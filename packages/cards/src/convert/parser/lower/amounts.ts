@@ -257,6 +257,21 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
     }
+    case 'spellsCastThisTurn': {
+      // CR 601.2i (D-624): the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
+      const blocked = needs('spellsCastThisTurn');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: {
+          kind: 'spellsCastThisTurn',
+          ...(amount.ofTypes === undefined
+            ? {}
+            : { ofTypes: amount.ofTypes as readonly CardType[] }),
+        },
+        rule,
+      };
+    }
     case 'countOf': {
       const blocked = needs('countOf');
       if (blocked !== null) return blocked;
@@ -661,6 +676,7 @@ export const AMOUNT_NEEDS = [
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
+  'amount:spellsCastThisTurn',
   'amount:exiledAsCost',
   'amount:times',
   'amount:toughnessOf',

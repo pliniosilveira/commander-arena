@@ -12,6 +12,21 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: gain.pos,
     };
   }
+  // D-624 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
+  const spells = pattern(
+    /the number of (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (spells.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'spellsCastThisTurn',
+        ...(spells.value[1] === undefined ? {} : { ofTypes: ['instant', 'sorcery'] }),
+        span: { start: pos, end: spells.pos },
+      },
+      pos: spells.pos,
+    };
+  }
   const entries = pattern(
     /the number of (nontoken |token )?(creatures|permanents) you had enter the battlefield under your control this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);

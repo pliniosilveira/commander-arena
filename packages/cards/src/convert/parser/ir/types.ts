@@ -341,6 +341,8 @@ export interface IrFilter {
   readonly putFromBattlefieldThisTurn?: true;
   /** "from anywhere other than your hand" (stage P75, D-235, CR 601.2a): a spell that was cast from a zone other than the hand (the engine's `notCastFromHand`). */
   readonly notCastFromHand?: true;
+  /** "from your hand" (Prismari deck group 1, D-624, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
+  readonly castFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
   /**
@@ -401,6 +403,12 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
+  // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-624, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
+  | {
+      readonly kind: 'spellsCastThisTurn';
+      readonly ofTypes?: readonly string[];
+      readonly span: Span;
+    }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
   | {
@@ -1263,6 +1271,8 @@ export type IrStaticEffect =
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   | { readonly kind: 'abilityCostReduction'; readonly amount: number }
+  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-627, CR 601.2f): the mana symbols added once for each target beyond the first.
+  | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
   // the abilities of the cards of these card types in the graveyard of the controller
   | {
@@ -1630,6 +1640,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',
+  'spellsCastThisTurn',
   'toughnessOf',
   'countersOn',
   'aggregate',

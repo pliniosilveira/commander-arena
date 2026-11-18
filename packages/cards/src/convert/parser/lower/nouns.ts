@@ -257,6 +257,11 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:notCastFromHand');
   }
+  // D-624: "an instant or sorcery spell ... from your hand" (CR 601.2a), a spell on the stack.
+  if (filter.castFromHand === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromHand');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
@@ -398,6 +403,7 @@ function lowerFilterAt(
       ? { putFromBattlefieldThisTurn: true as const }
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
+    ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),

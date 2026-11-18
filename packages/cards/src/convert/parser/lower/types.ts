@@ -70,6 +70,17 @@ export interface LowerContext {
    */
   madeAToken: boolean;
   /**
+   * True right after an instruction that made the tokens the engine's `moved` names (D-629, Prismari group 1: `createToken`, `createCopies`, `populate`): "They gain haste.",
+   * "The token created this way gains haste.", "Exile them at the beginning of the next end step." and "Sacrifice those tokens." are about exactly those tokens, and are lowered only
+   * then. Any later instruction that moves, destroys, exiles or sacrifices something else makes it false again. Filled by `lowerSentences` as each clause is lowered.
+   */
+  tokensMade: boolean;
+  /**
+   * The last `createToken` effect of a token that is a copy this text lowered (D-629): "create five of those tokens instead" makes that many tokens of the same kind, which this
+   * effect (with its target and its exceptions) says. Null before one. Filled by `lowerSentences` as each clause is lowered.
+   */
+  lastCopyToken: Effect | null;
+  /**
    * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
    * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
    */
@@ -252,6 +263,8 @@ export function newContext(
     castTrigger: false,
     removed: new Set(),
     madeAToken: false,
+    tokensMade: false,
+    lastCopyToken: null,
     lowered: 0,
     thatPlayer: null,
     xIs: null,

@@ -104,6 +104,7 @@ import {
 } from './player';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
+import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
@@ -894,6 +895,10 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Prismari deck, group 1 (issue 87, D-624 to D-631): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
+  // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
+  // choose and gain rules, and are tried first.
+  ...PRISMARI_G1_EFFECT_RULES,
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,

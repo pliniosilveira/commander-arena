@@ -327,9 +327,13 @@ const MULTIPLE = (rule: string): Parser<IrAmount> => {
 const SUM_OR_ATOM = (rule: string): Parser<IrAmount> => {
   const atom = ATOM(rule);
   return (ctx, pos) => {
-    const first = atom(ctx, pos);
+    // D-624 (Prismari deck group 1): "one plus the number of instant and sorcery spells you've cast this turn": a plain 1 more than the amount that follows.
+    const one = literal('one plus ')(ctx, pos);
+    const first = atom(ctx, one.ok ? one.pos : pos);
     if (!first.ok) return first;
-    const parts: IrAmount[] = [first.value];
+    const parts: IrAmount[] = one.ok
+      ? [{ kind: 'number', value: 1, span: { start: pos, end: one.pos } }, first.value]
+      : [first.value];
     let at = first.pos;
     for (;;) {
       const plus = literal(' plus ')(ctx, at);
