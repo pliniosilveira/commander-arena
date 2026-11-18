@@ -367,6 +367,12 @@ function lowerFilterAt(
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
+  // D-149 (CR 601.2c, 601.2f, 113.6): "Spells your opponents cast that target ~ cost {2} more": the object the spell targets is the permanent that has the ability.
+  if (filter.castTargetsSelf === true) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:isSource', 'selector:targetsObject');
+    targetsObject = { isSource: true };
+  }
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
   // D-131: "creatures attacking you" (CR 508.1b): the attackers whose attack target is the controller as a player.

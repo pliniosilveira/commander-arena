@@ -368,6 +368,8 @@ export interface IrFilter {
   readonly targetsHost?: true;
   /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
   readonly castTargets?: IrFilter;
+  /** D-149 (First Flight, Jubilant Skybonder): "Spells your opponents cast that target ~ cost {2} more": the spell a cost increase is about targets the object that has the ability (CR 601.2c, 113.6), read from the spell as it is cast. */
+  readonly castTargetsSelf?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
@@ -1352,6 +1354,8 @@ export type IrStaticEffect =
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
+  /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
+  | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   | { readonly kind: 'abilityCostReduction'; readonly amount: number }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.

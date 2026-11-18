@@ -992,6 +992,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
+    // D-149: "Spells your opponents cast that target this creature cost {2} more to cast" (CR 601.2f).
+    'costIncrease',
     // D-641: "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f).
     'costPerExtraTarget',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
@@ -1691,6 +1693,8 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
+  /** "Spells your opponents cast that target this creature cost {2} more to cast." (CR 601.2f, D-149): the engine's `costIncrease`. */
+  'costIncrease',
   /** "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f, D-641): the engine's `costPerExtraTarget`. */
   'costPerExtraTarget',
   /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */

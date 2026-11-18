@@ -223,6 +223,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.graveyard-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
+  'static.spells-cost-increase-targeting-self': asIs,
   'token.copies-x': permanent(
     (e) =>
       `At the beginning of combat on your turn, create ${e}, where X is the number of creatures you control.`,

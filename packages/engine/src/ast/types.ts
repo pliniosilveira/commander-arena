@@ -5308,6 +5308,17 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
+   * "Spells your opponents cast that target this creature cost {2} more to cast." (CR 601.2f, 601.2c, 604.2, 113.6, D-149): a static ability of a permanent (its own, or one a
+   * `grantAbility` gives it, read from the abilities it has after layer 6, CR 613.1f) that adds `amount` generic mana to the total cost of each spell `spells` describes, as the cost is
+   * determined, after the targets are chosen (CR 601.2c). The filter describes a spell being cast as `costReduction`'s does (`controller` is relative to the permanent's controller,
+   * `targetsObject: { isSource: true }` is "that target this creature": the permanent that has the ability). The increase comes before any reduction (CR 601.2f); every instance applies.
+   */
+  | {
+      readonly kind: 'costIncrease';
+      readonly spells: ObjectFilter;
+      readonly amount: number;
+    }
+  /**
    * "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f, 601.2c, 118.8; Strive is an ability word, CR 207.2c): a
    * static ability of the spell itself, which works on the stack (CR 113.6d), that adds `cost` (mana only, no X) to the total cost once for each target the spell has beyond the first
    * (a spell with no target, or one, costs nothing more). The targets are chosen before the total cost is determined (CR 601.2c, 601.2f), so the number of targets is the
@@ -5354,7 +5365,11 @@ export type StaticEffect =
       readonly subject: StaticSubject;
       readonly ability:
         | ManaAbility
-        | Extract<Ability, { readonly kind: 'activated' | 'triggered' }>;
+        | Extract<Ability, { readonly kind: 'activated' | 'triggered' }>
+        // D-149 (CR 604.1, 613.1f): a static ability of the kind `costIncrease`, the only static ability a static ability gives.
+        | (Extract<Ability, { readonly kind: 'static' }> & {
+            readonly static: Extract<StaticEffect, { readonly kind: 'costIncrease' }>;
+          });
     }
   /**
    * "~ is the chosen type in addition to its other types." (D-100): the subject also has the creature

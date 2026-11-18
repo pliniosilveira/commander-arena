@@ -338,6 +338,44 @@ export function checkCostReduction(
 }
 
 /**
+ * CR 601.2f, 601.2c (D-149): "Spells your opponents cast that target this creature cost {2} more to cast." `spells` describes a spell being cast, as a `costReduction`'s
+ * filter does (zone and stackKind are not set; `targetsObject` may say what it targets, `isSource` being the permanent with the ability); `amount` is a positive number of generic mana.
+ */
+export function checkCostIncrease(
+  s: Extract<StaticEffect, { kind: 'costIncrease' }>,
+  path: string,
+  out: Out,
+): void {
+  const { targetsObject, ...spell } = (s.spells ?? {}) as ObjectFilter;
+  checkFilter(spell, `${path}.spells`, out);
+  if (targetsObject !== undefined) {
+    checkFilter(targetsObject, `${path}.spells.targetsObject`, out, undefined, undefined, {
+      inTargets: true,
+    });
+    if (
+      filterSome(targetsObject, (f) => f.zone !== undefined && f.zone !== 'battlefield') ||
+      filterSome(targetsObject, (f) => f.targetsObject !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.spells.targetsObject`,
+        'the object a spell targets is a permanent on the battlefield, described without a zone of its own',
+      );
+    }
+  }
+  if (filterSome(spell, (f) => f.zone !== undefined || f.stackKind !== undefined)) {
+    issue(
+      out,
+      `${path}.spells`,
+      'the filter describes a spell being cast: zone and stackKind are not set',
+    );
+  }
+  if (!isCount(s.amount) || s.amount < 1) {
+    issue(out, `${path}.amount`, 'a cost increase must be a positive integer');
+  }
+}
+
+/**
  * D-641, CR 601.2f: "~ costs {2}{R} more to cast for each target beyond the first": the cost is mana only, with no X (it is paid once for each such target, as the spell is cast).
  */
 export function checkCostPerExtraTarget(
