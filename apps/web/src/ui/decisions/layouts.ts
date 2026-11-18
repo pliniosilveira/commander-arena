@@ -51,9 +51,13 @@ export function faceLine(face: FaceView): string {
   return cost === '' ? typeLine(face) : `${cost} · ${typeLine(face)}`;
 }
 
-/** "Adventure" for the Adventure of an Adventure card, so the cast says what it is. */
-const isAdventureFace = (card: ObjectView, face: number): boolean =>
-  card.layout === 'adventure' && face === 1;
+/** "Adventure" for the Adventure of an Adventure card, "Omen" for its Omen (Scryfall's adventure layout too), so the cast says what it is. */
+const spellFaceKind = (card: ObjectView, face: number): 'Adventure' | 'Omen' | null =>
+  card.layout !== 'adventure' || face !== 1
+    ? null
+    : card.faces?.[1]?.subtypes.includes('Omen') === true
+      ? 'Omen'
+      : 'Adventure';
 
 /** What a chooser item is called: the verb and the face's own name, and the line under it. */
 export interface FaceLabel {
@@ -74,11 +78,8 @@ export function faceLabel(
   const face = option.face === undefined ? undefined : card?.faces?.[option.face];
   if (face === undefined || card === undefined || option.face === undefined) return null;
   if (option.kind === 'playLand') return { label: `Play ${face.name}`, detail: faceLine(face) };
-  const how = isAdventureFace(card, option.face)
-    ? ' (Adventure)'
-    : card.zone === 'exile'
-      ? ' (from exile)'
-      : '';
+  const kind = spellFaceKind(card, option.face);
+  const how = kind !== null ? ` (${kind})` : card.zone === 'exile' ? ' (from exile)' : '';
   return { label: `Cast ${face.name}${how}`, detail: faceLine(face) };
 }
 
@@ -154,12 +155,13 @@ export function meldedFrom(card: ObjectView): string {
 }
 
 /** What a face is in its card: "Front face", "Back face", "Adventure", "Split, left half". */
-export function faceRole(layout: Layout, index: number): string {
+export function faceRole(layout: Layout, index: number, face?: FaceView): string {
   switch (layout) {
     case 'split':
       return index === 0 ? 'Split, left half' : 'Split, right half';
     case 'adventure':
-      return index === 0 ? 'Card' : 'Adventure';
+      if (index === 0) return 'Card';
+      return face?.subtypes.includes('Omen') === true ? 'Omen' : 'Adventure';
     case 'prepare':
       // CR 722.2a (D-214): the inset frame is the prepare spell.
       return index === 0 ? 'Card' : 'Prepare spell';
@@ -185,8 +187,8 @@ export function faceFacts(card: ObjectView): string[] {
   }
   if (card.face === undefined || card.faces === undefined) return facts;
   if (isBackFaceUp(card)) facts.push('Back face up');
-  else if (isAdventureFace(card, card.face) && card.zone === 'stack') {
-    facts.push('Cast as an Adventure');
+  else if (spellFaceKind(card, card.face) !== null && card.zone === 'stack') {
+    facts.push(`Cast as ${spellFaceKind(card, card.face) === 'Omen' ? 'an Omen' : 'an Adventure'}`);
   } else if (card.layout === 'split' && card.zone === 'stack') {
     facts.push(`Cast as ${card.faces[card.face]?.name ?? 'one half'}`);
   }
