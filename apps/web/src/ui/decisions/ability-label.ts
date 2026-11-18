@@ -153,6 +153,22 @@ export function isEternalize(ability: ActivatedAbility): boolean {
   );
 }
 
+/**
+ * True for Embalm's expansion (CR 702.128a): an ability from the graveyard that exiles the card as a cost and creates a token that is a copy of it, white, with no mana cost and a Zombie
+ * in addition.
+ */
+export function isEmbalm(ability: ActivatedAbility): boolean {
+  const { effect } = ability;
+  if (ability.functionsIn !== 'graveyard' || effect.kind !== 'createToken') return false;
+  const { token } = effect;
+  return (
+    token.kind === 'copyOf' &&
+    token.object.kind === 'this' &&
+    token.embalmed === true &&
+    token.setColors?.join() === 'W'
+  );
+}
+
 /** True for Unearth's expansion: an ability from the graveyard whose effect is `unearth` (CR 702.84a, D-124). */
 export function isUnearth(ability: ActivatedAbility): boolean {
   return ability.effect.kind === 'unearth';
@@ -1679,6 +1695,13 @@ export function activationLabel(
   if (isEternalize(ability)) {
     return costKeyword(
       'Eternalize',
+      ability.cost.filter((c) => c.kind !== 'exileThis'),
+    );
+  }
+  // CR 702.128a: "Embalm {5}{W}": the exile of the card is part of the keyword, not of the price.
+  if (isEmbalm(ability)) {
+    return costKeyword(
+      'Embalm',
       ability.cost.filter((c) => c.kind !== 'exileThis'),
     );
   }

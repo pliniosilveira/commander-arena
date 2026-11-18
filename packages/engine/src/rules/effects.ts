@@ -1957,6 +1957,7 @@ function runEffect(
           [{ definition, count, original: true }],
           effect.tapped === true,
           flow,
+          effect.token.kind === 'copyOf' && effect.token.embalmed === true,
         );
         if (made.kind === 'asked') return asking(state, made);
         next = made.state;

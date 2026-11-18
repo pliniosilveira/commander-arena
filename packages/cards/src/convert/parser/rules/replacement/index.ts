@@ -12,6 +12,7 @@ import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
+import { EMBALM_REPLACEMENT_RULES } from './embalm';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
@@ -313,6 +314,8 @@ export const REPLACEMENT_RULES = [
   ...ANGEL_REPLACEMENT_RULES,
   // Stage P34 (D-152): "As ~ enters, you may have it become a copy of any creature on the battlefield ...".
   ...DRAGON_REPLACEMENT_RULES,
+  // Issue 104: "You may have ~ enter as a copy of any creature on the battlefield, except if ~ was embalmed, ...".
+  ...EMBALM_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Stage P66 (D-219): "If one or more artifact tokens would be created under your control, ... are created instead."

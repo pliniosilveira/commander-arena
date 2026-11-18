@@ -34,7 +34,8 @@ function hasGraveyardAbility(state: GameState, id: ObjectId): boolean {
         (a.kind === 'keyword' &&
           (a.keyword.kind === 'unearth' ||
             a.keyword.kind === 'encore' ||
-            a.keyword.kind === 'eternalize')) ||
+            a.keyword.kind === 'eternalize' ||
+            a.keyword.kind === 'embalm')) ||
         (a.kind === 'activated' && a.functionsIn === 'graveyard'),
     ) === true
   );

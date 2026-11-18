@@ -67,6 +67,8 @@ const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER = /^(?:choose\b|tiered(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
+/** "You may have ~ enter as a copy of any creature on the battlefield, except ..." (issue 104, CR 614.12): the replacement effect of a permanent that enters as a copy, said without "As". */
+const REPLACEMENT_ENTER_AS_COPY = /^you may have ~ enter as a copy of\b/i;
 /** "~ escapes with two +1/+1 counters on it." (D-482, CR 702.138c): the replacement effect of a permanent that escaped. */
 const REPLACEMENT_ESCAPES = /^~ escapes with\b/i;
 /** "Umbra armor" (CR 702.89a, D-417): the keyword line of an Aura, which is a replacement effect of the permanent it enchants. */
@@ -841,6 +843,7 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
 
   if (
     REPLACEMENT_ENTERS.test(text) ||
+    REPLACEMENT_ENTER_AS_COPY.test(text) ||
     REPLACEMENT_ESCAPES.test(text) ||
     REPLACEMENT_UMBRA_ARMOR.test(text) ||
     REPLACEMENT_IF_ENTERS.test(text) ||

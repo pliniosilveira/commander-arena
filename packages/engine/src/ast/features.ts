@@ -512,6 +512,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'encore',
     // D-384: Eternalize (CR 702.129a).
     'eternalize',
+    // Embalm (CR 702.128a).
+    'embalm',
     'devour',
     'riot',
     // D-127: Echo (CR 702.30a) and Cumulative upkeep (CR 702.24a).
@@ -2146,6 +2148,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   unearth: true,
   encore: true,
   eternalize: true,
+  embalm: true,
   devour: true,
   riot: true,
   echo: true,

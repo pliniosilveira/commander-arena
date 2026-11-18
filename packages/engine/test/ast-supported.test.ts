@@ -76,6 +76,7 @@ const EXECUTABLE_KEYWORDS = [
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
   'eternalize', // scenario-xx-hashaton-g5
+  'embalm', // scenario-xx-embalm
   'devour', // scenario-xx-devour-riot
   'riot', // scenario-xx-devour-riot
   'echo', // scenario-xx-echo
@@ -177,6 +178,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   unearth: { kind: 'unearth', cost: [{ kind: 'mana', symbols: ['R'] }] },
   encore: { kind: 'encore', cost: [{ kind: 'mana', symbols: ['3', 'R'] }] },
   eternalize: { kind: 'eternalize', cost: [{ kind: 'mana', symbols: ['5', 'U', 'U'] }] },
+  embalm: { kind: 'embalm', cost: [{ kind: 'mana', symbols: ['5', 'W'] }] },
   devour: { kind: 'devour', count: 2 },
   riot: { kind: 'riot' },
   echo: { kind: 'echo', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },

@@ -6,6 +6,7 @@ import type { ObjectView, Restriction } from '@commander-arena/engine';
 import { JOB_SELECT_REMINDER, LIVING_WEAPON_REMINDER } from '../../game/artifacts-text';
 import { ESCALATE_REMINDER, hideawayReminder } from '../../game/dinosaurs-text';
 import { DETHRONE_REMINDER, MYRIAD_REMINDER, READ_AHEAD_REMINDER } from '../../game/dragons-text';
+import { EMBALM_REMINDER } from '../../game/embalm-text';
 import { DECAYED_REMINDER } from '../../game/gisa-g5-text';
 import { ETERNALIZE_REMINDER } from '../../game/hashaton-g5-text';
 import { devourReminder, ENCORE_REMINDER, RIOT_REMINDER } from '../../game/keywords-text';
@@ -102,6 +103,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   encore: ['Enc', `Encore (${ENCORE_REMINDER})`],
   // Hashaton deck group 5 (D-384): Eternalize (CR 702.129a).
   eternalize: ['Et', `Eternalize (${ETERNALIZE_REMINDER})`],
+  // Issue 104: Embalm (CR 702.128a).
+  embalm: ['Emb', `Embalm (${EMBALM_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
 };
@@ -171,6 +174,11 @@ const PARAMETERIZED: Readonly<
   eternalize: (text) =>
     [...text.matchAll(/\beternalize\s*((?:\{[^}]+\})+)/gi)].map(
       (m) => ['Et', `${withCost('Eternalize', m[1] ?? '')} (${ETERNALIZE_REMINDER})`] as const,
+    ),
+  // "Embalm {5}{W}": one chip per instance (CR 702.128a).
+  embalm: (text) =>
+    [...text.matchAll(/\bembalm\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Emb', `${withCost('Embalm', m[1] ?? '')} (${EMBALM_REMINDER})`] as const,
     ),
   // "Hideaway 4": the number of cards looked at (CR 702.75a).
   hideaway: (text) =>

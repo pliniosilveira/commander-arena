@@ -3255,6 +3255,9 @@ function checkTokenSpec(
             scope.checkAbility(a, `${path}.abilities[${i}]`, out);
           });
       }
+      if (spec.embalmed !== undefined && spec.embalmed !== true) {
+        issue(out, `${path}.embalmed`, 'embalmed must be true when present');
+      }
       if (spec.linkExiled !== undefined && spec.linkExiled !== true) {
         issue(out, `${path}.linkExiled`, 'linkExiled must be true when present');
       }
