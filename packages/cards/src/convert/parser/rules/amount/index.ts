@@ -338,6 +338,45 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
   },
 });
 
+/**
+ * `amount.discarded-most-this-way`: "equal to the greatest number of cards a player discarded this way" (issue 279, Windfall, CR 608.2c, 701.9a): the most cards any one
+ * player discarded to the instruction before it in the same text ("Each player discards their hand, then draws cards equal to ..."), read as the engine's `thisWay`
+ * `discardedMost`. Read only where the lowering finds a `discard` of the same text before it. Not read: "the total number of cards discarded this way" (a sum), "the least
+ * number", a player named ("a player" is the only word it says: "that player" or "you" name one), a count in front ("twice"), another verb ("exiled").
+ */
+export const AMOUNT_DISCARDED_MOST_THIS_WAY = defineRule<IrAmount>({
+  id: 'amount.discarded-most-this-way',
+  family: 'amount',
+  leading: ['equal'],
+  cites: ['CR 701.9a (Discard)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['equal to the greatest number of cards a player discarded this way'],
+  rejects: [
+    'equal to the greatest number of cards a player discarded',
+    'equal to the greatest number of cards you discarded this way',
+    'equal to the greatest number of cards that player discarded this way',
+    'equal to the least number of cards a player discarded this way',
+    'equal to the total number of cards a player discarded this way',
+    'equal to the greatest number of cards a player exiled this way',
+    'equal to the greatest number of creature cards a player discarded this way',
+    'the greatest number of cards a player discarded this way',
+    'equal to the greatest number of cards a player discarded this way plus 1',
+    'equal to twice the greatest number of cards a player discarded this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /equal to the greatest number of cards a player discarded this way(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'thisWay', what: 'discardedMost', words: [], span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
 export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_DIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
@@ -360,6 +399,7 @@ export const AMOUNT_RULES = [
   AMOUNT_MANA_VALUE_OF,
   AMOUNT_LIFE_LOST_THIS_WAY,
   AMOUNT_MILLED_VALUE_THIS_WAY,
+  AMOUNT_DISCARDED_MOST_THIS_WAY,
   // Galadriel deck, group 2 (D-539): two counts added; before `amount.for-each`, which would stop after the first.
   ...GALADRIEL_G2_AMOUNT_RULES,
   ...COUNT_AMOUNT_RULES,

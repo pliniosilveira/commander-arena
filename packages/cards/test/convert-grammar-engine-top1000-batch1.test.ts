@@ -269,3 +269,53 @@ describe('"Those creatures gain indestructible" after a count of creatures (CR 6
     g.expect.derived('Grizzly Bears', { keywords: [] });
   });
 });
+
+// ---- Windfall: "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way." (CR 701.9a, 608.2c).
+
+const WINDFALL = parsed(
+  'SYNTHETIC Parsed Windfall',
+  'Sorcery',
+  'Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way.',
+  { manaCost: '{2}{U}', colors: ['U'] },
+);
+
+describe('"draws cards equal to the greatest number of cards a player discarded this way" (CR 608.2c)', () => {
+  const start = (mine: number, theirs: number) => {
+    const cards = (n: number) => Array.from({ length: n }, () => 'Plains');
+    return main(
+      (b) =>
+        b
+          .define(WINDFALL)
+          .hand(WINDFALL.name, ...cards(mine))
+          .battlefield('Island', 'Island', 'Island')
+          .library(...Array.from({ length: 10 }, () => 'Forest')),
+      (b) => b.hand(...cards(theirs)).library(...Array.from({ length: 10 }, () => 'Forest')),
+    );
+  };
+
+  test('every player draws as many as the most any one of them discarded', () => {
+    // The caster has 3 other cards, the opponent 5: the greatest number discarded is 5, and both draw 5.
+    const g = start(3, 5);
+    g.act(0).cast(WINDFALL.name, { pay: true });
+    g.passAll();
+    expect(g.view(0).seats[0]?.handCount).toBe(5);
+    expect(g.view(1).seats[1]?.handCount).toBe(5);
+    g.expect.invariants();
+  });
+
+  test('the number is the most one player discarded, not the total', () => {
+    const g = start(4, 2);
+    g.act(0).cast(WINDFALL.name, { pay: true });
+    g.passAll();
+    expect(g.view(0).seats[0]?.handCount).toBe(4);
+    expect(g.view(1).seats[1]?.handCount).toBe(4);
+  });
+
+  test('when nobody has a card to discard nobody draws', () => {
+    const g = start(0, 0);
+    g.act(0).cast(WINDFALL.name, { pay: true });
+    g.passAll();
+    expect(g.view(0).seats[0]?.handCount).toBe(0);
+    expect(g.view(1).seats[1]?.handCount).toBe(0);
+  });
+});

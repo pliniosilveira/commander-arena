@@ -1750,6 +1750,8 @@ export interface ThisWayCounts {
   readonly discardedNoncreature?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
+  /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */
+  readonly discardedMost?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */

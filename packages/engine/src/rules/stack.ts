@@ -252,6 +252,11 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   (res.thisWay?.discardedInstantOrSorcery ?? 0) +
                   (out.thisWay.discardedInstantOrSorcery ?? 0),
                 searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
+                // Issue 279: the greatest number one player discarded, not a sum.
+                discardedMost: Math.max(
+                  res.thisWay?.discardedMost ?? 0,
+                  out.thisWay.discardedMost ?? 0,
+                ),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),

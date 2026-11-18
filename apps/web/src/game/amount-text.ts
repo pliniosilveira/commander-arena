@@ -159,6 +159,9 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'discardedMost':
+      // Issue 279 (Windfall).
+      return 'the greatest number of cards a player discarded this way';
     case 'searched':
       // Lorehold group 1: "If you search your library this way".
       return 'the number of times you searched your library this way';

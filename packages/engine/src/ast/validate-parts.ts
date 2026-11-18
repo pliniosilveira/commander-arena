@@ -1270,6 +1270,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
+  discardedMost: 'a discard effect',
   searched: 'a search effect',
 };
 
@@ -1286,7 +1287,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
-    return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
+    return [
+      'discarded',
+      'discardedCreature',
+      'discardedNoncreature',
+      'discardedInstantOrSorcery',
+      'discardedMost',
+    ];
   if (e?.kind === 'mill') return ['milledValue'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];

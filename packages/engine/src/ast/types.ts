@@ -302,6 +302,8 @@ export type ThisWayKind =
   | 'discardedNoncreature'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
   | 'discardedInstantOrSorcery'
+  // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": the most cards one player discarded to the `discard` effects of this resolution (CR 608.2c).
+  | 'discardedMost'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
   | 'searched';
 

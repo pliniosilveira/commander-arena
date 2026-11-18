@@ -40,4 +40,6 @@ export const EQUAL_AMOUNTS = [
   'amount.mana-value-of',
   // Stage P52 (D-210): "equal to the total mana value of those cards" after a mill.
   'amount.milled-value-this-way',
+  // Issue 279 (Windfall): "equal to the greatest number of cards a player discarded this way" after a discard.
+  'amount.discarded-most-this-way',
 ] as const;

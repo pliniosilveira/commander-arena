@@ -354,19 +354,10 @@
     "08becc07-28bc-4a2f-a6b0-28a2998d2f50": {
       "name": "Windfall",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.draw"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a1612efa"
+      "ast": "1bc914df"
     },
     "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
       "name": "Undercity Sewers",
@@ -6749,7 +6740,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 473,
+      "supported": 474,
       "total": 500
     }
   }
