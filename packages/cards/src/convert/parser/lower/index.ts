@@ -166,5 +166,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     'token:tapped',
     ...NOUN_EXTRA_NEEDS,
     'selector:colorChoice',
+    // Issue 104: "search your graveyard, hand, and/or library" (the engine's `search.zones`).
+    'selector:searchZones',
   ]),
 ];

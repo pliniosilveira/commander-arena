@@ -373,6 +373,8 @@ export interface IrFilter {
    * reads it, with the card's own name; any other noun that carries it is refused, so it is never dropped.
    */
   readonly namedSelf?: true;
+  /** "a card named God-Pharaoh's Gift" (issue 104, CR 201.2): the object's name is exactly this text (the engine's `named`). Read only after a card of a library search. */
+  readonly named?: string;
   /** The words the filter was read from, for diagnostics and templateOf. */
   readonly raw: string;
 }

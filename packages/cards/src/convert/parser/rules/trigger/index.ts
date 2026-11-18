@@ -26,6 +26,7 @@ import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { romanValue } from '../../roman';
 import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
+import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { CLASS_TRIGGER_RULES } from './class';
@@ -1165,6 +1166,8 @@ export const TRIGGER_RULES = [
   ...HASHATON_G1_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
+  // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
+  ...ACTIVATES_ABILITY_TRIGGER_RULES,
   // Hylda deck, group 1 (issue 42, D-510, D-513): "you tap an untapped creature an opponent controls", "you scry".
   ...HYLDA_G1_TRIGGER_RULES,
   // Galadriel deck, group 1 (issue 43): "you scry or surveil", "you surveil".

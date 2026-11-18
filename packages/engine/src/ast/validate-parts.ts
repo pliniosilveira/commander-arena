@@ -3435,6 +3435,31 @@ function checkSearch(
       );
     }
   }
+  // CR 701.23a: "your graveyard, hand, and/or library": two or more different zones of the searcher; nothing else of the search is built with them.
+  if (e.zones !== undefined) {
+    if (
+      !Array.isArray(e.zones) ||
+      e.zones.length < 2 ||
+      new Set(e.zones).size !== e.zones.length ||
+      !e.zones.every((z) => isOneOf(z, ['graveyard', 'hand', 'library']))
+    ) {
+      issue(
+        out,
+        `${path}.zones`,
+        'zones are two or more different ones of graveyard, hand and library',
+      );
+    }
+    if (e.reveal === true || e.shuffle === true || e.sharedLandType !== undefined) {
+      issue(
+        out,
+        `${path}.zones`,
+        'a search of several zones has no reveal, shuffle or shared land type: shuffle with a "searched this way" condition',
+      );
+    }
+    if (e.maxAmount !== undefined) {
+      issue(out, `${path}.zones`, 'a search of several zones has no maxAmount');
+    }
+  }
   for (const key of ['reveal', 'shuffle'] as const) {
     if (typeof e[key] !== 'boolean') issue(out, `${path}.${key}`, `${key} must be a boolean`);
   }

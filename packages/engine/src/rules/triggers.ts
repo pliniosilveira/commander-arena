@@ -410,6 +410,13 @@ function occurrences(
       return event.kind === 'crimeCommitted'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'activatesAbility':
+      // CR 602.2, 605.1a: an activated ability of a permanent that uses the stack (a mana ability is no such event); the ability on the stack is the subject.
+      return event.kind === 'abilityActivated' &&
+        event.fromBattlefield === true &&
+        event.stackObject !== null
+        ? [{ subject: event.stackObject, seat: event.seat, player: event.seat }]
+        : [];
     case 'tokenCreated':
       // CR 111.2 (D-465): a token enters under the control of the player who creates it; one occurrence for each token.
       return event.kind === 'tokenCreated'
@@ -683,7 +690,8 @@ function matches(
       return false;
     case 'crimeCommitted':
     case 'tokenCreated':
-      // CR 700.13, 111.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
+    case 'activatesAbility':
+      // CR 700.13, 111.2, 602.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -860,6 +868,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
+    case 'abilityActivated':
     case 'ringTempted':
     case 'classLevelReached':
       return true;

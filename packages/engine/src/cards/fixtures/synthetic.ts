@@ -10,6 +10,7 @@ import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 import { SYNTHETIC_ABILITY_LIST } from './synthetic-abilities';
 import { SYNTHETIC_ABILITY_COSTS_LIST } from './synthetic-ability-costs';
+import { SYNTHETIC_ACTIVATES_ABILITY_LIST } from './synthetic-activates-ability';
 import { SYNTHETIC_ADAMANTOISE_LIST } from './synthetic-adamantoise';
 import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
@@ -153,6 +154,7 @@ import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
+import { SYNTHETIC_SEARCH_ZONES_LIST } from './synthetic-search-zones';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
@@ -449,6 +451,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_FEATHER_G1_LIST,
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,
+  ...SYNTHETIC_ACTIVATES_ABILITY_LIST,
+  ...SYNTHETIC_SEARCH_ZONES_LIST,
   ...SYNTHETIC_HYLDA_G3_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,

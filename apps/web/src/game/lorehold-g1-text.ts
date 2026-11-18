@@ -23,9 +23,22 @@ export function searchText(effect: SearchEffect): string {
   if (effect.player.kind !== 'you' || effect.max !== 1 || place === undefined || more.length > 0) {
     return 'Search your library';
   }
-  const card = filterPhrase(effect.filter, 'card');
+  // Issue 104 (CR 201.2): "a card named God-Pharaoh's Gift", and (CR 701.23a) the zones the player searches: "graveyard, hand, and/or library".
+  const { named, ...rest } = effect.filter;
+  const card =
+    named === undefined
+      ? filterPhrase(effect.filter, 'card')
+      : Object.keys(rest).length === 0
+        ? `a card named ${named}`
+        : null;
+  const zones =
+    effect.zones === undefined
+      ? 'library'
+      : effect.zones.length === 2
+        ? effect.zones.join(' and/or ')
+        : `${effect.zones.slice(0, -1).join(', ')}, and/or ${effect.zones[effect.zones.length - 1]}`;
   if (card === null) return 'Search your library';
   const put = `put it ${WHERE[place.zone]}${place.tapped === true ? ' tapped' : ''}`;
   const found = effect.reveal ? `, reveal it and ${put}` : ` and ${put}`;
-  return `${effect.optional === true ? 'You may search' : 'Search'} your library for ${card}${found}${effect.shuffle ? ', then shuffle' : ''}`;
+  return `${effect.optional === true ? 'You may search' : 'Search'} your ${zones} for ${card}${found}${effect.shuffle ? ', then shuffle' : ''}`;
 }

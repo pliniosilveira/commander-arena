@@ -3113,6 +3113,14 @@ export type Effect =
        */
       readonly sharedLandType?: true;
       /**
+       * "Search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift" (CR 701.23a, 701.23b, 701.23d): the zones of the searcher that are searched,
+       * two or more of `graveyard`, `hand` and `library` (without it, the library alone). The cards of `filter` in all of them are offered in one choice. "And/or"
+       * lets the player search only some of the zones, so the library counts as searched (`librarySearched`, `thisWay` `searched`, which "If you search your library
+       * this way" reads) unless the cards found came from the graveyard or the hand alone; a search that finds nothing searched every zone. `shuffle` and a
+       * `reveal` are not built with it ("If you search your library this way, shuffle." is a `conditional` on `thisWayAtLeast` `searched`).
+       */
+      readonly zones?: readonly ('graveyard' | 'hand' | 'library')[];
+      /**
        * "Search your library for up to X basic land cards, where X is the number of tapped creatures you control" (D-626, issue 160): the most cards that may be found is
        * this amount, worked out as the search begins (CR 608.2c, 107.3c); `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`. A count of 0 or
        * less finds nothing (the player still searches and shuffles, CR 701.23c).
@@ -3403,6 +3411,14 @@ export type Trigger =
    * `triggerPlayer` the player who created it.
    */
   | { readonly kind: 'tokenCreated'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
+   * "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a, D-NEW): once each time the player `who`
+   * names (relative to the controller of this ability) activates an activated ability, loyalty abilities included, of a permanent (its source was on the
+   * battlefield as it was activated), as the ability goes on the stack. A mana ability (CR 605.1a) is never put on the stack and never triggers it; neither
+   * does an ability of a card in a hand or graveyard (Cycling, Unearth). `triggerSubject` is the ability on the stack and `triggerPlayer` the player who
+   * activated it.
+   */
+  | { readonly kind: 'activatesAbility'; readonly who: 'you' | 'opponent' | 'any' }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }
   /**

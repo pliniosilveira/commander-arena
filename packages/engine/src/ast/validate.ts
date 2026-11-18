@@ -711,6 +711,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
+    case 'activatesAbility':
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -1067,6 +1068,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'castSpell':
     case 'becomesTarget':
     case 'crimeCommitted':
+    case 'activatesAbility':
       return 'stack';
     case 'tokenCreated':
       return 'permanent';
