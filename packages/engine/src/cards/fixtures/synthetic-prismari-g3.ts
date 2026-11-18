@@ -256,6 +256,33 @@ export const SYNTHETIC_PRISMARI_G3_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Retrace. ~ deals 2 damage to any target." and "Retrace. You gain X life."
+  singleFace({
+    name: 'SYNTHETIC Retrace Bolt',
+    manaCost: ['1', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Retrace. SYNTHETIC Retrace Bolt deals 2 damage to any target.',
+    abilities: [{ kind: 'keyword', keyword: { kind: 'retrace' } }],
+    spell: {
+      targets: [{ id: 't1', what: { kind: 'anyTarget' } }],
+      effect: { kind: 'dealDamage', amount: 2, to: { kind: 'target', id: 't1' } },
+    },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Retrace X Drain',
+    manaCost: ['X', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Retrace. You gain X life.',
+    abilities: [{ kind: 'keyword', keyword: { kind: 'retrace' } }],
+    spell: {
+      x: true,
+      effect: { kind: 'gainLife', player: { kind: 'you' }, amount: { kind: 'x' } },
+    },
+  }),
   // Spells of known mana values to be exiled and cast: a cheap one that gains life, one with a target, one with an additional cost, and a permanent.
   singleFace({
     name: 'SYNTHETIC Calamity Gain Two',

@@ -189,13 +189,17 @@ describe('Throes of Chaos: "Cascade. Retrace."', () => {
     g.expect.stack([`${CHAOS} (ability)`, CHAOS]);
   });
 
-  test('cast from the hand it cascades and has no retrace there; it goes to the graveyard, and retrace brings it back', () => {
-    const g = game([], [CHAOS, 'Island'], (b) => b.pool('RRRRRR'));
+  test('cast from the hand it is the ordinary cast; it ends in the graveyard, where retrace casts it again, cascading again', () => {
+    const g = game([], [CHAOS, 'Island'], (b) => b.pool('RRRRRRRR'));
     g.act(0).cast(CHAOS, { pay: true });
+    // The cascade trigger finds nothing to cast in a library of lands and resolves with the spell.
     g.passAll();
-    if (g.state.pending?.kind === 'confirmOptional') g.act(0).decline();
-    g.passAll();
+    g.expect.pending('priority', 0);
     g.expect.zone(CHAOS, 'graveyard', { seat: 0 });
-    expect(retraceOption(g, CHAOS)).toHaveLength(0 + (g.state.seats[0]?.pool.length === 0 ? 0 : 0));
+    expect(retraceOption(g, CHAOS)).toHaveLength(1);
+    g.act(0).cast(CHAOS, { alternative: 'retrace', pay: true });
+    g.expect.stack([`${CHAOS} (ability)`, CHAOS]);
+    g.expect.zone('Island', 'graveyard', { seat: 0 });
+    g.expect.invariants();
   });
 });
