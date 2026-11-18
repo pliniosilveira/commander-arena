@@ -30,7 +30,7 @@ Commander Arena is an unofficial, free, in-browser game of Magic: The Gathering 
 
 ### 4.1 Stack
 
-Defaults are recorded in `docs/decisions/repo.md` (D-029, D-030, D-032); deviations need a decision file (`docs/decisions/README.md`).
+Defaults are recorded in `docs/decisions/repo.md` (D-029, D-030, D-032); deviations need a decision bullet (`docs/decisions/README.md`).
 
 - TypeScript in strict mode with pnpm workspaces, exact pinned dependencies. Biome for linting and formatting; dependency-cruiser for the package boundaries. React 19 with Vite, Zustand for UI state, Comlink for the Worker RPC. Zod schemas for serialized data (the AST, `GameState`, the card pipeline). Vitest for unit and scenario tests, fast-check for property tests, Playwright for browser tests.
 - Packages: `packages/engine` (pure rules engine: no DOM, network, timers, Node built-ins or randomness; imports only itself and `zod`), `packages/cards` (decklist parsing, Scryfall client and cache, the Oracle parser, the engine's real-card fixtures, validation, coverage tooling), `packages/ai` (agents; depends only on the engine's public API), `apps/web` (React UI; the engine and AI run in a Web Worker so the UI never freezes). A lint rule fails the build when a package imports what it must not (`AGENTS.md`, `tools/boundaries`).
@@ -60,7 +60,7 @@ Defaults are recorded in `docs/decisions/repo.md` (D-029, D-030, D-032); deviati
 
 ## 5. Rules engine requirements
 
-**Rules baseline:** the Comprehensive Rules effective September 25, 2026, plus the Mystery Booster Commander Edition Update Bulletin (October 19, 2026), applied by reference (D-035). The CR text and `RULES_VERSION.md` are in `docs/rules/`; `pnpm rule <number>` prints a rule. Rule numbers here come from the September 2026 file; the bulletin shifts meld to a new rule 713, so later 7xx numbers move: find rules by title. When this specification and the CR disagree, the CR wins; record the discrepancy in a decision file (`docs/decisions/`). Cite rules in code as `CR 702.19b (Trample)`, number and title (A15).
+**Rules baseline:** the Comprehensive Rules effective September 25, 2026, plus the Mystery Booster Commander Edition Update Bulletin (October 19, 2026), applied by reference (D-035). The CR text and `RULES_VERSION.md` are in `docs/rules/`; `pnpm rule <number>` prints a rule. Rule numbers here come from the September 2026 file; the bulletin shifts meld to a new rule 713, so later 7xx numbers move: find rules by title. When this specification and the CR disagree, the CR wins; record the discrepancy as a decision bullet (`docs/decisions/`). Cite rules in code as `CR 702.19b (Trample)`, number and title (A15).
 
 ### 5.1 Game setup (CR 103, 903)
 
@@ -178,7 +178,7 @@ Rules for the loop, still binding:
 - Never mark a card supported without tests.
 - Never special-case a card by name inside engine code.
 - Never weaken an existing rule implementation to make a new card fit.
-- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it in a decision file (`docs/decisions/`).
+- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it as a decision bullet (`docs/decisions/`).
 
 ### 8.4 What the owner types (removed)
 
@@ -368,4 +368,4 @@ Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20
 
 ### 17.7 Stack choices made before M0 (D-029)
 
-Recorded so later sessions do not reopen them; deviations need a decision file (`docs/decisions/`). Biome and dependency-cruiser; React 19 with Vite, Zustand and Comlink; Zod schemas for serialized data; one pull request per milestone, merged after the checks pass. Now in 4.1.
+Recorded so later sessions do not reopen them; deviations need a decision bullet (`docs/decisions/`). Biome and dependency-cruiser; React 19 with Vite, Zustand and Comlink; Zod schemas for serialized data; one pull request per milestone, merged after the checks pass. Now in 4.1.

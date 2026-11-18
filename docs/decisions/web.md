@@ -3,7 +3,7 @@
 Entries keep their old numbers (see `README.md`).
 
 - **D-044 A framework-free host behind a Comlink Worker.** `GameHost` owns the only `GameState`, applies the human's action, then lets the AI answer until the human is asked something; the page receives snapshots (the human's `GameView`, the steps applied) and never state.
-- **D-018, D-045, D-199 Auto-pass is a pure policy** (`shouldStop(view, settings)`): the game passes when nothing relevant can be done, stops at Arena-style default stops, and always stops to show an opponent's spell before it resolves (the card, its X and what it did stay on screen). Auto-passes are recorded as ordinary pass actions. A relevant action is one the engine lists as affordable and instant-speed; the player's own spell resolves without a click.
+- **D-018, D-045, D-199 Auto-pass is a pure policy** (`shouldStop(view, settings)`): the game passes when no affordable instant-speed action exists, stops at Arena-style default stops, and always stops to show an opponent's spell before it resolves. Auto-passes are recorded as ordinary pass actions; the player's own spell resolves without a click.
 - **D-143 Pass Turn** is a yield until the end of the player's turn, with its own button and key; **D-141:** the pass button names the next step and Concede lives in Settings.
 - **D-050 Undo** takes back small human actions (land, cast, activate, targets, payment) inside one priority window, only while nothing hidden, random or forward-moving happened.
 - **D-049 A static site** deployed with Cloudflare (free tier, Git integration, no secrets in the repository).

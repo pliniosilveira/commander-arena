@@ -1,8 +1,6 @@
 # Decisions
 
-A decision is recorded here only when it binds future work: an architecture or stack choice, a policy, a convention every contributor must follow, or a deliberate deviation from the Comprehensive Rules (CR) or the SPEC. How one card or one rule is implemented is not a decision: it goes in the pull request description and in a comment that cites the CR rule, and the mechanic goes in `docs/MECHANICS.md`.
-
-Where the decisions are:
+The choices that bind future work, as short bullets in five topic files. Read the file for the area you change, not the folder.
 
 | File | Holds |
 | --- | --- |
@@ -11,23 +9,17 @@ Where the decisions are:
 | `ai.md` | The AI opponent. |
 | `web.md` | The web app: host, auto-pass, layout, wording. |
 | `repo.md` | The repository: stack, checks, CI, public-repository rules, documentation. |
-| `YYYY-MM-DD-topic.md` | A decision taken after the cleanup that created this folder, one file each. |
 
 ## Adding a decision
 
-Create `docs/decisions/<date>-<topic>.md` (for example `2026-11-18-precon-snapshot-comment.md`). One file per decision: two pull requests never touch the same file, and there is no number to collide on. Use this template and keep it short:
+Most pull requests add none. Before adding one, check:
 
-```markdown
-# <title>
+1. **Is it a decision?** Only an architecture or stack choice, a policy, or a deliberate deviation from the CR or the SPEC. How a card or a rule is built goes in the pull request, a comment that cites the CR rule and `docs/MECHANICS.md`.
+2. **Is it already written where it is applied?** A convention stated in `AGENTS.md`, the playbook or a skill needs no bullet here; put one sentence of "why" next to the rule itself.
+3. **Then add one bullet** to the topic file, in the section it belongs to: a bold title, what was decided and why, and "rejected: X" only when someone is likely to propose X again. At most 60 words. No new file, no number, no Context/Alternatives/Consequences template; the history is the pull request.
 
-- Context: <what forced a choice>
-- Decision: <what you chose>
-- Alternatives: <what you rejected and why>
-- Consequences: <what this makes easier or harder>
-```
-
-Refer to a decision by its file name or by the pull request that introduced it. Do not number it.
+`tools/docs/decisions.test.ts` fails on any other file in this folder and on a bullet over the limit.
 
 ## The old log
 
-`docs/DECISIONS.md` held 623 entries numbered `D-001` to `D-637`, most of them about how one card or one rule was built. It was removed in a cleanup. The files here keep the entries that still bind, each under its old number so that a `D-123` in a code comment can be found with a search. Any other old entry is history: read the whole old file with `git log --diff-filter=D -n 1 --format=%H -- docs/DECISIONS.md`, then `git show <that commit>^:docs/DECISIONS.md`.
+`docs/DECISIONS.md` (entries `D-001` to `D-637`) was condensed into these files; the kept entries carry their old numbers so a `D-123` in a code comment can be searched for. The rest is history: `git log --diff-filter=D -n 1 --format=%H -- docs/DECISIONS.md`, then `git show <that commit>^:docs/DECISIONS.md`.
