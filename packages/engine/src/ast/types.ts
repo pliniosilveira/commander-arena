@@ -2396,6 +2396,11 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly keyword: Keyword;
       /**
+       * "... with \"During your turn, this creature has first strike.\"" (CR 604.1, 613.1f, 109.5, D-639, Restless Spire): the keyword is given only while it is its controller's turn (the
+       * controller of the object as it is then, a layer 2 effect read first, CR 613.1b), the way a granted static ability "during your turn" is. Only a keyword without parameters.
+       */
+      readonly duringYourTurn?: true;
+      /**
        * `forAsLongAsThisRemains` (D-207, CR 611.2b): "gains hexproof for as long as this Saga remains on the battlefield": ends, for good, when the
        * permanent with the ability leaves the battlefield; does nothing when it is not there as the effect would begin. Only in an ability of a permanent.
        * `forAsLongAsYouControlThis` (D-229, CR 611.2b): "gains indestructible for as long as you control this creature": ends, for good, when the

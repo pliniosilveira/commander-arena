@@ -1814,7 +1814,12 @@ export type ContinuousChange =
    * (`rules/regenerate.ts`). One shield protects the one permanent in `objects`, once, until end of turn.
    */
   | { readonly kind: 'regenerate' }
-  | { readonly kind: 'grantKeyword'; readonly keyword: Keyword }
+  | {
+      readonly kind: 'grantKeyword';
+      readonly keyword: Keyword;
+      /** D-639 (CR 604.1, 109.5): given only while it is the turn of the object's controller ("During your turn, this creature has first strike"). */
+      readonly duringYourTurn?: true;
+    }
   /** D-230 (Backup): an ability, granted in layer 6 for the duration of the effect. */
   | { readonly kind: 'grantAbility'; readonly ability: Ability }
   /**

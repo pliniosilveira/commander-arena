@@ -477,4 +477,59 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "This land enters tapped.\n{T}: Add {U} or {R}.\n{U}{R}: Until end of turn, this land becomes a 2/1 blue and red Elemental creature with \"During your turn, this creature has first
+  //  strike.\" It's still a land.\nWhenever this land attacks, scry 1."
+  singleFace({
+    name: 'SYNTHETIC Spire Land',
+    manaCost: null,
+    types: ['land'],
+    colors: [],
+    colorIdentity: ['U', 'R'],
+    oracleText:
+      'This land enters tapped.\n{T}: Add {U} or {R}.\n{U}{R}: Until end of turn, this land becomes a 2/1 blue and red Elemental creature with "During your turn, this creature has first strike." It\u2019s still a land.\nWhenever this land attacks, scry 1.',
+    abilities: [
+      { kind: 'replacement', replacement: { kind: 'entersTapped' } },
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'oneOf', colors: ['U', 'R'] },
+      },
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['U', 'R'] }],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'setTypes',
+              objects: { kind: 'this' },
+              types: ['creature'],
+              subtypes: ['Elemental'],
+              additive: true,
+              basePt: { power: 2, toughness: 1 },
+              duration: 'untilEndOfTurn',
+            },
+            {
+              kind: 'setColors',
+              objects: { kind: 'this' },
+              colors: ['U', 'R'],
+              duration: 'untilEndOfTurn',
+            },
+            {
+              kind: 'grantKeyword',
+              objects: { kind: 'this' },
+              keyword: { kind: 'firstStrike' },
+              duration: 'untilEndOfTurn',
+              duringYourTurn: true,
+            },
+          ],
+        },
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        effect: { kind: 'scry', count: 1 },
+      },
+    ],
+  }),
 ];

@@ -81,7 +81,11 @@ function changeOf(
     case 'setColors':
       return { kind: 'setColors', colors: node.colors };
     case 'grantKeyword':
-      return { kind: 'grantKeyword', keyword: node.keyword };
+      return {
+        kind: 'grantKeyword',
+        keyword: node.keyword,
+        ...(node.duringYourTurn === true ? { duringYourTurn: true as const } : {}),
+      };
     case 'grantAbility':
       // D-230 (Backup): one change for each ability; `runContinuous` makes a continuous effect of each.
       return { kind: 'grantAbility', ability: node.abilities[0] as Ability };

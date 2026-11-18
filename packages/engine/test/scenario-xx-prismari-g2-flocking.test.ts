@@ -110,7 +110,7 @@ describe('two 3/3 flying Elementals for each opponent, hasty, attacking that opp
     const d = g.state.pending;
     expect(d?.kind).toBe('declareAttackers');
     if (d?.kind !== 'declareAttackers') return;
-    expect(d.mustAttack.sort()).toEqual(
+    expect([...d.mustAttack].sort()).toEqual(
       tokens(g)
         .map((t) => t.id)
         .sort(),
