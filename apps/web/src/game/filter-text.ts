@@ -52,6 +52,7 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'attacking',
   'attackingYou',
   'attackingOrBlocking',
+  'blocking',
   // D-218.
   'attackingOpponents',
   // D-133.
@@ -242,7 +243,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
               : filter.attacking === true ||
                   filter.attackingYou === true ||
                   filter.attackingOpponents !== undefined ||
-                  filter.attackingOrBlocking === true
+                  filter.attackingOrBlocking === true ||
+                  filter.blocking === true
                 ? ''
                 : ' on the battlefield';
   } else if (zone === 'stack') {
@@ -259,13 +261,15 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
   const attackers =
     filter.attackingOrBlocking === true
       ? ' that is attacking or blocking'
-      : filter.attackingYou === true
-        ? ' attacking you'
-        : filter.attackingOpponents === 'players'
-          ? ' attacking one of your opponents'
-          : filter.attackingOpponents === true
-            ? ' attacking your opponents and/or planeswalkers they control'
-            : '';
+      : filter.blocking === true
+        ? ' that is blocking'
+        : filter.attackingYou === true
+          ? ' attacking you'
+          : filter.attackingOpponents === 'players'
+            ? ' attacking one of your opponents'
+            : filter.attackingOpponents === true
+              ? ' attacking your opponents and/or planeswalkers they control'
+              : '';
   // D-422 (CR 303.4): "creatures that aren't enchanted" names its objects by what is attached to them, so no "on the battlefield".
   const attached = attachedToWords(filter);
   if (attached === null) return null;

@@ -219,6 +219,9 @@ export function matchesFilter(
   const reading = {
     ...withChoice,
     attackers: attackingCreatures(state),
+    ...(filter.blocking === true || (filter.anyOf?.some((m) => m.blocking === true) ?? false)
+      ? { blockers: (state.combat?.blocks ?? []).map((b) => b.blocker) }
+      : {}),
     ...(filter.attackingOrBlocking === true ||
     (filter.anyOf?.some((m) => m.attackingOrBlocking === true) ?? false)
       ? { inCombat: creaturesInCombat(state) }
@@ -269,6 +272,7 @@ function readsGame(f: ObjectFilter): boolean {
   return (
     f.attacking === true ||
     f.notAttacking === true ||
+    f.blocking === true ||
     f.attackingYou === true ||
     f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||

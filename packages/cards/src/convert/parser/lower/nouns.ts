@@ -245,6 +245,7 @@ function lowerFilterAt(
   // D-139 (stage P31): "attacking creatures" (CR 508.1k), a number of colors (CR 105.2).
   if (filter.attacking === true) parts.push('selector:attacking');
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
+  if (filter.blocking === true) parts.push('selector:blocking');
   if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
@@ -425,6 +426,7 @@ function lowerFilterAt(
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
+    ...(filter.blocking === true ? { blocking: true as const } : {}),
     ...(filter.powerLessThanSource === true ? { powerLessThanSource: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}

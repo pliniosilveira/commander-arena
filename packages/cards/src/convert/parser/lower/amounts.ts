@@ -586,6 +586,7 @@ function staticCannotRead(f: IrNoun['filter']): boolean {
     f.attackingYou === true ||
     f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
+    f.blocking === true ||
     f.attacking === true ||
     f.manaValueX === true ||
     f.controllerDamagedBySource === true ||

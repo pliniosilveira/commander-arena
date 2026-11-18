@@ -296,6 +296,7 @@ export function checkFilter(
     'attacking',
     'attackingYou',
     'attackingOrBlocking',
+    'blocking',
     'powerLessThanSource',
     'powerAboveBase',
     'putFromBattlefieldThisTurn',
@@ -389,6 +390,7 @@ export function checkFilter(
   if (
     (f.attacking === true ||
       f.notAttacking === true ||
+      f.blocking === true ||
       f.attackingYou === true ||
       f.attackingOpponents !== undefined ||
       f.attackingOrBlocking === true) &&
@@ -613,6 +615,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.attackingYou !== undefined ||
   f.attackingOpponents !== undefined ||
   f.attackingOrBlocking !== undefined ||
+  f.blocking !== undefined ||
   f.powerLessThanSource === true ||
   f.powerAboveBase === true ||
   f.manaValueX !== undefined ||
