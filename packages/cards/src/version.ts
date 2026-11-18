@@ -45,4 +45,5 @@
 // 143: Grave Danger deck, second group: "for each A and each B" enters-with counts, prevention that removes a counter, "equal to the damage dealt this way" (D-610).
 // 144: A creature type before "creature spell" in the once-each-turn graveyard permission (D-611).
 // 145: Grave Danger deck, third group: "... and sacrifice it" costs, "in addition to its other colors and types", "a creature card put into a graveyard this way" (D-612).
-export const PARSER_VERSION = 145;
+// 146: Grave Danger deck, fourth group: casting from the graveyard by sacrificing creatures, "this turn" permissions, "milled this way", casts and activations from a graveyard this turn, "in a graveyard" (D-613).
+export const PARSER_VERSION = 146;

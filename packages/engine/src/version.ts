@@ -32,4 +32,5 @@
 // 130: Pay the life of a flashback cost (D-609).
 // 131: Enter with a sum of counts, prevent damage to a permanent and remove a counter, count the damage a resolution dealt (D-610).
 // 132: Add colors without replacing the others, choose among the cards a destroy put into any graveyard (D-612).
-export const ENGINE_VERSION = 132;
+// 133: Alternative cost that sacrifices permanents from a graveyard cast, spell-filter cast permissions, any-graveyard permissions with a cast rider, turn-log cast and activation from a graveyard (D-613).
+export const ENGINE_VERSION = 133;

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 145,
+  "parserVersion": 146,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -806,19 +806,10 @@
     "1c6a0d19-c7dd-4353-95ad-dfdef2d5d2d9": {
       "name": "Laboratory Drudge",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of each end step, draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.draw"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d17af314"
+      "ast": "9fbd6d07"
     },
     "1f91297a-ec2b-4ea8-9198-aa1daac20ff8": {
       "name": "Metallic Mimic",
@@ -831,19 +822,10 @@
     "1fb02bad-0d1f-437f-a269-f51cc19b280f": {
       "name": "Havengul Lich",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{1}: You may cast target creature card in a graveyard this turn. When you cast it this turn, ~ gains all activated abilities of that card until end of turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-graveyard-card"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d8bce482"
+      "ast": "16010b8f"
     },
     "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
       "name": "Scavenging Ooze",
@@ -1347,18 +1329,10 @@
     "32972d7a-c7c6-437c-8e7c-6c7d56b130e4": {
       "name": "Scourge of Nel Toth",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f2dff65c"
+      "ast": "8bf43001"
     },
     "32e5339e-9e4f-46f8-b305-f9d6d3ba8bb5": {
       "name": "Lotus Petal",
@@ -2032,27 +2006,10 @@
     "4f66489c-5a19-40ad-9126-461fa8231f1b": {
       "name": "Liliana, Untouched by Death",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "+1: Mill three cards. If at least one Zombie card is milled this way, each opponent loses 2 life and you gain 2 life.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−3: You may cast Zombie spells from your graveyard this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e83a48ad"
+      "ast": "a20f8a8a"
     },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
@@ -6563,7 +6520,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 450,
+      "supported": 454,
       "total": 476
     }
   }
