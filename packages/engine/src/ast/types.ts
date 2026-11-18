@@ -2020,6 +2020,11 @@ export type Effect =
       readonly to?: 'battlefield' | 'hand';
       readonly tapped?: true;
       readonly onMatch?: Effect;
+      /**
+       * "Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand." (CR 701.20, 608.2c, issue 310):
+       * where the card goes when it does not match `ifMatches`, instead of staying on top. Only with `to`, and only into the hand.
+       */
+      readonly otherwiseTo?: 'hand';
     }
   /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an
