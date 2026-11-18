@@ -617,6 +617,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,

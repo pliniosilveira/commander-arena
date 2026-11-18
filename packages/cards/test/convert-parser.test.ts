@@ -844,6 +844,7 @@ describe('unmatched abilities', () => {
       'noun.subtype-token-permanents',
       'noun.subtype-union',
       'noun.subtype-pair',
+      'noun.creatures-subtype-and-or-tokens',
       'noun.plain-permanents',
       'noun.it',
       'noun.each-of-them',
