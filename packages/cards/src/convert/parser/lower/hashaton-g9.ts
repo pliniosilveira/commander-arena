@@ -5,7 +5,7 @@ import type { IrClause, IrNoun } from '../ir/types';
 import { arg, type Effects, failure, operand } from './clauses';
 import { graveyardCardTarget } from './danitha-g1b';
 import { missingFeatures } from './features';
-import { playerSelectorOf } from './nouns';
+import { lowerFilter, playerSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
 /** Whether the operand is "it" of the card the instruction before exiled (the binding pass named it `moved`), and nothing else. */
@@ -73,7 +73,19 @@ const CAST_MOVED_FREE: Lowering<IrClause, Effects> = {
   id: 'lower.cast-moved-free',
   needs: ['effect:castFree', 'selector:moved'],
   acceptsOptional: true,
-  lower(clause) {
+  lower(clause, ctx) {
+    // D-655 (Herald of Amity): "cast an Aura spell from among them": only the cards of that kind of those the instruction before it exiled (the top of the library) are offered.
+    const spell = arg(clause, 'spell');
+    if (spell !== undefined) {
+      if (spell.kind !== 'noun' || !clause.optional || ctx.exiled !== 'top') return failure(clause);
+      const filter = lowerFilter(spell);
+      if (!filter.ok) return filter;
+      return {
+        ok: true,
+        value: [{ kind: 'castFree', objects: { kind: 'moved' }, filter: filter.value }],
+        rule: clause.rule,
+      };
+    }
     const what = operand(clause, 'objects');
     if (what?.kind !== 'noun' || !isMovedCard(what) || !clause.optional) return failure(clause);
     if (arg(clause, 'play') !== undefined) return failure(clause);
@@ -85,8 +97,35 @@ const CAST_MOVED_FREE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Put the rest on the bottom of your library in a random order" (CR 401.4; D-655): the engine's `moveToZone` of the cards the instruction before it exiled from the top of the library
+ * (`moved`), to the bottom of the library in a random order. Refused unless the text exiled cards from the top of the library before it.
+ */
+const PUT_REST_BOTTOM: Lowering<IrClause, Effects> = {
+  head: 'putRestBottom',
+  id: 'lower.put-rest-bottom',
+  needs: ['effect:moveToZone', 'selector:moved'],
+  lower(clause, ctx) {
+    if (ctx.exiled !== 'top') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: { kind: 'moved' },
+          to: 'library',
+          position: 'bottom',
+          random: true,
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const HASHATON_G9_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_RANDOM_FROM_HAND,
   PUT_MOVED_ONTO_BATTLEFIELD,
   CAST_MOVED_FREE,
+  PUT_REST_BOTTOM,
 ];

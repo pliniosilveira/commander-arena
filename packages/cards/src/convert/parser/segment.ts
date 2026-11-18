@@ -134,6 +134,17 @@ function insideEventList(text: string, at: number): boolean {
   );
 }
 
+/**
+ * Whether the comma at `at` separates two types of a list of spells in the trigger ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card"; D-644): the words before it are
+ * the start of the list after "cast" or "casts", and the words after it end the list with "spell". The comma after "spell" is the one that ends the trigger.
+ */
+function insideSpellTypeList(text: string, at: number): boolean {
+  return (
+    /(?:cast|casts) an? [A-Za-z-]+(?:, [A-Za-z-]+)*$/u.test(text.slice(Math.max(0, at - 70), at)) &&
+    /^, (?:[A-Za-z-]+, )*(?:or )?[A-Za-z-]+ spells?(?![\p{L}\p{N}])/u.test(text.slice(at, at + 80))
+  );
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -155,6 +166,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       ) &&
       // D-448 (CR 603.2c): "Whenever ~ attacks, blocks, or becomes the target of a spell, ...": a comma between the events of a list is not the end of the trigger condition.
       !insideEventList(text, i) &&
+      // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
+      !insideSpellTypeList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {
@@ -223,6 +236,15 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/**
+ * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
+ * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
+ * instruction, kept together for `effect.look-put-attach`.
+ */
+const PUT_FROM_AMONG_ONTO = /^you may put [^.]* from among them onto the battlefield\.$/i;
+const IF_EQUIPMENT_ATTACH =
+  /^if an equipment is put onto the battlefield this way, you may attach it to a creature you control\.$/i;
+const PUT_REST_OF_THOSE = /^put the rest of those cards [^.]*\.$/i;
 /** "Put any number of nonland permanent cards with total mana value 4 or less from among them onto the battlefield." (stage P68, D-230): the middle sentence of the same instruction. */
 const PUT_ANY_TOTAL =
   /^put any number of [^.]* with total mana value \d+ or less from among them onto the battlefield\.$/i;
@@ -268,6 +290,12 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
 const REVEAL_UNTIL =
   /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD = /^put that card [^.]*\.$/i;
+/**
+ * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
+ * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
+ */
+const MAY_PUT_THAT_CARD_ONTO = /^you may put that card onto the battlefield\.$/i;
+const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;
 
 /**
  * "Exile cards from the top of your library until you exile a nonland card. You may cast it without paying its mana cost if that spell's
@@ -443,11 +471,30 @@ const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
-    const [a, b, c] = [spans[i], spans[i + 1], spans[i + 2]];
+    const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
-    const d = spans[i + 3];
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, REVEAL_UNTIL) &&
+      said(b, MAY_PUT_THAT_CARD_ONTO) &&
+      said(c, IF_YOU_DONT_HAND) &&
+      said(d, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, LOOK_AT_TOP) &&
+      said(b, PUT_FROM_AMONG_ONTO) &&
+      said(c, IF_EQUIPMENT_ATTACH) &&
+      said(d, PUT_REST_OF_THOSE)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       d !== undefined &&
       said(a, EXILE_TWO_PILES_FIRST) &&

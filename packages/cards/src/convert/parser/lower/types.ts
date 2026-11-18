@@ -94,6 +94,11 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
+  /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
+  attackedPlayer: {
+    readonly selector: PlayerSelector;
+    readonly needs: readonly FeatureRef[];
+  } | null;
   /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
@@ -167,6 +172,11 @@ export interface LowerContext {
   itDied: boolean;
   /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
+  /**
+   * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
+   * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
+   */
+  auraDies: boolean;
   /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
@@ -292,6 +302,7 @@ export function newContext(
     lastToken: null,
     lowered: 0,
     thatPlayer: null,
+    attackedPlayer: null,
     enchantedPlayerTrigger: false,
     xIs: null,
     xDefined: false,
@@ -326,6 +337,7 @@ export function newContext(
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,
+    auraDies: false,
     itDied: false,
     diesTrigger: false,
     cardName,

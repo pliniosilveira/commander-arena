@@ -184,6 +184,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (k.from === 'ringBearer') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
+      // D-652 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).
+      if (k.from === 'chosenColor') {
+        if (k.exceptSource !== undefined && k.exceptSource !== true) {
+          issue(out, `${path}.exceptSource`, 'exceptSource must be true when present');
+        }
+        break;
+      }
       if (k.from === 'cardType') {
         checkProtectionTypes(k.types, `${path}.types`, out);
         break;
@@ -195,6 +202,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
           `unknown protection quality ${String((k as { from: unknown }).from)}`,
         );
         break;
+      }
+      if (k.exceptSource !== undefined) {
+        issue(
+          out,
+          `${path}.exceptSource`,
+          'exceptSource is what chosenColor becomes, never written',
+        );
       }
       if (!Array.isArray(k.colors) || k.colors.length === 0) {
         issue(out, `${path}.colors`, 'protection needs at least one color');
@@ -455,6 +469,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'attackTax':
       checkAttackTax(s, path, out);
       break;
+    case 'cantAttackYou':
+      // D-647: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
+      checkBattlefieldFilter(s.creatures, `${path}.creatures`, out);
+      if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
+        issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
+      }
+      break;
     case 'additionalLandDrops':
       // CR 305.2 (D-125): a positive whole number of extra land plays.
       if (!Number.isSafeInteger(s.count) || s.count < 1) {
@@ -517,7 +538,20 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       checkAbilityCostReduction(s, path, out);
       break;
     case 'castFromGraveyard':
-      // D-133: the permission has no parameters; the face-level checks say where it may stand.
+      // D-133: the face-level checks say where it may stand. D-656: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
+      if (s.cost !== undefined) {
+        if (!Array.isArray(s.cost) || s.cost.length === 0) {
+          issue(
+            out,
+            `${path}.cost`,
+            'the alternative cost of castFromGraveyard needs at least one cost',
+          );
+        } else if (s.cost.some((c) => c?.kind !== 'mana')) {
+          issue(out, `${path}.cost`, 'the alternative cost of castFromGraveyard is mana only');
+        } else {
+          checkFlashbackCost(s.cost, `${path}.cost`, out);
+        }
+      }
       break;
     case 'grantAbility':
       checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');
@@ -1359,7 +1393,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
-        ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
+        ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
+          ? { triggerAttacked: true }
+          : {}),
         triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
@@ -1368,6 +1404,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
+        // D-657: the Aura's own trigger "when enchanted creature dies".
+        ...(a.trigger?.kind === 'dies' && kindOf(a.trigger.what) === 'attached'
+          ? { auraDiesTrigger: true }
+          : {}),
         // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
         ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
           ? { entersX: true }
@@ -1468,6 +1508,28 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'subjectControllerHasMore reads the controller of a permanent the event is about',
+          );
+        }
+        // D-648: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
+        if (
+          conditionHas(a.interveningIf, 'attackedHasMoreLifeThanOtherOpponent') &&
+          a.trigger?.kind !== 'playerAttacksOpponent'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackedHasMoreLifeThanOtherOpponent reads the player a playerAttacksOpponent trigger is about: it is only valid in the intervening "if" of one',
+          );
+        }
+        // D-643: the attack declaration is what `attackersAtYouAtLeast` reads, so only the intervening "if" of an attackBatch trigger has it.
+        if (
+          conditionHas(a.interveningIf, 'attackersAtYouAtLeast') &&
+          a.trigger?.kind !== 'attackBatch'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackersAtYouAtLeast reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
           );
         }
         if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {

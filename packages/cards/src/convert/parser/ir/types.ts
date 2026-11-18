@@ -275,7 +275,7 @@ export interface IrFilter {
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
   readonly attackingYou?: true;
   /** "creatures attacking your opponents and/or planeswalkers they control" (stage P65, D-218, CR 508.1b, 506.3): attackers of an opponent or of a permanent of an opponent. */
-  readonly attackingOpponents?: true;
+  readonly attackingOpponents?: true | 'players';
   /** "attacking or blocking creatures" (stage P68, D-229, CR 506.4, 509.1g): creatures declared as attackers or as blockers that are still in combat. */
   readonly attackingOrBlocking?: true;
   /** "attacking creatures" (stage P31, CR 508.1k): creatures that are attacking, whoever they attack. */
@@ -360,8 +360,12 @@ export interface IrFilter {
     | { readonly kind: 'type'; readonly types: readonly string[] };
   /** "that aren't enchanted" (`false`), "that are enchanted" (`true`) (D-426, CR 303.4): the permanent has no Aura attached to it (or has one). */
   readonly enchanted?: boolean;
+  /** "enchanted by an Aura you control" (D-647, CR 303.4e): the engine's `enchantedByYou`. */
+  readonly enchantedByYou?: true;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
+  /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
+  readonly castTargets?: IrFilter;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
@@ -528,6 +532,8 @@ export type IrAmount =
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
   | { readonly kind: 'exiledStillThere'; readonly span: Span }
+  // D-654 (CR 603.10a, 113.7a): "for each Aura you controlled that was attached to it": the Auras of the controller that were attached to the permanent the trigger is about
+  | { readonly kind: 'aurasAttachedToIt'; readonly span: Span }
   /** Number of cards selected for the spell's optional additional exile cost (D-575). */
   | { readonly kind: 'exiledAsCost'; readonly span: Span };
 
@@ -685,6 +691,11 @@ export interface IrCondition extends IrNode {
     // Stage P33 (D-150): "none of those creatures attacked you" is `not` of this (CR 508.1b): at least one creature of the attackers that
     // triggered the ability was declared as attacking its controller as a player
     | { readonly kind: 'attackersAttackedYou' }
+    // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control": at least that many of the attackers that triggered the ability were
+    // declared attacking its controller or a planeswalker its controller controlled
+    | { readonly kind: 'attackersAtYou'; readonly atLeast: number }
+    /** "that opponent has more life than another of your opponents" (D-653, CR 603.4): the player a `playerAttacksOpponent` trigger is about. */
+    | { readonly kind: 'attackedHasMoreLife' }
     // Stage P33 (D-150): "you control three or more lands with the same name": some name is shared by at least that many of the permanents
     // that match (CR 201.2: two objects have the same name when their names are identical)
     | { readonly kind: 'sameName'; readonly noun: IrNoun; readonly atLeast: number }
@@ -970,6 +981,8 @@ export interface IrToken extends IrNode {
   readonly keywords?: readonly string[];
   /** "named Kobolds of Kher Keep" (stage P39, D-184, CR 111.4): the name the token is given, as written; left out the name is its creature types. */
   readonly named?: string;
+  /** "... token with flying that's attacking that opponent" (D-648, CR 508.4): the token is created attacking the player a trigger about a player attacking one of your opponents attacked. */
+  readonly attackingThatOpponent?: true;
   /** "Smaug, a legendary 6/6 red Dragon creature token" (stage P45, D-197, CR 205.4): the token has the supertype legendary. */
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */
@@ -1305,6 +1318,9 @@ export type IrStaticEffect =
       readonly cardTypes?: readonly string[];
       /** "protection from the chosen card type" (Hashaton deck group 6, D-376, CR 702.16a): the card type the source of the ability chose as it entered. */
       readonly chosenCardType?: true;
+      /** "protection from the chosen color" (Flickering Ward, D-652, CR 702.16a): the color the source chose as it entered; `exceptSource`: "This effect doesn't remove ~." */
+      readonly chosenColor?: true;
+      readonly exceptSource?: true;
     }
   /** `has "{T}: Add {G}."` (stage P14): a quoted mana ability, read as an activated ability. */
   | { readonly kind: 'grantAbility'; readonly ability: IrQuotedAbility }
@@ -1318,6 +1334,8 @@ export type IrStaticEffect =
    * "can't be countered" (stage P12): the subject has the restriction while the ability applies.
    */
   | { readonly kind: 'restriction'; readonly restriction: IrRestrictionKind }
+  // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control": the creatures the subject names cannot be declared attacking the controller or their planeswalkers
+  | { readonly kind: 'cantAttackYou' }
   | { readonly kind: 'noMaxHandSize' }
   /** "~ is the chosen type in addition to its other types." (stage P15, D-100, CR 205.1b, 613.1d). */
   | { readonly kind: 'chosenType' }
@@ -1391,7 +1409,7 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'untapInOthersStep'; readonly self?: true }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
-  | { readonly kind: 'castFromGraveyard' }
+  | { readonly kind: 'castFromGraveyard'; readonly cost?: readonly string[] }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */
   | { readonly kind: 'cantBeBlockedBy'; readonly blockers: IrFilter }
   /** "have base power and toughness 5/3" (stage P31, CR 613.4b): the subject's power and toughness are set in layer 7b. */
@@ -1746,6 +1764,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'triggerTargetCount',
   'shortfall',
   'exiledStillThere',
+  'aurasAttachedToIt',
   'manaSpent',
   'votesFor',
 ]);

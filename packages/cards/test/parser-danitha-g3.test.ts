@@ -603,7 +603,7 @@ describe('Strong Back: Equip abilities and Aura spells that target enchanted cre
     'Crew abilities you activate that target enchanted creature cost {3} less to activate.',
     'Abilities you activate that target enchanted creature cost {3} less to activate.',
     'Aura spells you cast that target equipped creature cost {3} less to cast.',
-    'Aura spells you cast that target a creature cost {3} less to cast.',
+    'Aura spells you cast that target creatures cost {3} less to cast.',
     'Aura spells that target enchanted creature cost {3} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} more to cast.',
     'Aura spells you cast that target enchanted creature cost {W} less to cast.',

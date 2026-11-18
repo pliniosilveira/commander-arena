@@ -84,7 +84,9 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       (readsTriggerSubject(t.ability) ? `${t.subject}#` : '') +
       (readsTriggerPlayer(t.ability) ? `p${t.player}#` : '') +
       (readsTriggerDamage(t.ability) ? `d${t.damage}#` : '') +
-      (readsTriggerAttacked(t.ability) ? `a${(t.attacked ?? []).join(',')}#` : '') +
+      (readsTriggerAttacked(t.ability)
+        ? `a${(t.attacked ?? []).join(',')}@${(t.attackedAt ?? []).join(',')}#`
+        : '') +
       // D-177: a reflexive ability reads the permanents its resolution sacrificed.
       (t.sacrificedBefore === undefined ? '' : `s${t.sacrificedBefore.join(',')}#`) +
       (t.thisWayBefore === undefined ? '' : `w${JSON.stringify(t.thisWayBefore)}#`) +
@@ -126,6 +128,9 @@ function pushTrigger(
     ...(trigger.targetCount === undefined ? {} : { targetCount: trigger.targetCount }),
     ...(trigger.attacked !== undefined && readsTriggerAttacked(trigger.ability)
       ? { attacked: trigger.attacked }
+      : {}),
+    ...(trigger.attackedAt !== undefined && readsTriggerAttacked(trigger.ability)
+      ? { attackedAt: trigger.attackedAt }
       : {}),
     ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
     ...(trigger.sacrificedBefore === undefined

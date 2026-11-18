@@ -250,8 +250,67 @@ export const TRIGGER_CAST_OR_COPY = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.enchanted-by-you-attack`: "one or more creatures that are enchanted by an Aura you control attack" (CR 508.1, 603.2c, 303.4e, D-651): once for the declaration
+ * of any player, when at least one of the creatures declared has an Aura attached that the controller of the ability controls. The engine's `attackBatch` with `who` "any"
+ * and the filter `enchantedByYou`. Not read: "attacks", "an Aura", Auras of another controller, "creature", a number, "attack you".
+ */
+export const TRIGGER_ENCHANTED_BY_YOU_ATTACK = defineRule<IrTrigger>({
+  id: 'trigger.enchanted-by-you-attack',
+  family: 'trigger',
+  leading: ['one'],
+  cites: [
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 303.4e (Auras)',
+  ],
+  examples: ['one or more creatures that are enchanted by an Aura you control attack'],
+  rejects: [
+    'one or more creatures that are enchanted by an Aura you control attacks',
+    'one or more creatures that are enchanted by an Aura attack',
+    'one or more creatures that are enchanted by an Aura your opponents control attack',
+    'one or more creatures that are enchanted by Auras you control attack',
+    'one or more creature that is enchanted by an Aura you control attacks',
+    'one or more creatures that are enchanted attack',
+    'two or more creatures that are enchanted by an Aura you control attack',
+    'one or more creatures that are enchanted by an Aura you control attack you',
+    'one or more permanents that are enchanted by an Aura you control attack',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.enchanted-by-you-attack';
+    const r = pattern(
+      /one or more creatures that are enchanted by an Aura you control attack(?![\p{L}\p{N}'’])(?!\s+(?:you|or|and)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const subject = {
+      ...makeNoun(id, span, 'a', {
+        types: ['creature'],
+        enchantedByYou: true,
+        raw: r.value[0],
+      }),
+      plural: true,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'attackBatch',
+        actor: makeNoun(id, { start: pos, end: pos }, 'eachPlayer', { raw: '' }),
+        atLeast: 1,
+        subject,
+        args: {},
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const EDHREC_TRIGGER_RULES = [
   TRIGGER_ATTACK_ONE_OR_MORE,
+  TRIGGER_ENCHANTED_BY_YOU_ATTACK,
   TRIGGER_YOU_ATTACK_WITH_ONE_OR_MORE,
   TRIGGER_ENTERS_ONE_OR_MORE,
   TRIGGER_CAST_OR_COPY,

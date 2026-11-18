@@ -186,6 +186,24 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a, D-649). */
+export const LOSE_HEXPROOF_SHROUD: Lowering<IrClause, Effects> = {
+  head: 'loseHexproofShroud',
+  id: 'lower.lose-hexproof-shroud',
+  needs: ['effect:loseHexproofShroud', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    if (!endsWithTurn(clause)) return failure(clause);
+    return eachObject(
+      clause,
+      ctx,
+      (objects) => ({ kind: 'loseHexproofShroud', objects, duration: END }),
+      'objects',
+      TRIGGER_SUBJECT,
+    );
+  },
+};
+
 /** "Target creature has base power and toughness 4/4 until end of turn" (CR 613.4b). */
 export const SET_PT: Lowering<IrClause, Effects> = {
   head: 'setPt',
@@ -398,6 +416,31 @@ export const DELAYED_RETURN: Lowering<IrClause, Effects> = {
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
       controller: to.whose,
+    };
+    return {
+      ok: true,
+      value: [{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step." (D-657, CR 603.7, 603.7c, 400.7, 303.4f): the engine's `delayedTrigger`
+ * at the end step of each turn whose effect puts the card of the Aura that has the ability (`thisCard`, in the graveyard by then) onto the battlefield under the control of the
+ * controller of the ability, where it chooses what it enchants (`rules/aura-entry.ts`). Refused anywhere but the "dies" trigger of the attached creature.
+ */
+export const DELAYED_RETURN_THIS_CARD: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnThisCard',
+  id: 'lower.delayed-return-this-card',
+  needs: ['effect:delayedTrigger', 'effect:moveToZone', 'selector:thisCard'],
+  lower(clause, ctx): LowerResult<Effects> {
+    if (!ctx.auraDies) return failure(clause);
+    const back: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'thisCard' },
+      to: 'battlefield',
+      controller: 'you',
     };
     return {
       ok: true,
