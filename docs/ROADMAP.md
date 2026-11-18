@@ -525,3 +525,16 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - `boundObjects` is the engine's own reference for a delayed ability about a group; it is never written in card data, and the validator rejects it there. A delayed exile or sacrifice of `moved` is now one ability for the group, so Whip of Erebos's delayed exile is named after the Whip, not the creature (D-629).
 - The casual agent copies the creature token with the most power plus toughness; a choice that weighs which token has an ability worth copying is not built.
 - The Scryfall rulings of the nine cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle texts are the cards of `golden.jsonl` taken from issue 87.
+
+## The Prismari deck, group 2 (issue 87, D-632 to D-645)
+
+- Mana that stays (D-636) is fixed mana of a spell or a triggered ability, kept until the cleanup step ends; a choice of mana, "all your mana" and another duration are not built.
+- A flashback cost may be mana and life only (D-633); a flashback with a sacrifice or a discard is still unsupported.
+- `canBlockOnlyFlying` is one fixed restriction (D-634); "can block only creatures with <quality>" is not built.
+- `ObjectFilter.named` is read only for "creatures named ~" in an effect, with the card's own name (D-642); a name that is not the card's own, and "named" in a cost, a condition or a target, are not built.
+- `copyCardAndCast` copies the card the effect before it exiled and offers the cast as the effect resolves (D-640); a copy that is cast with other costs, or "cast it" with the card itself, is not built.
+- `createToken.forEachOpponent` is for a custom token with keyword abilities and the "attack that opponent this turn if able" requirement (D-638); other per-opponent shapes are not built. In a multiplayer game the tokens are made in turn order.
+- The count of a target player's hand (D-635) works in the text of a spell; a power or toughness defined by it, and a static pump "for each card in target opponent's hand", are read and refused.
+- The spell a cast trigger reads (D-632) is for the cards of this group: the mana value, the mana spent and the greatest mana value among the spells the controller cast; "each player's" and "an opponent's" counts are not built.
+- The web says the new nodes in the gist of an ability; a spell's own effect text is shown from its Oracle text, so Rousing Refrain, Furygale Flocking and Magma Opus have no wording of their spell effect there.
+- The Scryfall rulings of the twelve cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle texts are the cards of `golden.jsonl` taken from issue 87.
