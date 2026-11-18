@@ -298,6 +298,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
 }
 .scr-link {
   padding: 0;
@@ -335,7 +337,6 @@
   align-items: flex-start;
   justify-content: center;
   padding: 4vh 16px;
-  overflow-y: auto;
   background: rgb(0 0 0 / 0.6);
 }
 .scr-modal {
@@ -343,6 +344,7 @@
   flex-direction: column;
   gap: 10px;
   width: min(100%, 780px);
+  max-height: 100%;
   padding: 20px 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
