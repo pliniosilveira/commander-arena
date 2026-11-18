@@ -1924,7 +1924,21 @@ export type Effect =
        * `types` they control (none when they control none; the same permanent may be chosen for several of its types), and then sacrifices every other permanent they control,
        * lands included, all of them together. Without `own` the controller of the effect chooses for every player and the lands are kept (Tragic Arrogance).
        */
-      readonly own?: { readonly players: PlayerSelector };
+      readonly own?: {
+        readonly players: PlayerSelector;
+        /**
+         * "Each player puts a vow counter on a creature they control and sacrifices the rest." (Promise of Loyalty; CR 122.1, 701.21a): only the permanents of the card types
+         * `types` names are sacrificed when they are not kept (the lands and the rest stay).
+         */
+        readonly typesOnly?: true;
+        /** The kind of counter put on each permanent kept (`vow`), as the choices are made and before the rest are sacrificed (CR 122.1). */
+        readonly counter?: string;
+        /**
+         * "Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it." (CR 508.1a, 611.2b): each permanent kept (a
+         * creature) can't attack the controller of the effect or the planeswalkers they control, until it no longer has the `counter` (it ends for good, CR 611.2b). Needs `counter`.
+         */
+        readonly cantAttackYou?: true;
+      };
     }
   /**
    * "[Cost]: Level 2" (CR 716.2a, 716.2c, D-235): "This Class's level becomes N": the permanent the ability belongs to has level `level`, a designation that stays while it is on

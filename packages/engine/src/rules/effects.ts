@@ -2216,6 +2216,13 @@ function runEffect(
             effect.own === undefined
               ? undefined
               : resolvePlayers(state, effect.own.players, ctx, targets),
+            effect.own === undefined
+              ? {}
+              : {
+                  ...(effect.own.typesOnly === true ? { typesOnly: true as const } : {}),
+                  ...(effect.own.counter === undefined ? {} : { counter: effect.own.counter }),
+                  ...(effect.own.cantAttackYou === true ? { cantAttackYou: true as const } : {}),
+                },
           ),
         ],
       );

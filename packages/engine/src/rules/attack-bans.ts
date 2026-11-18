@@ -38,5 +38,18 @@ export function withoutBannedTargets(
       });
     }
   }
+  // CR 508.1a (Promise of Loyalty): the continuous effects `cantAttackPlayer` bar their objects from the player and the planeswalkers that player controls.
+  for (const e of state.continuousEffects) {
+    if (e.change.kind !== 'cantAttackPlayer' || !e.objects.includes(attacker)) continue;
+    const protectedSeat = e.change.seat;
+    allowed = allowed.filter((t) => {
+      if (t.kind === 'player') return t.seat !== protectedSeat;
+      const attacked = getObject(state, t.object);
+      return !(
+        derive(state, attacked).types.includes('planeswalker') &&
+        controllerOf(state, attacked) === protectedSeat
+      );
+    });
+  }
   return allowed;
 }

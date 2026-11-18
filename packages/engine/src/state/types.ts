@@ -1114,6 +1114,10 @@ export type Instruction =
       readonly kind: 'spare';
       /** D-484: each of `players` chooses among their own permanents and sacrifices all the rest, lands too (`sparePermanents.own`); absent: the controller chooses and the lands stay. */
       readonly own?: true;
+      /** Promise of Loyalty (`sparePermanents.own`): only permanents of `types` are sacrificed; `counter` goes on each kept; `cantAttackYou` bars each kept from attacking the controller. */
+      readonly typesOnly?: true;
+      readonly counter?: string;
+      readonly cantAttackYou?: true;
       readonly players: readonly SeatId[];
       readonly types: readonly CardType[];
       readonly step: number;
@@ -2015,6 +2019,11 @@ export type ContinuousChange =
    */
   | { readonly kind: 'mustAttackPlayer'; readonly seat: SeatId }
   /**
+   * "Each of those creatures can't attack you or planeswalkers you control" (`sparePermanents.own.cantAttackYou`, CR 508.1a): the objects of the effect can't be declared attacking
+   * the player `seat` or the planeswalkers `seat` controls. A restriction of the rules, not an ability: read in `rules/attack-bans.ts`, not in a layer.
+   */
+  | { readonly kind: 'cantAttackPlayer'; readonly seat: SeatId }
+  /**
    * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is
    * empty): read as a permanent enters the battlefield (`rules/enters-group.ts`, `enteredTappedByEffect`), for each permanent `filter` matches then, with `controller` as "you".
    */
@@ -2122,7 +2131,12 @@ export type EffectEnd =
    * "For as long as this Saga remains on the battlefield" (D-207, CR 611.2b): while the object `source` is on the battlefield; it ends, for good, as that stops
    * being so (`endLostControlEffects`, with the state-based actions). Whoever controls it does not matter.
    */
-  | { readonly kind: 'whileOnBattlefield'; readonly source: ObjectId };
+  | { readonly kind: 'whileOnBattlefield'; readonly source: ObjectId }
+  /**
+   * "For as long as it has a vow counter on it" (CR 611.2b, 122.1): while the object `object` is on the battlefield with a counter of the kind `counter`; it ends, for good, as that
+   * stops being so (`endLostControlEffects`, with the state-based actions).
+   */
+  | { readonly kind: 'whileHasCounter'; readonly object: ObjectId; readonly counter: string };
 
 /**
  * What happened this turn that some abilities ask about (D-139), kept for the whole game state and emptied as each turn begins
