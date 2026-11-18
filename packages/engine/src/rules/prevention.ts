@@ -18,6 +18,7 @@
  *   numeric ones, oldest first) and the settling of one event are in `damage-order.ts` (D-191).
  */
 import type { Effect, PreventScope } from '../ast/types';
+import { TOKEN_PRESETS } from '../cards/tokens';
 import type { ObjectId, SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
 import { allocateTimestamp } from '../state/ops';
@@ -72,6 +73,18 @@ export function runPreventDamage(
     ...(node.byFilter === undefined
       ? {}
       : { sourceFilter: { filter: node.byFilter, controller: ctx.controller } }),
+    // CR 615.5 (Inkshield): "For each 1 damage prevented this way, create a token": the controller of the effect makes it.
+    ...(node.perPrevented === undefined
+      ? {}
+      : {
+          perPrevented: {
+            definition:
+              node.perPrevented.token.kind === 'preset'
+                ? TOKEN_PRESETS[node.perPrevented.token.preset]
+                : node.perPrevented.token.definition,
+            controller: ctx.controller,
+          },
+        }),
   } as const;
   const to = node.to;
 

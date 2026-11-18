@@ -1628,6 +1628,14 @@ export type Effect =
        * filter that names a type of permanent; a filter of colors only matches a spell on the stack as well (Hylda group 3: "black and/or red sources"). Not with `by`. The filter names no zone, owner or X.
        */
       readonly byFilter?: ObjectFilter;
+      /**
+       * "For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the additional effect of the
+       * prevention, which happens as the damage is prevented. For each point of damage this shield prevents, the controller of the effect creates one `token`
+       * (a preset or a custom token without `ptAmount`), made with the replacement effects of token creation applied (CR 614.1). Nothing for damage the shield does not prevent.
+       */
+      readonly perPrevented?: {
+        readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
+      };
       /** `forAsLongAsThisRemains` (D-207, CR 611.2b, 615): the shield ends when the permanent with the ability leaves the battlefield; only in an ability of a permanent. */
       readonly duration: 'untilEndOfTurn' | 'forAsLongAsThisRemains';
     }

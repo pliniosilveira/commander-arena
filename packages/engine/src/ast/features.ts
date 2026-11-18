@@ -769,6 +769,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokensPerOpponent',
     // D-650: "Until end of turn, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfTurn`).
     'manaStays',
+    // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
+    'tokensPerPrevented',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -1437,6 +1439,8 @@ export const SELECTOR_KINDS = [
   'tokensPerOpponent',
   /** "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-650): the engine's `staysUntilEndOfTurn` of a fixed `addMana` production. */
   'manaStays',
+  /** "For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the engine's `preventDamage.perPrevented`. */
+  'tokensPerPrevented',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "with one or more targets" on a cast trigger (D-574). */
