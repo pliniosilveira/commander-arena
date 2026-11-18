@@ -160,13 +160,33 @@ describe('"When you cast this spell, you may copy it" (CR 702.144a, 603.3b)', ()
     g.expect.invariants();
   });
 
-  test('the original is countered or the target gone: the copies were made anyway (the trigger is not part of the spell)', () => {
-    const g = castBolt(game());
+  test('the original is countered in response to the trigger: the copies are still made, from its last-known information (CR 113.7a)', () => {
+    const g = scenario()
+      .seat(0)
+      .hand(DEMO)
+      .library(...FILLER)
+      .pool('RRRR')
+      .seat(1)
+      .hand('Counterspell')
+      .battlefield('Island', { count: 2 })
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(DEMO, { pay: true, targets: [{ player: 1 }] });
+    g.act(0).pass();
+    g.act(1).cast('Counterspell', {
+      pay: true,
+      targets: [{ name: DEMO, zone: 'stack', seat: 0 }],
+    });
     g.passAll();
     g.act(0).accept();
     g.act(0).chooseTargets({ player: 1 });
     g.act(1).chooseTargets({ player: 1 });
     expect(copies(g)).toHaveLength(2);
+    g.passAll();
+    // The two copies resolved and the original was countered: 2 + 2 damage.
+    g.expect.life(1, 36);
+    g.expect.zone(DEMO, 'graveyard', { seat: 0 });
   });
 
   test('only the opponent is asked about their copy: the controller has no legal action then', () => {

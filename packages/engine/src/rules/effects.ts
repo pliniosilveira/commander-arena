@@ -1228,6 +1228,8 @@ function runEffect(
       // controller that triggers each time such a creature damages a player until the end of the turn. The card an earlier effect of this sequence exiled is written into it as
       // it is made (CR 603.7c: nothing of the spell is left to name later); a card that left exile since is a new object and is not found (CR 400.7).
       const exiled = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+      // With no card to copy (the target was gone as the spell resolved) the ability would have nothing to do: none is made.
+      if (exiled.length === 0) return done(state);
       const inner = effect.effect;
       const baked: Effect =
         inner.kind === 'copyCardAndCast' && inner.objects.kind === 'moved'
