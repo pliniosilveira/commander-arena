@@ -85,7 +85,7 @@ describe('Menu', () => {
     expect(out).toContain('unofficial');
     expect(out).toContain('Play a game');
     expect(out).toContain('Start game');
-    expect(out).toContain('Your Decks');
+    expect(out).toContain('My Decks');
     expect(out).toContain('Seed');
     expect(out).toContain('Free first mulligan');
     expect(out).not.toContain('Import a deck');
@@ -109,7 +109,7 @@ describe('Menu', () => {
     ]) {
       expect(out).toContain('No precon is installed yet');
       expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
-      expect(out).toContain('Your Decks');
+      expect(out).toContain('My Decks');
     }
   });
 
