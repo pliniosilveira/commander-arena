@@ -231,7 +231,10 @@ export const EFFECT_RETURN_AT_UPKEEP = quietly(
   }),
 );
 
-/** "Return that card to its owner's hand at the beginning of the next end step" in a dies trigger. */
+/**
+ * "Return that card to its owner's hand at the beginning of the next end step" / "return it to its owner's hand at the beginning of the next end step" in a dies trigger
+ * (D-599; CR 603.7, 603.7c, 400.7, 603.10a). "It" is the card the dying creature became; the lowering refuses it outside a dies trigger.
+ */
 export const EFFECT_RETURN_TO_HAND_DELAYED = quietly(
   defineRule<Clauses>({
     id: 'effect.return-to-hand-delayed',
@@ -241,18 +244,23 @@ export const EFFECT_RETURN_TO_HAND_DELAYED = quietly(
     examples: [
       "return that card to its owner's hand at the beginning of the next end step",
       'return that card to its owner’s hand at the beginning of the next end step',
+      "return it to its owner's hand at the beginning of the next end step",
+      'return it to its owner’s hand at the beginning of the next end step',
     ],
     rejects: [
       "return that card to its owner's hand",
       "return that card to its owner's hand at the beginning of your next end step",
       "return that card to its owner's hand at the beginning of the next upkeep",
-      "return it to its owner's hand at the beginning of the next end step",
+      "return it to its owner's hand at the beginning of the next upkeep",
+      "return it to its owner's hand at the beginning of your next end step",
+      "return it to its owner's hand at the beginning of the next end step and draw a card",
+      "return them to their owner's hand at the beginning of the next end step",
       "return that card to its owner's graveyard at the beginning of the next end step",
     ],
     parse: (ctx, pos) => {
       const r = sequence(
         literal('return '),
-        family<IrNoun>('noun', { only: ['noun.that-card'] }),
+        family<IrNoun>('noun', { only: ['noun.that-card', 'noun.it'] }),
         pattern(/ to its owner['’]s hand at the beginning of the next end step(?![\p{L}\p{N}])/iu),
       )(ctx, pos);
       if (!r.ok) return r;

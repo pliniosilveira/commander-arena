@@ -577,3 +577,8 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - Retrace (D-667) is printed only and never granted; it does not combine with another way to cast from the graveyard.
 - The Scryfall rulings of the seven cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 - The web shows the piles and the new choices with generic wording; the effect text of the spells is shown from the Oracle text.
+
+## Dies triggers that move the card (issue #104)
+
+- A dies trigger that returns the card to the battlefield at the beginning of the next end step (as opposed to your next upkeep) is not read.
+- The Scryfall rulings were not fetched (the host is blocked in a cloud session).
