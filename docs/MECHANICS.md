@@ -5063,3 +5063,11 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `insideSpellTypeList` (`segment.ts`: the commas of "an Aura, Equipment, or Vehicle spell" are not the end of the trigger), `rules/static/cost.ts` (`that target a creature` after "you cast", IR `castTargets`), `lower/nouns.ts` (`castTargets` to `targetsObject`).
 - Tests: engine `scenario-xx-cast-three-subtypes.test.ts`, `scenario-xx-cost-reduction-targets.test.ts`; cards `parser-cast-three-types.test.ts`, `parser-cost-reduction-targets.test.ts`.
 - Example cards: Sram, Senior Edificer; Killian, Ink Duelist (issue 89).
+
+## Affinity for Auras and a modified target of a cast trigger (issue 89, D-596)
+
+- CR: 702.41a-b (Affinity and its instances), 601.2f (the cost is determined as the spell is cast), 118.7a (generic mana only), 700.9 (modified), 601.2i and 603.2 (a cast trigger), 115.1.
+- Gap class: T (the grammar of two sentences); the engine ran both.
+- Parser: `static.spells-have-affinity` (`rules/static/cost.ts`), "modified" in `AIMED` (`rules/trigger/index.ts`), `lowerFilterAt` (`lower/nouns.ts`, the filter of what a spell targets reads "modified").
+- Tests: engine `scenario-xx-affinity-for-auras.test.ts`, `scenario-xx-cast-aimed-modified.test.ts`; cards `parser-affinity-for.test.ts`, `parser-cast-aimed-modified.test.ts`.
+- Example cards: Pearl-Ear, Imperial Advisor (issue 89).

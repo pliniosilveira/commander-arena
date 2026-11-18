@@ -32,4 +32,5 @@
 // 127: Read "an opponent attacks with creatures", "if two or more of those creatures are attacking you and/or planeswalkers you control" and "that opponent" (D-593, issue 89).
 // 128: Read a list of three kinds of spell in a cast trigger (D-594, issue 89).
 // 129: Read "Spells you cast that target a creature cost {N} less to cast" (D-595, issue 89).
-export const PARSER_VERSION = 129;
+// 130: Read "spells you cast have affinity for Auras" and "that targets a modified permanent you control" in a cast trigger (D-596, issue 89).
+export const PARSER_VERSION = 130;

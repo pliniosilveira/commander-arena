@@ -838,6 +838,7 @@ describe('unmatched abilities', () => {
       'static.untap-in-others-step',
       'static.self-cost-reduction',
       'static.spells-cost-reduction',
+      'static.spells-have-affinity',
       'static.additional-cost-sacrifice-copies',
       'static.additional-cost',
       'static.free-cast',

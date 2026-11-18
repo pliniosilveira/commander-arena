@@ -556,15 +556,25 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
 
 /** What a cast trigger's spell targets: "that targets a creature [you control]" (the object's kind and, for "you control", its controller) or the source itself. */
 type Aimed =
-  | { readonly kind: 'object'; readonly what: string; readonly yours: boolean }
+  | {
+      readonly kind: 'object';
+      readonly what: string;
+      readonly yours: boolean;
+      readonly modified?: true;
+    }
   | { readonly kind: 'self'; readonly only: boolean }
   | { readonly kind: 'any' };
 
 const AIMED: Parser<Aimed> = map(
   pattern(
-    /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
+    /\s?that targets an? (modified )?(creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
   ),
-  (m): Aimed => ({ kind: 'object', what: (m[1] ?? '').toLowerCase(), yours: m[2] !== undefined }),
+  (m): Aimed => ({
+    kind: 'object',
+    what: (m[2] ?? '').toLowerCase(),
+    yours: m[3] !== undefined,
+    ...(m[1] === undefined ? {} : { modified: true as const }),
+  }),
 );
 
 /** D-437: "that targets ~", "that targets only ~" (the `~` is the permanent with the ability). */
@@ -583,7 +593,11 @@ const AIMED_ANY: Parser<Aimed> = map(
 function aimedFilter(aimed: Aimed): IrFilter {
   if (aimed.kind === 'any') return { targetCountAtLeast: 1, raw: 'with one or more targets' };
   if (aimed.kind !== 'object') throw new Error('aimedFilter: an object');
-  const yours = aimed.yours ? { controller: 'you' as const } : {};
+  // D-596 (CR 700.9): "a modified permanent you control" (Pearl-Ear, Imperial Advisor): a permanent with a counter, an Equipment or an Aura its controller controls.
+  const yours = {
+    ...(aimed.yours ? { controller: 'you' as const } : {}),
+    ...(aimed.modified === true ? { modified: true as const } : {}),
+  };
   return aimed.what === 'permanent'
     ? { ...yours, raw: aimed.what }
     : { types: [aimed.what], ...yours, raw: aimed.what };

@@ -162,6 +162,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
+  'static.spells-have-affinity': asIs,
   'static.additional-cost': asIs,
   'static.free-cast': asIs,
   // Stage P20: power and toughness from a count; the statements are lines of their own.

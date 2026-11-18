@@ -144,6 +144,8 @@ function lowerFilterAt(
   inner: boolean,
   /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
   stackMember = false,
+  /** D-596: the filter of what a spell targets: matched against the permanent that is the target, so "modified" may be read in it although it is not the filter of the noun itself. */
+  aimed = false,
 ): LowerResult<ObjectFilter> {
   const rule = noun.rule;
   const bad = (needs: readonly FeatureRef[]): LowerResult<ObjectFilter> => ({
@@ -260,7 +262,7 @@ function lowerFilterAt(
   }
   // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
   if (filter.modified === true) {
-    if (inner) return bad([]);
+    if (inner && !aimed) return bad([]);
     parts.push('selector:modified');
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
@@ -281,7 +283,7 @@ function lowerFilterAt(
   if (filter.targets !== undefined) {
     if (!onStack) return bad([]);
     parts.push('selector:targetsObject');
-    const aimed = lowerFilterAt(filter.targets, noun, true);
+    const aimed = lowerFilterAt(filter.targets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
@@ -328,7 +330,7 @@ function lowerFilterAt(
   if (filter.castTargets !== undefined) {
     if (inner || targetsObject !== undefined) return bad([]);
     parts.push('selector:targetsObject');
-    const aimed = lowerFilterAt(filter.castTargets, noun, true);
+    const aimed = lowerFilterAt(filter.castTargets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
