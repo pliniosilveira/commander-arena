@@ -3287,6 +3287,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
       // D-642 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'moved':
+      // CR 707.2, 400.7j: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": the card the effect before it moved.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     default:
       issue(
         out,
@@ -4748,8 +4752,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.withCounters.count`, 'counter count must be a positive integer');
         }
       }
-      if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield'])) {
+      if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
         issue(out, `${path}.to`, `cannot move to zone ${JSON.stringify(e.to)}`);
+      }
+      // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.
+      if (e.to === 'exile') {
+        const chosen = kindOf(e.objects) === 'choose' ? (e.objects as ChooseSelector) : null;
+        if (
+          chosen === null ||
+          (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard')
+        ) {
+          issue(
+            out,
+            `${path}.to`,
+            "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
+          );
+        }
       }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
       if (e.attachTo !== undefined) {

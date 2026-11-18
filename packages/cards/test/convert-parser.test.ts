@@ -643,6 +643,7 @@ describe('unmatched abilities', () => {
       'effect.return-this-card-delayed',
       'effect.return-at-upkeep',
       'effect.return-to-hand-delayed',
+      'effect.exile-chosen-graveyard-card',
       'effect.exile',
       'effect.return',
       'effect.counter-unless',

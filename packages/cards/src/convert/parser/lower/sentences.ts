@@ -206,6 +206,11 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteTokensMade(lowered.value, ctx);
     noteMoved(lowered.value, ctx);
+    // Issue 104: the card the player chose from their graveyard and exiled is "that card" of the clause after it.
+    ctx.chosenExiled =
+      clause.verb === 'exileChosenCard' &&
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'moveToZone';
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);
     // D-411: "them" of a choice from among the cards milled: the clause before it was one mill of the controller's own library.
@@ -930,7 +935,11 @@ function lowerMay(
   if (reflexive && i + 2 < sentences.length) return refuse(next);
   const offered = lowerClauses(
     // Lorehold group 1: "you may exile one of them from your graveyard" keeps its "you may": the engine's choice of none or one card is that offer.
-    sentence.clauses.map((c) => ({ ...c, optional: c.verb === 'exileOneOfThem' && c.optional })),
+    sentence.clauses.map((c) => ({
+      ...c,
+      // Issue 104: "you may exile a creature card from your graveyard" is a choice of none or one card, the offer itself.
+      optional: (c.verb === 'exileOneOfThem' || c.verb === 'exileChosenCard') && c.optional,
+    })),
     ctx,
   );
   if (!offered.ok) return offered;
@@ -939,7 +948,11 @@ function lowerMay(
   // offer itself (tapping none is declining it, and is not "doing it"), so the tap is not wrapped in a question of its own.
   const chooseAny =
     (only?.kind === 'tap' && only.objects.kind === 'choose' && only.objects.anyNumber) ||
-    only?.kind === 'exileFromTriggerCards';
+    only?.kind === 'exileFromTriggerCards' ||
+    (only?.kind === 'moveToZone' &&
+      only.to === 'exile' &&
+      only.objects.kind === 'choose' &&
+      only.objects.optional === true);
   if (only === undefined || more.length > 0 || (!MAY_KINDS.has(only.kind) && !chooseAny)) {
     return refuse(sentence);
   }

@@ -2339,7 +2339,11 @@ export type Effect =
        * battlefield.
        */
       readonly objects: ObjectSelector | ChooseSelector;
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield';
+      /**
+       * `exile` (CR 406.1, 608.2d): only for a `choose` of cards in the hand or the graveyard ("you may exile a creature card from your graveyard"): the player chooses
+       * and the cards are exiled; what was exiled is what `moved` names afterwards ("If you do, create a token that's a copy of that card"). Any other exile is the `exile` effect.
+       */
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
       /**
        * For library: `top`, `bottom`, or a number N of 2 or more, "Nth from the top" ("third from the top" is 3): the card
        * goes below the first N - 1 cards, or on the bottom when the library has fewer than N cards (CR 401.7, D-135).

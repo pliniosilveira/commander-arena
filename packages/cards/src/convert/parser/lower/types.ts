@@ -225,6 +225,11 @@ export interface LowerContext {
    */
   madeToken: string | null;
   /**
+   * True right after a clause that was the exile of a card the player chose from their graveyard (issue 104, "you may exile a creature card from your graveyard. If you do, create a token
+   * that's a copy of that card"): "that card" names the card that exile put into exile, which the engine's `moved` holds until another instruction moves, destroys or exiles something.
+   */
+  chosenExiled: boolean;
+  /**
    * True right after a clause that was one mill of the controller's own library (D-411, CR 701.17a): "them" and "the cards milled this way" of "you may put a land card from
    * among them into your hand" are the cards that mill put into the graveyard. Any other clause lowered after it makes it false again.
    */
@@ -317,6 +322,7 @@ export function newContext(
     searched: null,
     sacrificedRef: null,
     madeToken: null,
+    chosenExiled: false,
     milled: false,
     destroyed: false,
     createdToken: null,

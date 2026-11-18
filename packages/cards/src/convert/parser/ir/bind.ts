@@ -81,6 +81,11 @@ interface Antecedent {
   readonly token?: true;
   /** The source of "~ deals damage equal to its power" (stage P49, D-206): only "it" and "its" may mean it, never "that creature". */
   readonly selfIt?: true;
+  /**
+   * A token that is a copy with exceptions (issue 104, "create a token that's a copy of that card, except it's a 4/4 black Zombie. It gains haste until end of turn."): "it" of the
+   * sentence after it is the token, as "that token" is (CR 707.9: the exceptions are said of "it", the copy).
+   */
+  readonly itToken?: true;
 }
 
 const key = (span: Span) => `${span.start}:${span.end}`;
@@ -265,7 +270,10 @@ class Binder {
           (a) =>
             a.kind === 'object' &&
             // "That token" means a token an instruction made and nothing else does (stage P48, D-205).
-            (pronoun.type === 'token') === (a.token === true) &&
+            (pronoun.type === 'token'
+              ? a.token === true
+              : a.token !== true ||
+                (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             !a.noun.plural &&
@@ -433,6 +441,7 @@ class Binder {
           this.antecedents.push({
             kind: 'object',
             token: true,
+            ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
             noun: {
               kind: 'noun',
               det: 'a',
@@ -532,6 +541,24 @@ class Binder {
           span: clause.span,
           rule: clause.rule,
           ref,
+        },
+      });
+    }
+    // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": "that card" is the card the exile moved, which the engine
+    // names `moved`. Pushed after the clause's own noun, so that it is the most recent object of the text.
+    if (clause.verb === 'exileChosenCard') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'card' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
         },
       });
     }
