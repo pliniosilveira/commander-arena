@@ -87,6 +87,7 @@ import {
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
+import { NILS_EFFECT_RULES } from './nils';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
 import { NIV_GROUP_3_A_EFFECT_RULES } from './niv-group-3-a';
@@ -968,6 +969,8 @@ export const EFFECT_RULES = [
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
+  // Silverquill deck (Nils): "for each player, put a +1/+1 counter on up to one target creature that player controls" starts like the plain "for each" rules, and is tried first.
+  ...NILS_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and

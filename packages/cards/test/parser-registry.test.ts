@@ -117,6 +117,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.additional-land': asIs,
   'static.look-at-top': asIs,
   'static.attack-tax': asIs,
+  'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,

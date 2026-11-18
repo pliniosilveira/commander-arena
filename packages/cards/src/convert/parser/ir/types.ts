@@ -1432,7 +1432,13 @@ export type IrStaticEffect =
    * those creatures." (stage P24, D-125, CR 508.1d, 508.1h): the `cost` one attacker pays, a mana cost whose symbols
    * are plain, hybrid or Phyrexian (never X), and whether the planeswalkers of the controller are covered too.
    */
-  | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
+  | {
+      readonly kind: 'attackTax';
+      readonly cost: IrCost;
+      readonly planeswalkers?: true;
+      /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
+      readonly perCounter?: true;
+    }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
   /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */

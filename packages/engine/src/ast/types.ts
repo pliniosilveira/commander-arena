@@ -5300,6 +5300,12 @@ export type StaticEffect =
       readonly kind: 'attackTax';
       readonly cost: readonly Cost[];
       readonly planeswalkers?: true;
+      /**
+       * "Each creature with one or more counters on it can't attack you ... unless its controller pays {X}, where X is the
+       * number of counters on that creature." (CR 508.1d, 508.1h, 122.1): only a creature with a counter of any kind is
+       * taxed, and it pays `cost` once for each counter on it.
+       */
+      readonly perCounter?: true;
     }
   /**
    * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): while the permanent has the ability, no creature `creatures` describes can be declared as

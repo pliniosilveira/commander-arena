@@ -112,6 +112,7 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
           kind: 'attackTax',
           cost: [cost.value],
           ...(effect.planeswalkers === true ? { planeswalkers: true as const } : {}),
+          ...(effect.perCounter === true ? { perCounter: true as const } : {}),
         },
       });
     }
