@@ -152,6 +152,7 @@ describe('Menu', () => {
     expect(onlyPrecons).toContain('Commander: Cmd One');
     expect(onlyPrecons).not.toContain('Back');
     expect(onlyPrecons).toContain('>Select<');
+    expect(onlyPrecons).toContain('aria-label="Search decks"');
     for (const label of ['Random all', 'Random precon', 'Random mine'])
       expect(onlyPrecons).toContain(label);
     // No deck was saved: its random button is disabled.

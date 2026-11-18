@@ -369,3 +369,9 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+.scr-deck-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}

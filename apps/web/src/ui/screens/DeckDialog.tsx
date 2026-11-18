@@ -60,7 +60,16 @@ export function DeckDialog({
   const [tab, setTab] = useState<DeckTab>(
     decks.find((d) => d.id === value)?.kind === 'saved' ? 'saved' : 'precon',
   );
-  const shown = decks.filter((deck) => deck.kind === tab);
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const inTab = decks.filter((deck) => deck.kind === tab);
+  // The search matches the name, the commander and the blurb, ignoring case.
+  const shown =
+    needle === ''
+      ? inTab
+      : inTab.filter((deck) =>
+          `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle),
+        );
 
   // A random button marks a deck (and shows its tab); Select still confirms it.
   const markRandom = (scope: RandomScope) => {
@@ -107,8 +116,21 @@ export function DeckDialog({
             </button>
           ))}
         </div>
+        <input
+          type="search"
+          className="scr-input scr-deck-search"
+          placeholder="Search decks by name or commander"
+          aria-label="Search decks"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
         <div role="tabpanel" className="scr-decks-list">
-          {shown.length === 0 && tab === 'saved' && (
+          {shown.length === 0 && inTab.length > 0 && (
+            <p className="scr-note" role="note">
+              No deck matches "{query.trim()}".
+            </p>
+          )}
+          {inTab.length === 0 && tab === 'saved' && (
             <p className="scr-note" role="note">
               No deck saved in this browser yet.{' '}
               <button type="button" className="scr-link" onClick={onImport}>
@@ -116,7 +138,7 @@ export function DeckDialog({
               </button>
             </p>
           )}
-          {shown.length === 0 && tab === 'precon' && (
+          {inTab.length === 0 && tab === 'precon' && (
             <p className="scr-note" role="note">
               No precon is installed yet.
             </p>
