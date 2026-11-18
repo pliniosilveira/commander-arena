@@ -1,4 +1,4 @@
-// Validation of the nodes of group 2 of the Lorehold Spirit deck (D-616 and later, provisional): `mayCast` of a card in exile (`from: 'exile'`, `free`, `bottomInstead`), the object filter
+// Validation of the nodes of group 2 of the Lorehold Spirit deck (D-617 and later, provisional): `mayCast` of a card in exile (`from: 'exile'`, `free`, `bottomInstead`), the object filter
 // `exiledWithSource` and the amounts `votesFor` and `thisWay` `milledValue` as the count of a `mill`, an `exileTop` and the amount of a damage. A node that the engine does not run (or runs in one
 // place only) is refused with a message, never accepted and half run.
 import { describe, expect, test } from 'vitest';

@@ -3147,7 +3147,7 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
- * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-608 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
+ * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-609 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
  * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
  * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
  * that discards two cards, an artifact that mills and shuffles cards of the graveyard into the library, a sorcery in which each creature deals damage to itself equal to its power and a 3/5
@@ -3247,7 +3247,7 @@ export const GALADRIEL_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
 ];
 
 /**
- * The SYNTHETIC cards of group 2 of the Lorehold Spirit deck (issue 86, D-616 and later): a sorcery in which each player votes for past or present (a card milled for each past vote and damage for
+ * The SYNTHETIC cards of group 2 of the Lorehold Spirit deck (issue 86, D-617 and later): a sorcery in which each player votes for past or present (a card milled for each past vote and damage for
  * the mana value of what was milled, a card exiled for each present vote to play until the end of the next turn), a 3/5 with vigilance that exiles a noncreature, nonland card of its controller's
  * graveyard at their end step for a 3/2 Spirit and casts it for free later by sacrificing a Spirit, and a plain Spirit. The vote, the targets, the sacrifice and the free cast change which answers the
  * generic pools ask for, which games-100 expects only from dedicated styles.

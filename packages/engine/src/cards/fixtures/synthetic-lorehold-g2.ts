@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 2 OF THE LOREHOLD SPIRIT DECK (issue 86, D-616 and later). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 2 OF THE LOREHOLD SPIRIT DECK (issue 86, D-617 and later). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real cards of the group need from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to these
  * same nodes): a sorcery in which each player votes for past or present, the controller mills a card for each past vote and each opponent is dealt damage equal to the total mana value of

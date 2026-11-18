@@ -1,4 +1,4 @@
-// The Lorehold Spirit deck (issue 86), group 3 (D-620 and later, provisional): the lines of Naktamun Lorespinner // Wheel of Fortune. The real lines are the Oracle text of the acceptance card
+// The Lorehold Spirit deck (issue 86), group 3 (D-621 and later, provisional): the lines of Naktamun Lorespinner // Wheel of Fortune. The real lines are the Oracle text of the acceptance card
 // of the golden corpus read through the whole pipeline; the other lines are SYNTHETIC siblings and the near misses the grammar must not read. The engine runs what is lowered in
 // convert-grammar-engine-lorehold-g3.test.ts.
 import { describe, expect, test, vi } from 'vitest';
