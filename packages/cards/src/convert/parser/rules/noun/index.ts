@@ -643,8 +643,20 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
     'each artifact you control',
     'each Plant creature you control',
     'each other creature you control',
+    // Oran-Rief, the Vastwood: the permanents that entered the battlefield this turn (CR 400.7, 110.1).
+    'each green creature that entered this turn',
+    'each creature you control that entered this turn',
   ],
-  rejects: ['each creatures', 'all creatures', 'each opponent', 'each player', 'each other'],
+  rejects: [
+    'each creatures',
+    'all creatures',
+    'each opponent',
+    'each player',
+    'each other',
+    'each creature that entered',
+    'each creature that entered this turn or last turn',
+    'each creature that entered the battlefield this turn',
+  ],
   parse: node<{ filter: IrFilter; other: boolean }, IrNoun>(
     ID.eachPermanent,
     map(
@@ -655,8 +667,16 @@ export const NOUN_EACH_PERMANENT = defineRule<IrNoun>({
           false,
         ),
         permanentPhrase(false, 'all'),
+        // "that entered this turn" (CR 400.7): the permanents that entered the battlefield during this turn.
+        optional(
+          map(literal(' that entered this turn'), () => true),
+          false,
+        ),
       ),
-      ([, other, filter]) => ({ filter, other }),
+      ([, other, filter, entered]) => ({
+        filter: entered ? { ...filter, enteredThisTurn: true as const } : filter,
+        other,
+      }),
     ),
     ({ filter, other }) => bare('each', filter, { other }),
   ),

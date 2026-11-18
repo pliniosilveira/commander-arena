@@ -274,6 +274,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast a Dragon creature spell',
     // Issue 199 (Unclaimed Territory): the creature type the permanent chose as it entered.
     'spend this mana only to cast a creature spell of the chosen type',
+    // Secluded Courtyard: the abilities of the creature sources of the same chosen type (CR 106.6, 607.2d).
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type',
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
     'spend this mana only to cast artifact and creature spells',
@@ -300,6 +302,9 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Dragon spells or activate abilities',
     'spend this mana only to cast Dragon spells or activate abilities of Dragons you control',
     'spend this mana only to cast creature spells or activate abilities of Dragons',
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source',
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of an artifact source of the chosen type',
+    'spend this mana only to cast an Angel spell or activate an ability of a creature source of the chosen type',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.spend-only';
@@ -318,6 +323,40 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     // "spells" with no type says nothing a restriction could use.
     if (filter.types === undefined && filter.subtypes === undefined && filter.anyOf === undefined) {
       return fail(ctx, pos);
+    }
+    // Secluded Courtyard: "... or activate an ability of a creature source of the chosen type": the abilities of the permanents of the chosen creature type, the
+    // spells being the creature spells of that type (CR 106.6, 607.2d). Only this exact pair: the same card types and the chosen type, nothing else.
+    const chosenAbilities =
+      filter.chosen === 'type' && filter.types?.length === 1 && filter.types[0] === 'creature'
+        ? literal(' or activate an ability of a creature source of the chosen type')(
+            ctx,
+            phrase.pos,
+          )
+        : null;
+    if (chosenAbilities?.ok === true) {
+      const end = chosenAbilities.pos;
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: phrase.value.span,
+        rule: id,
+      };
+      return {
+        ok: true,
+        value: [
+          makeClause(
+            id,
+            'spendOnly',
+            { spells: noun, alsoAbilities: flag(id, { start: phrase.pos, end }) },
+            { start: pos, end },
+          ),
+        ],
+        pos: end,
+      };
     }
     // Stage P34 (D-152): "... or activate abilities of Dragons", the abilities of the permanents of the same kind as the spells (CR 106.6).
     const abilities = optional(

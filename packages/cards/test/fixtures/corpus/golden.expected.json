@@ -1,5 +1,5 @@
 {
-  "parserVersion": 148,
+  "parserVersion": 149,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -285,6 +285,23 @@
       "reasons": [],
       "ast": "5d9fd28c"
     },
+    "078def07-ae5d-4591-8db6-d156834aab97": {
+      "name": "Etali, Primal Storm",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Whenever ~ attacks, exile the top card of each player's library, then you may cast any number of spells from among those cards without paying their mana costs.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.exile-top-face-down"
+        }
+      ],
+      "reasons": [],
+      "ast": "b168b08a"
+    },
     "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8": {
       "name": "Chaos Warp",
       "group": "training",
@@ -333,6 +350,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "04b35336"
+    },
+    "08becc07-28bc-4a2f-a6b0-28a2998d2f50": {
+      "name": "Windfall",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.player.draw"
+        }
+      ],
+      "reasons": [],
+      "ast": "a1612efa"
     },
     "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
       "name": "Undercity Sewers",
@@ -1229,6 +1263,23 @@
       "reasons": [],
       "ast": "cdf8dcbc"
     },
+    "2ef75cf3-30dc-4852-a6d1-1d6391fad022": {
+      "name": "Forgotten Ancient",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "At the beginning of your upkeep, you may move any number of +1/+1 counters from ~ onto other creatures.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.triggered"
+        }
+      ],
+      "reasons": [],
+      "ast": "545fc18d"
+    },
     "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
       "name": "Far Wanderings",
       "group": "acceptance",
@@ -1487,6 +1538,23 @@
         "faces[1].types: layout transform with a planeswalker or battle back face is not implemented by the engine yet"
       ],
       "ast": "6f040bf3"
+    },
+    "3589bcfc-42b0-414a-adce-bc690dc631c8": {
+      "name": "Windbrisk Heights",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 3,
+          "text": "{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.cast-free"
+        }
+      ],
+      "reasons": [],
+      "ast": "d156f283"
     },
     "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
       "name": "Goddric, Cloaked Reveler",
@@ -2228,6 +2296,23 @@
       "reasons": [],
       "ast": "ff07c294"
     },
+    "5669ea7c-c4fc-494c-896b-4bce9b494817": {
+      "name": "Curse of the Swine",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Exile X target creatures. For each creature exiled this way, its controller creates a 2/2 green Boar creature token.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "spell.effect"
+        }
+      ],
+      "reasons": [],
+      "ast": "cc5da5a8"
+    },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
       "group": "acceptance",
@@ -2432,6 +2517,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ac73db81"
+    },
+    "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
+      "name": "Rakdos Charm",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its controller.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.gain-keyword-each"
+        }
+      ],
+      "reasons": [],
+      "ast": "01d11ce7"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -3117,6 +3219,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "fd3ec62c"
+    },
+    "79ba18fd-f184-43c1-86df-56ee18ce806c": {
+      "name": "Secluded Courtyard",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e44da1fb"
     },
     "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
       "name": "Midnight Tilling",
@@ -3997,6 +4107,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "efbbb092"
+    },
+    "9b9a10ff-5a5d-4df8-88aa-18d84ff9117c": {
+      "name": "Inspiring Call",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Draw a card for each creature you control with a +1/+1 counter on it. Those creatures gain indestructible until end of turn.",
+          "reason": "notRunnable",
+          "closestRule": "noun.those-creatures",
+          "needs": ["selector:bound"]
+        }
+      ],
+      "reasons": [],
+      "ast": "951027d8"
     },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
@@ -5679,6 +5806,23 @@
       "reasons": [],
       "ast": "90b0e9dd"
     },
+    "e1d294e8-67b1-4a4a-86b8-f98f28a327d9": {
+      "name": "Promise of Loyalty",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "cb0a7c4e"
+    },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
       "group": "acceptance",
@@ -5766,6 +5910,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b2f7e49"
+    },
+    "e88027a6-24cc-4a8b-86db-734f26149ea8": {
+      "name": "Oran-Rief, the Vastwood",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "71f19d82"
     },
     "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
       "name": "Fall from Favor",
@@ -6615,8 +6767,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 469,
-      "total": 490
+      "supported": 471,
+      "total": 500
     }
   }
 }
