@@ -202,8 +202,12 @@ function walkEffect(
             ? effect.objects.filter
             : selectedFilter(effect.objects, targets);
       // D-149: an Aura card named by a target, `moved`, `each` or the like chooses what it enchants as it enters (CR 303.4f: `rules/aura-entry.ts`);
-      // one picked by a `choose` selector from the hand or the graveyard is still not run.
-      if (effect.to === 'battlefield' && effect.objects.kind === 'choose') {
+      // one picked by a `choose` selector from a card zone does too (issue 103: `runChooseMove`); a `choose` among permanents is not a move to the battlefield.
+      if (
+        effect.to === 'battlefield' &&
+        effect.objects.kind === 'choose' &&
+        !['hand', 'graveyard', 'exile'].includes(effect.objects.filter.zone ?? '')
+      ) {
         auraEntryIssue(named, `${path}.objects`, out);
       }
       moved.current = named;

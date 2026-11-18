@@ -146,3 +146,83 @@ describe("Opportunistic Dragon (gain control of a Human or artifact for as long 
     g.expect.invariants();
   });
 });
+
+const SCOURGE = real('Broodcaller Scourge');
+
+describe('Broodcaller Scourge (one or more Dragons you control deal combat damage to a player: put a permanent card with mana value at most that damage from your hand onto the battlefield)', () => {
+  // Scourge has power 5. Sol Ring costs 1 and Serra Angel 5 (both within the limit), the SYNTHETIC Maw Dragon 7 (above it), and a Lightning Bolt is no permanent.
+  const game = (extra: string[] = []) =>
+    scenario()
+      .define(SCOURGE)
+      .seat(0)
+      .library(...FILLER)
+      .hand('Sol Ring', 'Serra Angel', DRAGON, 'Lightning Bolt')
+      .battlefield(SCOURGE.name, { label: 'scourge' })
+      .battlefield(...extra)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('only the permanent cards with mana value at most the damage are offered (CR 202.3, 603.2c)', () => {
+    const g = game();
+    g.playCombat({ attack: ['scourge'], until: 'combatDamage' });
+    g.expect.life(1, 35);
+    g.passAll();
+    g.expect.pending('confirmOptional');
+    g.act(0).accept();
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error(`expected chooseCards, got ${d?.kind}`);
+    expect(d.legal).toHaveLength(2);
+    g.act(0).chooseCards('Serra Angel');
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone('Sol Ring', 'hand', { seat: 0 });
+    g.expect.zone(DRAGON, 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('"that damage" is all that the Dragons dealt to the player: two Dragons deal 10 and the 7 is offered', () => {
+    const g = game([SCOURGE.name]);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['scourge', `${SCOURGE.name}[1]`]);
+    g.passAll();
+    g.passAll();
+    g.passAll();
+    g.expect.life(1, 30);
+    g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    g.act(0).accept();
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error(`expected chooseCards, got ${d?.kind}`);
+    expect(d.legal).toHaveLength(3);
+  });
+
+  test('an Aura card put onto the battlefield chooses what it enchants (CR 303.4f)', () => {
+    const g = scenario()
+      .define(SCOURGE)
+      .seat(0)
+      .library(...FILLER)
+      .hand('SYNTHETIC Warding Aura')
+      .battlefield(SCOURGE.name, { label: 'scourge' })
+      .battlefield('Grizzly Bears')
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.playCombat({ attack: ['scourge'], until: 'combatDamage' });
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).choosePermanents('Grizzly Bears');
+    g.expect.attached('SYNTHETIC Warding Aura', 'Grizzly Bears');
+    g.expect.invariants();
+  });
+
+  test('declining puts nothing onto the battlefield', () => {
+    const g = game();
+    g.playCombat({ attack: ['scourge'], until: 'combatDamage' });
+    g.passAll();
+    g.act(0).decline();
+    g.expect.zone('Sol Ring', 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+});

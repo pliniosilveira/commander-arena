@@ -3707,7 +3707,8 @@ export type Trigger =
    * combat damage in a step is dealt at once, and the ability triggers once for each player damaged in it, however many of the sources
    * `what` names damaged that player (`atLeast` is the fewest sources: "two or more creatures ..."; one when left out). The sources are
    * read as they are as the damage is dealt, the controller of this ability being "you" in the filter; damage that is entirely
-   * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged. The
+   * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged and `triggerDamage` (issue 103, "that damage")
+   * all the combat damage those sources dealt to that player in the event. The
    * damage of a first strike step and of the regular step are different events: each can trigger it.
    */
   | {

@@ -1038,6 +1038,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealtDamage' ||
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
+    // Issue 103: all the combat damage the sources dealt to the player, "that damage".
+    t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||

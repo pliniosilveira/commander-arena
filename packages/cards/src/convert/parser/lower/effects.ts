@@ -626,11 +626,31 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
   needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard'],
-  lower(clause) {
-    const objects = arg(clause, 'objects');
+  lower(clause, ctx) {
+    const named = arg(clause, 'objects');
     const to = zoneOf(clause);
     const may = arg(clause, 'may');
-    if (objects?.kind !== 'noun' || objects.det !== 'a') return failure(clause);
+    if (named?.kind !== 'noun' || named.det !== 'a') return failure(clause);
+    // "... with mana value less than or equal to that damage" (issue 103, CR 202.3): the filter's limit is the damage of the trigger, read as the effect runs.
+    let limit: Amount | undefined;
+    let objects: IrNoun = named;
+    if (named.filter.manaValueAtMostAmount !== undefined) {
+      const blocked = missingFeatures(['selector:manaValueAtMost']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const amount = lowerAmount(named.filter.manaValueAtMostAmount, ctx, clause.rule);
+      if (!amount.ok) return amount;
+      if (
+        typeof amount.value !== 'object' ||
+        amount.value.kind !== 'triggerDamage' ||
+        to?.zone !== 'battlefield'
+      ) {
+        return failure(clause);
+      }
+      limit = amount.value;
+      const { manaValueAtMostAmount: _amount, ...rest } = named.filter;
+      void _amount;
+      objects = { ...named, filter: rest };
+    }
     // "You may return a creature card from your graveyard to your hand" (stage P35, D-176, CR 608.2d): a card chosen from the graveyard,
     // none when the player may and does not.
     if (to?.zone === 'hand') {
@@ -649,8 +669,12 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       return { ok: true, value: [move], rule: clause.rule };
     }
     if (to?.zone !== 'battlefield') return failure(clause);
-    const filter = lowerFilter(objects);
-    if (!filter.ok) return filter;
+    const lowered = lowerFilter(objects);
+    if (!lowered.ok) return lowered;
+    const filter = {
+      ok: true as const,
+      value: limit === undefined ? lowered.value : { ...lowered.value, manaValueAtMost: limit },
+    };
     const optional = may?.kind === 'flag' && may.value;
     // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
     const both = arg(clause, 'alsoGraveyard');

@@ -10,6 +10,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { withAuraEntries } from './aura-entry';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
 import { matchesFilter } from './select';
@@ -30,7 +31,14 @@ function cardCandidates(
   source: ObjectId | null,
   filter: ObjectFilter,
   alsoGraveyard = false,
+  triggerDamage?: number,
 ): ObjectId[] {
+  // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
+  const ctx = {
+    controller: seat,
+    source,
+    ...(triggerDamage === undefined ? {} : { triggerDamage }),
+  };
   // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
   if (filter.zone === 'exile') {
     const { controller: _you, ...described } = filter;
@@ -38,8 +46,7 @@ function cardCandidates(
     return linked.filter((id) => {
       const obj = state.objects[id];
       return (
-        obj?.zone === 'exile' &&
-        matchesFilter(state, obj, { ...described, zone: 'exile' }, { controller: seat, source })
+        obj?.zone === 'exile' && matchesFilter(state, obj, { ...described, zone: 'exile' }, ctx)
       );
     });
   }
@@ -52,10 +59,7 @@ function cardCandidates(
   return zones.flatMap((z) =>
     zoneList(state, z, seat).filter((id) => {
       const obj = state.objects[id];
-      return (
-        obj !== undefined &&
-        matchesFilter(state, obj, { ...described, zone: z }, { controller: seat, source })
-      );
+      return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
   );
 }
@@ -97,6 +101,7 @@ export function runChooseMove(
       automatic,
     };
     // D-283 (CR 603.10a): permanents put into a graveyard (or elsewhere) together keep the last-known information recorded before the first leaves.
+    // CR 303.4f (issue 103): an Aura card put onto the battlefield this way chooses what it enchants as it enters.
     const together = recordTogether(
       state,
       moveInstructions(
@@ -112,7 +117,11 @@ export function runChooseMove(
           : i,
       ),
     );
-    return { ...done(together.state, [event], together.instructions), lastMoved: [], ...restart };
+    const entries =
+      instruction.to === 'battlefield'
+        ? withAuraEntries(together.state, together.instructions)
+        : together.instructions;
+    return { ...done(together.state, [event], entries), lastMoved: [], ...restart };
   };
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
@@ -143,6 +152,7 @@ export function runChooseMove(
             res.source,
             instruction.filter,
             instruction.alsoGraveyard === true,
+            res.triggerDamage,
           ).filter(
             // D-411: only the cards the effect before it moved.
             (id) => instruction.among === undefined || instruction.among.includes(id),
