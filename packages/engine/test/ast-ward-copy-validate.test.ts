@@ -190,7 +190,7 @@ describe('token copies (CR 707.2)', () => {
     }
   });
 
-  test('a copy of something that could be an Aura is not executable (CR 303.4f); a land is (D-211, CR 614.12)', () => {
+  test('a copy of something that could be an Aura is executable since D-655 (CR 303.4f); so is a land (D-211, CR 614.12)', () => {
     const copying = (filter: ObjectFilter): Ability => ({
       kind: 'activated',
       cost: TWO,
@@ -202,21 +202,23 @@ describe('token copies (CR 707.2)', () => {
     expect(issues(creature(copying({ notTypes: ['land', 'enchantment'] })))).toEqual([]);
     // D-211: a token copy of a land asks what the land asks as it enters (`rules/enter-token.ts`).
     expect(issues(creature(copying({ types: ['land'] })))).toEqual([]);
+    // D-655: a token copy of an Aura chooses what it enchants as it enters (`rules/enter-token.ts`).
     for (const filter of [
       {},
       { types: ['enchantment'] },
       { anyOf: [{ types: ['creature'] }, { types: ['enchantment'] }] },
     ] as ObjectFilter[]) {
-      expect(issues(creature(copying(filter))).length, JSON.stringify(filter)).toBeGreaterThan(0);
+      expect(issues(creature(copying(filter))), JSON.stringify(filter)).toEqual([]);
     }
   });
 
   test('the triggering permanent of a landfall or a sacrifice trigger is judged the same way', () => {
     // A land that entered is a land (D-211): a copy of it asks what it asks.
     expect(issues(creature(trig({ kind: 'landfall' }, copyToken(SUBJECT))))).toEqual([]);
+    // D-655: the sacrificed permanent could be an Aura; its token copy chooses what it enchants.
     expect(
-      issues(creature(trig({ kind: 'permanentSacrificed', by: 'you' }, copyToken(SUBJECT)))).length,
-    ).toBeGreaterThan(0);
+      issues(creature(trig({ kind: 'permanentSacrificed', by: 'you' }, copyToken(SUBJECT)))),
+    ).toEqual([]);
     expect(
       issues(
         creature(
