@@ -236,6 +236,21 @@ const PUT_HAND_OTHER_BOTTOM =
   /^put one of them into your hand and the other on the bottom of your library\.$/i;
 
 /**
+ * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-636, CR 500.5): the second sentence
+ * says what happens to the mana the first adds, so the two are read as one instruction (`effect.add-mana-stays`).
+ */
+const ADD_MANA_SENTENCE = /^add [^.]*\.$/i;
+const MANA_STAYS_SENTENCE =
+  /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
+
+/**
+ * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-640, CR 707.12): the
+ * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
+ */
+const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
+const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
+
+/**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
  * bottom of your library in a random order." (stage P32, D-147): two sentences that are one instruction (what is revealed until, and where
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
@@ -417,7 +432,9 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
             said(b, PUT_HAND_OTHER_BOTTOM))) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
-        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)))
+        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
+        (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

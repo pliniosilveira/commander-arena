@@ -27,6 +27,21 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: spells.pos,
     };
   }
+  // D-632 (Prismari deck group 2, CR 202.3, 601.2i): the greatest mana value among the spells the controller has cast this turn.
+  const greatest = pattern(
+    /the greatest mana value among (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (greatest.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'greatestManaValueCast',
+        ...(greatest.value[1] === undefined ? {} : { ofTypes: ['instant', 'sorcery'] }),
+        span: { start: pos, end: greatest.pos },
+      },
+      pos: greatest.pos,
+    };
+  }
   const entries = pattern(
     /the number of (nontoken |token )?(creatures|permanents) you had enter the battlefield under your control this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);

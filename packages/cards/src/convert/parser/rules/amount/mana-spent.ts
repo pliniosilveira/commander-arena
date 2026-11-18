@@ -12,7 +12,7 @@ import { defineRule } from '../registry';
 /** The card types a source of mana may be named by ("from an artifact source", "from a creature source"). */
 const TYPE_WORDS = 'artifact|creature|enchantment|land|planeswalker';
 
-const THE_AMOUNT = /the amount of mana spent to cast (it|~)(?![\p{L}\p{N}])/iu;
+const THE_AMOUNT = /the amount of mana spent to cast (it|~|that spell)(?![\p{L}\p{N}])/iu;
 const FOR_EACH = new RegExp(
   `for each (?:mana(?: from an? (${TYPE_WORDS}) source)?|(\\{S\\})) spent to cast (it|~)(?![\\p{L}\\p{N}])`,
   'iu',
@@ -24,7 +24,8 @@ export const MANA_SPENT_AMOUNT = (ctx: Parameters<ReturnType<typeof pattern>>[0]
   if (!r.ok) return r;
   const value: IrAmount = {
     kind: 'manaSpent',
-    who: r.value[1] === '~' ? 'self' : 'it',
+    // D-632 (CR 601.2h, 113.7a): "that spell" is the spell that caused a cast trigger (the lowering reads it there only).
+    who: r.value[1] === '~' ? 'self' : r.value[1] === 'that spell' ? 'thatSpell' : 'it',
     span: { start: pos, end: r.pos },
   };
   return { ok: true as const, value, pos: r.pos };

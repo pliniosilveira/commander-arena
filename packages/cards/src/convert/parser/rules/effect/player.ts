@@ -528,7 +528,6 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain X life for each creature you control',
     'you draw a card for each time',
     'you draw a card for each creature',
-    'you gain life equal to the number of cards in target opponent’s hand',
     'its controller creates a token that’s a copy of it',
     'its controller creates a 2/2 blue Bird creature token with changeling',
     'its controller creates',

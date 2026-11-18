@@ -402,6 +402,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.target-commander': spell((e) => `Destroy ${e}.`),
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
+  // Prismari deck, group 2 (D-642, D-643): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
+  'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
+  'noun.any-number-of-targets': spell((e) => `~ deals 4 damage divided as you choose among ${e}.`),
   // Stage P33 (D-149, D-150): the Angels slice. The statements and the replacement are lines of their own; the triggers follow "Whenever";
   // the conditions follow "if" (an intervening "if", a trailing "if" or the "Activate only if" of an ability); the nouns are operands.
   'replacement.life-gain-bonus': asIs,
@@ -605,6 +608,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
   'condition.mana-spent-or-more': permanent(
+    (e) =>
+      `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
+  ),
+  // Prismari deck, group 2 (D-632): the condition leads the "instead" sentence of a trigger about a spell that was cast.
+  'condition.spell-mana-value-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),

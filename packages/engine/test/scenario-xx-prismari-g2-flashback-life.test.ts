@@ -3,14 +3,22 @@
 // if their life total is at least that much, and paying life is losing it), CR 601.2f and 601.2h (the total cost is determined, then paid, as the spell is cast), CR 702.34a (the card
 // is exiled instead of anywhere else it would go from the stack), CR 118.3 (a cost that cannot be paid cannot be paid).
 import { describe, expect, test } from 'vitest';
-import { applyAction, checkInvariants, getLegalActions, syntheticCard, validateCard } from '../src/index';
+import {
+  applyAction,
+  checkInvariants,
+  getLegalActions,
+  syntheticCard,
+  validateCard,
+} from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const STUDY = 'SYNTHETIC Deep Study'; // {3}{U} sorcery, target player draws two cards; flashback {1}{U} and 3 life
 const LIBRARY = Array.from({ length: 10 }, () => 'Island');
 
 const flashbackOptions = (g: ReturnType<ReturnType<typeof build>['build']>) =>
-  getLegalActions(g.state, 0).filter((a) => a.kind === 'castSpell' && a.alternative === 'flashback');
+  getLegalActions(g.state, 0).filter(
+    (a) => a.kind === 'castSpell' && a.alternative === 'flashback',
+  );
 
 function build(life = 20, lands = 2) {
   return scenario()
@@ -95,23 +103,24 @@ describe('Flashback with life (CR 702.34a, 119.4)', () => {
   test('cancelling the cast gives the life back (CR 733: the exact pre-cast state)', () => {
     const g = build(20).build();
     const before = g.positionHash();
-    g.act(0).cast({ name: STUDY, zone: 'graveyard', seat: 0 }, { alternative: 'flashback' }).cancel();
+    g.act(0)
+      .cast({ name: STUDY, zone: 'graveyard', seat: 0 }, { alternative: 'flashback' })
+      .cancel();
     expect(g.positionHash()).toBe(before);
     expect(g.state.seats[0]?.life).toBe(20);
   });
 
   test('a flashback cost with a life payment is paid once for the spell, and a countered spell is still exiled (CR 702.34a)', () => {
-    const g = build(20)
-      .seat(1)
-      .hand('Counterspell')
-      .battlefield('Island', { count: 2 })
-      .build();
+    const g = build(20).seat(1).hand('Counterspell').battlefield('Island', { count: 2 }).build();
     g.act(0).cast(
       { name: STUDY, zone: 'graveyard', seat: 0 },
       { alternative: 'flashback', pay: true, targets: [{ player: 0 }] },
     );
     g.act(0).pass();
-    g.act(1).cast('Counterspell', { pay: true, targets: [{ name: STUDY, zone: 'stack', seat: 0 }] });
+    g.act(1).cast('Counterspell', {
+      pay: true,
+      targets: [{ name: STUDY, zone: 'stack', seat: 0 }],
+    });
     g.passAll();
     expect(g.state.seats[0]?.life).toBe(17);
     expect(g.find({ name: STUDY, zone: 'exile', seat: 0 })).toHaveLength(1);

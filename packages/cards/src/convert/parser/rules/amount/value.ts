@@ -241,7 +241,7 @@ const STAT_OF =
   };
 
 const MANA_VALUE_OF_HEAD =
-  /(its|that (?:creature|permanent|card)['’]s) mana value(?![\p{L}\p{N}])/iu;
+  /(its|that (?:creature|permanent|card|spell)['’]s) mana value(?![\p{L}\p{N}])/iu;
 
 /** "its mana value", "that card's mana value" (CR 202.3). */
 const MANA_VALUE_OF =
@@ -503,6 +503,10 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     'where X is that card’s mana value',
+    // Prismari deck, group 2 (D-632, CR 202.3): the spell that caused a cast trigger.
+    "where X is that spell's mana value",
+    'where X is the amount of mana spent to cast that spell',
+    "where X is the greatest mana value among instant and sorcery spells you've cast this turn",
     // Stage P39 (D-184, CR 601.2h): the mana spent to cast the spell the ability is on.
     'where X is the amount of mana spent to cast it',
     // Stage P37 (D-180): the card an earlier instruction exiled.
@@ -531,7 +535,6 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of cards in your hand minus X',
     'X is the number of Zombies you control',
     'where X is the amount of mana spent',
-    'where X is the amount of mana spent to cast that spell',
     'where X is the mana spent to cast it',
   ],
   parse: (ctx, pos) => {

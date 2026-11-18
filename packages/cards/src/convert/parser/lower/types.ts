@@ -79,7 +79,8 @@ export interface LowerContext {
    * The last `createToken` effect of a token that is a copy this text lowered (D-629): "create five of those tokens instead" makes that many tokens of the same kind, which this
    * effect (with its target and its exceptions) says. Null before one. Filled by `lowerSentences` as each clause is lowered.
    */
-  lastCopyToken: Effect | null;
+  /** The `createToken` the instruction before made, of any kind of token (D-629, D-632): what "create five of those tokens instead" makes more of. */
+  lastToken: Effect | null;
   /**
    * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
    * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
@@ -264,7 +265,7 @@ export function newContext(
     removed: new Set(),
     madeAToken: false,
     tokensMade: false,
-    lastCopyToken: null,
+    lastToken: null,
     lowered: 0,
     thatPlayer: null,
     xIs: null,

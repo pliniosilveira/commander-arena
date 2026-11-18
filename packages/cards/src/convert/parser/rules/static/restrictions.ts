@@ -44,8 +44,17 @@ export const STATIC_SELF = defineRule<IrStatic>({
     "~ can't block and can't be blocked by more than one creature.",
     "~ can't be blocked by creatures with power 2 or less.",
     "~ can't be blocked by Walls.",
+    // Prismari deck, group 2 (D-634, CR 509.1b): the creatures it can block are those with flying.
+    '~ can block only creatures with flying.',
+    "~ can block only creatures with flying and can't be blocked.",
   ],
   rejects: [
+    '~ can block only creatures with flying',
+    '~ can block only creatures with reach.',
+    '~ can block only creatures with flying or reach.',
+    '~ can block only creatures without flying.',
+    '~ can block only creature with flying.',
+    '~ can block only flying creatures.',
     "~ can't block",
     "~ can't blocks.",
     "~ can't be blocked except by creatures with flying.",

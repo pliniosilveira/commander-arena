@@ -109,7 +109,7 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
 
 /**
  * What "they", "them", "those tokens" and "the token created this way" mean after an instruction that created tokens (D-629, Prismari group 1): the tokens that instruction made,
- * the engine's `moved`, until an instruction that moves, destroys, exiles or sacrifices other objects is lowered. A token made as a copy is also remembered (`lastCopyToken`), which
+ * the engine's `moved`, until an instruction that moves, destroys, exiles or sacrifices other objects is lowered. A token made is also remembered (`lastToken`), which
  * "create five of those tokens instead" makes more of.
  */
 function noteTokensMade(effects: readonly Effect[], ctx: LowerContext): void {
@@ -117,16 +117,14 @@ function noteTokensMade(effects: readonly Effect[], ctx: LowerContext): void {
   if (effects.some((e) => MAKES.includes(e.kind))) {
     ctx.tokensMade = true;
     const [only] = effects;
-    ctx.lastCopyToken =
-      effects.length === 1 && only?.kind === 'createToken' && only.token.kind === 'copyOf'
-        ? only
-        : null;
+    // D-632: a token of any kind (the copy of "create five of those tokens instead", the 1/1 Elemental of "create three of those tokens instead").
+    ctx.lastToken = effects.length === 1 && only?.kind === 'createToken' ? only : null;
     return;
   }
   const MOVES = ['moveToZone', 'destroy', 'exile', 'sacrifice'];
   if (effects.some((e) => MOVES.includes(e.kind))) {
     ctx.tokensMade = false;
-    ctx.lastCopyToken = null;
+    ctx.lastToken = null;
   }
 }
 

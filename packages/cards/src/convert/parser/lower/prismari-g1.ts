@@ -27,7 +27,12 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
   head: 'grantKeywordToMade',
   id: 'lower.grant-keyword-to-made',
   needs: ['effect:grantKeyword', 'selector:moved'],
+  // D-633: "They gain haste until end of turn" carries its duration (the rule that reads it is the only one that gives this clause one); without it the keyword is for good.
+  takesDuration: true,
   lower(clause, ctx) {
+    if (clause.duration !== undefined && clause.duration.scope !== 'untilEndOfTurn') {
+      return failure(clause);
+    }
     const word = arg(clause, 'keyword');
     if (word?.kind !== 'keywordName' || word.protection !== undefined) return failure(clause);
     if (!aboutMadeTokens(ctx)) return failure(clause);
@@ -40,7 +45,7 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
           kind: 'grantKeyword',
           objects: MOVED,
           keyword: plainKeyword(kind),
-          duration: 'permanent',
+          duration: clause.duration === undefined ? 'permanent' : 'untilEndOfTurn',
         },
       ],
       rule: clause.rule,
@@ -94,7 +99,8 @@ const CREATE_OF_THOSE: Lowering<IrClause, Effects> = {
   id: 'lower.create-of-those-tokens',
   needs: ['effect:createToken', 'token:copyOf'],
   lower(clause, ctx) {
-    const last = ctx.lastCopyToken;
+    // D-632: the token of the instruction before, whatever kind ("create three of those tokens instead" after a 1/1 Elemental as after a copy).
+    const last = ctx.lastToken;
     const count = arg(clause, 'count');
     if (last?.kind !== 'createToken' || count === undefined || count.kind !== 'number') {
       return failure(clause);

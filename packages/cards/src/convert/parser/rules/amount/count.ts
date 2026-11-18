@@ -199,6 +199,27 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
  * "card in all graveyards", "creature cards in your opponents' graveyards" (a card outside the battlefield is
  * the object of its owner, CR 400.3, so "your opponents'" is the opponents as owners).
  */
+const inTargetPlayersHand: Parser<{
+  zone: 'hand';
+  controller: { readonly noun: IrNoun };
+}> = (ctx, pos) => {
+  const r = pattern(/ in (target (?:player|opponent))['’]s hand(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (!r.ok) return r;
+  const word = r.value[1] ?? '';
+  const start = pos + ' in '.length;
+  const player: IrNoun = {
+    kind: 'noun',
+    det: 'target',
+    filter: { player: /opponent$/iu.test(word) ? 'opponent' : 'any', raw: word },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start, end: start + word.length },
+    rule: 'noun.player',
+  };
+  return { ok: true, value: { zone: 'hand', controller: { noun: player } }, pos: r.pos };
+};
+
 function cards(plural: boolean): Parser<IrFilter> {
   const itsControllerGraveyard: Parser<{
     zone: 'graveyard';
@@ -240,6 +261,8 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'opponent' as const,
     })),
     itsControllerGraveyard,
+    // Prismari deck, group 2 (D-635, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
+    inTargetPlayersHand,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(
@@ -263,9 +286,14 @@ function cards(plural: boolean): Parser<IrFilter> {
   // D-518 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
   const union: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
-      choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)),
+      // Prismari deck, group 2 (D-641): "instant and sorcery card in your graveyard", the card types joined by "and", the singular noun of a "for each".
+      choice(
+        typeChoice(CARD_TYPES, false, 'and/or'),
+        typeChoice(CARD_TYPES),
+        typeChoice(CARD_TYPES, false, 'and'),
+      ),
       literal(' '),
-      pattern(new RegExp(`cards${BOUNDARY}`, 'iu')),
+      pattern(new RegExp(`card${plural ? 's' : ''}${BOUNDARY}`, 'iu')),
       where,
       pattern(new RegExp(BOUNDARY, 'u')),
     )(ctx, pos);
@@ -313,7 +341,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       pos: r.pos,
     };
   };
-  return plural ? choice(union, single) : single;
+  return choice(union, single);
 }
 
 /** What a count is of, as the group noun it is: `det` `each`, the filter and `other`. */
@@ -393,6 +421,11 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each creature card in your opponents’ graveyards',
     'for each tapped creature target opponent controls',
     'for each creature target player controls',
+    // Prismari deck, group 2 (D-635, CR 108.3): the cards in the hand of a player the text targets.
+    'for each card in target opponent’s hand',
+    'for each card in target player’s hand',
+    'for each instant and sorcery card in your graveyard',
+    'for each instant or sorcery card in your graveyard',
   ],
   rejects: [
     'for each',
@@ -402,7 +435,10 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each burden counter on ~',
     'for each color among permanents you control',
     'for each target creature',
-    'for each card in target opponent’s hand',
+    'for each card in target opponents’ hand',
+    'for each card in target creature’s hand',
+    'for each card in target opponent’s graveyard',
+    'for each instant and sorcery cards in your graveyard',
     'each creature you control',
     'for every creature you control',
     'for each artifact and creature and land you control',
@@ -451,13 +487,15 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of Zombies you control',
     'equal to the number of nontoken creatures you control',
     'equal to the number of tapped creatures target opponent controls',
+    // Prismari deck, group 2 (D-635, CR 108.3): the cards in the hand of a player the text targets.
+    'equal to the number of cards in target opponent’s hand',
   ],
   rejects: [
     'equal to the number of',
     'equal to the number of creatures',
     'equal to the number of creature you control',
     'equal to the number of colors in your commanders’ color identity',
-    'equal to the number of cards in target opponent’s hand',
+    'equal to the number of cards in target opponents’ hand',
     'equal to its power',
     'the number of',
   ],

@@ -364,6 +364,11 @@ export interface IrFilter {
   readonly powerAboveBase?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
+  /**
+   * "creatures named ~" (Prismari deck group 2, D-642, CR 201.2): the objects have the name of the card the text is on (the tilde). Only the group noun of an effect (`selector:named`)
+   * reads it, with the card's own name; any other noun that carries it is refused, so it is never dropped.
+   */
+  readonly namedSelf?: true;
   /** The words the filter was read from, for diagnostics and templateOf. */
   readonly raw: string;
 }
@@ -406,6 +411,13 @@ export type IrAmount =
   // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-624, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
   | {
       readonly kind: 'spellsCastThisTurn';
+      readonly ofTypes?: readonly string[];
+      readonly span: Span;
+    }
+  // "the greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck group 2, D-632, CR 202.3, 601.2i): the largest mana value of the spells the controller
+  // has cast so far this turn, of the card types named.
+  | {
+      readonly kind: 'greatestManaValueCast';
       readonly ofTypes?: readonly string[];
       readonly span: Span;
     }
@@ -494,7 +506,7 @@ export type IrAmount =
       readonly fromType?: string;
       /** "for each {S} spent to cast ~" (D-260, CR 107.4h): only the mana of snow sources. */
       readonly snow?: true;
-      readonly who: 'self' | 'it';
+      readonly who: 'self' | 'it' | 'thatSpell';
       readonly span: Span;
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
@@ -659,6 +671,8 @@ export interface IrCondition extends IrNode {
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
     // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
+    // Prismari deck, group 2 (D-632, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
+    | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
@@ -1204,7 +1218,9 @@ export type IrRestrictionKind =
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
-  | 'mustBlock';
+  | 'mustBlock'
+  // "~ can block only creatures with flying" (Prismari deck group 2, D-634, CR 509.1b): only of `~` itself.
+  | 'canBlockOnlyFlying';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
@@ -1641,6 +1657,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'diedThisTurn',
   'cardsDrawnThisTurn',
   'spellsCastThisTurn',
+  'greatestManaValueCast',
   'toughnessOf',
   'countersOn',
   'aggregate',

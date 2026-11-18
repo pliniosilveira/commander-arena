@@ -17,7 +17,7 @@ function build(attackers: readonly string[]) {
   const b = scenario()
     .seat(0)
     .library(...LIBRARY);
-  attackers.forEach((name, i) => b.battlefield(name, { label: `att${i}` }));
+  for (const [i, name] of attackers.entries()) b.battlefield(name, { label: `att${i}` });
   return b
     .seat(1)
     .library(...LIBRARY)

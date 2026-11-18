@@ -13,7 +13,7 @@
  *   that token." (CR 707.2, 611.2a: a copy effect with no duration).
  * - `effect.becomes-copy-except-keyword`: "~ becomes a copy of up to one target nonlegendary creature you control until end of turn, except it has myriad." (CR 707.2, 707.9b).
  */
-import { fail, literal, map, type Parser, pattern, sequence } from '../../combinators';
+import { fail, literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
 import type { IrArg, IrDuration, IrNoun } from '../../ir/types';
 import { positiveCount } from '../amount/index';
 import { KEYWORD_WORDS } from '../keyword/list';
@@ -69,13 +69,20 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
     'They gain haste',
     'those tokens gain haste',
     'they gain flying and haste',
+    // Prismari deck, group 2 (D-633, CR 611.2a, 514.2): the keyword until end of turn, for the tokens that were just made.
+    'they gain haste until end of turn',
+    'They gain haste until end of turn',
+    'those tokens gain flying and haste until end of turn',
+    'the token created this way gains haste until end of turn',
   ],
   rejects: [
     'they gains haste',
     'the token created this way gain haste',
     'those tokens gains haste',
     'the tokens created this way gain haste',
-    'they gain haste until end of turn',
+    'they gain haste until your next turn',
+    'they gain haste until end of turn and draw a card',
+    'they gain haste until the end of turn',
     'they gain',
     'they gain banana',
     'they gain haste and draw a card',
@@ -91,14 +98,26 @@ export const EFFECT_MADE_TOKENS_GAIN_KEYWORDS = defineRule<Clauses>({
     if (!head.ok) return head;
     const gains = spanned(KEYWORD_WORDS)(ctx, head.pos);
     if (!gains.ok) return gains;
-    if (!endsSentence(ctx, gains.pos)) return fail(ctx, pos);
+    // D-633 (CR 611.2a): "... until end of turn": the keyword ends with the turn (the lowering gives the engine's `untilEndOfTurn`), where it was for good without it.
+    const until = optional(
+      sequence(
+        literal(' '),
+        family<IrDuration>('duration', { only: ['duration.until-end-of-turn'] }),
+      ),
+      null,
+    )(ctx, gains.pos);
+    if (!until.ok) return until;
+    const end = until.value === null ? gains.pos : until.pos;
+    if (!endsSentence(ctx, end)) return fail(ctx, pos);
+    const duration = until.value === null ? undefined : until.value[1];
     const words = gains.value.value;
     const clauses = words.map((name, i): Clauses[number] => {
       const keyword: IrArg = { kind: 'keywordName', name, span: gains.value.span, rule: id };
       const clause = makeClause(id, 'grantKeywordToMade', { keyword }, gains.value.span);
-      return i < words.length - 1 ? { ...clause, connector: 'and' } : clause;
+      const timed = duration === undefined ? clause : { ...clause, duration };
+      return i < words.length - 1 ? { ...timed, connector: 'and' } : timed;
     });
-    return { ok: true, value: clauses, pos: gains.pos };
+    return { ok: true, value: clauses, pos: end };
   },
 });
 
@@ -125,9 +144,15 @@ export const EFFECT_END_STEP_MADE_TOKENS = defineRule<Clauses>({
     'exile them at the beginning of the next end step',
     'Exile them at the beginning of the next end step',
     'exile those tokens at the beginning of the next end step',
+    // Prismari deck, group 2 (Manaform Hellkite): the one token the instruction before made.
+    'exile that token at the beginning of the next end step',
+    'Exile that token at the beginning of the next end step',
   ],
   rejects: [
     'exile it at the beginning of the next end step',
+    'exile that tokens at the beginning of the next end step',
+    'exile that creature at the beginning of the next end step',
+    'sacrifice that token at the beginning of the next end step',
     'sacrifice it at the beginning of your next end step',
     'sacrifice it at the beginning of the next end',
     'sacrifice them at the beginning of the next end step and draw a card',
@@ -143,7 +168,7 @@ export const EFFECT_END_STEP_MADE_TOKENS = defineRule<Clauses>({
     const r = spanned(
       pattern(
         new RegExp(
-          `(sacrifice (?:it|them|those tokens)|exile (?:them|those tokens)) at the beginning of the next end step${BOUNDARY}`,
+          `(sacrifice (?:it|them|those tokens)|exile (?:them|those tokens|that token)) at the beginning of the next end step${BOUNDARY}`,
           'iu',
         ),
       ),
@@ -198,7 +223,7 @@ export const EFFECT_LEAVE_MADE_TOKENS = defineRule<Clauses>({
 
 /**
  * `effect.create-of-those-tokens`: "create five of those tokens" (CR 111.4, 608.2c), as the replacement of "If this spell was kicked, create five of those tokens instead": more
- * tokens of the kind the instruction before it made. The lowering reads that instruction (`ctx.lastCopyToken`) and makes the engine's `createToken` of the same copy, that many.
+ * tokens of the kind the instruction before it made. The lowering reads that instruction (`ctx.lastToken`) and makes the engine's `createToken` of the same copy, that many.
  * Not read: "a", "one", a count of X, "of these tokens", "of that token".
  */
 export const EFFECT_CREATE_OF_THOSE_TOKENS = defineRule<Clauses>({

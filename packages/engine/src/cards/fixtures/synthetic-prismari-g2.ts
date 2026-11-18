@@ -528,13 +528,19 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
               types: ['creature'],
               subtypes: ['Elemental'],
               additive: true,
-              basePt: { power: 2, toughness: 1 },
               duration: 'untilEndOfTurn',
             },
             {
               kind: 'setColors',
               objects: { kind: 'this' },
               colors: ['U', 'R'],
+              duration: 'untilEndOfTurn',
+            },
+            {
+              kind: 'setPt',
+              objects: { kind: 'this' },
+              power: 2,
+              toughness: 1,
               duration: 'untilEndOfTurn',
             },
             {

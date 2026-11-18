@@ -69,7 +69,7 @@ describe('exile the card, copy it, cast the copy (CR 707.12)', () => {
     expect(d.purpose).toBe('cast');
     expect(d.zone).toBe('exile');
     expect(d.legal).toHaveLength(1);
-    expect(g.state.objects[d.legal[0] as string]?.cardCopy).toBe(true);
+    expect(g.state.objects[d.legal[0] as `o${number}`]?.cardCopy).toBe(true);
     g.act(0).chooseCards(d.legal[0] as string);
     g.act(0).chooseTargets({ player: 1 });
     g.expect.stack([`${OX} (ability)`, BOLT]);
@@ -187,7 +187,7 @@ describe('exile the card, copy it, cast the copy (CR 707.12)', () => {
     expect(exiled(g, DIVINATION)).toHaveLength(1);
     expect(graveyard(g, BOLT)).toHaveLength(1);
     expect(copies(g)).toHaveLength(1);
-    expect(g.state.objects[copies(g)[0]?.id as string]?.copyOf).toBe(
+    expect(g.state.objects[copies(g)[0]?.id as `o${number}`]?.copyOf).toBe(
       exiled(g, DIVINATION)[0]?.card,
     );
   });

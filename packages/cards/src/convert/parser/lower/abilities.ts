@@ -97,7 +97,7 @@ type CostedKeyword =
 function lowerEquipCosts(
   ability: IrKeyword,
   written: readonly IrCost[],
-  name: 'equip' | 'ward' = 'equip',
+  name: 'equip' | 'ward' | 'flashback' = 'equip',
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (kinds.length !== 2 || !kinds.includes('mana') || !kinds.includes('payLife')) {
@@ -134,6 +134,15 @@ function lowerCostedKeyword(
   // "Ward—{2}, Pay 2 life." (Gisa deck, D-467, CR 702.21a): a mana cost and a payment of life, each once.
   if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more], 'ward');
+  }
+  // "Flashback—{1}{U}, Pay 3 life." (Prismari deck group 2, D-633, CR 702.34a, 119.4): the alternative cost is a mana cost and a payment of life, each once.
+  if (
+    name === 'flashback' &&
+    only !== undefined &&
+    more.length === 1 &&
+    ability.params.length === 0
+  ) {
+    return lowerEquipCosts(ability, [only, ...more], 'flashback');
   }
   if (only === undefined || more.length > 0 || ability.params.length > 0) return failure(ability);
   // A cost the engine does not pay for this keyword is refused at the keyword, whatever else it is.

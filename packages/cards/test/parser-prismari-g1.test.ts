@@ -95,11 +95,20 @@ describe('Rite of Replication: kicker, a copy of target creature, five of those 
     });
   });
 
-  test('not read: "of those tokens" after a token that is not a copy, a count of one', () => {
-    NOT_READ(
+  test('"of those tokens" after a token that is not a copy is the same token (D-632: the token last made, copy or not)', () => {
+    const parsed = readAll(
       'Create a 1/1 white Soldier creature token. If ~ was kicked, create five of those tokens instead.',
       'sorcery',
     );
+    expect(parsed.spell?.effect).toMatchObject({
+      kind: 'conditional',
+      condition: { kind: 'kicked' },
+      effect: { kind: 'createToken', count: 5 },
+      else: { kind: 'createToken', count: 1 },
+    });
+  });
+
+  test('not read: a count of one', () => {
     NOT_READ(
       "Create a token that's a copy of target creature. If ~ was kicked, create one of those tokens instead.",
       'sorcery',
