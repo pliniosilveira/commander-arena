@@ -19,6 +19,15 @@ export interface SlotStatus {
   readonly ok: boolean;
 }
 
+/**
+ * A slot of one target is never "full" for the player: a click on another legal target takes the place of the chosen one. A copy of
+ * a spell starts with its current target chosen (CR 707.10c), and a slot that was answered once should not need the choice taken back
+ * first. A slot that divides something is left alone, as a swap would lose its shares (D-145).
+ */
+function swappable(spec: TargetChoiceSpec): boolean {
+  return spec.max === 1 && spec.divide === undefined && spec.keepsDivision !== true;
+}
+
 export function slotStatuses(
   specs: readonly TargetChoiceSpec[],
   picks: readonly ChosenTarget[],
@@ -76,7 +85,22 @@ export function toggleTarget(
       s.spec.legal.some((l) => sameTarget(l, target)) &&
       !repeatsOtherSlot(specs, picks, s.spec, target),
   );
-  if (open === undefined) return picks;
+  if (open === undefined) {
+    const swap = slotStatuses(specs, picks).find(
+      (s) =>
+        s.full &&
+        swappable(s.spec) &&
+        (specId === undefined || s.spec.specId === specId) &&
+        s.spec.legal.some((l) => sameTarget(l, target)) &&
+        !repeatsOtherSlot(specs, picks, s.spec, target),
+    );
+    if (swap === undefined) return picks;
+    const replacement: ChosenTarget =
+      target.kind === 'object'
+        ? { kind: 'object', id: target.id, specId: swap.spec.specId }
+        : { kind: 'player', seat: target.seat, specId: swap.spec.specId };
+    return [...picks.filter((p) => p.specId !== swap.spec.specId), replacement];
+  }
   const chosen: ChosenTarget =
     target.kind === 'object'
       ? { kind: 'object', id: target.id, specId: open.spec.specId }
@@ -207,7 +231,7 @@ export function clickableTargets(
   };
   // A slot that takes one target for each player stays open to a swap (D-149).
   for (const s of slotStatuses(specs, picks)) {
-    if (!s.full || s.spec.onePerGroup === true) s.spec.legal.forEach(add);
+    if (!s.full || s.spec.onePerGroup === true || swappable(s.spec)) s.spec.legal.forEach(add);
   }
   picks.forEach(add);
   return { objects, seats };

@@ -184,9 +184,10 @@ describe('model: targets', () => {
       { kind: 'chooseTargets', targets: [{ kind: 'player', seat: 1, specId: 's0' }] },
       { kind: 'cancel' },
     ]);
-    // The only slot is full, so a further pick is ignored and nothing is badged.
+    // The only slot takes one target: a click on another legal target changes the pick (a copy's target is chosen already).
     m.interaction.onObject(o(10));
-    expect(h.model().interaction.badge(o(10))).toBeNull();
+    expect(h.model().interaction.badge(o(10))).toBe('Target');
+    expect(h.model().interaction.selectedSeats).toEqual(new Set());
   });
 });
 
