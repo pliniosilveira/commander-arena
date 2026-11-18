@@ -17,7 +17,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 
 1. **Intake.** Read the owner's message or the GitHub issue and list the cards. Get each card's Oracle text and what blocks it (see the table above; never invent either). Group the cards by missing capability (`closestRule`, `needs`, the shape of `stoppedAt`) so one change resolves several. A card already supported by the current `PARSER_VERSION` goes straight to step 9.
 2. **Research.**
-   - The card and its rulings: from the owner or the issue (text) and Scryfall (rulings, through the `Scryfall lookup` workflow of D-294 or the owner). A ruling you could not fetch is marked unverified.
+   - The card and its rulings: from the owner or the issue (text) and Scryfall (rulings: the rulings comment of a deck support issue, read with `pnpm corpus:rulings-from-comment`; otherwise the `Scryfall lookup` workflow or the owner). A ruling you could not fetch is marked unverified.
    - Every relevant CR rule: `pnpm rule <number>` and `pnpm rule --search <words>`. Never cite a rule from memory (see the lessons).
    - What exists: `packages/engine/src/ast/types.ts` and `ast/features.ts` (the nodes and the supported features), the parser rule files with their `examples` and `rejects`, and the diagnostics of the card itself. `docs/RULES_COVERAGE.md` and `docs/ROADMAP.md` (known limits: the gap may already be described there).
    - The applied Update Bulletins in `docs/rules/RULES_VERSION.md`.
