@@ -243,7 +243,7 @@ describe('paying a cost with it', () => {
   });
 });
 
-describe('what a mana ability may say (D-609)', () => {
+describe('what a mana ability may say (D-610)', () => {
   const messages = (card: ReturnType<typeof syntheticCard>) =>
     validateCard(card)
       .map((m) => m.message)

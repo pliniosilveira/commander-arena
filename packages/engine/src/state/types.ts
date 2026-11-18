@@ -110,7 +110,7 @@ export interface GameObject {
   /** The object an Aura or Equipment is attached to (CR 303.4, 301.5). */
   readonly attachedTo: ObjectId | null;
   /**
-   * The player an Aura that enchants a player is attached to ("Enchant player", CR 303.4, 303.4b; issue 160, D-613). Absent for everything else, and for an Aura attached to an
+   * The player an Aura that enchants a player is attached to ("Enchant player", CR 303.4, 303.4b; issue 160, D-614). Absent for everything else, and for an Aura attached to an
    * object (`attachedTo`): an Aura is attached to one or the other, never both (CR 303.4d). A new object (a zone change, CR 400.7) never has it.
    */
   readonly attachedToPlayer?: SeatId;
@@ -1017,7 +1017,7 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
-   * "Populate" (`populate`, CR 701.36, D-611): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with
+   * "Populate" (`populate`, CR 701.36, D-612): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with
    * two or more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
    */
   | { readonly kind: 'populate'; readonly chosen: readonly ObjectId[] | null }

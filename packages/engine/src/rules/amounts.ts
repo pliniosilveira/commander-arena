@@ -168,7 +168,7 @@ export function opponentsWithMore(
   state: GameState,
   seat: SeatId,
   stat: PlayerStat,
-  /** D-610: count the opponents whose stat is less than `seat`'s instead. */
+  /** D-611: count the opponents whose stat is less than `seat`'s instead. */
   fewer = false,
 ): number {
   const mine = playerStatOf(state, seat, stat);

@@ -63,7 +63,7 @@ export const KEYWORD_ENCHANT = defineRule<readonly IrKeyword[]>({
 });
 
 /**
- * `keyword.enchant-player`: "Enchant player" (issue 160, D-613, CR 702.5a, 303.4): the Aura spell targets a player and the Aura enchants that player. The engine's `enchant`
+ * `keyword.enchant-player`: "Enchant player" (issue 160, D-614, CR 702.5a, 303.4): the Aura spell targets a player and the Aura enchants that player. The engine's `enchant`
  * keyword with `player`. Not read: "Enchant opponent", "Enchant players", "Enchant player's", "Enchant player." and other words after it.
  */
 export const KEYWORD_ENCHANT_PLAYER = defineRule<readonly IrKeyword[]>({

@@ -1,5 +1,5 @@
 /**
- * Lowering of "Each opponent attacking that player untaps all nonland permanents they control." (issue 160, D-613, CR 701.26a): in the body of "Whenever enchanted player is
+ * Lowering of "Each opponent attacking that player untaps all nonland permanents they control." (issue 160, D-614, CR 701.26a): in the body of "Whenever enchanted player is
  * attacked" only. One trigger is for one declaration of attackers, and one player declares them: that player is the engine's `triggerPlayer`. The nonland permanents they
  * control untap; when the attacking player is the controller of the Aura, who is not their own opponent, it untaps the same permanents the sentence before it did.
  */

@@ -129,7 +129,7 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
         ? `Mana ability ${o.abilityIndex + 1}`
         : manaChoiceLabel(o.abilityIndex, o.color, o.combination);
     // D-222: one item for each permanent a cost "Sacrifice a Spirit" may give up.
-    // D-609: one item for each permanent a cost "Tap an untapped creature you control" may tap.
+    // D-610: one item for each permanent a cost "Tap an untapped creature you control" may tap.
     const what =
       o.sacrifice !== undefined
         ? `${base}, sacrificing ${index === undefined ? 'it' : nameOf(index, o.sacrifice)}`

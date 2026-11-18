@@ -876,7 +876,7 @@ export function objectSelectorOf(
   options: RefOptions = {},
 ): LowerResult<ObjectSelector> {
   // D-517: "those creatures" after "tap all creatures target player controls": the group the text named, as it was lowered.
-  // Only the plural pronoun ("those creatures") names the group back: "it" after "each creature" is one of them, which the engine cannot name (issue 160, D-611).
+  // Only the plural pronoun ("those creatures") names the group back: "it" after "each creature" is one of them, which the engine cannot name (issue 160, D-612).
   if (options.eachMention === true && noun.det === 'anaphor' && noun.plural) {
     const mentioned = noun.ref === undefined ? undefined : ctx.eachMentions.get(noun.ref);
     if (mentioned !== undefined) return { ok: true, value: mentioned, rule: noun.rule };

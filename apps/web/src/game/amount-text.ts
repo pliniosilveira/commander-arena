@@ -112,7 +112,7 @@ const STAT_WORDS: Readonly<Record<'power' | 'toughness' | 'manaValue', string>> 
   manaValue: 'mana value',
 };
 
-/** "opponents with more life than you": what `opponentsWithMore` counts (D-610: `fewer`, with less). */
+/** "opponents with more life than you": what `opponentsWithMore` counts (D-611: `fewer`, with less). */
 function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
   const more = fewer ? 'fewer' : 'more';
   switch (stat) {

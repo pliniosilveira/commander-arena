@@ -1,5 +1,5 @@
 /**
- * Static rule of issue 160 (D-612): "Creatures with power less than ~'s power can't block creatures you control." (Champion of Lambholt, CR 509.1b, 208.1). The engine's
+ * Static rule of issue 160 (D-613): "Creatures with power less than ~'s power can't block creatures you control." (Champion of Lambholt, CR 509.1b, 208.1). The engine's
  * `cantBeBlockedBy` of the creatures its controller controls, the blockers being the creatures whose power is less than the power of the permanent with the ability, as it
  * is now (`powerLessThanSource`).
  */

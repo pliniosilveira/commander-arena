@@ -1,4 +1,4 @@
-// "Creatures with power less than ~'s power can't block creatures you control." (issue 160, D-612)
+// "Creatures with power less than ~'s power can't block creatures you control." (issue 160, D-613)
 // Pins: CR 509.1b (a creature can't block a creature it is barred from blocking: read as blockers are declared), CR 613.11 (a rules-modifying effect, read where the rule acts),
 // CR 208.1 (power as it is now: with every effect and counter). Cards are SYNTHETIC (src/cards/fixtures/synthetic-block-power.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';

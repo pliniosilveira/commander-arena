@@ -265,7 +265,7 @@ function lowerManaAbility(
   const lives = costs.value.filter((c) => c.kind === 'payLife').length;
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
-  // D-609 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
+  // D-610 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
   const tapsOther = costs.value.filter((c) => c.kind === 'tapPermanents');
   // CR 605.3b, 701.21a (stage P63, D-216): the permanent itself ("Sacrifice this artifact: Add ...") or one of a kind the controller has ("Sacrifice a Spirit:
   // Add {R}."), one only: the engine chooses it as the ability is activated, or the payment names it.
@@ -567,7 +567,7 @@ function prepare(
       : []),
   ]);
   if (blocked !== null) return blocked;
-  // D-609: a cost that taps permanents may come with a mana cost and {T} (the permanents are chosen before the mana is paid); the engine still
+  // D-610: a cost that taps permanents may come with a mana cost and {T} (the permanents are chosen before the mana is paid); the engine still
   // refuses a second one and Crew (`activationCostIssues`).
   // The engine pays one sacrifice and one discard (`breakDown` in the engine's
   // rules/activate-costs.ts): an ability with two of either is never offered.

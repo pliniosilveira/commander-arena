@@ -378,7 +378,7 @@ describe('what a card may say', () => {
     }
   });
 
-  test('a tap cost may be combined with mana (D-609), and not with a crew cost or a second tap cost', () => {
+  test('a tap cost may be combined with mana (D-610), and not with a crew cost or a second tap cost', () => {
     const tap = { kind: 'tapPermanents', filter: { types: ['artifact'] }, count: 1 } as const;
     expect(
       messages(withAbilities(LEDGER, [activated([{ kind: 'mana', symbols: ['1'] }, tap])])),

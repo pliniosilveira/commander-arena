@@ -449,7 +449,7 @@ function activationCostIssues(
     tappingPermanents > 1 ||
     (tappingPermanents === 1 && costs.some((c) => c.kind === 'tapCreatures'))
   ) {
-    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the mana, the sacrifice and the discard (D-609: next to a mana
+    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the mana, the sacrifice and the discard (D-610: next to a mana
     // cost too, the player chooses them before paying the mana); it has no place for a second one or for a crew cost.
     out.push({
       path,

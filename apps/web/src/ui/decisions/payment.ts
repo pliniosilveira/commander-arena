@@ -17,7 +17,7 @@ export interface Tap {
   readonly combination?: readonly ManaColor[];
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): chosen when there is more than one to give up. */
   readonly sacrifice?: ObjectId;
-  /** The permanent a cost "Tap an untapped creature you control" taps (D-609): chosen when there is more than one to tap. */
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-610): chosen when there is more than one to tap. */
   readonly tapped?: ObjectId;
 }
 
@@ -39,7 +39,7 @@ export function asksSacrifice(source: Source): boolean {
   return (source.sacrifices?.length ?? 0) > 1;
 }
 
-/** True when the player must say which permanent the source's cost taps ("{T}, Tap an untapped creature you control: Add ...", D-609): the engine offers more than one. */
+/** True when the player must say which permanent the source's cost taps ("{T}, Tap an untapped creature you control: Add ...", D-610): the engine offers more than one. */
 export function asksTapped(source: Source): boolean {
   return (source.tappables?.length ?? 0) > 1;
 }
@@ -113,7 +113,7 @@ export function setTapSacrifice(
 }
 
 /**
- * Taps the source's ability tapping `tapped` too (D-609: "{T}, Tap an untapped creature you control: Add ..."). The permanent must be one the engine offered for that ability;
+ * Taps the source's ability tapping `tapped` too (D-610: "{T}, Tap an untapped creature you control: Add ..."). The permanent must be one the engine offered for that ability;
  * anything else changes nothing.
  */
 export function setTapTapped(

@@ -126,7 +126,7 @@ export function manaSacrificeChoice(
 }
 
 /**
- * The kind of permanent the ability's cost taps besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-609, CR 118.3, 605.3b,
+ * The kind of permanent the ability's cost taps besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-610, CR 118.3, 605.3b,
  * 701.26a), or null when the cost taps nothing else.
  */
 export function tapFilterOf(ability: ManaAbility): ObjectFilter | null {
@@ -135,7 +135,7 @@ export function tapFilterOf(ability: ManaAbility): ObjectFilter | null {
 }
 
 /**
- * The permanents the player may choose to tap for the cost of a mana ability that taps a kind of permanent (D-609, CR 118.3, 302.6: summoning sickness holds back only a
+ * The permanents the player may choose to tap for the cost of a mana ability that taps a kind of permanent (D-610, CR 118.3, 302.6: summoning sickness holds back only a
  * creature's own {T} ability, so a creature that came under control this turn may be tapped): the untapped ones the seat controls that match. The source is one of them
  * only when its own cost leaves it untapped (no {T}): the {T} is paid first, so the source is tapped by then. Empty for an ability that taps nothing else. `reserved` are
  * permanents the caller keeps out (the other sources a payment plan taps).
@@ -156,7 +156,7 @@ export function manaTapCandidates(
 }
 
 /**
- * The permanent a mana ability taps as its cost (D-609): `preferred` when it is a legal choice, otherwise the engine picks the one the player would tap first: a creature
+ * The permanent a mana ability taps as its cost (D-610): `preferred` when it is a legal choice, otherwise the engine picks the one the player would tap first: a creature
  * that makes no mana of its own, then the weakest, then the oldest. That default is what the payment planner uses (a player who taps by hand names the permanent).
  */
 export function manaTapChoice(
@@ -283,7 +283,7 @@ export function physicalRefusal(
   if (kind !== null && sacrificeCandidates(state, seat, obj.id, kind).length === 0) {
     return `you control nothing to sacrifice for ${name}`;
   }
-  // CR 118.3 (D-609): "Tap an untapped creature you control" needs one besides the source.
+  // CR 118.3 (D-610): "Tap an untapped creature you control" needs one besides the source.
   if (
     tapFilterOf(ability) !== null &&
     manaTapCandidates(state, seat, obj.id, ability).length === 0
@@ -309,9 +309,9 @@ export function payManaAbilityCosts(
   ability: ManaAbility,
   /** The permanent a cost "Sacrifice a Spirit" gives up, when the player named it (D-216); the engine chooses otherwise. */
   sacrifice?: ObjectId,
-  /** The permanent a cost "Tap an untapped creature you control" taps, when the player named it (D-609); the engine chooses otherwise. */
+  /** The permanent a cost "Tap an untapped creature you control" taps, when the player named it (D-610); the engine chooses otherwise. */
   tapped?: ObjectId,
-  /** Permanents the engine's choice leaves alone (the other sources of a payment plan, D-609). */
+  /** Permanents the engine's choice leaves alone (the other sources of a payment plan, D-610). */
   reserved?: ReadonlySet<ObjectId>,
 ): { state: GameState; events: GameEvent[] } {
   let next = state;
@@ -323,7 +323,7 @@ export function payManaAbilityCosts(
     // for mana" reads it (the sacrifice below, as a Treasure's, is part of the same ability).
     events.push({ kind: 'tappedForMana', object: id, seat });
   }
-  // CR 701.26a (D-609): the permanent tapped as a cost is tapped, not tapped for mana.
+  // CR 701.26a (D-610): the permanent tapped as a cost is tapped, not tapped for mana.
   if (tapFilterOf(ability) !== null) {
     const given = manaTapChoice(next, seat, id, ability, tapped, reserved);
     if (given !== null) {

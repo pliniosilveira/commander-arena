@@ -79,7 +79,7 @@ export function PermanentPanel({
   const untapChoice = isUntapChoice(decision);
   // D-370 (CR 701.47a): the Army an amass puts its counters on.
   const amass = isAmass(decision);
-  // D-611 (CR 701.36a): the creature token a populate copies.
+  // D-612 (CR 701.36a): the creature token a populate copies.
   const populate = isPopulate(decision);
   // D-407 (CR 701.68a): the creature a blight cost puts -1/-1 counters on.
   const blight = isBlight(decision);

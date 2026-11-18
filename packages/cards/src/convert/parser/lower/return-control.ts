@@ -1,5 +1,5 @@
 /**
- * Lowering of "Each player gains control of all creatures they own." (issue 160, D-612, CR 613.1b): the engine's `returnControlToOwners` of every creature on the
+ * Lowering of "Each player gains control of all creatures they own." (issue 160, D-613, CR 613.1b): the engine's `returnControlToOwners` of every creature on the
  * battlefield.
  */
 import type { IrClause } from '../ir/types';

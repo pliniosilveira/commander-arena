@@ -156,7 +156,7 @@ function planWithout(
     ...(reserve ? { reserve } : {}),
   });
   if (plan === null) return null;
-  // D-609: a source whose cost taps another permanent needs one that no other source of the plan taps; plan again without a source that has none.
+  // D-610: a source whose cost taps another permanent needs one that no other source of the plan taps; plan again without a source that has none.
   const noTap = tapConflicts(state, seat, plan);
   if (noTap !== null) {
     if (round >= MAX_DEVOTION_ROUNDS) return null;
@@ -184,7 +184,7 @@ function planWithout(
 }
 
 /**
- * D-609 (CR 118.3, 605.3b): the sources of a plan whose cost taps another permanent ("{T}, Tap an untapped creature you control") that have none left to tap: the plan taps
+ * D-610 (CR 118.3, 605.3b): the sources of a plan whose cost taps another permanent ("{T}, Tap an untapped creature you control") that have none left to tap: the plan taps
  * every one of its sources, so those are not available, and a permanent tapped for one such cost is not available for another. Null when every such source has one,
  * else the keys (`object#abilityIndex`) of those that do not. The permanents are the engine's default choice (`manaTapChoice`), which is what `applyPaymentPlan` pays.
  */
@@ -293,7 +293,7 @@ export function payableSources(
     if (!ability) return { object: s.object, abilityIndex: s.abilityIndex };
     // D-222 (CR 601.2b): the permanents a cost "Sacrifice a Spirit" may give up, when there is a choice.
     const gives = manaSacrificeCandidates(state, seat, s.object, ability);
-    // D-609: the permanents a cost "Tap an untapped creature you control" may tap, when there is a choice.
+    // D-610: the permanents a cost "Tap an untapped creature you control" may tap, when there is a choice.
     const taps = manaTapCandidates(state, seat, s.object, ability);
     const sacrifices = {
       ...(gives.length > 1 ? { sacrifices: [...gives] } : {}),

@@ -69,7 +69,7 @@ export type PriorityOption =
        */
       readonly sacrifice?: ObjectId;
       /**
-       * For a mana ability whose cost taps an untapped permanent besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-609, CR 601.2b)
+       * For a mana ability whose cost taps an untapped permanent besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-610, CR 601.2b)
        * when the player has more than one to tap: one option for each permanent they may tap, this one. Absent otherwise.
        */
       readonly tapped?: ObjectId;
@@ -215,7 +215,7 @@ export interface PayManaDecision extends DecisionBase {
      */
     readonly sacrifices?: readonly ObjectId[];
     /**
-     * Set when the ability's cost taps an untapped permanent besides the source (D-609, CR 601.2b) and the player has more than one to tap: the permanents they may
+     * Set when the ability's cost taps an untapped permanent besides the source (D-610, CR 601.2b) and the player has more than one to tap: the permanents they may
      * choose. A manual tap of the source must name one of them as `tapped`; `payAuto` taps the one the planner prefers.
      */
     readonly tappables?: readonly ObjectId[];
@@ -431,7 +431,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back.
    * For `'empowerJace'` (D-201, CR 701.71a: "Choose a Jace planeswalker token you control"): `seat`, the player who empowers, chooses which Jace token of
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
-   * For `'populate'` (D-611, CR 701.36a: "Choose a creature token you control"): `seat`, the player who populates, chooses which creature token of `legal` (all they control)
+   * For `'populate'` (D-612, CR 701.36a: "Choose a creature token you control"): `seat`, the player who populates, chooses which creature token of `legal` (all they control)
    * is copied; exactly one. Asked only with two or more.
    * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
    * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the

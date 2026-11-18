@@ -170,7 +170,7 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for an enchantment card, reveal it, then shuffle and put that card on top',
     'search your library for an instant or sorcery card, reveal it, then shuffle and put it on top of your library',
     'search your library for a card, then shuffle and put that card on top',
-    // Issue 160 (D-610): "up to X", with X defined right after the noun.
+    // Issue 160 (D-611): "up to X", with X defined right after the noun.
     'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle',
     'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
   ],
@@ -200,7 +200,7 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
       )(ctx, pos);
       if (!head.ok) return head;
       const cards = head.value[1];
-      // Issue 160 (D-610, CR 107.3c): "up to X ... cards, where X is the number of tapped creatures you control": the definition comes right after the noun.
+      // Issue 160 (D-611, CR 107.3c): "up to X ... cards, where X is the number of tapped creatures you control": the definition comes right after the noun.
       let after = head.pos;
       let amount: IrAmount | null = null;
       if (cards.count?.kind === 'x') {

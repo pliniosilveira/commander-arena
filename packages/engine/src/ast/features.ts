@@ -205,7 +205,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
     'exchangeControl',
-    // D-612: "each player gains control of all creatures they own" (CR 613.1b).
+    // D-613: "each player gains control of all creatures they own" (CR 613.1b).
     'returnControlToOwners',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
@@ -282,7 +282,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'empowerJace',
     // D-367: "amass Zombies 1" (CR 701.47a).
     'amass',
-    // D-611: "Populate" (CR 701.36).
+    // D-612: "Populate" (CR 701.36).
     'populate',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
@@ -541,7 +541,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // {T}, "Sacrifice this permanent" (a Treasure, CR 111.10a) and mana ({1}, {T}: a Signet). A mana
   // cost is paid from the pool, or by auto-pay from sources that have no mana cost themselves.
   // D-099: "Pay N life" too (CR 119.4, 605.3), and the mana cost may use hybrid symbols (CR 107.4e).
-  // D-609: `tapPermanents` ("{T}, Tap an untapped creature you control: Add one mana of any color"), one permanent, chosen as the ability is activated.
+  // D-610: `tapPermanents` ("{T}, Tap an untapped creature you control: Add one mana of any color"), one permanent, chosen as the ability is activated.
   manaAbilityCostKinds: ['tap', 'sacrifice', 'mana', 'payLife', 'mill', 'tapPermanents'],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [

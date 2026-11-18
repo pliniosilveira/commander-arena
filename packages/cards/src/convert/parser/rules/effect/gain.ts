@@ -276,7 +276,7 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
 });
 
 /**
- * `effect.gain-keyword-those`: "those creatures gain vigilance until end of turn" (issue 160, D-611, CR 611.2a, 611.2c, 613.1f): the group an instruction before it named ("Put a
+ * `effect.gain-keyword-those`: "those creatures gain vigilance until end of turn" (issue 160, D-612, CR 611.2a, 611.2c, 613.1f): the group an instruction before it named ("Put a
  * +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn."), gaining keywords. The group is the one the text named, as the lowering reads it.
  */
 export const EFFECT_GAIN_KEYWORD_THOSE = defineRule<Clauses>({

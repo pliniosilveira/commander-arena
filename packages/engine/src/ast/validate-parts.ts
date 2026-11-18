@@ -2078,7 +2078,7 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       break;
     case 'discard':
       if (cost.hand !== undefined) {
-        // D-610: "Discard your hand": the whole hand, so no count, filter or name narrows it.
+        // D-611: "Discard your hand": the whole hand, so no count, filter or name narrows it.
         if (
           cost.hand !== true ||
           cost.count !== 0 ||
@@ -3203,7 +3203,7 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
-  // D-610: "up to X": an amount read as the search begins; the cards found all go to one place.
+  // D-611: "up to X": an amount read as the search begins; the cards found all go to one place.
   if (e.maxAmount !== undefined) {
     checkAmount(e.maxAmount, `${path}.maxAmount`, scope, out);
     if (
@@ -3768,7 +3768,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     }
     case 'returnControlToOwners':
-      // CR 613.1b (D-612): a group, a target or the permanent with the ability.
+      // CR 613.1b (D-613): a group, a target or the permanent with the ability.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'exchangeControl': {
@@ -4101,7 +4101,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'populate':
-      // CR 701.36 (D-611): no fields.
+      // CR 701.36 (D-612): no fields.
       break;
     case 'amass':
       // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).

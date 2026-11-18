@@ -1,4 +1,4 @@
-// "Enchant player. Whenever enchanted player is attacked, ..." (issue 160, D-613): an Aura that enchants a player.
+// "Enchant player. Whenever enchanted player is attacked, ..." (issue 160, D-614): an Aura that enchants a player.
 // Pins: CR 303.4 and 303.4b (an Aura enters attached to an object or player; the player is enchanted), CR 303.4a and 702.5a (the enchant ability defines the Aura spell's target:
 // a player), CR 303.4c and 704.5m (an Aura on an illegal player, or on a player who left the game, goes to the graveyard), CR 702.16c (a player with protection can't be
 // enchanted by an Aura with that quality), CR 303.4e (the Aura's controller is not the enchanted player), CR 508.1 and 603.2 (attackers are declared together: the ability
@@ -191,7 +191,7 @@ describe('an Aura on a player that can no longer be enchanted goes to the gravey
   });
 });
 
-describe('what a card may say (D-613)', () => {
+describe('what a card may say (D-614)', () => {
   const card = (abilities: unknown) => {
     const base = syntheticCard(TITHES);
     const face = base.faces[0];

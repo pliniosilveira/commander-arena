@@ -1291,7 +1291,7 @@ function runEffect(
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
     case 'populate':
-      // CR 701.36 (D-611): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
+      // CR 701.36 (D-612): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
       return done(state, [], [{ kind: 'populate', chosen: null }]);
 
     case 'amass':
@@ -2166,7 +2166,7 @@ function runEffect(
           [],
           resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
             kind: 'search' as const,
-            // D-610 (CR 608.2c): "up to X" is read as the search begins.
+            // D-611 (CR 608.2c): "up to X" is read as the search begins.
             search:
               effect.maxAmount === undefined
                 ? effect
@@ -2374,7 +2374,7 @@ function runEffect(
       return runGainControl(state, effect, ctx, targets);
 
     case 'returnControlToOwners':
-      // CR 613.1b, 611.2a (D-612): one layer 2 effect for each owner (`rules/control-effects.ts`).
+      // CR 613.1b, 611.2a (D-613): one layer 2 effect for each owner (`rules/control-effects.ts`).
       return runReturnControl(state, effect, ctx, targets);
 
     case 'exchangeControl':

@@ -1,5 +1,5 @@
 /**
- * Trigger rule of issue 160 (D-613): "Whenever enchanted player is attacked" (Curse of Bounty, CR 303.4m, 508.1, 508.1b, 603.2): once for the declaration of attackers in
+ * Trigger rule of issue 160 (D-614): "Whenever enchanted player is attacked" (Curse of Bounty, CR 303.4m, 508.1, 508.1b, 603.2): once for the declaration of attackers in
  * which at least one creature was declared as attacking the player the Aura enchants (as a player: an attack on their planeswalker is not one on them). The engine's
  * `attackBatch` with `attackedEnchantedPlayer`; whoever declares the attackers.
  */

@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARD FOR AN AURA THAT ENCHANTS A PLAYER (issue 160, D-613). NOT A REAL MAGIC CARD.
+ * SYNTHETIC CARD FOR AN AURA THAT ENCHANTS A PLAYER (issue 160, D-614). NOT A REAL MAGIC CARD.
  *
  * Invented for the tests of what the real card needs from the engine: "Enchant player. Whenever enchanted player is attacked, untap all nonland permanents you control. Each
  * opponent attacking that player untaps all nonland permanents they control." (the engine's `enchant` keyword with `player`, and an `attackBatch` trigger with

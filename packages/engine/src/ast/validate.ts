@@ -120,7 +120,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
       }
-      // D-613: "Enchant player": the Aura enchants a player; the filter of permanents says nothing then.
+      // D-614: "Enchant player": the Aura enchants a player; the filter of permanents says nothing then.
       if (k.player !== undefined) {
         if (k.player !== true) issue(out, `${path}.player`, 'player is true when present');
         else if (k.filter !== undefined && k.filter !== null && Object.keys(k.filter).length > 0) {

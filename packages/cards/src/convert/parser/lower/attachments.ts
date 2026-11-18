@@ -38,7 +38,7 @@ export function lowerEnchant(ability: IrKeyword): LowerResult<readonly Ability[]
   };
 }
 
-/** "Enchant player" (issue 160, D-613, CR 702.5a): the engine's `enchant` keyword of a player, whose filter of permanents is empty. */
+/** "Enchant player" (issue 160, D-614, CR 702.5a): the engine's `enchant` keyword of a player, whose filter of permanents is empty. */
 export function lowerEnchantPlayer(ability: IrKeyword): LowerResult<readonly Ability[]> {
   const missing = missingFeatures(['ability:keyword', 'keyword:enchant']);
   if (missing.length > 0) {

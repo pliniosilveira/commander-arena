@@ -75,7 +75,7 @@ describe('keyword.enchant: "Enchant <permanent phrase>" (CR 702.5a)', () => {
     expect(abilitiesOf('Enchant Island', 'Aura')).toEqual([enchant({ subtypes: ['Island'] })]);
   });
 
-  test('"Enchant player" is the engine\'s enchant keyword of a player, with an empty filter (D-613)', () => {
+  test('"Enchant player" is the engine\'s enchant keyword of a player, with an empty filter (D-614)', () => {
     expect(abilitiesOf('Enchant player', 'Aura')).toEqual([
       { kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } },
     ]);

@@ -486,7 +486,7 @@ interface Candidate {
   readonly controller: SeatId;
   /** What it is attached to, as it was when the event happened (D-111, `attached` subjects). */
   readonly attachedTo: ObjectId | null;
-  /** The player an Aura that enchants a player is attached to (D-613). */
+  /** The player an Aura that enchants a player is attached to (D-614). */
   readonly attachedToPlayer?: SeatId;
   /** Triggered abilities with their index among the object's abilities. */
   readonly triggered: readonly { readonly index: number; readonly ability: TriggeredAbility }[];
@@ -677,7 +677,7 @@ function matches(
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
-      // D-613 (CR 303.4m, 508.1b): "Whenever enchanted player is attacked": the Aura's player was declared as attacked, as a player and not through a planeswalker.
+      // D-614 (CR 303.4m, 508.1b): "Whenever enchanted player is attacked": the Aura's player was declared as attacked, as a player and not through a planeswalker.
       if (
         trigger.attackedEnchantedPlayer === true &&
         (candidate.attachedToPlayer === undefined ||

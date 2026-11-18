@@ -202,7 +202,7 @@ export interface ObjectView {
    * 303.4b). The UI draws it on or under that permanent. Absent when it is attached to nothing.
    */
   readonly attachedTo?: ObjectId;
-  /** For an Aura that enchants a player (D-613): the player it is attached to. */
+  /** For an Aura that enchants a player (D-614): the player it is attached to. */
   readonly attachedToPlayer?: SeatId;
   /**
    * For a permanent: the Auras and Equipment on the battlefield attached to it, oldest first. Absent

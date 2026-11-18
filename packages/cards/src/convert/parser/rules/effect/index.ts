@@ -928,10 +928,10 @@ export const EFFECT_RULES = [
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
-  // Issue 160 (D-611): "Populate".
+  // Issue 160 (D-612): "Populate".
   ...POPULATE_EFFECT_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,
-  // Issue 160 (D-612): "Each player gains control of all creatures they own."
+  // Issue 160 (D-613): "Each player gains control of all creatures they own."
   ...RETURN_CONTROL_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".

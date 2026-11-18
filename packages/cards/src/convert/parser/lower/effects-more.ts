@@ -91,7 +91,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     if (sharing.length > 0) return { ok: false, needs: sharing, at: cards.span, rule: cards.rule };
     const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
-    // D-610: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
+    // D-611: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
     const xCount = cards.count?.kind === 'x';
     const maxAmount = arg(clause, 'maxAmount');
     if (xCount !== (maxAmount !== undefined)) return failure(clause);

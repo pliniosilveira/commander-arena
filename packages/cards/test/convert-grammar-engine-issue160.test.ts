@@ -1,4 +1,4 @@
-// The cards of issue 160 (the Token Triumph precon), run as written (D-609 and the following entries). Each group imports SYNTHETIC cards through the grammar (never through a
+// The cards of issue 160 (the Token Triumph precon), run as written (D-610 and the following entries). Each group imports SYNTHETIC cards through the grammar (never through a
 // fixture), defines them in an engine scenario and plays them through applyAction. Every card name starts with "SYNTHETIC"; the wording of each text is that of the real card
 // the issue names, taken from the card data of the issue's comment. No real card's text is claimed beyond that.
 import { getView } from '@commander-arena/engine';
@@ -33,7 +33,7 @@ const tokens = (g: ScenarioGame, name: string, seat: 0 | 1 = 0) =>
     .map((id) => g.state.objects[id])
     .filter((o) => o?.token?.characteristics.name === name && o.controller === seat);
 
-// ---- Group 1: "Tap an untapped creature you control" next to mana and in a mana ability (D-609).
+// ---- Group 1: "Tap an untapped creature you control" next to mana and in a mana ability (D-610).
 
 const EVANGEL = parsed(
   'SYNTHETIC Parsed Evangel',
@@ -53,7 +53,7 @@ const SETTLEMENT = parsed(
   '{T}: Add {C}.\n{T}, Tap an untapped creature you control: Add one mana of any color.',
 );
 
-describe('"Tap an untapped creature you control" in the cost of an ability (D-609)', () => {
+describe('"Tap an untapped creature you control" in the cost of an ability (D-610)', () => {
   test('{1}, {T} and a creature: the creature is tapped first, the mana is paid, a Saproling is made', () => {
     const g = main((b) =>
       b.define(EVANGEL).battlefield(EVANGEL.name).battlefield(BEARS).battlefield('Forest'),
@@ -98,7 +98,7 @@ describe('"Tap an untapped creature you control" in the cost of an ability (D-60
   });
 });
 
-// ---- Group 2: tokens counted by an amount, and a spell that shuffles itself into its owner's library (D-610).
+// ---- Group 2: tokens counted by an amount, and a spell that shuffles itself into its owner's library (D-611).
 
 const lifeGame = (life: number, ...extra: ((b: Builder) => Builder)[]) => {
   let b = scenario()
@@ -137,7 +137,7 @@ const ZENITH = parsed(
   { manaCost: '{X}{W}{W}{W}', colors: ['W'] },
 );
 
-describe('X tokens counted by what the text says (D-610)', () => {
+describe('X tokens counted by what the text says (D-611)', () => {
   test('"where X is your life total": five tokens at 5 life, read as the spell resolves (CR 107.3c, 119.1)', () => {
     const g = lifeGame(5, (b) => b.define(CAT_RITE).hand(CAT_RITE.name).battlefield('Plains'));
     g.act(0).cast(CAT_RITE.name, { pay: true });
@@ -183,7 +183,7 @@ describe('X tokens counted by what the text says (D-610)', () => {
   });
 });
 
-// ---- Group 3: damage-counted tokens and a draw for each opponent with fewer creatures (D-610).
+// ---- Group 3: damage-counted tokens and a draw for each opponent with fewer creatures (D-611).
 
 const NEST = parsed(
   'SYNTHETIC Parsed Nest',
@@ -198,7 +198,7 @@ const READER = parsed(
   { manaCost: '{G}', colors: ['G'], power: '1', toughness: '1' },
 );
 
-describe('damage-counted tokens and "for each opponent who controls fewer creatures" (D-610)', () => {
+describe('damage-counted tokens and "for each opponent who controls fewer creatures" (D-611)', () => {
   test('a Nest dealt 3 damage makes 3 Insects, even when the damage kills it (CR 120.3, 603.2)', () => {
     const g = main((b) =>
       b.define(NEST).battlefield(NEST.name).hand('Lightning Bolt').battlefield('Mountain'),
@@ -237,7 +237,7 @@ const SLATE = parsed(
   { manaCost: '{3}' },
 );
 
-describe('"Discard your hand" as a cost (D-610, CR 701.9, 118.3)', () => {
+describe('"Discard your hand" as a cost (D-611, CR 701.9, 118.3)', () => {
   test('the whole hand goes, none chosen, and the draw counts the creatures', () => {
     const g = main((b) =>
       b
@@ -275,7 +275,7 @@ const HARVEST = parsed(
   { manaCost: '{G}', colors: ['G'] },
 );
 
-describe('"Search your library for up to X ..., where X is ..." (D-610, CR 701.23, 107.3c)', () => {
+describe('"Search your library for up to X ..., where X is ..." (D-611, CR 701.23, 107.3c)', () => {
   const harvest = (tappedBears: number) =>
     scenario()
       .seat(0)
@@ -318,7 +318,7 @@ describe('"Search your library for up to X ..., where X is ..." (D-610, CR 701.2
   });
 });
 
-// ---- Group 4: a modal landfall that grants a group, "creatures target player controls get ... Untap them", and populate (D-611).
+// ---- Group 4: a modal landfall that grants a group, "creatures target player controls get ... Untap them", and populate (D-612).
 
 const RETREAT = parsed(
   'SYNTHETIC Parsed Retreat',
@@ -339,7 +339,7 @@ const DEFENSES = parsed(
   { manaCost: '{G}{W}', colors: ['G', 'W'] },
 );
 
-describe('Felidar Retreat, Great Oak Guardian and Rootborn Defenses as written (D-611)', () => {
+describe('Felidar Retreat, Great Oak Guardian and Rootborn Defenses as written (D-612)', () => {
   test('the Retreat: a land makes a 2/2 Cat Beast, or counters and vigilance for every creature (CR 611.2c)', () => {
     const cat = main((b) => b.define(RETREAT).battlefield(RETREAT.name).hand('Forest'));
     cat.act(0).playLand('Forest');
@@ -399,7 +399,7 @@ describe('Felidar Retreat, Great Oak Guardian and Rootborn Defenses as written (
   });
 });
 
-// ---- Group 5: creatures with less power can't block (D-612).
+// ---- Group 5: creatures with less power can't block (D-613).
 
 const CHAMPION = parsed(
   'SYNTHETIC Parsed Champion',
@@ -408,7 +408,7 @@ const CHAMPION = parsed(
   { manaCost: '{2}{G}', colors: ['G'], power: '3', toughness: '3' },
 );
 
-describe('"Creatures with power less than ~\'s power can\'t block creatures you control" (D-612, CR 509.1b)', () => {
+describe('"Creatures with power less than ~\'s power can\'t block creatures you control" (D-613, CR 509.1b)', () => {
   test('a creature with less power cannot block mine, one with as much power can', () => {
     const g = scenario()
       .seat(0)
@@ -442,7 +442,7 @@ const PRESENCE = parsed(
   { manaCost: '{2}{G}', colors: ['G'] },
 );
 
-describe('an Aura that gives an enchanted creature an activated ability (D-612, CR 613.1f, 303.4e)', () => {
+describe('an Aura that gives an enchanted creature an activated ability (D-613, CR 613.1f, 303.4e)', () => {
   test('the enchanted creature taps for an Elf Warrior token; a creature without the Aura has no such ability', () => {
     const g = main((b) =>
       b
@@ -469,7 +469,7 @@ const DISCORD = parsed(
   { manaCost: '{3}{G}{W}', colors: ['G', 'W'], power: '4', toughness: '4' },
 );
 
-describe('"each player gains control of all creatures they own" (D-612, CR 613.1b)', () => {
+describe('"each player gains control of all creatures they own" (D-613, CR 613.1b)', () => {
   test('a stolen creature goes back to its owner at my end step', () => {
     const g = main(
       (b) => b.define(DISCORD).battlefield(DISCORD.name),
@@ -487,7 +487,7 @@ describe('"each player gains control of all creatures they own" (D-612, CR 613.1
   });
 });
 
-// ---- Group 6: an Aura that enchants a player (D-613).
+// ---- Group 6: an Aura that enchants a player (D-614).
 
 const BOUNTY = parsed(
   'SYNTHETIC Parsed Bounty',
@@ -496,7 +496,7 @@ const BOUNTY = parsed(
   { manaCost: '{2}{G}', colors: ['G'] },
 );
 
-describe('"Enchant player" and "Whenever enchanted player is attacked" as written (D-613, CR 303.4, 508.1)', () => {
+describe('"Enchant player" and "Whenever enchanted player is attacked" as written (D-614, CR 303.4, 508.1)', () => {
   const game = () =>
     scenario()
       .seat(0)

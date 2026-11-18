@@ -1,5 +1,5 @@
 /**
- * Effect rule of issue 160 (D-613): "Each opponent attacking that player untaps all nonland permanents they control." (Curse of Bounty, CR 701.26a, 508.1): in the body
+ * Effect rule of issue 160 (D-614): "Each opponent attacking that player untaps all nonland permanents they control." (Curse of Bounty, CR 701.26a, 508.1): in the body
  * of "Whenever enchanted player is attacked", the opponent who declared the attackers untaps their nonland permanents. The engine's `untap` of the nonland permanents
  * controlled by `triggerPlayer`, which is the player of the attack event; the lowering reads it only in that trigger.
  */

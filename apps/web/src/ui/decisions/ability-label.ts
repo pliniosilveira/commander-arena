@@ -1075,7 +1075,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;
     case 'populate':
-      // D-611 (CR 701.36): the keyword action.
+      // D-612 (CR 701.36): the keyword action.
       return 'Populate';
     case 'amass':
       // D-367 (CR 701.47a): the keyword action, as the cards write it (older cards: "amass Zombies 1").
@@ -1134,7 +1134,7 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // D-189 (CR 613.1b, 611.2): "Gain control of target creature until end of turn".
       return `Gain control of ${object(effect.objects)}${controlDurationText(effect.duration, self)}`;
     case 'returnControlToOwners':
-      // D-612 (CR 613.1b): "Each player gains control of all creatures they own".
+      // D-613 (CR 613.1b): "Each player gains control of all creatures they own".
       return `Each player gains control of ${object(effect.objects)} they own`;
     case 'exchangeControl':
       // Galadriel group 3 (CR 701.12): "Exchange control of this enchantment and target nonland permanent".
