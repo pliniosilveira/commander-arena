@@ -8,7 +8,6 @@ import type { Effect } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { allocateTimestamp } from '../state/ops';
 import type { ChosenTarget, ContinuousEffect, GameState } from '../state/types';
-import { controllerOf } from './control';
 import { derive } from './derive';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -57,20 +56,9 @@ function effectGoaders(state: GameState, id: ObjectId): SeatId[] {
 }
 
 /**
- * The players that goad the creature `id` now (CR 701.15b-c): the players whose effects goaded it, and the controllers of the permanents attached to it that have a static
- * ability "is goaded" (an Aura, CR 303.4m), each once (CR 701.15d). A source that lost all its abilities, or that is not on the battlefield, goads nothing (CR 613.1f).
+ * The players whose spells or abilities goad the creature `id` now (CR 701.15b-c): the continuous effects of the `goad` effect that have not ended (CR 701.15a), each player once
+ * (CR 701.15d). The static ability "is goaded" of an Aura (issue 201, CR 303.4m) is not read here: it is the derived `goadedBy` of the creature (`rules/derive-statics.ts`).
  */
 export function goadersOf(state: GameState, id: ObjectId): SeatId[] {
-  const seats = effectGoaders(state, id);
-  for (const sourceId of state.battlefield) {
-    const source = state.objects[sourceId];
-    if (source === undefined || source.attachedTo !== id) continue;
-    const goads = derive(state, source).abilities.some(
-      (a) => a.kind === 'static' && a.static.kind === 'goaded',
-    );
-    if (!goads) continue;
-    const by = controllerOf(state, source);
-    if (!seats.includes(by)) seats.push(by);
-  }
-  return seats;
+  return [...new Set(effectGoaders(state, id))];
 }

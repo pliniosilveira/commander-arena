@@ -1,19 +1,26 @@
 /**
  * A step of the start-game flow (issue 53): a dialog that asks for one deck, for you or for the
- * opponent. Two tabs split the choices, "Your decks" (decks saved in this browser) and "Precons"
- * (the shipped precons, edited ones included, D-215); "Your decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
+ * opponent. Two tabs split the choices, "My decks" (decks saved in this browser) and "Precons"
+ * (the shipped precons, edited ones included, D-215); "My decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
  * A deck is marked by clicking it, or by one of the three Random buttons; the Select button under
  * the list confirms the step.
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import type { DeckChoice } from '../../precons';
 import { ManaCost } from '../mana';
-import { pickRandomDeck, type RandomScope } from './menu-model';
+import {
+  COLOR_FILTERS,
+  type ColorFilter,
+  matchesColorFilter,
+  pickRandomDeck,
+  type RandomScope,
+  toggleColorFilter,
+} from './menu-model';
 
 export type DeckTab = 'saved' | 'precon';
 
 const TABS: readonly { readonly id: DeckTab; readonly label: string }[] = [
-  { id: 'saved', label: 'Your Decks' },
+  { id: 'saved', label: 'My Decks' },
   { id: 'precon', label: 'Precons' },
 ];
 
@@ -55,7 +62,7 @@ export function DeckDialog({
   onCancel: () => void;
   /** Opens the page that imports a deck. */
   onImport: () => void;
-  /** The tab shown first; "Your Decks" when left out. */
+  /** The tab shown first; "My Decks" when left out. */
   initialTab?: DeckTab;
 }) {
   const titleId = useId();
@@ -63,17 +70,18 @@ export function DeckDialog({
   const [marked, setMarked] = useState(value);
   const [tab, setTab] = useState<DeckTab>(initialTab ?? 'saved');
   const [query, setQuery] = useState('');
+  const [colorFilter, setColorFilter] = useState<readonly ColorFilter[]>([]);
   const needle = query.trim().toLowerCase();
   const inTab = decks
     .filter((deck) => deck.kind === tab)
     .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
   // The search matches the name, the commander and the blurb, ignoring case.
-  const shown =
-    needle === ''
-      ? inTab
-      : inTab.filter((deck) =>
-          `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle),
-        );
+  const shown = inTab.filter(
+    (deck) =>
+      matchesColorFilter(deck.colors, colorFilter) &&
+      (needle === '' ||
+        `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle)),
+  );
 
   // A random button marks a deck (and shows its tab); Select still confirms it.
   const markRandom = (scope: RandomScope) => {
@@ -128,10 +136,30 @@ export function DeckDialog({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <fieldset className="scr-color-filter" aria-label="Filter by colors">
+          {COLOR_FILTERS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              className="scr-color-btn"
+              aria-pressed={colorFilter.includes(color)}
+              aria-label={color === 'C' ? 'Colorless' : `${color} mana`}
+              title={color === 'C' ? 'Colorless' : undefined}
+              onClick={() => setColorFilter((prev) => toggleColorFilter(prev, color))}
+            >
+              <ManaCost cost={[color]} />
+            </button>
+          ))}
+          {colorFilter.length > 0 && (
+            <button type="button" className="scr-link" onClick={() => setColorFilter([])}>
+              Clear
+            </button>
+          )}
+        </fieldset>
         <div role="tabpanel" className="scr-decks-list">
           {shown.length === 0 && inTab.length > 0 && (
             <p className="scr-note" role="note">
-              No deck matches "{query.trim()}".
+              {needle === '' ? 'No deck has these colors.' : `No deck matches "${query.trim()}".`}
             </p>
           )}
           {inTab.length === 0 && tab === 'saved' && (

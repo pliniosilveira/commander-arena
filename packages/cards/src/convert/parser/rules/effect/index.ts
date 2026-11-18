@@ -80,6 +80,7 @@ import {
   EFFECT_CHOOSE_CREATURE_TYPE,
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
+import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
 import { NIV_GROUP_3_A_EFFECT_RULES } from './niv-group-3-a';
@@ -111,6 +112,9 @@ import {
 import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
+import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
+import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
+import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
@@ -932,6 +936,19 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
+  // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
+  // choose and gain rules, and are tried first.
+  ...PRISMARI_G1_EFFECT_RULES,
+  // Prismari deck, group 2 (issue 87, D-647 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
+  // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
+  // rules, and are tried first.
+  ...PRISMARI_G2_EFFECT_RULES,
+  // Prismari deck, group 3 (issue 87, D-660 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into
+  // your hand", "shuffle your library, then reveal cards ... exile that card ...", "as many times as you choose, you may exile ...", "each player exiles cards ... until they exile a nonland card",
+  // "an opponent chooses a nonland card exiled this way" and "whenever a creature you control deals combat damage ... copy the exiled card" start like the plain exile, cast, put, shuffle,
+  // each and whenever rules, and are tried first.
+  ...PRISMARI_G3_EFFECT_RULES,
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
@@ -973,6 +990,7 @@ export const EFFECT_RULES = [
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...MOVE_COUNTERS_EFFECT_RULES,
   ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,
   // Issue 160 (D-628): "Each player gains control of all creatures they own."

@@ -70,7 +70,9 @@ export function productionWords(production: ManaProduction): string | null {
       return "one mana of any color in your commander's color identity";
     case 'chosenColor':
       // D-149 (CR 106.1, 614.12): "Add one mana of the chosen color".
-      return 'one mana of the chosen color';
+      return production.or === undefined
+        ? 'one mana of the chosen color'
+        : `{${production.or}} or one mana of the chosen color`;
     case 'anyCombination':
       // D-151 (CR 106.1b): "Add two mana in any combination of colors".
       return anyCombinationWords(production.count, production.distinct === true);
@@ -138,6 +140,10 @@ export function fightText(
 export function revealUntilText(effect: Extract<Effect, { kind: 'revealUntil' }>): string | null {
   const card = cardNoun(effect.filter);
   if (card === null) return null;
+  // D-665 (CR 701.13): the card found is exiled.
+  if (effect.put === 'exile') {
+    return `Reveal cards from the top of your library until you reveal ${card}. Exile it and put the rest on the bottom of your library in a random order`;
+  }
   const where =
     effect.put === 'hand'
       ? 'into your hand'
@@ -152,6 +158,11 @@ export function revealUntilText(effect: Extract<Effect, { kind: 'revealUntil' }>
 export function castFreeText(effect: Extract<Effect, { kind: 'castFree' }>): string | null {
   const verb = effect.play === true ? 'play' : 'cast';
   const { objects } = effect;
+  // D-660 (CR 608.2g): "You may cast up to two spells from among the cards without paying their mana costs", "... any number of spells ...".
+  if (effect.max !== undefined) {
+    const spells = effect.max === 'any' ? 'any number of spells' : `up to ${effect.max} spells`;
+    return `You may cast ${spells} from among those cards without paying their mana costs`;
+  }
   let what: string;
   let from = '';
   switch (objects.kind) {

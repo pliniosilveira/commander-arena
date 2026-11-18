@@ -98,6 +98,8 @@ describe('the dimensions', () => {
       'kicked',
       // Issue 244: "If you cast this spell during your main phase".
       'castInOwnMainPhase',
+      // Issue 233: "If X is 5 or more".
+      'xAtLeast',
       'replicated',
       'sacrificedAsCost',
       'controlCommander',
@@ -119,6 +121,7 @@ describe('the dimensions', () => {
       'lifeTotal',
       'thisMatches',
       'didPrevious',
+      'movedTotalManaValue',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
@@ -178,6 +181,8 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.staticKinds).toEqual([
       'allCreatureTypes',
       'noMaximumHandSize',
+      // Issue 201: "Enchanted creature ... is goaded".
+      'goaded',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',
@@ -191,9 +196,9 @@ describe('the dimensions', () => {
       'grantKeyword',
       'grantAbility',
       'restriction',
-      // D-639: "Enchanted creature ... is goaded" (CR 701.15b).
-      'goaded',
       'costReduction',
+      // D-641 (CR 601.2f): strive, "costs {2}{R} more to cast for each target beyond the first".
+      'costPerExtraTarget',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
       'abilityCostReduction',
       'setTypes',

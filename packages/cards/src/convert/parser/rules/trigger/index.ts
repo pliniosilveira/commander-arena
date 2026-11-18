@@ -44,6 +44,7 @@ import { HOFRI_TRIGGER_RULES } from './hofri';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
+import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { RECURSION_TRIGGER_RULES } from './recursion';
 import {
   isPlainLandYouControl,
@@ -1124,6 +1125,9 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
+  // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
+  // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
+  ...PRISMARI_G1_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,

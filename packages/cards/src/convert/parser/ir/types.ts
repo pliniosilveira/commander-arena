@@ -341,6 +341,8 @@ export interface IrFilter {
   readonly putFromBattlefieldThisTurn?: true;
   /** "from anywhere other than your hand" (stage P75, D-235, CR 601.2a): a spell that was cast from a zone other than the hand (the engine's `notCastFromHand`). */
   readonly notCastFromHand?: true;
+  /** "from your hand" (Prismari deck group 1, D-638, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
+  readonly castFromHand?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
@@ -370,6 +372,11 @@ export interface IrFilter {
   readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
+  /**
+   * "creatures named ~" (Prismari deck group 2, D-656, CR 201.2): the objects have the name of the card the text is on (the tilde). Only the group noun of an effect (`selector:named`)
+   * reads it, with the card's own name; any other noun that carries it is refused, so it is never dropped.
+   */
+  readonly namedSelf?: true;
   /** The words the filter was read from, for diagnostics and templateOf. */
   readonly raw: string;
 }
@@ -409,6 +416,19 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
+  // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-638, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
+  | {
+      readonly kind: 'spellsCastThisTurn';
+      readonly ofTypes?: readonly string[];
+      readonly span: Span;
+    }
+  // "the greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck group 2, D-646, CR 202.3, 601.2i): the largest mana value of the spells the controller
+  // has cast so far this turn, of the card types named.
+  | {
+      readonly kind: 'greatestManaValueCast';
+      readonly ofTypes?: readonly string[];
+      readonly span: Span;
+    }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
   | {
@@ -474,6 +494,7 @@ export type IrAmount =
         | 'destroyedOwnNontoken'
         | 'playersDrew'
         | 'tapped'
+        | 'discarded'
         | 'milledValue'
         | 'damageDealt';
       readonly words: readonly string[];
@@ -496,7 +517,7 @@ export type IrAmount =
       readonly fromType?: string;
       /** "for each {S} spent to cast ~" (D-260, CR 107.4h): only the mana of snow sources. */
       readonly snow?: true;
-      readonly who: 'self' | 'it';
+      readonly who: 'self' | 'it' | 'thatSpell';
       readonly span: Span;
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
@@ -552,6 +573,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
+    // "X is 5 or more" (issue 233, CR 107.3a): the X announced for the spell
+    | { readonly kind: 'xAtLeast'; readonly atLeast: number }
     // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included
     | { readonly kind: 'abilityResolvedTimes'; readonly times: number }
     // "you chose a creature other than ~ as your Ring-bearer" (Galadriel deck group 1, CR 701.54a): the creature the Ring tempted the controller to choose, not the permanent itself
@@ -678,6 +701,11 @@ export interface IrCondition extends IrNode {
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
     // `ofTriggerSpell` (issue 25): said as "that spell" ("five or more mana was spent to cast that spell"); lowered in a trigger about a spell that was cast only.
     | { readonly kind: 'manaSpentAtLeast'; readonly count: number; readonly ofTriggerSpell?: true }
+    // Prismari deck, group 2 (D-646, CR 202.3, 608.2h): "that spell's mana value is 5 or greater": the mana value of the spell that caused a cast trigger; lowered in such a trigger only.
+    | { readonly kind: 'triggerSpellManaValue'; readonly atLeast: number }
+    // Prismari deck, group 3 (D-661, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
+    // only after an instruction that exiled cards.
+    | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
@@ -784,7 +812,7 @@ export interface IrManaSpec extends IrNode {
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
-    | { readonly kind: 'chosenColor' }
+    | { readonly kind: 'chosenColor'; readonly or?: 'W' | 'U' | 'B' | 'R' | 'G' }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
@@ -994,6 +1022,8 @@ export interface IrChoiceArg extends IrNode {
   readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
+  /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */
+  readonly except?: 'W' | 'U' | 'B' | 'R' | 'G';
 }
 
 /**
@@ -1231,7 +1261,11 @@ export type IrRestrictionKind =
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
-  | 'mustBlock';
+  | 'mustBlock'
+  // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.
+  | 'goaded'
+  // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
+  | 'canBlockOnlyFlying';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
@@ -1286,10 +1320,6 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'grantQuoted'; readonly text: string }
   /**
-   * "..., and is goaded" (D-639, CR 701.15b): the permanent an Aura or Equipment is attached to is goaded by the controller of the source while the ability applies.
-   */
-  | { readonly kind: 'goaded' }
-  /**
    * "can't block", "can't be blocked", "attacks each combat if able", "doesn't untap during ...",
    * "can't be countered" (stage P12): the subject has the restriction while the ability applies.
    */
@@ -1307,6 +1337,8 @@ export type IrStaticEffect =
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   | { readonly kind: 'abilityCostReduction'; readonly amount: number }
+  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.
+  | { readonly kind: 'costPerExtraTarget'; readonly cost: readonly string[] }
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa deck, group 4, D-461, CR 601.2f, 118.7, 113.6b): the generic mana taken off
   // the abilities of the cards of these card types in the graveyard of the controller
   | {
@@ -1689,6 +1721,8 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',
+  'spellsCastThisTurn',
+  'greatestManaValueCast',
   'toughnessOf',
   'countersOn',
   'aggregate',

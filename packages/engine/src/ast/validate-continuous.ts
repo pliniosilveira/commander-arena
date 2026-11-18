@@ -278,6 +278,17 @@ export function checkContinuousEffect(
       checkGrantAbility(e, path, scope, out);
       break;
     case 'grantKeyword':
+      // D-653 (CR 604.1): "During your turn, this creature has first strike": only while it is its controller's turn; true or absent, and a keyword without parameters.
+      if (e.duringYourTurn !== undefined && e.duringYourTurn !== true) {
+        issue(out, `${path}.duringYourTurn`, 'duringYourTurn is true or absent');
+      }
+      if (e.duringYourTurn === true && e.keyword?.kind === 'protection') {
+        issue(
+          out,
+          `${path}.duringYourTurn`,
+          'only a keyword without parameters is given on your turn',
+        );
+      }
       if (e.keyword?.kind === 'protection') {
         // D-451 (CR 702.16): an effect gives protection from named colors or card types, or from the color of the controller's choice (asked as it resolves).
         // The qualities that read a permanent's choice or a commander (`chosenCardType`, `colorsNotInCommanderIdentity`) need a static ability.

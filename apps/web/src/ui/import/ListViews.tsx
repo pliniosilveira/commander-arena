@@ -1,4 +1,4 @@
-/** "Your decks": a presentational list; the screen loads and refreshes it. */
+/** "My decks": a presentational list; the screen loads and refreshes it. */
 import type { SavedDeck } from '../../import/types';
 
 export function SavedDecksView({
@@ -14,14 +14,14 @@ export function SavedDecksView({
 }) {
   return (
     <section className="imp-section" aria-labelledby="imp-decks-h">
-      <h2 id="imp-decks-h">Your decks</h2>
+      <h2 id="imp-decks-h">My decks</h2>
       <p className="scr-help">
         Saved in this browser only. A saved deck keeps your pasted list; opening it imports it
         again, so it needs a connection to Scryfall.
       </p>
       {decks === null ? (
         <p aria-live="polite">
-          {loading ? 'Loading your decks…' : 'Your decks could not be loaded.'}
+          {loading ? 'Loading your decks…' : 'My decks could not be loaded.'}
         </p>
       ) : decks.length === 0 ? (
         <p>No saved decks yet. Paste a list on the Import tab and choose "Save deck".</p>

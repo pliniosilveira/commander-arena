@@ -60,6 +60,7 @@ import { dieReplacementFor } from './die-replacement';
 import {
   entersAsSaga,
   entersChoice,
+  entersColorExcept,
   entersCopyOf,
   entersOptions,
   entersPayment,
@@ -571,7 +572,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         kind: 'chooseOption',
         seat: enterController,
         purpose: choice,
-        options: optionsFor(choice, entering === null ? [] : entersOptions(entering.abilities)),
+        options: optionsFor(
+          choice,
+          entering === null ? [] : entersOptions(entering.abilities),
+          entering === null ? undefined : entersColorExcept(entering.abilities),
+        ),
         source: old.id,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
@@ -660,7 +665,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // ceases to exist (CR 707.10a, 704.5e), and so does an ability leaving the stack (CR 608.2n).
   const becomesToken = old.copyOf !== undefined && to === 'battlefield';
   // CR 722.3c (D-214): the copy of a prepare spell in exile is cast: it goes to the stack, still a copy of a spell.
-  const castPrepareCopy = old.prepareOf !== undefined && to === 'stack';
+  // D-654 (CR 707.12): so is the copy of a card made in exile to be cast as an effect resolves.
+  const castPrepareCopy = (old.prepareOf !== undefined || old.cardCopy === true) && to === 'stack';
   if (old.card === null && old.token === null && !becomesToken && !castPrepareCopy) {
     return { kind: 'done', state: next, events, newObject: null };
   }

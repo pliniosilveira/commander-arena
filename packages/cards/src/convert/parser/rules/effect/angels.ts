@@ -274,6 +274,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast a Dragon creature spell',
     // Issue 199 (Unclaimed Territory): the creature type the permanent chose as it entered.
     'spend this mana only to cast a creature spell of the chosen type',
+    // Issue 151 (Secluded Courtyard): and the abilities of the creatures of that type.
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type',
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
     'spend this mana only to cast artifact and creature spells',
@@ -300,6 +302,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Dragon spells or activate abilities',
     'spend this mana only to cast Dragon spells or activate abilities of Dragons you control',
     'spend this mana only to cast creature spells or activate abilities of Dragons',
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of a chosen type',
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.spend-only';
@@ -320,6 +324,39 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
       return fail(ctx, pos);
     }
     // Stage P34 (D-152): "... or activate abilities of Dragons", the abilities of the permanents of the same kind as the spells (CR 106.6).
+    // Issue 151 (Secluded Courtyard): "... a creature spell of the chosen type or activate an ability of a creature source of the chosen type": the abilities of the
+    // creatures of the type the permanent chose (CR 106.6, 607.2d).
+    const chosenAbilities =
+      filter.chosen === 'type'
+        ? pattern(
+            / or activate an ability of a creature source of the chosen type(?![\p{L}\p{N}])/iu,
+          )(ctx, phrase.pos)
+        : null;
+    if (chosenAbilities?.ok === true) {
+      const end = chosenAbilities.pos;
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: phrase.value.span,
+        rule: id,
+      };
+      return {
+        ok: true,
+        value: [
+          makeClause(
+            id,
+            'spendOnly',
+            { spells: noun, alsoAbilities: flag(id, { start: phrase.pos, end }) },
+            { start: pos, end },
+          ),
+        ],
+        pos: end,
+      };
+    }
     const abilities = optional(
       sequence(
         literal(' or activate abilities of '),

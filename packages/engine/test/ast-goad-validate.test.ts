@@ -59,14 +59,4 @@ describe('goad (D-639)', () => {
       'goaded is given to the attached permanent',
     );
   });
-
-  test('the static ability is refused for any other subject', () => {
-    const ability = {
-      kind: 'static',
-      static: { kind: 'goaded', subject: { kind: 'this' } },
-    } as unknown as Ability;
-    expect(messages(creature([ability])).join(' ')).toContain(
-      'goaded is given to the attached permanent',
-    );
-  });
 });

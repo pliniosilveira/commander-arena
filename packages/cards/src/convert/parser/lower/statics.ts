@@ -432,14 +432,16 @@ function effectOf(
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
-    case 'goaded':
-      // D-639 (CR 701.15b): only the permanent an Aura or Equipment is attached to.
-      if (subject.kind !== 'attached') return failure(at);
-      return ok({ kind: 'goaded', subject });
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
       if (effect.restriction === 'cantBeCountered' && subject.kind !== 'this') return failure(at);
+      // CR 701.15a (issue 201): "is goaded" is the engine's static `goaded` of the permanent an Aura or Equipment is attached to.
+      if (effect.restriction === 'goaded') {
+        const blocked = missingFeatures(['static:goaded']);
+        if (blocked.length > 0) return failure(at, blocked);
+        return ok({ kind: 'goaded', subject });
+      }
       return ok({ kind: 'restriction', subject, restriction: effect.restriction });
     }
     default:
@@ -476,8 +478,6 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'restriction':
       return ['static:restriction'];
-    case 'goaded':
-      return ['static:goaded'];
     case 'cantAttackYou':
       return ['static:cantAttackYou'];
     case 'grantAbility':
@@ -505,6 +505,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
       return ['static:abilityCostReduction'];
+    case 'costPerExtraTarget':
+      return ['static:costPerExtraTarget'];
     case 'restrictUnless':
       return ['static:restrictionUnless'];
     case 'ptAmount':
@@ -919,6 +921,32 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
+  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-641, CR 601.2f).
+  if (first.kind === 'costPerExtraTarget') {
+    if (
+      more.length > 0 ||
+      statement.condition !== undefined ||
+      statement.also !== undefined ||
+      statement.subject.det !== 'self'
+    ) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:costPerExtraTarget']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'costPerExtraTarget',
+            cost: [{ kind: 'mana', symbols: [...first.cost] }],
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (first.kind === 'additionalCost' || first.kind === 'freeCast') return failure(ability);
   if (
     first.kind === 'castAsThoughFlash' ||

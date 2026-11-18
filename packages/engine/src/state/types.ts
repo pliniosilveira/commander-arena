@@ -245,6 +245,13 @@ export interface GameObject {
    */
   readonly prepareOf?: ObjectId;
   /**
+   * D-654 (CR 707.12, 704.5e, "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost."): on the
+   * copy of a card that an effect made in exile, `copyOf` is the card it copies. It exists to be cast during the resolution of that effect (CR 707.12: it is created in the zone the
+   * card is in and cast while the effect resolves): once cast it is a copy of a spell on the stack; a copy that is not cast ceases to exist as the next state-based check
+   * finds it in a zone that is not the stack or the battlefield (CR 704.5e).
+   */
+  readonly cardCopy?: true;
+  /**
    * Present on a card in exile that resolved as an Adventure its controller did not own (D-187: a card taken from another player's library and
    * cast from exile): that controller, who may cast the card from exile (CR 715.3d: "its controller exiles it. For as long as that card remains
    * exiled, that player may play it"). Absent when the controller owns it, and then its owner may.
@@ -379,6 +386,11 @@ export interface StackData {
    */
   readonly flashback: boolean;
   /**
+   * True when cast from the graveyard by its retrace ability (CR 702.81a, D-667): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
+   * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
+   */
+  readonly retrace?: true;
+  /**
    * True when cast without paying its mana cost (CR 118.9, D-095): the `free` alternative cost.
    * Absent otherwise, and for an ability.
    */
@@ -449,6 +461,12 @@ export interface StackData {
     readonly by: SeatId;
     readonly source: ObjectId;
   };
+  /**
+   * "Exile this spell with three time counters on it" (D-651, CR 608.2n, 122.1, 702.62b): set on a spell by the effect `exileSpellWithTimeCounters`: the number of time counters. When this
+   * instant or sorcery card finishes resolving it is exiled with that many time counters on it, not put into a graveyard. A spell that is countered or fizzles is not changed, and a copy
+   * (not a card) ceases to exist. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly exileWithTimeCounters?: number;
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
    * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own. Also (Lorehold group 2) a card in exile cast for no mana cost because an
@@ -868,6 +886,8 @@ export interface CastingContext {
     readonly sacrificeAny?: ObjectFilter | null;
     readonly sacrificeAnyAsked?: true;
     readonly discard: number;
+    /** D-667 (CR 702.81a): the cards discarded are only those this filter matches ("a land card"); absent for any card. */
+    readonly discardFilter?: ObjectFilter;
     /** The filter of a Behold additional cost, or null. */
     readonly behold?: ObjectFilter | null;
     /** How many other cards of the caster's graveyard to exile (Escape, CR 702.138a, D-124); 0 for none. */
@@ -1043,10 +1063,23 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
-   * "Populate" (`populate`, CR 701.36, D-627): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with
-   * two or more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
+   * "Populate" (`populate`, CR 701.36a, D-639): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with two or
+   * more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
    */
-  | { readonly kind: 'populate'; readonly chosen: readonly ObjectId[] | null }
+  | {
+      readonly kind: 'populate';
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "Move any number of +1/+1 counters from this creature onto other creatures" (`moveCountersOnto`, issue 230): one counter at a time, a `choosePermanent` decision of purpose
+   * 'moveCounters' (`min` 0, `max` 1) names the permanent it goes onto, or none to stop. `chosen` is the answer, null until then. See rules/move-counters.ts.
+   */
+  | {
+      readonly kind: 'moveCounters';
+      readonly counter: string;
+      readonly to: ObjectFilter;
+      readonly chosen: readonly ObjectId[] | null;
+    }
   /**
    * Permanents instructed to connive at the same time (`connive`, CR 701.50c, D-223): `pending` are the ones still to connive, each with the player who
    * controls it (or last controlled it, if it is no longer on the battlefield: CR 701.50b). The first player in APNAP order who controls one or more of them
@@ -1195,6 +1228,38 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
       readonly pick?: 1 | 2;
     }
+  /**
+   * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-660, CR 608.2d): `seat` is the opponent who chooses, `cards` the cards of `moved` the filter
+   * matches (face up in exile), `chosen` is null until the question is answered. The card chosen is left out of `moved` afterwards. See rules/choose-aside.ts.
+   */
+  | {
+      readonly kind: 'opponentChoosesCard';
+      readonly seat: SeatId;
+      readonly cards: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "Exile the top four cards of your library in a face-down pile, then exile the top four cards in a face-up pile. An opponent chooses one of those piles. Put that pile into
+   * your graveyard. Look at the cards in the other pile." (`exilePiles`, D-663, CR 700.3): the face-down pile is exiled by the moves that start the effect, the instruction then
+   * exiles the face-up pile, has the first opponent in turn order pick a pile (`pick`, undefined until answered), puts the chosen pile into the graveyard and leaves the other as
+   * `moved`. `first` is the face-down pile, once exiled. See rules/exile-piles.ts.
+   */
+  | {
+      readonly kind: 'exilePiles';
+      /** `second` exiles the face-up pile (the face-down one was exiled by the moves before it), `choose` asks the opponent, `finish` leaves the other pile as `moved`. */
+      readonly stage: 'second' | 'choose' | 'finish';
+      readonly count: number;
+      /** The face-down pile: the new objects in exile (known from `choose` on). */
+      readonly first: readonly ObjectId[];
+      /** The pile that was not chosen, in the `finish` stage. */
+      readonly second: readonly ObjectId[];
+      readonly pick?: 1 | 2;
+    }
+  /**
+   * "As many times as you choose, you may exile the top card of your library" (`exileTopAnyNumber`, D-661): `answer` is null while the controller is asked whether to exile
+   * the top card, true once they accepted (the card is exiled and the question comes again). See rules/exile-any-number.ts.
+   */
+  | { readonly kind: 'exileAnyNumber'; readonly answer: boolean | null }
   /**
    * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest
    * on the bottom of your library in a random order" (`lookAtTop`, D-139), in two stages: `take` looks, asks which matching cards to take
@@ -1381,6 +1446,8 @@ export type Instruction =
       readonly riot?: readonly string[];
       /** The card of the hand revealed for the "reveal a card" of a land this token is a copy of (CR 701.20a, D-225), once the player chose among several. */
       readonly revealed?: ObjectId;
+      /** D-668 (CR 303.4f): the permanent a token that is an Aura enters enchanting, once its controller chose among several. */
+      readonly host?: ObjectId;
       /** The token is a copy made by Encore for this opponent (CR 702.141a, D-185): it is required to attack them, has haste and is sacrificed at the next end step. */
       readonly encoreFor?: SeatId;
     }
@@ -1637,6 +1704,8 @@ export type Instruction =
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
       readonly filter?: ObjectFilter;
+      /** D-660: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
+      readonly remaining?: number | 'any';
       readonly chosen: readonly ObjectId[] | null;
     };
 
@@ -1871,7 +1940,12 @@ export type ContinuousChange =
    * (`rules/regenerate.ts`). One shield protects the one permanent in `objects`, once, until end of turn.
    */
   | { readonly kind: 'regenerate' }
-  | { readonly kind: 'grantKeyword'; readonly keyword: Keyword }
+  | {
+      readonly kind: 'grantKeyword';
+      readonly keyword: Keyword;
+      /** D-653 (CR 604.1, 109.5): given only while it is the turn of the object's controller ("During your turn, this creature has first strike"). */
+      readonly duringYourTurn?: true;
+    }
   /** D-230 (Backup): an ability, granted in layer 6 for the duration of the effect. */
   | { readonly kind: 'grantAbility'; readonly ability: Ability }
   /**
@@ -2125,11 +2199,13 @@ export interface TurnLog {
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**
    * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
-   * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
+   * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-646 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
+   * announced, as it does for a spell on the stack), for "the greatest mana value among instant and sorcery spells you've cast this turn".
    */
   readonly castSpells: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
+    readonly manaValue: number;
     /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
     readonly fromGraveyard?: true;
   }[];

@@ -3,7 +3,7 @@
  * hand at random. If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost." Three phrases, one clause
  * each; the lowerings are in `lower/hashaton-g9.ts`.
  */
-import { literal, pattern, sequence } from '../../combinators';
+import { fail, literal, pattern, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { spellPhrase } from '../noun/phrases';
 import { defineRule, family, quietly } from '../registry';
@@ -132,12 +132,12 @@ export const EFFECT_CAST_IT_FREE = defineRule<Clauses>({
 });
 
 /**
- * `effect.cast-from-among`: "cast an Aura spell from among them without paying its mana cost" (CR 608.2g, 118.9, 601.2; D-655, Herald of Amity): the engine's `castFree` of the cards
+ * `effect.cast-kind-from-among`: "cast an Aura spell from among them without paying its mana cost" (CR 608.2g, 118.9, 601.2; D-655, Herald of Amity): the engine's `castFree` of the cards
  * an instruction before it exiled (`moved`), only those a kind of spell describes ("an Aura spell"); the "you may" before it is the controller's question, as for `effect.cast-it-free`.
  * Not read: "it", "one of them", a number of spells, "from your hand", "this turn", another cost.
  */
-export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
-  id: 'effect.cast-from-among',
+export const EFFECT_CAST_KIND_FROM_AMONG = defineRule<Clauses>({
+  id: 'effect.cast-kind-from-among',
   family: 'effect',
   leading: ['cast'],
   cites: [
@@ -147,10 +147,11 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   ],
   examples: [
     'cast an Aura spell from among them without paying its mana cost',
-    'cast a spell from among them without paying its mana cost',
     'cast a creature spell from among them without paying its mana cost',
   ],
   rejects: [
+    // A plain "a spell" is `effect.cast-from-among` (it also reads "up to two spells").
+    'cast a spell from among them without paying its mana cost',
     'cast an Aura spell from among them',
     'cast two Aura spells from among them without paying their mana costs',
     'cast an Aura spell from among those cards without paying its mana cost',
@@ -160,7 +161,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'cast it from among them without paying its mana cost',
   ],
   parse: single(
-    'effect.cast-from-among',
+    'effect.cast-kind-from-among',
     (ctx, pos) => {
       const head = pattern(/cast an? /iu)(ctx, pos);
       if (!head.ok) return head;
@@ -173,6 +174,10 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
       const { stackKind: _kind, zone: _zone, ...rest } = phrase.value;
       void _kind;
       void _zone;
+      // A plain "a spell" is another rule's (`effect.cast-from-among`).
+      if (rest.types === undefined && rest.subtypes === undefined && rest.anyOf === undefined) {
+        return fail(ctx, pos);
+      }
       const span = { start: pos, end: tail.pos };
       const spell: IrNoun = {
         kind: 'noun',
@@ -182,7 +187,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
         plural: false,
         other: false,
         span: { start: head.pos, end: phrase.pos },
-        rule: 'effect.cast-from-among',
+        rule: 'effect.cast-kind-from-among',
       };
       return { ok: true, value: { spell, span }, pos: tail.pos };
     },
@@ -227,6 +232,6 @@ export const HASHATON_G9_EFFECT_RULES = [
   quietly(EFFECT_EXILE_RANDOM_FROM_HAND),
   quietly(EFFECT_PUT_IT_ONTO_BATTLEFIELD),
   quietly(EFFECT_CAST_IT_FREE),
-  quietly(EFFECT_CAST_FROM_AMONG),
+  quietly(EFFECT_CAST_KIND_FROM_AMONG),
   quietly(EFFECT_PUT_REST_BOTTOM_RANDOM),
 ];

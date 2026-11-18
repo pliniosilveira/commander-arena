@@ -241,7 +241,7 @@ const STAT_OF =
   };
 
 const MANA_VALUE_OF_HEAD =
-  /(its|that (?:creature|permanent|card|enchantment|artifact|land|planeswalker)['’]s) mana value(?![\p{L}\p{N}])/iu;
+  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s) mana value(?![\p{L}\p{N}])/iu;
 
 /** "its mana value", "that card's mana value" (CR 202.3). */
 const MANA_VALUE_OF =
@@ -347,9 +347,13 @@ const MULTIPLE = (rule: string): Parser<IrAmount> => {
 const SUM_OR_ATOM = (rule: string): Parser<IrAmount> => {
   const atom = ATOM(rule);
   return (ctx, pos) => {
-    const first = atom(ctx, pos);
+    // D-638 (Prismari deck group 1): "one plus the number of instant and sorcery spells you've cast this turn": a plain 1 more than the amount that follows.
+    const one = literal('one plus ')(ctx, pos);
+    const first = atom(ctx, one.ok ? one.pos : pos);
     if (!first.ok) return first;
-    const parts: IrAmount[] = [first.value];
+    const parts: IrAmount[] = one.ok
+      ? [{ kind: 'number', value: 1, span: { start: pos, end: one.pos } }, first.value]
+      : [first.value];
     let at = first.pos;
     for (;;) {
       const plus = literal(' plus ')(ctx, at);
@@ -519,6 +523,10 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     'where X is that card’s mana value',
+    // Prismari deck, group 2 (D-646, CR 202.3): the spell that caused a cast trigger.
+    "where X is that spell's mana value",
+    'where X is the amount of mana spent to cast that spell',
+    "where X is the greatest mana value among instant and sorcery spells you've cast this turn",
     // Stage P39 (D-184, CR 601.2h): the mana spent to cast the spell the ability is on.
     'where X is the amount of mana spent to cast it',
     // Stage P37 (D-180): the card an earlier instruction exiled.
@@ -547,10 +555,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of cards in your hand minus X',
     'X is the number of Zombies you control',
     'where X is the amount of mana spent',
-    'where X is the amount of mana spent to cast that spell',
     'where X is the mana spent to cast it',
     'where X is your life',
-    "where X is that spell's mana value",
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);
@@ -661,6 +667,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creature sacrificed this way',
     'for each permanent sacrificed this way',
     'for each card exiled this way',
+    'for each card discarded this way',
     'for each creature destroyed this way',
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
@@ -672,6 +679,9 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who drew a card',
     'for each creatures sacrificed this way',
     'for each card drawn this way',
+    'for each card discarded',
+    'for each cards discarded this way',
+    'for each creature card discarded this way',
     'for each opponent who discarded a card this way',
   ],
   parse: (ctx, pos) => {
@@ -681,6 +691,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
         ok: true,
         value: { kind: 'exiledAsCost', span: { start: pos, end: exiled.pos } },
         pos: exiled.pos,
+      };
+    }
+    // Issue 244 (Syphon Mind, CR 701.9, 608.2c): "for each card discarded this way": the cards the discard before it made players discard.
+    const discarded = pattern(/for each card discarded this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (discarded.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'discarded',
+          words: ['card'],
+          span: { start: pos, end: discarded.pos },
+        },
+        pos: discarded.pos,
       };
     }
     const r = spanned(

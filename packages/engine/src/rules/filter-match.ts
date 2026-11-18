@@ -83,7 +83,7 @@ export interface FilterContext {
    * the current combat through `subjectAffects`, independently of the cached static-ability index.
    */
   readonly attackers?: readonly ObjectId[];
-  /** The zone a spell that is being cast comes from, for `notCastFromHand` while the card has not moved to the stack yet (D-235): the cost code passes it. */
+  /** The zone a spell that is being cast comes from, for `notCastFromHand` and `castFromHand` while the card has not moved to the stack yet (D-235): the cost code passes it. */
   readonly castFrom?: 'hand' | 'command' | 'graveyard' | 'exile' | 'library';
   /**
    * The creatures attacking the controller of the ability as a player, for `attackingYou` (D-131): read from the
@@ -323,6 +323,13 @@ export function matchesFilterWith(
       ctx.castFrom ??
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from === undefined || from === 'hand') return false;
+  }
+  // CR 601.2a (D-638): "Spells you cast from your hand": a spell on the stack that was cast from the hand.
+  if (filter.castFromHand === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'hand') return false;
   }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;

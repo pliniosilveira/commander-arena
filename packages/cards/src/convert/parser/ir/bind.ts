@@ -421,7 +421,10 @@ class Binder {
         // "a token that's a copy of target creature": the permanent copied is a noun like any other.
         // "a number of tapped Treasure tokens equal to its power" (stage P35, D-176): the pronoun of the count is bound like any other.
         const count = this.amount(arg.count);
-        const made = arg.copyOf === undefined && count.kind === 'number' && count.value === 1;
+        // D-643 (Prismari group 1): the permanent a copy is made of is bound first, so that "it" of "a token that's a copy of it" is not the token itself; then a token that is a
+        // copy is the token "that token" follows, as any other token of one ("Create a token that's a copy of target creature you control. That token gains haste until end of turn.").
+        const copyOf = arg.copyOf === undefined ? undefined : this.noun(arg.copyOf);
+        const made = count.kind === 'number' && count.value === 1;
         if (made) this.tokenCount += 1;
         const ref = made ? `tk${this.tokenCount}` : undefined;
         if (ref !== undefined) {
@@ -446,7 +449,7 @@ class Binder {
           ...arg,
           count,
           ...(ref === undefined ? {} : { ref }),
-          ...(arg.copyOf === undefined ? {} : { copyOf: this.noun(arg.copyOf) }),
+          ...(copyOf === undefined ? {} : { copyOf }),
         };
       }
       default:

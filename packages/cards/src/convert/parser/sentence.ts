@@ -59,6 +59,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.cast-from-graveyard',
   // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
   'condition.cast-in-own-main-phase',
+  // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
+  'condition.x-at-least',
 ] as const;
 
 /**
@@ -113,7 +115,13 @@ const DIE_CONDITIONS = ['condition.die-result'] as const;
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
  * cast trigger is about; the lowering reads it in the body of such a trigger only.
  */
-const MANA_SPENT_CONDITIONS = ['condition.mana-spent-or-more'] as const;
+const MANA_SPENT_CONDITIONS = [
+  'condition.mana-spent-or-more',
+  // Prismari deck, group 3 (issue 87, D-661): "If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells ..." (CR 202.3, 608.2c).
+  'condition.total-mana-value-exiled-this-way',
+  // Prismari deck, group 2 (issue 87, D-646): "If that spell's mana value is 5 or greater, create three of those tokens instead." (CR 202.3).
+  'condition.spell-mana-value-or-more',
+] as const;
 
 /** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
 const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;

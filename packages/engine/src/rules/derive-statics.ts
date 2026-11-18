@@ -26,7 +26,7 @@ import type {
   Restriction,
   StaticEffect,
 } from '../ast/types';
-import type { ObjectId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
 import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
@@ -48,6 +48,7 @@ type Modifier = Extract<
       | 'grantKeyword'
       | 'grantAbility'
       | 'restriction'
+      | 'goaded'
       | 'setPt'
       | 'cantBeBlockedBy'
       | 'takeFromLinkedExile'
@@ -213,6 +214,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
       a.static.kind === 'grantKeyword' ||
       a.static.kind === 'grantAbility' ||
       a.static.kind === 'restriction' ||
+      a.static.kind === 'goaded' ||
       a.static.kind === 'setPt' ||
       a.static.kind === 'cantBeBlockedBy' ||
       a.static.kind === 'takeFromLinkedExile' ||
@@ -473,6 +475,8 @@ export interface StaticEffects {
    * (D-094; `derive` adds the ones continuous effects give). Read where the rule acts, not in a layer.
    */
   readonly restrictions: readonly Restriction[];
+  /** The players that goad this permanent (issue 201, CR 701.15): the controllers of the permanents whose `goaded` static ability applies to it. */
+  readonly goadedBy: readonly SeatId[];
   /** Permanents on the battlefield attached to this one. */
   readonly attachments: readonly ObjectId[];
   /** The permanent this one is attached to, when it is still on the battlefield. */
@@ -566,6 +570,7 @@ export function staticEffectsOn(
       sets: [],
       blockLimits: [],
       restrictions: [],
+      goadedBy: [],
       attachments: NONE,
       attachedTo: null,
     };
@@ -575,6 +580,7 @@ export function staticEffectsOn(
   let power = 0;
   let toughness = 0;
   const restrictions: Restriction[] = [];
+  const goadedBy: SeatId[] = [];
   const sets: StaticSet[] = [];
   const blockLimits: BlockLimit[] = [];
   const apply = (source: ModifierSource, mod: Modifier, view: FilterSubject): boolean => {
@@ -623,6 +629,11 @@ export function staticEffectsOn(
     } else if (mod.kind === 'restriction') {
       // CR 613.11: a rules-modifying effect, read where the rule acts (no layer, no timestamp).
       if (!restrictions.includes(mod.restriction)) restrictions.push(mod.restriction);
+    } else if (mod.kind === 'goaded') {
+      // CR 701.15a (issue 201): goaded by the controller of the permanent with the ability: it attacks each combat if able and attacks a player other than them if able.
+      if (!restrictions.includes('attacksEachCombat')) restrictions.push('attacksEachCombat');
+      const goader = controllerOf(state, source.object);
+      if (!goadedBy.includes(goader)) goadedBy.push(goader);
     } else if (mod.kind === 'setPt') {
       // CR 613.4b (D-139): "base power and toughness 5/3", layer 7b, with the permanent's timestamp.
       sets.push({ timestamp: source.object.timestamp, power: mod.power, toughness: mod.toughness });
@@ -689,6 +700,7 @@ export function staticEffectsOn(
     sets,
     blockLimits,
     restrictions,
+    goadedBy,
     attachments: index.attachments.get(target.id) ?? NONE,
     attachedTo: host?.zone === 'battlefield' ? host.id : null,
   };

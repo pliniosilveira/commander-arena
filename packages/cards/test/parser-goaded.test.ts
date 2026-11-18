@@ -58,7 +58,6 @@ describe('"Enchanted creature gets +N/+N and is goaded." (CR 701.15b, 613.4c)', 
   });
 
   test.each([
-    ['Enchanted creature is goaded.', 'goaded.'],
     ['Enchanted creature gets +1/+1 and is goaded', ''],
     ['Enchanted creature gets +1/+1 and is goaded by you.', 'by you.'],
     ['Enchanted creature gets +1/+1 and is goaded twice.', 'twice.'],

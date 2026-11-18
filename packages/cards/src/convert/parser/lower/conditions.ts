@@ -80,6 +80,14 @@ export function lowerCondition(
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
       return ok({ kind: 'kicked' });
     }
+    case 'xAtLeast': {
+      // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
+      const blocked = missingFeatures(['condition:xAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      ctx.usesX = true;
+      return ok({ kind: 'xAtLeast', value: test.atLeast });
+    }
     case 'castInOwnMainPhase': {
       // CR 601.2, 505.1 (issue 244): the engine reads it from the spell; the lowering of a spell's sentence only.
       const blocked = missingFeatures(['condition:castInOwnMainPhase']);
@@ -504,6 +512,29 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'manaSpentAtLeast', count: test.count });
     }
+    case 'movedTotalManaValue': {
+      // CR 202.3, 608.2c (D-661): the cards an instruction before this one exiled (`moved`), added up; no other cards are named.
+      if (ctx?.lastEffectKind !== 'exileTopAnyNumber' && ctx?.lastEffectKind !== 'exileTop') {
+        return failure(c, []);
+      }
+      const blocked = missingFeatures(['condition:movedTotalManaValue']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'movedTotalManaValue',
+        compare: { cmp: 'atMost', value: test.atMost },
+      });
+    }
+    case 'triggerSpellManaValue': {
+      // CR 202.3, 608.2h (D-646): "that spell" is the spell that caused the trigger, read as it is on the stack or as it last was; in any other text no spell is named, so it is not lowered.
+      if (ctx?.castTrigger !== true) return failure(c, []);
+      const blocked = missingFeatures(['condition:objectMatches', 'selector:triggerSubject']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({
+        kind: 'objectMatches',
+        of: { kind: 'triggerSubject' },
+        filter: { manaValue: { cmp: 'atLeast', value: test.atLeast } },
+      });
+    }
     case 'cardLeftYourGraveyard': {
       // CR 400.7 (stage P49, D-206): the turn log of cards that left a graveyard.
       const blocked = missingFeatures(['condition:cardLeftYourGraveyard']);
@@ -649,6 +680,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:opponentPoisonAtLeast',
   'condition:kicked',
   'condition:castInOwnMainPhase',
+  'condition:xAtLeast',
   'condition:controlCommander',
   'condition:lifeTotal',
   'condition:cardsInGraveyard',

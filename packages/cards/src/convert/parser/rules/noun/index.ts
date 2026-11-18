@@ -57,6 +57,7 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
@@ -747,6 +748,8 @@ export const NOUN_RULES = [
   ...HYLDA_G3_NOUN_RULES,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".
   ...DINOSAUR_NOUN_RULES,
+  // Prismari deck, group 2 (D-656, D-657): "creatures named ~" before `noun.plain-permanents`, and "any number of targets" after `noun.any-number-targets`.
+  ...PRISMARI_G2_NOUN_RULES,
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,
   // D-295: "each of one or two targets".

@@ -94,8 +94,8 @@ const COPIES: readonly Line[] = [
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of target nonland permanent.",
-    expect: { engine: 'could be an Aura is not implemented by the engine yet' },
-    note: 'SYNTHETIC; the engine refuses a copy that could be an Aura (CR 303.4f)',
+    expect: OK,
+    note: 'SYNTHETIC; a token copy that is an Aura chooses what it enchants as it enters (CR 303.4f, D-668)',
   },
   {
     kind: 'sorcery',
@@ -112,7 +112,10 @@ const COPIES: readonly Line[] = [
   {
     kind: 'sorcery',
     text: "Create a token that's a copy of ~.",
-    expect: { engine: 'a copy is made from this permanent, a target or the triggering permanent' },
+    expect: {
+      engine:
+        'a copy is made from this permanent, a target, the permanent chosen or the triggering permanent',
+    },
     note: 'SYNTHETIC; "~" in an instant is the spell',
   },
   {

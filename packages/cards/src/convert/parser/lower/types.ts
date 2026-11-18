@@ -70,6 +70,18 @@ export interface LowerContext {
    */
   madeAToken: boolean;
   /**
+   * True right after an instruction that made the tokens the engine's `moved` names (D-643, Prismari group 1: `createToken`, `createCopies`, `populate`): "They gain haste.",
+   * "The token created this way gains haste.", "Exile them at the beginning of the next end step." and "Sacrifice those tokens." are about exactly those tokens, and are lowered only
+   * then. Any later instruction that moves, destroys, exiles or sacrifices something else makes it false again. Filled by `lowerSentences` as each clause is lowered.
+   */
+  tokensMade: boolean;
+  /**
+   * The last `createToken` effect of a token that is a copy this text lowered (D-643): "create five of those tokens instead" makes that many tokens of the same kind, which this
+   * effect (with its target and its exceptions) says. Null before one. Filled by `lowerSentences` as each clause is lowered.
+   */
+  /** The `createToken` the instruction before made, of any kind of token (D-643, D-646): what "create five of those tokens instead" makes more of. */
+  lastToken: Effect | null;
+  /**
    * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
    * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
    */
@@ -236,6 +248,11 @@ export interface LowerContext {
    */
   exiledRef: string | null;
   /**
+   * The kind of the last instruction lowered (Prismari deck group 3, D-664): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
+   * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
+   */
+  lastEffectKind: string | null;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -279,6 +296,8 @@ export function newContext(
     castTrigger: false,
     removed: new Set(),
     madeAToken: false,
+    tokensMade: false,
+    lastToken: null,
     lowered: 0,
     thatPlayer: null,
     attackedPlayer: null,
@@ -300,6 +319,7 @@ export function newContext(
     createdToken: null,
     movedToHand: false,
     exiledRef: null,
+    lastEffectKind: null,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

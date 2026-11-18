@@ -64,19 +64,38 @@ const QUOTED_MANA: Parser<Effects> = (ctx, pos) => {
     literal(': '),
     family<readonly IrClause[]>('effect', { only: ['effect.add-mana'] }),
     literal('.'),
+    // Prismari deck, group 2 (D-658, CR 106.6, 613.1f): "Spend this mana only to cast an instant or sorcery spell." is the second sentence of the granted mana ability, which the engine's
+    // `spendOnly` of the mana ability says (the lowering of a mana ability reads it as it does for the ability of a card).
+    optional(
+      sequence(
+        literal(' '),
+        family<readonly IrClause[]>('effect', { only: ['effect.spend-only'] }),
+        literal('.'),
+      ),
+      null,
+    ),
     pattern(/["”]/u),
   )(ctx, pos);
   if (!r.ok) return r;
   // The normalizer writes both "this land" and the card's own name as `~`, so inside the quotes `~` is the granted permanent or the card that
   // grants ("Sacrifice ~"). Stage P36 (D-178): it is read as the permanent that has the ability, and the lowering refuses a group when the
   // card names itself inside a quotation, where `~` could be the card (`LowerContext.namedInQuotes`).
-  const [, costs, , clauses] = r.value;
+  const [, costs, , clauses, , spend] = r.value;
   const span = { start: pos + 1, end: r.pos - 1 };
   const sentence = { kind: 'sentence' as const, clauses, span, rule: 'body.sentence' };
+  const spendSentence =
+    spend === null
+      ? []
+      : [{ kind: 'sentence' as const, clauses: spend[1], span, rule: 'body.sentence' }];
   const ability = {
     kind: 'activated' as const,
     costs,
-    body: { kind: 'body' as const, sentences: [sentence], span, rule: 'body' },
+    body: {
+      kind: 'body' as const,
+      sentences: [sentence, ...spendSentence],
+      span,
+      rule: 'body',
+    },
     restrictions: [],
     span,
     rule: 'ability.activated',
@@ -208,12 +227,12 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
       : quiet(
           map(sequence(pattern(/(?: and |, and |, )/iu), areTypes(plural)), ([, what]) => what),
         );
-  // D-639 (CR 701.15b): "..., and is goaded", said of the permanent an Aura or Equipment is attached to.
+  // D-639 (CR 701.15b): "..., has deathtouch, and is goaded": the comma list of an Aura that gives keywords and goads, read as the restriction `is goaded` of issue 201.
   const andGoaded =
     mode === 'attached'
       ? map(
-          pattern(/(?: and |, and |, )is goaded(?![\p{L}\p{N}'’])/iu),
-          (): Effects => [{ kind: 'goaded' }],
+          pattern(/(?:, and |, )is goaded(?![\p{L}\p{N}'’])/iu),
+          (): Effects => [{ kind: 'restriction', restriction: 'goaded' }],
         )
       : (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos);
   // D-641 (CR 613.1f): "has flying and "Sacrifice a creature: ~ gets +2/+1 until end of turn."": an ability in quotes after what the subject has, joined with "and" or a comma.
@@ -379,8 +398,6 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature gets +1/+1 for each creature you control.',
     'Enchanted creature has flash.',
     'Enchanted creature has ward.',
-    'Enchanted creature is goaded',
-    'Equipped creature is goaded.',
     'Enchanted creature has ward 2.',
     // Stage P70 (D-259): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
     'Enchanted creature has protection from everything.',

@@ -99,6 +99,8 @@ function narrowedTargets(
     ),
     // CR 701.15b (D-639): a goaded creature attacks a player other than each player that goaded it if able.
     ...goadersOf(state, attacker),
+    // CR 701.15a (issue 201): a goaded creature attacks a player other than each player that goads it, if able.
+    ...derive(state, getObject(state, attacker)).goadedBy,
   ];
   if (away.length === 0) return targets;
   const others = targets.filter((t) => t.kind === 'player' && !away.includes(t.seat));
@@ -260,6 +262,13 @@ export function canBlockAttacker(
   if (!isLiveCreature(state, blocker) || blocker.tapped) return false;
   if (derive(state, blocker).types.includes('battle')) return false;
   if (hasRestriction(state, blocker, 'cantBlock')) return false;
+  // CR 509.1b (D-648): "can block only creatures with flying": an attacker that does not have flying (reach is not flying) is not one it can block.
+  if (
+    hasRestriction(state, blocker, 'canBlockOnlyFlying') &&
+    !hasKeyword(state, attacker, 'flying')
+  ) {
+    return false;
+  }
   if (evades(state, blocker, attacker)) return false;
   if (hasKeyword(state, attacker, 'flying')) {
     return hasKeyword(state, blocker, 'flying') || hasKeyword(state, blocker, 'reach');

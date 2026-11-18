@@ -144,6 +144,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.kicked === true || source.kicked === true);
     }
+    case 'xAtLeast': {
+      // CR 107.3a, 608.2c (issue 233): the X announced for the spell as it resolves, or from its last-known information once it has left.
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && (source.stack?.x ?? 0) >= condition.value;
+    }
     case 'castInOwnMainPhase': {
       // CR 601.2, 505.1 (issue 244): "If you cast this spell during your main phase"; read from the spell, or from its last-known information once it has left.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
@@ -237,6 +242,15 @@ export function evaluateCondition(
     case 'didPrevious':
       // CR 603.12, 608.2c (D-135; Learn, CR 701.48a, reads the same way): "if you do": the nearest `may` effect before this was accepted and did something.
       return (ctx.performed ?? 0) > 0;
+    case 'movedTotalManaValue': {
+      // CR 202.3, 608.2c (D-661): the mana values of the cards the earlier effects of this resolution moved, added up (a card gone from where it was counts 0).
+      const total = (ctx.moved ?? []).reduce((sum, id) => {
+        return sum + (statOf(state, id, 'manaValue') ?? 0);
+      }, 0);
+      if (condition.compare.cmp === 'atLeast') return total >= condition.compare.value;
+      if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
+      return total === condition.compare.value;
+    }
     case 'objectMatches': {
       // D-135, CR 113.7a, 608.2h: the object the reference names, as it is or as it last was (a card an earlier instruction
       // moved is read as it was when it left), against the filter in whatever zone it was in.
