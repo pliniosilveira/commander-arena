@@ -4223,11 +4223,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
       else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
-      else
+      else if (named === 'this' && scope.owner === 'ability' && e.player !== undefined) {
+        // CR 613.1b: "that player gains control of this artifact": the permanent with the ability, for the one player `player` names.
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      } else
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target or the permanent that caused the trigger',
+          'gainControl names a target, the permanent that caused the trigger, or (with a player who gains control) the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);

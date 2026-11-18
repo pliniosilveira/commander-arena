@@ -4699,19 +4699,10 @@
     "98492d7d-3b9e-4ae1-ac45-1b508d6d2670": {
       "name": "Coveted Jewel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever one or more creatures an opponent controls attack you and aren't blocked, that player draws three cards and gains control of ~. Untap it.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d071894b"
+      "ast": "59ec418c"
     },
     "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
       "name": "Magma Opus",
@@ -7848,7 +7839,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 621,
+      "supported": 622,
       "total": 653
     }
   }

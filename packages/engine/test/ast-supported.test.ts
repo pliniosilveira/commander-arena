@@ -348,6 +348,7 @@ describe('supported feature gate', () => {
         'tappedForMana',
         'tapsForMana',
         'tokenCreated',
+        'unblockedAttackBatch',
         'upkeep',
       ].sort(),
     );

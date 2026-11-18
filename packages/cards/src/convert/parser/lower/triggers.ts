@@ -505,6 +505,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (t.actor?.det !== 'eachPlayer') return failure(t);
       return ok({ kind: 'playerAttacksOpponent' });
     }
+    case 'unblockedAttackBatch': {
+      // "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 508.1b): the creatures of an opponent.
+      if (whoOf(t.actor) !== 'opponent') return failure(t);
+      const missing = missingFeatures(['trigger:unblockedAttackBatch']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'unblockedAttackBatch', who: 'opponent' });
+    }
     case 'attackBatch': {
       // "Whenever you attack with two or more creatures" (stage P33, D-150, CR 508.1): once for the declaration; "another player" is
       // an opponent of the controller.
@@ -624,6 +631,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'becomesTarget',
       'lifeGained',
       'attackBatch',
+      // CR 509.1h: the opponent whose creatures were not blocked ("that player").
+      'unblockedAttackBatch',
       // D-648: the attacking player ("that attacking player").
       'playerAttacksOpponent',
       'dealtDamage',
@@ -1415,6 +1424,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',
+  'trigger:unblockedAttackBatch',
   'trigger:playerAttacksOpponent',
   'trigger:entersBatch',
   'trigger:leftGraveyard',

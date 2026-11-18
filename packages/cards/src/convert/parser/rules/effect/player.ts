@@ -364,6 +364,22 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
+ * "gains control of ~" said of "that player" (CR 613.1b, 611.2a, 110.2: a control-changing effect with no duration lasts until the game ends or another effect changes it; the player
+ * who gains control is the one the subject names): the player the event of a trigger is about, taking the permanent with the ability ("that player draws three cards and gains
+ * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
+ */
+const gainControlOfSelfAction: Action = (subject, you, rule) =>
+  you || subject.det !== 'anaphor' || subject.filter.raw.toLowerCase() !== 'that player'
+    ? (ctx, pos) => fail(ctx, pos)
+    : map(
+        spanned(
+          sequence(literal('gains control of '), family<IrNoun>('noun', { only: ['noun.self'] })),
+        ),
+        ({ value, span }) =>
+          actionClause(rule, 'gainControl', { player: subject, objects: value[1] }, span),
+      );
+
+/**
  * "loses the game", "lose the game" (CR 104.3e: an effect may state that a player loses the game; D-269): said of one player or of a group the
  * subject names, with nothing after it ("at the end of the turn", "unless ..." and "wins the game" are other words and stay unread). The engine's
  * `loseGame`; a player who can't lose the game does not (CR 101.2), which the engine reads.
@@ -487,6 +503,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain life equal to the life lost this way',
     'each opponent loses X life',
     'you draw X cards and lose X life',
+    // CR 613.1b: the player of the trigger takes the permanent with the ability.
+    'that player draws three cards and gains control of ~',
     'you and target opponent each draw two cards',
     'you and target player each discard a card',
     'each player sacrifices a creature of their choice',
@@ -608,6 +626,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each opponent becomes the monarch',
     'its controller becomes the monarch',
     'its controller become the monarch',
+    'that player gains control of ~ until end of turn',
+    'that player gains control of target creature',
+    'that player gain control of ~',
+    'you gain control of ~',
   ],
   parse: chain(
     sequence(family<IrNoun>('noun', { only: PLAYER_SUBJECTS }), literal(' ')),
@@ -633,6 +655,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
         alone('effect.player.lose-game', loseGameAction),
+        alone('effect.player.gain-control-of-self', gainControlOfSelfAction),
       );
       return map(
         listWithJoins(actions, VERB_LIST_JOIN),

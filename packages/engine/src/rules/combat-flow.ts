@@ -121,7 +121,12 @@ export function beginCombatStep(
                 : {}),
             }));
       if (defender === null || candidates.length === 0) {
-        return grantPriority(state, active, stepEvents);
+        // CR 509.1h: no one can block, so every attacker is unblocked; the declaration is an event with no blockers (`unblockedAttackBatch` reads it).
+        const none: GameEvent[] =
+          defender === null || state.combat === null
+            ? []
+            : [{ kind: 'blockersDeclared', seat: defender, blocks: [] }];
+        return grantPriority(state, active, [...stepEvents, ...none]);
       }
       // An attacker that left the battlefield (a trigger of the declare attackers step can remove
       // one) is no longer in combat (CR 506.4) and cannot be blocked.

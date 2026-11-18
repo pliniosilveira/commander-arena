@@ -41,6 +41,12 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
     case 'playerAttacksOpponent':
       // D-648: no parameters.
       return true;
+    case 'unblockedAttackBatch':
+      // CR 509.1h: the creatures of an opponent attacking you.
+      if (t.who !== 'opponent') {
+        issue(out, `${path}.who`, "unblockedAttackBatch is about the creatures of an 'opponent'");
+      }
+      return true;
     case 'attackBatch':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);

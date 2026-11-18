@@ -488,6 +488,26 @@ function occurrences(
         attacked: [seat],
       }));
     }
+    case 'unblockedAttackBatch': {
+      // CR 509.1h, 603.2: as the blockers are declared (the event is made with none declared too), once for each player whose attacking creatures attack the
+      // declaring player and have no blocker; the creatures are read from the combat after the declaration.
+      if (event.kind !== 'blockersDeclared') return [];
+      const byController = new Map<SeatId, ObjectId[]>();
+      for (const a of state.combat?.attackers ?? []) {
+        if (a.blocked || a.target.kind !== 'player' || a.target.seat !== event.seat) continue;
+        const creature = state.objects[a.object];
+        if (creature === undefined || creature.zone !== 'battlefield') continue;
+        const controller = controllerOf(state, creature);
+        byController.set(controller, [...(byController.get(controller) ?? []), a.object]);
+      }
+      return [...byController].map(([controller, attackers]) => ({
+        subject: null,
+        seat: controller,
+        player: controller,
+        attackers,
+        attacked: [event.seat],
+      }));
+    }
     case 'attackBatch':
       // CR 508.1, 603.2 (D-149): once for the whole declaration, whoever the creatures attack.
       return event.kind === 'attackersDeclared'
@@ -745,6 +765,9 @@ function matches(
       const attacked = occ.attacked?.[0];
       return attacked !== undefined && attacked !== candidate.controller;
     }
+    case 'unblockedAttackBatch':
+      // CR 509.1h: the unblocked creatures are an opponent's and attack the controller of this ability.
+      return occ.seat !== candidate.controller && occ.attacked?.[0] === candidate.controller;
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;

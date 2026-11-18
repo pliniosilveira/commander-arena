@@ -412,6 +412,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGained',
     'countersAdded',
     'attackBatch',
+    // CR 509.1h: "Whenever one or more creatures an opponent controls attack you and aren't blocked".
+    'unblockedAttackBatch',
     // D-648: "Whenever a player attacks one of your opponents" (CR 508.6).
     'playerAttacksOpponent',
     // D-179: "When you cycle this card" (CR 702.29c).
@@ -2190,6 +2192,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeGained: true,
   countersAdded: true,
   attackBatch: true,
+  unblockedAttackBatch: true,
   playerAttacksOpponent: true,
   cycled: true,
   exerted: true,

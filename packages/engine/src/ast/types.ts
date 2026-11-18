@@ -3881,6 +3881,13 @@ export type Trigger =
       readonly attackedEnchantedPlayer?: true;
     }
   /**
+   * "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 603.2, 508.1b): once for each player `who` names (relative to the controller
+   * of this ability: only `opponent`) who controls at least one attacking creature that attacks the controller of this ability as a player (an attack on a planeswalker or a battle
+   * is not an attack on them) and that no creature was declared to block, as the declare blockers step's blockers are declared (also when nobody can block, or the defending
+   * player declares none). The creatures are read after the blockers are declared. `triggerPlayer` is the player who controls those creatures ("that player").
+   */
+  | { readonly kind: 'unblockedAttackBatch'; readonly who: 'opponent' }
+  /**
    * "Whenever a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c, D-648): once for each player the declaration attacks (an attack on a planeswalker or a battle is not an
    * attack on its controller or protector, CR 508.6) who is not the controller of this ability, whoever declares the attackers and however many creatures attack that player.
    * `triggerPlayer` is the attacking player ("that attacking player") and `triggerAttackedPlayer` the player attacked ("that opponent").

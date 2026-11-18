@@ -58,6 +58,7 @@ import {
   triggerSubject,
   youNoun,
 } from './subjects';
+import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -1171,6 +1172,7 @@ export const TRIGGER_RULES = [
   ...CONTROL_TRIGGER_RULES,
   // Stage P33 (D-150): gaining life, counters put on a permanent, attacking with several creatures.
   ...ANGEL_TRIGGER_RULES,
+  ...UNBLOCKED_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
