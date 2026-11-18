@@ -145,6 +145,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.suspend': asIs,
   'keyword.madness': asIs,
   'keyword.miracle': asIs,
+  'keyword.harmonize': asIs,
   'keyword.foretell': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,

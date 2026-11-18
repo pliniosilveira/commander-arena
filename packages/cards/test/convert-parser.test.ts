@@ -307,6 +307,7 @@ describe('unmatched abilities', () => {
       'keyword.madness',
       'keyword.foretell',
       'keyword.miracle',
+      'keyword.harmonize',
       'keyword.storm',
       'keyword.replicate',
       'keyword.gravestorm',
