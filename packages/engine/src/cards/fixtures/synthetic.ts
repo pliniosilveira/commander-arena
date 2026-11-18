@@ -131,6 +131,7 @@ import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
 import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
 import { SYNTHETIC_PRISMARI_G1_LIST } from './synthetic-prismari-g1';
 import { SYNTHETIC_PRISMARI_G2_LIST } from './synthetic-prismari-g2';
+import { SYNTHETIC_PRISMARI_G3_LIST } from './synthetic-prismari-g3';
 import { SYNTHETIC_PT_LIST } from './synthetic-pt';
 import { SYNTHETIC_RECURSION_LIST } from './synthetic-recursion';
 import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
@@ -500,6 +501,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_G2_LIST,
   ...SYNTHETIC_PRISMARI_G1_LIST,
   ...SYNTHETIC_PRISMARI_G2_LIST,
+  ...SYNTHETIC_PRISMARI_G3_LIST,
 ];
 
 export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(
