@@ -33,6 +33,7 @@ import {
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
+  LOSE_HEXPROOF_SHROUD,
   RESTRICT,
   SET_PT,
 } from './continuous';
@@ -1540,6 +1541,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_ABILITY,
   RESTRICT,
   LOSE_ALL_ABILITIES,
+  LOSE_HEXPROOF_SHROUD,
   BECOMES,
   SET_PT,
   FLICKER,

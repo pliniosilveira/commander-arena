@@ -1797,6 +1797,8 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
+  /** "Lose hexproof and shroud and can't have them" (`loseHexproofShroud`, D-599, CR 613.1f): layer 6, applied after every grant whatever its timestamp. */
+  | { readonly kind: 'loseHexproofShroud' }
   /**
    * A regeneration shield (CR 701.19a, D-120): no layer, it is read where a permanent would be destroyed
    * (`rules/regenerate.ts`). One shield protects the one permanent in `objects`, once, until end of turn.

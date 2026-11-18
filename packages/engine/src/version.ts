@@ -23,4 +23,5 @@
 // 119: A trigger of an attack batch keeps, for each creature declared, whom it attacked (a player or the controller of a planeswalker), read by the intervening "if" `attackersAtYouAtLeast` (D-593, issue 89).
 // 120: The static ability `cantAttackYou` keeps a group of creatures from attacking its controller and their planeswalkers, and the filter `enchantedByYou` (D-597, issue 89).
 // 121: The trigger `playerAttacksOpponent`, the selector `triggerAttackedPlayer`, the condition `attackedHasMoreLifeThanOtherOpponent` and `createToken.attacking` (D-598, issue 89).
-export const ENGINE_VERSION = 121;
+// 122: The effect `loseHexproofShroud` and its continuous change, read where abilities are derived (D-599, issue 89).
+export const ENGINE_VERSION = 122;

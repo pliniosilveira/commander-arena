@@ -186,6 +186,24 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
   },
 };
 
+/** "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a, D-599). */
+export const LOSE_HEXPROOF_SHROUD: Lowering<IrClause, Effects> = {
+  head: 'loseHexproofShroud',
+  id: 'lower.lose-hexproof-shroud',
+  needs: ['effect:loseHexproofShroud', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    if (!endsWithTurn(clause)) return failure(clause);
+    return eachObject(
+      clause,
+      ctx,
+      (objects) => ({ kind: 'loseHexproofShroud', objects, duration: END }),
+      'objects',
+      TRIGGER_SUBJECT,
+    );
+  },
+};
+
 /** "Target creature has base power and toughness 4/4 until end of turn" (CR 613.4b). */
 export const SET_PT: Lowering<IrClause, Effects> = {
   head: 'setPt',

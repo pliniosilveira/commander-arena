@@ -553,6 +553,7 @@ describe('unmatched abilities', () => {
       'effect.return-chosen-card',
       'effect.shuffle-graveyard',
       'effect.require-attack',
+      'effect.lose-hexproof-shroud',
       'effect.shuffle-self-and-graveyard',
       'effect.shuffle-into-libraries',
       'effect.tap-or-untap',

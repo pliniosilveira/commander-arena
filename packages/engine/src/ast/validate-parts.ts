@@ -67,6 +67,7 @@ export interface Scope {
           | 'modifyPt'
           | 'setPt'
           | 'loseAllAbilities'
+          | 'loseHexproofShroud'
           | 'setTypes'
           | 'setColors'
           | 'grantKeyword'
@@ -4727,6 +4728,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'modifyPt':
     case 'setPt':
     case 'loseAllAbilities':
+    case 'loseHexproofShroud':
     case 'setTypes':
     case 'setColors':
     case 'grantKeyword':

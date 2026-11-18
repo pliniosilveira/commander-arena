@@ -184,6 +184,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modifyPt',
     'setPt',
     'loseAllAbilities',
+    // D-599: "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a).
+    'loseHexproofShroud',
     // `setTypes` runs both the replacing form and `additive: true` (CR 205.1b, Crew's "becomes an
     // artifact creature"); `additive` is an option of the node, not a kind, so it has no `FeatureRef`.
     'setTypes',
@@ -1831,6 +1833,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   modifyPt: true,
   setPt: true,
   loseAllAbilities: true,
+  loseHexproofShroud: true,
   setTypes: true,
   setColors: true,
   grantKeyword: true,

@@ -2297,6 +2297,16 @@ export type Effect =
       readonly duration: Duration;
     }
   /**
+   * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-599):
+   * each creature `objects` names, fixed when the effect resolves, loses the abilities hexproof and shroud and can't have them again while the effect lasts, whatever
+   * gives them later (an ability a permanent loses is lost at its timestamp, but "can't have" holds for every timestamp). Protection and every other ability stays.
+   */
+  | {
+      readonly kind: 'loseHexproofShroud';
+      readonly objects: ObjectSelector;
+      readonly duration: Duration;
+    }
+  /**
    * "Target creature becomes a Frog" (a subtype), "becomes an artifact" (a card type): layer 4
    * (CR 613.1d). The new card types replace the old ones (CR 205.1a; an instant or sorcery keeps
    * its type); the new subtypes replace the creature types (CR 205.3d keeps the others). Either

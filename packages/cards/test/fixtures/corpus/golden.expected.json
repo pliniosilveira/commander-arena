@@ -1,5 +1,5 @@
 {
-  "parserVersion": 132,
+  "parserVersion": 133,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1277,19 +1277,10 @@
     "30ac68e6-160a-41f9-9f0f-0e0eef383150": {
       "name": "Arcane Lighthouse",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{1}, {T}: Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lead-gain-all"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "6685c4a2"
+      "ast": "ff575f07"
     },
     "30c3c700-46f4-4a77-8c45-5c7e3a21bd62": {
       "name": "Wizard's Staff",
@@ -6789,7 +6780,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 435,
+      "supported": 436,
       "total": 480
     }
   }

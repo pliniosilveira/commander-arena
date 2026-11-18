@@ -40,6 +40,7 @@ export type ContinuousNode = Extract<
       | 'modifyPt'
       | 'setPt'
       | 'loseAllAbilities'
+      | 'loseHexproofShroud'
       | 'setTypes'
       | 'setColors'
       | 'grantKeyword'
@@ -71,6 +72,8 @@ function changeOf(
     }
     case 'loseAllAbilities':
       return { kind: 'loseAllAbilities' };
+    case 'loseHexproofShroud':
+      return { kind: 'loseHexproofShroud' };
     case 'setTypes':
       return {
         kind: 'setTypes',

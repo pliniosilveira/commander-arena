@@ -35,4 +35,5 @@
 // 130: Read "spells you cast have affinity for Auras" and "that targets a modified permanent you control" in a cast trigger (D-596, issue 89).
 // 131: Read "[group] can't attack you or planeswalkers you control" and "each creature that's enchanted by an Aura you control" (D-597, issue 89).
 // 132: Read "a player attacks one of your opponents", "that attacking player", "that opponent" of that trigger and a token "that's attacking that opponent" (D-598, issue 89).
-export const PARSER_VERSION = 132;
+// 133: Read "until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-599, issue 89).
+export const PARSER_VERSION = 133;

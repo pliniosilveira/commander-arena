@@ -215,7 +215,9 @@ export function applyAbilityLayer(
       steps.push({ timestamp: e.timestamp, grant: null });
     }
   }
-  if (steps.length === 0) return printed;
+  // CR 702.11b, 702.18a, 613.1f (D-599): "can't have hexproof or shroud" holds for every timestamp, so the two are taken out after all the steps.
+  const noHexproofShroud = effects.some((e) => e.change.kind === 'loseHexproofShroud');
+  if (steps.length === 0 && !noHexproofShroud) return printed;
   // `sort` is stable, so grants with one timestamp (one permanent) keep their written order.
   steps.sort((a, b) => a.timestamp - b.timestamp);
   let abilities = printed;
@@ -231,6 +233,12 @@ export function applyAbilityLayer(
         ? [...abilities, step.grant, ...expansionOf(step.grant)]
         : [...abilities, step.grant];
     }
+  }
+  if (noHexproofShroud) {
+    return abilities.filter(
+      (a) =>
+        !(a.kind === 'keyword' && (a.keyword.kind === 'hexproof' || a.keyword.kind === 'shroud')),
+    );
   }
   return abilities;
 }

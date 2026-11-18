@@ -2399,6 +2399,7 @@ function runEffect(
     case 'modifyPt':
     case 'setPt':
     case 'loseAllAbilities':
+    case 'loseHexproofShroud':
     case 'setTypes':
     case 'setColors':
     case 'grantAbility':

@@ -5089,3 +5089,13 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `trigger.player-attacks-opponent` (`rules/trigger/angels.ts`), `noun.that-attacking-player` (`rules/noun/players.ts`), "that opponent" and `LowerContext.attackedPlayer` (`lower/nouns.ts`, `lower/triggers.ts`), the token suffix (`rules/token/index.ts`, `lower/effects.ts`).
 - Tests: engine `scenario-xx-player-attacks-opponent.test.ts` (once for each player attacked, a planeswalker is not a player, the controller is not its own opponent, the token tapped and attacking with its damage; mutation-checked: the controller counted as an opponent and a planeswalker counted as a player), `scenario-xx-attacked-more-life.test.ts` (the condition over three seats); cards `parser-player-attacks-opponent.test.ts` (the real line of Combat Calligrapher, near misses).
 - Example cards: Combat Calligrapher (issue 89); the trigger and the engine condition of Breena, the Demagogue.
+
+## Creatures lose hexproof and shroud (issue 89, D-599)
+
+- CR: 702.11b (Hexproof), 702.18a (Shroud), 611.2c (the set of creatures is fixed as the effect resolves), 613.1f (layer 6), 514.2 (it ends in the cleanup step), 702.16b (protection stays).
+- Gap class: P (the effect and the continuous change) and T (the sentence).
+- AST node: `{ kind: 'loseHexproofShroud', objects: { kind: 'each', filter: { types: ['creature'], controller: 'opponent', zone: 'battlefield' } }, duration: 'untilEndOfTurn' }`; the creatures it names lose both abilities and can't have them again until end of turn, whatever gives them later.
+- Engine: `rules/continuous.ts` (the effect), `rules/derive-layers.ts` (`applyAbilityLayer`, applied after all the grants), `state/types.ts` (the change).
+- Parser: `effect.lose-hexproof-shroud` (`rules/effect/hexproof-loss.ts`), `lower.lose-hexproof-shroud` (`lower/continuous.ts`).
+- Tests: engine `scenario-xx-lose-hexproof.test.ts` (hexproof and shroud no longer stop the spells of the controller, protection stays, it ends with the turn; mutation-checked: the removal of the two keywords); cards `parser-lose-hexproof.test.ts` (the real line of Arcane Lighthouse, near misses).
+- Example cards: Arcane Lighthouse (issue 89).

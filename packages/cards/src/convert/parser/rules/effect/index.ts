@@ -61,6 +61,7 @@ import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
+import { HEXPROOF_LOSS_EFFECT_RULES } from './hexproof-loss';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
@@ -913,6 +914,7 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  ...HEXPROOF_LOSS_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
