@@ -1833,6 +1833,12 @@ export type Effect =
        * something: the ability is created whenever this effect runs, which is when the cost of the `mayPay` it is the effect of was paid. Only the `effect` of a `mayPay`.
        */
       readonly afterPayment?: true;
+      /**
+       * "Create a 2/1 Inkling creature token. When you do, return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token" (issue 89,
+       * CR 603.12, 400.7j): `moved` in the ability is what the resolution that created it made or moved last (the tokens of a `createToken`), fixed as the ability is created. The
+       * instruction before the reflexive ability is a `createToken` (whose doing is a token created) or one of the kinds a `may` wraps.
+       */
+      readonly carriesMoved?: true;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -2475,8 +2481,15 @@ export type Effect =
        * "Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less" (CR 303.4f, 303.4g,
        * D-207): the Aura card enters the battlefield already attached to the target the effect names, which is not a choice of its controller. Only
        * with `to` `battlefield`; a `target` of the ability, an object. A card that cannot enchant it stays where it is (CR 303.4g).
+       * `moved` ("... to the battlefield attached to that token", "... attached to that creature"; issue 89, CR 303.4f, 303.4i, 400.7j): the object an earlier effect of the
+       * same sequence made or put onto the battlefield, or, in a `reflexive` ability with `carriesMoved`, the one the resolution that created it made. An Aura it cannot enchant
+       * stays where it is; an Equipment enters unattached when the object is not a creature (rules text unchecked, see docs/ROADMAP.md); nothing named is nothing moved.
+       * In a `delayedTrigger` the object is the one that was named as the ability was created.
        */
-      readonly attachTo?: { readonly kind: 'target'; readonly id: string };
+      readonly attachTo?:
+        | { readonly kind: 'target'; readonly id: string }
+        | { readonly kind: 'moved' }
+        | Extract<ObjectRef, { readonly kind: 'boundObjects' }>;
     }
   | { readonly kind: 'counter'; readonly objects: ObjectSelector }
   /**

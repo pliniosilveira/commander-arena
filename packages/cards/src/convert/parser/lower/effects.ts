@@ -33,6 +33,7 @@ import {
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
+  DELAYED_RETURN_THIS_CARD_ATTACHED,
   DELAYED_RETURN_TO_HAND,
   FLICKER,
   GRANT_KEYWORD,
@@ -502,6 +503,34 @@ const RETURN: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // "When enchanted creature dies, return that card to the battlefield under its owner's control" (issue 89, Gift of Immortality, CR 400.7, 603.10a): "that card" is the card the
+    // enchanted creature became in the graveyard, not the creature the Aura was attached to (the binding pass names that one).
+    if (
+      ctx.auraDies &&
+      zone === 'battlefield' &&
+      chosen?.kind === 'noun' &&
+      chosen.det === 'enchanted' &&
+      chosen.rule === 'noun.that-card' &&
+      operand(clause, 'attachTo') === undefined
+    ) {
+      const blocked = missingFeatures(['selector:triggerCard', 'selector:triggerSubject']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      ctx.returnedDyingCard = true;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'moveToZone',
+            objects: { kind: 'triggerCard' },
+            to: 'battlefield',
+            controller: to.whose ?? 'you',
+            ...(to.tapped === true ? { tapped: true } : {}),
+            ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     // "Return that nonland permanent card to the battlefield" (stage P33, D-150, CR 608.2c): the card an earlier instruction chose from a
     // graveyard; a pronoun for anything else (a permanent on the battlefield, a player) is not a card to return. D-362 (Victimize): "the chosen cards" the same.
     if (
@@ -513,6 +542,18 @@ const RETURN: Lowering<IrClause, Effects> = {
       if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
         return failure(clause);
       }
+    }
+    // "... to the battlefield attached to that token" (issue 89, Forum Filibuster, CR 303.4f, 400.7j): the token the instruction before made, which names it.
+    const hostNoun = operand(clause, 'attachTo');
+    let attachTo: { readonly kind: 'moved' } | undefined;
+    if (hostNoun !== undefined) {
+      if (zone !== 'battlefield' || hostNoun.kind !== 'noun') return failure(clause);
+      const host = objectRefOf(hostNoun, ctx, { token: true });
+      if (!host.ok) return host;
+      if (host.value.kind !== 'moved') return failure(clause);
+      const blockedHost = missingFeatures(['ability:attachedToMoved']);
+      if (blockedHost.length > 0) return failure(clause, blockedHost);
+      attachTo = { kind: 'moved' };
     }
     // CR 110.2a: what an effect puts onto the battlefield is controlled by the player performing it
     // unless the text says otherwise; the node says so rather than lean on the engine's default.
@@ -530,6 +571,7 @@ const RETURN: Lowering<IrClause, Effects> = {
               ...(to.tapped === true ? { tapped: true } : {}),
               // "... with a finality counter on it" (stage P68, D-230, CR 122.6): the counter it enters with.
               ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+              ...(attachTo === undefined ? {} : { attachTo }),
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
@@ -1943,6 +1985,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DELAYED_RETURN_TO_HAND,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
+  DELAYED_RETURN_THIS_CARD_ATTACHED,
   SEARCH,
   PREVENT_DAMAGE,
   PREVENT_DAMAGE_PER_PREVENTED,

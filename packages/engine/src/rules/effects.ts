@@ -31,7 +31,7 @@ import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
 import { runAttackRandomOpponent } from './attack-random-opponent';
-import { runAuraEntry, withAuraEntries } from './aura-entry';
+import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
@@ -984,10 +984,25 @@ function runEffect(
         const [host] = resolveObjects(state, effect.attachTo, ctx, targets).filter(
           (id) => state.objects[id]?.zone === 'battlefield',
         );
-        if (host === undefined) return { ...done(state), lastMoved: [] };
+        const hostObject = host === undefined ? undefined : state.objects[host];
+        if (host === undefined || hostObject === undefined) {
+          return { ...done(state), lastMoved: [] };
+        }
+        // Issue 89 (CR 303.4g, 303.4i): an Aura the object cannot be enchanted by stays where it is; an Equipment enters unattached when it is no creature (`rules/aura-entry.ts`).
         return moving(
           state,
-          moves.map((m) => (m.kind === 'move' ? { ...m, attachTo: host } : m)),
+          moves.flatMap((m): Instruction[] => {
+            if (m.kind !== 'move') return [m];
+            const card = state.objects[m.object];
+            if (card === undefined) return [m];
+            const how = entryAttachment(
+              state,
+              card,
+              hostObject,
+              m.controller === 'owner' ? card.owner : res.controller,
+            );
+            return how === 'stay' ? [] : how === 'attach' ? [{ ...m, attachTo: host }] : [m];
+          }),
         );
       }
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
@@ -1351,7 +1366,15 @@ function runEffect(
         });
       }
       if (effect.effect.kind === 'moveToZone') {
-        const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
+        // Issue 89 (CR 603.7c, 400.7): "Return this card to the battlefield attached to that creature at the beginning of the next end step": the creature is the object
+        // the effect before it returned, bound as it is now (`boundObjects`: found later only if it is still that object on the battlefield, else the Aura stays, CR 303.4g).
+        const back: Effect = {
+          ...effect.effect,
+          objects: { kind: 'triggerSubject' },
+          ...(effect.effect.attachTo?.kind === 'moved'
+            ? { attachTo: { kind: 'boundObjects' as const, ids: res.lastMoved ?? [] } }
+            : {}),
+        };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
         const cards =
           effect.effect.objects.kind === 'triggerCard' || effect.effect.objects.kind === 'thisCard'
@@ -1991,7 +2014,7 @@ function runEffect(
           front.push(...made.front);
           created = [...created, ...made.created];
         }
-        return { ...done(next, events, front), lastMoved: created };
+        return { ...done(next, events, front), lastMoved: created, performed: created.length };
       }
       // CR 303.4f, 303.4g (issue 89): "create an Aura token attached to target creature": the Aura enters attached to the object the effect names, which is not a choice of its
       // controller; when that object is not one its enchant ability allows (or is gone) the Aura does not enter, and a token that never was in a zone is not created.
@@ -2068,7 +2091,8 @@ function runEffect(
       }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
-      return { ...done(next, events, front), lastMoved: created };
+      // Issue 89 (CR 603.12): the tokens made are something done, for "create a token. When you do, ...".
+      return { ...done(next, events, front), lastMoved: created, performed: created.length };
     }
 
     case 'shuffle': {

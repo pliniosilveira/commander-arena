@@ -1126,9 +1126,24 @@ export function graveyardPhrase(
       pos: r.pos,
     };
   };
+  // "Aura or Equipment card" (issue 89, Forum Filibuster, CR 205.3g, 205.3h): a card that is an Aura or is an Equipment, one card only (the subtypes of an enchantment and of an
+  // artifact; no type word is said).
+  const auraOrEquipment: Parser<CardWords> = map(literal('Aura or Equipment '), () => ({
+    types: [],
+    anyOf: [],
+    subtypes: [],
+    subtypeAnyOf: ['Aura', 'Equipment'],
+  }));
   const words: Parser<CardWords> = plural
     ? choice(permanentCards, choiceOfTypes, typed)
-    : choice(permanentCards, withNonAura, choiceOfTypes, quiet(subtypeChoiceWords), typed);
+    : choice(
+        permanentCards,
+        withNonAura,
+        choiceOfTypes,
+        quiet(subtypeChoiceWords),
+        auraOrEquipment,
+        typed,
+      );
   // "Dragon creature card or Ugin planeswalker card from your graveyard" (stage P34, D-152, CR 205.2a, 205.3j): one card that is either kind,
   // each kind a creature type and a card type ("Dragon creature card") or a planeswalker type ("Ugin planeswalker card"). Two or more kinds,
   // each with a type or a subtype; the owner follows the last.

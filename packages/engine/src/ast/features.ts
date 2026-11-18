@@ -141,6 +141,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
     'reflexiveModal',
     'reflexivePaid',
+    // Issue 89: "Create a token. When you do, return ... attached to that token", "Return this card to the battlefield attached to that creature at the beginning of the next end step".
+    'reflexiveMoved',
+    'attachedToMoved',
+    'delayedReturnAttached',
   ],
   effectKinds: [
     'sequence',
@@ -1351,6 +1355,12 @@ export const ABILITY_FEATURES = [
   'reflexiveModal',
   /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-511): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
   'reflexivePaid',
+  /** "Create a 2/1 token. When you do, ... attached to that token" (CR 603.12, 400.7j, issue 89): a `reflexive` effect with `carriesMoved` after a `createToken`. */
+  'reflexiveMoved',
+  /** "Return target Aura or Equipment card from your graveyard to the battlefield attached to that token" (CR 303.4f, 303.4g, issue 89): a `moveToZone` with `attachTo` `moved`. */
+  'attachedToMoved',
+  /** "Return this card to the battlefield attached to that creature at the beginning of the next end step" (CR 603.7c, 303.4f, issue 89): a delayed `moveToZone` of `thisCard` with `attachTo` `moved`. */
+  'delayedReturnAttached',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -2024,6 +2034,9 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   sacrificeOneOrMore: true,
   reflexiveModal: true,
   reflexivePaid: true,
+  reflexiveMoved: true,
+  attachedToMoved: true,
+  delayedReturnAttached: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,

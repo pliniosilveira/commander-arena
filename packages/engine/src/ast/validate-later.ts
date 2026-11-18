@@ -104,6 +104,23 @@ export function checkDelayedTrigger(
     if (move.to !== 'battlefield' && !handReturn) {
       issue(out, `${path}.effect.to`, 'a delayed move puts the object onto the battlefield');
     }
+    // Issue 89 (Gift of Immortality, CR 603.7c, 400.7, 303.4f): "Return this card to the battlefield attached to that creature at the beginning of the next end step": the Aura's own
+    // card, attached to the object the effect before it returned (`moved`, bound as the ability is created).
+    if (move.attachTo !== undefined) {
+      if (
+        move.attachTo.kind !== 'moved' ||
+        !exiledAvailable ||
+        !dyingObject ||
+        kindOf(move.objects) !== 'thisCard' ||
+        move.to !== 'battlefield'
+      ) {
+        issue(
+          out,
+          `${path}.effect.attachTo`,
+          "a delayed return of the Aura's own card is attached to the object an effect before it returned ('moved')",
+        );
+      }
+    }
     return;
   }
   // D-217 (CR 603.7c): "add an amount of {C} equal to the amount of mana spent to cast that spell at the beginning of your next main phase": fixed mana,

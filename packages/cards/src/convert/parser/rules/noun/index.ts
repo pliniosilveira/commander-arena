@@ -336,6 +336,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'two target land cards from your graveyard',
     'up to three target land cards from your graveyard',
     'up to one target card from a graveyard',
+    // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
+    'up to one target Aura or Equipment card from your graveyard',
+    'target Aura or Equipment card from your graveyard',
   ],
   rejects: [
     'target creature',
@@ -343,6 +346,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',
+    'two target Aura or Equipment cards from your graveyard',
+    'target Aura or Equipment from your graveyard',
+    'target Aura or Equipment or Saga card from your graveyard',
   ],
   parse: targetOf(ID.targetGraveyard, graveyardPhrase),
 });

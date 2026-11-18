@@ -832,7 +832,14 @@ function moveText(
         effect.controller === 'owner' && (objects.kind === 'target' || objects.kind === 'each')
           ? " under its owner's control"
           : '';
-      return `Return ${what} to the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
+      // Issue 89 (CR 303.4f): "... attached to that token": the object an effect before it made, or a target.
+      const attached =
+        effect.attachTo === undefined
+          ? ''
+          : effect.attachTo.kind === 'target'
+            ? ` attached to ${objectText(effect.attachTo, ability, self)}`
+            : ' attached to that permanent';
+      return `Return ${what} to the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${attached}${withCounters}`;
     }
   }
 }

@@ -466,6 +466,38 @@ export const DELAYED_RETURN_THIS_CARD: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "When enchanted creature dies, return that card to the battlefield under its owner's control. Return this card to the battlefield attached to that creature at the beginning of the next
+ * end step." (issue 89, Gift of Immortality; CR 603.7, 603.7c, 400.7, 303.4f, 303.4g): the engine's `delayedTrigger` at the end step of each turn whose effect puts the card of the Aura that
+ * has the ability (`thisCard`) onto the battlefield attached to the creature the return before it put there (`moved`, bound as the delayed ability is created). Refused anywhere but right
+ * after that return, in the "dies" trigger of the attached creature.
+ */
+export const DELAYED_RETURN_THIS_CARD_ATTACHED: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnThisCardAttached',
+  id: 'lower.delayed-return-this-card-attached',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:thisCard',
+    'ability:delayedReturnAttached',
+  ],
+  lower(clause, ctx): LowerResult<Effects> {
+    if (!ctx.auraDies || !ctx.returnedDyingCard) return failure(clause);
+    const back: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'thisCard' },
+      to: 'battlefield',
+      controller: 'you',
+      attachTo: { kind: 'moved' },
+    };
+    return {
+      ok: true,
+      value: [{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** A dies trigger can schedule its trigger card to its owner's hand at the next end step (D-599). */
 export const DELAYED_RETURN_TO_HAND: Lowering<IrClause, Effects> = {
   head: 'delayedReturnToHand',

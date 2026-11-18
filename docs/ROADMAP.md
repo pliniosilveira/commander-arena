@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- "Attached to that token" is read only after a token created in the same ability (Forum Filibuster). An Equipment put onto the battlefield attached to a non-creature enters unattached; that rule's text was not checked.
 - An Aura token an effect creates attached to a target is read only as one "white Aura enchantment token" with "enchant creature"; other enchant restrictions, several tokens and a replacement-made extra Aura (which still asks its host) are not.
 - Bestow: a copy of a bestowed permanent copies the card, not its Aura form; the rules text of CR 702.103 was not available when it was built, so its subrule letters are unchecked.
 - A land that may reveal a Dragon card "or you control a Dragon" is not asked to reveal when it controls one (`orIf`): nothing but what the opponent learns would change.
@@ -494,8 +495,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Enchanted creature dies: "an enchanted creature you control", "another enchanted creature" and "equipped" are not read; the last-known information keeps the Auras only, no Equipment.
 - Exile from the top and cast among them: only the sentences of Herald of Amity; "from among them" after another instruction, other orders of the rest and several spells are not read.
 - Cast from the graveyard for another cost: the alternative cost is charged for every such cast, also one a permission gave; the choice between two costs (CR 118.9) is not offered. Unverified against a card with both.
-- An Aura that returns: only "this card" of an Aura whose trigger is the dying of its creature; "attached to that creature" for a delayed return is not built.
-- Gift of Immortality is not read: "return that card to the battlefield under its owner's control" after "when enchanted creature dies" lowers to a move of the enchanted creature, not the card it became; unverified at runtime.
+- An Aura that returns: only "this card" of an Aura whose trigger is the dying of its creature, and attached to the creature that came back (Gift of Immortality); other hosts are not built.
 - Look at the top and put an Aura or Equipment, reveal until and may put, attach to the token: only the sentences of Armored Skyhunter, Songbirds' Blessing and Ajani's Chosen are read.
 - Behold cost, granted loyalty ability, graveyard self-exile cost: built without the Comprehensive Rules text at hand; their rule references are unverified.
 - Split cards: Flashback on a split card is refused, so such a card stays unsupported.

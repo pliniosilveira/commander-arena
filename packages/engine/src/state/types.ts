@@ -527,6 +527,8 @@ export interface StackData {
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`PendingTrigger.thisWayBefore`). */
   readonly thisWayBefore?: ThisWayCounts;
+  /** For a reflexive ability with `carriesMoved` (issue 89): the objects the resolution that created it had made or moved, which `moved` names in it (`StackData.movedBefore`). */
+  readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` ability (D-232): the cards that left the graveyard, as the objects they are now (`PendingTrigger.cards`). */
   readonly triggerCards?: readonly ObjectId[];
   /**
@@ -753,6 +755,8 @@ export interface PendingTrigger {
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`ThisWayCounts`), read by its `thisWay` amounts. */
   readonly thisWayBefore?: ThisWayCounts;
+  /** For a reflexive ability with `carriesMoved` (issue 89): the objects the resolution that created it had made or moved, which `moved` names in it (`StackData.movedBefore`). */
+  readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` trigger (D-232): the cards that left the graveyard in the events that triggered it, as the objects they became. */
   readonly cards?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
