@@ -96,6 +96,10 @@ import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealUntil } from './reveal-until';
+import { runExileAnyNumber } from './exile-any-number';
+import { runExilePiles, startExilePiles } from './exile-piles';
+import { runExileUntilFound } from './exile-until-found';
+import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
@@ -245,6 +249,11 @@ export function runInstruction(
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
   if (instruction.kind === 'lookSplit') return runLookSplit(state, res, instruction);
   if (instruction.kind === 'pileSeparate') return runPileSeparate(state, res, instruction);
+  if (instruction.kind === 'exilePiles') return runExilePiles(state, res, instruction);
+  if (instruction.kind === 'exileAnyNumber') return runExileAnyNumber(state, res, instruction);
+  if (instruction.kind === 'opponentChoosesCard') {
+    return runOpponentChoosesCard(state, res, instruction);
+  }
   if (instruction.kind === 'behold') return runBehold(state, res, instruction);
   if (instruction.kind === 'putOnTop') return runPutOnTop(state, res, instruction);
   if (instruction.kind === 'confirmOptional') {
@@ -1203,6 +1212,41 @@ function runEffect(
           })),
         ],
       });
+    case 'delayedCombatDamageTurn': {
+      // CR 603.7, 603.7c, 603.7d, 510.3a, 514.2 (D-649): "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card": a delayed ability of the
+      // controller that triggers each time such a creature damages a player until the end of the turn. The card an earlier effect of this sequence exiled is written into it as
+      // it is made (CR 603.7c: nothing of the spell is left to name later); a card that left exile since is a new object and is not found (CR 400.7).
+      const exiled = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+      const inner = effect.effect;
+      const baked: Effect =
+        inner.kind === 'copyCardAndCast' && inner.objects.kind === 'moved'
+          ? {
+              ...inner,
+              objects: { kind: 'boundObjects', ids: exiled, zone: 'exile' },
+            }
+          : inner;
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: {
+                kind: 'dealsCombatDamage' as const,
+                what: effect.filter,
+                to: 'player' as const,
+              },
+              effect: baked,
+            },
+          },
+        ],
+      });
+    }
     case 'delayedTrigger': {
       // CR 603.7, 603.7d, 603.7e (D-128): a delayed triggered ability, created as the spell or ability resolves. It
       // belongs to its controller and refers to the source only as the thing that created it (CR 603.7c: the source
@@ -2170,7 +2214,15 @@ function runEffect(
       return done(
         state,
         [],
-        [{ kind: 'castFree', objects: effect.objects, play: effect.play === true, chosen: null }],
+        [
+          {
+            kind: 'castFree',
+            objects: effect.objects,
+            play: effect.play === true,
+            ...(effect.max === undefined ? {} : { remaining: effect.max }),
+            chosen: null,
+          },
+        ],
       );
 
     case 'fight': {
@@ -2198,6 +2250,22 @@ function runEffect(
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
       return runRevealUntil(state, res, effect);
+
+    case 'exileUntilFound':
+      // CR 701.13, 101.4 (D-647): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).
+      return runExileUntilFound(state, res, effect, ctx, targets);
+
+    case 'opponentChoosesCard':
+      // CR 608.2d (D-647): an opponent chooses one of the cards moved; the others are `moved` afterwards (rules/choose-aside.ts).
+      return startOpponentChoosesCard(state, res, effect, ctx);
+
+    case 'exilePiles':
+      // CR 700.3, 406.3 (D-650): a face-down pile and a face-up pile of exiled cards; an opponent chooses one (rules/exile-piles.ts).
+      return startExilePiles(state, res, effect, ctx);
+
+    case 'exileTopAnyNumber':
+      // CR 701.13, 608.2d (D-648): "As many times as you choose, you may exile the top card of your library" (rules/exile-any-number.ts).
+      return moving(state, [{ kind: 'exileAnyNumber', answer: null }]);
 
     case 'lookAndReorder': {
       const count = amountOf(state, effect.count, ctx, targets);

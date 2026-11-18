@@ -566,7 +566,10 @@ export function resolveObjects(
       return [...(ctx.chosenObjects?.[selector.id] ?? [])];
     case 'boundObjects':
       // D-625 (CR 603.7c, 400.7): the objects a delayed ability was created about that are still those objects on the battlefield.
-      return selector.ids.filter((id) => state.objects[id]?.zone === 'battlefield');
+      // D-649 (CR 400.7): a card the ability was made about in exile (`zone` 'exile'), found only while it is still that object there.
+      return selector.ids.filter(
+        (id) => state.objects[id]?.zone === (selector.zone === undefined ? 'battlefield' : selector.zone),
+      );
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
