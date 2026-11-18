@@ -257,7 +257,7 @@ describe('becomes a copy (CR 707.2, 613.2a)', () => {
     expect(structural(becomes('untilEndOfTurn'))).toEqual([]);
   });
 
-  test('no end at all is executable (D-628), and an unknown duration is malformed', () => {
+  test('no end at all is executable (D-629), and an unknown duration is malformed', () => {
     expect(issues(creature(becomes('permanent')))).toEqual([]);
     expect(structural(becomes('permanent'))).toEqual([]);
     expect(structural(becomes('forever'))).toEqual([expect.stringContaining('duration')]);

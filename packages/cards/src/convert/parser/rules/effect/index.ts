@@ -897,11 +897,11 @@ export const EFFECT_RULES = [
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
-  // Prismari deck, group 1 (issue 87, D-624 to D-631): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
+  // Prismari deck, group 1 (issue 87, D-625 to D-632): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
   // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
   // choose and gain rules, and are tried first.
   ...PRISMARI_G1_EFFECT_RULES,
-  // Prismari deck, group 2 (issue 87, D-633 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
+  // Prismari deck, group 2 (issue 87, D-634 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
   ...PRISMARI_G2_EFFECT_RULES,

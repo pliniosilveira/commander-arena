@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 1 OF THE PRISMARI DECK (ISSUE 87, D-624 TO D-631). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 1 OF THE PRISMARI DECK (ISSUE 87, D-625 TO D-632). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the group added to the engine: tokens that are copies and the delayed exile or sacrifice of only the tokens one ability made (`createToken` of a
  * `copyOf`, `createCopies`, `populate`, `delayedTrigger` of `moved`, CR 111.10, 603.7c, 701.36), a tapped and attacking copy (`createCopies` with `tapped`, `enterAttacking`, CR 508.4),

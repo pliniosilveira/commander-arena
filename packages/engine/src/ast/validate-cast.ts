@@ -25,7 +25,7 @@ export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIss
 }
 
 /**
- * CR 702.34a: the flashback cost is mana, or mana and life (D-633, CR 119.4: "Flashback—{1}{U}, Pay 3 life."); any other cost of a flashback is not supported.
+ * CR 702.34a: the flashback cost is mana, or mana and life (D-634, CR 119.4: "Flashback—{1}{U}, Pay 3 life."); any other cost of a flashback is not supported.
  */
 export function checkFlashbackCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
   checkCosts(cost, path, out);

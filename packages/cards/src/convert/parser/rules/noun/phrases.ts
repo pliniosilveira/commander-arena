@@ -118,7 +118,7 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('colorless', (p) => ({ ...p, colorless: true })),
   // Stage P30 (D-135): "nonbasic land" (CR 205.4: basic is a supertype), the engine's `notSupertypes`.
   word('nonbasic', (p) => ({ ...p, notSupertypes: [...p.notSupertypes, 'basic'] })),
-  // D-630 (Prismari deck, group 1; CR 205.4: legendary is a supertype): "up to one target nonlegendary creature you control", the engine's `notSupertypes`.
+  // D-631 (Prismari deck, group 1; CR 205.4: legendary is a supertype): "up to one target nonlegendary creature you control", the engine's `notSupertypes`.
   word('nonlegendary', (p) => ({ ...p, notSupertypes: [...p.notSupertypes, 'legendary'] })),
   // Stage P31 (D-140): "attacking creature" (CR 508.1k), "monocolored" and "multicolored" (CR 105.2a, 105.2b: one color, two or more).
   // Stage P68 (D-229): "attacking or blocking creature" (CR 506.4, 509.1g), before "attacking", of which it is the start.

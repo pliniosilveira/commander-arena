@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 2 OF THE PRISMARI DECK (ISSUE 87, D-632 AND LATER). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 2 OF THE PRISMARI DECK (ISSUE 87, D-633 AND LATER). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the group added to the engine: effects that read the spell that was cast (its mana value and the mana spent on it, `objectMatches` and `manaValueOf` of
  * the `triggerSubject` of a `castSpell` trigger, `manaSpent` with `of`), the greatest mana value among the spells cast this turn (`greatestManaValueCast`), divided damage among any

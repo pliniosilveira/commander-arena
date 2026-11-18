@@ -1,5 +1,5 @@
 /**
- * Lowerings of group 1 of the Prismari deck (issue 87, D-624 to D-631): populate, the sentences about the tokens an instruction just made, copies of tokens, the choice of a token and
+ * Lowerings of group 1 of the Prismari deck (issue 87, D-625 to D-632): populate, the sentences about the tokens an instruction just made, copies of tokens, the choice of a token and
  * the permanents that become copies. "They", "them", "those tokens", "it" (the token) and "the token created this way" are read only as the tokens the instruction before made
  * (`ctx.tokensMade`, the engine's `moved`); after anything else the sentence is not lowered (never guessed).
  */
@@ -27,7 +27,7 @@ const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
   head: 'grantKeywordToMade',
   id: 'lower.grant-keyword-to-made',
   needs: ['effect:grantKeyword', 'selector:moved'],
-  // D-633: "They gain haste until end of turn" carries its duration (the rule that reads it is the only one that gives this clause one); without it the keyword is for good.
+  // D-634: "They gain haste until end of turn" carries its duration (the rule that reads it is the only one that gives this clause one); without it the keyword is for good.
   takesDuration: true,
   lower(clause, ctx) {
     if (clause.duration !== undefined && clause.duration.scope !== 'untilEndOfTurn') {
@@ -99,7 +99,7 @@ const CREATE_OF_THOSE: Lowering<IrClause, Effects> = {
   id: 'lower.create-of-those-tokens',
   needs: ['effect:createToken', 'token:copyOf'],
   lower(clause, ctx) {
-    // D-632: the token of the instruction before, whatever kind ("create three of those tokens instead" after a 1/1 Elemental as after a copy).
+    // D-633: the token of the instruction before, whatever kind ("create three of those tokens instead" after a 1/1 Elemental as after a copy).
     const last = ctx.lastToken;
     const count = arg(clause, 'count');
     if (last?.kind !== 'createToken' || count === undefined || count.kind !== 'number') {

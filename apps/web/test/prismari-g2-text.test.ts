@@ -1,5 +1,5 @@
 /**
- * The words of group 2 of the Prismari deck (D-632 and later) as pure models: the trigger and the activated abilities that read the spell that was cast (its mana value, the mana spent
+ * The words of group 2 of the Prismari deck (D-633 and later) as pure models: the trigger and the activated abilities that read the spell that was cast (its mana value, the mana spent
  * on it, the greatest mana value cast this turn), the token of an X size, the copy of an exiled card that is cast, the animated land with its keyword on its controller's turn, creatures
  * named like the source, the creature that can block only creatures with flying, and the activated ability that discards the card for a Treasure (which is not Cycling). Read from the
  * engine's SYNTHETIC cards, so a wording that drifts from the AST fails here. No DOM.

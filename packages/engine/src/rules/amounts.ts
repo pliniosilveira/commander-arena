@@ -243,7 +243,7 @@ export function amountOf(
   if (amount.kind === 'manaSpent') {
     // D-217 (CR 113.7a): "the amount of mana spent to cast that spell": the spell the ability targeted, as it last was once countered.
     if (amount.of !== undefined) {
-      // D-632 (CR 601.2h, 113.7a): the spell that caused the trigger, as it is or as it last was.
+      // D-633 (CR 601.2h, 113.7a): the spell that caused the trigger, as it is or as it last was.
       if (amount.of.kind === 'triggerSubject') {
         const id = ctx.triggerSubject;
         return manaSpentOf(
@@ -351,7 +351,7 @@ export function stateAmountOf(
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
     case 'spellsCastThisTurn': {
-      // CR 601.2i (D-624): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
+      // CR 601.2i (D-625): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
       const types = amount.ofTypes;
       if (types === undefined) return getSeat(state, ctx.controller).spellsCastThisTurn;
       return state.turnLog.castSpells.filter(
@@ -359,7 +359,7 @@ export function stateAmountOf(
       ).length;
     }
     case 'greatestManaValueCast': {
-      // CR 202.3, 202.3e, 601.2i (D-632): the greatest mana value among the spells the controller has cast this turn (copies are not cast, CR 707.10), each as it was cast.
+      // CR 202.3, 202.3e, 601.2i (D-633): the greatest mana value among the spells the controller has cast this turn (copies are not cast, CR 707.10), each as it was cast.
       const types = amount.ofTypes;
       let best = 0;
       for (const s of state.turnLog.castSpells) {

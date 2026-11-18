@@ -188,7 +188,7 @@ describe('keyword.flashback: "Flashback {M}" (CR 702.34a)', () => {
       closestRule: 'keyword.flashback',
       recognised: expect.arrayContaining(['keyword.flashback', 'cost.pay-life']),
     });
-    // A mana cost with a life payment is run since D-633 (Deep Analysis); a third cost, or another one, is not.
+    // A mana cost with a life payment is run since D-634 (Deep Analysis); a third cost, or another one, is not.
     expect(readAll('Flashback—{1}{U}, Pay 3 life.', 'sorcery').abilities).toEqual([
       flashback(mana('1', 'U'), { kind: 'payLife', amount: 3 }),
     ]);

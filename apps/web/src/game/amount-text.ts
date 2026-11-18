@@ -27,7 +27,7 @@ export interface AmountContext {
   readonly self?: string;
   /** The object an effect already names as its subject, so "its power" says it ("it deals damage equal to its power"). */
   readonly same?: ObjectRef;
-  /** The ability is the trigger of a spell being cast (CR 601.2i): the trigger's subject is a spell, "that spell's mana value" (D-632). */
+  /** The ability is the trigger of a spell being cast (CR 601.2i): the trigger's subject is a spell, "that spell's mana value" (D-633). */
   readonly spell?: true;
 }
 
@@ -213,10 +213,10 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the number of times it was kicked';
     case 'manaSpent':
       // D-183 (CR 601.2h): the mana spent to cast the spell, in all or from sources of a card type.
-      // D-632 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell", the spell a cast trigger names.
+      // D-633 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell", the spell a cast trigger names.
       return `the amount of ${manaSpentWords(amount.fromType, amount.of?.kind === 'triggerSubject' ? 'that spell' : 'it')}`;
     case 'greatestManaValueCast':
-      // D-632 (CR 202.3, 601.2i): "the greatest mana value among instant and sorcery spells you've cast this turn".
+      // D-633 (CR 202.3, 601.2i): "the greatest mana value among instant and sorcery spells you've cast this turn".
       return amount.ofTypes === undefined
         ? "the greatest mana value among spells you've cast this turn"
         : `the greatest mana value among ${amount.ofTypes.join(' and ')} spells you've cast this turn`;
@@ -298,7 +298,7 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
     case 'spellsCastThisTurn':
-      // D-624 (CR 601.2i): "the number of instant and sorcery spells you've cast this turn".
+      // D-625 (CR 601.2i): "the number of instant and sorcery spells you've cast this turn".
       return amount.ofTypes === undefined
         ? "the number of spells you've cast this turn"
         : `the number of ${amount.ofTypes.join(' and ')} spells you've cast this turn`;

@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 1: populate (CR 701.36) and the delayed sacrifice of only the token it made (D-625), with the SYNTHETIC sibling of Determined Iteration
+// The Prismari deck (issue 87), group 1: populate (CR 701.36) and the delayed sacrifice of only the token it made (D-626), with the SYNTHETIC sibling of Determined Iteration
 // (src/cards/fixtures/synthetic-prismari-g1.ts): "At the beginning of combat on your turn, populate. The token created this way gains haste. Sacrifice it at the beginning of the next
 // end step." Pins: CR 701.36a (choose a creature token you control, create a copy of it), CR 701.36b (no creature token, no token), CR 707.2 and 111.10 (a copy has the copiable values:
 // no counters, no other effects; the copy of a token that is a copy has the copied values), CR 603.7 and 603.7c (a delayed triggered ability about the tokens this ability made, and no

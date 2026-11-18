@@ -337,7 +337,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const adventure = isAdventureSpell(next, obj);
     // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
-    // CR 608.2n, 122.1 (D-637): "Exile this spell with three time counters on it": the instruction decides where the card goes: exile, with the counters.
+    // CR 608.2n, 122.1 (D-638): "Exile this spell with three time counters on it": the instruction decides where the card goes: exile, with the counters.
     const timeCounters =
       obj.stack?.exileWithTimeCounters !== undefined && obj.card !== null && !permanent
         ? obj.stack.exileWithTimeCounters
@@ -376,7 +376,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     if (moved.kind === 'done') {
       next = moved.state;
       events.push(...moved.events);
-      // CR 122.1, 702.62b (D-637): the time counters go on the card as it is exiled (a card with suspend and a time counter in exile is suspended).
+      // CR 122.1, 702.62b (D-638): the time counters go on the card as it is exiled (a card with suspend and a time counter in exile is suspended).
       if (timeCounters !== null && moved.newObject !== null) {
         next = patchObject(next, moved.newObject, { counters: { [TIME_COUNTER]: timeCounters } });
         events.push({

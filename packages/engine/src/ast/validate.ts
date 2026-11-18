@@ -1794,7 +1794,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       'a land is played, not cast: it has no castFromGraveyard to give it permission for',
     );
   }
-  // D-627 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
+  // D-628 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
   const strive = face.abilities.filter(
     (a) => a?.kind === 'static' && a.static?.kind === 'costPerExtraTarget',
   ).length;

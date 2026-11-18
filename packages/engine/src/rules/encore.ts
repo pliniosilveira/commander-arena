@@ -19,7 +19,7 @@ export const ENCORE_SACRIFICE_ABILITY: TriggeredAbility = {
 };
 
 /**
- * "... tokens that attack that opponent this turn if able" (CR 508.1d, D-638): each of `tokens` is required to attack the player `opponent` this turn if it is able to (the same
+ * "... tokens that attack that opponent this turn if able" (CR 508.1d, D-639): each of `tokens` is required to attack the player `opponent` this turn if it is able to (the same
  * requirement Encore gives its copies; no haste and no delayed ability).
  */
 export function requireAttackingPlayer(

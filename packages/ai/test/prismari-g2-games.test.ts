@@ -1,4 +1,4 @@
-// Slice soak (issue 87, D-632 and later): whole games with the 'prismariG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-prismari-g2.ts`: the creatures whose triggers read the
+// Slice soak (issue 87, D-633 and later): whole games with the 'prismariG2' deck style (SYNTHETIC cards of the engine fixtures `synthetic-prismari-g2.ts`: the creatures whose triggers read the
 // spell that was cast, the creature that casts a copy of an exiled card, the divided damage among any targets, the tokens that must attack each opponent, the creature that copies itself,
 // the land that becomes a creature, the dragon that gives artifacts a mana ability, the creature that can block only creatures with flying, the flashback that costs life and the suspended
 // sorcery that adds mana that stays) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game finishes with a result, no fallback, no rejected action and

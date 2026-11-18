@@ -468,7 +468,7 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals 3 damage divided as you choose among any number of target creatures',
     '~ deals 4 damage divided as you choose among up to three target creatures',
     '~ deals X damage divided as you choose among any number of target creatures you don’t control',
-    // Prismari deck, group 2 (D-643, CR 115.4): any target, as many as the damage can be divided among.
+    // Prismari deck, group 2 (D-644, CR 115.4): any target, as many as the damage can be divided among.
     '~ deals 4 damage divided as you choose among any number of targets',
   ],
   rejects: [

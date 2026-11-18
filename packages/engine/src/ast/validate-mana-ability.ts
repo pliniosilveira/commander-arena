@@ -48,7 +48,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       'a mana ability adds a fixed amount of mana, never a count',
     );
   }
-  // D-636: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
+  // D-637: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
   if (a.production?.kind === 'fixed' && a.production.staysUntilEndOfTurn !== undefined) {
     issue(
       out,

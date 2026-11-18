@@ -625,7 +625,7 @@ export function canCastDuringResolution(
   /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
   anyManaType = false,
 ): boolean {
-  // D-640 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
+  // D-641 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
   if (alternative === 'normal') {
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the

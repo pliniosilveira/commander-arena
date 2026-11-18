@@ -111,7 +111,7 @@ describe('a token that is a copy of a target (CR 707.2)', () => {
     );
   });
 
-  test('"Create X tokens that are copies of ..." is read (D-624, D-629): X is the X of the spell, so a card whose cost has no {X} is not supported', () => {
+  test('"Create X tokens that are copies of ..." is read (D-625, D-630): X is the X of the spell, so a card whose cost has no {X} is not supported', () => {
     const text = 'Create X tokens that are copies of target creature.';
     expect(readAll(text, 'sorcery').spell?.effect).toMatchObject({
       kind: 'createToken',
@@ -276,7 +276,7 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     expect(d.stoppedAt).toContain(part);
   });
 
-  test('"That token" after a copy is the token the copy made (Prismari group 1, D-629): the engine\'s `moved`, which `createToken` of a copy names', () => {
+  test('"That token" after a copy is the token the copy made (Prismari group 1, D-630): the engine\'s `moved`, which `createToken` of a copy names', () => {
     expect(
       readAll(
         "Create a token that's a copy of target creature. That token gains haste until end of turn.",

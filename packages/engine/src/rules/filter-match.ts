@@ -300,7 +300,7 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from === undefined || from === 'hand') return false;
   }
-  // CR 601.2a (D-624): "Spells you cast from your hand": a spell on the stack that was cast from the hand.
+  // CR 601.2a (D-625): "Spells you cast from your hand": a spell on the stack that was cast from the hand.
   if (filter.castFromHand === true) {
     const from =
       ctx.castFrom ??

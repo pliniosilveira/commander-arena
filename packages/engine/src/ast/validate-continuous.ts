@@ -270,7 +270,7 @@ export function checkContinuousEffect(
       checkGrantAbility(e, path, scope, out);
       break;
     case 'grantKeyword':
-      // D-639 (CR 604.1): "During your turn, this creature has first strike": only while it is its controller's turn; true or absent, and a keyword without parameters.
+      // D-640 (CR 604.1): "During your turn, this creature has first strike": only while it is its controller's turn; true or absent, and a keyword without parameters.
       if (e.duringYourTurn !== undefined && e.duringYourTurn !== true) {
         issue(out, `${path}.duringYourTurn`, 'duringYourTurn is true or absent');
       }

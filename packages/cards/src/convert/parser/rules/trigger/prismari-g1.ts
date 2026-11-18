@@ -1,5 +1,5 @@
 /**
- * Trigger rules of group 1 of the Prismari deck (issue 87, D-624, D-630): "you cast an instant or sorcery spell with mana value 5 or greater from your hand" (CR 601.2a, 601.2i), "one or
+ * Trigger rules of group 1 of the Prismari deck (issue 87, D-625, D-631): "you cast an instant or sorcery spell with mana value 5 or greater from your hand" (CR 601.2a, 601.2i), "one or
  * more creature tokens you control deal combat damage to a player" (CR 510.2, 603.2c) and "~ enters and whenever one or more creature tokens you control deal combat damage to a player"
  * (CR 603.2c, 603.6a: one ability that two events cause).
  */

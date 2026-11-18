@@ -251,7 +251,7 @@ export interface CostRequest {
    */
   readonly modes?: number;
   /**
-   * How many targets the spell has (CR 601.2c), for the cost "for each target beyond the first" (D-627): left out, the targets the spell on the stack has chosen
+   * How many targets the spell has (CR 601.2c), for the cost "for each target beyond the first" (D-628): left out, the targets the spell on the stack has chosen
    * (`StackData.chosenTargets`); 0 for a spell that is not on the stack yet.
    */
   readonly targets?: number;
@@ -353,7 +353,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
-  // CR 601.2f (D-627): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
+  // CR 601.2f (D-628): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
   const perTarget = costPerExtraTargetOf(face);
   if (perTarget !== null) {
     const targets = request.targets ?? spell.stack?.chosenTargets.length ?? 0;
@@ -388,7 +388,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
-  // D-633 (CR 702.34a, 118.9, 119.4): "Flashback—{1}{U}, Pay 3 life": the life of the flashback cost, paid with it.
+  // D-634 (CR 702.34a, 118.9, 119.4): "Flashback—{1}{U}, Pay 3 life": the life of the flashback cost, paid with it.
   const life =
     taxLife +
     lifeOf(additional) +

@@ -240,7 +240,7 @@ export interface GameObject {
    */
   readonly prepareOf?: ObjectId;
   /**
-   * D-640 (CR 707.12, 704.5e, "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost."): on the
+   * D-641 (CR 707.12, 704.5e, "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost."): on the
    * copy of a card that an effect made in exile, `copyOf` is the card it copies. It exists to be cast during the resolution of that effect (CR 707.12: it is created in the zone the
    * card is in and cast while the effect resolves): once cast it is a copy of a spell on the stack; a copy that is not cast ceases to exist as the next state-based check
    * finds it in a zone that is not the stack or the battlefield (CR 704.5e).
@@ -446,7 +446,7 @@ export interface StackData {
     readonly source: ObjectId;
   };
   /**
-   * "Exile this spell with three time counters on it" (D-637, CR 608.2n, 122.1, 702.62b): set on a spell by the effect `exileSpellWithTimeCounters`: the number of time counters. When this
+   * "Exile this spell with three time counters on it" (D-638, CR 608.2n, 122.1, 702.62b): set on a spell by the effect `exileSpellWithTimeCounters`: the number of time counters. When this
    * instant or sorcery card finishes resolving it is exiled with that many time counters on it, not put into a graveyard. A spell that is countered or fizzles is not changed, and a copy
    * (not a card) ceases to exist. It ends when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
    */
@@ -1032,7 +1032,7 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
-   * "Populate" (`populate`, CR 701.36a, D-625): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with two or
+   * "Populate" (`populate`, CR 701.36a, D-626): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with two or
    * more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
    */
   | {
@@ -1865,7 +1865,7 @@ export type ContinuousChange =
   | {
       readonly kind: 'grantKeyword';
       readonly keyword: Keyword;
-      /** D-639 (CR 604.1, 109.5): given only while it is the turn of the object's controller ("During your turn, this creature has first strike"). */
+      /** D-640 (CR 604.1, 109.5): given only while it is the turn of the object's controller ("During your turn, this creature has first strike"). */
       readonly duringYourTurn?: true;
     }
   /** D-230 (Backup): an ability, granted in layer 6 for the duration of the effect. */
@@ -2110,7 +2110,7 @@ export interface TurnLog {
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**
    * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
-   * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-632 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
+   * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-633 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
    * announced, as it does for a spell on the stack), for "the greatest mana value among instant and sorcery spells you've cast this turn".
    */
   readonly castSpells: readonly {

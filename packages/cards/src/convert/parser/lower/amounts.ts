@@ -202,7 +202,7 @@ export function lowerAmount(
       // this spell" only (the spell is the source there); "it" is that spell only when the ability is about the source itself.
       const blocked = needs('manaSpent');
       if (blocked !== null) return blocked;
-      // D-632 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell": the spell that caused a "whenever you cast" trigger, read from the spell as it is or as it last was.
+      // D-633 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell": the spell that caused a "whenever you cast" trigger, read from the spell as it is or as it last was.
       if (amount.who === 'thatSpell') {
         if (!ctx.castTrigger) return { ok: false, needs: [], at: amount.span, rule };
         return { ok: true, value: { kind: 'manaSpent', of: { kind: 'triggerSubject' } }, rule };
@@ -263,7 +263,7 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
     }
     case 'spellsCastThisTurn': {
-      // CR 601.2i (D-624): the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
+      // CR 601.2i (D-625): the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('spellsCastThisTurn');
       if (blocked !== null) return blocked;
       return {
@@ -278,7 +278,7 @@ export function lowerAmount(
       };
     }
     case 'greatestManaValueCast': {
-      // CR 202.3, 601.2i (D-632): the greatest mana value among the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
+      // CR 202.3, 601.2i (D-633): the greatest mana value among the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('greatestManaValueCast');
       if (blocked !== null) return blocked;
       return {
@@ -310,7 +310,7 @@ export function lowerAmount(
         const { controller: _named, ...rest } = amount.of.filter;
         const plain = countFilter({ ...amount.of, filter: rest });
         if (!plain.ok) return plain;
-        // D-635 (CR 108.3, 400.1): a card outside the battlefield belongs to its owner ("for each card in target opponent's hand"); a permanent has a controller.
+        // D-636 (CR 108.3, 400.1): a card outside the battlefield belongs to its owner ("for each card in target opponent's hand"); a permanent has a controller.
         const outside =
           amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
         return {

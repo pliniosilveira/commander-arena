@@ -1,5 +1,5 @@
 /**
- * Conditions of group 2 of the Prismari deck (issue 87, D-632 and later): "that spell's mana value is 5 or greater" (CR 202.3, 608.2h), the test of an "If ..., create three of those
+ * Conditions of group 2 of the Prismari deck (issue 87, D-633 and later): "that spell's mana value is 5 or greater" (CR 202.3, 608.2h), the test of an "If ..., create three of those
  * tokens instead" sentence of a trigger about a spell that was cast. It reads the spell that caused the trigger, as it is on the stack or as it last was; the lowering reads it only in
  * such a trigger (`ctx.castTrigger`).
  */

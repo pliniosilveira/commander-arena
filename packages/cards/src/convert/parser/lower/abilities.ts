@@ -135,7 +135,7 @@ function lowerCostedKeyword(
   if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more], 'ward');
   }
-  // "Flashback—{1}{U}, Pay 3 life." (Prismari deck group 2, D-633, CR 702.34a, 119.4): the alternative cost is a mana cost and a payment of life, each once.
+  // "Flashback—{1}{U}, Pay 3 life." (Prismari deck group 2, D-634, CR 702.34a, 119.4): the alternative cost is a mana cost and a payment of life, each once.
   if (
     name === 'flashback' &&
     only !== undefined &&

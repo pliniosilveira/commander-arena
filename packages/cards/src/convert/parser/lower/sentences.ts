@@ -108,7 +108,7 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
 }
 
 /**
- * What "they", "them", "those tokens" and "the token created this way" mean after an instruction that created tokens (D-629, Prismari group 1): the tokens that instruction made,
+ * What "they", "them", "those tokens" and "the token created this way" mean after an instruction that created tokens (D-630, Prismari group 1): the tokens that instruction made,
  * the engine's `moved`, until an instruction that moves, destroys, exiles or sacrifices other objects is lowered. A token made is also remembered (`lastToken`), which
  * "create five of those tokens instead" makes more of.
  */
@@ -117,7 +117,7 @@ function noteTokensMade(effects: readonly Effect[], ctx: LowerContext): void {
   if (effects.some((e) => MAKES.includes(e.kind))) {
     ctx.tokensMade = true;
     const [only] = effects;
-    // D-632: a token of any kind (the copy of "create five of those tokens instead", the 1/1 Elemental of "create three of those tokens instead").
+    // D-633: a token of any kind (the copy of "create five of those tokens instead", the 1/1 Elemental of "create three of those tokens instead").
     ctx.lastToken = effects.length === 1 && only?.kind === 'createToken' ? only : null;
     return;
   }
@@ -466,7 +466,7 @@ function lossReadsAreOrdered(effects: readonly Effect[]): boolean {
 }
 
 /**
- * "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-628, CR 608.2d, 707.2): the offer and the sentence
+ * "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-629, CR 608.2d, 707.2): the offer and the sentence
  * after it are the engine's `chooseObjects` of one token (choosing none is declining it) and a `becomeCopy` of the others of the one chosen, which does nothing when none was chosen, so
  * "if you do" needs no test of its own. Null when the sentence is not the offer; a pair of another shape is refused, never guessed.
  */
@@ -1548,7 +1548,7 @@ function lowerStep(
     steps.push({ effects: notTaken.value, replaceable: false });
     return { last: i };
   }
-  // "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-628).
+  // "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-629).
   const chosenToken = lowerChooseTokenPair(sentence, sentences, i, ctx);
   if (chosenToken !== null) {
     if (!chosenToken.ok) return stop(chosenToken);

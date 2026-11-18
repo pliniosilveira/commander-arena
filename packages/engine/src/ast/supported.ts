@@ -275,7 +275,7 @@ function walkEffect(
       // CR 611.2a: only "until end of turn" has an end the engine runs (CR 514.2). The source must
       // be a permanent on the battlefield (a copy of an Aura or a land is a copy effect on an
       // object that already entered, so nothing is asked, unlike a token).
-      // D-628 (CR 611.2a, 707.2): and no end at all (`permanent`): "each other token you control becomes a copy of that token" is a layer 1 copy effect that lasts as long as the
+      // D-629 (CR 611.2a, 707.2): and no end at all (`permanent`): "each other token you control becomes a copy of that token" is a layer 1 copy effect that lasts as long as the
       // permanent does.
       if (
         effect.duration !== 'permanent' &&
@@ -789,7 +789,7 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana, and life (D-633: "Flashback—{1}{U}, Pay 3 life.", paid by the cast with the mana, rules/cast-cost.ts).
+        // CR 702.34a: an alternative cost; mana, and life (D-634: "Flashback—{1}{U}, Pay 3 life.", paid by the cast with the mana, rules/cast-cost.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'echo') {
         // CR 702.30a: paid as the echo trigger resolves (rules/pay-unless.ts); mana only, no X (D-127).

@@ -701,7 +701,7 @@ export const NOUN_RULES = [
   ...HYLDA_G3_NOUN_RULES,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".
   ...DINOSAUR_NOUN_RULES,
-  // Prismari deck, group 2 (D-642, D-643): "creatures named ~" before `noun.plain-permanents`, and "any number of targets" after `noun.any-number-targets`.
+  // Prismari deck, group 2 (D-643, D-644): "creatures named ~" before `noun.plain-permanents`, and "any number of targets" after `noun.any-number-targets`.
   ...PRISMARI_G2_NOUN_RULES,
   // Stage P34 (D-152): "each other opponent" and "each of up to two other targets".
   ...DRAGON_NOUN_RULES,

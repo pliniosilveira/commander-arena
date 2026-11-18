@@ -233,7 +233,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copySpell',
     // D-439: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
     'exileOnResolve',
-    // D-637: "Exile this spell with three time counters on it" (CR 608.2n, 122.1).
+    // D-638: "Exile this spell with three time counters on it" (CR 608.2n, 122.1).
     'exileSpellWithTimeCounters',
     // D-181: "Change the target of target spell or ability with a single target" (CR 115.7a).
     'changeTarget',
@@ -255,9 +255,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
     'prepare',
-    // D-625: "populate" (CR 701.36).
+    // D-626: "populate" (CR 701.36).
     'populate',
-    // D-640: "copy it. You may cast the copy without paying its mana cost" (CR 707.12).
+    // D-641: "copy it. You may cast the copy without paying its mana cost" (CR 707.12).
     'copyCardAndCast',
     // D-647: "each player exiles cards from the top of their library until they exile a nonland card" and "an opponent chooses a nonland card exiled this way".
     'exileUntilFound',
@@ -573,7 +573,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
-  // D-625: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
+  // D-626: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
   tokenPresets: ['Treasure', 'Food', 'Clue'],
@@ -675,7 +675,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromBattlefieldThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
-    // D-624: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
+    // D-625: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
     'castFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
@@ -697,11 +697,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'isSource',
     // D-438: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
     'copyForEach',
-    // D-489, D-642: "creatures named ~" (`ObjectFilter.named`).
+    // D-489, D-643: "creatures named ~" (`ObjectFilter.named`).
     'named',
-    // D-638: "for each opponent, create two 3/3 tokens that attack that opponent this turn if able" (`createToken.forEachOpponent`).
+    // D-639: "for each opponent, create two 3/3 tokens that attack that opponent this turn if able" (`createToken.forEachOpponent`).
     'tokensPerOpponent',
-    // D-636: "Until end of turn, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfTurn`).
+    // D-637: "Until end of turn, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfTurn`).
     'manaStays',
     'moved',
     'triggerSubject',
@@ -917,7 +917,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
-    // D-627: "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f).
+    // D-628: "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f).
     'costPerExtraTarget',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
     'abilityCostReduction',
@@ -1023,9 +1023,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
-    // D-624: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
+    // D-625: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
     'spellsCastThisTurn',
-    // D-632: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
+    // D-633: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
     'greatestManaValueCast',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
@@ -1113,7 +1113,7 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
-  // D-634: "This creature can block only creatures with flying."
+  // D-635: "This creature can block only creatures with flying."
   'canBlockOnlyFlying',
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
@@ -1291,11 +1291,11 @@ export const SELECTOR_KINDS = [
   'isSource',
   /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-438): the engine's `copySpell.forEach` and `copier`. */
   'copyForEach',
-  /** "Creatures named Leitmotif Composer" (CR 201.2, D-489, D-642): the engine's `ObjectFilter.named`, the name of the objects as they are now. */
+  /** "Creatures named Leitmotif Composer" (CR 201.2, D-489, D-643): the engine's `ObjectFilter.named`, the name of the objects as they are now. */
   'named',
-  /** "For each opponent, create two 3/3 tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, D-638): the engine's `createToken.forEachOpponent`. */
+  /** "For each opponent, create two 3/3 tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, D-639): the engine's `createToken.forEachOpponent`. */
   'tokensPerOpponent',
-  /** "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-636): the engine's `staysUntilEndOfTurn` of a fixed `addMana` production. */
+  /** "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-637): the engine's `staysUntilEndOfTurn` of a fixed `addMana` production. */
   'manaStays',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
@@ -1303,7 +1303,7 @@ export const SELECTOR_KINDS = [
   'targetCountAtLeast',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
   'notCastFromHand',
-  /** "A spell you cast from your hand" (CR 601.2a, D-624): the engine's `ObjectFilter.castFromHand`. */
+  /** "A spell you cast from your hand" (CR 601.2a, D-625): the engine's `ObjectFilter.castFromHand`. */
   'castFromHand',
   'triggerSubject',
   'triggerActor',
@@ -1558,7 +1558,7 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
-  /** "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f, D-627): the engine's `costPerExtraTarget`. */
+  /** "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f, D-628): the engine's `costPerExtraTarget`. */
   'costPerExtraTarget',
   /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */
   'abilityCostReduction',
@@ -1711,9 +1711,9 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
-  /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-624): the engine's `spellsCastThisTurn`. */
+  /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-625): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
-  /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-632): the engine's `greatestManaValueCast`. */
+  /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-633): the engine's `greatestManaValueCast`. */
   'greatestManaValueCast',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',

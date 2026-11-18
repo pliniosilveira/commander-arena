@@ -703,7 +703,7 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const spec = arg(clause, 'mana');
     if (spec?.kind !== 'manaSpec') return failure(clause);
-    // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-636, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
+    // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-637, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
     // ends. A choice of mana would be chosen later than the sentence says, so only fixed mana.
     const staysFlag = arg(clause, 'stays');
     const stays = staysFlag?.kind === 'flag' && staysFlag.value;
@@ -1369,7 +1369,7 @@ function ownTokenName(named: string, ctx: LowerContext): string | null {
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
-  // "For each opponent, create two 3/3 ... tokens with flying that attack that opponent this turn if able." (Prismari deck group 2, D-638, CR 111.2, 508.1d): the same tokens, made for
+  // "For each opponent, create two 3/3 ... tokens with flying that attack that opponent this turn if able." (Prismari deck group 2, D-639, CR 111.2, 508.1d): the same tokens, made for
   // each opponent and required to attack it. A custom creature token only, with no controller of its own.
   const perOpponent = arg(clause, 'perOpponentAttack');
   if (perOpponent?.kind === 'flag' && perOpponent.value) {

@@ -1,5 +1,5 @@
 /**
- * The question of populate (D-625) that the engine asks as a `choosePermanent`: "Choose a creature token you control and create a token that's a copy of it" (`populate`,
+ * The question of populate (D-626) that the engine asks as a `choosePermanent`: "Choose a creature token you control and create a token that's a copy of it" (`populate`,
  * CR 701.36a), asked when the player controls two or more creature tokens. The words read the decision and the objects it names and nothing else. No new dialog kind: the token
  * is chosen on the board, as for any other choice of permanents; the engine stays the judge of every answer. Pure.
  */

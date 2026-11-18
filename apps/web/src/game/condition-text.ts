@@ -130,7 +130,7 @@ function matchesWords(
   ctx: AmountContext = {},
 ): string | null {
   const { filter } = condition;
-  // D-632 (CR 202.3, 601.2i): "that spell's mana value is 5 or greater": the spell a cast trigger names, only its mana value compared.
+  // D-633 (CR 202.3, 601.2i): "that spell's mana value is 5 or greater": the spell a cast trigger names, only its mana value compared.
   if (
     condition.of.kind === 'triggerSubject' &&
     ctx.spell === true &&

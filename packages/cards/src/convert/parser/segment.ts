@@ -236,7 +236,7 @@ const PUT_HAND_OTHER_BOTTOM =
   /^put one of them into your hand and the other on the bottom of your library\.$/i;
 
 /**
- * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-636, CR 500.5): the second sentence
+ * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-637, CR 500.5): the second sentence
  * says what happens to the mana the first adds, so the two are read as one instruction (`effect.add-mana-stays`).
  */
 const ADD_MANA_SENTENCE = /^add [^.]*\.$/i;
@@ -244,7 +244,7 @@ const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
 
 /**
- * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-640, CR 707.12): the
+ * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-641, CR 707.12): the
  * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;

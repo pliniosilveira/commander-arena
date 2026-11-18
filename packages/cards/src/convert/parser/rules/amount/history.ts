@@ -12,7 +12,7 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: gain.pos,
     };
   }
-  // D-624 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
+  // D-625 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
   const spells = pattern(
     /the number of (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);
@@ -27,7 +27,7 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: spells.pos,
     };
   }
-  // D-632 (Prismari deck group 2, CR 202.3, 601.2i): the greatest mana value among the spells the controller has cast this turn.
+  // D-633 (Prismari deck group 2, CR 202.3, 601.2i): the greatest mana value among the spells the controller has cast this turn.
   const greatest = pattern(
     /the greatest mana value among (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);

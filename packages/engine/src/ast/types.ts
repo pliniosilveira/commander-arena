@@ -108,7 +108,7 @@ export type Amount =
       /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
-       * D-632 (CR 601.2h, 113.7a, Manaform Hellkite): or `{ kind: 'triggerSubject' }`, the spell that was cast, in a `castSpell` trigger ("Whenever you cast a noncreature spell, create an
+       * D-633 (CR 601.2h, 113.7a, Manaform Hellkite): or `{ kind: 'triggerSubject' }`, the spell that was cast, in a `castSpell` trigger ("Whenever you cast a noncreature spell, create an
        * X/X token, where X is the amount of mana spent to cast that spell"), read from the spell on the stack or from its last-known information.
        */
       readonly of?:
@@ -278,7 +278,7 @@ export type Amount =
    */
   | { readonly kind: 'spellsCastThisTurn'; readonly ofTypes?: readonly CardType[] }
   /**
-   * "The greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck, group 2, D-632, CR 202.3, 202.3e, 601.2i, 707.10): the largest mana value
+   * "The greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck, group 2, D-633, CR 202.3, 202.3e, 601.2i, 707.10): the largest mana value
    * of the spells the controller of the spell or ability has cast this turn, each as it was cast (`TurnLog.castSpells`: an {X} counts as the number announced, as it does for a
    * spell on the stack, CR 202.3e; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that
    * have at least one of those card types, as they were cast; left out, every spell counts. 0 when none was cast. Not valid in a static ability: nothing refreshes a layer
@@ -721,7 +721,7 @@ export type ObjectRef =
    */
   | { readonly kind: 'sacrificedCost' }
   /**
-   * The engine's own form of `moved` inside a delayed triggered ability (D-625, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
+   * The engine's own form of `moved` inside a delayed triggered ability (D-626, CR 603.7c, 400.7): "Exile them at the beginning of the next end step" is one delayed ability about
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
    * and a card that left and came back is a new object with a new id). Never written in a card (`validateCard`): the engine writes it when it creates the delayed ability.
    */
@@ -729,7 +729,7 @@ export type ObjectRef =
       readonly kind: 'boundObjects';
       readonly ids: readonly ObjectId[];
       /**
-       * D-649 (CR 603.7c, 400.7): the zone the objects are expected in; left out, the battlefield (D-625). A card that left it is a new object with a new id and is not found.
+       * D-649 (CR 603.7c, 400.7): the zone the objects are expected in; left out, the battlefield (D-626). A card that left it is a new object with a new id and is not found.
        * Surge to Victory's delayed ability is about the card it exiled, `exile`.
        */
       readonly zone?: 'exile';
@@ -1432,7 +1432,7 @@ export type Effect =
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   /**
-   * "Populate." (CR 701.36a, 701.36b, D-625): "choose a creature token you control and create a token that's a copy of that creature token." The controller of the effect
+   * "Populate." (CR 701.36a, 701.36b, D-626): "choose a creature token you control and create a token that's a copy of that creature token." The controller of the effect
    * chooses among the creature tokens they control (a `choosePermanent` decision of purpose 'populate', asked only with two or more) and creates a token with the copiable values
    * of the one chosen (CR 707.2, 111.10: a copy of a token that is itself a copy has the copiable values of the original token). With no creature token to choose nothing is created
    * (CR 701.36b). The token is made as any token is (the replacement effects of its creation apply; a question it asks as it enters is asked) and is what `moved` names after
@@ -1440,7 +1440,7 @@ export type Effect =
    */
   | { readonly kind: 'populate' }
   /**
-   * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (CR 707.12, 707.2, 608.2g, 704.5e, D-640,
+   * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (CR 707.12, 707.2, 608.2g, 704.5e, D-641,
    * Renegade Bull): the copy of the card `objects` names (`moved`: the card the effect before it exiled, read as it is in exile) is created in exile, with its copiable values (CR 707.2); the
    * controller of the effect may cast it without paying its mana cost, following the steps of CR 601.2a-i as CR 608.2g says, with no player receiving priority (a copy
    * that cannot be cast, for lack of a legal target, is not offered). Once cast it is a copy of a spell on the stack: it resolves (and ceases to exist as it leaves the stack, CR 707.10a)
@@ -2006,7 +2006,7 @@ export type Effect =
    */
   | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
   /**
-   * "Exile this spell with three time counters on it." (CR 608.2n, 122.1, 702.62b, D-637, Rousing Refrain): the last instruction of an instant or sorcery's own text: as the spell
+   * "Exile this spell with three time counters on it." (CR 608.2n, 122.1, 702.62b, D-638, Rousing Refrain): the last instruction of an instant or sorcery's own text: as the spell
    * finishes resolving it is exiled, with `count` time counters on it, instead of being put into its owner's graveyard (or its owner's hand, or exile as it would by flashback or as an
    * Adventure: this instruction decides). A card with Suspend that is in exile with a time counter is suspended (CR 702.62b) and its upkeep trigger removes the counters (the engine's
    * suspend abilities); with no Suspend ability it simply stays in exile. A spell that is countered or does not resolve is not exiled by it, and a copy of the spell (not a card) ceases
@@ -2340,7 +2340,7 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly abilities?: readonly Ability[];
       /**
-       * "..., create a tapped and attacking token that's a copy of that token" (Prismari deck, group 1, D-625, CR 110.5b, 508.4): the tokens enter the battlefield tapped, as
+       * "..., create a tapped and attacking token that's a copy of that token" (Prismari deck, group 1, D-626, CR 110.5b, 508.4): the tokens enter the battlefield tapped, as
        * `createToken`'s `tapped` does. The attacking half is the `enterAttacking` effect after this one, which names the tokens made (`moved`).
        */
       readonly tapped?: true;
@@ -2475,7 +2475,7 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly keyword: Keyword;
       /**
-       * "... with \"During your turn, this creature has first strike.\"" (CR 604.1, 613.1f, 109.5, D-639, Restless Spire): the keyword is given only while it is its controller's turn (the
+       * "... with \"During your turn, this creature has first strike.\"" (CR 604.1, 613.1f, 109.5, D-640, Restless Spire): the keyword is given only while it is its controller's turn (the
        * controller of the object as it is then, a layer 2 effect read first, CR 613.1b), the way a granted static ability "during your turn" is. Only a keyword without parameters.
        */
       readonly duringYourTurn?: true;
@@ -2679,7 +2679,7 @@ export type Effect =
        */
       readonly addTypes?: readonly CardType[];
       /**
-       * "..., except it has myriad" (D-626, CR 707.9b): the abilities the copy has besides the ones it copies; they are part of the copiable values the
+       * "..., except it has myriad" (D-627, CR 707.9b): the abilities the copy has besides the ones it copies; they are part of the copiable values the
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
        */
       readonly abilities?: readonly Ability[];
@@ -2951,7 +2951,7 @@ export type Effect =
        */
       readonly tapped?: true;
       /**
-       * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-638, Furygale Flocking): the controller of the effect creates
+       * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-639, Furygale Flocking): the controller of the effect creates
        * `count` tokens for each opponent still in the game (in turn order from the next player), and each token is required to attack the player it was made for this turn if able
        * (the requirement of `mustAttackPlayer`, as Encore's tokens have it; it does not give haste, and a token that cannot attack that player, or is not able to attack, is not
        * required to). `moved` names all of the tokens afterwards. The token is a custom token whose abilities are keywords, so it asks nothing as it enters; no `controller`.
@@ -2991,7 +2991,7 @@ export type ManaProduction =
        */
       readonly times?: Amount;
       /**
-       * "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-636, Rousing Refrain): the mana this effect adds stays in its player's mana
+       * "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-637, Rousing Refrain): the mana this effect adds stays in its player's mana
        * pool as steps and phases end, until the turn does (the cleanup step: the effect ends then, CR 514.2, and the mana empties as that step ends). Only the `addMana` effect of
        * a spell or a triggered ability, not a mana ability.
        */
@@ -3500,7 +3500,7 @@ export type Trigger =
  * - `cantBlock`: it can't block (CR 509.1b);
  * - `cantAttack`: it can't attack (CR 508.1a, D-145);
  * - `cantBeBlocked`: it can't be blocked (CR 509.1b, an evasion restriction);
- * - `canBlockOnlyFlying`: it can block only creatures with flying (CR 509.1b, D-634: "This creature can block only creatures with flying"; flying, not reach: a creature with reach
+ * - `canBlockOnlyFlying`: it can block only creatures with flying (CR 509.1b, D-635: "This creature can block only creatures with flying"; flying, not reach: a creature with reach
  *   that does not fly is not one it can block);
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
@@ -4157,7 +4157,7 @@ export type Condition =
    * was when it left, so "return target creature card from your graveyard to your hand. If it's a Zombie card, draw a card"
    * reads the card whatever zone it is in now. Only in a `conditional` effect (`validateCard`), with a `target` or `moved`
    * reference, or (D-149, "If that land is a Plains") the `triggerSubject` of a trigger whose subject is a permanent; the filter names no zone,
-   * controller or owner (it describes the object). D-632 (CR 202.3, 608.2h, "If that spell's mana value is 5 or greater"): also the `triggerSubject` of a `castSpell` trigger, the spell
+   * controller or owner (it describes the object). D-633 (CR 202.3, 608.2h, "If that spell's mana value is 5 or greater"): also the `triggerSubject` of a `castSpell` trigger, the spell
    * that was cast, as it is on the stack or as it last was once it has left (its `manaValue` filter counts the X announced).
    * `inZone` (D-412, "If you put a Town card into your hand this way", CR 608.2c, 400.7j): the object must also be in that zone as it is now (or was, once it has
    * left): the card an earlier instruction put into the hand or exiled, not one that went anywhere else. Only in a `conditional` effect (a static ability does not read it).
@@ -4865,7 +4865,7 @@ export type StaticEffect =
       readonly amount: Amount;
     }
   /**
-   * "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-627, CR 601.2f, 601.2c, 118.8; Strive is an ability word, CR 207.2c): a
+   * "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-628, CR 601.2f, 601.2c, 118.8; Strive is an ability word, CR 207.2c): a
    * static ability of the spell itself, which works on the stack (CR 113.6d), that adds `cost` (mana only, no X) to the total cost once for each target the spell has beyond the first
    * (a spell with no target, or one, costs nothing more). The targets are chosen before the total cost is determined (CR 601.2c, 601.2f), so the number of targets is the
    * number chosen; a slot of any number of targets offers no more targets than the caster could pay for. The increase is part of the cost before the reductions (CR 601.2f).
