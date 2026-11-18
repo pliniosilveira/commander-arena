@@ -53,6 +53,7 @@ export function exiledAsItResolves(
     !adventure &&
     stack.flashback !== true &&
     stack.aftermath !== true &&
+    stack.alt !== 'harmonize' &&
     stack.exileInstead !== true
   );
 }

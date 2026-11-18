@@ -243,6 +243,11 @@ function occurrences(
       return event.kind === 'cycled'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'exerted':
+      // CR 701.43d, 603.12: the creature that was exerted as it attacked, with the ability linked to its exert ability.
+      return event.kind === 'exerted'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'blocks':
       // CR 509.1g, 702.45a: one occurrence for each creature declared as a blocker.
       return event.kind === 'blockersDeclared'
@@ -768,6 +773,9 @@ function matches(
     case 'cycled':
       // CR 702.29c: "when you cycle this card": the card with the ability is the one that was cycled.
       return subject !== null && subject.id === candidate.id;
+    case 'exerted':
+      // CR 607.2h: the ability is linked to the exert ability of the creature itself: only that creature's exert triggers it.
+      return subject !== null && subject.id === candidate.id;
     case 'ringTempted':
       // CR 701.54d: "Whenever the Ring tempts you": the player the Ring tempted controls the ability.
       return occ.seat === candidate.controller;
@@ -896,6 +904,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'blockersDeclared':
     case 'spellCast':
     case 'spellCopied': // D-218: "whenever you cast or copy"
+    case 'exerted': // CR 701.43d
     case 'cycled':
     case 'discarded':
     case 'tapped':

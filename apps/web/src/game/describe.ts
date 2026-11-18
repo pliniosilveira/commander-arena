@@ -1593,6 +1593,15 @@ export function describeEvent(
         [event.permanent],
         'CR 701.42a',
       );
+    case 'exerted':
+      // CR 701.43a, 701.43d: the creature will not untap during its controller's next untap step; the "When you do" ability that follows says what it does.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'exert', 'exerts')} ${name(event.object)}. It won't untap during ${event.seat === viewer ? 'your' : 'their'} next untap step.`,
+        event.seat,
+        [event.object],
+        'CR 701.43a',
+      );
     case 'meldFailed':
       // CR 701.42b, 701.42c (D-277): what could not be melded stays where it is.
       return line(

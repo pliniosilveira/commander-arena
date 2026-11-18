@@ -21,6 +21,7 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   dash: 'Dash',
   spectacle: 'Spectacle',
   escape: 'Escape',
+  harmonize: 'Harmonize',
   madness: 'Madness',
   miracle: 'Miracle',
   foretell: 'Foretell',
@@ -83,6 +84,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
     title:
       'Cast from the graveyard for its escape cost, exiling other cards from the graveyard. It goes to the graveyard, not exile, when it leaves the stack.',
     fact: 'Cast from the graveyard for its escape cost',
+  },
+  harmonize: {
+    text: 'harmonize',
+    title:
+      'Cast from the graveyard for its harmonize cost; a tapped creature’s power reduced the cost. It is exiled when it leaves the stack.',
+    fact: 'Cast from the graveyard for its harmonize cost: exiled when it leaves the stack',
   },
   madness: {
     text: 'madness',

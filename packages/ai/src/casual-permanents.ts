@@ -116,7 +116,10 @@ export function choosePermanentToTap(view: GameView, d: ChoosePermanentDecision)
       };
     })
     .sort((a, b) => a.ready - b.ready || a.value - b.value || a.index - b.index);
-  const chosen = ranked.slice(0, d.min).map((r) => r.id);
+  // CR 702.180a (Harmonize): "up to one" creature (`min` 0, `max` 1) is tapped to reduce the cost. The cast may be payable only with it, and the decision does not
+  // say, so the agent taps one (the one it can spare best) rather than risk a cast it cannot pay for.
+  const count = d.min === 0 && d.max === 1 ? 1 : d.min;
+  const chosen = ranked.slice(0, count).map((r) => r.id);
   return { kind: 'choosePermanents', objects: d.legal.filter((id) => chosen.includes(id)) };
 }
 
@@ -300,7 +303,22 @@ function chooseAdditionalCost(d: ConfirmOptionalDecision, view: GameView): Actio
     : { kind: 'acceptOptional' };
 }
 
+/**
+ * "You may exert ~ as it attacks" (CR 701.43d, a `confirmOptional` of purpose 'exert'): the creature will not untap next turn, which is worth it only for
+ * what "When you do, ..." gives. The agent exerts when the creature's text has that reflexive ability and, if it hurts a creature ("deals 4 damage to target
+ * creature an opponent controls"), when an opponent has a creature for it to hit; otherwise it keeps the creature ready to attack again.
+ */
+function answerExert(d: ConfirmOptionalDecision, view: GameView): Action {
+  const text = d.sourceOracleText;
+  if (!/\bwhen you do\b/i.test(text)) return { kind: 'declineOptional' };
+  const hits = /\btarget [^.]*creature\b/i.test(text);
+  const target =
+    !hits || view.battlefield.some((p) => p.controller !== view.viewer && isCreature(p));
+  return target ? { kind: 'acceptOptional' } : { kind: 'declineOptional' };
+}
+
 export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Action {
+  if (d.purpose === 'exert') return answerExert(d, view);
   // "You may cast that card without paying its mana cost" (Cascade, CR 702.85a): a free spell, always.
   if (d.purpose === 'cascade') return { kind: 'acceptOptional' };
   // "As many times as you choose, you may exile the top card of your library" (D-662): each card exiled is a free spell if the total mana value stays at 13 or less. The agent

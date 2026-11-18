@@ -380,6 +380,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       timeCounters === null &&
       obj.stack.flashback !== true &&
       obj.stack.aftermath !== true &&
+      obj.stack.alt !== 'harmonize' &&
       obj.stack.exileInstead !== true;
     // Omen: "Then shuffle this card into its owner's library" instead of the graveyard, for a spell that resolves (a countered one goes to the graveyard) and that no
     // other effect sends to exile or the hand.

@@ -29,6 +29,7 @@ import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { graveyardPlayPermission } from './graveyard-play';
+import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
 import { isCommanderCardId } from './melded';
@@ -449,6 +450,13 @@ export function castZone(
       ? null
       : 'graveyard';
   }
+  // CR 702.180a (Harmonize): cast from the owner's graveyard, an instant or a sorcery card whose front face lists the harmonize cost.
+  if (alternative === 'harmonize') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    const face = faceOf(state, obj);
+    const spell = face?.types.includes('instant') || face?.types.includes('sorcery');
+    return spell === true && alternativeOf(face, 'harmonize') !== null ? 'graveyard' : null;
+  }
   // CR 702.35a, 702.94a (D-128, D-274): a card is cast for its madness or miracle cost only as that ability resolves
   // (`castExiled`); it is never cast that way from a hand, so `canCast` and the option lists never offer it.
   if (alternative === 'madness' || alternative === 'miracle') return null;
@@ -679,8 +687,8 @@ export function canCast(
   return kickedWays.some(
     (kicked) =>
       targetsPossible(state, seat, spell, alternative === 'overload', kicked, timing.onlyTargets) &&
-      payments.some((modes) =>
-        canPayRequest(state, seat, spell, {
+      payments.some((modes) => {
+        const request = {
           seat,
           spell,
           zone,
@@ -690,8 +698,14 @@ export function canCast(
           x: least,
           // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose; with modes that have a cost (D-433) the set chosen.
           ...modes,
-        }),
-      ),
+        } as const;
+        // CR 702.180a (Harmonize): paid with no creature tapped, or with one tapped (which then pays no mana).
+        return alternative === 'harmonize'
+          ? harmonizeWays(state, seat).some((way) =>
+              canPayRequest(way.state, seat, spell, { ...request, harmonizeTap: way.tap }),
+            )
+          : canPayRequest(state, seat, spell, request);
+      }),
   );
 }
 
@@ -908,6 +922,13 @@ export function retraceObjects(state: GameState, seat: SeatId): ObjectId[] {
 export function sacrificeFromGraveyardObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'sacrificeFromGraveyard'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now for their harmonize cost (CR 702.180a). */
+export function harmonizeObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'harmonize'),
   );
 }
 

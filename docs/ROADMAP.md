@@ -112,6 +112,8 @@ Everything here is read and refused, or unread, so the card stays unsupported an
 - **Divided damage in abilities.** A division is announced for a spell, an activated or a triggered ability, never in a mode or a reflexive ability, and never with an announced X as its total.
 - **"That spell's power is N or greater"** is read as an "If" sentence of a cast trigger, not as its intervening "if" (CR 603.4).
 - **Open verification.** `IRREGULAR_PLURALS` and `INVARIANT_TYPES` come from English usage, not from Oracle text (D-134, D-140), and the short-name rule for legendary "X the Y" names was verified against one card; verify against real lines as the owner's data shows them.
+- **Exert** is read only as the paragraph "You may exert ~ as it attacks. When you do, ..."; exert with no linked "When you do", exert by another effect and exert as it blocks are not read.
+- **Harmonize** is built for the front face of instants and sorceries, not beside convoke, improvise, delve, flashback or escape; the cast button shows its cost with X = 0.
 
 ## Web, view and AI
 

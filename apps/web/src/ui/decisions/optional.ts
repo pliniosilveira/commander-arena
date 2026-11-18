@@ -467,6 +467,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'exert') {
+    // Exert (CR 701.43d, 508.1g): "You may exert ~ as it attacks", an optional cost of the attack. Accepting keeps the creature from untapping during its next
+    // untap step; Cancel takes the whole declaration back (CR 733).
+    return {
+      prompt: `Exert ${d.sourceName} as it attacks? It won't untap during your next untap step.`,
+      yes: 'Exert',
+      no: "Don't exert",
+      cancellable: true,
+    };
+  }
   if (d.purpose === 'buyback') {
     // Buyback (CR 702.27a, 601.2b; Galadriel group 3): asked as the spell is cast, only when the whole cost with it can be paid. Declining casts the spell without it;
     // Cancel rewinds the cast (CR 733).

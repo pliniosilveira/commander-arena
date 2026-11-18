@@ -406,6 +406,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerAttacksOpponent',
     // D-179: "When you cycle this card" (CR 702.29c).
     'cycled',
+    // CR 701.43d: "When you do" after "You may exert ~ as it attacks".
+    'exerted',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
     'ringTempted',
     // D-598: "When this Class becomes level N" (CR 716.2).
@@ -985,6 +987,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
+    // CR 701.43d: "You may exert ~ as it attacks."
+    'exertOnAttack',
     // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
     'crewSaddleBonus',
     // D-229: "Untap all creatures you control during each other player's untap step."
@@ -1141,6 +1145,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dash',
     'spectacle',
     'escape',
+    // CR 702.180: Harmonize.
+    'harmonize',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -1690,6 +1696,8 @@ export const STATIC_KINDS = [
   'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
+  /** "You may exert ~ as it attacks." (CR 701.43d, 508.1g). */
+  'exertOnAttack',
   /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */
   'crewSaddleBonus',
   /** "Untap all creatures you control during each other player's untap step." (CR 502.3, D-229). */
@@ -1894,6 +1902,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'dash',
   'spectacle',
   'escape',
+  'harmonize',
   'madness',
   'miracle',
   'foretell',
@@ -2148,6 +2157,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   attackBatch: true,
   playerAttacksOpponent: true,
   cycled: true,
+  exerted: true,
   ringTempted: true,
   classLevel: true,
   crimeCommitted: true,

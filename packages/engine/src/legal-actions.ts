@@ -352,7 +352,8 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         ...(d.purpose === 'kicker' ||
         d.purpose === 'gift' ||
         d.purpose === 'costChoice' ||
-        d.purpose === 'buyback'
+        d.purpose === 'buyback' ||
+        d.purpose === 'exert'
           ? [{ kind: 'cancel' as const }]
           : []),
         { kind: 'concede' },

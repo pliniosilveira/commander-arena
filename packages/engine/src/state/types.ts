@@ -381,6 +381,11 @@ export interface StackData {
    */
   readonly costOption?: 0 | 1;
   /**
+   * The creature the caster tapped to reduce a harmonize cost (CR 702.180a, 702.180b), or null when they chose none: its power in generic mana is taken off the
+   * total cost. Absent until the choice is made, and for a spell not cast for its harmonize cost.
+   */
+  readonly harmonizeTap?: ObjectId | null;
+  /**
    * True when cast from the graveyard by paying its flashback cost (CR 702.34a): the spell is
    * exiled instead of going anywhere else when it leaves the stack. Always false for an ability.
    */
@@ -857,6 +862,7 @@ export interface CastingContext {
     | 'payment'
     | 'behold'
     | 'additionalExile'
+    | 'harmonize'
     | 'sacrifice'
     | 'discard'
     | 'exile'

@@ -358,6 +358,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures(['trigger:cycled']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'cycled' });
     }
+    case 'exerted': {
+      // "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h): the creature with the ability, exerted as it attacked.
+      if (t.subject?.det !== 'self') return failure(t);
+      const blocked = missingFeatures(['trigger:exerted']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exerted' });
+    }
     case 'crimeCommitted':
     case 'activatesAbility':
     case 'tokenCreated': {
@@ -915,12 +921,30 @@ function foldHadCounters(trigger: Trigger, counter: string | undefined): Trigger
 }
 
 /**
+ * A triggered ability, and for "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h) the two abilities the paragraph is: the static ability that
+ * offers the optional cost of attacking (`exertOnAttack`) and the triggered ability linked to it, which the engine triggers when the creature is exerted.
+ */
+export function lowerTriggered(
+  written: Triggered,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const lowered = lowerTriggeredAbility(written, ctx);
+  if (!lowered.ok || written.trigger.event !== 'exerted') return lowered;
+  const blocked = missingFeatures(['static:exertOnAttack']);
+  if (blocked.length > 0) return failure(written, blocked);
+  return {
+    ...lowered,
+    value: [{ kind: 'static', static: { kind: 'exertOnAttack' } }, ...lowered.value],
+  };
+}
+
+/**
  * A triggered ability. "A or B" is one engine ability per event (CR 603.2c: it triggers once each
  * time an event occurs; the two events cannot be the same event for one object), sharing the body.
  * "You may" covers the whole effect in the engine (D-060), so it is lowered only when the body is
  * that one instruction.
  */
-export function lowerTriggered(
+function lowerTriggeredAbility(
   written: Triggered,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
@@ -1374,6 +1398,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:combatDamageBatch',
   'trigger:diesBatch',
   'trigger:discarded',
+  'trigger:exerted',
+  'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',
   'trigger:state',

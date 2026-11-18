@@ -36,6 +36,7 @@ import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
 import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
 import { EVENT_TRIGGER_RULES } from './events';
+import { EXERT_TRIGGER_RULES } from './exert';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
@@ -1164,6 +1165,8 @@ export const TRIGGER_RULES = [
   TRIGGER_LANDFALL,
   // Stage P37 (D-180): "you cycle this card".
   ...KORVOLD_TRIGGER_RULES,
+  // CR 701.43d: "you may exert ~ as it attacks" (Exert).
+  ...EXERT_TRIGGER_RULES,
   ...CONTROL_TRIGGER_RULES,
   // Stage P33 (D-150): gaining life, counters put on a permanent, attacking with several creatures.
   ...ANGEL_TRIGGER_RULES,
