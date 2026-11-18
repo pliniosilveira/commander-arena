@@ -16,7 +16,7 @@ import { objectIndex } from '../decisions/lookup';
 import { playableObjects } from '../decisions/priority';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
-import { exilePlayable } from './exile-play';
+import { type ExilePlayable, exilePlayable } from './exile-play';
 import { useHoverPreview } from './hover';
 import './later.css';
 
@@ -69,7 +69,7 @@ function StatusChip({ object, mine }: { object: ObjectView; mine: boolean }) {
   );
 }
 
-export function OtherZonesStrip({ view }: { view: GameView }) {
+export function OtherZonesStrip({ view, exile }: { view: GameView; exile?: ExilePlayable }) {
   const ix = useInteraction();
   const pending = view.pending;
   const priority = pending?.kind === 'priority' ? pending : null;
@@ -79,7 +79,7 @@ export function OtherZonesStrip({ view }: { view: GameView }) {
     priority === null ? new Set<ObjectId>() : graveyardPlayObjects(priority, graveyard);
   const fromGraveyard = graveyard.filter((o) => usable.has(o.id) && ix.clickable.has(o.id));
   // The cards the viewer may cast or play from exile are shown by ExilePlayStrip, at the left of the battlefield (issue 49).
-  const { cards: fromExile } = exilePlayable(view, ix.clickable);
+  const { cards: fromExile } = exile ?? exilePlayable(view, ix.clickable);
   // D-151 (CR 601.3): the top card of the viewer's own library, when a permanent lets them cast it from there.
   const top = view.seats[view.viewer]?.libraryTop;
   const playable = priority === null ? new Set<ObjectId>() : playableObjects(priority);
