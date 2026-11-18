@@ -214,9 +214,10 @@ test(
         if (pending?.kind === 'choosePermanent' && pending.purpose === 'populate') {
           t.populateChoices += 1;
           const picked = step.action.kind === 'choosePermanents' ? step.action.objects : [];
-          expect(pending.legal, 'the token copied is one of the legal ones').toEqual(
-            expect.arrayContaining(picked),
-          );
+          for (const id of picked)
+            expect(pending.legal.includes(id), 'the token copied is one of the legal ones').toBe(
+              true,
+            );
         }
         checkRules(t, step, memory);
         const problems = checkInvariants(step.after);
