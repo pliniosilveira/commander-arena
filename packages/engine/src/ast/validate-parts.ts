@@ -5171,6 +5171,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'tapped is true, and only for a card put onto the battlefield',
         );
       }
+      // Issue 103 (CR 701.20, 701.24): "until you reveal a creature card for each wild vote", then the rest is shuffled in by the effect after it.
+      if (e.count !== undefined) {
+        if (e.put === 'none') {
+          issue(out, `${path}.count`, 'a count of cards found does not go with put none');
+        }
+        if (typeof e.count === 'number' && (!isCount(e.count) || e.count < 1)) {
+          issue(out, `${path}.count`, 'a number of cards to find is a whole number from 1');
+        } else if (typeof e.count !== 'number') {
+          checkAmount(e.count, `${path}.count`, scope, out);
+        }
+      }
+      if (e.rest !== undefined && e.rest !== 'stay') {
+        issue(out, `${path}.rest`, 'rest is stay when present');
+      }
       break;
     case 'gainLevel':
       // CR 716.2a (D-235): the level the Class gains is 2 or more (level 1 is the one it has).

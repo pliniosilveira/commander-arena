@@ -35,6 +35,7 @@ import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { EFFECT_COPY_SPELL } from './copy-spell';
+import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
@@ -983,6 +984,7 @@ export const EFFECT_RULES = [
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
+  ...COUNCIL_EFFECT_RULES,
   ...DINOSAUR_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,

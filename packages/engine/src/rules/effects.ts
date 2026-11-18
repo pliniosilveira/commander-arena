@@ -2397,7 +2397,12 @@ function runEffect(
 
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
-      return runRevealUntil(state, res, effect);
+      return runRevealUntil(
+        state,
+        res,
+        effect,
+        effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets),
+      );
 
     case 'exileUntilFound':
       // CR 701.13, 101.4 (D-660): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).

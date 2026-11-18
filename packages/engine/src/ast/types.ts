@@ -3148,6 +3148,17 @@ export type Effect =
        */
       readonly put: 'battlefield' | 'hand' | 'exile' | 'none';
       readonly tapped?: true;
+      /**
+       * "Reveal cards from the top of your library until you reveal a creature card for each wild vote" (CR 701.20, 701.38b, issue 103, Selvala's Stampede): the cards are
+       * revealed until this many match (read as the effect runs; default one; none are revealed when it is 0 or less), the library to its end when it holds fewer. Every
+       * card found goes where `put` says ("Put those creature cards onto the battlefield", together). Not with `put: 'none'`.
+       */
+      readonly count?: Amount;
+      /**
+       * `stay` ("then shuffle the rest into your library", CR 701.24): the cards revealed that were not put anywhere are not moved by this effect; they stay in the library, for the
+       * `shuffle` effect after it to place. Without it they go to the bottom in a random order (CR 401.5).
+       */
+      readonly rest?: 'stay';
     }
   /**
    * "Look at the top N cards of your library, then put them back in any order": the controller

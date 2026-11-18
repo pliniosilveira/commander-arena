@@ -625,7 +625,7 @@ const RESELECT_ATTACK: Lowering<IrClause, Effects> = {
 const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
-  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard'],
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard', 'amount:votesFor'],
   lower(clause, ctx) {
     const named = arg(clause, 'objects');
     const to = zoneOf(clause);
@@ -678,11 +678,29 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
     const optional = may?.kind === 'flag' && may.value;
     // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
     const both = arg(clause, 'alsoGraveyard');
+    // Issue 103 (CR 701.38b, 608.2c): "You may put a permanent card from your hand onto the battlefield for each free vote": up to that many cards, chosen as it resolves.
+    const votes = arg(clause, 'count');
+    let count: Amount | undefined;
+    if (votes !== undefined) {
+      if (
+        votes.kind !== 'votesFor' ||
+        !optional ||
+        to.attacking === true ||
+        filter.value.zone !== 'hand' ||
+        both?.kind === 'flag'
+      ) {
+        return failure(clause);
+      }
+      const lowered = lowerAmount(votes, ctx, clause.rule);
+      if (!lowered.ok) return lowered;
+      count = lowered.value;
+    }
     const move: Effect = {
       kind: 'moveToZone',
       objects: {
         kind: 'choose',
         filter: filter.value,
+        ...(count === undefined ? {} : { count }),
         ...(optional ? { optional: true as const } : {}),
         ...(both?.kind === 'flag' && both.value ? { alsoGraveyard: true as const } : {}),
       },
