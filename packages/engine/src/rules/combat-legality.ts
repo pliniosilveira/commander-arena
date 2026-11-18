@@ -166,7 +166,7 @@ export function requiredAttackers(
         goadersOf(state, c.attacker).length > 0 ||
         groupRequirements(state, getObject(state, c.attacker)).length > 0,
     )
-    .filter((c) => untaxedTargets(state, c.targets).length > 0)
+    .filter((c) => untaxedTargets(state, c.attacker, c.targets).length > 0)
     .map((c) => c.attacker);
 }
 
