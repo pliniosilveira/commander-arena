@@ -1,6 +1,6 @@
 # Roadmap: deferred work and known limitations
 
-What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/DECISIONS.md`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
+What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/decisions/`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
 
 Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
 
@@ -135,7 +135,7 @@ Everything here is read and refused, or unread, so the card stays unsupported an
 
 ## Design-only items
 
-D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebound and others; Miracle is built, D-274; Encore is built, D-185) and the keyword actions; no D-118, D-119 or D-122 entry exists (see the top of `docs/DECISIONS.md`).
+The designs for the alternative costs not yet built (Bestow, Plot, Rebound and others; Miracle and Encore are built) and the keyword actions were in the old decision log, entry D-117 (read it as `docs/decisions/README.md` says).
 
 ## Hofri deck leftovers (D-229 and following)
 
