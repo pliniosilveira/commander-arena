@@ -5,6 +5,7 @@ import {
   clean,
   deckFromApi,
   deckIdsFromListing,
+  displayName,
   isSameList,
   listDiff,
   listHash,
@@ -194,5 +195,19 @@ describe('what differs between two lists', () => {
       hash,
     );
     expect(listHash(theirs)).not.toBe(hash);
+  });
+});
+
+describe('the name a ready-made deck shows', () => {
+  test('drops the product after the spaced hyphen', () => {
+    expect(displayName('Eternal Might - Aetherdrift Commander')).toBe('Eternal Might');
+    expect(displayName('Grave Danger - Starter Commander Decks')).toBe('Grave Danger');
+    expect(displayName('Lorehold Spirit – Secrets of Strixhaven')).toBe('Lorehold Spirit');
+  });
+
+  test('leaves a name without one, and hyphens inside a word, alone', () => {
+    expect(displayName('Witherbloom Pestilence')).toBe('Witherbloom Pestilence');
+    expect(displayName('Face-Down Tricks')).toBe('Face-Down Tricks');
+    expect(displayName('- Odd')).toBe('- Odd');
   });
 });
