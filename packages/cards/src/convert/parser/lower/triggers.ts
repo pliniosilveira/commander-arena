@@ -357,6 +357,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'cycled' });
     }
     case 'crimeCommitted':
+    case 'activatesAbility':
     case 'tokenCreated': {
       // "Whenever you commit a crime" (Gisa deck, D-464, CR 700.13), "whenever you create a token" (D-465, CR 111.2): the player is relative to the controller.
       const who = whoOf(t.actor);
@@ -364,7 +365,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const blocked = missingFeatures([`trigger:${t.event}`]);
       return blocked.length > 0
         ? failure(t, blocked)
-        : ok({ kind: t.event as 'crimeCommitted' | 'tokenCreated', who });
+        : ok({ kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility', who });
     }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
@@ -614,6 +615,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
+      'activatesAbility',
       'tokenCreated',
       'scries',
       'surveils',
@@ -867,6 +869,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };
       default:
@@ -952,6 +955,7 @@ export function lowerTriggered(
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.triggeredBody = true;
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
@@ -1381,6 +1385,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:castNth',
   'trigger:crimeCommitted',
   'trigger:tokenCreated',
+  'trigger:activatesAbility',
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:notAsAttacker',

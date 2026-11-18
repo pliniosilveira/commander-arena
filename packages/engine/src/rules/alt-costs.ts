@@ -75,6 +75,13 @@ export function hasGift(face: CardFace | null): boolean {
   return face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'gift') === true;
 }
 
+/** Whether the face has Aftermath (CR 702.127a): a half of a split card that is cast only from a graveyard and is exiled when it leaves the stack. */
+export function hasAftermath(face: CardFace | null): boolean {
+  return (
+    face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'aftermath') === true
+  );
+}
+
 /** The cost of whichever kicker ability the face has, kicker or multikicker (CR 702.33c), or null. */
 export function kickerLikeCostOf(face: CardFace | null): readonly Cost[] | null {
   return kickerCostOf(face) ?? multikickerCostOf(face);

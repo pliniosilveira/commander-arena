@@ -227,7 +227,11 @@ function walkEffect(
             message: `putting a searched card into "${d.zone}" is not implemented by the engine yet`,
           });
         }
-        if (d.zone === 'battlefield') auraEntryIssue(effect.filter, `${path}.filter`, out);
+        // Issue 104 (CR 303.4f): a card found by name that is an Aura chooses what it enchants as it enters (`withAuraEntries` in `rules/search.ts`), whatever the
+        // name is; any other search that could find an Aura stays refused.
+        if (d.zone === 'battlefield' && effect.filter.named === undefined) {
+          auraEntryIssue(effect.filter, `${path}.filter`, out);
+        }
       }
       return;
     case 'revealUntil':
@@ -844,6 +848,9 @@ function walkAbility(
       } else if (a.keyword.kind === 'eternalize') {
         // CR 702.129a: paid like any activation cost from the graveyard; mana only (D-384).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+      } else if (a.keyword.kind === 'embalm') {
+        // CR 702.128a: paid like any activation cost from the graveyard; mana only.
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'unearth') {
         // CR 702.84a: paid like any activation cost from the graveyard; mana only (D-124).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
@@ -911,7 +918,7 @@ function copiesThisIssues(face: CardFace, base: string, out: AstIssue[]): void {
     (a) =>
       ((a.kind === 'triggered' || a.kind === 'activated') && copiesThis(a.effect)) ||
       // D-384: Eternalize (CR 702.129a) makes a token copy of this card.
-      (a.kind === 'keyword' && a.keyword.kind === 'eternalize'),
+      (a.kind === 'keyword' && (a.keyword.kind === 'eternalize' || a.keyword.kind === 'embalm')),
   );
   const asks =
     face.types.includes('land') ||

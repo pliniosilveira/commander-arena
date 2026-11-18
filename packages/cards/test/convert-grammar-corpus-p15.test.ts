@@ -58,9 +58,9 @@ const TOKENS: readonly Line[] = [
   },
   {
     kind: 'sorcery',
-    text: 'Create a 1/1 white Soldier creature token with changeling.',
-    expect: no('with changeling.', 'token.custom'),
-    note: 'SYNTHETIC; a token is never made without its ability; the grammar reads only the words the engine can grant (D-110), which changeling is not',
+    text: 'Create a 1/1 white Soldier creature token with flash.',
+    expect: no('with flash.', 'token.custom'),
+    note: 'SYNTHETIC; a token is never made without its ability; the grammar reads only the words the engine can grant (D-110) and changeling (issue 104), which flash is not',
   },
   {
     kind: 'sorcery',

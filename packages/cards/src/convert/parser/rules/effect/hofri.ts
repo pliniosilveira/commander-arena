@@ -195,7 +195,7 @@ export const EFFECT_BECOMES_IN_ADDITION = defineRule<Clauses>({
 const COLOR_WORDS = '(white|blue|black|red|green)';
 /** "It's a black Zombie in addition to its other colors and types" (singular), "They're black Zombies in addition to their other colors and types" (plural). */
 const BECOMES_COLORED_ONE = new RegExp(
-  `^[Ii]t['’]s an? ${COLOR_WORDS} ([A-Z][a-z]+) in addition to its other colors and types(?![\\p{L}\\p{N}])`,
+  `^(?:[Ii]t['’]s|[Tt]hat creature is) an? ${COLOR_WORDS} ([A-Z][a-z]+) in addition to its other colors and types(?![\\p{L}\\p{N}])`,
   'u',
 );
 const BECOMES_COLORED_MANY = new RegExp(
@@ -212,7 +212,7 @@ const BECOMES_COLORED_MANY = new RegExp(
 export const EFFECT_BECOMES_COLORED_IN_ADDITION = defineRule<Clauses>({
   id: 'effect.becomes-colored-in-addition',
   family: 'effect',
-  leading: ['it', 'it’s', "it's", 'they', 'they’re', "they're"],
+  leading: ['it', 'it’s', "it's", 'they', 'they’re', "they're", 'that'],
   cites: [
     'CR 105.3 (Colors)',
     'CR 205.1b (Type Line)',
@@ -224,8 +224,14 @@ export const EFFECT_BECOMES_COLORED_IN_ADDITION = defineRule<Clauses>({
     "It's a black Zombie in addition to its other colors and types",
     "They're black Zombies in addition to their other colors and types",
     'They’re black Zombies in addition to their other colors and types',
+    // Liliana, Death's Majesty: the creature the sentence before returned.
+    'That creature is a black Zombie in addition to its other colors and types',
   ],
   rejects: [
+    'That creature is a Zombie in addition to its other colors and types',
+    'That creature is a black Zombie in addition to its other colors and types until end of turn',
+    'That permanent is a black Zombie in addition to its other colors and types',
+    'Those creatures are black Zombies in addition to their other colors and types',
     "It's a black Zombie in addition to its other types",
     "It's a Zombie in addition to its other colors and types",
     "They're black Zombies in addition to their other types",

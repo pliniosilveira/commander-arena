@@ -163,6 +163,12 @@ const COMMANDER_COLORS: Parser<IrAmount> = (ctx, pos) => {
     : r;
 };
 
+/** "the number of opponents you have" (CR 102.2, 102.3: the opponents still in the game; Rot Hulk's "where X is the number of opponents you have"). */
+const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the number of opponents you have(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  return r.ok ? { ok: true, value: { kind: 'opponentCount', span: r.value.span }, pos: r.pos } : r;
+};
+
 /** "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3): the controller's commanders, in any zone. */
 const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(pattern(/the greatest mana value among your commanders(?![\p{L}\p{N}'’])/iu))(
@@ -287,6 +293,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     AGGREGATE(rule),
     DEVOTION,
     COMMANDER_COLORS,
+    OPPONENT_COUNT,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),
@@ -396,9 +403,38 @@ const MINUS_OR_SUM = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * "<value> or <value>, whichever is greater" (CR 608.2c, 107.1: both are worked out as the instruction runs and the greater, or with "less" the lesser, is
+ * used): two amounts of the kinds `MINUS_OR_SUM` reads, joined by "or" and closed by the "whichever" clause the text always carries. Without the clause
+ * the words are not read (an "or" alone chooses between things, not numbers).
+ */
+const EXTREME = (rule: string): Parser<IrAmount> => {
+  const part = MINUS_OR_SUM(rule);
+  return (ctx, pos) => {
+    const first = part(ctx, pos);
+    if (!first.ok) return first;
+    const or = literal(' or ')(ctx, first.pos);
+    if (!or.ok) return or;
+    const second = part(ctx, or.pos);
+    if (!second.ok) return second;
+    const tail = pattern(/, whichever is (greater|less)(?![\p{L}\p{N}])/u)(ctx, second.pos);
+    if (!tail.ok) return tail;
+    return {
+      ok: true,
+      value: {
+        kind: 'extreme',
+        pick: tail.value[1] === 'greater' ? 'greater' : 'lesser',
+        of: [first.value, second.value],
+        span: { start: pos, end: tail.pos },
+      },
+      pos: tail.pos,
+    };
+  };
+};
+
 /** Any value phrase: arithmetic first, then the atoms (and their sums, less a number). */
 export const VALUE = (rule: string): Parser<IrAmount> =>
-  choice(HALF(rule), MULTIPLE(rule), MINUS_OR_SUM(rule));
+  choice(HALF(rule), MULTIPLE(rule), EXTREME(rule), MINUS_OR_SUM(rule));
 
 /** The kinds the older "equal to ..." rules read, which `amount.equal-to` leaves to them. */
 const OLDER_EQUAL_KINDS: ReadonlySet<string> = new Set([
@@ -442,6 +478,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to half the number of cards in your hand, rounded up',
     'equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'equal to the number of colors in your commanders’ color identity',
+    'equal to the number of opponents you have',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
     // Stage P44 (D-195, CR 701.38a): the votes for one option of the vote earlier in the text.
@@ -449,9 +486,18 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to twice the number of security votes',
     'equal to the number of profit votes plus the number of security votes',
     'equal to half the number of gold votes, rounded down',
+    // CR 608.2c: the greater (or the lesser) of two amounts.
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
+    'equal to the number of creatures you control or the number of cards in your hand, whichever is less',
   ],
   rejects: [
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard',
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is smaller',
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater and',
+    'equal to the number of Zombies you control, whichever is greater',
     'equal to the number of lands you control',
+    'equal to the number of opponents',
+    'equal to the number of opponents you control',
     'equal to its power',
     "equal to that creature's power",
     'equal to its mana value',
@@ -508,6 +554,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
   ],
   examples: [
     'where X is the number of Zombies you control',
+    // CR 102.2: the opponents still in the game.
+    'where X is the number of opponents you have',
+    'where X is the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
     'where X is the number of creatures on the battlefield',
     'where X is the number of creatures attacking you',
     'where X is the greatest power among creatures you control',
@@ -543,6 +592,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is',
     'where X is 3',
     'where X is the number of creatures',
+    'where X is the number of opponents',
+    'where X is the number of opponents you control',
     'where Y is the number of Zombies you control',
     'where x is the number of Zombies you control',
     'where X is half the number of Zombies you control',
@@ -671,8 +722,14 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creature destroyed this way',
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
+    'for each creature card put into a graveyard this way',
   ],
   rejects: [
+    'for each card put into a graveyard this way',
+    'for each land card put into a graveyard this way',
+    'for each creature put into a graveyard this way',
+    'for each creature cards put into a graveyard this way',
+    'for each creature card put into a graveyard',
     'for each creature sacrificed',
     'for each creature exiled this way',
     'for each opponent who drew this way',
@@ -705,6 +762,22 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: discarded.pos },
         },
         pos: discarded.pos,
+      };
+    }
+    // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards the mill before it put there.
+    const milled = pattern(
+      /for each creature card put into a graveyard this way(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (milled.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'milledCreature',
+          words: ['creature'],
+          span: { start: pos, end: milled.pos },
+        },
+        pos: milled.pos,
       };
     }
     const r = spanned(

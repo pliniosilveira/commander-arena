@@ -671,6 +671,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
     abilityIndex: activation.abilityIndex,
     stackObject: casting.object,
     ...(announced == null ? {} : { x: announced }),
+    // CR 113.6: read before the cost moved the source (a sacrificed permanent is still "a permanent" the ability of which was activated).
+    ...(casting.fromZone === 'battlefield' ? { fromBattlefield: true as const } : {}),
   });
   const next: GameState = {
     ...state,

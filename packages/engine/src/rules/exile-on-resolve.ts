@@ -52,6 +52,7 @@ export function exiledAsItResolves(
     !permanent &&
     !adventure &&
     stack.flashback !== true &&
+    stack.aftermath !== true &&
     stack.exileInstead !== true
   );
 }

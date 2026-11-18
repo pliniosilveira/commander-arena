@@ -199,11 +199,15 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
  * "card in all graveyards", "creature cards in your opponents' graveyards" (a card outside the battlefield is
  * the object of its owner, CR 400.3, so "your opponents'" is the opponents as owners).
  */
-const inTargetPlayersHand: Parser<{
-  zone: 'hand';
+const inTargetPlayersZone: Parser<{
+  zone: 'hand' | 'graveyard';
   controller: { readonly noun: IrNoun };
 }> = (ctx, pos) => {
-  const r = pattern(/ in (target (?:player|opponent))['’]s hand(?![\p{L}\p{N}])/iu)(ctx, pos);
+  // CR 108.3, 404.1: a card in a hand or a graveyard is the object of its owner; "target player's graveyard" (Corpse Augur) is the owner a target names.
+  const r = pattern(/ in (target (?:player|opponent))['’]s (hand|graveyard)(?![\p{L}\p{N}])/iu)(
+    ctx,
+    pos,
+  );
   if (!r.ok) return r;
   const word = r.value[1] ?? '';
   const start = pos + ' in '.length;
@@ -217,7 +221,8 @@ const inTargetPlayersHand: Parser<{
     span: { start, end: start + word.length },
     rule: 'noun.player',
   };
-  return { ok: true, value: { zone: 'hand', controller: { noun: player } }, pos: r.pos };
+  const zone = (r.value[2] ?? '').toLowerCase() === 'hand' ? 'hand' : 'graveyard';
+  return { ok: true, value: { zone, controller: { noun: player } }, pos: r.pos };
 };
 
 function cards(plural: boolean): Parser<IrFilter> {
@@ -262,7 +267,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     })),
     itsControllerGraveyard,
     // Prismari deck, group 2 (D-649, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
-    inTargetPlayersHand,
+    inTargetPlayersZone,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
   const words = map(
@@ -424,6 +429,8 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     // Prismari deck, group 2 (D-649, CR 108.3): the cards in the hand of a player the text targets.
     'for each card in target opponent’s hand',
     'for each card in target player’s hand',
+    'for each creature card in target player’s graveyard',
+    'for each card in target opponent’s graveyard',
     'for each instant and sorcery card in your graveyard',
     'for each instant or sorcery card in your graveyard',
   ],
@@ -437,7 +444,7 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each target creature',
     'for each card in target opponents’ hand',
     'for each card in target creature’s hand',
-    'for each card in target opponent’s graveyard',
+    'for each card in target creature’s graveyard',
     'for each instant and sorcery cards in your graveyard',
     'each creature you control',
     'for every creature you control',
@@ -489,6 +496,7 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of tapped creatures target opponent controls',
     // Prismari deck, group 2 (D-649, CR 108.3): the cards in the hand of a player the text targets.
     'equal to the number of cards in target opponent’s hand',
+    'equal to the number of creature cards in target player’s graveyard',
   ],
   rejects: [
     'equal to the number of',

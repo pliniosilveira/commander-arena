@@ -21,7 +21,7 @@ import {
 import type { IrAmount, IrNoun, IrQuotedAbility, IrToken } from '../../ir/types';
 import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
-import { KEYWORD_WORD, KEYWORD_WORDS } from '../keyword/list';
+import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
 import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY_OR_CREW_BONUS } from '../static/quoted';
 import { TOKEN_COPY_EXCEPT } from './copy-except';
@@ -135,19 +135,32 @@ const TOXIC_WORD: Parser<string> = map(
 );
 
 /**
+ * "changeling" (CR 702.73a, issue 104): a keyword a token has from its own text. It is a characteristic-defining ability the engine runs in every zone, and no static or
+ * effect can grant it (the engine's `GRANTABLE_KEYWORDS`), so only the token's own description reads it, not `KEYWORD_WORD`.
+ */
+const CHANGELING_WORD: Parser<string> = map(
+  pattern(/changeling(?![\p{L}\p{N}])/iu),
+  () => 'changeling',
+);
+
+/** The words a token's own description may name as keywords: those the engine can grant, and changeling. */
+const TOKEN_KEYWORD_WORD: Parser<string> = choice(KEYWORD_WORD, CHANGELING_WORD);
+const TOKEN_KEYWORD_WORDS: Parser<string[]> = keywordWordsOf(TOKEN_KEYWORD_WORD);
+
+/**
  * The keywords of a token: a list of those the engine can grant, or one keyword and "devour N" ("flying and devour 2"), or "devour N" alone. A longer
  * list with "devour N" at its end is not read (the list of grantable words is written "A, B, and C" and stops at the keyword it does not know).
  */
 const TOKEN_KEYWORDS: Parser<string[]> = choice(
   map(
     satisfy(
-      sequence(KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
+      sequence(TOKEN_KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
       ([words]) => words.length === 1,
     ),
     ([words, , numbered]): string[] => [...words, numbered],
   ),
   map(choice(DEVOUR_WORD, TOXIC_WORD), (numbered): string[] => [numbered]),
-  KEYWORD_WORDS,
+  TOKEN_KEYWORD_WORDS,
 );
 
 /**
@@ -163,7 +176,7 @@ const tokenWith = (
     // "with flying, haste, and \"...\"": the ability in quotes is the last of a list of three, so the keywords before it are joined by commas.
     map(
       satisfy(
-        sequence(separatedBy1(KEYWORD_WORD, literal(', ')), literal(', and '), quoted),
+        sequence(separatedBy1(TOKEN_KEYWORD_WORD, literal(', ')), literal(', and '), quoted),
         ([words]) => words.length >= 2 && new Set(words).size === words.length,
       ),
       ([keywords, , one]) => ({ keywords, abilities: [one] }),
@@ -308,7 +321,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
  * the effect, 111.4 name and subtypes). Power and toughness are numbers; the colors and at least
  * one creature type are written out. The keywords the engine can grant may follow ("a 1/1 white
  * Spirit creature token with flying", "with flying and vigilance", stage P15; CR 702: a keyword
- * ability of the token's own). Any other ability, in quotes or not ("with changeling", "with
+ * ability of the token's own). Any other ability, in quotes or not ("with flash", "with
  * \"Sacrifice this token: ...\"") is not read, so a token is never created without it.
  */
 export const TOKEN_CUSTOM = defineRule<IrToken>({
@@ -349,6 +362,10 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 2/2 red Goblin creature token with devour 1',
     'a 1/1 red Dragon creature token with first strike and devour 3',
     'a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "~ can’t block."',
+    // Issue 104 (CR 702.73a): a token with changeling.
+    'a 2/2 blue Shapeshifter creature token with changeling',
+    'a 1/1 white Soldier creature token with changeling and flying',
+    'a 1/1 white Soldier creature token with flying, changeling, and "{T}: You gain 1 life."',
   ],
   rejects: [
     'a 1/1 red and green Dragon creature token with devour',
@@ -367,7 +384,8 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token with flying and flying',
     'a 1/1 white Soldier creature token with',
     'a 1/1 white Soldier creature token with flash',
-    'a 1/1 white Soldier creature token with changeling',
+    'a 1/1 white Soldier creature token with changeling and changeling',
+    'a 1/1 white Soldier creature token with changelings',
     'a 1/1 white Soldier creature token with "Sacrifice ~: Draw a card"',
     'a 1/1 white Soldier creature token with "Sacrifice ~: Draw a card." and flying',
     'a 1/1 white Soldier creature token with flying and "Sacrifice ~: Draw a card"',

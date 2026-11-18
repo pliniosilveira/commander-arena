@@ -82,7 +82,11 @@ export function runChooseMove(
   const chooser = instruction.seat ?? res.controller;
   // D-411 (CR 608.2c): "You may put a land card from among them into your hand" is the offer itself, so what "if you do" and "if you don't" read starts again
   // at 0 as it is made, as a `may` effect does (D-135); the card moved, if one is, is what it counts.
-  const restart = instruction.among === undefined ? {} : { resetPerformed: true as const };
+  // CR 608.2c: an offer ("you may exile a creature card from your graveyard. If you do, ...") starts what "if you do" reads again, as a `may` does.
+  const restart =
+    instruction.among === undefined && instruction.optional !== true
+      ? {}
+      : { resetPerformed: true as const };
   const run = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
     const event: GameEvent = {
       kind: 'permanentsChosen',

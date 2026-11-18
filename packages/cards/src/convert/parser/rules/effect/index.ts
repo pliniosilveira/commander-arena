@@ -61,6 +61,7 @@ import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
+import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -680,7 +681,11 @@ const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSp
     literal('return '),
     // D-386: "return X target creature cards from your graveyard to your hand" (as many targets as the X announced) is read here and by no other verb.
     operands(
-      [...GRAVEYARD_OPERANDS, 'noun.x-target-graveyard-cards'],
+      [
+        ...GRAVEYARD_OPERANDS,
+        'noun.x-target-graveyard-cards',
+        'noun.up-to-x-target-graveyard-cards',
+      ],
       'effect.return',
       toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
     ),
@@ -1015,6 +1020,8 @@ export const EFFECT_RULES = [
   // The flicker sentence starts like a plain exile and must be tried first: the first rule that
   // reads a prefix of the text wins, and no rule backtracks into another.
   ...FLICKER_RULES,
+  // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
+  ...GRAVEYARD_COPY_EFFECT_RULES,
   EFFECT_EXILE,
   EFFECT_RETURN,
   // Before the plain counter: its phrase is a prefix of this one.

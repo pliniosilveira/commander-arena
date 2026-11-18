@@ -29,6 +29,7 @@ import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
 import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
 import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
+import { ETERNAL_MIGHT_NOUN_RULES } from './eternal-might';
 import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
 import { GISA_G2_NOUN_RULES } from './gisa-g2';
 import { GISA_G3_NOUN_RULES } from './gisa-g3';
@@ -819,6 +820,8 @@ export const NOUN_RULES = [
   NOUN_SUBTYPE_UNION,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.
   ...GISA_G2_NOUN_RULES,
+  // Issue 104 (Eternal Might deck): "creatures you control that are Zombies and/or tokens", which `noun.plain-permanents` would stop in the middle of.
+  ...ETERNAL_MIGHT_NOUN_RULES,
   NOUN_PLAIN_PERMANENTS,
   NOUN_IT,
   NOUN_EACH_OF_THEM,

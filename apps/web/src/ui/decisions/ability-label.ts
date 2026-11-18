@@ -153,6 +153,22 @@ export function isEternalize(ability: ActivatedAbility): boolean {
   );
 }
 
+/**
+ * True for Embalm's expansion (CR 702.128a): an ability from the graveyard that exiles the card as a cost and creates a token that is a copy of it, white, with no mana cost and a Zombie
+ * in addition.
+ */
+export function isEmbalm(ability: ActivatedAbility): boolean {
+  const { effect } = ability;
+  if (ability.functionsIn !== 'graveyard' || effect.kind !== 'createToken') return false;
+  const { token } = effect;
+  return (
+    token.kind === 'copyOf' &&
+    token.object.kind === 'this' &&
+    token.embalmed === true &&
+    token.setColors?.join() === 'W'
+  );
+}
+
 /** True for Unearth's expansion: an ability from the graveyard whose effect is `unearth` (CR 702.84a, D-124). */
 export function isUnearth(ability: ActivatedAbility): boolean {
   return ability.effect.kind === 'unearth';
@@ -270,12 +286,16 @@ export function targetText(spec: TargetSpec | undefined): string {
       if (
         spec.upToThatMany === true ||
         spec.upToTriggerAmount === true ||
+        spec.upToAmount !== undefined ||
         ((spec.max ?? 1) > 1 && (spec.min ?? 1) === 0)
       ) {
+        // Issue 104 (CR 603.3d): "up to X target Zombie cards ..., where X is the number of opponents you have": the number is an amount of the game, fixed as the ability triggers.
         const count =
-          spec.upToThatMany === true || spec.upToTriggerAmount === true
-            ? 'that many'
-            : numberWord(spec.max ?? 1);
+          spec.upToAmount !== undefined
+            ? 'X'
+            : spec.upToThatMany === true || spec.upToTriggerAmount === true
+              ? 'that many'
+              : numberWord(spec.max ?? 1);
         return `up to ${count} target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
       // D-639: "another target creature you control": the source of the ability is left out.
@@ -790,6 +810,9 @@ function moveText(
       return `Put ${what} ${positionPhrase(effect.position ?? 'top')} ${owner} library`;
     case 'graveyard':
       return `Put ${what} into ${owner} graveyard`;
+    // CR 406.1: only a chosen card is exiled by a `moveToZone` (the choice is worded above); anything else is the `exile` effect.
+    case 'exile':
+      return `Exile ${what}`;
     case 'battlefield': {
       const kept = effect.withCounters;
       const withCounters =
@@ -1687,6 +1710,13 @@ export function activationLabel(
   if (isEternalize(ability)) {
     return costKeyword(
       'Eternalize',
+      ability.cost.filter((c) => c.kind !== 'exileThis'),
+    );
+  }
+  // CR 702.128a: "Embalm {5}{W}": the exile of the card is part of the keyword, not of the price.
+  if (isEmbalm(ability)) {
+    return costKeyword(
+      'Embalm',
       ability.cost.filter((c) => c.kind !== 'exileThis'),
     );
   }

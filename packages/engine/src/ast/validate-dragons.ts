@@ -5,6 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
+import { isNonCreatureSubtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -450,6 +451,36 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
           checkGrantedParameter(k, `${path}.gains[${i}]`, out);
         }
       });
+    }
+  }
+  // CR 707.9b, 702.128b: "except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
+  if (r.ifEmbalmed !== undefined) {
+    const x = r.ifEmbalmed;
+    if (typeof x !== 'object' || x === null) {
+      issue(out, `${path}.ifEmbalmed`, 'ifEmbalmed is a set of exceptions');
+    } else {
+      if (
+        x.setColors !== undefined &&
+        (!Array.isArray(x.setColors) ||
+          x.setColors.some((c) => !isOneOf(c, ['W', 'U', 'B', 'R', 'G'])))
+      ) {
+        issue(out, `${path}.ifEmbalmed.setColors`, 'setColors is a list of colors');
+      }
+      if (x.noManaCost !== undefined && x.noManaCost !== true) {
+        issue(out, `${path}.ifEmbalmed.noManaCost`, 'noManaCost must be true when present');
+      }
+      if (
+        x.addSubtypes !== undefined &&
+        (!Array.isArray(x.addSubtypes) ||
+          x.addSubtypes.length === 0 ||
+          x.addSubtypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t)))
+      ) {
+        issue(
+          out,
+          `${path}.ifEmbalmed.addSubtypes`,
+          'addSubtypes is a non-empty list of creature types',
+        );
+      }
     }
   }
   return true;

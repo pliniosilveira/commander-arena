@@ -103,6 +103,22 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       amountValue = lowered.value;
     }
     const max = xCount ? 1 : cards.count?.kind === 'number' ? cards.count.value : 1;
+    // Issue 104 (CR 701.23a): "search your graveyard, hand, and/or library": the zones of the searcher, with nothing revealed and no shuffle in the sentence.
+    const zonesArg = arg(clause, 'zones');
+    let zones: readonly ('graveyard' | 'hand' | 'library')[] | undefined;
+    if (zonesArg !== undefined) {
+      if (zonesArg.kind !== 'destinations' || reveal.value || shuffle.value) return failure(clause);
+      const needs = missingFeatures(['selector:searchZones']);
+      if (needs.length > 0) return { ok: false, needs, at: zonesArg.span, rule: zonesArg.rule };
+      const names: ('graveyard' | 'hand' | 'library')[] = [];
+      for (const item of zonesArg.items) {
+        if (item.zone !== 'graveyard' && item.zone !== 'hand' && item.zone !== 'library') {
+          return failure(clause);
+        }
+        names.push(item.zone);
+      }
+      zones = names;
+    }
     const destinations: SearchDestination[] = [];
     for (const place of places.items) {
       if (
@@ -151,6 +167,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),
           ...(shared ? { sharedLandType: true as const } : {}),
+          ...(zones === undefined ? {} : { zones }),
           destinations,
           reveal: reveal.value,
           shuffle: shuffle.value,

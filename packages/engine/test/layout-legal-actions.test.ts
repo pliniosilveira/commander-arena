@@ -9,6 +9,7 @@ import { type ScenarioGame, scenario } from '../src/testing/index';
 const LAYOUT_CARDS = [
   'SYNTHETIC Singe // Mend',
   'SYNTHETIC Study // Zap',
+  'SYNTHETIC Rite // Toll',
   'SYNTHETIC Brawler Bear // Chop',
   'SYNTHETIC Wise Owl // Peek',
   'SYNTHETIC Ridge Drake // Ridge Pass',

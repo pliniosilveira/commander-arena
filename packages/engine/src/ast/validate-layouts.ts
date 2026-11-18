@@ -16,6 +16,11 @@ function hasKeywordLine(face: CardFace, keyword: string): boolean {
   return face.oracleText.split('\n').some((line) => new RegExp(`^${keyword}\\b`, 'i').test(line));
 }
 
+/** Whether the face carries the aftermath keyword (CR 702.127a). */
+function hasAftermath(face: CardFace): boolean {
+  return face.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'aftermath');
+}
+
 /** The chapter abilities of a face: the trigger's range and where the ability is. */
 function chapterAbilities(face: CardFace): { from: number; to: number; index: number }[] {
   return face.abilities.flatMap((a, index) =>
@@ -310,19 +315,23 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
         });
       }
     });
-    // CR 702.102 (Fuse) casts both halves at once; CR 702.127 (Aftermath) casts one half from the
-    // graveyard. Neither is run.
-    for (const [keyword, rule] of [
-      ['Fuse', '702.102'],
-      ['Aftermath', '702.127'],
-    ] as const) {
-      if (def.faces.some((face) => hasKeywordLine(face, keyword))) {
+    // CR 702.102 (Fuse) casts both halves at once: not run.
+    if (def.faces.some((face) => hasKeywordLine(face, 'Fuse'))) {
+      out.push({
+        path: 'layout',
+        message: 'layout split with Fuse (CR 702.102) is not implemented by the engine yet',
+      });
+    }
+    // CR 702.127a (Aftermath) is run when its keyword is on the half; a line of that name that the
+    // card does not carry as the keyword is text the engine did not read.
+    def.faces.forEach((face, i) => {
+      if (hasKeywordLine(face, 'Aftermath') && !hasAftermath(face)) {
         out.push({
-          path: 'layout',
-          message: `layout split with ${keyword} (CR ${rule}) is not implemented by the engine yet`,
+          path: `faces[${i}].abilities`,
+          message: 'layout split with an Aftermath line that is not the keyword (CR 702.127)',
         });
       }
-    }
+    });
   }
   if (def.layout === 'meld') {
     // CR 712.14c (D-278): the two cards enter as one permanent as the ability resolves, which does not stop to ask a question; a combined face with a
@@ -365,6 +374,13 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
       out.push({
         path: `faces[${i}].abilities`,
         message: `flashback on this face of layout ${def.layout} is not implemented by the engine yet`,
+      });
+    }
+    // CR 702.127a: aftermath is a half of a split card.
+    if (hasAftermath(face) && def.layout !== 'split') {
+      out.push({
+        path: `faces[${i}].abilities`,
+        message: `aftermath on layout ${def.layout} (it is a half of a split card, CR 702.127a)`,
       });
     }
     // D-667 (CR 702.81a): retrace is read from the front face of a card that is not split, as the flashback cost is.

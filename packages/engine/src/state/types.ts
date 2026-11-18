@@ -386,6 +386,11 @@ export interface StackData {
    */
   readonly flashback: boolean;
   /**
+   * True when a half with Aftermath was cast from a graveyard (CR 702.127a): "If this spell was cast from a graveyard, exile it instead of putting it anywhere else any time it would
+   * leave the stack." Applied in the zone-change pipeline (`rules/zones.ts`), so resolving, being countered and fizzling are all covered. Absent otherwise, and for an ability.
+   */
+  readonly aftermath?: true;
+  /**
    * True when cast from the graveyard by its retrace ability (CR 702.81a, D-667): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
    * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
    */
@@ -1450,6 +1455,8 @@ export type Instruction =
       readonly host?: ObjectId;
       /** The token is a copy made by Encore for this opponent (CR 702.141a, D-185): it is required to attack them, has haste and is sacrificed at the next end step. */
       readonly encoreFor?: SeatId;
+      /** The token is embalmed (CR 702.128b): created by a resolving embalm ability; the exceptions `entersAsCopy.ifEmbalmed` of its replacement effect apply to it. */
+      readonly embalmed?: true;
     }
   /**
    * "Counter it unless its controller pays [cost]" (CR 702.21a, 701.6) for the spell or ability
@@ -1834,6 +1841,8 @@ export interface ThisWayCounts {
   readonly discarded?: number;
   /** The total mana value of the cards milled by `mill` effects, for "equal to the total mana value of those cards" (D-210). */
   readonly milledValue?: number;
+  /** The creature cards milled by `mill` effects, for "for each creature card put into a graveyard this way" (Dread Summons). */
+  readonly milledCreature?: number;
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;

@@ -462,6 +462,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
     'Zombie tokens you control get +1/+1.',
+    'Creatures you control that are Zombies and/or tokens get +1/+1 and have flying.',
   ],
   rejects: [
     'Zombie tokens you control have flash.',
@@ -485,6 +486,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Nontoken creatures you control are forest lands in addition to their other types.',
     'Nontoken creatures you control are Desert lands in addition to their other types.',
     'Nontoken creatures you control are Forest land in addition to their other types.',
+    'Creatures you control that are Zombies or tokens get +1/+1.',
   ],
   parse: statement(
     'static.permanents',
@@ -495,6 +497,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       'noun.subtype-union',
       // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control get +1/+1 and have menace."
       'noun.subtype-pair',
+      // Issue 104 (Eternal Might deck): "Creatures you control that are Zombies and/or tokens get +1/+1 and have flying."
+      'noun.creatures-subtype-and-or-tokens',
       'noun.all-permanents',
       // Stage P64 (D-217): "Creature tokens you control have haste."
       'noun.token-permanents',

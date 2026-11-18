@@ -47,6 +47,7 @@ export type SimpleKeyword = Extract<
   | 'cascade'
   | 'demonstrate'
   | 'retrace'
+  | 'aftermath'
   | 'readAhead'
   | 'dethrone'
   | 'myriad'
@@ -121,6 +122,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   // Prismari deck, group 3 (issue 87, D-665, D-666; CR 702.144a, 702.81a): printed abilities with no parameter, never granted (the engine's GRANTABLE_KEYWORDS has neither).
   ['demonstrate', 'demonstrate'],
   ['retrace', 'retrace'],
+  // CR 702.127a (Aftermath): printed on the second half of a split card, never granted (the engine's GRANTABLE_KEYWORDS does not list it).
+  ['aftermath', 'aftermath'],
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],

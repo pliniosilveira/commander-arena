@@ -457,7 +457,6 @@ describe('token.custom: a token with the keywords of the engine (CR 111.4, 702)'
   });
 
   test.each([
-    ['Create a 1/1 white Soldier creature token with changeling.', 'with changeling.'],
     ['Create a 1/1 white Soldier creature token with flash.', 'with flash.'],
     [
       'Create a 1/1 white Soldier creature token with flying and flying.',

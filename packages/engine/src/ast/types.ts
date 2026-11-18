@@ -232,6 +232,15 @@ export type Amount =
   /** "The number of Zombies on the battlefield plus the number of Zombie cards in all graveyards" (D-131): the sum of two or more amounts. */
   | { readonly kind: 'sum'; readonly of: readonly Amount[] }
   /**
+   * "The number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater" (CR 608.2c, 107.1): the greater (`pick: 'greater'`) or
+   * the lesser (`'lesser'`) of two or more amounts, each read as the instruction runs. Not for a static ability's power or toughness.
+   */
+  | {
+      readonly kind: 'extreme';
+      readonly pick: 'greater' | 'lesser';
+      readonly of: readonly Amount[];
+    }
+  /**
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
    * controllers sacrifice), "for each creature destroyed this way" (`destroyed`: the permanents an earlier
@@ -259,6 +268,10 @@ export type Amount =
       /** D-626 (issue 160, "for each opponent who controls fewer creatures than you"): the opponents whose `stat` is less than the controller's. */
       readonly fewer?: true;
     }
+  /**
+   * "The number of opponents you have" (CR 102.2, 102.3): the opponents of the controller still in the game, now. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'opponentCount' }
   /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
@@ -323,6 +336,8 @@ export type ThisWayKind =
   | 'discarded'
   // D-210: "the total mana value of those cards" milled this way, and "if a creature card (a noncreature card) was discarded this way".
   | 'milledValue'
+  // Dread Summons (CR 701.17a): "for each creature card put into a graveyard this way": the creature cards the `mill` effects of this resolution milled, whoever's they are.
+  | 'milledCreature'
   | 'discardedCreature'
   | 'discardedNoncreature'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
@@ -985,6 +1000,13 @@ export interface TargetSpec {
    */
   readonly upToTriggerAmount?: true;
   /**
+   * "Return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (CR 107.3c, 603.3d, 601.2c): the slot takes up to as many
+   * targets as this amount is as the ability is put on the stack (none to that many); the number is fixed then, and the engine writes it into `max` (and a `min` of 0) of the ability that
+   * goes on the stack. The amount reads the game only (no target, no X): a count of objects, of opponents, and what is made of them. With 0 the ability has no target and, having
+   * nothing else to do for it, is not put on the stack. Only a slot of a triggered ability, with `min` and `max` left out.
+   */
+  readonly upToAmount?: Amount;
+  /**
    * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
    * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the
    * number of legal targets, and with X = 0 the slot has no target (the spell is cast and does nothing for it). Only a slot of a spell's own text (not an
@@ -1363,6 +1385,11 @@ export type TokenSpec =
        * reads them with `linkedExile` ("return the exiled card"). The link is the token's own and is read from last-known information when it has left the battlefield.
        */
       readonly linkExiled?: true;
+      /**
+       * The token is "embalmed" (CR 702.128b, Embalm): it is created by a resolving embalm ability. Only the token the effect creates is embalmed, not a copy of it; a replacement
+       * effect of the token that reads it (`entersAsCopy.ifEmbalmed`) asks as it enters.
+       */
+      readonly embalmed?: true;
     };
 
 // ---- Effects
@@ -2327,7 +2354,11 @@ export type Effect =
        * battlefield.
        */
       readonly objects: ObjectSelector | ChooseSelector;
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield';
+      /**
+       * `exile` (CR 406.1, 608.2d): only for a `choose` of cards in the hand or the graveyard ("you may exile a creature card from your graveyard"): the player chooses
+       * and the cards are exiled; what was exiled is what `moved` names afterwards ("If you do, create a token that's a copy of that card"). Any other exile is the `exile` effect.
+       */
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
       /**
        * For library: `top`, `bottom`, or a number N of 2 or more, "Nth from the top" ("third from the top" is 3): the card
        * goes below the first N - 1 cards, or on the bottom when the library has fewer than N cards (CR 401.7, D-135).
@@ -3146,6 +3177,14 @@ export type Effect =
        */
       readonly sharedLandType?: true;
       /**
+       * "Search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift" (CR 701.23a, 701.23b, 701.23d): the zones of the searcher that are searched,
+       * two or more of `graveyard`, `hand` and `library` (without it, the library alone). The cards of `filter` in all of them are offered in one choice. "And/or"
+       * lets the player search only some of the zones, so the library counts as searched (`librarySearched`, `thisWay` `searched`, which "If you search your library
+       * this way" reads) unless the cards found came from the graveyard or the hand alone; a search that finds nothing searched every zone. `shuffle` and a
+       * `reveal` are not built with it ("If you search your library this way, shuffle." is a `conditional` on `thisWayAtLeast` `searched`).
+       */
+      readonly zones?: readonly ('graveyard' | 'hand' | 'library')[];
+      /**
        * "Search your library for up to X basic land cards, where X is the number of tapped creatures you control" (D-626, issue 160): the most cards that may be found is
        * this amount, worked out as the search begins (CR 608.2c, 107.3c); `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`. A count of 0 or
        * less finds nothing (the player still searches and shuffles, CR 701.23c).
@@ -3442,6 +3481,14 @@ export type Trigger =
    * `triggerPlayer` the player who created it.
    */
   | { readonly kind: 'tokenCreated'; readonly who: 'you' | 'opponent' | 'any' }
+  /**
+   * "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a, D-NEW): once each time the player `who`
+   * names (relative to the controller of this ability) activates an activated ability, loyalty abilities included, of a permanent (its source was on the
+   * battlefield as it was activated), as the ability goes on the stack. A mana ability (CR 605.1a) is never put on the stack and never triggers it; neither
+   * does an ability of a card in a hand or graveyard (Cycling, Unearth). `triggerSubject` is the ability on the stack and `triggerPlayer` the player who
+   * activated it.
+   */
+  | { readonly kind: 'activatesAbility'; readonly who: 'you' | 'opponent' | 'any' }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }
   /**
@@ -4131,6 +4178,13 @@ export type Keyword =
    */
   | { readonly kind: 'retrace' }
   /**
+   * CR 702.127a (Aftermath): "You may cast this half of this split card from your graveyard", "This half of this split card can't be cast from any zone other than a graveyard" and "If this
+   * spell was cast from a graveyard, exile it instead of putting it anywhere else any time it would leave the stack." Three static abilities of one half of a split card (CR 709). It is not an
+   * alternative cost: the half is cast paying its own mana cost, at the timing of its type, so the engine offers it as an ordinary `castSpell` with that `face` for a card in a graveyard
+   * (`castZone`); the spell on the stack carries `StackData.aftermath` and is exiled whenever it leaves the stack (`rules/zones.ts`). Only on a face of a split card.
+   */
+  | { readonly kind: 'aftermath' }
+  /**
    * CR 702.40a (Storm, D-129): "When you cast this spell, copy it for each other spell that was cast before it this
    * turn. If the spell has any targets, you may choose new targets for any of the copies." A triggered ability of the
    * spell, expanded by `derive` (`rules/derive-keywords.ts`) into `castSpell` with `self` and the `storm` effect. Each
@@ -4172,6 +4226,13 @@ export type Keyword =
    * `noManaCost` and `addSubtypes`. Mana only, no X; one eternalize ability on a permanent card.
    */
   | { readonly kind: 'eternalize'; readonly cost: readonly Cost[] }
+  /**
+   * CR 702.128a (Embalm): "Embalm [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's white, it has no mana cost,
+   * and it's a Zombie in addition to its other types. Activate only as a sorcery." An activated ability that functions from the graveyard; the engine expands the keyword
+   * (`rules/derive-keywords.ts`) into that ability: the `exileThis` cost and a `createToken` of a `copyOf` `this` with `setColors`, `noManaCost`, `addSubtypes` and `embalmed`
+   * (CR 702.128b: the token is "embalmed"). Mana only, no X; one embalm ability on a permanent card.
+   */
+  | { readonly kind: 'embalm'; readonly cost: readonly Cost[] }
   /**
    * CR 702.82a (Devour, D-185): "Devour N" means "As this object enters, you may sacrifice any number of creatures. This permanent enters with N
    * +1/+1 counters on it for each creature sacrificed this way." A static ability, applied as the permanent enters (CR 614.12): its controller
@@ -4873,6 +4934,16 @@ export type Replacement =
       readonly optional?: true;
       readonly duration: Duration;
       readonly gains?: readonly Keyword[];
+      /**
+       * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
+       * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not
+       * embalmed, is not changed by them.
+       */
+      readonly ifEmbalmed?: {
+        readonly setColors?: readonly Color[];
+        readonly noManaCost?: true;
+        readonly addSubtypes?: readonly Subtype[];
+      };
     }
   /**
    * "If you would gain life, you gain that much life plus 1 instead." (D-149, CR 119.10, 614.1a): a replacement effect of a permanent on the
@@ -5013,6 +5084,18 @@ export type StaticSubject =
 export type StaticEffect =
   /** CR 205.3a (D-578): a permanent gives every creature card in specified ownership/control scopes every creature subtype. */
   | { readonly kind: 'allCreatureTypes'; readonly scope: 'youControl' | 'youOwn' }
+  /**
+   * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f, 604.3, 611.3a): a static ability of a permanent on the battlefield that gives the cards in
+   * its controller's hand that `what` matches the keyword `keyword`, in layer 6 with the permanent's timestamp. The cards are the controller's own ("your hand"), read as the cards
+   * are looked at (a card that enters the hand has it at once, a card that leaves does not). Only Cycling (a cycling ability, `{cost}, Discard this card: Draw a card`, which works only
+   * from the hand and is expanded as printed Cycling is); a card that already has the keyword with the same cost has it once. `what` is a filter of the card as it is in hand (its types
+   * and the like after layers 4 and 5), with no zone, controller, owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantKeywordToHandCards';
+      readonly what: ObjectFilter;
+      readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
+    }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';

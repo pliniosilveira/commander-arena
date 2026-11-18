@@ -482,6 +482,31 @@ function eternalizeAbility(cost: readonly Cost[]): Ability {
 }
 
 /**
+ * CR 702.128a: "Embalm [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's white, it has no mana cost, and it's a
+ * Zombie in addition to its other types. Activate only as a sorcery." The token is "embalmed" (CR 702.128b), which `embalmed` records for what its own replacement effects read.
+ */
+function embalmAbility(cost: readonly Cost[]): Ability {
+  return {
+    kind: 'activated',
+    cost: [...cost, { kind: 'exileThis' }],
+    effect: {
+      kind: 'createToken',
+      token: {
+        kind: 'copyOf',
+        object: { kind: 'this' },
+        setColors: ['W'],
+        noManaCost: true,
+        addSubtypes: ['Zombie'],
+        embalmed: true,
+      },
+      count: 1,
+    },
+    timing: 'sorcery',
+    functionsIn: 'graveyard',
+  };
+}
+
+/**
  * CR 702.30a: "Echo [cost]" means "At the beginning of your upkeep, if this permanent came under your control since
  * the beginning of your last upkeep, sacrifice it unless you pay [cost]." The condition is checked as the ability
  * triggers and again as it resolves (CR 603.4); the payment is the question of "unless you pay" (CR 118.12a,
@@ -678,6 +703,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [encoreAbility(ability.keyword.cost)];
     case 'eternalize':
       return [eternalizeAbility(ability.keyword.cost)];
+    case 'embalm':
+      return [embalmAbility(ability.keyword.cost)];
     case 'affinity':
       return [affinityAbility(ability.keyword.filter)];
     case 'echo':

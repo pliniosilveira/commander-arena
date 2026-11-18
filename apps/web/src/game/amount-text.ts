@@ -159,6 +159,8 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'milledValue':
       // D-210 (CR 202.3): "equal to the total mana value of those cards".
       return 'the total mana value of the cards milled this way';
+    case 'milledCreature':
+      return 'the number of creature cards milled this way';
     case 'discardedCreature':
       return 'the number of creature cards discarded this way';
     case 'discardedNoncreature':
@@ -291,6 +293,12 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return `${amountPhrase(amount.of, ctx)} minus ${amount.by}`;
     case 'sum':
       return amount.of.map((part) => amountPhrase(part, ctx)).join(' plus ');
+    case 'extreme':
+      // CR 608.2c: "the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater".
+      return `${amount.of.map((part) => amountPhrase(part, ctx)).join(' or ')}, whichever is ${amount.pick === 'greater' ? 'greater' : 'less'}`;
+    case 'opponentCount':
+      // CR 102.2: Rot Hulk's "where X is the number of opponents you have".
+      return 'the number of opponents you have';
     case 'thisWay':
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':

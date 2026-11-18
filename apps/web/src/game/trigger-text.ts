@@ -570,6 +570,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'crimeCommitted':
       // D-464 (CR 700.13): a spell or ability of the player that targets an opponent, what an opponent controls or a card in an opponent's graveyard.
       return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
+    case 'activatesAbility':
+      // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
+      return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability of a permanent that isn't a mana ability`;
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;

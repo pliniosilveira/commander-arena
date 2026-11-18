@@ -562,7 +562,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw a card for each time',
     'you draw a card for each creature',
     'its controller creates a token that’s a copy of it',
-    'its controller creates a 2/2 blue Bird creature token with changeling',
+    'its controller creates a 2/2 blue Bird creature token with flash',
     'its controller creates',
     'its controller create a Treasure token',
     'its controller investigate',
@@ -770,8 +770,18 @@ export const EFFECT_DISCARD_HAND = defineRule<Clauses>({
   family: 'effect',
   leading: ['discard'],
   cites: ['CR 701.9 (Discard)', 'CR 608.2c (Resolving Spells and Abilities)'],
-  examples: ['discard your hand', 'discard their hand', 'Discard your hand'],
+  examples: [
+    'discard your hand',
+    'discard their hand',
+    'Discard your hand',
+    'discard all the cards in your hand',
+    'discard all the cards in their hand',
+  ],
   rejects: [
+    'discard all the cards in your hands',
+    'discard all the cards in a hand',
+    'discard all cards in your hand',
+    'discard all the cards in your hand and draw seven cards',
     'discard a hand',
     'discard its hand',
     'discard hand',
@@ -782,7 +792,7 @@ export const EFFECT_DISCARD_HAND = defineRule<Clauses>({
   ],
   parse: (ctx, pos) =>
     map(
-      spanned(pattern(/discard (?:your|their) hand(?![\p{L}\p{N}])/iu)),
+      spanned(pattern(/discard (?:all the cards in )?(?:your|their) hand(?![\p{L}\p{N}])/iu)),
       ({ span }): Clauses => [
         makeClause(
           'effect.discard-hand',
@@ -790,6 +800,17 @@ export const EFFECT_DISCARD_HAND = defineRule<Clauses>({
           {
             player: impliedYou('effect.discard-hand', pos),
             hand: { kind: 'flag', value: true, span, rule: 'effect.discard-hand' },
+            // "Discard all the cards in your hand" counts as what "that many" reads (CR 608.2c); "discard your hand" keeps its old reading.
+            ...(/all the cards/iu.test(ctx.text.slice(span.start, span.end))
+              ? {
+                  allCards: {
+                    kind: 'flag' as const,
+                    value: true,
+                    span,
+                    rule: 'effect.discard-hand',
+                  },
+                }
+              : {}),
           },
           span,
         ),

@@ -62,6 +62,7 @@ import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
+import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
 import { HASHATON_G7_LOWERINGS } from './hashaton-g7';
 import { HASHATON_G9_LOWERINGS } from './hashaton-g9';
@@ -923,7 +924,9 @@ function playerVerb(
       // "Discard their hand" (stage P52, D-210, CR 701.9): as many cards as the hand holds, counted as the instruction comes up.
       if (verb === 'discard' && arg(clause, 'hand') !== undefined) {
         // "Each player discards their hand" (Lorehold group 3, CR 701.9a): each player discards the hand they have as their instruction comes up, so the count is not the controller's.
-        if (player.value.kind !== 'you') {
+        // "Discard all the cards in your hand" (CR 701.9a, 608.2c): the same whole-hand discard, whose cards "that many" counts afterwards.
+        if (player.value.kind !== 'you' || arg(clause, 'allCards') !== undefined) {
+          if (arg(clause, 'allCards') !== undefined) ctx.thisWay = 'discarded';
           return {
             ok: true,
             value: [{ kind: 'discard', player: player.value, count: 0, hand: true }],
@@ -1831,6 +1834,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DANITHA_G1B_LOWERINGS,
   // D-411: "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_LOWERINGS,
+  // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
+  ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
   ...FEATHER_G2_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".

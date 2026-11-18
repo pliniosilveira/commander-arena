@@ -10,6 +10,7 @@ import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 import { SYNTHETIC_ABILITY_LIST } from './synthetic-abilities';
 import { SYNTHETIC_ABILITY_COSTS_LIST } from './synthetic-ability-costs';
+import { SYNTHETIC_ACTIVATES_ABILITY_LIST } from './synthetic-activates-ability';
 import { SYNTHETIC_ADAMANTOISE_LIST } from './synthetic-adamantoise';
 import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
@@ -55,8 +56,10 @@ import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
+import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
+import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -74,6 +77,7 @@ import { SYNTHETIC_GISA_G3_LIST } from './synthetic-gisa-g3';
 import { SYNTHETIC_GISA_G4_LIST } from './synthetic-gisa-g4';
 import { SYNTHETIC_GISA_G5_LIST } from './synthetic-gisa-g5';
 import { SYNTHETIC_GRAVEYARD_LIST } from './synthetic-graveyard';
+import { SYNTHETIC_GRAVEYARD_COPY_LIST } from './synthetic-graveyard-copy';
 import { SYNTHETIC_GREATEST_LIST } from './synthetic-greatest';
 import { SYNTHETIC_HASHATON_G1_LIST } from './synthetic-hashaton-g1';
 import { SYNTHETIC_HASHATON_G2_LIST } from './synthetic-hashaton-g2';
@@ -150,6 +154,7 @@ import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
+import { SYNTHETIC_SEARCH_ZONES_LIST } from './synthetic-search-zones';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
@@ -416,6 +421,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
   ...SYNTHETIC_HASHATON_G5_LIST,
+  ...SYNTHETIC_EMBALM_LIST,
+  ...SYNTHETIC_GRAVEYARD_COPY_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
@@ -444,10 +451,13 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_FEATHER_G1_LIST,
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,
+  ...SYNTHETIC_ACTIVATES_ABILITY_LIST,
+  ...SYNTHETIC_SEARCH_ZONES_LIST,
   ...SYNTHETIC_HYLDA_G3_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
+  ...SYNTHETIC_ETERNAL_MIGHT_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,

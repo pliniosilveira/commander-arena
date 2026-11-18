@@ -510,6 +510,35 @@ describe('the graveyard', () => {
     ]);
   });
 
+  test('the Aftermath half of a split card is "Cast <half> from graveyard" (CR 702.127a)', () => {
+    const split = view(3, 'SYNTHETIC Rite // Toll', {
+      zone: 'graveyard',
+      faces: [
+        {
+          name: 'Rite',
+          manaCost: ['1', 'B'],
+          supertypes: [],
+          types: ['sorcery'],
+          subtypes: [],
+          oracleText: 'You gain 2 life.',
+        },
+        {
+          name: 'Toll',
+          manaCost: ['2', 'B'],
+          supertypes: [],
+          types: ['sorcery'],
+          subtypes: [],
+          oracleText: 'Destroy.',
+        },
+      ],
+    } as never);
+    const d = decision([{ kind: 'castSpell', object: 'o3', face: 1 }]);
+    expect(graveyardLabels(d, split)).toEqual(['Cast from graveyard']);
+    expect(menuItems(d, 'o3', lookupIndexFor([split])).map((i) => i.label)).toEqual([
+      'Cast Toll from graveyard',
+    ]);
+  });
+
   test('the reduction note is empty without a reduction or with a condition the words do not cover', () => {
     expect(costReductionNote({})).toBe('');
     expect(

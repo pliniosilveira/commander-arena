@@ -54,6 +54,7 @@ const KEYWORD_RULE = {
   unearth: 'keyword.unearth',
   encore: 'keyword.encore',
   eternalize: 'keyword.eternalize',
+  embalm: 'keyword.embalm',
   echo: 'keyword.echo',
   cumulativeUpkeep: 'keyword.cumulative-upkeep',
   ward: 'keyword.ward',
@@ -71,6 +72,7 @@ type CostedKeyword =
   | 'unearth'
   | 'encore'
   | 'eternalize'
+  | 'embalm'
   | 'echo'
   | 'cumulativeUpkeep'
   | 'ward'
@@ -154,6 +156,7 @@ function lowerCostedKeyword(
     name === 'unearth' ||
     name === 'encore' ||
     name === 'eternalize' ||
+    name === 'embalm' ||
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'replicate' ||
@@ -427,6 +430,7 @@ export function lowerKeyword(
     ability.name === 'unearth' ||
     ability.name === 'encore' ||
     ability.name === 'eternalize' ||
+    ability.name === 'embalm' ||
     ability.name === 'echo' ||
     ability.name === 'cumulativeUpkeep' ||
     ability.name === 'replicate' ||
@@ -643,6 +647,16 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       optional: true,
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
+      // Issue 104 (CR 707.9b, 702.128b): "except if ~ was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
+      ...(event.args.embalmed?.kind === 'flag' && event.args.embalmed.value
+        ? {
+            ifEmbalmed: {
+              setColors: ['W' as const],
+              noManaCost: true as const,
+              addSubtypes: ['Zombie'],
+            },
+          }
+        : {}),
     });
   }
   if (event.verb === 'drawInstead') {
@@ -910,6 +924,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:unearth',
   'keyword:encore',
   'keyword:eternalize',
+  'keyword:embalm',
   'keyword:devour',
   'keyword:riot',
   'keyword:suspend',

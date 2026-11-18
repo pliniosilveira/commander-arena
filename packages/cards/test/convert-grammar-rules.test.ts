@@ -581,7 +581,7 @@ describe('out of scope stays unparsed', () => {
     'Entwine {1}',
     'Destroy any number of target creatures.',
     'You may draw a card.',
-    'Create a 1/1 white Soldier creature token with changeling.',
+    'Create a 1/1 white Soldier creature token with flash.',
     // Lorehold group 1 reads "... and put it onto the battlefield tapped." (one card, a put joined with "and"); two cards put with "and" are still not read.
     'Search your library for two basic land cards and put them onto the battlefield tapped.',
     // Lorehold group 3 reads "Target player discards their hand." (D-623); two hands are not one.

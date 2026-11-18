@@ -9,7 +9,7 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { alternativeOf, flashbackCostOf, hasGift, hasModeCosts } from './alt-costs';
+import { alternativeOf, flashbackCostOf, hasAftermath, hasGift, hasModeCosts } from './alt-costs';
 import { auraTargetSpec } from './attach';
 import {
   type CastAlternative,
@@ -417,6 +417,13 @@ export function castZone(
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
     return null;
+  // CR 702.127a (Aftermath): a half with Aftermath is cast from a graveyard and from no other zone, paying its own mana cost (it takes no alternative cost); the other half of the
+  // card is cast as any split half is.
+  if (obj.card !== null && hasAftermath(definitionOf(state, obj.card).faces[faceIndex] ?? null)) {
+    return alternative === undefined && obj.zone === 'graveyard' && obj.owner === seat
+      ? 'graveyard'
+      : null;
+  }
   // CR 702.81a (Retrace, D-667): a card with retrace in its owner's graveyard is cast from there, paying its mana cost and discarding a land card.
   if (alternative === 'retrace') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
@@ -807,6 +814,11 @@ function faceOptions(
   return out;
 }
 
+/** Whether the card has a half with Aftermath (CR 702.127a): in a graveyard it may be cast from there. */
+function hasAftermathHalf(state: GameState, obj: GameObject): boolean {
+  return obj.card !== null && definitionOf(state, obj.card).faces.some((f) => hasAftermath(f));
+}
+
 /**
  * Every spell the seat could cast now from the hand, the command zone, or exile for a card on an
  * Adventure, one entry per castable face (CR 709.3, 712.11b, 715.3).
@@ -818,7 +830,8 @@ export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
     ...zoneList(state, 'graveyard', seat).filter(
       (id) =>
         mayCastFromGraveyard(state, seat, getObject(state, id)) ||
-        graveyardPlayPermission(state, seat, getObject(state, id), false) !== null,
+        graveyardPlayPermission(state, seat, getObject(state, id), false) !== null ||
+        hasAftermathHalf(state, getObject(state, id)),
     ),
     // Issue 159: the cards of other players' graveyards that an effect lets the seat cast this turn.
     ...anyGraveyardCastable(state, seat),

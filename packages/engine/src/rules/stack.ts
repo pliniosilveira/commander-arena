@@ -253,6 +253,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 tapped: (res.thisWay?.tapped ?? 0) + (out.thisWay.tapped ?? 0),
                 discarded: (res.thisWay?.discarded ?? 0) + (out.thisWay.discarded ?? 0),
                 milledValue: (res.thisWay?.milledValue ?? 0) + (out.thisWay.milledValue ?? 0),
+                milledCreature:
+                  (res.thisWay?.milledCreature ?? 0) + (out.thisWay.milledCreature ?? 0),
                 discardedCreature:
                   (res.thisWay?.discardedCreature ?? 0) + (out.thisWay.discardedCreature ?? 0),
                 discardedNoncreature:
@@ -372,6 +374,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !exiled &&
       timeCounters === null &&
       obj.stack.flashback !== true &&
+      obj.stack.aftermath !== true &&
       obj.stack.exileInstead !== true;
     const moved = moveObject(next, {
       object: res.object,

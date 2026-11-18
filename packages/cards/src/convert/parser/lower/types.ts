@@ -208,6 +208,8 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** True in the body of a triggered ability (CR 603.3d): the number of targets of a slot ("up to X target ...") may be read as it triggers. */
+  triggeredBody: boolean;
   /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
   didSearch: boolean;
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
@@ -222,6 +224,11 @@ export interface LowerContext {
    * (`tk1`), which the engine's `moved` names for the instructions that follow, until another instruction moves or makes objects. Null before one token and after.
    */
   madeToken: string | null;
+  /**
+   * True right after a clause that was the exile of a card the player chose from their graveyard (issue 104, "you may exile a creature card from your graveyard. If you do, create a token
+   * that's a copy of that card"): "that card" names the card that exile put into exile, which the engine's `moved` holds until another instruction moves, destroys or exiles something.
+   */
+  chosenExiled: boolean;
   /**
    * True right after a clause that was one mill of the controller's own library (D-411, CR 701.17a): "them" and "the cards milled this way" of "you may put a land card from
    * among them into your hand" are the cards that mill put into the graveyard. Any other clause lowered after it makes it false again.
@@ -309,11 +316,13 @@ export function newContext(
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
     scryTrigger: false,
+    triggeredBody: false,
     discardBatchTrigger: false,
     didSearch: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,
+    chosenExiled: false,
     milled: false,
     destroyed: false,
     createdToken: null,

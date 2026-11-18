@@ -569,8 +569,8 @@ const P1_EFFECTS: readonly Line[] = [
   },
   {
     kind: 'sorcery',
-    text: 'Create a 1/1 white Soldier creature token with changeling.',
-    expect: no('with changeling.', 'token.custom'),
+    text: 'Create a 1/1 white Soldier creature token with flash.',
+    expect: no('with flash.', 'token.custom'),
     note: 'a token with an ability the engine has no keyword for would be created without it',
   },
   { kind: 'sorcery', text: 'Sacrifice a creature.', expect: OK },

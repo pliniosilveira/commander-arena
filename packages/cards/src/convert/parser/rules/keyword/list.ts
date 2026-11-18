@@ -44,27 +44,32 @@ const SEPARATOR = /^(?:, and | and |, )/i;
  * keyword, so the diagnostic points at the words that are wrong. The words are lowercase, as
  * `SIMPLE_KEYWORDS` spells them ("first strike").
  */
-export const KEYWORD_WORDS: Parser<string[]> = (ctx, pos) => {
-  const first = KEYWORD_WORD(ctx, pos);
-  if (!first.ok) return first;
-  const words = [first.value];
-  const separators: { readonly text: string; readonly at: number }[] = [];
-  let end = first.pos;
-  for (;;) {
-    const sep = SEPARATOR.exec(ctx.text.slice(end, end + 6));
-    if (sep === null) break;
-    const next = KEYWORD_WORD(ctx, end + sep[0].length);
-    if (!next.ok) break;
-    if (words.includes(next.value)) return fail(ctx, next.pos);
-    separators.push({ text: sep[0].toLowerCase(), at: end });
-    words.push(next.value);
-    end = next.pos;
-  }
-  // Oracle shape: "A and B", "A, B, and C": commas between all but the last two, ", and" before.
-  const last = separators.length - 1;
-  for (const [i, sep] of separators.entries()) {
-    const expected = i < last ? ', ' : last === 0 ? ' and ' : ', and ';
-    if (sep.text !== expected) return fail(ctx, sep.at);
-  }
-  return { ok: true, value: words, pos: end };
-};
+export const KEYWORD_WORDS: Parser<string[]> = keywordWordsOf(KEYWORD_WORD);
+
+/** The list of `KEYWORD_WORDS` over another set of words, one word at a time: the keywords a token may have print more words than a grant may give (issue 104: "with changeling"). */
+export function keywordWordsOf(word: Parser<string>): Parser<string[]> {
+  return (ctx, pos) => {
+    const first = word(ctx, pos);
+    if (!first.ok) return first;
+    const words = [first.value];
+    const separators: { readonly text: string; readonly at: number }[] = [];
+    let end = first.pos;
+    for (;;) {
+      const sep = SEPARATOR.exec(ctx.text.slice(end, end + 6));
+      if (sep === null) break;
+      const next = word(ctx, end + sep[0].length);
+      if (!next.ok) break;
+      if (words.includes(next.value)) return fail(ctx, next.pos);
+      separators.push({ text: sep[0].toLowerCase(), at: end });
+      words.push(next.value);
+      end = next.pos;
+    }
+    // Oracle shape: "A and B", "A, B, and C": commas between all but the last two, ", and" before.
+    const last = separators.length - 1;
+    for (const [i, sep] of separators.entries()) {
+      const expected = i < last ? ', ' : last === 0 ? ' and ' : ', and ';
+      if (sep.text !== expected) return fail(ctx, sep.at);
+    }
+    return { ok: true, value: words, pos: end };
+  };
+}

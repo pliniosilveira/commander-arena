@@ -135,6 +135,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.encore': asIs,
   // Hashaton deck group 5 (D-384): Eternalize is a line of its own, like Encore.
   'keyword.eternalize': asIs,
+  // Issue 104: Embalm is a line of its own, like Eternalize.
+  'keyword.embalm': asIs,
   'keyword.escape': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
@@ -205,6 +207,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 10 of the Hashaton deck (D-386): "discard X cards" is an additional cost of a spell, and "X target creature cards" the targets that read the X it announces.
   'cost.discard-x': permanent((e) => `${e}: Draw X cards.`),
   'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
+  // Issue 104: the number of targets of a triggered ability, set by the X its sentence defines.
+  'noun.up-to-x-target-graveyard-cards': permanent(
+    (e) =>
+      `When ~ enters, return ${e} to the battlefield, where X is the number of opponents you have.`,
+  ),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
@@ -482,6 +489,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P34 (D-151, D-152): the Dragons slice. The statements and the replacement are lines of their own; the trigger follows "Whenever"; the
   // conditions follow "if" (an intervening "if", the trailing "if" of an activated ability) or "As long as"; the nouns are operands of damage.
   'replacement.enters-as-copy': asIs,
+  'replacement.enters-as-copy-embalmed': asIs,
   'replacement.redirect-damage': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,
@@ -621,6 +629,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
+  'trigger.activate-ability': whenever,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
   'trigger.scry': whenever,
@@ -635,6 +644,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
+  'static.every-creature-type': asIs,
+  'static.hand-cards-have-cycling': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
@@ -643,6 +654,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
   'trigger.discarded': whenever,

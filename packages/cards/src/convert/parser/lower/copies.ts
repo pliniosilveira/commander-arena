@@ -21,6 +21,12 @@ function copySourceOf(noun: IrNoun, ctx: LowerContext): LowerResult<ObjectRef> {
     if (missing.length > 0) return { ok: false, needs: missing, at: noun.span, rule: noun.rule };
     return { ok: true, value: { kind: 'triggerSubject' }, rule: noun.rule };
   }
+  // Issue 104 (CR 707.2, 400.7j): "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": the card the exile before it moved.
+  if (noun.det === 'anaphor' && noun.ref === 'moved' && ctx.chosenExiled) {
+    const missing = missingFeatures(['selector:moved']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: noun.span, rule: noun.rule };
+    return { ok: true, value: { kind: 'moved' }, rule: noun.rule };
+  }
   return objectRefOf(noun, ctx);
 }
 

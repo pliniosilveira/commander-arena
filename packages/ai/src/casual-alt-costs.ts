@@ -106,7 +106,8 @@ export function alternativeSpend(card: ObjectView, kind: NamedAlternativeKind): 
  * come back from the graveyard (flashback, escape, unearth, eternalize) is kept longest, since exiling it ends that.
  */
 function graveyardKeepValue(o: ObjectView): number {
-  if (/\b(flashback|escape|unearth|eternalize)\b/i.test(o.oracleText)) return 20 + manaValueOf(o);
+  if (/\b(flashback|escape|unearth|eternalize|embalm)\b/i.test(o.oracleText))
+    return 20 + manaValueOf(o);
   if (isLand(o)) return 0;
   if (o.types.includes('instant') || o.types.includes('sorcery')) return 1;
   return 2 + manaValueOf(o) / 10;

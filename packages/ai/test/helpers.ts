@@ -4400,6 +4400,13 @@ export const ANGEL_SPELLS = [
   ...supported(['Lightning Bolt', 'Murder', 'Unsummon', 'Counterspell']),
 ];
 
+/** The SYNTHETIC cards of issue 104 (an activation trigger, a search of the graveyard, hand and/or library for a named card). */
+export const ACTIVATES_ABILITY_NAMES = [
+  'SYNTHETIC Ability Watcher',
+  'SYNTHETIC Own Ability Watcher',
+  'SYNTHETIC Zone Seeker',
+] as const;
+
 /**
  * Creature and permanent pools for the combat-heavy deck mix. They are read from the engine's
  * exported fixtures instead of being listed by name, so every supported creature fixture (the
@@ -4428,6 +4435,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
+  // Issue 104: the activation trigger and the multi-zone named search ask questions the generic pools do not expect: kept out of them.
+  .filter((card) => !(ACTIVATES_ABILITY_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 3 cards (D-484 to D-492) ask which permanent each player keeps, an X announced for a sacrifice, and a sacrifice that may choose none: a style of their own.
   .filter((card) => !(GISA_G3_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.

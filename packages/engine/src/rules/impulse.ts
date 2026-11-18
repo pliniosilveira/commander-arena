@@ -125,6 +125,7 @@ function bakeAmount(amount: Amount, ids: readonly ObjectId[]): Amount {
       return { ...amount, of: bakeAmount(amount.of, ids) };
     case 'minus':
       return { ...amount, of: bakeAmount(amount.of, ids) };
+    case 'extreme':
     case 'sum':
       return { ...amount, of: amount.of.map((a) => bakeAmount(a, ids)) };
     default:

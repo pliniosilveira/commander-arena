@@ -20,6 +20,7 @@ import type {
 } from '@commander-arena/engine';
 import { amountPhrase, UNKNOWN_AMOUNT } from './amount-text';
 import { asCreatures, cardNoun, isPermanentCard, numberWord } from './artifacts-text';
+import { embalmedExceptionText } from './embalm-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { triggerWording, withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
@@ -256,8 +257,10 @@ export function entersAsCopyText(
     replacement.gains === undefined || replacement.gains.length === 0
       ? ''
       : `, except it has ${keywordList(replacement.gains.map((k) => k.kind))}`;
+  const embalmed =
+    replacement.ifEmbalmed === undefined ? '' : embalmedExceptionText(replacement.ifEmbalmed);
   const become = replacement.optional === true ? 'you may have it become' : 'it becomes';
-  return `As this ${noun} enters, ${become} a copy of any ${what} on the battlefield${copyDuration(replacement.duration)}${except}`;
+  return `As this ${noun} enters, ${become} a copy of any ${what} on the battlefield${copyDuration(replacement.duration)}${except}${embalmed}`;
 }
 
 /** "As this enchantment enters, choose Khans or Dragons" (CR 614.12a, 607.2d): a choice among names the card gives. */

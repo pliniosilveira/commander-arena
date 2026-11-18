@@ -401,6 +401,32 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.scope`, 'scope must be youControl or youOwn');
       }
       break;
+    case 'grantKeywordToHandCards':
+      // Issue 104 (CR 702.29a): "Each creature card in your hand has cycling {1}{U}": only Cycling, for the cards of the controller's hand a filter names.
+      if (s.keyword?.kind !== 'cycling') {
+        issue(out, `${path}.keyword`, 'only cycling can be given to the cards in a hand');
+      } else {
+        checkKeyword(s.keyword, `${path}.keyword`, out);
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a hand are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':
@@ -719,6 +745,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
+    case 'activatesAbility':
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -1075,6 +1102,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'castSpell':
     case 'becomesTarget':
     case 'crimeCommitted':
+    case 'activatesAbility':
       return 'stack';
     case 'tokenCreated':
       return 'permanent';
@@ -1342,6 +1370,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         true,
         false,
         a.trigger?.kind === 'scries',
+        true,
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(

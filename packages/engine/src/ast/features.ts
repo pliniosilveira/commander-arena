@@ -411,6 +411,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-464, D-465: "Whenever you commit a crime" (CR 700.13), "Whenever you create a token" (CR 111.2).
     'crimeCommitted',
     'tokenCreated',
+    // "Whenever an opponent activates an ability of a permanent that isn't a mana ability" (CR 602.2, 603.2, 605.1a).
+    'activatesAbility',
     // D-513: "Whenever you scry" (CR 701.22).
     'scries',
     // Galadriel group 1: "Whenever you surveil" (CR 701.25).
@@ -512,12 +514,16 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-665: Demonstrate (CR 702.144a); D-667: Retrace (CR 702.81a).
     'demonstrate',
     'retrace',
+    // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
+    'aftermath',
     // D-124: Unearth (CR 702.84a).
     'unearth',
     // D-185: Encore (CR 702.141a), Devour (CR 702.82a) and Riot (CR 702.136a).
     'encore',
     // D-384: Eternalize (CR 702.129a).
     'eternalize',
+    // Embalm (CR 702.128a).
+    'embalm',
     'devour',
     'riot',
     // D-127: Echo (CR 702.30a) and Cumulative upkeep (CR 702.24a).
@@ -619,7 +625,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
   // 714 Saga (lore counters and chapter abilities; read ahead is a keyword and is not run), CR 701.42 and 712.4 meld
-  // (D-277: two cards, one melded permanent). Fuse, Aftermath, Rooms and flip are not run (`validateCard` names the layout).
+  // (D-277: two cards, one melded permanent). Fuse, Rooms and flip are not run (`validateCard` names the layout); Aftermath is (CR 702.127).
   layouts: [
     'normal',
     'split',
@@ -731,6 +737,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharesCreatureTypeWith',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
+    // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
+    'searchZones',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -804,6 +812,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'upToThatMany',
     // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
     'upToTriggerAmount',
+    // CR 107.3c, 603.3d: "return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (`TargetSpec.upToAmount`).
+    'upToAmount',
     // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
@@ -956,6 +966,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-099: `grantAbility` gives a mana ability ("Lands you control have "{T}: Add one mana of any color."").
   staticKinds: [
     'allCreatureTypes',
+    // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
+    'grantKeywordToHandCards',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1086,6 +1098,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-321: "the number of cards in your hand minus 4".
     'minus',
     'sum',
+    'extreme',
+    'opponentCount',
     'opponentsWithMore',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
@@ -1375,6 +1389,8 @@ export const SELECTOR_KINDS = [
   'sharesCreatureTypeWith',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
+  /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
+  'searchZones',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
@@ -1463,6 +1479,8 @@ export const SELECTOR_KINDS = [
   'upToThatMany',
   /** "Up to X target nonland permanents" where X is the cards looked at while scrying (CR 603.3d, 701.22, D-513): the engine's `TargetSpec.upToTriggerAmount`. */
   'upToTriggerAmount',
+  /** "Up to X target Zombie cards ..., where X is the number of opponents you have" (CR 107.3c, 603.3d): the engine's `TargetSpec.upToAmount`, read as the ability triggers. */
+  'upToAmount',
   /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
@@ -1650,6 +1668,8 @@ export const STATIC_KINDS = [
   'noMaximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
+  /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
+  'grantKeywordToHandCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
@@ -1811,6 +1831,10 @@ export const AMOUNT_KINDS = [
   'minus',
   /** "... plus ..." (D-131): the engine's `sum`. */
   'sum',
+  /** "... or ..., whichever is greater" (CR 608.2c): the engine's `extreme`, the greater or the lesser of two or more amounts. */
+  'extreme',
+  /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
+  'opponentCount',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */
@@ -2117,6 +2141,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
+  activatesAbility: true,
   scries: true,
   surveils: true,
   rollsHighest: true,
@@ -2196,9 +2221,11 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   demonstrate: true,
   retrace: true,
+  aftermath: true,
   unearth: true,
   encore: true,
   eternalize: true,
+  embalm: true,
   devour: true,
   riot: true,
   echo: true,

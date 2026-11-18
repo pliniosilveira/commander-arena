@@ -638,6 +638,25 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 
 // ---- Target declarations (CR 115)
 
+/** Amount kinds that read an object or a target, which the number of targets of a slot (read before any is chosen) cannot. */
+const READS_NO_OBJECT: ReadonlySet<string> = new Set([
+  'x',
+  'enteredX',
+  'powerOf',
+  'manaValueOf',
+  'toughnessOf',
+  'countersOn',
+  'thisWay',
+  'triggerDamage',
+  'triggerTargetCount',
+  'dieResult',
+  'votesFor',
+  'exiledStillThere',
+  'cardsStillExiled',
+  'shortfall',
+  'lifeLostThisWay',
+]);
+
 /** Validates a list of target specs and returns the ids they declare. */
 export function declareTargets(
   specs: readonly TargetSpec[] | undefined,
@@ -653,6 +672,8 @@ export function declareTargets(
   countXAllowed = false,
   /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
+  /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
+  upToAmountAllowed = false,
 ): Map<string, TargetKind> {
   const declared = new Map<string, TargetKind>();
   if (specs === undefined) return declared;
@@ -833,6 +854,32 @@ export function declareTargets(
         spec.countX !== undefined
       ) {
         issue(out, p, 'up to as many targets as the trigger says has no min, max or other count');
+      }
+    }
+    if (spec.upToAmount !== undefined) {
+      // CR 107.3c, 603.3d: "up to X target Zombie cards ..., where X is the number of opponents you have".
+      if (!upToAmountAllowed) {
+        issue(
+          out,
+          `${p}.upToAmount`,
+          'only a slot of a triggered ability takes up to as many targets as an amount read as it triggers',
+        );
+      } else if (
+        spec.min !== undefined ||
+        spec.max !== undefined ||
+        spec.divide !== undefined ||
+        spec.onePerOpponent !== undefined ||
+        spec.upToThatMany !== undefined ||
+        spec.upToTriggerAmount !== undefined ||
+        spec.anyNumber !== undefined ||
+        spec.countX !== undefined
+      ) {
+        issue(out, p, 'up to as many targets as an amount has no min, max or other count');
+      } else {
+        checkAmount(spec.upToAmount, `${p}.upToAmount`, NO_SCOPE, out);
+        if (typeof spec.upToAmount === 'object' && READS_NO_OBJECT.has(spec.upToAmount.kind)) {
+          issue(out, `${p}.upToAmount`, 'the number of targets reads the game, not an object');
+        }
       }
     }
     if (spec.countX !== undefined) {
@@ -1323,6 +1370,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   tapped: 'a tap effect',
   discarded: 'a discard effect',
   milledValue: 'a mill effect',
+  milledCreature: 'a mill effect',
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
@@ -1351,12 +1399,14 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedInstantOrSorcery',
       'discardedMost',
     ];
-  if (e?.kind === 'mill') return ['milledValue'];
+  if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
+  // "You may discard all the cards in your hand. If you do, draw that many cards": a declined offer counts 0.
+  if (e?.kind === 'may') return thisWayProduced(e.effect);
   return [];
 }
 
@@ -1438,6 +1488,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderCasts':
     case 'cardTypesAmong':
     case 'opponentsWithMore':
+    case 'opponentCount':
     case 'lifeGainedThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
@@ -1678,6 +1729,18 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         });
       }
       break;
+    case 'extreme':
+      if (a.pick !== 'greater' && a.pick !== 'lesser') {
+        issue(out, `${path}.pick`, 'an extreme amount picks the greater or the lesser');
+      }
+      if (!Array.isArray(a.of) || a.of.length < 2) {
+        issue(out, `${path}.of`, 'an extreme amount needs at least two amounts');
+      } else {
+        a.of.forEach((part, i) => {
+          checkAmount(part, `${path}.of[${i}]`, scope, out);
+        });
+      }
+      break;
     case 'opponentsWithMore':
       if (!isOneOf(a.stat, PLAYER_STATS)) {
         issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
@@ -1685,6 +1748,8 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.fewer !== undefined && a.fewer !== true) {
         issue(out, `${path}.fewer`, 'fewer is true when present');
       }
+      break;
+    case 'opponentCount':
       break;
     case 'timesKicked':
       // D-110: the card must have a kicker or multikicker (`checkCastFace`).
@@ -3235,6 +3300,10 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
       // D-642 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
       checkRef(ref, 'object', path, scope, out);
       break;
+    case 'moved':
+      // CR 707.2, 400.7j: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": the card the effect before it moved.
+      checkRef(ref, 'object', path, scope, out);
+      break;
     default:
       issue(
         out,
@@ -3328,6 +3397,9 @@ function checkTokenSpec(
           spec.abilities.forEach((a, i) => {
             scope.checkAbility(a, `${path}.abilities[${i}]`, out);
           });
+      }
+      if (spec.embalmed !== undefined && spec.embalmed !== true) {
+        issue(out, `${path}.embalmed`, 'embalmed must be true when present');
       }
       if (spec.linkExiled !== undefined && spec.linkExiled !== true) {
         issue(out, `${path}.linkExiled`, 'linkExiled must be true when present');
@@ -3435,6 +3507,31 @@ function checkSearch(
         `${path}.sharedLandType`,
         "the cards found are land cards: the filter's types include 'land'",
       );
+    }
+  }
+  // CR 701.23a: "your graveyard, hand, and/or library": two or more different zones of the searcher; nothing else of the search is built with them.
+  if (e.zones !== undefined) {
+    if (
+      !Array.isArray(e.zones) ||
+      e.zones.length < 2 ||
+      new Set(e.zones).size !== e.zones.length ||
+      !e.zones.every((z) => isOneOf(z, ['graveyard', 'hand', 'library']))
+    ) {
+      issue(
+        out,
+        `${path}.zones`,
+        'zones are two or more different ones of graveyard, hand and library',
+      );
+    }
+    if (e.reveal === true || e.shuffle === true || e.sharedLandType !== undefined) {
+      issue(
+        out,
+        `${path}.zones`,
+        'a search of several zones has no reveal, shuffle or shared land type: shuffle with a "searched this way" condition',
+      );
+    }
+    if (e.maxAmount !== undefined) {
+      issue(out, `${path}.zones`, 'a search of several zones has no maxAmount');
     }
   }
   for (const key of ['reveal', 'shuffle'] as const) {
@@ -4706,8 +4803,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.withCounters.count`, 'counter count must be a positive integer');
         }
       }
-      if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield'])) {
+      if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
         issue(out, `${path}.to`, `cannot move to zone ${JSON.stringify(e.to)}`);
+      }
+      // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.
+      if (e.to === 'exile') {
+        const chosen = kindOf(e.objects) === 'choose' ? (e.objects as ChooseSelector) : null;
+        if (
+          chosen === null ||
+          (chosen.filter?.zone !== 'hand' && chosen.filter?.zone !== 'graveyard')
+        ) {
+          issue(
+            out,
+            `${path}.to`,
+            "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
+          );
+        }
       }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
       if (e.attachTo !== undefined) {

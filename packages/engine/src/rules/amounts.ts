@@ -44,6 +44,7 @@ type StateAmount = Extract<
       | 'commanderCasts'
       | 'thisWay'
       | 'opponentsWithMore'
+      | 'opponentCount'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'spellsCastThisTurn'
@@ -81,6 +82,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'commanderCasts' ||
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
+    amount.kind === 'opponentCount' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'spellsCastThisTurn' ||
@@ -287,6 +289,10 @@ export function amountOf(
   if (amount.kind === 'sum') {
     return amount.of.reduce<number>((n, part) => n + amountOf(state, part, ctx, targets), 0);
   }
+  if (amount.kind === 'extreme') {
+    const values = amount.of.map((part) => amountOf(state, part, ctx, targets));
+    return amount.pick === 'greater' ? Math.max(...values) : Math.min(...values);
+  }
   // D-151: written into a delayed trigger as it is created; a card that still has it is read as nothing.
   if (amount.kind === 'exiledStillThere') return 0;
   // D-131: what the game says now (toughness, counters, greatest or total of a stat, devotion, ...).
@@ -357,6 +363,9 @@ export function stateAmountOf(
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
       return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
+    case 'opponentCount':
+      // CR 102.2, 102.3: the opponents of the controller still in the game.
+      return opponentsOf(state, ctx.controller).length;
     case 'cardsStillExiled':
       // CR 400.7: a card that left exile is a new object, so only the very objects still there count.
       return amount.objects.filter((id) => state.objects[id]?.zone === 'exile').length;

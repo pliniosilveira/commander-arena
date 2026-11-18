@@ -40,6 +40,7 @@ import type {
   StepId,
   TriggeredAbility,
 } from '../state/types';
+import { amountOf } from './amounts';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -48,7 +49,7 @@ import { findLaterTriggers } from './later-triggers';
 import { findMonarchTriggers } from './monarch';
 import { findRingTriggers } from './ring';
 import { chaptersReached, loreChange, readAheadBlocks } from './saga';
-import { matchesFilter } from './select';
+import { matchesFilter, type SelectContext } from './select';
 import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
@@ -129,15 +130,35 @@ function eventPlayer(ability: Ability, occ: Occurrence): { readonly player?: Sea
  * CR 603.3d (D-513): a target slot that takes "up to X" targets, X being the number the trigger event carries (`TargetSpec.upToTriggerAmount`), is written as
  * the bounds it has this time (none to `amount`). Null when `amount` is 0: an ability with up to 0 targets and nothing else to do does nothing, so it is not put on the stack.
  */
-function withTriggerAmount(ability: TriggeredAbility, amount: number): TriggeredAbility | null {
-  if (!ability.targets?.some((spec) => spec.upToTriggerAmount === true)) return ability;
-  if (amount <= 0) return null;
+function withTriggerAmount(
+  state: GameState,
+  ability: TriggeredAbility,
+  amount: number,
+  ctx: SelectContext,
+): TriggeredAbility | null {
+  if (
+    !ability.targets?.some(
+      (spec) => spec.upToTriggerAmount === true || spec.upToAmount !== undefined,
+    )
+  ) {
+    return ability;
+  }
+  // CR 107.3c, 603.3d: "up to X target ..., where X is the number of opponents you have": X is what the text says, as the ability is put on the stack.
+  const counts = ability.targets.map((spec) =>
+    spec.upToTriggerAmount === true
+      ? amount
+      : spec.upToAmount === undefined
+        ? null
+        : amountOf(state, spec.upToAmount, ctx, []),
+  );
+  if (counts.some((n) => n !== null && n <= 0)) return null;
   return {
     ...ability,
-    targets: ability.targets.map((spec) => {
-      if (spec.upToTriggerAmount !== true) return spec;
-      const { upToTriggerAmount: _fixed, ...rest } = spec;
-      return { ...rest, min: 0, max: amount };
+    targets: ability.targets.map((spec, i) => {
+      const n = counts[i];
+      if (n === null || n === undefined) return spec;
+      const { upToTriggerAmount: _fixed, upToAmount: _amount, ...rest } = spec;
+      return { ...rest, min: 0, max: n };
     }),
   };
 }
@@ -390,6 +411,13 @@ function occurrences(
       // CR 700.13 (D-464): the spell or ability that committed the crime is the subject, the player who put it on the stack the player.
       return event.kind === 'crimeCommitted'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
+    case 'activatesAbility':
+      // CR 602.2, 605.1a: an activated ability of a permanent that uses the stack (a mana ability is no such event); the ability on the stack is the subject.
+      return event.kind === 'abilityActivated' &&
+        event.fromBattlefield === true &&
+        event.stackObject !== null
+        ? [{ subject: event.stackObject, seat: event.seat, player: event.seat }]
         : [];
     case 'tokenCreated':
       // CR 111.2 (D-465): a token enters under the control of the player who creates it; one occurrence for each token.
@@ -688,7 +716,8 @@ function matches(
       return false;
     case 'crimeCommitted':
     case 'tokenCreated':
-      // CR 700.13, 111.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
+    case 'activatesAbility':
+      // CR 700.13, 111.2, 602.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -870,6 +899,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
+    case 'abilityActivated':
     case 'ringTempted':
     case 'classLevelReached':
       return true;
@@ -1104,7 +1134,10 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             continue;
           }
           // CR 603.3d, 701.22 (D-513): "tap up to X target nonland permanents, where X is the number of cards looked at": fixed as the ability triggers.
-          const fixed = withTriggerAmount(ability, occ.damage ?? 0);
+          const fixed = withTriggerAmount(state, ability, occ.damage ?? 0, {
+            controller: candidate.controller,
+            source: id,
+          });
           if (fixed === null) continue;
           found.push({
             source: id,
