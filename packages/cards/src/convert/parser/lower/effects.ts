@@ -648,6 +648,29 @@ const MAY_CAST: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): the engine's `mayCastSpells`, a permission for the rest of the turn that covers
+ * every card of the controller's graveyard the filter describes.
+ */
+const MAY_CAST_SPELLS: Lowering<IrClause, Effects> = {
+  head: 'mayCastSpells',
+  id: 'lower.may-cast-spells',
+  // "You may" is the sentence's own offer and the permission is optional anyway (nobody has to cast).
+  acceptsOptional: true,
+  needs: ['effect:mayCastSpells', 'duration:untilEndOfTurn'],
+  lower(clause) {
+    const objects = operand(clause, 'objects');
+    if (objects?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter(objects);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [{ kind: 'mayCastSpells', spells: filter.value, duration: 'untilEndOfTurn' }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** The mana a spec produces; a color choice is only possible while paying for a mana ability. */
 export function lowerMana(spec: IrManaSpec): ManaProduction {
   switch (spec.what.kind) {
@@ -1537,6 +1560,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   UNTAP_CHOSEN,
   RESELECT_ATTACK,
   MAY_CAST,
+  MAY_CAST_SPELLS,
   simple('counter'),
   COUNTER_UNLESS,
   simple('tap'),
@@ -1667,7 +1691,10 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
             ? 'opponentControlsAtLeast'
             : test === 'sameName'
               ? 'sameNameAtLeast'
-              : test === 'attachedTo' || test === 'putThisWay' || test === 'exiledThisWay'
+              : test === 'attachedTo' ||
+                  test === 'putThisWay' ||
+                  test === 'exiledThisWay' ||
+                  test === 'milledThisWay'
                 ? 'objectMatches'
                 : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
                   ? 'thisWayAtLeast'

@@ -1779,6 +1779,11 @@ export type ContinuousChange =
       readonly kind: 'castPermission';
       readonly seat: SeatId;
       /**
+       * "You may cast Zombie spells from your graveyard this turn" (`mayCastSpells`, issue 159): instead of the cards the effect's `objects` names, every card of `seat`'s
+       * graveyard that this filter describes, whenever it is asked (`objects` is empty).
+       */
+      readonly spells?: ObjectFilter;
+      /**
        * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
        */

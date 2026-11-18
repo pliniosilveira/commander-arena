@@ -605,6 +605,8 @@ export interface IrCondition extends IrNode {
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
     | { readonly kind: 'putThisWay'; readonly filter: IrFilter; readonly zone?: 'hand' }
     | { readonly kind: 'exiledThisWay'; readonly filter: IrFilter }
+    // "at least one Zombie card is milled this way" (issue 159, CR 608.2c, 701.17a): any card the mill before it put into the graveyard is described by the filter.
+    | { readonly kind: 'milledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)

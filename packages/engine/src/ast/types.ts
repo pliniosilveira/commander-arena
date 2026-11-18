@@ -1634,6 +1634,17 @@ export type Effect =
       readonly exileInstead?: true;
     }
   /**
+   * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): until end of turn the controller of this effect may cast, from their own graveyard,
+   * every card there that `spells` describes (a Zombie card: its types, subtypes, mana value, as the card it is; the filter names no zone, controller or owner), at the timing of its
+   * type and paying its ordinary cost (no alternative cost, no commander tax). It names the cards as they are whenever the turn asks, so a card that enters the graveyard later this
+   * turn is covered too. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'mayCastSpells';
+      readonly spells: ObjectFilter;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
    * "Exile the top card of your library", "Exile the top two cards of your library", "Exile the top X cards of your library, where X is the
    * number of creatures you control with power 4 or greater" (CR 701.13 Exile, 401, D-151): the controller exiles the top `count` cards of their
    * library one after the other (fewer when it holds fewer; 0 or less does nothing). They are face up, and are what `moved` names afterwards
@@ -4012,6 +4023,11 @@ export type Condition =
       readonly of: ObjectRef;
       readonly filter: ObjectFilter;
       readonly inZone?: 'hand' | 'exile';
+      /**
+       * "If at least one Zombie card is milled this way" (issue 159, CR 608.2c, 400.7j): with `of: moved`, true when any of the objects the instruction before it
+       * moved matches the filter, not only the first. Only with the `moved` reference.
+       */
+      readonly any?: true;
     }
   /**
    * "During your first, second, or third turn of the game" (CR 500.1, D-149): it is the turn of the player the condition is read for and

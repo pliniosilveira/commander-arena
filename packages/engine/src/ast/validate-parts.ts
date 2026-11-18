@@ -3334,6 +3334,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       if (c.inZone !== undefined && c.inZone !== 'hand' && c.inZone !== 'exile') {
         issue(out, `${path}.inZone`, "inZone is only 'hand' or 'exile'");
       }
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects that were moved.
+      if (c.any !== undefined && (c.any !== true || ofKind !== 'moved')) {
+        issue(out, `${path}.any`, 'any is true, and only with the moved reference');
+      }
       break;
     }
     case 'ringBearerChosen':
@@ -4958,6 +4962,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.exileInstead !== undefined && e.exileInstead !== true) {
         issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
+      }
+      break;
+    case 'mayCastSpells':
+      // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.
+      checkFilter(e.spells, `${path}.spells`, out);
+      if (
+        e.spells?.zone !== undefined ||
+        e.spells?.controller !== undefined ||
+        e.spells?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.spells`,
+          'the spells name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
       }
       break;
     case 'shuffle':

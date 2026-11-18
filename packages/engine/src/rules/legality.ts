@@ -207,12 +207,26 @@ export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, fac
  * (its own "you may cast this card from your graveyard", a permission to play it): a player who has both uses the one with no rider, as they may choose, so the rider
  * is not forced on them.
  */
+/** Whether the continuous effect is a cast permission for `seat` that covers the card `obj` of their graveyard: a named card, or (issue 159) a filter every matching card meets. */
+function grantsCast(
+  state: GameState,
+  e: GameState['continuousEffects'][number],
+  seat: SeatId,
+  obj: GameObject,
+): boolean {
+  if (e.change.kind !== 'castPermission' || e.change.seat !== seat) return false;
+  if (e.change.spells === undefined) return e.objects.includes(obj.id);
+  return matchesFilter(
+    state,
+    obj,
+    { ...e.change.spells, zone: 'graveyard' },
+    { controller: seat, source: obj.id },
+  );
+}
+
 export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameObject): boolean {
   if (obj.zone !== 'graveyard' || obj.owner !== seat) return false;
-  const grants = state.continuousEffects.filter(
-    (e) =>
-      e.change.kind === 'castPermission' && e.change.seat === seat && e.objects.includes(obj.id),
-  );
+  const grants = state.continuousEffects.filter((e) => grantsCast(state, e, seat, obj));
   if (grants.length === 0) return false;
   if (!grants.every((e) => e.change.kind === 'castPermission' && e.change.exileInstead === true))
     return false;
@@ -238,12 +252,7 @@ export function mayCastFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
   if (obj.zone !== 'graveyard' || obj.owner !== seat) return false;
   // D-135, CR 611.2a: "You may cast target Zombie creature card from your graveyard this turn" gave this card, as it is now
   // (a card that moved is a new object, CR 400.7), the permission until the end of the turn.
-  if (
-    state.continuousEffects.some(
-      (e) =>
-        e.change.kind === 'castPermission' && e.change.seat === seat && e.objects.includes(obj.id),
-    )
-  ) {
+  if (state.continuousEffects.some((e) => grantsCast(state, e, seat, obj))) {
     return true;
   }
   // D-327, CR 601.2: "Mill a card. You may play that card this turn." lets the owner cast the card they milled.

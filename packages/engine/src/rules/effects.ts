@@ -67,7 +67,7 @@ import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
-import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
+import { runMayCast, runMayCastSpells, runPaidReflexive, runReflexive } from './may-effects';
 import { runMeld } from './meld';
 import { successorsOf } from './melded';
 import { millCards } from './mill';
@@ -1440,6 +1440,9 @@ function runEffect(
     case 'mayPlay':
       // D-151: "You may play that card this turn" (rules/impulse.ts).
       return runMayPlay(state, res, effect);
+    case 'mayCastSpells':
+      // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
+      return runMayCastSpells(state, res, effect);
     case 'mayCast':
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);

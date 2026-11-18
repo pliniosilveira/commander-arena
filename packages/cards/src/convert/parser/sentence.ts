@@ -51,6 +51,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
+  // Issue 159 (Liliana, Untouched by Death): "If at least one Zombie card is milled this way, each opponent loses 2 life."
+  'condition.milled-this-way',
   // D-412 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."

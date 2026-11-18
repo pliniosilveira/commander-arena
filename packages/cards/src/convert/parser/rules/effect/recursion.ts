@@ -14,11 +14,12 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
+import type { IrFilter, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { positiveCount } from '../amount/index';
+import { CREATURE_TYPES } from '../noun/creature-types';
 import { defineRule, family, spanned } from '../registry';
 import { flag } from './dragons';
-import { type Clauses, operands, PERMANENT_OPERANDS, single } from './operands';
+import { type Clauses, makeClause, operands, PERMANENT_OPERANDS, single } from './operands';
 
 const ORDINALS: Readonly<Record<string, number>> = {
   second: 2,
@@ -174,6 +175,81 @@ export const EFFECT_MAY_CAST = defineRule<Clauses>({
       args: { objects, exileInstead: flag(MAY_CAST_RULE, exileInstead !== null, objects.span) },
     }),
   ),
+});
+
+const MAY_CAST_SPELLS_RULE = 'effect.may-cast-spells';
+const SPELL_CARD_TYPES: readonly string[] = [
+  'creature',
+  'artifact',
+  'enchantment',
+  'planeswalker',
+  'instant',
+  'sorcery',
+];
+
+/**
+ * `effect.may-cast-spells`: "you may cast Zombie spells from your graveyard this turn" (issue 159, Liliana, Untouched by Death; CR 601.2: casting from the graveyard when an effect
+ * permits it; CR 611.2a, 514.2: the permission lasts until end of turn and covers the cards of the graveyard as the turn asks). Every card of your own graveyard that the one word
+ * describes (a creature type, or a card type); the engine's `mayCastSpells`. The words "you may" are read here when the sentence parser leaves them (a spell), and are the sentence's
+ * own optional mark when it takes them (a loyalty ability): the permission is optional either way. Not read: "target", another graveyard,
+ * several words ("Zombie creature spells"), a type that is not a creature type or a card type of a spell, no duration.
+ */
+export const EFFECT_MAY_CAST_SPELLS = defineRule<Clauses>({
+  id: MAY_CAST_SPELLS_RULE,
+  family: 'effect',
+  leading: ['you', 'cast'],
+  cites: ['CR 601.2 (Casting Spells)', 'CR 611.2a (Continuous Effects)', 'CR 514.2 (Cleanup Step)'],
+  examples: [
+    'you may cast Zombie spells from your graveyard this turn',
+    'you may cast creature spells from your graveyard this turn',
+    'you may cast Goblin spells from your graveyard until end of turn',
+    'you may cast instant spells from your graveyard this turn',
+    'cast Zombie spells from your graveyard this turn',
+  ],
+  rejects: [
+    'you may cast Zombie spells from your graveyard',
+    'you may cast Zombie spells from a graveyard this turn',
+    "you may cast Zombie spells from an opponent's graveyard this turn",
+    'you may cast Zombie creature spells from your graveyard this turn',
+    'you may cast Banana spells from your graveyard this turn',
+    'you may cast land spells from your graveyard this turn',
+    'you may cast target Zombie card from your graveyard this turn',
+    'you may cast Zombie spells from your graveyard this turn and draw a card',
+    'you may cast spells from your graveyard this turn',
+    'you may cast a Zombie spell from your graveyard this turn',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /(?:you may )?cast ([A-Za-z]+) spells from your graveyard (?:this turn|until end of turn)(?![\p{L}\p{N}'’])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const word = r.value[1] ?? '';
+    const lower = word.toLowerCase();
+    const isType = SPELL_CARD_TYPES.includes(lower);
+    // A creature type is capitalized in the text ("Zombie"); a card type is not.
+    const filter: IrFilter | null = isType
+      ? { types: [lower], raw: word }
+      : /^[A-Z]/u.test(word) && CREATURE_TYPES.has(word)
+        ? { subtypes: [word], raw: word }
+        : null;
+    if (filter === null) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter,
+      upTo: false,
+      plural: true,
+      other: false,
+      span,
+      rule: MAY_CAST_SPELLS_RULE,
+    };
+    return {
+      ok: true,
+      value: [makeClause(MAY_CAST_SPELLS_RULE, 'mayCastSpells', { objects }, span)],
+      pos: r.pos,
+    };
+  },
 });
 
 const RETURN_SELF_RULE = 'effect.return-self';
@@ -381,6 +457,7 @@ export const EFFECT_RETURN_SELF = defineRule<Clauses>({
 export const RECURSION_EFFECT_RULES = [
   EFFECT_PUT_LIBRARY_NTH,
   EFFECT_MAY_CAST,
+  EFFECT_MAY_CAST_SPELLS,
   // Before `effect.return-self`, whose words are a prefix of these (stage P50, D-207).
   EFFECT_RETURN_SELF_ATTACHED,
   EFFECT_RETURN_SELF,

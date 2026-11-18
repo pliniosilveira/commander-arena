@@ -148,3 +148,23 @@ export function runMayCast(
   }
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });
 }
+
+/**
+ * "You may cast Zombie spells from your graveyard this turn" (issue 159): one `castPermission` continuous effect for the controller that covers every card of their graveyard the
+ * filter describes, until the end of the turn (CR 611.2a). No object is named, so a card that enters the graveyard later this turn is covered too (`legality.ts`, `grantsCast`).
+ */
+export function runMayCastSpells(
+  state: GameState,
+  res: ResolutionContext,
+  effect: Extract<Effect, { kind: 'mayCastSpells' }>,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: 'endOfTurn',
+    change: { kind: 'castPermission', seat: res.controller, spells: effect.spells },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}

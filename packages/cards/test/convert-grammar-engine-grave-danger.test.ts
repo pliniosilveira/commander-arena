@@ -437,3 +437,71 @@ describe('Scourge of Nel Toth: "You may cast this creature from your graveyard b
     expect(g.act(0).try.cast(scourge.name).ok).toBe(false);
   });
 });
+
+describe('Liliana, Untouched by Death: "+1: Mill three cards. If at least one Zombie card is milled this way, each opponent loses 2 life and you gain 2 life." and "-3: You may cast Zombie spells from your graveyard this turn."', () => {
+  const liliana = real('Liliana, Untouched by Death');
+  const ZOMBIE = 'SYNTHETIC Plain Zombie';
+  const OTHER_ZOMBIE = 'SYNTHETIC Zombie Mourner';
+  const start = (library: readonly string[], graveyard: readonly string[] = []) =>
+    scenario()
+      .define(liliana)
+      .seat(0)
+      .life(20)
+      .library(...library)
+      .battlefield(liliana.name, { counters: { loyalty: 4 } })
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .graveyard(...graveyard)
+      .seat(1)
+      .life(20)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(liliana)).toEqual([]);
+  });
+
+  test('+1 with a Zombie among the three cards milled (the last of them): each opponent loses 2 and I gain 2 (CR 701.17a)', () => {
+    const g = start(['Plains', 'Plains', ZOMBIE, 'Plains', 'Plains']);
+    g.act(0).activate(liliana.name, { ability: 0 });
+    g.passAll();
+    g.expect.life(1, 18);
+    g.expect.life(0, 22);
+    g.expect.counters(liliana.name, { loyalty: 5 });
+    g.expect.invariants();
+  });
+
+  test('+1 with no Zombie milled (and a Zombie already in the graveyard): nothing is drained', () => {
+    const g = start(['Plains', 'Plains', 'Plains', 'Plains'], [ZOMBIE]);
+    g.act(0).activate(liliana.name, { ability: 0 });
+    g.passAll();
+    g.expect.life(1, 20);
+    g.expect.life(0, 20);
+  });
+
+  test('-3: Zombie spells are cast from the graveyard this turn, any number of them; a non-Zombie is not (CR 601.2, 611.2a)', () => {
+    const g = start(LIBRARY, [ZOMBIE, OTHER_ZOMBIE, BEARS]);
+    expect(g.act(0).try.cast(ZOMBIE).ok).toBe(false);
+    g.act(0).activate(liliana.name, { ability: 2 });
+    g.passAll();
+    g.expect.counters(liliana.name, { loyalty: 1 });
+    g.act(0).cast(ZOMBIE, { pay: true });
+    g.passAll();
+    expect(g.find({ name: ZOMBIE, zone: 'battlefield' })).toHaveLength(1);
+    g.act(0).cast(OTHER_ZOMBIE, { pay: true });
+    g.passAll();
+    expect(g.find({ name: OTHER_ZOMBIE, zone: 'battlefield' })).toHaveLength(1);
+    expect(g.act(0).try.cast(BEARS).ok).toBe(false);
+    g.expect.invariants();
+  });
+
+  test('-3: the permission ends with the turn', () => {
+    const g = start(LIBRARY, [ZOMBIE]);
+    g.act(0).activate(liliana.name, { ability: 2 });
+    g.passAll();
+    g.advanceTo('end');
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 5 });
+    expect(g.act(0).try.cast(ZOMBIE).ok).toBe(false);
+  });
+});

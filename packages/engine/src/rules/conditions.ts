@@ -231,7 +231,7 @@ export function evaluateCondition(
     case 'objectMatches': {
       // D-135, CR 113.7a, 608.2h: the object the reference names, as it is or as it last was (a card an earlier instruction
       // moved is read as it was when it left), against the filter in whatever zone it was in.
-      const [id] = resolveObjects(
+      const ids = resolveObjects(
         state,
         condition.of,
         {
@@ -242,18 +242,22 @@ export function evaluateCondition(
         },
         ctx.targets ?? [],
       );
-      const named = id === undefined ? null : objectOrLki(state, id);
-      return (
-        named !== null &&
-        // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
-        (condition.inZone === undefined || named.zone === condition.inZone) &&
-        matchesFilter(
-          state,
-          named,
-          { ...condition.filter, zone: named.zone },
-          { controller: ctx.controller, source: ctx.source },
-        )
-      );
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects the instruction before it moved; otherwise the first.
+      const candidates = condition.any === true ? ids : ids.slice(0, 1);
+      return candidates.some((id) => {
+        const named = objectOrLki(state, id);
+        return (
+          named !== null &&
+          // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
+          (condition.inZone === undefined || named.zone === condition.inZone) &&
+          matchesFilter(
+            state,
+            named,
+            { ...condition.filter, zone: named.zone },
+            { controller: ctx.controller, source: ctx.source },
+          )
+        );
+      });
     }
     case 'giftPromised': {
       // CR 702.174k (D-135): the spell carries the chosen player on the stack, the permanent that came from it remembers

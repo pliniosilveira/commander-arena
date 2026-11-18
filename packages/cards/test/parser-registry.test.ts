@@ -288,6 +288,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `{T}: Draw a card, then discard a card. If ${e}, you gain 1 life.`,
   ),
   'effect.may-cast': spell((e) => `${cap(e).replace('. if that', '. If that')}.`),
+  'effect.may-cast-spells': spell((e) => `${cap(e)}.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
@@ -522,6 +523,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.paired': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'noun.paired-creatures': permanent(
     (e) => `As long as ~ is paired with another creature, ${e} has flying.`,
+  ),
+  'condition.milled-this-way': spell(
+    (e) => `Mill three cards. If ${e}, each opponent loses 2 life.`,
   ),
   'condition.put-this-way': spell(
     (e) => `You may put a land card from your hand onto the battlefield. If ${e}, you gain 4 life.`,

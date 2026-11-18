@@ -347,6 +347,25 @@ export function lowerCondition(
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'milledThisWay': {
+      // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
+      const blocked = missingFeatures(['condition:objectMatches']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.milled !== true) return failure(c, []);
+      const filter = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: test.filter,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      });
+      return filter.ok
+        ? ok({ kind: 'objectMatches', of: { kind: 'moved' }, filter: filter.value, any: true })
+        : filter;
+    }
     case 'exiledThisWay':
     case 'putThisWay': {
       // "If you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c, 400.7j): the object the instruction before it moved, as it is
