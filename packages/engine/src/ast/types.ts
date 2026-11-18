@@ -342,6 +342,8 @@ export type ThisWayKind =
   | 'discardedNoncreature'
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
   | 'discardedInstantOrSorcery'
+  // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": the most cards one player discarded to the `discard` effects of this resolution (CR 608.2c).
+  | 'discardedMost'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
   | 'searched'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
@@ -1635,6 +1637,17 @@ export type Effect =
       readonly objects: ObjectSelector;
     }
   /**
+   * "Each creature deals 1 damage to its controller" (CR 120.3, 120.8, 608.2h; issue 279, Rakdos Charm): every object `objects` names on the battlefield is a source and deals `amount`
+   * damage to the player who controls it, the controller read as the effect begins (CR 109.4, 608.2h). Each is a source of its own damage event, so lifelink and a prevention effect for
+   * that source apply as for any damage (CR 120.3), and the damage is not combat damage. An object that is not on the battlefield deals none; `amount` is read once, and 0 or less deals
+   * none (CR 120.8). `objects` is `each` or a reference (not a `choose`).
+   */
+  | {
+      readonly kind: 'dealDamageToController';
+      readonly objects: ObjectSelector;
+      readonly amount: Amount;
+    }
+  /**
    * CR 701.17 (Mill): each player `player` names puts the top `count` cards of their library into their graveyard (all of
    * them when they have fewer, and nobody loses for it: milling is not drawing, CR 121.4). `count` 0 does nothing. The
    * cards go one after another from the top; a commander milled goes to the graveyard like any card (its owner may
@@ -1833,6 +1846,8 @@ export type Effect =
       /**
        * "Exile the top two cards of target opponent's library face down" (CR 406.3, 701.13, D-187): whose library, a selector that names exactly one player
        * (a target or an opponent); left out, the controller's own. The cards belong to that player (a card is exiled from its owner's library).
+       * Issue 279 (Etali, Primal Storm): `eachPlayer` ("exile the top card of each player's library") names every player: the top `count` cards of each library are exiled, one player after
+       * the other in the order CR 101.4 gives, and all of them are what `moved` names afterwards.
        */
       readonly from?: PlayerSelector;
       /**
@@ -4715,6 +4730,12 @@ export type Condition =
       readonly atLeast: number;
       readonly ofTypes?: readonly CardType[];
     }
+  /**
+   * "If you attacked with three or more creatures this turn" (issue 279, CR 508.1): the controller of the condition declared at least `atLeast` different
+   * creatures as attackers this turn, in any combat phase (a creature that attacks twice counts once), from `TurnLog.attackedWith`; a creature that has died
+   * since still counts. Reads the turn log only, so it is read as the ability is activated or resolves. Not for a static ability.
+   */
+  | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
   /**
    * "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2, 603.4): the controller of the condition has
    * cast a spell from a graveyard this turn, or activated an ability of a card that was in a graveyard as it was activated (`TurnLog.castSpells` and `TurnLog.activated`, the

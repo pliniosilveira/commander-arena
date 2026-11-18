@@ -513,3 +513,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Search across zones reads "your graveyard, hand, and/or library" for one card by name; the engine does not ask which zones to search, and a find in the graveyard or hand never forces a shuffle.
 - "Whenever a player activates an ability of a permanent" counts abilities that use the stack, loyalty abilities included, never mana abilities or abilities of a card in a hand or graveyard.
 - "Exile a creature card from your graveyard. If you do, create a token that's a copy" reads your own graveyard and one card; other zones and several cards are not read.
+- "You attacked with N or more creatures this turn" has no form for a kind of creature, or for "this combat" with a count.
+- "Those creatures" after a count is read only for a grant of a keyword.
+- "Each creature deals N damage to its controller" has no "owner" or "equal to its power" form.
+- "For each creature exiled this way, its controller" is read only for an exile with targets, not for destroy or sacrifice.
+- Promise of Loyalty is unsupported: it needs a restriction against one player tied to a vow counter, and `sparePermanents.own` for one type with a counter.

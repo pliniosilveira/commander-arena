@@ -1341,6 +1341,8 @@ function countsWhatHappened(
     case 'tapped':
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
+    case 'discardedMost':
+    // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": a `discard` before it in the same text.
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';

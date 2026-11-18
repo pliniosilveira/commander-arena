@@ -1618,6 +1618,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'dealDamageToSelf':
       // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power".
       return `${capital(object(effect.objects))} deals damage to itself equal to its power`;
+    case 'dealDamageToController':
+      // CR 120.3 (issue 279): "Each creature deals 1 damage to its controller".
+      return `${capital(object(effect.objects))} deals ${defs.say(effect.amount, { self })} damage to its controller`;
     case 'exileFromTriggerCards':
       // CR 603.2c (Lorehold group 1): of the cards a batch trigger is about.
       return 'You may exile one of them from your graveyard';

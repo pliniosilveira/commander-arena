@@ -329,6 +329,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDividedDamage',
     // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
     'dealDamageToSelf',
+    // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
+    'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
     'exileFromTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
@@ -926,6 +928,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromGraveyardThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
+    // Issue 279: "if you attacked with three or more creatures this turn".
+    'attackedWithCreaturesThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
@@ -1603,6 +1607,8 @@ export const CONDITION_KINDS = [
   'castFromGraveyardThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
+  /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
+  'attackedWithCreaturesThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
@@ -2066,6 +2072,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   revealUntil: true,
   dealDividedDamage: true,
   dealDamageToSelf: true,
+  dealDamageToController: true,
   exileFromTriggerCards: true,
   fight: true,
   castFree: true,

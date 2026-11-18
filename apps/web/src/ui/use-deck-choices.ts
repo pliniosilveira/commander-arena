@@ -3,9 +3,11 @@
  * edited precons and saved decks once the deck store has answered. Without an import provider
  * (the unit tests of the menu) only the precons are listed.
  */
+import { normalizeNameKey } from '@commander-arena/cards';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SavedDeck } from '../import/types';
-import { type DeckChoice, deckChoices } from '../precons';
+import type { CommanderLook } from '../precons';
+import { commanderNameOf, type DeckChoice, deckChoices } from '../precons';
 import { useOptionalImportEnv } from './import/import-context';
 import { usePrecons } from './precons-context';
 
@@ -41,9 +43,39 @@ export function useDeckChoices(): DeckChoices {
     };
   }, [env, tick]);
 
+  // The art and colors of the commanders of saved decks, which keep only text: read through the
+  // card cache by name once the list is known. A name that cannot be had just shows no art.
+  const [looks, setLooks] = useState<ReadonlyMap<string, CommanderLook>>(new Map());
+  useEffect(() => {
+    const client = env?.client;
+    if (client === undefined) return;
+    const names = [...new Set(stored.saved.map((d) => commanderNameOf(d.text)))].filter(
+      (n) => n !== '',
+    );
+    if (names.length === 0) return;
+    let live = true;
+    void client.resolveNames(names).then(
+      (result) => {
+        if (!live) return;
+        const next = new Map<string, CommanderLook>();
+        for (const name of names) {
+          const card = result.found.get(normalizeNameKey(name));
+          if (card === undefined) continue;
+          const image = card.faces[0]?.imageUris?.artCrop ?? undefined;
+          next.set(name, { image, colors: card.colorIdentity });
+        }
+        setLooks(next);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [env, stored.saved]);
+
   const choices = useMemo(
-    () => deckChoices(precons.list, stored.overrides, stored.saved),
-    [precons.list, stored],
+    () => deckChoices(precons.list, stored.overrides, stored.saved, looks),
+    [precons.list, stored, looks],
   );
   return { choices, refresh };
 }

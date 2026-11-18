@@ -14,6 +14,8 @@ const REMOVED = [
   'docs/decisions',
   'docs/STATUS.md',
   'docs/progress',
+  'docs/proposals',
+  'docs/design',
 ];
 
 /** Words, counted as `wc -w` counts them. */

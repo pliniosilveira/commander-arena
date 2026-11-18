@@ -9,6 +9,7 @@ export {
 } from './build';
 export {
   blurbOf,
+  type CommanderLook,
   commanderNameOf,
   type DeckChoice,
   deckChoices,

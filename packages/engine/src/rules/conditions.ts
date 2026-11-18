@@ -496,6 +496,13 @@ export function evaluateCondition(
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
       );
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
+      return (
+        new Set(
+          state.turnLog.attackedWith.filter((a) => a.seat === ctx.controller).map((a) => a.object),
+        ).size >= condition.atLeast
+      );
     case 'castFromGraveyardThisTurn':
       // Issue 159 (CR 601.2a, 602.2): a spell the controller cast from a graveyard this turn, or an ability of a card in a graveyard they activated this turn.
       return (

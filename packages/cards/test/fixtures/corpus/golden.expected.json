@@ -1,5 +1,5 @@
 {
-  "parserVersion": 152,
+  "parserVersion": 153,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -293,6 +293,14 @@
       "reasons": [],
       "ast": "5d9fd28c"
     },
+    "078def07-ae5d-4591-8db6-d156834aab97": {
+      "name": "Etali, Primal Storm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3449358e"
+    },
     "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8": {
       "name": "Chaos Warp",
       "group": "training",
@@ -341,6 +349,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "04b35336"
+    },
+    "08becc07-28bc-4a2f-a6b0-28a2998d2f50": {
+      "name": "Windfall",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1bc914df"
     },
     "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
       "name": "Undercity Sewers",
@@ -1633,6 +1649,14 @@
       ],
       "ast": "6f040bf3"
     },
+    "3589bcfc-42b0-414a-adce-bc690dc631c8": {
+      "name": "Windbrisk Heights",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e71e09a8"
+    },
     "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
       "name": "Goddric, Cloaked Reveler",
       "group": "training",
@@ -2445,6 +2469,14 @@
       "reasons": [],
       "ast": "ff07c294"
     },
+    "5669ea7c-c4fc-494c-896b-4bce9b494817": {
+      "name": "Curse of the Swine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8050fce"
+    },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
       "group": "acceptance",
@@ -2673,6 +2705,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "48dd05c9"
+    },
+    "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
+      "name": "Rakdos Charm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4b2006b"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -4441,6 +4481,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "efbbb092"
+    },
+    "9b9a10ff-5a5d-4df8-88aa-18d84ff9117c": {
+      "name": "Inspiring Call",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7262f39b"
     },
     "9bdc1e63-1cf9-4ddb-a7d5-f2a2eb91bdfd": {
       "name": "Pearl-Ear, Imperial Advisor",
@@ -6527,6 +6575,14 @@
       "reasons": [],
       "ast": "4704e4be"
     },
+    "e88027a6-24cc-4a8b-86db-734f26149ea8": {
+      "name": "Oran-Rief, the Vastwood",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "71f19d82"
+    },
     "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
       "name": "Fall from Favor",
       "group": "training",
@@ -7280,8 +7336,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 549,
-      "total": 581
+      "supported": 556,
+      "total": 588
     }
   }
 }
