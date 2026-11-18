@@ -24,13 +24,22 @@ const tapped = (g: ScenarioGame, name: string) =>
 describe('what is offered (CR 702.180a)', () => {
   test('the cards are valid; in the graveyard one is cast with the alternative, not plainly', () => {
     for (const name of [SURGE, DRAIN, BOLT]) expect(syntheticCard(name).support).toBe('supported');
-    const g = scenario().seat(0).graveyard(DRAIN).battlefield('Swamp', { count: 4 }).seat(1).build();
+    const g = scenario()
+      .seat(0)
+      .graveyard(DRAIN)
+      .battlefield('Swamp', { count: 4 })
+      .seat(1)
+      .build();
     const id = g.id({ name: DRAIN, zone: 'graveyard' });
     expect(harmonizeOptions(g)).toEqual([
       { kind: 'castSpell', object: id, alternative: 'harmonize' },
     ]);
     expect(applyAction(g.state, 0, { kind: 'castSpell', object: id }).ok).toBe(false);
-    const flash = applyAction(g.state, 0, { kind: 'castSpell', object: id, alternative: 'flashback' });
+    const flash = applyAction(g.state, 0, {
+      kind: 'castSpell',
+      object: id,
+      alternative: 'flashback',
+    });
     expect(flash.ok).toBe(false);
   });
 
@@ -188,12 +197,12 @@ describe('tapping a creature to reduce the cost (CR 702.180a, 702.180b)', () => 
     expect(d?.kind === 'choosePermanent' ? d.legal : []).toEqual([g.id('Serra Angel')]);
     expect(d?.kind === 'choosePermanent' ? [d.min, d.max] : []).toEqual([0, 1]);
     // Another answer is refused.
-    expect(g.act(0).try.action({ kind: 'choosePermanents', objects: [g.id('Giant Spider')] }).ok).toBe(
-      false,
-    );
-    expect(g.act(0).try.action({ kind: 'choosePermanents', objects: [g.id('Typhoid Rats')] }).ok).toBe(
-      false,
-    );
+    expect(
+      g.act(0).try.action({ kind: 'choosePermanents', objects: [g.id('Giant Spider')] }).ok,
+    ).toBe(false);
+    expect(
+      g.act(0).try.action({ kind: 'choosePermanents', objects: [g.id('Typhoid Rats')] }).ok,
+    ).toBe(false);
   });
 
   test('nothing is asked when the cost has no generic mana to reduce, or no creature qualifies', () => {
@@ -322,12 +331,7 @@ describe('leaving the stack (CR 702.180a)', () => {
     g.act(1).cast('Unsummon', { targets: ['Grizzly Bears'], pay: true });
     g.passAll();
     g.expect.zone(BOLT, 'exile');
-    const hand = scenario()
-      .seat(0)
-      .hand(DRAIN)
-      .battlefield('Swamp', { count: 2 })
-      .seat(1)
-      .build();
+    const hand = scenario().seat(0).hand(DRAIN).battlefield('Swamp', { count: 2 }).seat(1).build();
     hand.act(0).cast(DRAIN, { pay: true });
     hand.passAll();
     hand.expect.zone(DRAIN, 'graveyard', { seat: 0 });

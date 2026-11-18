@@ -181,6 +181,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   castSpell: { kind: 'castSpell', filter: {}, by: 'you' },
   landfall: { kind: 'landfall' },
   cycled: { kind: 'cycled' },
+  exerted: { kind: 'exerted' },
   leftGraveyard: { kind: 'leftGraveyard', who: 'you' },
   exiledFromLibraryOrGraveyard: { kind: 'exiledFromLibraryOrGraveyard', who: 'you' },
   ringTempted: { kind: 'ringTempted' },

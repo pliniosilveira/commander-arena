@@ -61,6 +61,11 @@ export interface AbilitySkeleton {
 }
 
 const TRIGGER_WORD = /^(?:when|whenever|at)\s/i;
+/**
+ * "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h, 603.12; Glorybringer): the optional cost of attacking and the ability linked to it, in one
+ * paragraph. It is read as a triggered ability whose trigger is the first sentence (`trigger.exerted`) and whose body follows "When you do,".
+ */
+const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you do, /i;
 /** "When you next cast an instant or sorcery spell this turn, " (D-336): the lead of a sentence that creates a delayed triggered ability. */
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
@@ -809,6 +814,17 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
       trigger: { start: 0, end: numerals.length },
       chapter: true,
       sentences: splitSentences(text, chapter[0].length, text.length),
+    };
+  }
+
+  // "You may exert ~ as it attacks. When you do, ~ deals 4 damage to target creature." (CR 701.43d, 607.2h): the first sentence is the trigger, the rest the body.
+  const exert = EXERT_LEAD.exec(text);
+  if (exert !== null) {
+    return {
+      ...base,
+      head: 'triggered',
+      trigger: trimmed(text, 0, text.indexOf('.')),
+      sentences: splitSentences(text, exert[0].length, text.length),
     };
   }
 

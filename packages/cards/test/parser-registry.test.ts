@@ -582,6 +582,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
+  // Exert (CR 701.43d): the trigger is the first sentence of a paragraph, the body follows "When you do,".
+  'trigger.exerted': permanent((e) => `${cap(e)}. When you do, you gain 1 life.`),
   'condition.attached-to': permanent(
     (e) => `As long as ${e}, your opponents can't cast spells during your turn.`,
   ),

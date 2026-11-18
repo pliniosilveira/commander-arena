@@ -51,11 +51,11 @@ import { chosenFromOption } from './rules/chosen';
 import {
   answerAttackers,
   answerAttackPayment,
-  answerExert,
   answerBlockers,
   answerBlockPayment,
   answerCombatReplacement,
   answerDamage,
+  answerExert,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import { answerDestruction } from './rules/destroy-replacement';

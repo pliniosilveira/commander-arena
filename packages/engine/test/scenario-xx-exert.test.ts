@@ -24,7 +24,9 @@ const FILLER = Array.from({ length: 6 }, () => 'Island');
 
 /** Seat 0 is at its declare attackers decision. */
 function atAttackers(seat0: (b: Builder) => void, seat1: (b: Builder) => void = () => {}) {
-  const b = scenario().seat(0).library(...FILLER);
+  const b = scenario()
+    .seat(0)
+    .library(...FILLER);
   seat0(b);
   b.seat(1).library(...FILLER);
   seat1(b);
@@ -109,9 +111,9 @@ describe('the question: asked as the creature attacks (CR 701.43d, 508.1g)', () 
     g.act(0).attack(WYRM);
     g.act(0).cancel();
     g.expect.pending('declareAttackers', 0);
-    expect(g.state.pending?.kind === 'declareAttackers' ? g.state.pending.candidates : null).toEqual(
-      before?.kind === 'declareAttackers' ? before.candidates : undefined,
-    );
+    expect(
+      g.state.pending?.kind === 'declareAttackers' ? g.state.pending.candidates : null,
+    ).toEqual(before?.kind === 'declareAttackers' ? before.candidates : undefined);
     g.expect.tapped(WYRM, false);
     expect(g.state.combat).toBeNull();
   });
@@ -121,7 +123,8 @@ describe('the question: asked as the creature attacks (CR 701.43d, 508.1g)', () 
       b.battlefield(GUARD, { label: 'first' }).battlefield(GUARD, { label: 'second' });
     });
     g.act(0).attack(['first', 'second']);
-    const asked = (): unknown => (g.state.pending?.kind === 'confirmOptional' ? g.state.pending.source : null);
+    const asked = (): unknown =>
+      g.state.pending?.kind === 'confirmOptional' ? g.state.pending.source : null;
     expect(asked()).toBe(g.id('first'));
     g.act(0).accept();
     expect(asked()).toBe(g.id('second'));

@@ -1104,6 +1104,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'leavesBattlefield':
     case 'countersAdded':
     case 'tapsForMana':
+    case 'exerted':
       return 'permanent';
     case 'castSpell':
     case 'becomesTarget':
@@ -2091,7 +2092,11 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     }
   });
   if (exerts && !face.types.includes('creature')) {
-    issue(out, `${path}.abilities`, 'exert is the cost of attacking: a creature has it (CR 701.43d)');
+    issue(
+      out,
+      `${path}.abilities`,
+      'exert is the cost of attacking: a creature has it (CR 701.43d)',
+    );
   }
 
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported

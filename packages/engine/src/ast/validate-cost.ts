@@ -219,7 +219,12 @@ export function checkAlternativeCosts(
     }
     seen.add(alt.kind);
     if (alt.kind !== 'free') {
-      checkNamedAlternativeCost(alt.cost, `${p}.cost`, out, alt.kind === 'miracle' || alt.kind === 'harmonize');
+      checkNamedAlternativeCost(
+        alt.cost,
+        `${p}.cost`,
+        out,
+        alt.kind === 'miracle' || alt.kind === 'harmonize',
+      );
     }
     // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
     const exile = (alt as { readonly exile?: unknown }).exile;

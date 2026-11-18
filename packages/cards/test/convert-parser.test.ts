@@ -384,6 +384,7 @@ describe('unmatched abilities', () => {
       'trigger.you-attack',
       'trigger.ring-tempts',
       'trigger.ring-bearer-chosen',
+      'trigger.exerted',
       'trigger.taps-for-mana',
       'trigger.life-gained',
       'trigger.counters-added',

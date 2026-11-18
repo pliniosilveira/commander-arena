@@ -165,7 +165,11 @@ export function checkCastFace(
   // spell would be exiled instead of entering); the engine does not combine it with the other ways of paying part of the cost.
   if (alternatives.some((a) => a?.kind === 'harmonize')) {
     if (!face.types.includes('instant') && !face.types.includes('sorcery')) {
-      issue(out, `${path}.alternativeCosts`, 'harmonize is on an instant or a sorcery (CR 702.180a)');
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'harmonize is on an instant or a sorcery (CR 702.180a)',
+      );
     }
     const combined = abilities.some(
       (a) =>

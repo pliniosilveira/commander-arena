@@ -14,7 +14,6 @@ import { SYNTHETIC_ACTIVATES_ABILITY_LIST } from './synthetic-activates-ability'
 import { SYNTHETIC_ADAMANTOISE_LIST } from './synthetic-adamantoise';
 import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
-import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_ANGELS_SHAPES_LIST } from './synthetic-angels-shapes';
 import { SYNTHETIC_ANGELS_STATICS_LIST } from './synthetic-angels-statics';
 import { SYNTHETIC_ASCEND_LIST } from './synthetic-ascend';
@@ -62,6 +61,7 @@ import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
+import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
