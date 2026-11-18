@@ -3350,6 +3350,12 @@ export type Effect =
        * required to). `moved` names all of the tokens afterwards. The token is a custom token whose abilities are keywords, so it asks nothing as it enters; no `controller`.
        */
       readonly forEachOpponent?: { readonly mustAttack: true };
+      /**
+       * "Create a white Aura enchantment token named Contract attached to target creature an opponent controls" (CR 303.4f, 303.4g, 111.2, 701.3; issue 89): the Aura token enters
+       * attached to the object the effect names, which is not a choice of its controller. Only with a custom token that is an Aura (the subtype and an `enchant` ability that is
+       * not "enchant player"), whose host is a target of the ability; the token is attached when it is created, so no player can respond between the two.
+       */
+      readonly attachTo?: { readonly kind: 'target'; readonly id: string };
     }
   /**
    * CR 701.3 (Attach): `object` (an Aura or Equipment) becomes attached to `to`. If it cannot be

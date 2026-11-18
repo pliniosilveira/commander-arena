@@ -358,6 +358,14 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:objectMatches']);
       if (blocked.length > 0) return failure(c, blocked);
       const at = ctx ?? newContext('ability', []);
+      // "it gets +2/+0 until end of turn if it's attacking one of your opponents" (issue 89, CR 303.4b, 508.1b): "it" is the permanent the Aura or Equipment is attached to.
+      if (test.who.det === 'enchanted' || test.who.det === 'equipped') {
+        const hostBlocked = missingFeatures(['selector:attached']);
+        if (hostBlocked.length > 0) return failure(c, hostBlocked);
+        const matched = lowerFilter({ ...test.who, det: 'a', filter: test.filter });
+        if (!matched.ok) return matched;
+        return ok({ kind: 'objectMatches', of: { kind: 'attached' }, filter: matched.value });
+      }
       // "If that land is a Plains" (stage P33, D-150): the permanent whose event triggered the ability, as it is now.
       if (test.who.det === 'triggerSubject') {
         const subject = missingFeatures(['selector:triggerSubject']);

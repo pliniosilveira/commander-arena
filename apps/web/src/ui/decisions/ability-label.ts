@@ -753,9 +753,14 @@ function tokenText(
   if (effect.forEachOpponent !== undefined) {
     return `For each opponent, create ${what} that attack that opponent this turn if able`;
   }
+  // CR 303.4f (issue 89): "Create a white Aura enchantment token named Contract attached to target creature ...".
+  const attached =
+    effect.attachTo === undefined
+      ? ''
+      : ` attached to ${objectText(effect.attachTo, ability, self)}`;
   return effect.controller === undefined
-    ? `Create ${what}`
-    : `${playerVerb(effect.controller, ability, 'create')} ${what}`;
+    ? `Create ${what}${attached}`
+    : `${playerVerb(effect.controller, ability, 'create')} ${what}${attached}`;
 }
 
 /**

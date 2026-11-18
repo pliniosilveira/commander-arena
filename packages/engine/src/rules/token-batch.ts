@@ -31,6 +31,8 @@ export function makeSettled(
   tapped: boolean,
   flow: OrderFlow,
   embalmed = false,
+  /** CR 303.4f (issue 89): the permanent the Aura tokens the effect itself creates enter attached to, named by the effect (not chosen). */
+  attachHost?: ObjectId,
 ): MadeTokens | TokensAsked {
   const settled = settleTokens(state, seat, res.source, parts, flow);
   if (settled.kind === 'asked') return settled;
@@ -48,10 +50,14 @@ export function makeSettled(
         partTapped,
         true,
       );
-      front.push(
-        ...(embalmed && part.original
+      const embalmedToo =
+        embalmed && part.original
           ? instructions.map((one) => ({ ...one, embalmed: true as const }))
-          : instructions),
+          : instructions;
+      front.push(
+        ...(attachHost !== undefined && part.original
+          ? embalmedToo.map((one) => ({ ...one, host: attachHost }))
+          : embalmedToo),
       );
       continue;
     }

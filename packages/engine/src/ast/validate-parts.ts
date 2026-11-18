@@ -3414,6 +3414,47 @@ function checkCopyExceptions(
   }
 }
 
+/**
+ * CR 303.4f, 303.4g, 701.3 (issue 89): `createToken.attachTo` names the target an Aura token is attached to as it is created. An Aura token (a custom token with the Aura subtype)
+ * has one, and a token with one is a custom Aura token with an "enchant" ability that is not "enchant player" (a player is not a permanent a target can name here).
+ */
+function checkAuraTokenAttachment(
+  e: Extract<Effect, { kind: 'createToken' }>,
+  path: string,
+  scope: Scope,
+  out: Out,
+): void {
+  const definition = e.token?.kind === 'custom' ? e.token.definition : undefined;
+  const isAura = definition?.subtypes?.includes('Aura') === true;
+  if (e.attachTo === undefined) {
+    if (isAura) {
+      issue(out, `${path}.attachTo`, 'an Aura token is created attached to a target: name it');
+    }
+    return;
+  }
+  if (e.attachTo?.kind !== 'target') {
+    issue(out, `${path}.attachTo`, 'the object an Aura token is attached to is a target');
+  } else {
+    checkRef(e.attachTo, 'object', `${path}.attachTo`, scope, out);
+  }
+  const enchants = (definition?.abilities ?? []).some(
+    (a) => a?.kind === 'keyword' && a.keyword?.kind === 'enchant' && a.keyword.player !== true,
+  );
+  if (
+    !isAura ||
+    definition?.types?.includes('enchantment') !== true ||
+    !enchants ||
+    e.attacking !== undefined ||
+    e.forEachOpponent !== undefined
+  ) {
+    issue(
+      out,
+      `${path}.attachTo`,
+      'only a custom Aura enchantment token with an enchant ability is created attached',
+    );
+  }
+}
+
 function checkTokenSpec(
   spec: Extract<Effect, { kind: 'createToken' }>['token'],
   path: string,
@@ -3687,11 +3728,16 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
   switch (c?.kind) {
     case 'objectMatches': {
       const ofKind = kindOf(c.of);
-      if (ofKind !== 'target' && ofKind !== 'moved' && ofKind !== 'triggerSubject') {
+      if (
+        ofKind !== 'target' &&
+        ofKind !== 'moved' &&
+        ofKind !== 'triggerSubject' &&
+        ofKind !== 'attached'
+      ) {
         issue(
           out,
           `${path}.of`,
-          'objectMatches reads a target, the object that was moved or the object that caused the trigger',
+          'objectMatches reads a target, the object that was moved, the object that caused the trigger or the permanent this Aura or Equipment is attached to',
         );
       } else if (ofKind === 'triggerSubject') {
         // D-149: "If that land is a Plains": the permanent whose event caused the trigger.
@@ -4108,6 +4154,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.attacking !== undefined) {
         checkPlayerSelector(e.attacking.at, `${path}.attacking.at`, scope, out);
       }
+      // CR 303.4f, 303.4g, 701.3 (issue 89): an Aura token is created attached to a target of the ability (its host is named by the effect, never chosen), and only an Aura token is.
+      checkAuraTokenAttachment(e, path, scope, out);
       // D-652 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
       // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
       if (e.forEachOpponent !== undefined) {

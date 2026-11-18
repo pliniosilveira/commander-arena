@@ -79,7 +79,7 @@ import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
-import { runEnterToken } from './enter-token';
+import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
 import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
 import { runExilePiles, startExilePiles } from './exile-piles';
@@ -1993,6 +1993,24 @@ function runEffect(
         }
         return { ...done(next, events, front), lastMoved: created };
       }
+      // CR 303.4f, 303.4g (issue 89): "create an Aura token attached to target creature": the Aura enters attached to the object the effect names, which is not a choice of its
+      // controller; when that object is not one its enchant ability allows (or is gone) the Aura does not enter, and a token that never was in a zone is not created.
+      let attachHost: ObjectId | undefined;
+      if (effect.attachTo !== undefined) {
+        attachHost = resolveObjects(state, effect.attachTo, ctx, targets)[0];
+        if (
+          attachHost === undefined ||
+          !auraTokenCanEnterAttached(
+            state,
+            creators[0] ?? res.controller,
+            described,
+            res.object,
+            attachHost,
+          )
+        ) {
+          return done(state);
+        }
+      }
       for (const seat of creators) {
         // D-221 (CR 616.1): the replacement effects of the creation are settled with the creator's answers; then the tokens are made, those that ask (D-185:
         // a choice, riot, devour, a land copy's question) one instruction each.
@@ -2004,6 +2022,7 @@ function runEffect(
           effect.tapped === true,
           flow,
           effect.token.kind === 'copyOf' && effect.token.embalmed === true,
+          attachHost,
         );
         if (made.kind === 'asked') return asking(state, made);
         next = made.state;

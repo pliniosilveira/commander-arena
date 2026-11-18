@@ -24,6 +24,7 @@ import { defineRule, spanned } from '../registry';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
+import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
@@ -574,6 +575,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G2_LATE_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
+  // Issue 89: "it's attacking one of your opponents".
+  ...ATTACKING_OPPONENTS_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".

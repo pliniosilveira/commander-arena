@@ -1086,6 +1086,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapped',
     'copyExceptions',
     'attacking',
+    // Issue 89: an Aura token that enters attached to a target (`createToken.attachTo`).
+    'attached',
   ],
   amountKinds: [
     'number',
@@ -1831,6 +1833,8 @@ export const TOKEN_KINDS = [
   'copyExceptions',
   /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-648): the engine's `createToken.attacking`. */
   'attacking',
+  /** "Create a white Aura enchantment token ... attached to target creature" (CR 303.4f, 111.2): the engine's `createToken.attachTo`. */
+  'attached',
 ] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
