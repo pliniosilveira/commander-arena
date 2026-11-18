@@ -1,5 +1,5 @@
 {
-  "parserVersion": 137,
+  "parserVersion": 138,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2820,19 +2820,10 @@
     "6c25c6b5-d98c-4eb4-aacd-b6960a8779a9": {
       "name": "Herald of Amity",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, exile the top eight cards of your library. You may cast an Aura spell from among them without paying its mana cost. Then put the rest on the bottom of your library in a random order.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "5a70ed41"
+      "ast": "4c2ba284"
     },
     "6c8f276e-4e7b-4974-ab02-9356cc0ffb2b": {
       "name": "Witch's Cottage",
@@ -4210,19 +4201,10 @@
     "a3b39590-34b7-4fd0-877f-748e6df30e88": {
       "name": "Hateful Eidolon",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever an enchanted creature dies, draw a card for each Aura you controlled that was attached to it.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "dd6dc164"
+      "ast": "91111cdd"
     },
     "a3b3b9ae-1e48-481d-80a5-7e2a26cf2f50": {
       "name": "Screams from Within",
@@ -4556,19 +4538,10 @@
     "ad3bf726-e0c2-4038-a66e-9a9dff439563": {
       "name": "Raffine's Guidance",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.conditional-suffix"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8dea7d29"
+      "ast": "6d0876a5"
     },
     "add60aad-2532-4f59-bfb9-f0168c2adda6": {
       "name": "Cosmic Rebirth",
@@ -6736,7 +6709,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 440,
+      "supported": 443,
       "total": 480
     }
   }

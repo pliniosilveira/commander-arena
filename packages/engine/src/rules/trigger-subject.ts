@@ -13,6 +13,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // A modal ability keeps its effects in the modes (D-114).
   const effects = JSON.stringify([ability.effect, ability.modes ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
+  // D-604 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
+  if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;
   // CR 601.2h, 608.2c: "If five or more mana was spent to cast that spell, ... instead" is a condition of the effect, read as the effect resolves from the spell that
   // caused the trigger, so the subject stays on the stack as it does for the intervening "if" below.
   if (effects.includes('"manaSpentAtLeast"')) return true;

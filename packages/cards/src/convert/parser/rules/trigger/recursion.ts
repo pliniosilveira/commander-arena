@@ -6,7 +6,12 @@
 import { choice, map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrTrigger } from '../../ir/types';
 import { defineRule } from '../registry';
-import { isPlainLandYouControl, permanentOrAttachedSubject, triggerSubject } from './subjects';
+import {
+  isPlainLandYouControl,
+  makeNoun,
+  permanentOrAttachedSubject,
+  triggerSubject,
+} from './subjects';
 
 const NOT_IN_WORD = '(?![\\p{L}\\p{N}])';
 
@@ -166,7 +171,55 @@ export const TRIGGER_DIES_OWN_GRAVEYARD = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.enchanted-creature-dies`: "an enchanted creature dies" (CR 700.4, 603.10a, 303.4: a creature with at least one Aura attached to it, whoever controls the creature or
+ * the Aura; D-604, Hateful Eidolon): the creature as it was as it died. The engine's `dies` of a creature filter with `enchanted`. Not read: "enchanted creature dies" (the
+ * creature an Aura is attached to), "another enchanted creature", "an enchanted creature you control", "enchanted creatures", another verb.
+ */
+export const TRIGGER_ENCHANTED_CREATURE_DIES = defineRule<IrTrigger>({
+  id: 'trigger.enchanted-creature-dies',
+  family: 'trigger',
+  leading: ['an'],
+  cites: ['CR 700.4 (General)', 'CR 603.10a (Handling Triggered Abilities)', 'CR 303.4 (Auras)'],
+  examples: ['an enchanted creature dies'],
+  rejects: [
+    'enchanted creature dies',
+    'another enchanted creature dies',
+    'an enchanted creature you control dies',
+    'an enchanted creatures dies',
+    'an enchanted creature die',
+    'an enchanted creature dies or',
+    'a enchanted creature dies',
+    'an enchanted creature is put into a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/an enchanted creature dies(?![\p{L}\p{N}])(?!\s+or(?![\p{L}\p{N}]))/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'dies',
+        subject: makeNoun('trigger.enchanted-creature-dies', span, 'a', {
+          types: ['creature'],
+          enchanted: true,
+          raw: r.value[0],
+        }),
+        args: {},
+        span,
+        rule: 'trigger.enchanted-creature-dies',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const RECURSION_TRIGGER_RULES = [
+  TRIGGER_ENCHANTED_CREATURE_DIES,
   TRIGGER_DIES_OWN_GRAVEYARD,
   TRIGGER_LEAVES_TO,
   TRIGGER_ENTERS_STATE,

@@ -532,3 +532,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Protection from the chosen color (D-602): the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
 
 - Chosen creature for counters (D-603): only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read. The three-player condition `attackedHasMoreLifeThanOtherOpponent` is tested directly (the scenario DSL has two seats), not through a full game.
+
+- Enchanted creature dies (D-604): "an enchanted creature you control", "another enchanted creature" and "equipped" are not read; the Auras are kept in the last-known information only (no Equipment).
+- Exile from the top and cast among them (D-605): only the sentences of Herald of Amity; "from among them" after another instruction, other orders of the rest and several spells are not read.
+- Cast from the graveyard for another cost (D-606): the alternative cost is charged for every cast from the graveyard of a card that has it, also one a permission of an effect gave; the choice between the two costs of CR 118.9 is not offered (the card has one way). UNVERIFIED against a card with both.

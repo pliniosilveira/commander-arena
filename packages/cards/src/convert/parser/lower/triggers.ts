@@ -1216,6 +1216,13 @@ export function lowerTriggered(
   ) {
     return failure(ability);
   }
+  // D-604 (CR 603.10a): "for each Aura you controlled that was attached to it" is about the permanent that left the battlefield, which only a `dies` or `leavesBattlefield` trigger has.
+  if (
+    JSON.stringify(effect).includes('"aurasAttachedToTriggerSubject"') &&
+    !triggers.every((t) => t.kind === 'dies' || t.kind === 'leavesBattlefield')
+  ) {
+    return failure(ability);
+  }
   // D-603 (CR 508.6): "if that opponent has more life than another of your opponents" is about the player a "whenever a player attacks one of your opponents" trigger is about.
   if (
     JSON.stringify(interveningIf ?? null).includes('"attackedHasMoreLifeThanOtherOpponent"') &&

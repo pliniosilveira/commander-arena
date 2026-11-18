@@ -36,6 +36,7 @@ import {
   buybackCostOf,
   escalateCostOf,
   flashbackCostOf,
+  graveyardCostOf,
   kickerLikeCostOf,
   manaSymbolsOf,
   modeCostsOf,
@@ -302,6 +303,9 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const named = isNamedAlternative(alternative) ? namedAlternativeCostOf(face, alternative) : null;
   const perX = spellXCost(face, alternative);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
+  // CR 118.9 (D-606): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
+  const fromGraveyard =
+    zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
   const symbols: string[] =
     alternative === 'free'
       ? []
@@ -310,7 +314,9 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
         : named !== null
           ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
             withX(manaSymbolsOf(named), x)
-          : withX(face?.manaCost ?? [], x);
+          : fromGraveyard !== null
+            ? manaSymbolsOf(fromGraveyard)
+            : withX(face?.manaCost ?? [], x);
   let tax = 0;
   if (zone === 'command' && spell.card !== null) {
     const casts = state.commanderCasts[spell.card] ?? 0;

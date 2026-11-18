@@ -72,4 +72,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-own-nontoken-destroyed',
   // Feather deck group 1 (D-450): the cards the controller has drawn this turn.
   'amount.for-each-card-drawn',
+  // D-604 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.
+  'amount.for-each-aura-attached',
 ] as const;

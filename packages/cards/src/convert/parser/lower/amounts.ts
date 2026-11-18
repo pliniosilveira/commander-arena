@@ -181,6 +181,16 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'triggerDamage' }, rule };
     }
+    case 'aurasAttachedToIt': {
+      // CR 603.10a, 113.7a (D-604): read from the last-known information of the permanent the trigger is about; `validateCard` refuses it where the trigger has none.
+      const blocked = needs('aurasAttachedToTriggerSubject');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: { kind: 'aurasAttachedToTriggerSubject', controlledBy: 'you' },
+        rule,
+      };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -630,6 +640,7 @@ export function lowerDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
   'amount:powerOf',
   'amount:manaValueOf',

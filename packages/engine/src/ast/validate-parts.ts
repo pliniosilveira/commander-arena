@@ -1460,6 +1460,18 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'aurasAttachedToTriggerSubject':
+      // CR 603.10a, 113.7a (D-604): the Auras that were attached to the permanent the trigger is about as it left.
+      if (scope.triggerSubject !== 'permanent') {
+        issue(
+          out,
+          path,
+          "'aurasAttachedToTriggerSubject' needs a trigger whose subject is a permanent",
+        );
+      }
+      if (a.controlledBy !== 'you')
+        issue(out, `${path}.controlledBy`, "controlledBy must be 'you'");
+      break;
     case 'enteredX':
       // CR 107.3m (Hylda group 3): only the enters trigger of the permanent itself reads the X of the spell it came from (the card's {X} is checked with the face).
       if (scope.entersX !== true) {
@@ -4201,6 +4213,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'moveToZone':
+      // D-605 (CR 401.4): "in a random order" is for several cards put at the bottom of a library at once.
+      if (
+        e.random !== undefined &&
+        (e.random !== true || e.to !== 'library' || e.position !== 'bottom')
+      ) {
+        issue(out, `${path}.random`, "random is true, with to 'library' and position 'bottom'");
+      }
       if (kindOf(e.objects) === 'triggerCard') {
         // D-230: "return that card to the battlefield" of a dies trigger.
         if (scope.triggerSubject !== 'permanent') {
@@ -4405,6 +4424,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.play !== undefined && e.play !== true)
         issue(out, `${path}.play`, 'play must be true when present');
       const objects = e.objects as ChooseSelector | ObjectRef;
+      // D-605: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
+      if (e.filter !== undefined) {
+        if (kindOf(objects) === 'choose') {
+          issue(out, `${path}.filter`, 'a choice from the hand has its own filter');
+        } else {
+          checkFilter(e.filter, `${path}.filter`, out);
+        }
+      }
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
         checkFilter(choose.filter, `${path}.objects.filter`, out);

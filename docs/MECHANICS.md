@@ -5136,3 +5136,31 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `effect.add-counters` (`rules/effect/counters.ts`), `lower.add-counters` (`lower/effects.ts`), `condition.attacked-has-more-life` (`rules/condition/angels.ts`, `lower/conditions.ts`, `lower/triggers.ts`).
 - Tests: engine `scenario-xx-attacks-choose-counters.test.ts` (the choice, the counters, choosing none refused; mutation-checked: the minimum); cards `parser-breena.test.ts` (the real line of Breena, near misses).
 - Example cards: Breena, the Demagogue (issue 89).
+
+## Enchanted creature dies, and the Auras it had (issue 89, D-604)
+
+- CR: 603.10a (leaves-the-battlefield abilities look back), 113.7a (last-known information), 303.4e (Aura controller), 700.4 (dies).
+- Gap class: P (the last-known Auras and the amount) and T (the sentences).
+- AST node: `{ kind: 'triggered', trigger: { kind: 'dies', what: { types: ['creature'], enchanted: true } }, effect: { kind: 'draw', player: { kind: 'you' }, count: { kind: 'aurasAttachedToTriggerSubject', controlledBy: 'you' } } }`.
+- Engine: `rules/zones.ts` (`recordLki`), `rules/amounts.ts`, `rules/trigger-subject.ts`, `state/types.ts` (`LastKnownInfo.auras`).
+- Parser: `trigger.enchanted-creature-dies`, `amount.for-each-aura-attached`, `lower/triggers.ts`.
+- Tests: engine `scenario-xx-enchanted-dies.test.ts` (Auras of mine and theirs, none; mutation-checked: the controller of the Auras); cards `parser-enchanted-dies.test.ts`.
+- Example cards: Hateful Eidolon (issue 89).
+
+## Exile from the top, cast an Aura among them, the rest to the bottom (issue 89, D-605)
+
+- CR: 701.13, 608.2g, 118.9, 303.4, 401.4.
+- Gap class: P (`castFree.filter`, `moveToZone.random`) and T.
+- AST nodes: `{ kind: 'castFree', objects: { kind: 'moved' }, filter: { subtypes: ['Aura'] } }` and `{ kind: 'moveToZone', objects: { kind: 'moved' }, to: 'library', position: 'bottom', random: true }` after an `exileTop`.
+- Engine: `rules/cast-free.ts`, `rules/effects.ts`. Parser: `effect.cast-from-among`, `effect.put-rest-bottom-random`, `CAST_MOVED_FREE`, `PUT_REST_BOTTOM`.
+- Tests: engine `scenario-xx-exile-cast-aura.test.ts` (only the Aura is offered, it is cast and enchants, declining, the generator advances; mutation-checked: the filter and the shuffle); cards `parser-exile-cast-aura.test.ts` (the real line of Herald of Amity).
+- Example cards: Herald of Amity (issue 89).
+
+## Cast from the graveyard for another cost (issue 89, D-606)
+
+- CR: 118.9, 601.2f, 113.6b.
+- Gap class: P (`castFromGraveyard.cost`) and T.
+- AST node: `{ kind: 'static', static: { kind: 'castFromGraveyard', cost: [{ kind: 'mana', symbols: ['2', 'W'] }] } }`.
+- Engine: `rules/cast-cost.ts` (`spellCost`), `rules/alt-costs.ts` (`graveyardCostOf`). Parser: `rules/static/conditional.ts`, `lower/statics.ts`.
+- Tests: engine `scenario-xx-cast-graveyard-cost.test.ts` (the cost from the graveyard and from the hand, too little mana); cards `parser-cast-graveyard-cost.test.ts`.
+- Example cards: Raffine's Guidance (issue 89).

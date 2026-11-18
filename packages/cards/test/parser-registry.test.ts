@@ -147,6 +147,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
   ),
   'trigger.dies-own-graveyard': whenever,
+  // D-604: "an enchanted creature dies".
+  'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
@@ -496,6 +498,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.each-other-opponent': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.other-targets': spell((e) => `~ deals 1 damage to any target and 1 damage to ${e}.`),
+  // D-604: the Auras the controller controlled that were attached to the creature that died.
+  'amount.for-each-aura-attached': permanent(
+    (e) => `Whenever an enchanted creature dies, draw a card ${e}.`,
+  ),
   'amount.for-each-still-exiled': spell((e) => `~ deals 2 damage to each opponent ${e}.`),
   // Stage P35 (D-176): the Korvold deck's text and token slice. The effect is a sentence of its own; the noun follows a sentence about a target.
   'effect.it-has-ability': permanent(

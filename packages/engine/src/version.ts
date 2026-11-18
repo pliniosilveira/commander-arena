@@ -27,4 +27,5 @@
 // 123: The filter `attackingOpponents: 'players'` (creatures attacking an opponent as a player) and `except: triggerSubject` of an `each` selector (D-600, issue 89).
 // 124: Protection from the chosen color of the permanent that gives it, with the exception that keeps its own Aura attached (D-602, issue 89).
 // 125: chooseObjects may require the choice (`exactly`), "put counters on a creature you control" (D-603, issue 89).
-export const ENGINE_VERSION = 125;
+// 126: The amount `aurasAttachedToTriggerSubject` and the last-known Auras (D-604), `castFree.filter` and `moveToZone.random` (D-605), the alternative cost of `castFromGraveyard` (D-606), issue 89.
+export const ENGINE_VERSION = 126;

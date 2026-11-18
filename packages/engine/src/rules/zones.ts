@@ -234,8 +234,16 @@ function recordLki(
   departedTogether?: readonly ObjectId[],
 ): GameState {
   const d = derive(state, obj);
+  // CR 113.7a, 303.4e (D-604): the Auras attached to it now, as the state-based action that puts them into the graveyard has not yet run.
+  const auras = state.battlefield.flatMap((id) => {
+    const attachment = state.objects[id];
+    return attachment?.attachedTo === obj.id && derive(state, attachment).subtypes.includes('Aura')
+      ? [{ id, controller: controllerOf(state, attachment) }]
+      : [];
+  });
   const info: LastKnownInfo = {
     ...(departedTogether === undefined ? {} : { departedTogether }),
+    ...(auras.length === 0 ? {} : { auras }),
     // CR 113.7a: what it was just before it left, including who controlled it then (a control-changing effect, CR 613.1b, is not kept).
     object: { ...obj, controller: controllerOf(state, obj) },
     characteristics: {

@@ -1015,6 +1015,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exiledAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // D-604: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
+    'aurasAttachedToTriggerSubject',
     // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
     'dieResult',
   ],
@@ -1691,6 +1693,8 @@ export const AMOUNT_KINDS = [
   'exiledAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "For each Aura you controlled that was attached to it" (D-604, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
+  'aurasAttachedToTriggerSubject',
   /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
   'dieResult',
   'bound',

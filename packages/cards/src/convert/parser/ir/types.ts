@@ -493,6 +493,8 @@ export type IrAmount =
     }
   // Stage P34 (D-152, CR 400.7): "for each of those cards that are still exiled", the cards an earlier instruction of the same text exiled
   | { readonly kind: 'exiledStillThere'; readonly span: Span }
+  // D-604 (CR 603.10a, 113.7a): "for each Aura you controlled that was attached to it": the Auras of the controller that were attached to the permanent the trigger is about
+  | { readonly kind: 'aurasAttachedToIt'; readonly span: Span }
   /** Number of cards selected for the spell's optional additional exile cost (D-575). */
   | { readonly kind: 'exiledAsCost'; readonly span: Span };
 
@@ -1335,7 +1337,7 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'untapInOthersStep'; readonly self?: true }
   /** "You may cast this card from your graveyard." (stage P29, D-133, CR 113.6b). The subject is `~`; a condition makes it "as long as ...". */
-  | { readonly kind: 'castFromGraveyard' }
+  | { readonly kind: 'castFromGraveyard'; readonly cost?: readonly string[] }
   /** "can't be blocked by Walls", "can't be blocked by creatures with power 2 or less" (stage P31, CR 509.1b): the blockers excluded. */
   | { readonly kind: 'cantBeBlockedBy'; readonly blockers: IrFilter }
   /** "have base power and toughness 5/3" (stage P31, CR 613.4b): the subject's power and toughness are set in layer 7b. */
@@ -1657,6 +1659,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'triggerTargetCount',
   'shortfall',
   'exiledStillThere',
+  'aurasAttachedToIt',
   'manaSpent',
   'votesFor',
 ]);

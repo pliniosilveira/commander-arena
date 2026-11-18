@@ -901,9 +901,16 @@ function runEffect(
           lastMoved: [],
         };
       }
-      const ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
+      let ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
         (id) => state.objects[id] !== undefined,
       );
+      // D-605 (CR 401.4): "put the rest on the bottom of your library in a random order": the order is the seeded generator's, one after the other.
+      let shuffledState = state;
+      if (effect.random === true && ids.length > 1) {
+        const [order, rng] = shuffle(ids, state.rng);
+        ids = order;
+        shuffledState = { ...state, rng };
+      }
       // CR 110.2a: an object an effect puts onto the battlefield enters under the control of the
       // player performing the effect (the controller of the spell or ability) unless the effect
       // states otherwise, so an effect with no control named means 'you', not the owner. Every
@@ -932,7 +939,7 @@ function runEffect(
       }
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
       // D-283 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
-      const together = recordTogether(state, moves);
+      const together = recordTogether(shuffledState, moves);
       return moving(together.state, together.instructions);
     }
 
@@ -2109,7 +2116,15 @@ function runEffect(
       return done(
         state,
         [],
-        [{ kind: 'castFree', objects: effect.objects, play: effect.play === true, chosen: null }],
+        [
+          {
+            kind: 'castFree',
+            objects: effect.objects,
+            play: effect.play === true,
+            ...(effect.filter === undefined ? {} : { filter: effect.filter }),
+            chosen: null,
+          },
+        ],
       );
 
     case 'fight': {

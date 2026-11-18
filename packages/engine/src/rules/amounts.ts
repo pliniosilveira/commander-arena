@@ -217,6 +217,11 @@ export function amountOf(
   if (amount.kind === 'enteredThisTurn' || amount.kind === 'diedThisTurn') {
     return historyCount(state, amount, ctx.controller);
   }
+  // CR 603.10a, 113.7a (D-604): the Auras the controller controlled that were attached to the permanent the trigger is about, as it left.
+  if (amount.kind === 'aurasAttachedToTriggerSubject') {
+    const left = ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject];
+    return (left?.auras ?? []).filter((a) => a.controller === ctx.controller).length;
+  }
   if (amount.kind === 'enteredX') {
     // CR 107.3m, 107.3g (Hylda group 3): the X of the spell the permanent resolved from, which the permanent remembers (`GameObject.castX`), or last-known information
     // when it has left; a permanent that was not cast has none.

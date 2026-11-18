@@ -479,7 +479,20 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       checkAbilityCostReduction(s, path, out);
       break;
     case 'castFromGraveyard':
-      // D-133: the permission has no parameters; the face-level checks say where it may stand.
+      // D-133: the face-level checks say where it may stand. D-606: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
+      if (s.cost !== undefined) {
+        if (!Array.isArray(s.cost) || s.cost.length === 0) {
+          issue(
+            out,
+            `${path}.cost`,
+            'the alternative cost of castFromGraveyard needs at least one cost',
+          );
+        } else if (s.cost.some((c) => c?.kind !== 'mana')) {
+          issue(out, `${path}.cost`, 'the alternative cost of castFromGraveyard is mana only');
+        } else {
+          checkFlashbackCost(s.cost, `${path}.cost`, out);
+        }
+      }
       break;
     case 'grantAbility':
       checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');

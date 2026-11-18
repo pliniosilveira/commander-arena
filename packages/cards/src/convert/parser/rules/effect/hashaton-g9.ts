@@ -5,6 +5,7 @@
  */
 import { literal, pattern, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
+import { spellPhrase } from '../noun/phrases';
 import { defineRule, family, quietly } from '../registry';
 import { type Clauses, single } from './operands';
 
@@ -131,6 +132,94 @@ export const EFFECT_CAST_IT_FREE = defineRule<Clauses>({
 });
 
 /**
+ * `effect.cast-from-among`: "cast an Aura spell from among them without paying its mana cost" (CR 608.2g, 118.9, 601.2; D-605, Herald of Amity): the engine's `castFree` of the cards
+ * an instruction before it exiled (`moved`), only those a kind of spell describes ("an Aura spell"); the "you may" before it is the controller's question, as for `effect.cast-it-free`.
+ * Not read: "it", "one of them", a number of spells, "from your hand", "this turn", another cost.
+ */
+export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
+  id: 'effect.cast-from-among',
+  family: 'effect',
+  leading: ['cast'],
+  cites: [
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Costs)',
+    'CR 601.2 (Casting Spells)',
+  ],
+  examples: [
+    'cast an Aura spell from among them without paying its mana cost',
+    'cast a spell from among them without paying its mana cost',
+    'cast a creature spell from among them without paying its mana cost',
+  ],
+  rejects: [
+    'cast an Aura spell from among them',
+    'cast two Aura spells from among them without paying their mana costs',
+    'cast an Aura spell from among those cards without paying its mana cost',
+    'cast an Aura spell from your hand without paying its mana cost',
+    'cast an Aura spell from among them without paying its mana cost this turn',
+    'cast an Aura spell from among them without paying its mana cost and draw a card',
+    'cast it from among them without paying its mana cost',
+  ],
+  parse: single(
+    'effect.cast-from-among',
+    (ctx, pos) => {
+      const head = pattern(/cast an? /iu)(ctx, pos);
+      if (!head.ok) return head;
+      const phrase = spellPhrase(false)(ctx, head.pos);
+      if (!phrase.ok) return phrase;
+      const tail = pattern(
+        / from among them without paying its mana cost(?![\p{L}\p{N}])(?!\s+(?:and|then|this)(?![\p{L}\p{N}]))/iu,
+      )(ctx, phrase.pos);
+      if (!tail.ok) return tail;
+      const { stackKind: _kind, zone: _zone, ...rest } = phrase.value;
+      void _kind;
+      void _zone;
+      const span = { start: pos, end: tail.pos };
+      const spell: IrNoun = {
+        kind: 'noun',
+        det: 'a',
+        filter: rest,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: head.pos, end: phrase.pos },
+        rule: 'effect.cast-from-among',
+      };
+      return { ok: true, value: { spell, span }, pos: tail.pos };
+    },
+    ({ spell }) => ({ verb: 'castMovedFree', args: { spell } }),
+  ),
+});
+
+/**
+ * `effect.put-rest-bottom-random`: "put the rest on the bottom of your library in a random order" (CR 401.4, 701.20; D-605, Herald of Amity): the cards an instruction before it
+ * exiled from the top of the library and that are still in exile, put under the library in an order the game's random generator makes. Not read: "in any order", "on top",
+ * "into your graveyard", another library ("their", "that player's"), "the rest" with another number of cards.
+ */
+export const EFFECT_PUT_REST_BOTTOM_RANDOM = defineRule<Clauses>({
+  id: 'effect.put-rest-bottom-random',
+  family: 'effect',
+  leading: ['put'],
+  cites: ['CR 401.4 (Library)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['put the rest on the bottom of your library in a random order'],
+  rejects: [
+    'put the rest on the bottom of your library in any order',
+    'put the rest on the bottom of your library',
+    'put the rest on top of your library in a random order',
+    'put the rest into your graveyard',
+    'put the rest on the bottom of their library in a random order',
+    'put the rest on the bottom of your library in a random order and draw a card',
+    'put the rest into your hand in a random order',
+  ],
+  parse: single(
+    'effect.put-rest-bottom-random',
+    pattern(
+      /put the rest on the bottom of your library in a random order(?![\p{L}\p{N}])(?!\s+and(?![\p{L}\p{N}]))/iu,
+    ),
+    () => ({ verb: 'putRestBottom', args: {} }),
+  ),
+});
+
+/**
  * Quiet: a line these rules do not read ("Put a +1/+1 counter on ~", "Put any number of cards from your hand ...", "Cast a spell ...") must stop where it always did, so the
  * words they share with the older rules ("put ", "cast ") do not become the closest rule of its diagnostic. Their matches are recorded as usual.
  */
@@ -138,4 +227,6 @@ export const HASHATON_G9_EFFECT_RULES = [
   quietly(EFFECT_EXILE_RANDOM_FROM_HAND),
   quietly(EFFECT_PUT_IT_ONTO_BATTLEFIELD),
   quietly(EFFECT_CAST_IT_FREE),
+  quietly(EFFECT_CAST_FROM_AMONG),
+  quietly(EFFECT_PUT_REST_BOTTOM_RANDOM),
 ];

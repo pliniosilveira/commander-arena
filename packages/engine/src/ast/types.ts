@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "Draw a card for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-604): the Auras `controlledBy` ("you": the controller of the ability) controlled that
+   * were attached to the permanent the trigger is about as it left the battlefield, from its last-known information. Valid only in a triggered ability whose trigger has a permanent
+   * as its subject (`dies`, `leavesBattlefield`).
+   */
+  | { readonly kind: 'aurasAttachedToTriggerSubject'; readonly controlledBy: 'you' }
+  /**
    * "Scry X, where X is the result" (CR 706.2, 706.3b; Galadriel group 3): the natural result of the latest `rollDie` of the same resolution (the engine has no modifier of a
    * roll). Valid only after a `rollDie` earlier in the same sequence (`validateCard` checks it), as the condition `dieResult` is.
    */
@@ -2065,6 +2071,11 @@ export type Effect =
        * For battlefield: tapped.
        */
       readonly position?: 'top' | 'bottom' | number;
+      /**
+       * "Put the rest on the bottom of your library in a random order" (D-605, CR 401.4, 701.20): the cards the effect names (more than one) are put at the bottom in an order
+       * the seeded generator makes, nobody choosing and nobody seeing it. Only with `to` `library` and `position` `bottom`.
+       */
+      readonly random?: true;
       readonly tapped?: boolean;
       /**
        * For battlefield: "under its owner's control" (`owner`) or "under your control" (`you`, the
@@ -2679,6 +2690,11 @@ export type Effect =
         | Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' }>
         | ChooseSelector;
       readonly play?: true;
+      /**
+       * "You may cast an Aura spell from among them without paying its mana cost" (D-605, CR 608.2g): only the cards of `objects` this filter matches are offered, read for the
+       * card as it is in exile (card types, subtypes, mana value, colors). With `objects` a `choose` selector the selector's own filter says it, so this is for `moved` and `linkedExile`.
+       */
+      readonly filter?: ObjectFilter;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -4647,7 +4663,15 @@ export type StaticEffect =
    * cast like any other, and the spell goes to the graveyard again if it does not resolve onto the battlefield. A card
    * has it once, it is not a land (a land is played, not cast), and a copy that has the ability has it too.
    */
-  | { readonly kind: 'castFromGraveyard' }
+  | {
+      readonly kind: 'castFromGraveyard';
+      /**
+       * "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost." (CR 118.9, 601.2f, D-606): the alternative cost paid when the card is cast from
+       * the graveyard through this ability, instead of its mana cost (mana only, no {X}). Left out, the mana cost is paid. A cast of the card from the graveyard another way (a permission
+       * an effect gave it, flashback) is not changed by it.
+       */
+      readonly cost?: readonly Cost[];
+    }
   /**
    * "+N/+N" to the subject, in layer 7c (CR 613.4c). Negative numbers are allowed. The amounts may
    * count ("Equipped creature gets +1/+1 for each artifact you control", D-115): worked out each time

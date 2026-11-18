@@ -662,6 +662,11 @@ export interface LastKnownInfo {
   readonly toughness: number | null;
   /** The base power it had (CR 208.4b, D-431); absent in a record made before it was kept. */
   readonly basePower?: number | null;
+  /**
+   * The Auras attached to it as it left the battlefield, with the player who controlled each (CR 113.7a, 303.4e, D-604): "for each Aura you controlled that was attached to it"
+   * (`aurasAttachedToTriggerSubject`). Absent when none was.
+   */
+  readonly auras?: readonly { readonly id: ObjectId; readonly controller: SeatId }[];
 }
 
 /**
@@ -1597,6 +1602,7 @@ export type Instruction =
       readonly kind: 'castFree';
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
+      readonly filter?: ObjectFilter;
       readonly chosen: readonly ObjectId[] | null;
     };
 

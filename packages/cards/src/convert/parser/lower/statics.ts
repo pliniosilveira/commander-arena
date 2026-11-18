@@ -295,7 +295,15 @@ function effectOf(
         : failure(at);
     case 'castFromGraveyard':
       // CR 113.6b (stage P29, D-133): the ability of a card in its owner's graveyard, so its subject is `~`.
-      return subject.kind === 'this' ? ok({ kind: 'castFromGraveyard' }) : failure(at);
+      // D-606 (Raffine's Guidance, CR 118.9): "by paying {2}{W} rather than paying its mana cost" is the ability's own alternative cost.
+      return subject.kind === 'this'
+        ? ok({
+            kind: 'castFromGraveyard',
+            ...(effect.cost === undefined
+              ? {}
+              : { cost: [{ kind: 'mana' as const, symbols: [...effect.cost] }] }),
+          })
+        : failure(at);
     case 'chosenType':
       // D-100, CR 205.1b, 613.1d: the permanent itself has the type it chose, in addition to its own
       // (layer 4). Only `~` and only the chosen creature type run; the card must ask the question.
