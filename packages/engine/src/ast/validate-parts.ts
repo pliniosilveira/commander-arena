@@ -4189,10 +4189,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'untilEndOfTurn',
           'untilEndOfYourNextTurn',
           'forAsLongAsYouControlThis',
+          'forAsLongAsThisRemains',
           'permanent',
         ])
       ) {
         issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
+      }
+      if (e.duration === 'forAsLongAsThisRemains' && scope.owner !== 'ability') {
+        issue(
+          out,
+          `${path}.duration`,
+          '"for as long as this remains on the battlefield" is the effect of an ability of a permanent',
+        );
       }
       if (e.duration === 'forAsLongAsYouControlThis' && scope.owner !== 'ability') {
         issue(

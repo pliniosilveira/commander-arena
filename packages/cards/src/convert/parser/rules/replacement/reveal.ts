@@ -4,9 +4,10 @@
  * 701.4). The permanent's own replacement effect (CR 603.6d), as the shock land's.
  */
 import { choice, fail, map, pattern, sequence } from '../../combinators';
-import type { IrAbility, IrClause } from '../../ir/types';
+import type { IrAbility, IrClause, IrCondition } from '../../ir/types';
+import { CREATURE_TYPES } from '../noun/creature-types';
 import { PLANESWALKER_TYPES } from '../noun/subtypes';
-import { defineRule, spanned } from '../registry';
+import { defineRule, family, spanned } from '../registry';
 import { replacement } from './shared';
 
 const LAND_TYPE = '(?:Plains|Island|Swamp|Mountain|Forest)';
@@ -141,7 +142,79 @@ export const REPLACEMENT_ENTERS_PREPARED = defineRule<IrAbility>({
   },
 });
 
+/**
+ * `replacement.enters-tapped-unless-reveals-or`: "As ~ enters, you may reveal a Dragon card from your hand. ~ enters tapped unless you revealed a Dragon card this
+ * way or you control a Dragon." (CR 614.1c, 614.12, 701.20a). One creature type for the card, and a second way to enter untapped that the condition family reads. The
+ * engine's `entersTappedUnlessReveals` with `orIf`: nothing is asked when the condition holds. Not read: another quality than a creature type, a different card in the
+ * second sentence, a condition the family does not read.
+ */
+export const REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS_OR = defineRule<IrAbility>({
+  id: 'replacement.enters-tapped-unless-reveals-or',
+  family: 'replacement',
+  leading: ['as'],
+  cites: [
+    'CR 614.1c (Replacement Effects)',
+    'CR 614.12 (Replacement Effects)',
+    'CR 701.20a (Reveal)',
+  ],
+  examples: [
+    'As ~ enters, you may reveal a Dragon card from your hand. ~ enters tapped unless you revealed a Dragon card this way or you control a Dragon.',
+    'As ~ enters, you may reveal an Elf card from your hand. ~ enters tapped unless you revealed an Elf card this way or you control an Elf.',
+  ],
+  rejects: [
+    'As ~ enters, you may reveal a Dragon card from your hand. ~ enters tapped unless you revealed a Dragon card this way or you control a Dragon',
+    'As ~ enters, you may reveal a Dragon card from your hand. ~ enters tapped unless you revealed an Elf card this way or you control a Dragon.',
+    'As ~ enters, you may reveal a Dragon card from your hand. ~ enters tapped unless you revealed a Dragon card this way.',
+    'As ~ enters, you may reveal a Dragon card. ~ enters tapped unless you revealed a Dragon card this way or you control a Dragon.',
+    'As ~ enters, you may reveal a land card from your hand. ~ enters tapped unless you revealed a land card this way or you control a Dragon.',
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(
+      /as ~ enters(?: the battlefield)?, you may reveal (an? )([A-Z][a-z]+) card from your hand\. /iu,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const type = head.value[2] ?? '';
+    if (!CREATURE_TYPES.has(type)) return fail(ctx, pos);
+    const mid = pattern(
+      /~ enters(?: the battlefield)? tapped unless you revealed an? ([A-Z][a-z]+) card this way or /iu,
+    )(ctx, head.pos);
+    if (!mid.ok) return mid;
+    if (mid.value[1] !== type) return fail(ctx, pos);
+    const cond = spanned(family<IrCondition>('condition'))(ctx, mid.pos);
+    if (!cond.ok) return cond;
+    const tail = pattern(/\./u)(ctx, cond.pos);
+    if (!tail.ok) return tail;
+    const id = 'replacement.enters-tapped-unless-reveals-or';
+    const span = { start: pos, end: tail.pos };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersTappedUnlessReveals',
+      args: {
+        reveal: {
+          kind: 'revealSpec',
+          words: `${head.value[1] ?? 'a '}${type} card`,
+          types: [type],
+          behold: false,
+          span,
+          rule: id,
+        },
+      },
+      optional: false,
+      condition: {
+        kind: 'condition',
+        test: { kind: 'not', term: cond.value.value },
+        span: cond.value.span,
+        rule: id,
+      },
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: tail.pos };
+  },
+});
+
 export const REVEAL_REPLACEMENT_RULES = [
+  REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS_OR,
   REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS,
   REPLACEMENT_ENTERS_PREPARED,
 ];

@@ -843,6 +843,12 @@ export interface ChooseOptionDecision extends DecisionBase {
    */
   readonly riotSoFar?: readonly string[];
   /**
+   * For the choice a land asks as it enters from the hand after another question (CR 614.12a; "you may reveal a Dragon card from your hand", then "choose a
+   * color"): the answers already given, so playing the land again with the choice does not ask the first question twice. `paid` is the answer to the reveal and
+   * `revealed` the card the player chose to reveal among several. Absent when nothing was asked before.
+   */
+  readonly entersSoFar?: { readonly paid: boolean; readonly revealed?: ObjectId };
+  /**
    * For purpose `'effect'` (D-175, CR 608.2d, "create a Food token or a Treasure token"): `options` are the words of the instructions the
    * effect offers, in the order the text gives them, and `source` is the spell or ability that resolves. Nothing is entering.
    */

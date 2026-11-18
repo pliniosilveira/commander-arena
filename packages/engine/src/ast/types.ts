@@ -1420,6 +1420,8 @@ export type ControlDuration =
   | 'untilEndOfTurn'
   | 'untilEndOfYourNextTurn'
   | 'forAsLongAsYouControlThis'
+  /** "For as long as this creature remains on the battlefield" (CR 611.2b, issue 103): ends, for good, as the permanent with the ability leaves, whoever controls it. */
+  | 'forAsLongAsThisRemains'
   | 'permanent';
 
 /**
@@ -2631,7 +2633,8 @@ export type Effect =
   | {
       readonly kind: 'loseAllAbilities';
       readonly objects: ObjectSelector;
-      readonly duration: Duration;
+      /** `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. */
+      readonly duration: Duration | 'forAsLongAsThisRemains';
     }
   /**
    * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-649):
@@ -2731,7 +2734,11 @@ export type Effect =
       readonly kind: 'restrict';
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
-      readonly duration: Duration | 'forAsLongAsYouControlThis' | 'untilNextUntapStep';
+      readonly duration:
+        | Duration
+        | 'forAsLongAsYouControlThis'
+        | 'forAsLongAsThisRemains'
+        | 'untilNextUntapStep';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -4853,6 +4860,11 @@ export type Replacement =
       readonly filter: ObjectFilter;
       readonly words: string;
       readonly fromBattlefield?: true;
+      /**
+       * "... enters tapped unless you revealed a Dragon card this way or you control a Dragon" (CR 614.1c, 614.12): a second way to enter untapped. Checked as it
+       * enters, without the permanent on the battlefield; when it holds nothing is asked (the reveal could change only what the opponent learns).
+       */
+      readonly orIf?: Condition;
     }
   /**
    * "This permanent enters with N <counter> counters on it." `count` is `{ kind: 'x' }` for "enters

@@ -526,7 +526,16 @@ function answerChooseOption(
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
-  const played = playLand({ ...state, pending: null }, seat, d.source, null, d.face ?? 0, chosen);
+  const played = playLand(
+    { ...state, pending: null },
+    seat,
+    d.source,
+    d.entersSoFar?.paid ?? null,
+    d.face ?? 0,
+    chosen,
+    [],
+    d.entersSoFar?.revealed,
+  );
   if (!played.ok) return played;
   const answered: GameEvent = {
     kind: 'optionChosen',

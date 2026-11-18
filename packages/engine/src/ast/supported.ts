@@ -873,6 +873,9 @@ function walkAbility(
       if (a.replacement.kind === 'entersTapped' && a.replacement.unless !== undefined) {
         conditionIssues(a.replacement.unless, `${path}.replacement.unless`, out);
       }
+      if (a.replacement.kind === 'entersTappedUnlessReveals' && a.replacement.orIf !== undefined) {
+        conditionIssues(a.replacement.orIf, `${path}.replacement.orIf`, out);
+      }
       if (
         (a.replacement.kind === 'entersTappedUnlessPays' ||
           a.replacement.kind === 'entersTappedUnlessReveals') &&

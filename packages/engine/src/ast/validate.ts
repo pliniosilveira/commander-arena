@@ -265,6 +265,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
     case 'entersTappedUnlessReveals':
       // D-208 (CR 701.20, 701.4): the cards that may be revealed, as a filter of the hand (and the permanents the controller controls, for behold).
       checkFilter(r.filter, `${path}.filter`, out);
+      if (r.orIf !== undefined) checkCondition(r.orIf, `${path}.orIf`, out);
       if (typeof r.words !== 'string' || r.words.trim() === '') {
         issue(out, `${path}.words`, 'the dialog needs the words of what is revealed');
       }
