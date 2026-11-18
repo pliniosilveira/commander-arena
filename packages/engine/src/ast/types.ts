@@ -2575,7 +2575,7 @@ export type Effect =
        */
       readonly addTypes?: readonly CardType[];
       /**
-       * "..., except it has myriad" (D-626, CR 707.9b, 707.9d): the abilities the copy has besides the ones it copies; they are part of the copiable values the
+       * "..., except it has myriad" (D-626, CR 707.9b): the abilities the copy has besides the ones it copies; they are part of the copiable values the
        * copy effect gives (a keyword is a `keyword` ability). Never empty.
        */
       readonly abilities?: readonly Ability[];

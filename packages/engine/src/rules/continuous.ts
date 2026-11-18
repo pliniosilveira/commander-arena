@@ -228,7 +228,7 @@ export function copyEffect(
             types: [...original.characteristics.types, ...added],
           },
         };
-  // D-626 (CR 707.9b, 707.9d): "..., except it has myriad": the abilities of the exception are part of the copiable values the effect gives, after the ones it copies.
+  // D-626 (CR 707.9b): "..., except it has myriad": the abilities of the exception are part of the copiable values the effect gives, after the ones it copies.
   const copied =
     node.abilities === undefined || node.abilities.length === 0
       ? typed

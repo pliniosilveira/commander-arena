@@ -514,3 +514,14 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The condition `sacrificedAsCost` of an activated ability is read from its resolution; an intervening "if" of a triggered ability cannot read what an activated ability sacrificed.
 - The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
 - The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.
+
+## The Prismari deck, group 1 (issue 87, D-624 to D-631)
+
+- Myriad (granted to Muddle) does nothing with two players, so it is exact in v1 and not built for a table (D-631, D-151).
+- The tapped and attacking copies of Redoubled Stormsinger attack as `enterAttacking` decides: the controller does not choose the player or planeswalker they attack (CR 508.4 allows the choice); in a two-player game the only choice of a player is the opponent.
+- `spellsCastThisTurn` counts the spells of the controller of the effect only; "each player", "an opponent" and "other than the first" counts are not built (D-624).
+- Strive supports mana costs only, on an instant or sorcery face; the cap of targets tries the payable cost for each count of the slot's legal targets and assumes no target for the question "may this be cast at all?" (D-627).
+- A copy "except it has <keyword>" works for the keywords the engine implements as abilities; "except it is a <type>" and "except its power is" are the older exceptions of D-382 and are not combined with the new `abilities` field in one effect (D-626).
+- `boundObjects` is the engine's own reference for a delayed ability about a group; it is never written in card data, and the validator rejects it there. A delayed exile or sacrifice of `moved` is now one ability for the group, so Whip of Erebos's delayed exile is named after the Whip, not the creature (D-629).
+- The casual agent copies the creature token with the most power plus toughness; a choice that weighs which token has an ability worth copying is not built.
+- The Scryfall rulings of the nine cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle texts are the cards of `golden.jsonl` taken from issue 87.
