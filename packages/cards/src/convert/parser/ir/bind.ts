@@ -247,7 +247,7 @@ class Binder {
         );
         break;
       case 'plural':
-        // Issue 160 (D-612, CR 608.2c): "Put a +1/+1 counter on each creature you control. Those creatures gain vigilance": the group "each creature" named, which the
+        // Issue 160 (D-627, CR 608.2c): "Put a +1/+1 counter on each creature you control. Those creatures gain vigilance": the group "each creature" named, which the
         // singular wording of "each" does not mark as plural. Only "those creatures" says so ("them" after an "each" stays unbound).
         found = recent.find(
           (a) =>

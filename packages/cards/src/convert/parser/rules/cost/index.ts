@@ -254,7 +254,7 @@ export const COST_DISCARD = defineRule<IrCost>({
 });
 
 /**
- * `cost.discard-hand`: "Discard your hand" (issue 160, D-611, CR 701.9, 118.3): every card of the hand goes, the player chooses none, and a player with an empty hand
+ * `cost.discard-hand`: "Discard your hand" (issue 160, D-626, CR 701.9, 118.3): every card of the hand goes, the player chooses none, and a player with an empty hand
  * pays it with nothing to discard. Not read: a number of cards ("Discard a card", `cost.discard`), "Discard your hand and" something more.
  */
 export const COST_DISCARD_HAND = defineRule<IrCost>({

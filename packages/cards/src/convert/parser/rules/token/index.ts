@@ -50,7 +50,7 @@ const COUNT = choice(
   ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
-  // Issue 160 (D-611, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
+  // Issue 160 (D-626, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
   // which `validateCard` allows only in a trigger that has damage; the tokens are plural.
   map(
     spanned(pattern(/that many(?![\p{L}\p{N}])/iu)),

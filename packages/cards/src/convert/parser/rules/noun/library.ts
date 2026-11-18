@@ -320,7 +320,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           count: { kind: 'number', value: count.value, span: count.span },
         }),
       ),
-      // Issue 160 (D-611): "up to X basic land cards, where X is ...": the count is the X the search rule reads the definition of.
+      // Issue 160 (D-626): "up to X basic land cards, where X is ...": the count is the X the search rule reads the definition of.
       map(
         sequence(literal('up to X '), libraryPhrase(true)),
         ([, filter]): Bare => ({

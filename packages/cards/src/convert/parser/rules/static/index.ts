@@ -94,7 +94,7 @@ export const STATIC_RULES = [
   ...ARTIFACT_STATIC_RULES,
   // Stage P32 (D-147): can't attack or block unless, an Aura that makes the creature something else, +X/+X for the commanders.
   ...DINOSAUR_STATIC_RULES,
-  // Issue 160 (D-613): "Creatures with power less than ~'s power can't block creatures you control."
+  // Issue 160 (D-628): "Creatures with power less than ~'s power can't block creatures you control."
   ...BLOCK_POWER_STATIC_RULES,
   // Stage P33 (D-150): protections of a player, damage prevented to ~, a card that can't be cast early, a tax on blocking, permanents that
   // enter with counters, an alternative cost that taps creatures.

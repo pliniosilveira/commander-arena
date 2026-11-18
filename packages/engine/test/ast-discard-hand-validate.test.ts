@@ -1,4 +1,4 @@
-// "Discard your hand" as the cost of an activated ability (D-611, issue 160): what a card may say.
+// "Discard your hand" as the cost of an activated ability (D-626, issue 160): what a card may say.
 import { describe, expect, test } from 'vitest';
 import { type Cost, syntheticCard, validateCard } from '../src/index';
 

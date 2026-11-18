@@ -24,7 +24,7 @@ export interface ManualTap {
   readonly combination?: readonly ManaColor[] | null;
   /** "Sacrifice a Spirit: Add {R}." (D-216): the permanent given up; the engine chooses when it is left out. */
   readonly sacrifice?: ObjectId;
-  /** "{T}, Tap an untapped creature you control: Add ..." (D-610): the permanent tapped; the engine chooses when it is left out and there is one candidate. */
+  /** "{T}, Tap an untapped creature you control: Add ..." (D-625): the permanent tapped; the engine chooses when it is left out and there is one candidate. */
   readonly tapped?: ObjectId;
 }
 

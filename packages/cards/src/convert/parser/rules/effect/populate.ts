@@ -1,5 +1,5 @@
 /**
- * Effect rule of issue 160 (D-612): "Populate." (CR 701.36), the keyword action of Rootborn Defenses: choose a creature token you control and create a token that is a copy
+ * Effect rule of issue 160 (D-627): "Populate." (CR 701.36), the keyword action of Rootborn Defenses: choose a creature token you control and create a token that is a copy
  * of it. The engine runs `populate` (`rules/populate.ts`).
  */
 import { pattern } from '../../combinators';

@@ -257,7 +257,7 @@ const MANA_VALUE_OF =
     };
   };
 
-/** "your life total" (CR 119.1: a player's life total, read as the instruction runs; D-611). */
+/** "your life total" (CR 119.1: a player's life total, read as the instruction runs; D-626). */
 const LIFE_TOTAL =
   (rule: string): Parser<IrAmount> =>
   (ctx, pos) => {
@@ -602,7 +602,7 @@ export const AMOUNT_FOR_EACH_OPPONENT = defineRule<IrAmount>({
     'for each opponent who has more cards in hand than you',
     'for each opponent who has more life than you',
     'for each opponent who controls more creatures than you',
-    // Issue 160 (D-611): the opponents with less.
+    // Issue 160 (D-626): the opponents with less.
     'for each opponent who controls fewer creatures than you',
     'for each opponent who has fewer cards in hand than you',
   ],

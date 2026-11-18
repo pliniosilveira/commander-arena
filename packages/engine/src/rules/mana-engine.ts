@@ -187,7 +187,7 @@ export function activateManaAbility(
   combination: readonly ManaColor[] | null = null,
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-216, D-222): required when the player has more than one to give up. */
   sacrifice?: ObjectId,
-  /** The permanent a cost "Tap an untapped creature you control" taps (D-610): required when the player has more than one to tap. */
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-625): required when the player has more than one to tap. */
   tapped?: ObjectId,
 ): ActivationResult {
   // A source that does not exist (a stale or invented id in a payManual action) is an illegal
@@ -210,7 +210,7 @@ export function activateManaAbility(
       return refuse(`Choose which permanent to sacrifice for ${name}`);
     }
   }
-  // CR 601.2b, 605.3b (D-610): the player chooses the permanent a cost "Tap an untapped creature you control" taps, as for a sacrifice.
+  // CR 601.2b, 605.3b (D-625): the player chooses the permanent a cost "Tap an untapped creature you control" taps, as for a sacrifice.
   if (tapFilterOf(found.ability) !== null) {
     const legal = manaTapCandidates(state, seat, source, found.ability);
     if (tapped !== undefined && !legal.includes(tapped)) {
@@ -306,7 +306,7 @@ export function applyPaymentPlan(
       ? manaAbilitiesOf(next, obj).find((m) => m.abilityIndex === tap.abilityIndex)?.ability
       : undefined;
     if (!ability) continue;
-    // D-610: a cost "Tap an untapped creature you control" leaves alone the other sources of the plan, which are tapped for their mana.
+    // D-625: a cost "Tap an untapped creature you control" leaves alone the other sources of the plan, which are tapped for their mana.
     const paid = payManaAbilityCosts(
       next,
       seat,

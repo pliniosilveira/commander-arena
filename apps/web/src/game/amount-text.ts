@@ -112,7 +112,7 @@ const STAT_WORDS: Readonly<Record<'power' | 'toughness' | 'manaValue', string>> 
   manaValue: 'mana value',
 };
 
-/** "opponents with more life than you": what `opponentsWithMore` counts (D-611: `fewer`, with less). */
+/** "opponents with more life than you": what `opponentsWithMore` counts (D-626: `fewer`, with less). */
 function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
   const more = fewer ? 'fewer' : 'more';
   switch (stat) {
@@ -159,6 +159,9 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'searched':
+      // Lorehold group 1: "If you search your library this way".
+      return 'the number of times you searched your library this way';
   }
 }
 

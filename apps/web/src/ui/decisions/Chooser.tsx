@@ -83,7 +83,7 @@ export function ChooserPopover({
         </Popover>
       );
     }
-    // D-610 (CR 601.2b): "{T}, Tap an untapped creature you control: Add ...": the player chooses the permanent to tap, then (when it is asked) the color.
+    // D-625 (CR 601.2b): "{T}, Tap an untapped creature you control: Add ...": the player chooses the permanent to tap, then (when it is asked) the color.
     const taps = ability?.tappables ?? [];
     if (taps.length > 1 && anchor.tapped === undefined) {
       const asksMore = colors.length > 1 || combinations.length > 1;

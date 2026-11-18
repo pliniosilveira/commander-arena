@@ -354,7 +354,7 @@ const TARGETS: readonly Line[] = [
     kind: 'aura',
     text: 'Enchant player',
     expect: OK,
-    note: 'replay: 46 cards; read since D-614 (`keyword.enchant-player`)',
+    note: 'replay: 46 cards; read since D-629 (`keyword.enchant-player`)',
   },
 ];
 

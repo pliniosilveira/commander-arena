@@ -41,9 +41,10 @@
 // 136: Parse the commander-tax life replacement sentence (D-605).
 // 140: Parse activated abilities carried by emblems (D-606).
 // 141: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-607).
-// 142: Read "Tap an untapped creature you control" next to a mana cost and {T}, and in a mana ability (D-610, issue 160).
-// 143: Read "where X is your life total", the mana value of a destroyed enchantment, "that many" tokens after damage, "for each opponent who controls fewer creatures", "Discard your hand", "up to X" library searches and a spell shuffling itself into its library (D-611, issue 160).
-// 144: Read "creatures target player controls get ...", "untap them", "those creatures gain ..." after an each group and "Populate" (D-612, issue 160).
-// 145: Read "creatures with power less than ~'s power can't block creatures you control", an enchanted creature with a granted activated ability and "each player gains control of all creatures they own" (D-613, issue 160).
-// 146: Read "Enchant player", "whenever enchanted player is attacked" and "each opponent attacking that player untaps all nonland permanents they control" (D-614, issue 160).
-export const PARSER_VERSION = 146;
+// 142: Read the Lorehold Spirit deck cards: Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece, Wave of Reckoning, Fateful Tempest, Quintorius, Loremaster and Naktamun Lorespinner // Wheel of Fortune (D-610 to D-624, issue 86).
+// 143: Read "Tap an untapped creature you control" next to a mana cost and {T}, and in a mana ability (D-625, issue 160).
+// 144: Read "where X is your life total", the mana value of a destroyed enchantment, "that many" tokens after damage, "for each opponent who controls fewer creatures", "Discard your hand", "up to X" library searches and a spell shuffling itself into its library (D-626, issue 160).
+// 145: Read "creatures target player controls get ...", "untap them", "those creatures gain ..." after an each group and "Populate" (D-627, issue 160).
+// 146: Read "creatures with power less than ~'s power can't block creatures you control", an enchanted creature with a granted activated ability and "each player gains control of all creatures they own" (D-628, issue 160).
+// 147: Read "Enchant player", "whenever enchanted player is attacked" and "each opponent attacking that player untaps all nonland permanents they control" (D-629, issue 160).
+export const PARSER_VERSION = 147;

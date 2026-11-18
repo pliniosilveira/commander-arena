@@ -96,6 +96,8 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
       continue;
     }
     ctx.searched = null;
+    // Lorehold group 1: "that card" of "you may play that card this turn" after "exile that card from your graveyard": the card the exile moved.
+    if (effect.kind === 'exile') ctx.exiled = 'cards';
     ctx.exiledRef =
       effect.kind === 'exile' && effect.objects.kind === 'target' ? effect.objects.id : null;
     ctx.movedOnto =
@@ -705,6 +707,91 @@ function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerR
 const LONE_MAY_KINDS: ReadonlySet<string> = new Set(['shuffle']);
 
 /**
+ * "You may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1,
+ * CR 608.2d, 701.23): a "you may" search that a later "repeat this process" does again. Each search asks for itself (the engine's `search` with `optional`: a declined search is not a search,
+ * CR 701.23a), so the offer is on the search and not on the ability. Null when the sentence is not one offered search or no sentence of the text repeats; a search that is more than that is
+ * refused, never guessed.
+ */
+function lowerOfferedSearch(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'search' || !clause.optional) return null;
+  if (!sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'))) return null;
+  if (
+    more.length > 0 ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined
+  ) {
+    return refuse(sentence);
+  }
+  const lowered = lowerClauses([{ ...clause, optional: false }], ctx);
+  if (!lowered.ok) return lowered;
+  const [only, ...rest] = lowered.value;
+  // The search of another player has its own "may" (`optional` already); only the controller's own is offered here.
+  if (
+    only?.kind !== 'search' ||
+    rest.length > 0 ||
+    only.optional === true ||
+    only.player.kind !== 'you'
+  ) {
+    return refuse(sentence);
+  }
+  return { ok: true, value: [{ ...only, optional: true }], rule: clause.rule };
+}
+
+/**
+ * "Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1, CR 608.2c): the instruction before it is done again, once, when the test holds. The
+ * process is the one sentence before it, which is not a choice of targets (a second choice of targets would be another question); a text that repeats more than one sentence is refused,
+ * as the words do not say how far back "this process" goes. The test is read as the instruction comes up (the engine's `conditional`). Only "once".
+ */
+function lowerRepeatProcess(
+  sentence: IrSentence,
+  steps: readonly Step[],
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const [clause, ...more] = sentence.clauses;
+  if (
+    clause === undefined ||
+    more.length > 0 ||
+    clause.optional ||
+    clause.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    steps.length !== 1
+  ) {
+    return refuse(sentence);
+  }
+  const [process] = steps;
+  // A choice of targets in the process would be asked again, which no text says; the process is without any.
+  if (process === undefined || process.effects.length === 0 || ctx.targets.length > 0) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:conditional']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const again = oneEffect(process.effects);
+  if (sentence.condition === undefined) {
+    return { ok: true, value: [again], rule: clause.rule };
+  }
+  const condition = lowerCondition(sentence.condition, false, ctx);
+  if (!condition.ok) return condition;
+  return {
+    ok: true,
+    value: [{ kind: 'conditional', condition: condition.value, effect: again }],
+    rule: clause.rule,
+  };
+}
+
+/**
  * "You may shuffle." (Ponder, stage P63, D-216, CR 608.2d, 701.24): a sentence of one optional instruction, with no "if you do" after it, is the engine's `may`
  * of that instruction, asked as it comes up. Only the instructions of `LONE_MAY_KINDS`; null when the sentence is not such an offer.
  */
@@ -769,7 +856,8 @@ function lowerMay(
   // A reflexive ability is the last effect of its sequence (`validateCard`).
   if (reflexive && i + 2 < sentences.length) return refuse(next);
   const offered = lowerClauses(
-    sentence.clauses.map((c) => ({ ...c, optional: false })),
+    // Lorehold group 1: "you may exile one of them from your graveyard" keeps its "you may": the engine's choice of none or one card is that offer.
+    sentence.clauses.map((c) => ({ ...c, optional: c.verb === 'exileOneOfThem' && c.optional })),
     ctx,
   );
   if (!offered.ok) return offered;
@@ -777,7 +865,8 @@ function lowerMay(
   // "You may tap X untapped Myr you control. If you do, ..." (stage P31, D-140, CR 701.26a): the choice of any number of them is the
   // offer itself (tapping none is declining it, and is not "doing it"), so the tap is not wrapped in a question of its own.
   const chooseAny =
-    only?.kind === 'tap' && only.objects.kind === 'choose' && only.objects.anyNumber;
+    (only?.kind === 'tap' && only.objects.kind === 'choose' && only.objects.anyNumber) ||
+    only?.kind === 'exileFromTriggerCards';
   if (only === undefined || more.length > 0 || (!MAY_KINDS.has(only.kind) && !chooseAny)) {
     return refuse(sentence);
   }
@@ -1431,6 +1520,19 @@ function lowerStep(
       effect: oneEffect(inner.value),
     };
     steps.push({ effects: [effect], replaceable: false });
+    return { last: i };
+  }
+  // "You may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1).
+  const offeredSearch = lowerOfferedSearch(sentence, sentences, ctx);
+  if (offeredSearch !== null) {
+    if (!offeredSearch.ok) return stop(offeredSearch);
+    steps.push({ effects: offeredSearch.value, replaceable: false });
+    return { last: i };
+  }
+  if (first.verb === 'repeatProcess') {
+    const repeated = lowerRepeatProcess(sentence, steps, ctx);
+    if (!repeated.ok) return stop(repeated);
+    steps.push({ effects: repeated.value, replaceable: false });
     return { last: i };
   }
   // "You may pay any amount of {R}. When you do, it deals that much damage to any target." (stage P34, D-152, CR 603.12, 118.1).

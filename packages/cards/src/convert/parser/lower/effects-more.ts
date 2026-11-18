@@ -91,7 +91,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     if (sharing.length > 0) return { ok: false, needs: sharing, at: cards.span, rule: cards.rule };
     const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
-    // D-611: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
+    // D-626: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
     const xCount = cards.count?.kind === 'x';
     const maxAmount = arg(clause, 'maxAmount');
     if (xCount !== (maxAmount !== undefined)) return failure(clause);
@@ -126,6 +126,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     if (xCount && destinations.length !== 1) return failure(clause);
     // D-178: the cards that were found are "it" and "that land" for what follows (the engine's `moved`).
     ctx.searched = cards.ref ?? null;
+    ctx.didSearch = true;
     const total = destinations.reduce((sum, d) => sum + (d.count === 'rest' ? 0 : d.count), 0);
     if (!xCount && total !== max) return failure(clause);
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).

@@ -441,13 +441,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const another = t.another === true ? { another: true as const } : {};
       // "Whenever you discard a creature card" (D-383, CR 701.9a): the kind of card is a filter on the card discarded; "a card" has none.
       const kind = t.subject?.filter;
+      // "Whenever you discard one or more nonland cards" (Lorehold group 1, CR 603.2c): one trigger for the cards discarded together.
+      const batch = t.batch === true ? { batch: true as const } : {};
       if (kind === undefined || (kind.types === undefined && kind.notTypes === undefined)) {
-        return ok({ kind: 'discarded', who, ...another });
+        return ok({ kind: 'discarded', who, ...another, ...batch });
       }
       if (t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
-      return ok({ kind: 'discarded', who, ...another, filter: filter.value });
+      return ok({ kind: 'discarded', who, ...another, ...batch, filter: filter.value });
     }
     case 'drawn': {
       const who = whoOf(t.actor);
@@ -935,6 +937,7 @@ export function lowerTriggered(
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
@@ -1146,9 +1149,15 @@ export function lowerTriggered(
   // question of the ability's; a cast with no "you may" is not read, and stays a sentence of the ability's own (`castCard` lowers only an optional clause).
   // D-394 (group 9): "you may put it onto the battlefield" and "you may cast it without paying its mana cost" of the card an instruction before exiled: the engine's `may`
   // of that move and its `castFree` ask the question themselves, so the same holds.
+  // Lorehold group 1 (CR 608.2c): "you may search ... Then if an opponent controls more lands than you, repeat this process once": each search is its own offer (the engine's `search`
+  // with `optional`), asked again when the process is repeated, so the "you may" is no question of the ability as a whole.
+  const repeats = sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'));
   const asksItself = (c: Sentence['clauses'][number]) =>
     c.optional &&
-    (c.verb === 'castCard' ||
+    ((repeats && c.verb === 'search') ||
+      // Lorehold group 1: "you may exile one of them from your graveyard": the engine's choice of none or one card is the question.
+      c.verb === 'exileOneOfThem' ||
+      c.verb === 'castCard' ||
       c.verb === 'castMovedFree' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.

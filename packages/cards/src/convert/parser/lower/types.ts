@@ -82,7 +82,7 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
-  /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-614): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
+  /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
@@ -170,10 +170,11 @@ export interface LowerContext {
   /**
    * What an earlier instruction of this text exiled (stage P34, D-152): `top` the cards of the top of the library ("exile the top card of
    * your library", the cards "that card" and "those cards" name), `cast` the card found by exiling until a card is found (Discover, "the
-   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."). Null before any. The
+   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."), `cards` (Lorehold group 1) the card an
+   * `exile` of the text exiled from where it was ("you may exile that card from your graveyard. If you do, you may play that card this turn"). Null before any. The
    * engine's `moved` names them.
    */
-  exiled: 'top' | 'cast' | 'milled' | null;
+  exiled: 'top' | 'cast' | 'milled' | 'cards' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
   /**
@@ -185,6 +186,10 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
+  didSearch: boolean;
+  /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
+  discardBatchTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -264,6 +269,8 @@ export function newContext(
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
     scryTrigger: false,
+    discardBatchTrigger: false,
+    didSearch: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,

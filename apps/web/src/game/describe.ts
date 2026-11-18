@@ -1184,7 +1184,7 @@ export function describeEvent(
       );
     }
     case 'attachedToPlayer': {
-      // D-614 (CR 303.4b): an Aura that enchants a player enters attached to that player.
+      // D-629 (CR 303.4b): an Aura that enchants a player enters attached to that player.
       const caster = after.objects[event.object]?.controller;
       return line(
         'major',

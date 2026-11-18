@@ -93,7 +93,7 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
           issue(
             out,
             p,
-            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-611)',
+            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
           );
         }
         break;

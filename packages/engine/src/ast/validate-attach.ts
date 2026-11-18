@@ -201,7 +201,7 @@ export function checkAttachmentFace(
   if (!isAura && enchants.length > 0) {
     issue(out, `${path}.abilities`, 'only an Aura has an enchant ability (CR 702.5a)');
   }
-  // D-614: "Whenever enchanted player is attacked" belongs to an Aura that enchants a player.
+  // D-629: "Whenever enchanted player is attacked" belongs to an Aura that enchants a player.
   const enchantsPlayer = enchants.some(
     (a) => a.kind === 'keyword' && a.keyword.kind === 'enchant' && a.keyword.player === true,
   );
@@ -215,7 +215,7 @@ export function checkAttachmentFace(
       issue(
         out,
         `${path}.abilities[${i}].trigger`,
-        'attackedEnchantedPlayer needs an Aura that enchants a player (D-614)',
+        'attackedEnchantedPlayer needs an Aura that enchants a player (D-629)',
       );
     }
     const subject = a.kind === 'static' && 'subject' in a.static ? a.static.subject : null;

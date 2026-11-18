@@ -1108,7 +1108,7 @@ export const TRIGGER_RULES = [
   ...ANGEL_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
-  // Issue 160 (D-614): "Whenever enchanted player is attacked".
+  // Issue 160 (D-629): "Whenever enchanted player is attacked".
   ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".

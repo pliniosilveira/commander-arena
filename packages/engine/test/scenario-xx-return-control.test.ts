@@ -1,4 +1,4 @@
-// "At the beginning of your end step, each player gains control of all creatures they own." (issue 160, D-613)
+// "At the beginning of your end step, each player gains control of all creatures they own." (issue 160, D-628)
 // Pins: CR 613.1b (a control-changing effect is a layer 2 effect), CR 613.7b (the effect that began last decides), CR 611.2a (no duration stated: until the game ends or another
 // effect changes control), CR 611.2c (the set of permanents is fixed when the effect begins), CR 506.4 (a creature whose controller changes leaves combat), CR 302.6
 // (a creature that goes back has not been under its controller's control since the turn began). Cards are SYNTHETIC (src/cards/fixtures/synthetic-return-control.ts).

@@ -85,7 +85,7 @@ export const NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER = defineRule<IrNoun>({
 });
 
 /**
- * `noun.group-of-target-player`: "creatures target player controls", "nonland permanents target opponent controls" (issue 160, D-612, CR 109.4, 115.1, 608.2c): the plural phrase
+ * `noun.group-of-target-player`: "creatures target player controls", "nonland permanents target opponent controls" (issue 160, D-627, CR 109.4, 115.1, 608.2c): the plural phrase
  * without "all", the subject of "creatures target player controls get +2/+2 until end of turn". The same noun as `noun.all-permanents-of-target-player` (the player is a target noun
  * of its own, numbered with the other targets). Not read: "all", a singular, no controller words, "you control" or "your opponents control" (the plain permanent phrase), "target
  * players", "other", a controller said twice.

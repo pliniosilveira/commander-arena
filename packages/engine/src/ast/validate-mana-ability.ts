@@ -35,14 +35,14 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       issue(
         out,
         `${path}.cost[${i}].count`,
-        'a mana ability taps one permanent besides its source (D-610)',
+        'a mana ability taps one permanent besides its source (D-625)',
       );
     }
     if (c?.kind === 'tapPermanents' && (a.cost ?? []).some((o) => o?.kind === 'sacrifice')) {
       issue(
         out,
         `${path}.cost[${i}]`,
-        'a mana ability that taps a permanent does not also sacrifice one: the player would name two choices (D-610)',
+        'a mana ability that taps a permanent does not also sacrifice one: the player would name two choices (D-625)',
       );
     }
     if (c?.kind === 'sacrifice' && c.countX !== undefined) {

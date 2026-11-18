@@ -246,6 +246,11 @@ const THIS_WAY_WORDS: Readonly<Record<string, { readonly yes: string; readonly n
     yes: 'you sacrificed a permanent this way',
     not: "you didn't sacrifice a permanent this way",
   },
+  // Lorehold group 1 (CR 701.23a): "If you search your library this way, shuffle."
+  searched: {
+    yes: 'you search your library this way',
+    not: "you don't search your library this way",
+  },
 };
 
 function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): string | null {
@@ -389,6 +394,17 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           : cmp === 'atLeast'
             ? `there are ${value} or more cards in your library`
             : `there are exactly ${value} cards in your library`;
+      return negate ? `it's not true that ${text}` : text;
+    }
+    case 'aPlayerCardsInHand': {
+      // Lorehold group 3 (CR 402.1, 603.4): "a player has one or fewer cards in hand".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atMost'
+          ? `a player has ${value} or fewer cards in hand`
+          : cmp === 'atLeast'
+            ? `a player has ${value} or more cards in hand`
+            : `a player has exactly ${value} cards in hand`;
       return negate ? `it's not true that ${text}` : text;
     }
     case 'yourTurn':

@@ -54,7 +54,7 @@ export interface AbilityChoice {
   /** The permanent this choice sacrifices ("Sacrifice a Spirit: Add {R}.", D-222), and its name for the button. */
   readonly sacrifice?: ObjectId;
   readonly sacrificeName?: string;
-  /** The permanent this choice taps besides the source ("{T}, Tap an untapped creature you control: Add ...", D-610), and its name for the button. */
+  /** The permanent this choice taps besides the source ("{T}, Tap an untapped creature you control: Add ...", D-625), and its name for the button. */
   readonly tapped?: ObjectId;
   readonly tappedName?: string;
 }

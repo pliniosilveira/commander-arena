@@ -462,7 +462,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const base = discardedCardWords(trigger.filter);
       if (base === null) return null;
       const card = trigger.another === true ? base.replace(/^an? /u, 'another ') : base;
-      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${card}`;
+      // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": one trigger for the cards discarded together.
+      const said =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : card;
+      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${said}`;
     }
     case 'diesBatch': {
       // D-206 (CR 603.2c): "Whenever one or more other creatures and/or artifacts you control die".

@@ -1,5 +1,5 @@
 /**
- * Effect rule of issue 160 (D-613): "Each player gains control of all creatures they own." (Trostani Discordant, CR 613.1b, 613.7b, 611.2a): every creature goes back to its
+ * Effect rule of issue 160 (D-628): "Each player gains control of all creatures they own." (Trostani Discordant, CR 613.1b, 613.7b, 611.2a): every creature goes back to its
  * owner, as one layer 2 effect for each owner. The engine's `returnControlToOwners` of every creature on the battlefield.
  */
 import { pattern } from '../../combinators';

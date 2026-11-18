@@ -1,5 +1,5 @@
 /**
- * Lowering of "Populate" (issue 160, D-612, CR 701.36): the engine's `populate`.
+ * Lowering of "Populate" (issue 160, D-627, CR 701.36): the engine's `populate`.
  */
 import type { IrClause } from '../ir/types';
 import type { Effects } from './clauses';

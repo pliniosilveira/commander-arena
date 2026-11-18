@@ -131,7 +131,7 @@ export function runGainControl(
 }
 
 /**
- * Runs `returnControlToOwners` (CR 613.1b, 611.2a, 611.2c, D-613): "each player gains control of all creatures they own". The permanents the selector names now are grouped by
+ * Runs `returnControlToOwners` (CR 613.1b, 611.2a, 611.2c, D-628): "each player gains control of all creatures they own". The permanents the selector names now are grouped by
  * owner and each owner gets one layer 2 effect with no duration (CR 613.7b: each has a timestamp, made one after the other in seat order), so an earlier effect that gave a
  * permanent to someone else no longer decides who controls it, and a later one decides over this one. A permanent whose controller changed leaves combat (CR 506.4).
  */

@@ -1,4 +1,4 @@
-/** The words of the populate question (D-612, CR 701.36a): the engine asks `choosePermanent` of purpose 'populate'; the web names it. */
+/** The words of the populate question (D-627, CR 701.36a): the engine asks `choosePermanent` of purpose 'populate'; the web names it. */
 import type { ObjectView } from '@commander-arena/engine';
 import { expect, test } from 'vitest';
 import {

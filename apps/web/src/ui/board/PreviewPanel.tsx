@@ -160,7 +160,7 @@ function PreviewDetails({ object }: { object: ObjectView }) {
     });
     if (taken !== null) facts.push(taken);
   }
-  // CR 303.4b (D-614): an Aura that enchants a player says whom.
+  // CR 303.4b (D-629): an Aura that enchants a player says whom.
   if (object.attachedToPlayer !== undefined && view !== null) {
     facts.push(`Enchants ${seatLabel(view, object.attachedToPlayer)} (CR 303.4b)`);
   }

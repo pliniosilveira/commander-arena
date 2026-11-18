@@ -1,5 +1,5 @@
 /**
- * The web side of D-610 (CR 601.2b, 605.3b): the player chooses the permanent a mana ability "{T}, Tap an untapped creature you control: Add one mana of any color."
+ * The web side of D-625 (CR 601.2b, 605.3b): the player chooses the permanent a mana ability "{T}, Tap an untapped creature you control: Add one mana of any color."
  * taps as part of its cost, while paying by clicking sources and when activating the ability at priority.
  */
 import type { ObjectView, PayManaDecision, PriorityDecision } from '@commander-arena/engine';

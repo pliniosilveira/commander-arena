@@ -271,7 +271,7 @@ export function payCosts(state: GameState, events: GameEvent[]): Result {
   if (state.objects[activation.source] === undefined) return fail('The source is gone');
   const paid = payImmediateCosts(state, casting.seat, activation.source, costs);
   events.push(...paid.events);
-  // D-610 (CR 601.2h): the permanents to tap are chosen first when there is mana to pay too, so the mana comes from the sources still untapped.
+  // D-625 (CR 601.2h): the permanents to tap are chosen first when there is mana to pay too, so the mana comes from the sources still untapped.
   if (costs.tapPermanents !== null && costs.mana.length > 0) {
     return payTap(paid.state, events, costs.tapPermanents);
   }
@@ -311,7 +311,7 @@ function payRest(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { costs } = going;
   if (costs.tapCreatures !== null) return payCrew(state, events, costs.tapCreatures);
-  // D-610: with mana to pay the permanents were tapped before it.
+  // D-625: with mana to pay the permanents were tapped before it.
   if (costs.tapPermanents !== null && costs.mana.length === 0) {
     return payTap(state, events, costs.tapPermanents);
   }
@@ -369,7 +369,7 @@ function tapChosen(
     next = patchObject(next, id, { tapped: true });
     events.push({ kind: 'tapped', object: id, by: casting.seat });
   }
-  // D-610: the mana is paid after the permanents are tapped when the cost has both; otherwise the sacrifice comes next.
+  // D-625: the mana is paid after the permanents are tapped when the cost has both; otherwise the sacrifice comes next.
   if ((going?.costs.mana.length ?? 0) > 0) return askMana(next, events);
   return payBlight(next, events, paySacrifice);
 }
@@ -544,7 +544,7 @@ function payDiscard(state: GameState, events: GameEvent[]): Result {
   const going = inProgress(state);
   if (!going) return fail('No activation is in progress');
   const { casting, costs } = going;
-  // D-611 (CR 701.9): "Discard your hand" discards every card of it, none chosen; an empty hand pays it with nothing to discard.
+  // D-626 (CR 701.9): "Discard your hand" discards every card of it, none chosen; an empty hand pays it with nothing to discard.
   if (costs.discardHand) {
     const all = [...(state.seats[casting.seat]?.hand ?? [])];
     return all.length === 0 ? payExileCards(state, events) : discardChosen(state, events, all);
