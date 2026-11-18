@@ -37,8 +37,13 @@ export function checkDragonsEffect(
       // D-187: "the top two cards of target opponent's library": one player, a target (CR 115.1).
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
-        if (kindOf(e.from) !== 'target') {
-          issue(out, `${path}.from`, 'the library whose top cards are exiled is a target');
+        // Issue 279: or "each player's library" (`eachPlayer`).
+        if (kindOf(e.from) !== 'target' && kindOf(e.from) !== 'eachPlayer') {
+          issue(
+            out,
+            `${path}.from`,
+            "the library whose top cards are exiled is a target or each player's ('eachPlayer')",
+          );
         }
       }
       if (e.faceDown !== undefined && e.faceDown !== true) {

@@ -356,6 +356,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           : `you ${have} cast ${condition.atLeast} or more ${kinds} spells this turn`;
       }
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279 (CR 508.1): "you attacked with three or more creatures this turn".
+      return `you ${negate ? "haven't" : 'have'} attacked with ${condition.atLeast} or more creatures this turn`;
     case 'lifeGainedThisTurn':
       // D-252, D-363 (CR 119.3, 603.4): "if you gained life this turn" (at least 1), "if you gained 3 or more life this turn".
       if (condition.atLeast <= 1) return `you ${negate ? "didn't gain" : 'gained'} life this turn`;

@@ -124,4 +124,58 @@ export const CONDITION_SPELLS_CAST_THIS_TURN = defineRule<IrCondition>({
   },
 });
 
-export const SPELLS_CAST_CONDITION_RULES = [CONDITION_SPELLS_CAST_THIS_TURN];
+/**
+ * `condition.attacked-with-creatures`: "you attacked with three or more creatures this turn" (CR 508.1: the player who declares the attackers attacks with them;
+ * issue 279, Windbrisk Heights): the engine's `attackedWithCreaturesThisTurn`, the different creatures the controller declared as attackers in any combat of the turn.
+ * Not read: "or fewer", "an opponent attacked", a kind of creature ("with three or more Dragons"), "this combat" (a test of one combat, which
+ * `condition.attackers-total-power` reads for total power), zero, a variable count, "with a creature" with no count.
+ */
+export const CONDITION_ATTACKED_WITH_CREATURES = defineRule<IrCondition>({
+  id: 'condition.attacked-with-creatures',
+  family: 'condition',
+  leading: ['you'],
+  cites: ['CR 508.1 (Declare Attackers Step)', 'CR 508.4 (Declare Attackers Step)'],
+  examples: [
+    'you attacked with three or more creatures this turn',
+    'you attacked with two or more creatures this turn',
+    'you attacked with 3 or more creatures this turn',
+    'you have attacked with three or more creatures this turn',
+  ],
+  rejects: [
+    'you attacked with three or more creatures',
+    'you attacked with three or more creatures this combat',
+    'you attacked with three or fewer creatures this turn',
+    'you attacked with three creatures this turn',
+    'you attacked with 0 or more creatures this turn',
+    'you attacked with X or more creatures this turn',
+    'you attacked with three or more Dragons this turn',
+    'an opponent attacked with three or more creatures this turn',
+    'you attacked with three or more creatures this turn and',
+    'you attacked with a creature this turn',
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(/you(?: have)? attacked with /iu)(ctx, pos);
+    if (!head.ok) return head;
+    const r = sequence(
+      spanned(satisfy(quantity, (n) => n >= 1)),
+      pattern(new RegExp(` or more creatures this turn${BOUNDARY}`, 'iu')),
+    )(ctx, head.pos);
+    if (!r.ok) return r;
+    const [count] = r.value;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'attackedWithCreaturesThisTurn', atLeast: count.value },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.attacked-with-creatures',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const SPELLS_CAST_CONDITION_RULES = [
+  CONDITION_SPELLS_CAST_THIS_TURN,
+  CONDITION_ATTACKED_WITH_CREATURES,
+];

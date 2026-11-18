@@ -1839,6 +1839,8 @@ export interface ThisWayCounts {
   readonly discardedNoncreature?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
+  /** The most cards one player discarded to a `discard` effect of this resolution (issue 279: "draws cards equal to the greatest number of cards a player discarded this way"). */
+  readonly discardedMost?: number;
   /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
   readonly damageDealt?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
@@ -2171,6 +2173,12 @@ export interface TurnLog {
    */
   readonly attacked: readonly ObjectId[];
   /**
+   * Each creature that was declared as an attacker this turn with the player who declared it (issue 279, CR 508.1): one entry for each declaration, so a
+   * creature that attacks in two combat phases appears twice. A creature put onto the battlefield attacking was never declared and is not here (CR 508.4).
+   * Kept by the id the creature had as it attacked, so that a creature that has died since still counts for "you attacked with three or more creatures this turn".
+   */
+  readonly attackedWith: readonly { readonly object: ObjectId; readonly seat: SeatId }[];
+  /**
    * Each player a creature was declared as an attacker attacking this turn (D-269, CR 508.6: a player has "attacked [a player]" if they declared
    * creatures as attackers attacking that player), in order: the creature and the player. A creature that attacks a planeswalker or a battle attacks
    * that permanent, not the player who controls or protects it, so it adds no entry; a creature put onto the battlefield attacking was never declared
@@ -2221,6 +2229,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   entered: [],
   damageTaken: [],
   attacked: [],
+  attackedWith: [],
   attackedPlayers: [],
   graveyarded: [],
   died: [],

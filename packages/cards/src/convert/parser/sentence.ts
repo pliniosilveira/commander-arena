@@ -91,6 +91,8 @@ const ATTACKERS_CONDITIONS = ['condition.those-attacked-you'] as const;
 const TURN_CONDITIONS = [
   'condition.creature-died-this-turn',
   'condition.player-dealt-damage',
+  // Issue 279: "You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn."
+  'condition.attacked-with-creatures',
   // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
   'condition.life-gained-this-turn',
   'condition.life-above-starting',

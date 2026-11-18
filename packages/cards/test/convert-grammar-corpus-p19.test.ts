@@ -75,9 +75,9 @@ const REPLAY: readonly Line[] = [
   },
   {
     kind: 'instant',
-    text: "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its controller.",
-    expect: no('deals 1 damage to its controller.', 'effect.gain-keyword-each'),
-    note: 'replay: 1 card; the third mode is read by no effect rule (an "each" that deals damage)',
+    text: "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its owner.",
+    expect: no('deals 1 damage to its owner.', 'effect.gain-keyword-each'),
+    note: 'the replay line said "to its controller", which issue 279 reads (`effect.deal-damage-to-its-controller`); "to its owner" is still read by no effect rule (an "each" that deals damage)',
   },
   {
     kind: 'instant',

@@ -496,6 +496,7 @@ export type IrAmount =
         | 'tapped'
         | 'discarded'
         | 'milledValue'
+        | 'discardedMost'
         | 'damageDealt';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
@@ -603,6 +604,8 @@ export interface IrCondition extends IrNode {
         readonly atLeast: number;
         readonly ofTypes?: readonly string[];
       }
+    // Issue 279 (CR 508.1): "you attacked with three or more creatures this turn"
+    | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard

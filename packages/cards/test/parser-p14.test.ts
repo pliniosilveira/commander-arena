@@ -241,8 +241,9 @@ describe('restriction.if: "Activate only if <condition>." (CR 602.5b)', () => {
       'with power greater than 3.',
     ],
     [
-      '{1}{W}, {T}: Draw a card. Activate only if you attacked with two or more creatures this turn.',
-      'you attacked with two or more creatures this turn.',
+      // Issue 279 read "you attacked with two or more creatures this turn"; a kind of creature is still not a count the engine reads.
+      '{1}{W}, {T}: Draw a card. Activate only if you attacked with two or more Dragons this turn.',
+      'or more Dragons this turn.',
     ],
   ])('%s stays unread', (text, stoppedAt) => {
     expect(dropped(text, 'artifact').stoppedAt).toBe(stoppedAt);

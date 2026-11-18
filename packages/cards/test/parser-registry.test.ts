@@ -241,6 +241,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.bare-land-type': permanent((e) => `Enchant ${e}`),
   // "Its controller": the pronoun needs a target before it (CR 109.4).
   'noun.its-controller': spell((e) => `Destroy target creature. ${cap(e)} gains 4 life.`),
+  // Issue 279 (Curse of the Swine).
+  'noun.each-exiled-controller': spell(
+    (e) => `Exile X target creatures. ${cap(e)} creates a 2/2 green Boar creature token.`,
+  ),
   'noun.library-card': spell(
     (e) =>
       `Search your library for ${e}, put ${e.startsWith('up to') ? 'them' : 'it'} into your hand, then shuffle.`,
@@ -648,6 +652,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
+  // Issue 279 (Windfall).
+  'amount.discarded-most-this-way': spell(
+    (e) => `Each player discards their hand, then draws cards ${e}.`,
+  ),
+  // Issue 279 (Windbrisk Heights).
+  'condition.attacked-with-creatures': permanent(
+    (e) => `{W}, {T}: You may play the exiled card without paying its mana cost if ${e}.`,
+  ),
   'condition.mana-spent-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,

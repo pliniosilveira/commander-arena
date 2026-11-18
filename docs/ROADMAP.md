@@ -501,3 +501,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - AI, pay any amount: the agent always pays the most it can for a "pay any amount" question.
 - Look and take: a filtered take ("two creature cards from among them"), a number that is not fixed, X and another player's library are not read.
 - Look at the top cards and take one: only the Diabolic Vision and Sleight of Hand wordings are read.
+- "You attacked with N or more creatures this turn" has no form for a kind of creature, or for "this combat" with a count.
+- "Those creatures" after a count is read only for a grant of a keyword.
+- "Each creature deals N damage to its controller" has no "owner" or "equal to its power" form.
+- "For each creature exiled this way, its controller" is read only for an exile with targets, not for destroy or sacrifice.
+- Promise of Loyalty is unsupported: it needs a restriction against one player tied to a vow counter, and `sparePermanents.own` for one type with a counter.

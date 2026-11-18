@@ -1326,6 +1326,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
+  discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
   searched: 'a search effect',
 };
@@ -1343,7 +1344,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
-    return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
+    return [
+      'discarded',
+      'discardedCreature',
+      'discardedNoncreature',
+      'discardedInstantOrSorcery',
+      'discardedMost',
+    ];
   if (e?.kind === 'mill') return ['milledValue'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
   // Lorehold group 1: "If you search your library this way, shuffle."
@@ -2692,6 +2699,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         }
       }
       break;
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279, CR 508.1: the different creatures the controller attacked with this turn.
+      if (!isCount(c.atLeast) || c.atLeast < 1) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
       issue(
@@ -3823,6 +3836,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       } else {
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       }
+      break;
+    case 'dealDamageToController':
+      // CR 120.3 (issue 279): each object the selector names deals the damage to its controller: a group or a reference, never a choice.
+      if (kindOf(e.objects) === 'choose') {
+        issue(
+          out,
+          `${path}.objects`,
+          'dealDamageToController names the objects: each or a reference',
+        );
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'exileFromTriggerCards':
       // CR 603.2c (Lorehold group 1): the cards a batch `discarded` trigger saw discarded, one of which is exiled.

@@ -406,6 +406,7 @@ export const PLAYER_SUBJECTS = [
   'noun.defending-player',
   'noun.player',
   'noun.its-controller',
+  'noun.each-exiled-controller',
   'noun.that-player',
   // D-648: "that attacking player draws a card" (the player of a trigger about a player attacking one of your opponents).
   'noun.that-attacking-player',
@@ -426,7 +427,7 @@ function never(id: string): Parser<IrClause> {
 export const EFFECT_PLAYER = defineRule<Clauses>({
   id: 'effect.player',
   family: 'effect',
-  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any'],
+  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any', 'for'],
   cites: [
     'CR 119.3 (Life)',
     'CR 121.1 (Drawing a Card)',
