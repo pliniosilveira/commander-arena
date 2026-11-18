@@ -87,6 +87,14 @@ const ACTIVATED_MAY_CAST_RIDER =
   /^(?:[^:.]+: )?you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\. if that spell would be put into your graveyard, exile it instead\./i;
 
 /**
+ * "{1}{R}{W}, {T}, Sacrifice a Spirit: Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on
+ * the bottom of its owner's library instead." (Lorehold group 2, issue 86, Quintorius, Loremaster): an activated ability whose last sentence is the rider of the permission the second gives,
+ * read before the replacement test below, which "would ... instead" would take.
+ */
+const ACTIVATED_CAST_EXILED_RIDER =
+  /^[^:.]+: choose target card exiled with ~\. you may cast that card this turn without paying its mana cost\. if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\./i;
+
+/**
  * "{2}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains haste. Exile it at the beginning of the next end step. If it would leave the battlefield,
  * exile it instead of putting it anywhere else. Activate only as a sorcery." (Gisa deck, group 4, D-459, Whip of Erebos): an activated ability whose last sentence says a replacement
  * effect of the permanent its first sentence put onto the battlefield; read before the replacement test below, which "would ... instead" would take.
@@ -361,6 +369,25 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
   /^if that spell would be put into your graveyard, exile it instead\.$/i;
 
 /**
+ * "You may cast target creature card in a graveyard this turn. When you cast it this turn, ~ gains all activated abilities of that card until end of turn." (issue 159, CR 603.7,
+ * Havengul Lich): the rider is a delayed ability of the permission (`effect.may-cast-any-graveyard`), so the two sentences are one instruction.
+ */
+const MAY_CAST_IN_A_GRAVEYARD =
+  /(?:^|, )you may cast target [^.,]* cards? in a graveyard (?:this turn|until end of turn)\.$/i;
+const WHEN_CAST_IT_GAINS_ABILITIES =
+  /^when you cast it this turn, ~ gains all activated abilities of that card until end of turn\.$/i;
+
+/**
+ * "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of its owner's library
+ * instead." (Lorehold group 2, issue 86, CR 607.2a, 601.2, 118.9, 614.1a): "that card" is the target of the first sentence and "that spell" the one cast with the permission of the second, so
+ * the three sentences (or the first two, with no rider) are one instruction (`effect.cast-exiled-with-self`).
+ */
+const CHOOSE_EXILED_WITH = /(?:^|: )choose target card exiled with ~\.$/i;
+const MAY_CAST_THAT_FREE = /^you may cast that card this turn without paying its mana cost\.$/i;
+const BOTTOM_RIDER =
+  /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
+
+/**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-303, CR 700.3):
  * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
  * three in a row.
@@ -439,6 +466,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, CHOOSE_EXILED_WITH) &&
+      said(b, MAY_CAST_THAT_FREE) &&
+      said(c, BOTTOM_RIDER)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
@@ -459,13 +495,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
+        (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
         (said(a, LOOK_AT_TOP) &&
           (said(b, PUT_HAND_REST_BOTTOM) ||
             said(b, PUT_HAND_REST_TOP) ||
             said(b, PUT_HAND_OTHER_BOTTOM))) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
-        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)))
+        (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -560,6 +598,10 @@ function costColon(text: string): number {
   return -1;
 }
 
+/**
+ * The costs of an activated ability, one span each (CR 118.1: costs are separated by commas). Grave Danger (issue 159, Grimoire of the Dead): the last cost may
+ * join "sacrifice it" to the one before with "and" ("Remove three study counters from ~ and sacrifice it"): it is two costs, the second read by `cost.sacrifice`.
+ */
 function costSpans(text: string, end: number): Span[] {
   const spans: Span[] = [];
   let from = 0;
@@ -567,7 +609,14 @@ function costSpans(text: string, end: number): Span[] {
     spans.push(trimmed(text, from, comma));
     from = comma + 1;
   }
-  spans.push(trimmed(text, from, end));
+  const last = trimmed(text, from, end);
+  const joined = /^(.*~) and (sacrifice it)$/isu.exec(text.slice(last.start, last.end));
+  if (joined !== null && joined[1] !== undefined) {
+    spans.push({ start: last.start, end: last.start + joined[1].length });
+    spans.push({ start: last.end - 'sacrifice it'.length, end: last.end });
+  } else {
+    spans.push(last);
+  }
   return spans;
 }
 
@@ -772,6 +821,11 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     if (colon > 0) return activatedSkeleton(text, colon, base);
     // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  if (ACTIVATED_CAST_EXILED_RIDER.test(text)) {
+    const colon = costColon(text);
+    if (colon > 0) return activatedSkeleton(text, colon, base);
   }
 
   if (LEAVE_EXILE_RIDER.test(text)) {

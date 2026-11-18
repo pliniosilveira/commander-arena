@@ -226,6 +226,38 @@ function lowerTapAlternative(
 }
 
 /**
+ * "You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost." (issue 159, CR 118.9, 601.2h, 701.21a): the engine's
+ * alternative cost `sacrificeFromGraveyard`: its mana, and the number of permanents of the caster's that match the filter, which the engine asks for as it asks for the sacrifice of
+ * an additional cost. The mana is plain (no X, no hybrid) and the permanents are described by a filter with no zone (the caster's are meant).
+ */
+function lowerGraveyardSacrificeAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'graveyardSacrificeAlternative';
+  },
+): LowerResult<FaceCosts> {
+  const cost = lowerCost(effect.cost);
+  if (!cost.ok) return cost;
+  const what = lowerFilter({ ...effect.what, filter: withoutZone(effect.what.filter) });
+  if (!what.ok) return what;
+  const { controller, ...filter } = what.value;
+  if (controller !== undefined && controller !== 'you') return failure(ability);
+  if (effect.count < 1) return failure(ability);
+  const blocked = missingFeatures([
+    'castAlternative:sacrificeFromGraveyard',
+    `cost:${cost.value.kind}`,
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'sacrificeFromGraveyard',
+    cost: [cost.value],
+    filter,
+    count: effect.count,
+  };
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
  * The face costs of a static statement that says one, or null when the statement is not about the
  * cost of casting (the caller lowers it as an ability).
  */
@@ -238,6 +270,9 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
+  if (effect.kind === 'graveyardSacrificeAlternative') {
+    return lowerGraveyardSacrificeAlternative(ability, effect);
+  }
   return null;
 }
 

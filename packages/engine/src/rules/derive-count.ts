@@ -23,6 +23,7 @@ import type { GameObject, GameState } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
 import { typeViewOf } from './derive-view';
+import { devotionOf } from './devotion';
 import { matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
 
@@ -137,6 +138,8 @@ export function staticAmountOf(
   recipient: GameObject = source,
 ): number {
   if (typeof amount === 'number') return amount;
+  if (amount.kind === 'devotion')
+    return devotionOf(state, controllerOf(state, source), amount.colors);
   // CR 508.1 (D-187): the times the permanent was declared as an attacker this turn.
   if (amount.kind === 'timesAttacked') {
     return state.turnLog.attacked.filter((id) => id === recipient.id).length;

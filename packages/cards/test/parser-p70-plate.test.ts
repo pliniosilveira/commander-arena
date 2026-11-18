@@ -122,12 +122,29 @@ function real(name: string): CardDefinition {
 describe("Commander's Plate, the real card, played through applyAction", () => {
   const PLATE = real("Commander's Plate");
   const commander = (name: string, identity: CardDefinition['colorIdentity']): CardDefinition => {
-    const bears = real('Grizzly Bears');
     return {
-      ...bears,
+      oracleId: null,
       name,
+      layout: 'normal',
+      faces: [
+        {
+          name,
+          manaCost: ['1', 'G'],
+          supertypes: [],
+          types: ['creature'],
+          subtypes: ['Bear'],
+          colors: ['G'],
+          power: 2,
+          toughness: 2,
+          loyalty: null,
+          defense: null,
+          oracleText: '',
+          abilities: [],
+          spell: null,
+        },
+      ],
       colorIdentity: identity,
-      faces: bears.faces.map((f) => ({ ...f, name })),
+      support: 'supported',
     };
   };
   const GOLD = commander('SYNTHETIC Plate Commander', ['W', 'U']);

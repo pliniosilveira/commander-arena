@@ -12,6 +12,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
 import { activateManaAbility, applyPaymentPlan } from './mana-engine';
+import { lifeTotalIsLocked } from './player-lock';
 
 /** What a payment may spend: a spell's own restrictions apply, or an ability's (CR 106.6, 605.3a). */
 export type PaymentUse = SpendTarget;
@@ -23,6 +24,8 @@ export interface ManualTap {
   readonly combination?: readonly ManaColor[] | null;
   /** "Sacrifice a Spirit: Add {R}." (D-216): the permanent given up; the engine chooses when it is left out. */
   readonly sacrifice?: ObjectId;
+  /** "{T}, Tap an untapped creature you control: Add ..." (D-625): the permanent tapped; the engine chooses when it is left out and there is one candidate. */
+  readonly tapped?: ObjectId;
 }
 
 /** The state after the payment, or why the taps do not pay the cost (nothing changes then). */
@@ -52,6 +55,7 @@ export function payByTapping(
       tap.color ?? null,
       tap.combination ?? null,
       tap.sacrifice,
+      tap.tapped,
     );
     if ('error' in r) return { error: r.error };
     working = r.state;
@@ -62,7 +66,9 @@ export function payByTapping(
     x: 0,
     pool: getSeat(working, seat).manaPool,
     sources: [],
-    lifeAvailable: Math.max(0, getSeat(working, seat).life - 1),
+    lifeAvailable: lifeTotalIsLocked(working, seat)
+      ? 0
+      : Math.max(0, getSeat(working, seat).life - 1),
     spell: use,
   });
   if (plan === null) return { error: 'The mana you tapped does not pay that cost' };

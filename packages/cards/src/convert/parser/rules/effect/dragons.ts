@@ -15,6 +15,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrDuration, IrFlag, IrToken, Span } from '../../ir/types';
 import { quantity } from '../amount/index';
+import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
@@ -43,6 +44,9 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
     'exile the top two cards of your library',
     'exile the top X cards of your library',
     'exile the top 3 cards of your library',
+    // Lorehold Spirit deck, group 2 (issue 86): the count of "for each", as "draw a card for each ..." has it.
+    'exile the top card of your library for each present vote',
+    'exile the top two cards of your library for each present vote',
   ],
   rejects: [
     'exile the top card of target player’s library',
@@ -55,6 +59,9 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
     'exile the top card of your graveyard',
     'exile the top 0 cards of your library',
     'exile the top card of your library and draw a card',
+    'exile the top X cards of your library for each present vote',
+    'exile the top card of your library for each',
+    'exile the top card of your library for each vote',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.exile-top';
@@ -77,11 +84,16 @@ export const EFFECT_EXILE_TOP = defineRule<Clauses>({
     const tail = pattern(new RegExp(` of your library${BOUNDARY}`, 'iu'))(ctx, counted.pos);
     if (!tail.ok) return tail;
     const { value, span } = counted.value;
-    const count: IrAmount = value === 'x' ? { kind: 'x', span } : number(value, span);
+    const base: IrAmount = value === 'x' ? { kind: 'x', span } : number(value, span);
+    // Lorehold group 2 (CR 608.2c): "... of your library for each present vote": the count of "for each" is the number, times the quantity when it is more than one. An X is not multiplied.
+    const each = optional(FOR_EACH_TAIL, null)(ctx, tail.pos);
+    if (!each.ok) return each;
+    const count = each.value === null ? base : scaled(base, each.value);
+    if (count === null) return fail(ctx, tail.pos);
     return {
       ok: true,
-      value: [makeClause(id, 'exileTop', { count }, { start: pos, end: tail.pos })],
-      pos: tail.pos,
+      value: [makeClause(id, 'exileTop', { count }, { start: pos, end: each.pos })],
+      pos: each.pos,
     };
   },
 });
@@ -96,12 +108,13 @@ const THOSE_CARDS = pattern(
  * `effect.may-play`: "You may play that card this turn.", "Until the end of your next turn, you may play those cards.", "You may play those
  * cards until your next end step." (CR 601.2, 305.1, 611.2a: until the moment named, the player may play the cards the instruction before it
  * exiled, a land as a land drop and a spell by casting it, as though they were in their hand). The permission has one duration, said first
- * or last. The cards are those of an earlier "exile": the lowering refuses it after anything else.
+ * or last. The cards are those of an earlier "exile": the lowering refuses it after anything else. Since Lorehold group 1 "cast" says the same of casting only: "you may cast it this
+ * turn" (CR 601.2, 305.1: a land card is no spell, so it is not cast and is not played), the engine's `mayPlay` with `castOnly`.
  */
 export const EFFECT_MAY_PLAY = defineRule<Clauses>({
   id: 'effect.may-play',
   family: 'effect',
-  leading: ['you', 'play', 'until'],
+  leading: ['you', 'play', 'cast', 'until'],
   cites: [
     'CR 601.2 (Casting Spells)',
     'CR 305.1 (Lands)',
@@ -117,8 +130,16 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'until end of turn, you may play that card',
     'you may play those cards until your next end step',
     'you may play those cards until the end of your next turn',
+    'you may cast it this turn',
+    'you may cast that card this turn',
+    'cast that card this turn',
+    'until the end of your next turn, you may cast those cards',
   ],
   rejects: [
+    'you may cast that card',
+    'you may cast it without paying its mana cost',
+    'you may cast target card this turn',
+    'you may cast that card this turn and draw a card',
     'you may play that card',
     'you may play that card this turn until your next end step',
     'until end of turn, you may play that card this turn',
@@ -126,7 +147,6 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     'you may play target card this turn',
     'you may play those cards this turn and draw a card',
     'you may play that card next turn',
-    'you may cast that card this turn',
     'you may play lands this turn',
     'until the end of your next turn, you may play that card until your next end step',
     'until your next turn, you may play those cards',
@@ -151,10 +171,12 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
     if (!lead.ok) return lead;
     const body = sequence(
       optional(literal('you may '), null),
-      literal('play '),
+      choice(literal('play '), literal('cast ')),
       THOSE_CARDS,
     )(ctx, lead.pos);
     if (!body.ok) return body;
+    // "cast" is a permission to cast only: a land card is not played (Lorehold group 1).
+    const castOnly = body.value[1] === 'cast ';
     const trail = spanned(
       optional(
         choice(
@@ -183,7 +205,12 @@ export const EFFECT_MAY_PLAY = defineRule<Clauses>({
       ok: true,
       value: [
         {
-          ...makeClause(id, 'mayPlay', {}, { start: pos, end: trail.pos }),
+          ...makeClause(
+            id,
+            'mayPlay',
+            castOnly ? { castOnly: flag(id, true, { start: pos, end: trail.pos }) } : {},
+            { start: pos, end: trail.pos },
+          ),
           duration: duration(scope, span),
         },
       ],

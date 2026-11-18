@@ -50,6 +50,12 @@ const COUNT = choice(
   ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
+  // Issue 160 (D-626, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
+  // which `validateCard` allows only in a trigger that has damage; the tokens are plural.
+  map(
+    spanned(pattern(/that many(?![\p{L}\p{N}])/iu)),
+    ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+  ),
 );
 
 const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Map', 'Blood'] as const;
@@ -121,6 +127,12 @@ const DEVOUR_WORD: Parser<string> = map(
   (m) => `devour ${m[1] ?? ''}`,
 );
 
+/** "toxic N" (CR 702.164): a numbered keyword a token may have alongside a quoted ability. */
+const TOXIC_WORD: Parser<string> = map(
+  pattern(/toxic ([1-9]\d*)(?![\p{L}\p{N}])/iu),
+  (m) => `toxic ${m[1] ?? ''}`,
+);
+
 /**
  * The keywords of a token: a list of those the engine can grant, or one keyword and "devour N" ("flying and devour 2"), or "devour N" alone. A longer
  * list with "devour N" at its end is not read (the list of grantable words is written "A, B, and C" and stops at the keyword it does not know).
@@ -128,12 +140,12 @@ const DEVOUR_WORD: Parser<string> = map(
 const TOKEN_KEYWORDS: Parser<string[]> = choice(
   map(
     satisfy(
-      sequence(KEYWORD_WORDS, literal(' and '), DEVOUR_WORD),
+      sequence(KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
       ([words]) => words.length === 1,
     ),
-    ([words, , devour]): string[] => [...words, devour],
+    ([words, , numbered]): string[] => [...words, numbered],
   ),
-  map(DEVOUR_WORD, (devour): string[] => [devour]),
+  map(choice(DEVOUR_WORD, TOXIC_WORD), (numbered): string[] => [numbered]),
   KEYWORD_WORDS,
 );
 
@@ -217,7 +229,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
         count,
         literal(' '),
         TAPPED,
-        pattern(/(\d+)\/(\d+) /),
+        pattern(/(\d+|X)\/(\d+|X) /),
         COLORS,
         literal(' '),
         SUBTYPES,
@@ -254,7 +266,9 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           null,
         ),
       ),
-      ([amount, , , , , , , , plural]) => (amount.kind !== 'x' && !pluralOnly) || plural,
+      ([amount, , , pt, , , , , plural]) =>
+        ((amount.kind !== 'x' && !pluralOnly) || plural) &&
+        ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')),
     ),
     ([
       amount,
@@ -274,8 +288,9 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
       ...(tapped === null ? {} : { tapped }),
       ...(named === null ? {} : { named }),
-      power: Number(pt[1]),
-      toughness: Number(pt[2]),
+      ...(pt[1] === 'X'
+        ? { ptAmount: true as const }
+        : { power: Number(pt[1]), toughness: Number(pt[2]) }),
       colors,
       types,
       subtypes,
@@ -314,6 +329,7 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 3/3 green Beast creature token with trample, reach, and haste',
     'X 1/1 white Soldier creature tokens',
     'X 2/2 black Zombie creature tokens',
+    'that many 1/1 green Insect creature tokens with flying and deathtouch',
     'a tapped 2/2 black Zombie creature token',
     'thirteen tapped 2/2 black Zombie creature tokens',
     'two 2/2 black Zombie Knight creature tokens with menace',
@@ -331,12 +347,15 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 red and green Dragon creature token with flying and devour 2',
     'a 2/2 red Goblin creature token with devour 1',
     'a 1/1 red Dragon creature token with first strike and devour 3',
+    'a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "~ can’t block."',
   ],
   rejects: [
     'a 1/1 red and green Dragon creature token with devour',
     'a 1/1 red and green Dragon creature token with devour 0',
     'a 1/1 red and green Dragon creature token with devour X',
     'a 1/1 red and green Dragon creature token with devour 2 and flying',
+    'a 1/1 colorless Phyrexian Mite artifact creature token with toxic 0',
+    'a 1/1 colorless Phyrexian Mite artifact creature token with toxic X',
     'a 1/1 red and green Dragon creature token with flying, devour 2',
     'a 1/1 red and green Dragon creature token with flying, trample and devour 2',
     'a 1/1 red and green Dragon creature token with flying, trample, and devour 2',

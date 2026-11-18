@@ -16,8 +16,9 @@ import {
   flashbackObjects,
   foretellCastObjects,
   playableLands,
+  sacrificeFromGraveyardObjects,
 } from './legality';
-import { activationChoices, manaSacrificeCandidates } from './mana-abilities';
+import { activationChoices, manaSacrificeCandidates, manaTapCandidates } from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
 import { setPending } from './set-pending';
 import { settle } from './settle';
@@ -46,6 +47,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const object of escapeObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'escape' });
   }
+  // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
+  for (const object of sacrificeFromGraveyardObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'sacrificeFromGraveyard' });
+  }
   // CR 702.143a (Foretell, D-128): a foretold card in exile is cast for its foretell cost, in a later turn.
   for (const object of foretellCastObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'foretell' });
@@ -66,13 +71,25 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
       if (!canActivateManaAbility(state, obj, ability, seat)) continue;
       // CR 601.2b, 605.3b (D-222): a cost "Sacrifice a Spirit" is chosen by the player: one option for each permanent they may give up when there are several.
       const gives = manaSacrificeCandidates(state, seat, id, ability);
+      // D-625: the same for a cost "Tap an untapped creature you control": one option for each permanent the player may tap when there are several.
+      const taps = manaTapCandidates(state, seat, id, ability);
       for (const choice of activationChoices(state, obj, ability)) {
-        if (gives.length < 2) {
+        if (gives.length >= 2) {
+          for (const sacrifice of gives) {
+            options.push({
+              kind: 'activateAbility',
+              source: id,
+              abilityIndex,
+              ...choice,
+              sacrifice,
+            });
+          }
+        } else if (taps.length >= 2) {
+          for (const tapped of taps) {
+            options.push({ kind: 'activateAbility', source: id, abilityIndex, ...choice, tapped });
+          }
+        } else {
           options.push({ kind: 'activateAbility', source: id, abilityIndex, ...choice });
-          continue;
-        }
-        for (const sacrifice of gives) {
-          options.push({ kind: 'activateAbility', source: id, abilityIndex, ...choice, sacrifice });
         }
       }
     }

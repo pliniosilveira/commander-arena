@@ -107,6 +107,7 @@ export function lowerModes(
     mode.itIsSelf = ctx.itIsSelf;
     mode.selfCast = ctx.selfCast;
     mode.thatPlayer = ctx.thatPlayer;
+    mode.enchantedPlayerTrigger = ctx.enchantedPlayerTrigger;
     const lowered = lowerSentences(body.sentences, mode);
     if (!lowered.ok) return lowered;
     const [only] = lowered.value;
@@ -128,6 +129,7 @@ export function lowerModes(
     ...(maxIf === undefined ? {} : { maxIf }),
     // "Choose one that hasn't been chosen this turn" (stage P34, D-152): only a triggered ability may say it (`validateCard`).
     ...(choose.notRepeatedThisTurn === true ? { notRepeatedThisTurn: true as const } : {}),
+    ...(choose.notRepeatedBySource === true ? { notRepeatedBySource: true as const } : {}),
     // "You may choose the same mode more than once" (D-344, CR 700.2d): the modes chosen are a multiset.
     ...(repeatable ? { repeatable: true as const } : {}),
   };

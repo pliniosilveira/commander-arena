@@ -278,6 +278,34 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
 });
 
 /**
+ * `effect.gain-keyword-those`: "those creatures gain vigilance until end of turn" (issue 160, D-627, CR 611.2a, 611.2c, 613.1f): the group an instruction before it named ("Put a
+ * +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn."), gaining keywords. The group is the one the text named, as the lowering reads it.
+ */
+export const EFFECT_GAIN_KEYWORD_THOSE = defineRule<Clauses>({
+  id: 'effect.gain-keyword-those',
+  family: 'effect',
+  leading: ['those'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'those creatures gain vigilance until end of turn',
+    'those creatures gain flying and trample until end of turn',
+  ],
+  rejects: [
+    'those creatures gains vigilance until end of turn',
+    'those creatures gain vigilance',
+    'those creatures gain vigilance until your next turn',
+    'those cards gain vigilance until end of turn',
+    'those creatures get +1/+1 until end of turn',
+  ],
+  parse: gainParser('effect.gain-keyword-those', ['noun.those-creatures'], true),
+});
+
+/**
  * `effect.gain-keyword-each`: "each creature you control with power 4 or greater gets +1/+1 and gains trample until
  * end of turn", "each creature gains flying until end of turn" (stage P29, CR 611.2a, 611.2c, 613.1f, 613.4c): every
  * permanent that matches as the effect resolves, in the singular of "each". The same continuous effects as
@@ -555,6 +583,7 @@ export const GAIN_RULES = [
   EFFECT_GAIN_KEYWORD,
   EFFECT_GAIN_KEYWORD_ALL,
   EFFECT_GAIN_KEYWORD_EACH,
+  EFFECT_GAIN_KEYWORD_THOSE,
   EFFECT_LEAD_GRANTED_ABILITY,
   EFFECT_LEAD_GAIN,
   EFFECT_LEAD_GAIN_ALL,

@@ -17,17 +17,25 @@
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
 // 114: A cost of no life is payable at a negative life total (D-581, issue 254); a targets decision slot carries the card's own target words (D-582).
 // 115: Pay a sacrifice cost of one or more permanents and read the count sacrificed as a cost from the resolving ability (D-583, D-584, issue 258).
-// 116: A static ability may give ward; each instance granted is a triggered ability of its own (D-638, issue 89).
-// 117: Goad: the effect `goad`, the static ability "is goaded" of an attached permanent and the continuous change `goaded`, read where attackers are declared (D-639, issue 89).
-// 118: A static ability may give annihilator; each instance granted is a triggered ability of its own (D-640, issue 89).
-// 119: A trigger of an attack batch keeps, for each creature declared, whom it attacked (a player or the controller of a planeswalker), read by the intervening "if" `attackersAtYouAtLeast` (D-643, issue 89).
-// 120: The static ability `cantAttackYou` keeps a group of creatures from attacking its controller and their planeswalkers, and the filter `enchantedByYou` (D-647, issue 89).
-// 121: The trigger `playerAttacksOpponent`, the selector `triggerAttackedPlayer`, the condition `attackedHasMoreLifeThanOtherOpponent` and `createToken.attacking` (D-648, issue 89).
-// 122: The effect `loseHexproofShroud` and its continuous change, read where abilities are derived (D-649, issue 89).
-// 123: The filter `attackingOpponents: 'players'` (creatures attacking an opponent as a player) and `except: triggerSubject` of an `each` selector (D-650, issue 89).
-// 124: Protection from the chosen color of the permanent that gives it, with the exception that keeps its own Aura attached (D-652, issue 89).
-// 125: chooseObjects may require the choice (`exactly`), "put counters on a creature you control" (D-653, issue 89).
-// 126: The amount `aurasAttachedToTriggerSubject` and the last-known Auras (D-654), `castFree.filter` and `moveToZone.random` (D-655), the alternative cost of `castFromGraveyard` (D-656), issue 89.
-// 127: A delayed return of the Aura card that has the ability (`thisCard`) after "when enchanted creature dies" (D-657, issue 89).
-// 128: `revealUntil` may put nothing (D-659), `attach` of the permanent a trigger is about (D-660), the card a `lookAtTop` put onto the battlefield is `moved` (D-658), issue 89.
-export const ENGINE_VERSION = 128;
+// 116: Order interacting life-gain replacements (D-588).
+// 117: Remember non-repeating modes for the source object's lifetime (D-590).
+// 118: Read current life totals as effect amounts and set a total from such an amount (D-591).
+// 119: Read devotion in characteristic-defining toughness abilities (D-592).
+// 120: Check gained-and-lost-life turn history (D-593).
+// 121: Allow life gained this turn as a mana-value selector limit (D-595).
+// 122: Distinguish Ring tempt events that chose a creature as Ring-bearer (D-597).
+// 123: Emit and match Class level reached triggers (D-598).
+// 124: Allow a dies trigger's delayed trigger to return its trigger card to its owner's hand (D-599).
+// 127: Replace a command-zone cast's commander tax with its card-defined life payment (D-605).
+// 128: Activate emblem abilities from the command zone (D-606).
+// 129: Lock a player's life total and grant temporary protection from everything (D-607).
+// 130: Lorehold Spirit deck: discard in a payment, batch discard trigger, cast-only and free play permissions from exile, linked exile filter, damage to itself, a search counted for "this way" and the repeat of an offered search, a free cast from exile that ends on the bottom of the library, a hand-size condition over every player, discard of a whole hand (D-610 to D-624, issue 86).
+// 131: Pay a cost that taps an untapped permanent before the mana of the same cost, and in a mana ability (D-625, issue 160).
+// 132: Count the opponents with fewer of a stat, discard the whole hand as a cost and search for up to an amount of cards (D-626, issue 160).
+// 133: Populate, the choice of a creature token to copy (D-627, issue 160).
+// 134: Give every creature back to its owner as layer 2 effects (D-628, issue 160).
+// 135: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-629, issue 160).
+// 136: Additional land plays for a turn, a target slot and a condition about the phase a spell was cast in, mana spent on the chosen creature type, and counters on a commander cast with marked mana (D-630, issues 199, 208, 241, 244).
+// 137: Grave Danger deck (issue 159): flashback with life, enters with a sum of counts, prevention that removes a counter, damage dealt this way, additive colors, a destroy's cards from any graveyard, casting from a graveyard by sacrificing, spell-filter and any-graveyard cast permissions with a cast rider, the turn-log casts and activations from a graveyard, the opponents attacking the attacked player (D-631 to D-636).
+// 138: Silverquill Influence (issue 89, D-638 to D-660): granted ward and annihilator, goad, attack-aimed triggers and conditions, protection from the chosen color, hexproof loss, the last-known Auras, cast and attach pieces of the Aura cards.
+export const ENGINE_VERSION = 138;

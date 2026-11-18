@@ -58,6 +58,15 @@ export function playerHasProtectionFrom(
   seat: SeatId,
   source: ObjectId | null,
 ): boolean {
+  if (
+    state.continuousEffects.some(
+      (effect) =>
+        effect.change.kind === 'playerProtectionEverything' &&
+        (effect.players ?? []).includes(seat),
+    )
+  ) {
+    return true;
+  }
   const mine = playerProtectedTypes(state, seat);
   if (mine.length === 0) return false;
   return sourceTypes(state, source).some((t) => mine.includes(t));

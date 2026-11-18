@@ -73,7 +73,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         ctx,
         (objects) => ({ kind: 'grantKeyword', objects, keyword, duration: END }),
         'objects',
-        { ...TRIGGER_SUBJECT, token: true },
+        { ...TRIGGER_SUBJECT, token: true, eachMention: true },
       );
     }
     // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
@@ -98,7 +98,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
             : END,
       }),
       'objects',
-      { ...TRIGGER_SUBJECT, token: true },
+      { ...TRIGGER_SUBJECT, token: true, eachMention: true },
     );
   },
 };
@@ -445,6 +445,39 @@ export const DELAYED_RETURN_THIS_CARD: Lowering<IrClause, Effects> = {
     return {
       ok: true,
       value: [{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** A dies trigger can schedule its trigger card to its owner's hand at the next end step (D-599). */
+export const DELAYED_RETURN_TO_HAND: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnToHand',
+  id: 'lower.delayed-return-to-hand',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:triggerCard',
+    'selector:triggerSubject',
+  ],
+  lower(clause, ctx): LowerResult<Effects> {
+    const what = operand(clause, 'objects');
+    const to = arg(clause, 'to');
+    if (what?.kind !== 'noun' || to?.kind !== 'zoneSpec' || to.zone !== 'hand') {
+      return failure(clause);
+    }
+    if (what.det !== 'triggerSubject' || !ctx.diesTrigger || ctx.lowered > 0) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'delayedTrigger',
+          at: { step: 'endStep', whose: 'each' },
+          effect: { kind: 'moveToZone', objects: { kind: 'triggerCard' }, to: 'hand' },
+        },
+      ],
       rule: clause.rule,
     };
   },

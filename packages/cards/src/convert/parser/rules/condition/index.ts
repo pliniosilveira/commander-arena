@@ -25,6 +25,7 @@ import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
 import { BRUNA_CONDITION_RULES } from './bruna';
+import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
@@ -43,6 +44,8 @@ import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
+import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
+import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { RECURSION_CONDITION_RULES } from './recursion';
@@ -357,6 +360,78 @@ export const CONDITION_OPPONENTS_AT_LEAST = defineRule<IrCondition>({
   },
 });
 
+/** `condition.opponent-poison-at-least`: an opponent's poison counters cross a threshold (D-601). */
+export const CONDITION_OPPONENT_POISON_AT_LEAST = defineRule<IrCondition>({
+  id: 'condition.opponent-poison-at-least',
+  family: 'condition',
+  leading: ['an'],
+  cites: ['CR 122.1 (Counters)', 'CR 704.5c (State-Based Actions)'],
+  examples: [
+    'an opponent has three or more poison counters',
+    'an opponent has four or more poison counters',
+  ],
+  rejects: [
+    'an opponent has poison counters',
+    'an opponent has two poison counters',
+    'an opponent has three or fewer poison counters',
+    'you have three or more poison counters',
+    'an opponent controls three or more poison counters',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('an opponent has '),
+      spanned(satisfy(quantity, (n) => n >= 1)),
+      literal(' or more poison counters'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: condition('condition.opponent-poison-at-least', span, {
+        kind: 'opponentPoisonAtLeast',
+        atLeast: amountOf(r.value[1]),
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/** Morbid: whether any creature died this turn. */
+export const CONDITION_CREATURE_DIED_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.creature-died-this-turn',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 700.4 (Dies)', 'CR 608.2c (Instructions in Order)'],
+  examples: ['a creature died this turn'],
+  rejects: [
+    'a creature died last turn',
+    'a creature will die this turn',
+    'a creature dies this turn',
+    'a creature card died this turn',
+    'a creature died this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a creature died this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'diedThisTurn',
+      controller: 'any',
+      types: ['creature'],
+      span,
+    };
+    return {
+      ok: true,
+      value: condition('condition.creature-died-this-turn', span, {
+        kind: 'amountIs',
+        amount,
+        compare: { cmp: 'atLeast', value: 1 },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
@@ -408,6 +483,8 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_AT_MOST,
   CONDITION_CONTROL_NONE,
   CONDITION_CONTROL_LAND_TYPE,
+  CONDITION_OPPONENT_POISON_AT_LEAST,
+  CONDITION_CREATURE_DIED_THIS_TURN,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,
@@ -447,9 +524,14 @@ export const CONDITION_RULES = [
   ...HYLDA_G1_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
+  ...LOREHOLD_G1_CONDITION_RULES,
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
+  ...LOREHOLD_G3_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
+  CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

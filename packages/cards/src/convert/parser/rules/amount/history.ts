@@ -12,6 +12,22 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: gain.pos,
     };
   }
+  // Grave Danger (issue 159, Liliana's Standard Bearer): "where X is the number of creatures that died under your control this turn".
+  const died = pattern(
+    /the number of creatures that died under your control this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (died.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'diedThisTurn',
+        controller: 'you',
+        types: ['creature'],
+        span: { start: pos, end: died.pos },
+      },
+      pos: died.pos,
+    };
+  }
   const entries = pattern(
     /the number of (nontoken |token )?(creatures|permanents) you had enter the battlefield under your control this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);

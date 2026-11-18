@@ -89,8 +89,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
       case 'discard':
         discards += 1;
         // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
-        if (cost.filter !== undefined || cost.named !== undefined) {
-          issue(out, p, 'an additional cost discards any cards: no filter and no name (D-207)');
+        if (cost.filter !== undefined || cost.named !== undefined || cost.hand !== undefined) {
+          issue(
+            out,
+            p,
+            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
+          );
         }
         break;
       case 'payLife':
@@ -181,6 +185,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'miracle',
   'foretell',
   'tapPermanents',
+  'sacrificeFromGraveyard',
 ];
 
 /**
@@ -227,11 +232,25 @@ export function checkAlternativeCosts(
     // D-149: the permanents tapped as part of the cost are checked as the tap cost of an ability is (same fields, same rules).
     if (alt.kind === 'tapPermanents') {
       checkCost({ kind: 'tapPermanents', filter: alt.filter, count: alt.count }, p, out);
+    } else if (alt.kind === 'sacrificeFromGraveyard') {
+      // Issue 159: the permanents sacrificed as part of the cost: a filter of the caster's permanents and a number of them (at least 1).
+      checkFilter(alt.filter, `${p}.filter`, out);
+      if (!Number.isSafeInteger(alt.count) || alt.count < 1) {
+        issue(
+          out,
+          `${p}.count`,
+          'sacrificeFromGraveyard sacrifices a positive whole number of permanents',
+        );
+      }
     } else if (
       (alt as { readonly filter?: unknown }).filter !== undefined ||
       (alt as { readonly count?: unknown }).count !== undefined
     ) {
-      issue(out, p, `only tapPermanents taps permanents (${alt.kind} has no filter or count)`);
+      issue(
+        out,
+        p,
+        `only tapPermanents and sacrificeFromGraveyard name permanents (${alt.kind} has no filter or count)`,
+      );
     }
     if (alt.condition !== undefined) checkCondition(alt.condition, `${p}.condition`, out);
   });

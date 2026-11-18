@@ -34,6 +34,9 @@
 
 /* Menu */
 .scr-menu {
+  /* The scroll container of the screen: positioned, so that the absolutely placed hidden inputs and
+     legends inside it are clipped and scrolled with it, not laid out against the page (issue 52). */
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -63,34 +66,12 @@
   font-size: 13px;
 }
 
-.scr-pickers {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.scr-decks {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-.scr-decks legend {
-  padding: 0;
-  margin-bottom: 6px;
-  color: var(--text-dim);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
 .scr-deck {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   padding: 9px 12px 9px 38px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -112,6 +93,24 @@
   height: 16px;
   margin: 0;
   accent-color: var(--accent);
+}
+.scr-deck-art {
+  flex: none;
+  width: 96px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.scr-deck-colors {
+  flex: none;
+  margin-left: auto;
+}
+.scr-deck-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .scr-deck-name {
   font-weight: 700;
@@ -135,14 +134,6 @@
   font-size: 11px;
   font-weight: 600;
   vertical-align: 1px;
-}
-.scr-decks-group {
-  margin: 6px 0 0;
-  color: var(--text-dim);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .scr-start-row {
@@ -301,39 +292,108 @@
   white-space: nowrap;
 }
 
-/* Menu: entry points of the deck import (M4) */
-.scr-import {
+/* Menu: the home and the start-game flow (issue 53) */
+.scr-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.scr-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.scr-tab[aria-selected="true"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+}
+.scr-decks-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 8px;
+  /* A stable height, so an empty tab does not collapse the dialog. */
+  min-height: min(280px, 40vh);
+  overflow-y: auto;
+}
+.scr-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.scr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg-raised);
 }
-.scr-import h2 {
+.scr-card h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: 22px;
+  font-weight: 500;
 }
-.scr-import p {
+.scr-card p {
   margin: 0;
 }
-.scr-import-buttons {
+.scr-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 16px;
+  background: rgb(0 0 0 / 0.6);
 }
-
-/* Menu: the real precons (D-137) */
-.scr-quick {
+.scr-modal {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  width: min(100%, 780px);
+  max-height: 100%;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  outline: none;
+}
+.scr-modal h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+}
+.scr-modal p {
+  margin: 0;
+}
+.scr-modal-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.scr-modal-group {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
-.scr-quick h2 {
-  margin: 0;
-  font-size: 15px;
-}
-.scr-quick p {
-  margin: 0;
+
+.scr-deck-search {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
 }

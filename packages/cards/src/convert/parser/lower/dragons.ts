@@ -78,7 +78,17 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
   acceptsOptional: true,
   lower(clause, ctx) {
     const lasts = clause.duration === undefined ? undefined : PLAY_UNTIL[clause.duration.scope];
-    if (lasts === undefined || (ctx.exiled !== 'top' && ctx.exiled !== 'milled')) {
+    if (
+      lasts === undefined ||
+      (ctx.exiled !== 'top' && ctx.exiled !== 'milled' && ctx.exiled !== 'cards')
+    ) {
+      return failure(clause);
+    }
+    // Lorehold group 1: the card an `exile` of the text exiled is face up where it was and nobody looks at it: never "while exiled" (CR 406.3 asks cards exiled face down).
+    if (
+      ctx.exiled === 'cards' &&
+      (lasts === 'whileExiled' || arg(clause, 'lookAt') !== undefined)
+    ) {
       return failure(clause);
     }
     // D-327 (CR 601.2, 305.1): the cards the controller milled are in their graveyard, face up: the permission lasts this turn or the next, never "while exiled",
@@ -99,6 +109,8 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
           objects: { kind: 'moved' },
           lasts,
           ...(look === undefined ? {} : { lookAt: true as const }),
+          // "You may cast it this turn" (Lorehold group 1): the permission is to cast, a land card is not played.
+          ...(arg(clause, 'castOnly')?.kind === 'flag' ? { castOnly: true as const } : {}),
         },
       ],
       rule: clause.rule,

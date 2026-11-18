@@ -4,7 +4,7 @@
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
 import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
-import { GRANTABLE_KEYWORDS } from './features';
+import { FILTERABLE_KEYWORDS } from './features';
 import type {
   Ability,
   Amount,
@@ -256,8 +256,8 @@ export function checkFilter(
       'token must be a boolean (true: tokens only, false: nontokens only)',
     );
   }
-  checkEnumList(out, `${path}.keywords`, f.keywords, GRANTABLE_KEYWORDS, 'keyword');
-  checkEnumList(out, `${path}.notKeywords`, f.notKeywords, GRANTABLE_KEYWORDS, 'keyword');
+  checkEnumList(out, `${path}.keywords`, f.keywords, FILTERABLE_KEYWORDS, 'keyword');
+  checkEnumList(out, `${path}.notKeywords`, f.notKeywords, FILTERABLE_KEYWORDS, 'keyword');
   if (
     f.controller !== undefined &&
     !isOneOf(f.controller, ['you', 'opponent', 'any', 'triggerPlayer', 'defendingPlayer'])
@@ -301,6 +301,7 @@ export function checkFilter(
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'enteredThisTurn',
+    'exiledWithSource',
     'singleTarget',
     'modified',
   ] as const) {
@@ -367,6 +368,7 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      a?.kind === 'lifeGainedThisTurn' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
@@ -407,6 +409,14 @@ export function checkFilter(
       out,
       `${path}.putFromBattlefieldThisTurn`,
       "only a card in a graveyard was put there: the filter's zone is 'graveyard'",
+    );
+  }
+  // CR 607.2a (Lorehold group 2): "card exiled with this creature" is a card in exile.
+  if (f.exiledWithSource === true && f.zone !== 'exile') {
+    issue(
+      out,
+      `${path}.exiledWithSource`,
+      "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
     );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
@@ -608,6 +618,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.controllerDealtDamageBySource !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
+  f.exiledWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
   f.named !== undefined ||
@@ -769,6 +780,10 @@ export function declareTargets(
       issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be boolean when present');
     }
     // D-181, CR 702.33g, 601.2c: a slot chosen only if the spell was kicked, or only if it was not.
+    // Issue 244, CR 601.2c: a slot chosen only if the spell was cast during its controller's main phase.
+    if (spec.ifCastInOwnMain !== undefined && spec.ifCastInOwnMain !== true) {
+      issue(out, `${p}.ifCastInOwnMain`, 'ifCastInOwnMain must be true when present');
+    }
     for (const key of ['ifKicked', 'unlessKicked'] as const) {
       if (spec[key] !== undefined && spec[key] !== true) {
         issue(out, `${p}.${key}`, `${key} must be true when present`);
@@ -1154,6 +1169,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'opponentsAttackingTriggerPlayer':
+      // Issue 159 (CR 508.6): "each opponent attacking that player": the trigger is about an attacked player.
+      if (scope.triggerPlayer !== true) {
+        issue(
+          out,
+          path,
+          "'opponentsAttackingTriggerPlayer' needs the effect of a trigger about an attacked player (attackBatch)",
+        );
+      }
+      break;
     case 'declinedPlayer':
       if (scope.declinedPlayer !== true) {
         issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
@@ -1293,6 +1318,8 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
+  damageDealt: 'a dealDamage effect',
+  searched: 'a search effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1310,6 +1337,9 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'discard')
     return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
   if (e?.kind === 'mill') return ['milledValue'];
+  if (e?.kind === 'dealDamage') return ['damageDealt'];
+  // Lorehold group 1: "If you search your library this way, shuffle."
+  if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
   return [];
@@ -1561,6 +1591,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'commanderManaValue':
     case 'commanderCasts':
       break;
+    case 'lifeTotalOf':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
@@ -1618,6 +1651,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'opponentsWithMore':
       if (!isOneOf(a.stat, PLAYER_STATS)) {
         issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
+      }
+      if (a.fewer !== undefined && a.fewer !== true) {
+        issue(out, `${path}.fewer`, 'fewer is true when present');
       }
       break;
     case 'timesKicked':
@@ -1881,6 +1917,11 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   const amount = a as { kind?: string; factor?: number; of?: unknown };
+  if (amount?.kind === 'devotion') {
+    if (plain)
+      issue(out, path, 'devotion is not supported as a plain static power/toughness modifier');
+    return;
+  }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
     if (!plain) {
@@ -2115,6 +2156,18 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'discard':
+      if (cost.hand !== undefined) {
+        // D-626: "Discard your hand": the whole hand, so no count, filter or name narrows it.
+        if (
+          cost.hand !== true ||
+          cost.count !== 0 ||
+          cost.filter !== undefined ||
+          cost.named !== undefined
+        ) {
+          issue(out, `${path}.hand`, 'hand is true, with a count of 0 and no filter or name');
+        }
+        break;
+      }
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'discard count must be a positive integer');
       }
@@ -2285,6 +2338,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
     case 'opponentsAtLeast':
+      if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
+      break;
+    case 'opponentPoisonAtLeast':
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
     case 'opponentControlsAtLeast':
@@ -2493,6 +2549,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
       break;
+    case 'aPlayerCardsInHand': // Lorehold group 3, CR 402.1: the same shape, for the hands of the players
     case 'cardsInLibrary': // D-331, CR 401.1: the same shape, for the library
     case 'cardsInGraveyard':
       // D-229, CR 404.1: the number of cards in the controller's graveyard against a whole number.
@@ -2556,6 +2613,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'castFromGraveyardThisTurn':
+      if (Object.keys(c).some((key) => key !== 'kind')) {
+        issue(out, path, 'the cast-from-a-graveyard condition has no extra fields');
+      }
+      break;
+    case 'lifeGainedAndLostThisTurn':
+      if (Object.keys(c).some((key) => key !== 'kind')) {
+        issue(out, path, 'the gained-and-lost-life condition has no extra fields');
+      }
+      break;
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
@@ -2582,6 +2649,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
+    case 'castInOwnMainPhase': // issue 244: no parameters; it reads the spell it is asked of
     case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
@@ -2649,6 +2717,8 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
  */
 function movesObjects(e: Effect): boolean {
   if (e?.kind === 'sequence') return Array.isArray(e.effects) && e.effects.some(movesObjects);
+  // Lorehold group 1: "you may exile that card from your graveyard. If you do, you may play that card this turn": the card a declined `may` did not exile is no card (`moved` is empty).
+  if (e?.kind === 'may') return movesObjects(e.effect);
   // D-139: a `createToken` produces objects `moved` names too ("create a token, then attach this to it").
   return (
     e?.kind === 'exile' ||
@@ -2672,6 +2742,8 @@ function movesObjects(e: Effect): boolean {
     (e?.kind === 'lookAtTop' && e.take?.to === 'battlefield') ||
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
     e?.kind === 'mill' ||
+    // Lorehold group 1: the card `exileFromTriggerCards` exiled is "it" ("If you do, you may cast it this turn").
+    e?.kind === 'exileFromTriggerCards' ||
     // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
     (e?.kind === 'draw' && e.reveal === true)
   );
@@ -2898,6 +2970,16 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
         'fromMoved ("from among them") needs an effect before it in the sequence that moved cards (a mill)',
       );
     }
+  }
+  if (
+    sel.fromAnyGraveyard !== undefined &&
+    (sel.fromAnyGraveyard !== true || sel.fromMoved !== true)
+  ) {
+    issue(
+      out,
+      `${path}.fromAnyGraveyard`,
+      'fromAnyGraveyard is true and only with fromMoved (issue 159)',
+    );
   }
   // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
   if (sel.alsoGraveyard !== undefined) {
@@ -3232,6 +3314,22 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
+  // D-626: "up to X": an amount read as the search begins; the cards found all go to one place.
+  if (e.maxAmount !== undefined) {
+    checkAmount(e.maxAmount, `${path}.maxAmount`, scope, out);
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.maxAmount`,
+        "a search for up to an amount has a max of 1 (unread), one destination of 'rest' and no shared land type",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {
@@ -3365,6 +3463,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       // D-412: "If you put a Town card into your hand this way": the card is where the earlier instruction put it.
       if (c.inZone !== undefined && c.inZone !== 'hand' && c.inZone !== 'exile') {
         issue(out, `${path}.inZone`, "inZone is only 'hand' or 'exile'");
+      }
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects that were moved.
+      if (c.any !== undefined && (c.any !== true || ofKind !== 'moved')) {
+        issue(out, `${path}.any`, 'any is true, and only with the moved reference');
       }
       break;
     }
@@ -3538,7 +3640,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             (child?.kind === 'may' ||
               MAY_EFFECT_KINDS.includes(child?.kind) ||
               // D-231: "each player exiles a card from their graveyard. When one or more nonland cards are exiled this way, ...".
-              child?.kind === 'exileOwnGraveyardCard') &&
+              child?.kind === 'exileOwnGraveyardCard' ||
+              // Lorehold group 1: "you may exile one of them from your graveyard. If you do, ...".
+              child?.kind === 'exileFromTriggerCards') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -3597,6 +3701,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'trampleExcess is about the creatures the damage is dealt to: the recipient names permanents',
           );
         }
+      }
+      break;
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): each object the selector names deals damage to itself equal to its power: a group or a reference, never a choice.
+      if (kindOf(e.objects) === 'choose') {
+        issue(out, `${path}.objects`, 'dealDamageToSelf names the objects: each or a reference');
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      break;
+    case 'exileFromTriggerCards':
+      // CR 603.2c (Lorehold group 1): the cards a batch `discarded` trigger saw discarded, one of which is exiled.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          'exileFromTriggerCards needs a trigger about a batch of cards (a batch discarded trigger)',
+        );
       }
       break;
     case 'dealDividedDamage':
@@ -3738,6 +3860,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'grantPlayerProtectionEverything':
+    case 'preventPlayerLifeTotalChange':
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          "this player effect lasts until the named player's next turn",
+        );
+      }
+      break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
       const named = kindOf(e.objects);
@@ -3775,6 +3908,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'returnControlToOwners':
+      // CR 613.1b (D-628): a group, a target or the permanent with the ability.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'exchangeControl': {
       // CR 701.12a (Galadriel group 3): two permanents, each the permanent with the ability or a target; never the same one twice.
       const sides = [
@@ -4087,16 +4224,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 701.54a (D-196): no operand; the Ring tempts the controller of the effect.
       break;
     case 'createEmblem':
-      // CR 114.1, 114.4 (D-201): an emblem has static and triggered abilities, which work from the command zone: at least one, and no other kind.
+      // CR 114.1, 114.4 (D-201): an emblem can have static, triggered or activated abilities that work from the command zone: at least one, and no other kind.
       if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
         issue(out, `${path}.abilities`, 'an emblem has at least one ability');
       } else {
         e.abilities.forEach((a, i) => {
-          if (a?.kind !== 'static' && a?.kind !== 'triggered') {
+          if (a?.kind !== 'static' && a?.kind !== 'triggered' && a?.kind !== 'activated') {
             issue(
               out,
               `${path}.abilities[${i}]`,
-              `an emblem has static and triggered abilities, not ${kindOf(a)}`,
+              `an emblem has static, triggered and activated abilities, not ${kindOf(a)}`,
             );
           } else {
             scope.checkAbility(a, `${path}.abilities[${i}]`, out);
@@ -4112,6 +4249,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           `${path}.amount`,
           'Empower Jace puts a positive whole number of loyalty counters',
+        );
+      }
+      break;
+    case 'populate':
+      // CR 701.36 (D-627): no fields.
+      break;
+    case 'additionalLandDropThisTurn':
+      // CR 305.2: a positive whole number of additional land plays.
+      if (!isCount(e.count) || e.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'additionalLandDropThisTurn adds a positive whole number of land plays',
         );
       }
       break;
@@ -4269,11 +4419,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
-        if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
+        const among = e.objects as ChooseSelector;
+        if (
+          among.fromMoved === true &&
+          e.to !== 'hand' &&
+          !(e.to === 'battlefield' && among.fromAnyGraveyard === true)
+        ) {
           issue(
             out,
             `${path}.to`,
-            'a choice among the cards an earlier effect moved is put into the hand (D-411)',
+            'a choice among the cards an earlier effect moved is put into the hand (D-411), or onto the battlefield from any graveyard (issue 159)',
           );
         }
       } else {
@@ -4673,6 +4828,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       // D-151: "Discard any number of cards": the player chooses how many, so `count` is 0 and nothing else narrows the choice.
+      // Lorehold group 3: "Each player discards their hand": the hand as the instruction comes up, so `count` is 0 and nothing else narrows or chooses.
+      if (e.kind === 'discard' && e.hand !== undefined) {
+        if (
+          e.hand !== true ||
+          e.count !== 0 ||
+          e.anyNumber !== undefined ||
+          e.unless !== undefined ||
+          e.random !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.hand`,
+            'hand is true, with a count of 0 and no "any number", "unless you discard" or "at random"',
+          );
+        }
+      }
       if (e.kind === 'discard' && e.anyNumber !== undefined) {
         if (e.anyNumber !== true || e.count !== 0 || e.unless !== undefined) {
           issue(
@@ -4749,13 +4920,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (!isCount(e.amount)) {
-        issue(
-          out,
-          `${path}.amount`,
-          'a life total that becomes a number is a whole number of 0 or more',
-        );
-      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
@@ -5016,6 +5181,95 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (e.exileInstead !== undefined && e.exileInstead !== true) {
         issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
+      }
+      // Lorehold group 2 (CR 118.9, 614.1a): "without paying its mana cost" and the library rider, of a card in exile.
+      if (e.from !== undefined && e.from !== 'exile') {
+        issue(
+          out,
+          `${path}.from`,
+          "a cast permission is of a graveyard card or, with from, 'exile'",
+        );
+      }
+      for (const key of ['free', 'bottomInstead'] as const) {
+        if (e[key] !== undefined && e[key] !== true) {
+          issue(out, `${path}.${key}`, `${key} must be true when present`);
+        } else if (e[key] === true && e.from !== 'exile') {
+          issue(out, `${path}.${key}`, `${key} is only for a card in exile (from: 'exile')`);
+        }
+      }
+      if (e.from === 'exile' && e.exileInstead === true) {
+        issue(
+          out,
+          `${path}.exileInstead`,
+          'a card cast from exile has bottomInstead, not exileInstead',
+        );
+      }
+      if (e.anyGraveyard !== undefined && e.anyGraveyard !== true) {
+        issue(out, `${path}.anyGraveyard`, 'anyGraveyard must be true when present');
+      }
+      // Issue 159: "When you cast it this turn, this creature gains all activated abilities of that card": a delayed trigger of the cast of that card, which does
+      // something to the permanent with the ability (`this`) with the spell cast (`triggerSubject`), and nothing of the ability that made it is left to name (CR 603.7c).
+      if (e.whenCast !== undefined) {
+        const inner = e.whenCast;
+        if (
+          inner?.kind !== 'gainActivatedAbilitiesOf' ||
+          kindOf(inner.from) !== 'triggerSubject' ||
+          kindOf(inner.to) !== 'this'
+        ) {
+          issue(
+            out,
+            `${path}.whenCast`,
+            'a cast rider gives the permanent with the ability the abilities of the spell cast (gainActivatedAbilitiesOf from triggerSubject to this)',
+          );
+        } else {
+          checkEffect(
+            inner,
+            `${path}.whenCast`,
+            {
+              owner: 'ability',
+              targets: new Map(),
+              xAllowed: false,
+              triggerSubject: 'stack',
+              triggerPlayer: true,
+              checkAbility: scope.checkAbility,
+              checkContinuous: scope.checkContinuous,
+              checkEffectExt: scope.checkEffectExt,
+            },
+            out,
+          );
+        }
+      }
+      break;
+    case 'gainActivatedAbilitiesOf':
+      // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
+      }
+      if (kindOf(e.from) !== 'triggerSubject') {
+        issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
+      } else {
+        checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
+      }
+      break;
+    case 'mayCastSpells':
+      // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.
+      checkFilter(e.spells, `${path}.spells`, out);
+      if (
+        e.spells?.zone !== undefined ||
+        e.spells?.controller !== undefined ||
+        e.spells?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.spells`,
+          'the spells name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
       }
       break;
     case 'shuffle':

@@ -58,6 +58,10 @@ export function checkDragonsEffect(
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
       }
+      // Lorehold group 1: "you may cast it this turn".
+      if (e.castOnly !== undefined && e.castOnly !== true) {
+        issue(out, `${path}.castOnly`, 'castOnly must be true when present');
+      }
       return true;
     case 'exileUntilCast':
       // CR 701.57 (D-151): whole-number limits on the card found and on the card cast, and what happens to the rest.
@@ -455,7 +459,11 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
   face.abilities.forEach((a, i) => {
     const p = `${path}.abilities[${i}]`;
     const triggered = a?.kind === 'triggered';
-    const choose = (a as { chooseModes?: { notRepeatedThisTurn?: unknown } }).chooseModes;
+    const choose = (
+      a as {
+        chooseModes?: { notRepeatedThisTurn?: unknown; notRepeatedBySource?: unknown };
+      }
+    ).chooseModes;
     if (choose?.notRepeatedThisTurn !== undefined) {
       if (choose.notRepeatedThisTurn !== true) {
         issue(
@@ -469,6 +477,22 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
           out,
           `${p}.chooseModes`,
           'only a triggered ability can choose modes that were not chosen this turn',
+        );
+      }
+    }
+    if (choose?.notRepeatedBySource !== undefined) {
+      if (choose.notRepeatedBySource !== true) {
+        issue(
+          out,
+          `${p}.chooseModes.notRepeatedBySource`,
+          'notRepeatedBySource is true when present',
+        );
+      }
+      if (!triggered) {
+        issue(
+          out,
+          `${p}.chooseModes`,
+          'only a triggered ability can choose modes that were not chosen by its source',
         );
       }
     }
@@ -502,7 +526,8 @@ export function checkDragonsFace(face: CardFace, path: string, out: AstIssue[]):
   if (
     spell.includes('"controller":"triggerPlayer"') ||
     spell.includes('"controller":"defendingPlayer"') ||
-    spell.includes('"notRepeatedThisTurn"')
+    spell.includes('"notRepeatedThisTurn"') ||
+    spell.includes('"notRepeatedBySource"')
   ) {
     issue(
       out,

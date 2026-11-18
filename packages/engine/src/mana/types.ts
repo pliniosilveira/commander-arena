@@ -41,9 +41,10 @@ export type ManaRestriction =
 export interface ManaRider {
   /**
    * `haste`: the spell's permanent has haste until end of turn. `scry`: its controller scries `count` (a triggered ability of `source`, group 4 of the Vraska deck).
+   * `counters` (issue 241): the commander spell it was spent on enters with as many more +1/+1 counters as the times it has been cast from the command zone (`countCommanderCasts`).
    * `copy` (D-328): a triggered ability of `source` copies the spell (`newTargets`: whether its controller may choose new targets for the copy).
    */
-  readonly kind: 'haste' | 'scry' | 'copy';
+  readonly kind: 'haste' | 'scry' | 'copy' | 'counters';
   readonly types?: readonly string[];
   /** D-328: "a red instant or sorcery spell": the spell has one of these colors (`W`, `U`, `B`, `R`, `G`). */
   readonly colors?: readonly string[];

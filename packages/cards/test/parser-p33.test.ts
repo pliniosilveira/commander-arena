@@ -651,7 +651,6 @@ describe('gaining life (CR 119.9, 119.10, 614.1a)', () => {
     'Whenever each opponent gains life, draw a card.',
     'If an opponent would gain life, they gain that much life plus 1 instead.',
     'If you would gain life, you gain that much life plus X instead.',
-    'If you would gain life, you gain twice that much life instead.',
     'If you would gain life, you gain that much life instead.',
     'If you would lose life, you lose that much life plus 1 instead.',
   ])('is not read: %s', (text) => {
@@ -1216,7 +1215,7 @@ describe('mana spent only on some spells, and mana of the chosen color (CR 106.6
 
   test.each([
     '{T}: Add {G}. Spend this mana only to cast spells.',
-    '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type.',
+    '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type or an Angel spell.',
     '{T}: Add {G}. Spend this mana only to cast a red creature spell.',
     '{T}: Add {G}. Spend this mana only to activate abilities.',
     '{T}: Add {G}. Spend this mana only to cast an Angel spell. Draw a card.',

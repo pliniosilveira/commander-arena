@@ -171,7 +171,7 @@ function selfNoun(id: string, start: number): IrNoun {
 }
 
 const DEFINES = pattern(
-  /~['’]s (power and toughness are each|power is|toughness is) (?=equal to the number of )/i,
+  /~['’]s (power and toughness are each|power is|toughness is) (?=equal to )/i,
 );
 
 /**
@@ -231,7 +231,12 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     if (!count.ok) return count;
     // The engine reads a count, or the sum of counts (stage P28: "... plus the number of Zombie cards in all
     // graveyards"); "twice", "half", a greatest power and the rest are other statements.
-    if (count.value.kind !== 'countOf' && count.value.kind !== 'sum') return fail(ctx, pos);
+    if (
+      count.value.kind !== 'countOf' &&
+      count.value.kind !== 'sum' &&
+      count.value.kind !== 'devotion'
+    )
+      return fail(ctx, pos);
     const end = PERIOD(ctx, count.pos);
     if (!end.ok) return end;
     const which = (head.value[1] ?? '').toLowerCase();

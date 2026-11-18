@@ -95,6 +95,8 @@ import {
   hasKickedTargets,
   libraryCastPermission,
   mayCastFromGraveyard,
+  mayPlayFromExile,
+  playPermissionBottoms,
   targetSpecsOf,
   targetsPossible,
 } from './legality';
@@ -212,7 +214,12 @@ export function beginCast(
       flashback: alternative === 'flashback',
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
-      ...(resolving && alternative !== 'madness' && alternative !== 'miracle'
+      ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
+      // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
+      (!resolving &&
+        alternative === 'free' &&
+        zone === 'exile' &&
+        mayPlayFromExile(state, seat, obj, false, true))
         ? { byEffect: true as const }
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
@@ -222,6 +229,12 @@ export function beginCast(
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
         ? { exileInstead: true as const }
+        : {}),
+      // Lorehold group 2 (CR 614.1a): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" of the permission the card is cast with.
+      ...(zone === 'exile' &&
+      !resolving &&
+      playPermissionBottoms(state, seat, obj, alternative === 'free')
+        ? { bottomInstead: true as const }
         : {}),
       // D-151: "If you cast a creature spell this way, it gains haste until end of turn".
       ...(zone === 'library' && libraryCastPermission(state, seat, obj)?.gainsHaste === true
@@ -239,7 +252,7 @@ export function beginCast(
     ? null
     : castTiming(state, seat, castAs(obj, seat, face)).onlyTargets;
   // The cost, the kicker and the legality look at the face being cast only (CR 709.3a, 712.11c).
-  const { tax } = spellCost(state, {
+  const { tax, taxLife } = spellCost(state, {
     seat,
     spell: castAs(obj, seat, face),
     zone,
@@ -257,6 +270,7 @@ export function beginCast(
       stage: 'modes',
       totalCost: [],
       commanderTax: tax,
+      ...(taxLife === 0 ? {} : { commanderTaxLife: taxLife }),
       activation: null,
       snapshot: state,
       ...(resolving ? { duringResolution: true as const } : {}),
@@ -895,6 +909,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       ...casting,
       stage: 'payment',
       totalCost: symbols,
+      ...(cost.life === 0 ? {} : { lifePaid: cost.life }),
       extra: {
         sacrifice: cost.sacrifice,
         ...(cost.sacrificeCount === undefined ? {} : { sacrificeCount: cost.sacrificeCount }),
@@ -1066,6 +1081,7 @@ function toMana(state: GameState, events: GameEvent[]): Result {
       seat: casting.seat,
       source: casting.object,
       totalCost: casting.totalCost,
+      ...(casting.lifePaid === undefined ? {} : { lifePaid: casting.lifePaid }),
       manaSources: payableSources(next, casting.seat),
     }),
     events,
@@ -1295,6 +1311,15 @@ function withSpentRiders(
   ) {
     next = patchObject(next, casting.object, { stack: { ...stack, hasteUntilEnd: true } });
   }
+  // Issue 241: "it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone": the spell remembers how
+  // many such mana were spent on it; the counters are put on as it enters.
+  const counterMana = riders.filter((r) => r.kind === 'counters' && matches(r)).length;
+  const withCounters = state.objects[casting.object]?.stack;
+  if (counterMana > 0 && withCounters !== null && withCounters !== undefined) {
+    next = patchObject(next, casting.object, {
+      stack: { ...withCounters, commanderCastCounters: counterMana },
+    });
+  }
   // Group 4 of the Vraska deck (CR 603.2, 701.22): "When that mana is spent to cast a creature spell that shares a creature type with your commander,
   // scry 1." is a triggered ability of the permanent that made the mana, for each mana spent; it waits to go on the stack above the spell.
   const scries: PendingTrigger[] = [];
@@ -1407,7 +1432,12 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
         ...next.turnLog,
         castSpells: [
           ...next.turnLog.castSpells,
-          { seat: casting.seat, types: derive(next, getObject(next, casting.object)).types },
+          {
+            seat: casting.seat,
+            types: derive(next, getObject(next, casting.object)).types,
+            // Issue 159: "if you've cast a spell from a graveyard this turn".
+            ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
+          },
         ],
       },
     };
@@ -1430,6 +1460,9 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     object: casting.object,
     fromZone: casting.fromZone,
     commanderTax: casting.commanderTax,
+    ...(casting.commanderTaxLife === undefined
+      ? {}
+      : { commanderTaxLife: casting.commanderTaxLife }),
     nth: getSeat(next, casting.seat).spellsCastThisTurn,
     targetCount: obj.stack?.chosenTargets.length ?? 0,
     ...(obj.stack?.kicked ? { kicked: true as const } : {}),

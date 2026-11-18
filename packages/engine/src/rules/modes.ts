@@ -32,10 +32,19 @@ export function withModesChosen(
   state: GameState,
   source: ObjectId,
   modes: readonly number[],
+  rememberBySource = false,
 ): GameState {
   if (modes.length === 0) return state;
   return {
     ...state,
+    ...(rememberBySource
+      ? {
+          modesChosenBySource: {
+            ...state.modesChosenBySource,
+            [source]: [...(state.modesChosenBySource?.[source] ?? []), ...modes],
+          },
+        }
+      : {}),
     turnLog: {
       ...state.turnLog,
       modesChosen: [...state.turnLog.modesChosen, ...modes.map((mode) => ({ source, mode }))],
@@ -91,9 +100,11 @@ export function legalModeSets(
 ): readonly (readonly number[])[] {
   // D-151: "choose one that hasn't been chosen this turn": the modes this source chose earlier this turn are out.
   const used =
-    modal.choose.notRepeatedThisTurn === true && ctx.source !== null
-      ? state.turnLog.modesChosen.filter((m) => m.source === ctx.source).map((m) => m.mode)
-      : [];
+    modal.choose.notRepeatedBySource === true && ctx.source !== null
+      ? (state.modesChosenBySource?.[ctx.source] ?? [])
+      : modal.choose.notRepeatedThisTurn === true && ctx.source !== null
+        ? state.turnLog.modesChosen.filter((m) => m.source === ctx.source).map((m) => m.mode)
+        : [];
   const available = modal.modes.flatMap((mode, i) =>
     !used.includes(i) && modePossible(state, mode, ctx) ? [i] : [],
   );

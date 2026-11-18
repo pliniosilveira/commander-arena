@@ -10,6 +10,8 @@ import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
 import { combatOrder } from './combat-order';
 import { EmblemStrip } from './EmblemStrip';
+import { ExilePlayStrip } from './ExilePlayStrip';
+import { type ExilePlayable, exilePlayable } from './exile-play';
 import { Hand } from './Hand';
 import { OtherZonesStrip } from './OtherZonesStrip';
 import { PlayerStrip, type ZoneRef } from './PlayerStrip';
@@ -30,12 +32,14 @@ function Field({
   order,
   roles,
   attachments,
+  exile,
 }: {
   view: GameView;
   seat: number;
   order: readonly RowKind[];
   roles: ReturnType<typeof combatRoles>;
   attachments: Attachments;
+  exile?: ExilePlayable | null;
 }) {
   // An attachment is drawn under its host, which may belong to the other player (an Aura you
   // control on their creature), so it never gets a tile of its own here.
@@ -71,6 +75,10 @@ function Field({
           />
         ))}
       </div>
+      {/* The cards the viewer may play from exile, over the right side of their own battlefield, apart from the emblems at the left (issue 49). */}
+      {seat === view.viewer && (
+        <ExilePlayStrip view={view} {...(exile ? { playable: exile } : {})} />
+      )}
     </section>
   );
 }
@@ -104,12 +112,18 @@ export function Board() {
       autoOpened.current = false;
     }
   }, [seatToOpen]);
-  const pendingBlocks = useInteraction().pendingBlocks;
+  const ix = useInteraction();
+  const pendingBlocks = ix.pendingBlocks;
   const roles = useMemo(
     () => (view === null ? new Map() : combatRoles(view, pendingBlocks)),
     [view, pendingBlocks],
   );
   const attachments = useMemo(() => splitAttachments(view?.battlefield ?? []), [view]);
+  // The cards playable from exile, computed once for the strip over the battlefield and for the chip rows (issue 49).
+  const exile = useMemo(
+    () => (view === null ? null : exilePlayable(view, ix.clickable)),
+    [view, ix.clickable],
+  );
   if (view === null) return <section className="board board-empty">No game in progress.</section>;
 
   // v1 is one opponent; the v2 layout (SPEC 10) will map over every other seat.
@@ -156,9 +170,10 @@ export function Board() {
           order={ROW_ORDER_ME}
           roles={roles}
           attachments={attachments}
+          exile={exile}
         />
         <PlayerStrip view={view} seat={me} onOpenZone={setZone} />
-        <OtherZonesStrip view={view} />
+        <OtherZonesStrip view={view} {...(exile ? { exile } : {})} />
         <Hand cards={me.hand ?? []} active={view.activeSeat === me.id} />
         <BlockArrows roles={roles} />
         {open !== null && (

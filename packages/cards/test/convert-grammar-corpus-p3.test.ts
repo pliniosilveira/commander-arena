@@ -68,8 +68,8 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant player',
-    expect: no('player', 'keyword.enchant'),
-    note: 'backlog: 46 cards; a permanent phrase does not name a player',
+    expect: OK,
+    note: 'backlog: 46 cards; read since D-629 (`keyword.enchant-player`)',
   },
   {
     kind: 'aura',
@@ -93,7 +93,7 @@ const AURAS: readonly Line[] = [
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature has "{T}: Draw a card."',
     expect: OK,
-    note: 'SYNTHETIC; an attached permanent is given a triggered ability (stage P49, D-206), a mana ability and, since D-641 (issue 89), an activated one: the creature has it as its own',
+    note: 'SYNTHETIC; run since D-628: an enchanted creature is given an activated ability, as an enchanted land is (D-603)',
   },
   {
     kind: 'aura',
@@ -108,6 +108,14 @@ const AURAS: readonly Line[] = [
       ...NOT_RUNNABLE,
     }),
     note: 'SYNTHETIC; the activated ability is read and not run: no rule for foretelling a card as an effect',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant permanent\nEnchanted permanent has "{T}: Draw a card."',
+    expect: no('Enchanted permanent has "{T}: Draw a card."', 'static.attached', {
+      ...NOT_RUNNABLE,
+    }),
+    note: 'SYNTHETIC; still not run: an untyped attached permanent is given an activated ability (only an enchanted creature or land is, D-603, D-628)',
   },
   {
     kind: 'aura',
@@ -520,7 +528,7 @@ test('the P3 corpus has unique lines, and supported, unparsed and not-runnable e
   expect(CORPUS.filter((l) => 'supported' in l.expect).length).toBeGreaterThanOrEqual(35);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === undefined).length,
-  ).toBeGreaterThanOrEqual(15);
+  ).toBeGreaterThanOrEqual(14); // 15 before "Enchant player" was read (D-629)
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === 'notRunnable')
       .length,

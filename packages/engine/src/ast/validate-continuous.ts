@@ -194,6 +194,12 @@ function checkSetColors(
     if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
   });
   if (new Set(e.colors).size !== e.colors.length) issue(out, `${path}.colors`, 'duplicate color');
+  // Issue 159: "in addition to its other colors" adds colors, so an empty list would add nothing.
+  if (e.additive !== undefined && e.additive !== true) {
+    issue(out, `${path}.additive`, 'additive is true or absent');
+  } else if (e.additive === true && e.colors.length === 0) {
+    issue(out, `${path}.colors`, 'an additive setColors names at least one color');
+  }
 }
 
 export function checkContinuousEffect(

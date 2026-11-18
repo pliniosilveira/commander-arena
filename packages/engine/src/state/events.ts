@@ -133,6 +133,8 @@ export type GameEvent =
       /** Number of targets chosen for this spell as it was cast (D-574). */
       readonly targetCount: number;
       readonly commanderTax: number;
+      /** Life paid instead of commander-tax mana, when the card's face replaces it. */
+      readonly commanderTaxLife?: number;
       /** Present (true) when a kicker cost was paid, at least once (CR 702.33d). */
       readonly kicked?: true;
       /** How many times the multikicker cost was paid (CR 702.33c); present when it is at least 1. */
@@ -639,6 +641,8 @@ export type GameEvent =
   | { readonly kind: 'foretold'; readonly seat: SeatId; readonly object: ObjectId }
   /** CR 701.3 (Attach): an Aura or Equipment became attached to a permanent. */
   | { readonly kind: 'attached'; readonly object: ObjectId; readonly to: ObjectId }
+  /** An Aura that enchants a player entered attached to that player (CR 303.4b, issue 160, D-629). */
+  | { readonly kind: 'attachedToPlayer'; readonly object: ObjectId; readonly seat: SeatId }
   /**
    * CR 701.3d: an Aura or Equipment became unattached from `from` and stays on the battlefield
    * (an Aura that falls off goes to the graveyard, which is its `zoneChanged`). `reason` is
@@ -680,6 +684,8 @@ export type GameEvent =
       readonly bearer: ObjectId | null;
       readonly first: boolean;
     }
+  /** A Class permanent reached `level` as its level-bar ability resolved (CR 716.2, D-235). */
+  | { readonly kind: 'classLevelReached'; readonly object: ObjectId; readonly level: number }
   /**
    * A creature stopped being the Ring-bearer of `seat` (CR 701.54a), because another creature became it or because another player gained
    * control of it. Not emitted for one that left the battlefield (it is a new object, CR 400.7, and the designation is simply gone).

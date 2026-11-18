@@ -109,6 +109,11 @@ export interface GameObject {
   readonly copyOf?: CardId;
   /** The object an Aura or Equipment is attached to (CR 303.4, 301.5). */
   readonly attachedTo: ObjectId | null;
+  /**
+   * The player an Aura that enchants a player is attached to ("Enchant player", CR 303.4, 303.4b; issue 160, D-629). Absent for everything else, and for an Aura attached to an
+   * object (`attachedTo`): an Aura is attached to one or the other, never both (CR 303.4d). A new object (a zone change, CR 400.7) never has it.
+   */
+  readonly attachedToPlayer?: SeatId;
   /** For a battle: the player who protects it (CR 310.8). Null for everything else. */
   readonly protector: SeatId | null;
   /** Stack objects only. */
@@ -398,6 +403,11 @@ export interface StackData {
    */
   readonly hasteUntilEnd?: true;
   /**
+   * How many mana with a `counters` rider were spent on the spell (issue 241, Opal Palace): the commander it becomes enters with that many times its casts from the command zone
+   * (CR 903.8) more +1/+1 counters (`rules/zones.ts`). Absent when none, and for an ability.
+   */
+  readonly commanderCastCounters?: number;
+  /**
    * A spell cast from the graveyard with the permission of a permanent (`playFromGraveyardOnceEachTurn`, D-232): that permanent, and what the permanent the spell becomes
    * does or has because of it (enters tapped; gains an ability). Applied as the spell enters the battlefield (`rules/zones.ts`).
    */
@@ -424,6 +434,12 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
+   * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
+   * when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly bottomInstead?: true;
+  /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-439,
    * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
    * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
@@ -435,8 +451,8 @@ export interface StackData {
   };
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
-   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
-   * Absent otherwise, and for an ability.
+   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own. Also (Lorehold group 2) a card in exile cast for no mana cost because an
+   * effect gave a permission to ("You may cast that card this turn without paying its mana cost", `mayCast.free`). Absent otherwise, and for an ability.
    */
   readonly byEffect?: true;
   /**
@@ -750,6 +766,11 @@ export interface DelayedTrigger {
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
   readonly watched?: ObjectId;
+  /**
+   * "When you cast it this turn" (`mayCast.whenCast`, issue 159, CR 603.7): the ability triggers only for a spell cast from this card (`GameObject.card`: the card is a new
+   * object on the stack, CR 400.7, but it is the same card).
+   */
+  readonly watchedCard?: CardId;
 }
 
 /**
@@ -828,6 +849,10 @@ export interface CastingContext {
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
+  /** Life paid instead of commander-tax mana for this cast, when the card's face replaces the tax. */
+  readonly commanderTaxLife?: number;
+  /** Total life cost paid when the total cost was locked in; shown in the ensuing mana prompt. */
+  readonly lifePaid?: number;
   /**
    * For a spell, what its total cost asks besides mana once the mana is paid (CR 601.2h, D-095): the
    * filter of the permanent to sacrifice and the number of cards to discard. Set when the total
@@ -1018,6 +1043,11 @@ export type Instruction =
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
+   * "Populate" (`populate`, CR 701.36, D-627): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with
+   * two or more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
+   */
+  | { readonly kind: 'populate'; readonly chosen: readonly ObjectId[] | null }
+  /**
    * Permanents instructed to connive at the same time (`connive`, CR 701.50c, D-223): `pending` are the ones still to connive, each with the player who
    * controls it (or last controlled it, if it is no longer on the battlefield: CR 701.50b). The first player in APNAP order who controls one or more of them
    * chooses one of them (a `choosePermanent` decision of purpose 'conniveOrder', asked only when that player has more than one) and it connives: its controller
@@ -1111,6 +1141,8 @@ export type Instruction =
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
        */
       readonly among?: readonly ObjectId[];
+      /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
+      readonly anyOwner?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1284,6 +1316,8 @@ export type Instruction =
       readonly anyNumber?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
+      /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
+      readonly hand?: true;
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */
       readonly conniver?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
@@ -1736,8 +1770,12 @@ export interface ThisWayCounts {
   readonly discardedNoncreature?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
+  /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
+  readonly damageDealt?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
+  /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
+  readonly searched?: number;
 }
 
 /** An attacking creature (CR 508.1k). `blocked` stays true even if its blockers leave (CR 509.1h). */
@@ -1784,6 +1822,13 @@ export type ContinuousChange =
       readonly kind: 'castPermission';
       readonly seat: SeatId;
       /**
+       * "You may cast Zombie spells from your graveyard this turn" (`mayCastSpells`, issue 159): instead of the cards the effect's `objects` names, every card of `seat`'s
+       * graveyard that this filter describes, whenever it is asked (`objects` is empty).
+       */
+      readonly spells?: ObjectFilter;
+      /** "You may cast target creature card in a graveyard this turn" (`mayCast.anyGraveyard`, issue 159): the named card may be in any player's graveyard. */
+      readonly anyGraveyard?: true;
+      /**
        * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
        */
@@ -1800,7 +1845,22 @@ export type ContinuousChange =
    * "You may play that card this turn" (`mayPlay`, D-151, CR 601.2, 305.1, 611.2a): `seat` may cast the card in exile `objects` names, or play it when it
    * is a land, until the effect ends. No layer: read where casting and playing are decided (`rules/legality.ts`, `mayPlayFromExile`).
    */
-  | { readonly kind: 'playPermission'; readonly seat: SeatId }
+  | {
+      readonly kind: 'playPermission';
+      readonly seat: SeatId;
+      /** "You may cast it this turn" (`mayPlay.castOnly`, Lorehold group 1): the card may be cast, not played as a land. */
+      readonly castOnly?: true;
+      /**
+       * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
+       * (the plain cast, paying the mana cost, is not allowed by this permission). Only with `castOnly`.
+       */
+      readonly free?: true;
+      /**
+       * "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (`mayCast.bottomInstead`, Lorehold group 2, CR 614.1a): the spell cast with
+       * this permission carries `StackData.bottomInstead` (`rules/cast.ts`, `beginCast`).
+       */
+      readonly bottomInstead?: true;
+    }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
@@ -1825,6 +1885,10 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
+  /** Protection from everything granted to a player until their next turn (D-607). */
+  | { readonly kind: 'playerProtectionEverything' }
+  /** Prevents all increases and decreases to the player's life total (D-607). */
+  | { readonly kind: 'playerCantChangeLifeTotal' }
   /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
    * D-179): no layer and no fixed set (`objects` is empty): the requirement is read where attackers are declared (`rules/combat-legality.ts`), for
@@ -1864,7 +1928,7 @@ export type ContinuousChange =
       /** D-229 (CR 205.1a): card types the object loses ("isn't a creature"); the subtypes only they allowed go with them. */
       readonly remove?: readonly CardType[];
     }
-  | { readonly kind: 'setColors'; readonly colors: readonly Color[] }
+  | { readonly kind: 'setColors'; readonly colors: readonly Color[]; readonly additive?: true }
   /**
    * Layer 1 (CR 613.2a): the object becomes a copy: the copiable values (CR 707.2) it was given when
    * the effect began replace its own (CR 707.2b: later changes to the original do not reach it).
@@ -1973,6 +2037,11 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly abilityIndex: number;
     readonly loyalty?: true;
+    /**
+     * The player who activated an ability of a card that was in a graveyard as it was activated (issue 159, "activated an ability of a card in a graveyard this turn").
+     * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.
+     */
+    readonly fromGraveyard?: SeatId;
   }[];
   /**
    * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
@@ -2058,7 +2127,12 @@ export interface TurnLog {
    * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
    */
-  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
+  readonly castSpells: readonly {
+    readonly seat: SeatId;
+    readonly types: readonly CardType[];
+    /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
+    readonly fromGraveyard?: true;
+  }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {
@@ -2104,6 +2178,8 @@ export interface GameState {
   readonly monarchBecameAt?: Readonly<Record<number, number>>;
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
+  /** Modes chosen by a source object whose triggered ability uses `notRepeatedBySource`; zone changes create a new source id. */
+  readonly modesChosenBySource?: Readonly<Record<ObjectId, readonly number[]>>;
   readonly battlefield: readonly ObjectId[];
   /** The permanents that are phased out (D-234, CR 702.26): objects whose `zone` is `'phased'`. Absent in a game saved before D-234. */
   readonly phased?: readonly ObjectId[];

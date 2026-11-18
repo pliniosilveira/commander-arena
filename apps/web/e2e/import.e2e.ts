@@ -1,4 +1,11 @@
 import { expect, type Page, test } from '@playwright/test';
+import {
+  chooseDeck,
+  OPPONENT_DIALOG,
+  openStartFlow,
+  select,
+  startDefaultGame,
+} from './harness/menu';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
 /**
@@ -26,7 +33,8 @@ function hundredCardList(): string {
 
 async function openImport(page: Page): Promise<void> {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Import a deck' }).click();
+  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'Paste a list' }).click();
   await expect(page.getByRole('heading', { name: 'Import a deck' })).toBeVisible();
 }
 
@@ -118,6 +126,8 @@ test('a deck with unsupported cards has one button that opens GitHub with the is
   const button = page.getByTestId('report-issue');
   await expect(button).toBeVisible();
   const [popup] = await Promise.all([page.waitForEvent('popup'), button.click()]);
+  // The pop-up opens before it has navigated: its URL is empty until the (stubbed) GitHub page loads.
+  await popup.waitForURL(/^https:\/\/github\.com\//);
   const url = new URL(popup.url());
   expect(url.origin + url.pathname).toBe(
     'https://github.com/pliniosilveira/commander-arena/issues/new',
@@ -158,11 +168,10 @@ test('an imported deck whose cards are all supported is saved and played from th
   await page.getByRole('button', { name: 'Save deck' }).click();
   await expect(page.getByText('Saved "SYNTHETIC Hundred".')).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
-  await page
-    .locator('fieldset', { hasText: 'Your deck' })
-    .getByRole('radio', { name: /SYNTHETIC Hundred/ })
-    .check();
-  await page.getByRole('button', { name: 'Start game' }).click();
+  const mine = await openStartFlow(page);
+  await chooseDeck(mine, 'Your Decks', /SYNTHETIC Hundred/);
+  const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+  await select(theirs);
 
   // The first decision is the mulligan, with cards of this deck in the opening hand.
   const mulligan = page.getByRole('dialog', { name: 'Opening hand' });
@@ -261,7 +270,7 @@ test('offline: every Scryfall request fails and the screen says so without crash
 test('the menu starts the installed precon without any connection', async ({ page }) => {
   await page.route('https://api.scryfall.com/**', (route) => route.abort());
   await page.goto('/');
-  await page.getByRole('button', { name: 'Start game' }).click();
+  await startDefaultGame(page);
   await expect(page.getByRole('dialog', { name: 'Opening hand' })).toBeVisible({ timeout: 30_000 });
 });
 

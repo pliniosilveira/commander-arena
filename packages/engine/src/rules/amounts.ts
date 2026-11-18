@@ -9,15 +9,14 @@
  * objects or an amount of life or cards is needed).
  */
 import type { Amount, ObjectFilter, PlayerStat } from '../ast/types';
-import type { Color } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
-import type { ChosenTarget, GameObject, GameState } from '../state/types';
+import type { ChosenTarget, GameState } from '../state/types';
 import { commanderIdentity } from './commander-identity';
 import { controllerOf } from './control';
-import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { commandersCastCount, commandersManaValue } from './derive-count';
+import { devotionOf } from './devotion';
 import { timesKickedOf } from './kicks';
 import { manaSpentOf } from './mana-spent';
 import { manaValueOfCost } from './mana-value';
@@ -29,6 +28,8 @@ import {
   type SelectContext,
 } from './select';
 import { objectOrLki } from './source-info';
+
+export { devotionCostOf, devotionOf, devotionSymbols } from './devotion';
 
 type StateAmount = Extract<
   Amount,
@@ -91,36 +92,6 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
  * Phyrexian one ({W/P}) counts once for the colors it has among the set; a generic, colorless, snow or {X} symbol
  * counts for none (CR 700.5: "mana symbols of that color").
  */
-export function devotionSymbols(cost: readonly string[] | null, colors: readonly Color[]): number {
-  if (cost === null) return 0;
-  let count = 0;
-  for (const symbol of cost) {
-    if (symbol.split('/').some((part) => (colors as readonly string[]).includes(part))) count += 1;
-  }
-  return count;
-}
-
-/**
- * CR 700.5, 700.5a: a player's devotion to the colors: the mana symbols in the mana costs of their permanents, after copy effects (the copiable values, CR 707.2)
- * and before any other effect. The mana cost a permanent has printed is not the one its mana value is calculated from when that is only "as though" (CR 202.3b:
- * the back face of a transformed permanent, CR 202.3c: a melded permanent, D-281): the combined face of a meld pair has no mana cost, so a melded permanent adds nothing.
- */
-export function devotionOf(state: GameState, seat: SeatId, colors: readonly Color[]): number {
-  let total = 0;
-  for (const id of objectsInZone(state, 'battlefield')) {
-    const obj = state.objects[id];
-    if (obj === undefined || controllerOf(state, obj) !== seat) continue;
-    total += devotionSymbols(devotionCostOf(state, obj), colors);
-  }
-  return total;
-}
-
-/** CR 700.5a: the mana cost a permanent counts for devotion, from its copiable values (after copy effects). Null for what has none. */
-export function devotionCostOf(state: GameState, obj: GameObject): readonly string[] | null {
-  if (obj.card === null && obj.token === null && obj.copyOf === undefined) return null;
-  return copiableValues(state, obj).characteristics.manaCost;
-}
-
 /** The stat of one object as `derive` gives it, or null for an object that has none (CR 208.3: a noncreature). */
 export function statOf(
   state: GameState,
@@ -193,9 +164,17 @@ export function playerStatOf(state: GameState, seat: SeatId, stat: PlayerStat): 
 }
 
 /** The opponents of `seat` still in the game whose stat is greater than `seat`'s (D-131). */
-export function opponentsWithMore(state: GameState, seat: SeatId, stat: PlayerStat): number {
+export function opponentsWithMore(
+  state: GameState,
+  seat: SeatId,
+  stat: PlayerStat,
+  /** D-626: count the opponents whose stat is less than `seat`'s instead. */
+  fewer = false,
+): number {
   const mine = playerStatOf(state, seat, stat);
-  return opponentsOf(state, seat).filter((o) => playerStatOf(state, o, stat) > mine).length;
+  return opponentsOf(state, seat).filter((o) =>
+    fewer ? playerStatOf(state, o, stat) < mine : playerStatOf(state, o, stat) > mine,
+  ).length;
 }
 
 /**
@@ -221,6 +200,10 @@ export function amountOf(
   if (amount.kind === 'aurasAttachedToTriggerSubject') {
     const left = ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject];
     return (left?.auras ?? []).filter((a) => a.controller === ctx.controller).length;
+  }
+  if (amount.kind === 'lifeTotalOf') {
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : getSeat(state, seat).life;
   }
   if (amount.kind === 'enteredX') {
     // CR 107.3m, 107.3g (Hylda group 3): the X of the spell the permanent resolved from, which the permanent remembers (`GameObject.castX`), or last-known information
@@ -360,7 +343,7 @@ export function stateAmountOf(
     case 'thisWay':
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
-      return opponentsWithMore(state, ctx.controller, amount.stat);
+      return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);
     case 'cardsStillExiled':
       // CR 400.7: a card that left exile is a new object, so only the very objects still there count.
       return amount.objects.filter((id) => state.objects[id]?.zone === 'exile').length;
@@ -368,7 +351,7 @@ export function stateAmountOf(
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
     case 'sacrificedAsCost': {
-      // CR 602.2b, 701.21a (D-583): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
+      // CR 602.2b, 701.21a (D-584): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
       // them, and its resolution reads them (`ResolutionContext.costSacrificed`, which an ability without such a cost does not have).
       if (ctx.costSacrificed !== undefined) return ctx.costSacrificed.length;
       // CR 118.8, 701.21a (D-491): "for each creature sacrificed this way": the permanents sacrificed to pay the additional cost of the spell that is the source, read from the spell

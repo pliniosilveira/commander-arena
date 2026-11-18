@@ -148,23 +148,44 @@ const RANDOM_OR_UNLESS: Parser<string | IrNoun> = choice<string | IrNoun>(
   UNLESS_DISCARD,
 );
 
+/**
+ * "discards their hand" (CR 701.9a, 402.1; Lorehold group 3): the whole hand of each player the subject names, nobody chooses. Said of a subject other than plain "you" ("each player discards
+ * their hand", "target opponent discards their hand"); "discard your hand" has no subject and is `effect.discard-hand`'s.
+ */
+const discardHandAction: Action = (subject, you, rule) =>
+  subject.det === 'you'
+    ? never(rule)
+    : map(
+        spanned(sequence(verbWord('discard', you), pattern(/their hand(?![\p{L}\p{N}])/iu))),
+        ({ span }) =>
+          actionClause(
+            rule,
+            'discard',
+            { player: subject, hand: { kind: 'flag', value: true, span, rule } },
+            span,
+          ),
+      );
+
 const discardAction: Action = (subject, you, rule) =>
-  map(
-    spanned(
-      sequence(
-        verbWord('discard', you),
-        family<IrArg>('amount'),
-        CARDS,
-        you ? optional(RANDOM_OR_UNLESS, null) : optional(AT_RANDOM, null),
+  choice(
+    discardHandAction(subject, you, rule),
+    map(
+      spanned(
+        sequence(
+          verbWord('discard', you),
+          family<IrArg>('amount'),
+          CARDS,
+          you ? optional(RANDOM_OR_UNLESS, null) : optional(AT_RANDOM, null),
+        ),
       ),
+      ({ value, span }) => {
+        const tail = value[3];
+        const args: Record<string, IrArg> = { player: subject, amount: value[1] };
+        if (typeof tail === 'string') args.random = { kind: 'flag', value: true, span, rule };
+        else if (tail !== null && tail !== undefined) args.unless = tail as IrNoun;
+        return actionClause(rule, 'discard', args, span);
+      },
     ),
-    ({ value, span }) => {
-      const tail = value[3];
-      const args: Record<string, IrArg> = { player: subject, amount: value[1] };
-      if (typeof tail === 'string') args.random = { kind: 'flag', value: true, span, rule };
-      else if (tail !== null && tail !== undefined) args.unless = tail as IrNoun;
-      return actionClause(rule, 'discard', args, span);
-    },
   );
 
 /**
@@ -175,6 +196,25 @@ const discardAction: Action = (subject, you, rule) =>
  * and a quantity above one for each ("gain 2 life for each creature you control").
  */
 export const lifeAction: Action = (subject, you, rule) => {
+  const halfTheirLife: Parser<IrAmount> = map(
+    spanned(
+      sequence(
+        verbWord('lose', you),
+        pattern(/half their life, rounded (down|up)(?![\p{L}\p{N}])/iu),
+      ),
+    ),
+    ({ value, span }) => {
+      const words = value[1][0] ?? '';
+      const halfSpan = { start: span.start + words.length, end: span.end };
+      const total: IrAmount = { kind: 'lifeTotalOf', of: subject, span: halfSpan };
+      return {
+        kind: 'half',
+        of: total,
+        round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+        span,
+      };
+    },
+  );
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -197,13 +237,18 @@ export const lifeAction: Action = (subject, you, rule) => {
                 only:
                   base === 'gain'
                     ? // CR 702.101a: only a gain can be the life lost by the instruction before it.
-                      [...EQUAL_AMOUNTS, 'amount.life-lost-this-way']
+                      [
+                        ...EQUAL_AMOUNTS,
+                        'amount.life-lost-this-way',
+                        'amount.damage-dealt-this-way',
+                      ]
                     : // D-365: "loses life equal to the life that player lost this turn" (a loss only; the lowering reads it for another player than "you").
                       [...EQUAL_AMOUNTS, 'amount.life-lost-this-turn'],
               }),
             ),
             ([, , amount]) => amount,
           ),
+          ...(base === 'lose' ? [halfTheirLife] : []),
         ),
       ),
       ({ value, span }) => actionClause(rule, verb, { player: subject, amount: value }, span),
@@ -386,6 +431,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'CR 119.3 (Life)',
     'CR 121.1 (Drawing a Card)',
     'CR 701.9 (Discard)',
+    'CR 402.1 (Hand)',
     'CR 701.17 (Mill)',
     'CR 701.40a (Manifest)',
     'CR 701.21 (Sacrifice)',
@@ -411,6 +457,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw two cards, then lose 2 life',
     'each player discards a card',
     'target player discards two cards',
+    // Lorehold group 3 (CR 701.9a): the whole hand of each player the subject names.
+    'each player discards their hand',
+    'each player discards their hand, then draws seven cards',
+    'target opponent discards their hand',
     'you draw a card, then discard a card',
     'target opponent discards a card',
     'its controller gains 4 life',
@@ -528,7 +578,11 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you and target creature each draw a card',
     'each other player draw a card',
     'target player mills',
-    'target player discards their hand',
+    'you discard their hand',
+    'each player discards your hand',
+    'each player discards their hands',
+    'each player discards its hand',
+    'target player discards the hand',
     'you may draw a card',
     'you manifests the top card of your library',
     'its controller manifest the top card of their library',
@@ -862,6 +916,39 @@ export const EFFECT_LIFE = defineRule<Clauses>({
       lifeAction(impliedYou('effect.life', pos), true, 'effect.life'),
       (clause): Clauses => [clause],
     )(ctx, pos),
+});
+
+/** "Until that player's next turn, they gain protection from everything and their life total can't change." */
+export const EFFECT_PLAYER_LOCK = defineRule<Clauses>({
+  id: 'effect.player-lock',
+  family: 'effect',
+  leading: ['until'],
+  cites: ['CR 702.16 (Protection)', 'CR 119 (Life)'],
+  examples: [
+    "until that player's next turn, they gain protection from everything and their life total can't change",
+  ],
+  rejects: [
+    "until that player's next turn, they gain protection from everything",
+    "until that player's next turn, their life total can't change",
+    'until your next turn, you gain protection from everything and your life total can’t change',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /until that player['’]s next turn, they gain protection from everything and their life total can(?:not|'t|’t) change(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const player = family<IrNoun>('noun', { only: ['noun.they'] })(ctx, pos + 31);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        makeClause('effect.player-lock', 'playerLock', { player: player.value }, r.value.span),
+      ],
+      pos: r.pos,
+    };
+  },
 });
 
 /** `effect.shuffle`: "Shuffle your library." and, since stage P63 (D-216), "You may shuffle." (Ponder: the library is the controller's) (CR 701.24). */

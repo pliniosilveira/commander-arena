@@ -272,6 +272,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Dragon spells or activate abilities of Dragons',
     'spend this mana only to cast artifact spells or activate abilities of artifacts',
     'spend this mana only to cast a Dragon creature spell',
+    // Issue 199 (Unclaimed Territory): the creature type the permanent chose as it entered.
+    'spend this mana only to cast a creature spell of the chosen type',
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
     'spend this mana only to cast artifact and creature spells',

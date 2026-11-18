@@ -254,6 +254,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
                 ...(s.combination !== undefined ? { combination: s.combination } : {}),
                 ...(s.ability !== undefined ? { ability: s.ability } : {}),
                 ...(s.sacrifice !== undefined ? { sacrifice: s.sacrifice } : {}),
+                ...(s.tapped !== undefined ? { tapped: s.tapped } : {}),
               })
             : tapAction(ctx, seat, s);
           if (a.kind !== 'activateAbility') throw new ScenarioError('not a mana ability');
@@ -263,6 +264,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
             ...(detailed && s.color !== undefined ? { color: a.color } : {}),
             ...(detailed && a.combination !== undefined ? { combination: a.combination } : {}),
             ...(a.sacrifice === undefined ? {} : { sacrifice: a.sacrifice }),
+            ...(a.tapped === undefined ? {} : { tapped: a.tapped }),
           };
         });
         apply(seat, { kind: 'payManual', taps });

@@ -35,6 +35,7 @@ import {
 } from './validate-attach';
 import { kindOf, triggerHasPlayer } from './validate-base';
 import {
+  castPhaseTargetsUsedUnguarded,
   checkCastFace,
   checkFlashbackCost,
   checkKickerCost,
@@ -117,8 +118,21 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       // CR 702.5a: what an Aura spell can target and what it can stay attached to: permanents.
       if (k.filter === undefined || k.filter === null) {
         issue(out, `${path}.filter`, 'enchant needs a filter');
+      } else if (k.player !== undefined) {
+        // Issue 159 (CR 702.5a, 702.5d): "Enchant player": a player, never a permanent, so there is nothing to describe.
+        if (k.player !== true) issue(out, `${path}.player`, 'player must be true when present');
+        if (Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
+      }
+      // D-629: "Enchant player": the Aura enchants a player; the filter of permanents says nothing then.
+      if (k.player !== undefined) {
+        if (k.player !== true) issue(out, `${path}.player`, 'player is true when present');
+        else if (k.filter !== undefined && k.filter !== null && Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
       }
       break;
     case 'equip':
@@ -285,6 +299,25 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'sum') {
+        // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
+        const parts = (r.count as { of?: unknown }).of;
+        if (!Array.isArray(parts) || parts.length < 2) {
+          issue(out, `${path}.count.of`, 'a sum of counts needs at least two counts');
+        } else {
+          parts.forEach((part, i) => {
+            if (kindOf(part) !== 'countOf') {
+              issue(out, `${path}.count.of[${i}]`, 'an enters-with sum is made of countOf amounts');
+            } else {
+              checkStateAmount(
+                part as Amount,
+                `${path}.count.of[${i}]`,
+                out,
+                'an enters-with count',
+              );
+            }
+          });
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&
@@ -293,7 +326,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(
           out,
           `${path}.count`,
-          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" } or a countOf',
+          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" }, a countOf or a sum of them',
         );
       }
       // CR 702.138c (D-124): "escapes with" is the only conditional form; it needs an escape cost (`checkCastFace`).
@@ -675,7 +708,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'landfall':
       break;
     case 'ringTempted':
-      // D-196: "whenever the Ring tempts you" (CR 701.54d) has no parameters.
+      if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
+        issue(out, `${path}.bearerChosen`, 'must be true when present');
+      }
+      break;
+    case 'classLevel':
+      if (!isCount(t.level) || t.level < 2) {
+        issue(out, `${path}.level`, 'a Class level trigger must name a level of 2 or greater');
+      }
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
@@ -792,6 +832,10 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-374: "another card".
       if (t.another !== undefined && typeof t.another !== 'boolean') {
         issue(out, `${path}.another`, 'another must be a boolean');
+      }
+      // CR 603.2c (Lorehold group 1): "one or more cards": a batch.
+      if (t.batch !== undefined && t.batch !== true) {
+        issue(out, `${path}.batch`, 'batch must be true when present');
       }
       // D-383: "a creature card": read against the card where it went (a graveyard, or exile for madness), so no zone, controller or owner.
       if (t.filter !== undefined) {
@@ -1315,7 +1359,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         xAllowed: false,
         ...(subject === undefined ? {} : { triggerSubject: subject }),
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
-        ...(a.trigger.kind === 'leftGraveyard' ? { triggerCards: true } : {}),
+        ...(a.trigger.kind === 'leftGraveyard' ||
+        (a.trigger.kind === 'discarded' && a.trigger.batch === true)
+          ? { triggerCards: true }
+          : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
@@ -1788,6 +1835,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
   if (face.types.includes('battle') && !isCount(face.defense)) {
     issue(out, `${path}.defense`, 'a battle needs a non-negative defense');
   }
+  if (
+    face.commanderTaxLife !== undefined &&
+    (!Number.isSafeInteger(face.commanderTaxLife) || face.commanderTaxLife <= 0)
+  ) {
+    issue(out, `${path}.commanderTaxLife`, 'commander tax life must be a positive whole number');
+  }
 
   face.abilities.forEach((a, i) => {
     checkAbility(a, `${path}.abilities[${i}]`, out);
@@ -1887,6 +1940,14 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.spell.targets`,
         `target "${id}" exists only in the matching gift branch: use it only in that branch`,
+      );
+    }
+    // Issue 244, CR 601.2c: a target chosen only if the spell was cast during its controller's main phase is used only in a `castInOwnMainPhase` conditional.
+    for (const id of castPhaseTargetsUsedUnguarded(face.spell)) {
+      issue(
+        out,
+        `${path}.spell.targets`,
+        `target "${id}" exists only if the spell was cast during its controller's main phase: use it only in the effect of a castInOwnMainPhase conditional`,
       );
     }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.

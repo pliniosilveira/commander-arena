@@ -462,7 +462,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const base = discardedCardWords(trigger.filter);
       if (base === null) return null;
       const card = trigger.another === true ? base.replace(/^an? /u, 'another ') : base;
-      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${card}`;
+      // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": one trigger for the cards discarded together.
+      const said =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : card;
+      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${said}`;
     }
     case 'diesBatch': {
       // D-206 (CR 603.2c): "Whenever one or more other creatures and/or artifacts you control die".
@@ -644,6 +649,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'state':
       // D-139 (CR 603.8): the condition itself is worded by `condition-text.ts`, which this module cannot import (it imports this one).
       return 'When a condition this permanent watches for becomes true';
+    case 'classLevel':
+      // D-598 (CR 716.2): a Class ability triggers when its level increases to this number.
+      return `When this Class becomes level ${trigger.level}`;
     case 'chapter': {
       const chapters: string[] = [];
       for (let n = trigger.from; n <= trigger.to; n += 1) chapters.push(romanNumeral(n));

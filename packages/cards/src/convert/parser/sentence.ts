@@ -51,10 +51,14 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
+  // Issue 159 (Liliana, Untouched by Death): "If at least one Zombie card is milled this way, each opponent loses 2 life."
+  'condition.milled-this-way',
   // D-412 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."
   'condition.cast-from-graveyard',
+  // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
+  'condition.cast-in-own-main-phase',
 ] as const;
 
 /**
@@ -83,10 +87,13 @@ const ATTACKERS_CONDITIONS = ['condition.those-attacked-you'] as const;
  * ("You may play the exiled card without paying its mana cost if an opponent was dealt 7 or more damage this turn.").
  */
 const TURN_CONDITIONS = [
+  'condition.creature-died-this-turn',
   'condition.player-dealt-damage',
   // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
   'condition.life-gained-this-turn',
   'condition.life-above-starting',
+  // Issue 159 (Laboratory Drudge): "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+  'condition.cast-from-graveyard-this-turn',
 ] as const;
 
 /**
@@ -119,6 +126,8 @@ const LEAD_CONDITIONS = [
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.
   'condition.discarded-spell-this-way',
+  // Lorehold group 1: "If you search your library this way, shuffle." after a search.
+  'condition.searched-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
@@ -191,10 +200,17 @@ const TRAILING_CONDITIONS = [
   ...ATTACKERS_CONDITIONS,
 ] as const;
 
-const TRAILING_IF: Parser<IrCondition> = quiet(
+const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
   map(
-    sequence(literal(' if '), family<IrCondition>('condition', { only: TRAILING_CONDITIONS })),
-    ([, condition]) => condition,
+    sequence(
+      choice(literal(' instead if '), literal(' if ')),
+      family<IrCondition>('condition', { only: TRAILING_CONDITIONS }),
+      optional(literal(' instead'), null),
+    ),
+    ([lead, condition, tail]) => ({
+      condition,
+      instead: lead.startsWith(' instead') || tail !== null,
+    }),
   ),
 );
 
@@ -427,7 +443,8 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             map(
               (c, p) => {
                 const ahead = pattern(
-                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield))/iu,
+                  // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
+                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
                 )(c, p);
                 return ahead.ok ? literal('you may ')(c, p) : ahead;
               },
@@ -458,7 +475,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         : options.unless === 'energy'
           ? optional(UNLESS_ENERGY, null)
           : (_ctx, p) => ({ ok: true, value: null, pos: p });
-    const trailing: Parser<IrCondition | null> =
+    const trailing: Parser<{ readonly condition: IrCondition; readonly instead: boolean } | null> =
       options.conditional && condition === undefined && !reflexive
         ? optional(TRAILING_IF, null)
         : (_ctx, p) => ({ ok: true, value: null, pos: p });
@@ -477,7 +494,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     if (trailingIf !== null && (items.length !== 1 || (items[0]?.length ?? 0) !== 1)) {
       return fail(ctx, prefix.pos);
     }
-    if (trailingIf !== null) condition = trailingIf;
+    if (trailingIf !== null) condition = trailingIf.condition;
     // The cost stops one instruction; after several clauses "unless" would say which of them.
     if (unlessPays !== null && (items.length !== 1 || (items[0]?.length ?? 0) !== 1)) {
       return fail(ctx, prefix.pos);
@@ -502,7 +519,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
         kind: 'sentence',
         clauses,
         ...(condition === undefined ? {} : { condition }),
-        ...(instead ? { instead: true } : {}),
+        ...(instead || trailingIf?.instead === true ? { instead: true } : {}),
         ...(otherwise ? { otherwise: true as const } : {}),
         ...(where === null ? {} : { where }),
         ...(reflexive ? { reflexive: true as const } : {}),

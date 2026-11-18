@@ -107,6 +107,38 @@ export function runDealDamage(
     next = r.state;
     events.push(...r.events);
   }
+  // Issue 159: "you gain life equal to the damage dealt this way" reads the damage that was dealt, after prevention (CR 615.6).
+  const dealt = events.reduce((n, e) => (e.kind === 'damageDealt' ? n + e.amount : n), 0);
+  return { ...done(next, events), ...(dealt > 0 ? { thisWay: { damageDealt: dealt } } : {}) };
+}
+
+/**
+ * "Each creature deals damage to itself equal to its power" (CR 120.2b, 120.3, 608.2h; Lorehold group 1): every object the selector names on the battlefield is the source and the recipient
+ * of one damage event of its own, as much as its power was as the effect began. All the powers are read first, from the state the instruction began with, so no damage dealt by an
+ * earlier object of the list changes what a later one deals. An object with power 0 or less deals none (CR 120.8). Like every damage instruction it returns the question of a
+ * replacement effect (CR 616.1) with nothing dealt, and runs again with the answer.
+ */
+export function runDealDamageToSelf(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'dealDamageToSelf' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const sources = resolveObjects(state, effect.objects, ctx, targets).flatMap((id) => {
+    const obj = state.objects[id];
+    if (obj?.zone !== 'battlefield') return [];
+    const power = derive(state, obj).power;
+    return power === null || power <= 0 ? [] : [{ id, power }];
+  });
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const { id, power } of sources) {
+    const r = dealDamageAsking(next, id, { kind: 'object', id }, power, false, flow);
+    if (r.kind === 'asked') return asking(state, r);
+    next = r.state;
+    events.push(...r.events);
+  }
   return done(next, events);
 }
 

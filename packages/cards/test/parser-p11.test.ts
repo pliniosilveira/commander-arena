@@ -21,6 +21,28 @@ const spellOf = (text: string, type: 'instant' | 'sorcery' = 'instant') => {
 };
 
 describe('the power of a target (CR 208.1, 608.2h): "Its controller gains life equal to its power"', () => {
+  test('a triggered ability can target a creature and gain life equal to its power', () => {
+    const abilities = readAll(
+      'At the beginning of your end step, you gain life equal to the power of target creature you control.',
+      'creature',
+    ).abilities;
+    expect(abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { types: ['creature'], controller: 'you' } },
+          },
+        ],
+        effect: {
+          kind: 'gainLife',
+          player: { kind: 'you' },
+          amount: { kind: 'powerOf', of: { kind: 'target', id: 't1' } },
+        },
+      },
+    ]);
+  });
   test("Swords to Plowshares' sentence reads the power of the target the clause before named", () => {
     const spell = spellOf('Exile target creature. Its controller gains life equal to its power.');
     expect(spell.targets).toEqual([target({ zone: 'battlefield', types: ['creature'] })]);

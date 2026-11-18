@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -43,6 +44,7 @@ import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
+import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -69,6 +71,8 @@ import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
+import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
+import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
 import {
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
@@ -101,8 +105,10 @@ import {
   EFFECT_MANIFEST,
   EFFECT_MILL,
   EFFECT_PLAYER,
+  EFFECT_PLAYER_LOCK,
   EFFECT_SHUFFLE,
 } from './player';
+import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
 import { PUMP_RULES } from './pump';
@@ -110,10 +116,12 @@ import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
+import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
+import { SEARCH_PAIR_RULES } from './search-pair';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { VOTE_EFFECT_RULES } from './vote';
@@ -208,6 +216,9 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
     // Stage P52 (D-210): the total mana value of the cards a mill before it milled.
     '~ deals damage to target opponent equal to the total mana value of those cards',
     '~ deals damage to that player equal to the total mana value of those cards',
+    // Lorehold Spirit deck, group 2 (issue 86, Fateful Tempest): every opponent, for the total mana value of the cards a mill before it milled (one number, counted once).
+    '~ deals damage to each opponent equal to the total mana value of cards milled this way',
+    '~ deals damage to each opponent equal to the total mana value of those cards',
   ],
   rejects: [
     '~ deals damage to that creature equal to the total mana value of those cards',
@@ -215,6 +226,8 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
     '~ deals damage to target player equal to the number of creatures',
     '~ deals damage to each creature equal to the number of lands you control',
     '~ deals damage to each opponent equal to the number of lands you control',
+    '~ deals damage to each player equal to the total mana value of those cards',
+    '~ deals damage to each creature equal to the total mana value of those cards',
     '~ deals damage to two target creatures equal to the number of lands you control',
     '~ deals damage to target creature equal to its power',
     '~ deals damage to target player',
@@ -224,19 +237,25 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.damage-count',
-    sequence(
-      literal('~ deals damage to '),
-      satisfy(
-        family<IrNoun>('noun', { only: DAMAGE_RECIPIENTS }),
-        (noun) =>
-          // Stage P52 (D-210): "that player", the one a sentence before it asked (the binding pass makes it that target).
-          (noun.det === 'target' ||
-            noun.det === 'you' ||
-            (noun.det === 'anaphor' && noun.rule === 'noun.that-player')) &&
-          noun.count === undefined,
+    satisfy(
+      sequence(
+        literal('~ deals damage to '),
+        satisfy(
+          family<IrNoun>('noun', { only: DAMAGE_RECIPIENTS }),
+          (noun) =>
+            // Stage P52 (D-210): "that player", the one a sentence before it asked (the binding pass makes it that target).
+            (noun.det === 'target' ||
+              noun.det === 'you' ||
+              // Lorehold group 2: "each opponent" is one number for every opponent, read only with the milled value (a count would be counted again for each, below).
+              noun.det === 'eachOpponent' ||
+              (noun.det === 'anaphor' && noun.rule === 'noun.that-player')) &&
+            noun.count === undefined,
+        ),
+        literal(' '),
+        family<IrArg>('amount', { only: ['amount.number-of', 'amount.milled-value-this-way'] }),
       ),
-      literal(' '),
-      family<IrArg>('amount', { only: ['amount.number-of', 'amount.milled-value-this-way'] }),
+      ([, to, , amount]) =>
+        to.det !== 'eachOpponent' || (amount.kind === 'thisWay' && amount.what === 'milledValue'),
     ),
     ([, to, , amount]) => ({ verb: 'dealDamage', args: { amount, to } }),
   ),
@@ -295,8 +314,13 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     'it deals damage equal to its power to any target',
     'it deals X damage to any target',
     'it deals damage equal to the number of Dragons you control to any target',
+    // Grave Danger (issue 159, Lotleth Giant): the count after "for each" multiplies the quantity (CR 608.2c).
+    'it deals 1 damage to target opponent for each creature card in your graveyard',
+    'it deals 2 damage to each opponent for each creature you control',
   ],
   rejects: [
+    'it deals X damage to target opponent for each creature you control',
+    'it deals 1 damage to target opponent for each',
     'it deals damage equal to its power',
     'it deals 1 damage',
     'it deals damage to you',
@@ -307,14 +331,21 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.damage-by-it',
-    sequence(
-      family<IrNoun>('noun', { only: ['noun.it'] }),
-      literal(' deals '),
-      DAMAGE_AMOUNT,
-      literal(' to '),
-      operands(DAMAGE_RECIPIENTS, 'effect.damage-by-it'),
+    satisfy(
+      sequence(
+        family<IrNoun>('noun', { only: ['noun.it'] }),
+        literal(' deals '),
+        DAMAGE_AMOUNT,
+        literal(' to '),
+        operands(DAMAGE_RECIPIENTS, 'effect.damage-by-it'),
+        optional(FOR_EACH_TAIL, null),
+      ),
+      ([, , amount, , , each]) => each === null || scaled(amount, each) !== null,
     ),
-    ([source, , amount, , to]) => ({ verb: 'dealDamage', args: { source, amount, to } }),
+    ([source, , amount, , to, each]) => ({
+      verb: 'dealDamage',
+      args: { source, amount: each === null ? amount : (scaled(amount, each) ?? amount), to },
+    }),
   ),
 });
 
@@ -382,6 +413,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).
     'exile target creature an opponent controls until an opponent becomes the monarch',
+    // Lorehold group 2 (issue 86): a card of your graveyard that is none of the types the words leave out.
+    'exile target noncreature, nonland card from your graveyard',
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -397,6 +430,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile this card from your hand',
     'exile that card from your hand',
     'exile that card from a graveyard',
+    'exile target noncreature, nonland card from a graveyard',
+    'exile target noncreature, nonland card from your graveyard until ~ leaves the battlefield',
     // D-270: the second half is another kind of target, which the slot of two zones does not say.
     'exile up to three other target creatures from the battlefield and/or creature cards from a graveyard',
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards until ~ leaves the battlefield',
@@ -410,6 +445,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
         operands(
           [
             ...GRAVEYARD_OPERANDS,
+            // Lorehold group 2 (issue 86): "exile target noncreature, nonland card from your graveyard".
+            'noun.target-nonmatching-graveyard-card',
             'noun.player-graveyard',
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
@@ -900,6 +937,11 @@ export const EFFECT_RULES = [
   ...HYLDA_G1_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
+  // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
+  ...LOREHOLD_G1_EFFECT_RULES,
+  // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
+  ...LOREHOLD_G2_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
@@ -928,6 +970,13 @@ export const EFFECT_RULES = [
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
+  // Issue 160 (D-627): "Populate".
+  ...POPULATE_EFFECT_RULES,
+  ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...SEARCH_PAIR_RULES,
+  ...ENCHANTED_PLAYER_EFFECT_RULES,
+  // Issue 160 (D-628): "Each player gains control of all creatures they own."
+  ...RETURN_CONTROL_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,
@@ -1009,6 +1058,7 @@ export const EFFECT_RULES = [
   EFFECT_DISCARD_HAND,
   EFFECT_DISCARD,
   EFFECT_LIFE,
+  EFFECT_PLAYER_LOCK,
   EFFECT_MANIFEST,
   EFFECT_MILL,
   EFFECT_SHUFFLE,

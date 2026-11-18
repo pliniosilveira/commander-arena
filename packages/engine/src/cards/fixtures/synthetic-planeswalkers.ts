@@ -368,6 +368,40 @@ export const SYNTHETIC_PLANESWALKER_LIST: readonly CardDefinition[] = [
     spell: { effect: { kind: 'setLifeTotal', player: YOU, amount: 60 } },
   }),
   singleFace({
+    name: 'SYNTHETIC Life Total Arithmetic',
+    manaCost: ['1', 'W', 'B'],
+    types: ['sorcery'],
+    colors: ['W', 'B'],
+    colorIdentity: ['W', 'B'],
+    oracleText: 'Double your life total. Target opponent loses half their life, rounded up.',
+    spell: {
+      targets: [{ id: 't1', what: { kind: 'player', filter: 'opponent' } }],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'setLifeTotal',
+            player: YOU,
+            amount: {
+              kind: 'multiple',
+              factor: 2,
+              of: { kind: 'lifeTotalOf', player: YOU },
+            },
+          },
+          {
+            kind: 'loseLife',
+            player: T1,
+            amount: {
+              kind: 'half',
+              of: { kind: 'lifeTotalOf', player: T1 },
+              round: 'up',
+            },
+          },
+        ],
+      },
+    },
+  }),
+  singleFace({
     name: 'SYNTHETIC Walker Theft',
     manaCost: ['2', 'U'],
     types: ['instant'],

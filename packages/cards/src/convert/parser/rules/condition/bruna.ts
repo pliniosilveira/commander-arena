@@ -38,6 +38,21 @@ export const CONDITION_LIFE_GAINED_THIS_TURN = defineRule<IrCondition>({
     'you gain 3 or more life this turn',
   ],
   parse: (ctx, pos) => {
+    const gainedAndLost = pattern(
+      new RegExp(`you gained and lost life this turn${BOUNDARY}`, 'iu'),
+    )(ctx, pos);
+    if (gainedAndLost.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'lifeGainedAndLostThisTurn' },
+          span: { start: pos, end: gainedAndLost.pos },
+          rule: 'condition.life-gained-this-turn',
+        },
+        pos: gainedAndLost.pos,
+      };
+    }
     const bare = pattern(new RegExp(`you gained life this turn${BOUNDARY}`, 'iu'))(ctx, pos);
     const r = bare.ok
       ? { ...bare, value: 1 }
@@ -172,8 +187,57 @@ export const CONDITION_UNLESS_RETURN = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.cast-from-graveyard-this-turn`: "you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, Laboratory Drudge; CR
+ * 601.2a, 602.2, 603.4: read as the trigger event happens and again as the ability resolves). The engine's `castFromGraveyardThisTurn`, read from the turn log. Not read: only one of
+ * the two halves, another player, another zone, "last turn".
+ */
+export const CONDITION_CAST_FROM_GRAVEYARD_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.cast-from-graveyard-this-turn',
+  family: 'condition',
+  leading: ['you', "you've", 'you’ve'],
+  cites: [
+    'CR 601.2a (Casting Spells)',
+    'CR 602.2 (Activating Activated Abilities)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
+  examples: [
+    "you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn",
+    'you’ve cast a spell from a graveyard or activated an ability of a card in a graveyard this turn',
+  ],
+  rejects: [
+    "you've cast a spell from a graveyard this turn",
+    "you've activated an ability of a card in a graveyard this turn",
+    "you've cast a spell from a graveyard or activated an ability of a card in a graveyard",
+    "you've cast a spell from your graveyard or activated an ability of a card in a graveyard this turn",
+    'an opponent has cast a spell from a graveyard or activated an ability of a card in a graveyard this turn',
+    "you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn and",
+    "you've cast a spell from a graveyard or activated an ability of a card in a graveyard last turn",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      new RegExp(
+        `you['’]ve cast a spell from a graveyard or activated an ability of a card in a graveyard this turn${BOUNDARY}`,
+        'iu',
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'castFromGraveyardThisTurn' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.cast-from-graveyard-this-turn',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const BRUNA_CONDITION_RULES = [
   CONDITION_LIFE_GAINED_THIS_TURN,
   CONDITION_LIFE_ABOVE_STARTING,
   CONDITION_UNLESS_RETURN,
+  CONDITION_CAST_FROM_GRAVEYARD_THIS_TURN,
 ];

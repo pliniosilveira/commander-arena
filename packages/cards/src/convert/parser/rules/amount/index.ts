@@ -11,6 +11,7 @@ import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
+import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
@@ -137,6 +138,8 @@ export const AMOUNT_THAT_MANY = defineRule<IrAmount>({
 });
 
 const POWER_OF = /equal to (its|that (?:creature|permanent)['’]s|~['’]s) power(?![\p{L}\p{N}])/iu;
+const TARGET_CREATURE_POWER =
+  /equal to the power of (target creature you control)(?![\p{L}\p{N}])/iu;
 
 /**
  * `amount.power-of`: "equal to its power", "equal to that creature's power", "equal to ~'s power"
@@ -166,6 +169,25 @@ export const AMOUNT_POWER_OF = defineRule<IrAmount>({
     'equal to',
   ],
   parse: (ctx, pos) => {
+    const targetMatch = pattern(TARGET_CREATURE_POWER)(ctx, pos);
+    if (targetMatch.ok) {
+      const start = pos + 'equal to the power of '.length;
+      const target: IrNoun = {
+        kind: 'noun',
+        det: 'target',
+        filter: { types: ['creature'], controller: 'you', raw: targetMatch.value[1] ?? '' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start, end: targetMatch.pos },
+        rule: 'noun.target-permanent',
+      };
+      return {
+        ok: true,
+        value: { kind: 'powerOf', of: target, span: { start: pos, end: targetMatch.pos } },
+        pos: targetMatch.pos,
+      };
+    }
     const m = pattern(POWER_OF)(ctx, pos);
     if (!m.ok) return fail(ctx, pos);
     const head = m.value[1] ?? '';
@@ -282,8 +304,18 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
     'CR 701.17a (Mill)',
     'CR 608.2c (Resolving Spells and Abilities)',
   ],
-  examples: ['equal to the total mana value of those cards'],
+  examples: [
+    'equal to the total mana value of those cards',
+    // Lorehold Spirit deck, group 2 (issue 86): the cards "milled this way".
+    'equal to the total mana value of cards milled this way',
+    'equal to the total mana value of the cards milled this way',
+  ],
   rejects: [
+    'equal to the total mana value of cards milled',
+    'equal to the total mana value of cards exiled this way',
+    'equal to the total mana value of cards milled this way plus 1',
+    'the total mana value of cards milled this way',
+    'equal to the total mana value of those cards milled this way',
     'the total mana value of those cards',
     'equal to the mana value of those cards',
     'equal to the total mana value',
@@ -292,14 +324,48 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
     'equal to the greatest mana value of those cards',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/equal to the total mana value of those cards(?![\p{L}\p{N}])/iu))(
-      ctx,
-      pos,
-    );
+    const r = spanned(
+      pattern(
+        /equal to the total mana value of (?:those cards|(?:the )?cards milled this way)(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,
       value: { kind: 'thisWay', what: 'milledValue', words: [], span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `amount.damage-dealt-this-way`: "equal to the damage dealt this way" (issue 159, CR 120.3, 615.6, 608.2c): the damage the instruction
+ * before it in the same text dealt, after prevention. Read only where the lowering finds a `dealDamage` of the same text before it.
+ */
+export const AMOUNT_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
+  id: 'amount.damage-dealt-this-way',
+  family: 'amount',
+  leading: ['equal'],
+  cites: [
+    'CR 120.3 (Damage)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['equal to the damage dealt this way'],
+  rejects: [
+    'the damage dealt this way',
+    'equal to the damage dealt',
+    'equal to damage dealt this way',
+    'equal to the damage dealt this turn',
+    'equal to the damage dealt this way plus 1',
+    'equal to the life lost this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/equal to the damage dealt this way(?![\p{L}\p{N}])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'thisWay', what: 'damageDealt', words: [], span: r.value.span },
       pos: r.pos,
     };
   },
@@ -327,6 +393,7 @@ export const AMOUNT_RULES = [
   AMOUNT_MANA_VALUE_OF,
   AMOUNT_LIFE_LOST_THIS_WAY,
   AMOUNT_MILLED_VALUE_THIS_WAY,
+  AMOUNT_DAMAGE_DEALT_THIS_WAY,
   // Galadriel deck, group 2 (D-539): two counts added; before `amount.for-each`, which would stop after the first.
   ...GALADRIEL_G2_AMOUNT_RULES,
   ...COUNT_AMOUNT_RULES,
@@ -335,6 +402,8 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_STILL_EXILED,
   AMOUNT_FOR_EACH_AURA_ATTACHED,
   AMOUNT_FOR_EACH_MANA_SPENT,
+  // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
+  ...LOREHOLD_G2_AMOUNT_RULES,
 ];
 
 /** The amounts of a damage or life clause: a number or X, never an article. */

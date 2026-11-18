@@ -8,8 +8,10 @@ import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { resolutionCount } from './action-taken';
 import { amountOf, playerStatOf, statOf } from './amounts';
+import { castInOwnMainPhase } from './cast-phase';
 import { chosenOf } from './chosen';
 import {
+  aPlayerCardsInHandHolds,
   cardsInGraveyardHolds,
   cardsInLibraryHolds,
   combatDamagedByHolds,
@@ -74,7 +76,7 @@ export interface ConditionContext {
    */
   readonly targets?: readonly ChosenTarget[];
   readonly moved?: readonly ObjectId[];
-  /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-583, CR 602.2b). Absent for any other spell or ability. */
+  /** The permanents sacrificed to pay the cost of the activated ability that is resolving, for `sacrificedAsCost` (D-584, CR 602.2b). Absent for any other spell or ability. */
   readonly costSacrificed?: readonly ObjectId[];
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
@@ -131,12 +133,21 @@ export function evaluateCondition(
     }
     case 'opponentsAtLeast':
       return opponentsOf(state, ctx.controller).length >= condition.count;
+    case 'opponentPoisonAtLeast':
+      return state.seats.some(
+        (seat) => seat.id !== ctx.controller && !seat.hasLost && seat.poison >= condition.count,
+      );
     case 'kicked': {
       // CR 702.33d: a spell that is resolving carries the fact on the stack; a permanent that
       // entered from a kicked spell keeps it (`GameObject.kicked`). Once either has left, its
       // last-known information says (CR 113.7a), which also covers a replacement as it enters.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.kicked === true || source.kicked === true);
+    }
+    case 'castInOwnMainPhase': {
+      // CR 601.2, 505.1 (issue 244): "If you cast this spell during your main phase"; read from the spell, or from its last-known information once it has left.
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && castInOwnMainPhase(state, source);
     }
     case 'replicated': {
       // CR 702.56a (D-129): "if a replicate cost was paid for it": the spell carries the count on the stack, or its
@@ -146,7 +157,7 @@ export function evaluateCondition(
     }
     case 'sacrificedAsCost': {
       // CR 118.8, 603.4 (D-491): "if you sacrificed one or more creatures to cast it": the spell carries the sacrificed permanents on the stack, or its last-known information
-      // does once it has left (CR 113.7a). D-583 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.
+      // does once it has left (CR 113.7a). D-584 (CR 602.2b): an activated ability reads what its own cost sacrificed from its resolution.
       if (ctx.costSacrificed !== undefined) return ctx.costSacrificed.length > 0;
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return (source?.stack?.sacrificedAsCost?.length ?? 0) > 0;
@@ -229,7 +240,7 @@ export function evaluateCondition(
     case 'objectMatches': {
       // D-135, CR 113.7a, 608.2h: the object the reference names, as it is or as it last was (a card an earlier instruction
       // moved is read as it was when it left), against the filter in whatever zone it was in.
-      const [id] = resolveObjects(
+      const ids = resolveObjects(
         state,
         condition.of,
         {
@@ -240,18 +251,22 @@ export function evaluateCondition(
         },
         ctx.targets ?? [],
       );
-      const named = id === undefined ? null : objectOrLki(state, id);
-      return (
-        named !== null &&
-        // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
-        (condition.inZone === undefined || named.zone === condition.inZone) &&
-        matchesFilter(
-          state,
-          named,
-          { ...condition.filter, zone: named.zone },
-          { controller: ctx.controller, source: ctx.source },
-        )
-      );
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects the instruction before it moved; otherwise the first.
+      const candidates = condition.any === true ? ids : ids.slice(0, 1);
+      return candidates.some((id) => {
+        const named = objectOrLki(state, id);
+        return (
+          named !== null &&
+          // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
+          (condition.inZone === undefined || named.zone === condition.inZone) &&
+          matchesFilter(
+            state,
+            named,
+            { ...condition.filter, zone: named.zone },
+            { controller: ctx.controller, source: ctx.source },
+          )
+        );
+      });
     }
     case 'giftPromised': {
       // CR 702.174k (D-135): the spell carries the chosen player on the stack, the permanent that came from it remembers
@@ -436,6 +451,8 @@ export function evaluateCondition(
       return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, ctx.controller, condition.compare);
+    case 'aPlayerCardsInHand':
+      return aPlayerCardsInHandHolds(state, condition.compare);
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);
@@ -445,6 +462,13 @@ export function evaluateCondition(
     case 'lifeGainedThisTurn':
       // D-252, CR 119.3: the life the controller has gained this turn, from the turn log.
       return lifeGainedThisTurnHolds(state, ctx.controller, condition);
+    case 'lifeGainedAndLostThisTurn':
+      return (
+        lifeGainedThisTurnHolds(state, ctx.controller, {
+          kind: 'lifeGainedThisTurn',
+          atLeast: 1,
+        }) && getSeat(state, ctx.controller).lifeLostThisTurn > 0
+      );
     case 'spellsCastThisTurn':
       // D-318, CR 601.2i: the spells the controller has cast this turn (copies are not cast, CR 707.10).
       if (condition.ofTypes === undefined) {
@@ -457,6 +481,13 @@ export function evaluateCondition(
             s.seat === ctx.controller &&
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
+      );
+    case 'castFromGraveyardThisTurn':
+      // Issue 159 (CR 601.2a, 602.2): a spell the controller cast from a graveyard this turn, or an ability of a card in a graveyard they activated this turn.
+      return (
+        state.turnLog.castSpells.some(
+          (s) => s.seat === ctx.controller && s.fromGraveyard === true,
+        ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
       );
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.

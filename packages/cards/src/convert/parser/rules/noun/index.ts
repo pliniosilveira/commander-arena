@@ -45,6 +45,8 @@ import {
 import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
+import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
+import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
 import { PAIR_NOUN_RULES } from './pair';
 import {
@@ -145,6 +147,16 @@ function targetOf(
     });
     return { ok: true, value, pos: filter.pos };
   };
+  // "up to one other target artifact or enchantment" (issue 244, CR 115.3, 601.2c): none or one target, which is not a target of the slot before it in the same text.
+  const upToOneOther: Parser<Bare> = map(
+    sequence(spanned(literal('up to one')), literal(' other target '), targetPhrase(false)),
+    ([count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: 1, span: count.span },
+        upTo: true,
+        otherTarget: true,
+      }),
+  );
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
@@ -170,6 +182,7 @@ function targetOf(
       ...(allowX ? [xTargets] : []),
       eachOf,
       oneOrTwo,
+      upToOneOther,
       upTo,
       upToThatMany,
       counted,
@@ -315,6 +328,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
   examples: [
     'target card from a graveyard',
     'target creature card from your graveyard',
+    'one or two target creature and/or planeswalker cards from your graveyard',
     "target creature card from an opponent's graveyard",
     'two target land cards from your graveyard',
     'up to three target land cards from your graveyard',
@@ -325,6 +339,7 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'target card',
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
+    'one or two target creature and planeswalker cards from your graveyard',
   ],
   parse: targetOf(ID.targetGraveyard, graveyardPhrase),
 });
@@ -355,6 +370,39 @@ export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
     'all creature cards in your graveyard',
   ],
   parse: targetOf('noun.target-cards-in-your-graveyard', (plural) => graveyardPhrase(plural, 'in')),
+});
+
+/**
+ * `noun.target-card-in-a-graveyard` (issue 159, Havengul Lich): "target creature card in a graveyard": the cards of `noun.target-graveyard-card`, said with "in" and of any player's
+ * graveyard (CR 404.1, 115.1). One card only. Another noun rule so that the "in a graveyard" is read only where a rule asks for this noun by its id.
+ */
+export const NOUN_TARGET_CARD_IN_A_GRAVEYARD = defineRule<IrNoun>({
+  id: 'noun.target-card-in-a-graveyard',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: [
+    'target creature card in a graveyard',
+    'target card in a graveyard',
+    'target Zombie creature card in a graveyard',
+  ],
+  rejects: [
+    'target creature card in your graveyard',
+    "target creature card in an opponent's graveyard",
+    'target creature card from a graveyard',
+    'two target creature cards in a graveyard',
+    'target creature in a graveyard',
+    'target card',
+    'all creature cards in a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-a-graveyard', (plural) =>
+      graveyardPhrase(plural, 'inAny'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements.
+    return r.value.plural || r.value.upTo || r.value.count !== undefined ? fail(ctx, pos) : r;
+  },
 });
 
 /**
@@ -710,8 +758,14 @@ export const NOUN_RULES = [
   NOUN_UP_TO_GRAVEYARD_CARDS,
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
+  NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "any number of target cards from your graveyard", read by `effect.shuffle-cards-into-library` only.
+  ...LOREHOLD_G1_NOUN_RULES,
+  // Lorehold Spirit deck, group 2 (issue 86): "target noncreature, nonland card from your graveyard" (read by `effect.exile` only) and "target card exiled with ~" (read by
+  // `effect.cast-exiled-with-self` only).
+  ...LOREHOLD_G2_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "those creatures" and "X target creatures".
   ...HYLDA_G2_NOUN_RULES,
   NOUN_PLAYER_GRAVEYARD,

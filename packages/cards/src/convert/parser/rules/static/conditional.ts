@@ -25,6 +25,7 @@ const STATIC_CONDITIONS = [
   'condition.control-commander',
   'condition.control-your-commander',
   'condition.life-total',
+  'condition.opponent-poison-at-least',
   'condition.this-tapped',
   'condition.designation',
   // Stage P34 (D-152): the permanents that entered this turn.

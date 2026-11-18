@@ -112,17 +112,18 @@ const STAT_WORDS: Readonly<Record<'power' | 'toughness' | 'manaValue', string>> 
   manaValue: 'mana value',
 };
 
-/** "opponents with more life than you": what `opponentsWithMore` counts. */
-function opponentsWithMore(stat: PlayerStat): string {
+/** "opponents with more life than you": what `opponentsWithMore` counts (D-626: `fewer`, with less). */
+function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
+  const more = fewer ? 'fewer' : 'more';
   switch (stat) {
     case 'life':
-      return 'the number of opponents with more life than you';
+      return `the number of opponents with ${fewer ? 'less' : 'more'} life than you`;
     case 'cardsInHand':
-      return 'the number of opponents with more cards in hand than you';
+      return `the number of opponents with ${more} cards in hand than you`;
     case 'creatures':
-      return 'the number of opponents who control more creatures than you';
+      return `the number of opponents who control ${more} creatures than you`;
     case 'lands':
-      return 'the number of opponents who control more lands than you';
+      return `the number of opponents who control ${more} lands than you`;
   }
 }
 
@@ -158,6 +159,12 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'searched':
+      // Lorehold group 1: "If you search your library this way".
+      return 'the number of times you searched your library this way';
+    case 'damageDealt':
+      // Issue 159: "equal to the damage dealt this way".
+      return 'the damage dealt this way';
   }
 }
 
@@ -272,7 +279,7 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'thisWay':
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':
-      return opponentsWithMore(amount.stat);
+      return opponentsWithMore(amount.stat, amount.fewer === true);
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
@@ -286,7 +293,7 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
     case 'sacrificedAsCost':
-      // D-491 (CR 118.8), D-583 (CR 602.2b): "for each creature sacrificed this way": the additional cost of the spell or the cost of the activated ability.
+      // D-491 (CR 118.8), D-584 (CR 602.2b): "for each creature sacrificed this way": the additional cost of the spell or the cost of the activated ability.
       return 'the number of permanents sacrificed as a cost';
     case 'exiledStillThere':
     case 'cardsStillExiled':

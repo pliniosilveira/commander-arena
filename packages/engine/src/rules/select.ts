@@ -254,6 +254,10 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    // CR 607.2a, 400.7 (Lorehold group 2): the cards the source exiled with its linked ability; a source that left the battlefield is a new object with none.
+    ...(filter.exiledWithSource === true
+      ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
+      : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
   };
@@ -274,6 +278,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.controllerDealtDamageBySource === true ||
     f.putFromBattlefieldThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
@@ -733,6 +738,16 @@ export function resolvePlayers(
       // CR 508.6 (D-648): "that opponent": the player the declaration attacked that made the trigger, if still in the game.
       const attacked = ctx.triggerAttacked?.[0];
       return attacked === undefined || getSeat(state, attacked).hasLost ? [] : [attacked];
+    }
+    case 'opponentsAttackingTriggerPlayer': {
+      // CR 508.6 (issue 159): the player who declared the attackers of the trigger's declaration (`triggerPlayer` of an `attackBatch` trigger), when they are an opponent of the
+      // controller of the ability and still in the game: an opponent "attacking that player". The controller attacking the enchanted player is not an opponent.
+      const attacker = ctx.triggerPlayer;
+      return attacker !== undefined &&
+        !getSeat(state, attacker).hasLost &&
+        opponentsOf(state, ctx.controller).includes(attacker)
+        ? [attacker]
+        : [];
     }
     case 'declinedPlayer':
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost

@@ -202,6 +202,8 @@ export interface ObjectView {
    * 303.4b). The UI draws it on or under that permanent. Absent when it is attached to nothing.
    */
   readonly attachedTo?: ObjectId;
+  /** For an Aura that enchants a player (D-629): the player it is attached to. */
+  readonly attachedToPlayer?: SeatId;
   /**
    * For a permanent: the Auras and Equipment on the battlefield attached to it, oldest first. Absent
    * when there are none.
@@ -325,6 +327,8 @@ export interface ObjectView {
    * it. Absent for a land and outside those zones.
    */
   readonly castCost?: readonly string[];
+  /** Life that replaces this commander's mana tax if cast from the command zone now. */
+  readonly castCostLife?: number;
   /**
    * The additional costs to cast the card's face that is up (CR 118.8, D-095), as its rules text
    * says: what the caster sacrifices or discards besides the mana. Public, like `oracleText`. Absent
@@ -401,6 +405,8 @@ export interface AlternativeCostView {
   readonly exile?: number;
   /** For `tapPermanents` (D-149): how many untapped permanents of this filter are tapped as part of the cost. */
   readonly tap?: { readonly filter: ObjectFilter; readonly count: number };
+  /** For `sacrificeFromGraveyard` (issue 159): how many permanents of this filter are sacrificed as part of the cost. */
+  readonly sacrifice?: { readonly filter: ObjectFilter; readonly count: number };
 }
 
 /** One face of a multi-faced card, as printed: its name, cost, type line, rules text and values. */
@@ -443,6 +449,8 @@ export interface SeatView {
   /** How many spells this player has cast this turn (CR 601.2i; copies are not cast): what Storm counts (D-129). */
   readonly spellsCastThisTurn: number;
   readonly commanderTax: Readonly<Record<string, number>>;
+  /** The amount of life replacing each commander's mana tax at the current cast count. */
+  readonly commanderTaxLife: Readonly<Record<string, number>>;
   /**
    * How many times the Ring has tempted this player (CR 701.54c, D-196), which turns on the abilities of their emblem named The Ring (1: the legendary
    * Ring-bearer that evades greater power; 2: the loot; 3: the sacrifice of a blocker; 4: the life loss). Public. Absent until the first time.
@@ -540,6 +548,7 @@ function castCostFields(
   obj: GameObject,
 ): {
   castCost?: readonly string[];
+  castCostLife?: number;
   additionalCosts?: readonly Cost[];
   additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
   alternativeCosts?: readonly AlternativeCostView[];
@@ -547,11 +556,16 @@ function castCostFields(
   if (obj.card === null || obj.zone === 'battlefield') return {};
   const castCost = castCostOf(state, obj);
   const face = definitionOf(state, obj.card).faces[obj.face];
+  const commanderTaxLife =
+    obj.zone === 'command' && face?.commanderTaxLife !== undefined
+      ? face.commanderTaxLife * (state.commanderCasts[obj.card] ?? 0)
+      : 0;
   const additional = face?.additionalCosts;
   const choice = face?.additionalCostChoice;
   const alternatives = alternativeCostsOf(state, obj);
   return {
     ...(castCost === null ? {} : { castCost }),
+    ...(commanderTaxLife === 0 ? {} : { castCostLife: commanderTaxLife }),
     ...(alternatives.length === 0 ? {} : { alternativeCosts: alternatives }),
     ...(additional === undefined ? {} : { additionalCosts: additional }),
     ...(choice === undefined ? {} : { additionalCostChoice: choice }),
@@ -771,6 +785,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
       : {}),
     ...(activated.length === 0 ? {} : { activated }),
     ...(d.attachedTo === null ? {} : { attachedTo: d.attachedTo }),
+    ...(obj.attachedToPlayer === undefined ? {} : { attachedToPlayer: obj.attachedToPlayer }),
     ...(d.attachments.length === 0 ? {} : { attachments: d.attachments }),
     ...(obj.zone === 'battlefield' && regenerationShieldsOn(state, id) > 0
       ? { regenerationShields: regenerationShieldsOn(state, id) }
@@ -886,7 +901,18 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       lifeLostThisTurn: s.lifeLostThisTurn,
       spellsCastThisTurn: s.spellsCastThisTurn,
       commanderTax: Object.fromEntries(
-        s.commanders.map((c) => [c, 2 * (state.commanderCasts[c] ?? 0)]),
+        s.commanders.map((c) => {
+          const face = state.cards[c] === undefined ? undefined : definitionOf(state, c).faces[0];
+          return [c, face?.commanderTaxLife === undefined ? 2 * (state.commanderCasts[c] ?? 0) : 0];
+        }),
+      ),
+      commanderTaxLife: Object.fromEntries(
+        s.commanders.flatMap((c) => {
+          const face = state.cards[c] === undefined ? undefined : definitionOf(state, c).faces[0];
+          return face?.commanderTaxLife === undefined
+            ? []
+            : [[c, face.commanderTaxLife * (state.commanderCasts[c] ?? 0)]];
+        }),
       ),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),

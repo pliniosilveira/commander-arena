@@ -8,9 +8,11 @@
 import { describe, expect, test } from 'vitest';
 import { syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
+import { chooseOptionDecision } from './pending-helpers';
 
 const VITAL = 'SYNTHETIC Vital Angel';
 const RADIANT = 'SYNTHETIC Radiant Angel';
+const DOUBLER = 'SYNTHETIC Doubling Angel';
 const SEER = 'SYNTHETIC Seer Seraph';
 const PINGER = 'SYNTHETIC Dawn Pinger';
 const ENVIOUS = 'SYNTHETIC Envious Angel';
@@ -32,6 +34,7 @@ describe('the cards are valid', () => {
   test.each([
     VITAL,
     RADIANT,
+    DOUBLER,
     SEER,
     PINGER,
     ENVIOUS,
@@ -115,6 +118,29 @@ describe('"If you would gain life, you gain that much life plus N instead"', () 
     g.expect.life(0, 42);
   });
 
+  test('lifelink can pause for a life-replacement order and then resumes combat', () => {
+    const g = scenario()
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(HAWK, VITAL, DOUBLER)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(HAWK);
+    g.advanceTo('declareBlockers', { block: false });
+    while (g.state.pending?.kind === 'priority' && g.state.turn.step === 'declareBlockers') {
+      g.act(g.state.pending.seat).pass();
+    }
+    const q = chooseOptionDecision(g);
+    expect(q.replacement).toMatchObject({ lifeGain: { amount: 1 } });
+    g.act(0).chooseOption(q.options[1] as string);
+    g.expect.pending('priority', 0);
+    g.expect.life(0, 43);
+    g.expect.life(1, 39);
+    g.expect.invariants();
+  });
+
   test('it is the ability of the permanent: it stops when the permanent leaves', () => {
     const g = scenario()
       .seat(0)
@@ -142,6 +168,34 @@ describe('"If you would gain life, you gain that much life plus N instead"', () 
     edge.expect.pt(VITAL, 4, 4);
     const low = scenario().seat(0).life(24).battlefield(VITAL).seat(1).build();
     low.expect.pt(VITAL, 2, 2);
+  });
+});
+
+describe('ordering a life-gain replacement that doubles with one that adds life', () => {
+  test('the affected player chooses which replacement applies first', () => {
+    const g = base().hand(MEND).battlefield(VITAL, DOUBLER).seat(1).build();
+    g.act(0).cast(MEND, { pay: true });
+    g.passAll();
+    const q = chooseOptionDecision(g);
+    g.expect.pending('chooseOption', 0);
+    expect(q.purpose).toBe('replacement');
+    expect(q.options).toHaveLength(2);
+
+    g.act(0).chooseOption(q.options[0] as string);
+    g.expect.pending('priority', 0);
+    g.expect.life(0, 48);
+  });
+
+  test('the other order applies the addition after doubling', () => {
+    const g = base().hand(MEND).battlefield(VITAL, DOUBLER).seat(1).build();
+    g.act(0).cast(MEND, { pay: true });
+    g.passAll();
+    const q = chooseOptionDecision(g);
+    g.expect.pending('chooseOption', 0);
+
+    g.act(0).chooseOption(q.options[1] as string);
+    g.expect.pending('priority', 0);
+    g.expect.life(0, 47);
   });
 });
 

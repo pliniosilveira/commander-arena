@@ -187,7 +187,13 @@ test('Madness: cycling discards the card to exile, the question names the cost, 
   await page.getByRole('button', { name: 'Full Control' }).click();
 
   // Cycling {1}: the card is discarded as a cost and exiled by madness instead of the graveyard.
+  // A card in the hand asks about its ability even when it is the only one (#40), so the click
+  // opens the chooser and the ability is picked in it.
   await handCard(page, cycler).first().click();
+  await page
+    .locator('.dec-ability-chooser')
+    .getByRole('button', { name: /^Cycling/ })
+    .click();
   await settled(page);
   await expect(logText(page)).toContainText(`${cycler} was exiled with madness.`);
   const wording = stack(page).locator('[data-later-wording]');
@@ -257,10 +263,10 @@ test('Foretell: the button, our own card face down, cast for the foretell cost f
   await expect(viewer.locator('[data-exile-mark="Foretold"]')).toHaveCount(1);
   await expect(viewer.getByText('Yours')).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.locator('.board-flashback-chip', { hasText: 'Cast for' })).toHaveCount(0);
+  await expect(page.locator('.board-exile-play', { hasText: 'Cast for' })).toHaveCount(0);
 
   // From a later turn: "Cast for {1}{G}" above the hand, one click casts it.
-  const chip = page.locator('.board-flashback-chip', { hasText: 'Cast for {1}{G}' });
+  const chip = page.locator('.board-exile-play', { hasText: 'Cast for {1}{G}' });
   await playUntil(page, async () => (await noDialog(page)) && (await chip.count()) > 0);
   await expect(chip.first()).toHaveAttribute('aria-label', `Cast for {1}{G}: ${giant}`);
   // Full Control, so the spell stays on the stack for us to read.

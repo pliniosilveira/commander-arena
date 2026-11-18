@@ -249,7 +249,13 @@ class Binder {
         );
         break;
       case 'plural':
-        found = recent.find((a) => a.kind === 'object' && a.noun.plural);
+        // Issue 160 (D-627, CR 608.2c): "Put a +1/+1 counter on each creature you control. Those creatures gain vigilance": the group "each creature" named, which the
+        // singular wording of "each" does not mark as plural. Only "those creatures" says so ("them" after an "each" stays unbound).
+        found = recent.find(
+          (a) =>
+            a.kind === 'object' &&
+            (a.noun.plural || (a.noun.det === 'each' && /^those /iu.test(noun.filter.raw.trim()))),
+        );
         break;
       case 'other':
         found = recent.find((a) => a.noun.count?.kind === 'number' && a.noun.count.value === 2);
@@ -376,6 +382,8 @@ class Binder {
       case 'aggregate':
       case 'colorsAmong':
       case 'cardTypesAmong':
+        return { ...amount, of: this.noun(amount.of) };
+      case 'lifeTotalOf':
         return { ...amount, of: this.noun(amount.of) };
       case 'half':
       case 'multiple':

@@ -74,4 +74,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-card-drawn',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.
   'amount.for-each-aura-attached',
+  // Lorehold Spirit deck group 2 (issue 86): the votes for one option of the vote the text made.
+  'amount.for-each-vote',
 ] as const;

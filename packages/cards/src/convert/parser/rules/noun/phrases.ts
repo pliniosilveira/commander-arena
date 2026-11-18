@@ -444,7 +444,7 @@ export interface KeywordSuffix {
  * more than one thing: what follows the first keyword is left unread, so the phrase around it does not read.
  */
 export const KEYWORD_SUFFIX: Parser<KeywordSuffix> = (ctx, pos) => {
-  for (const [word] of GRANTABLE_KEYWORDS) {
+  for (const word of [...GRANTABLE_KEYWORDS.map(([name]) => name), 'toxic']) {
     const r = pattern(new RegExp(` (with|without) ${word.replace(' ', '\\s+')}${BOUNDARY}`, 'iu'))(
       ctx,
       pos,
@@ -991,20 +991,23 @@ interface CardWords {
 export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
-  preposition: 'from' | 'in' = 'from',
+  preposition: 'from' | 'in' | 'inAny' = 'from',
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
-    preposition === 'in'
-      ? map(literal(' in your graveyard'), () => 'you' as const)
-      : choice(
-          map(literal(' from your graveyard'), () => 'you' as const),
-          map(literal(' from a graveyard'), () => undefined),
-          map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-          // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-          ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-        );
+    preposition === 'inAny'
+      ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
+        map(literal(' in a graveyard'), () => undefined)
+      : preposition === 'in'
+        ? map(literal(' in your graveyard'), () => 'you' as const)
+        : choice(
+            map(literal(' from your graveyard'), () => 'you' as const),
+            map(literal(' from a graveyard'), () => undefined),
+            map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+            // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+            ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+          );
   const choiceOfTypes: Parser<CardWords> = map(
-    sequence(typeChoice(CARD_TYPES), literal(' ')),
+    sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
   );
   const typed: Parser<CardWords> = map(
@@ -1097,7 +1100,7 @@ export function graveyardPhrase(
     };
   };
   const words: Parser<CardWords> = plural
-    ? choice(permanentCards, typed)
+    ? choice(permanentCards, choiceOfTypes, typed)
     : choice(permanentCards, withNonAura, choiceOfTypes, quiet(subtypeChoiceWords), typed);
   // "Dragon creature card or Ugin planeswalker card from your graveyard" (stage P34, D-152, CR 205.2a, 205.3j): one card that is either kind,
   // each kind a creature type and a card type ("Dragon creature card") or a planeswalker type ("Ugin planeswalker card"). Two or more kinds,

@@ -275,9 +275,54 @@ export const EFFECT_RETURN_AT_UPKEEP = quietly(
   }),
 );
 
+/** "Return that card to its owner's hand at the beginning of the next end step" in a dies trigger. */
+export const EFFECT_RETURN_TO_HAND_DELAYED = quietly(
+  defineRule<Clauses>({
+    id: 'effect.return-to-hand-delayed',
+    family: 'effect',
+    leading: ['return'],
+    cites: ['CR 603.7 (Handling Triggered Abilities)', 'CR 400.7 (General)'],
+    examples: [
+      "return that card to its owner's hand at the beginning of the next end step",
+      'return that card to its owner’s hand at the beginning of the next end step',
+    ],
+    rejects: [
+      "return that card to its owner's hand",
+      "return that card to its owner's hand at the beginning of your next end step",
+      "return that card to its owner's hand at the beginning of the next upkeep",
+      "return it to its owner's hand at the beginning of the next end step",
+      "return that card to its owner's graveyard at the beginning of the next end step",
+    ],
+    parse: (ctx, pos) => {
+      const r = sequence(
+        literal('return '),
+        family<IrNoun>('noun', { only: ['noun.that-card'] }),
+        pattern(/ to its owner['’]s hand at the beginning of the next end step(?![\p{L}\p{N}])/iu),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [, objects] = r.value;
+      const to: IrZoneSpec = {
+        kind: 'zoneSpec',
+        zone: 'hand',
+        whose: 'owner',
+        span: { start: objects.span.end, end: r.pos },
+        rule: 'effect.return-to-hand-delayed',
+      };
+      const clause = makeClause(
+        'effect.return-to-hand-delayed',
+        'delayedReturnToHand',
+        { objects, to },
+        { start: pos, end: r.pos },
+      );
+      return { ok: true, value: [clause], pos: r.pos };
+    },
+  }),
+);
+
 export const FLICKER_RULES = [
   EFFECT_FLICKER,
   EFFECT_RETURN_DELAYED,
   EFFECT_RETURN_THIS_CARD_DELAYED,
   EFFECT_RETURN_AT_UPKEEP,
+  EFFECT_RETURN_TO_HAND_DELAYED,
 ];

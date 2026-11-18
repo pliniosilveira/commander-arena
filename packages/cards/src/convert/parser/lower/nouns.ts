@@ -223,6 +223,10 @@ function lowerFilterAt(
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
+      if (word === 'toxic') {
+        kinds.push('toxic');
+        continue;
+      }
       const kind = keywordKind(word);
       if (kind === undefined || !isGrantable(kind)) return null;
       kinds.push(kind);
@@ -236,6 +240,7 @@ function lowerFilterAt(
   // D-139 (stage P31): "attacking creatures" (CR 508.1k), a number of colors (CR 105.2).
   if (filter.attacking === true) parts.push('selector:attacking');
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
+  if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -261,6 +266,11 @@ function lowerFilterAt(
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
+  }
+  // Lorehold group 2: "target card exiled with ~" (CR 607.2a), read where the filter is matched against the game with the source (a target slot); never a member of a choice, and a card in exile.
+  if (filter.exiledWithSelf === true) {
+    if (inner || filter.zone !== 'exile') return bad([]);
+    parts.push('selector:exiledWithSource');
   }
   // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
   if (filter.modified === true) {
@@ -400,6 +410,7 @@ function lowerFilterAt(
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
+    ...(filter.powerLessThanSource === true ? { powerLessThanSource: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
@@ -414,6 +425,7 @@ function lowerFilterAt(
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
@@ -890,7 +902,8 @@ export function objectSelectorOf(
   options: RefOptions = {},
 ): LowerResult<ObjectSelector> {
   // D-517: "those creatures" after "tap all creatures target player controls": the group the text named, as it was lowered.
-  if (options.eachMention === true && noun.det === 'anaphor') {
+  // Only the plural pronoun ("those creatures") names the group back: "it" after "each creature" is one of them, which the engine cannot name (issue 160, D-627).
+  if (options.eachMention === true && noun.det === 'anaphor' && noun.plural) {
     const mentioned = noun.ref === undefined ? undefined : ctx.eachMentions.get(noun.ref);
     if (mentioned !== undefined) return { ok: true, value: mentioned, rule: noun.rule };
   }

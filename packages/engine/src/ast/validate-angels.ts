@@ -49,6 +49,13 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (!isCount(t.atLeast) || t.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast is a whole number of 1 or more');
       }
+      if (t.attackedEnchantedPlayer !== undefined && t.attackedEnchantedPlayer !== true) {
+        issue(
+          out,
+          `${path}.attackedEnchantedPlayer`,
+          'attackedEnchantedPlayer is true when present',
+        );
+      }
       if (t.what !== undefined) {
         checkFilter(t.what, `${path}.what`, out);
         if (
@@ -103,6 +110,8 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       if (!isCount(r.amount) || r.amount < 1) {
         issue(out, `${path}.amount`, 'the extra life is a positive whole number');
       }
+      return true;
+    case 'lifeGainDouble':
       return true;
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
@@ -163,6 +172,7 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'groupEntersUntapped':
+    case 'groupEntersTapped':
       // D-179: tapped is a state, not something the entering permanent has before it enters; the other fields are read as for the counters.
       checkEnteringFilter(r.what, `${path}.what`, out);
       return true;
@@ -208,6 +218,9 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
+      }
+      if (s.removeCounter !== undefined && !isOneOf(s.removeCounter, ['+1/+1', '-1/-1'])) {
+        issue(out, `${path}.removeCounter`, 'removeCounter is a +1/+1 or a -1/-1 counter');
       }
       return true;
     case 'blockTax':

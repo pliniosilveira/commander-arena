@@ -72,7 +72,8 @@ export function checkDelayedTrigger(
         "a delayed move names the object an effect before it exiled: 'moved' after an exile, 'triggerCard' in a dies trigger, or 'thisCard' in the dies trigger of an enchanted creature",
       );
     }
-    if (move.to !== 'battlefield') {
+    const handReturn = diesTrigger && kindOf(move.objects) === 'triggerCard' && move.to === 'hand';
+    if (move.to !== 'battlefield' && !handReturn) {
       issue(out, `${path}.effect.to`, 'a delayed move puts the object onto the battlefield');
     }
     return;

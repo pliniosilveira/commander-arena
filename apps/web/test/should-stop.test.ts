@@ -68,6 +68,7 @@ function seat(
     spellsCastThisTurn: 0,
     landPlaysAllowed: 1,
     commanderTax: {},
+    commanderTaxLife: {},
   };
 }
 

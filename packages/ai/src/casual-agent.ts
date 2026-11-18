@@ -103,7 +103,7 @@ export function createCasualHandlers(
         ? chooseFightOpponent(view, d) // CR 701.14, D-145: the creature the subject fights
         : d.purpose === 'ringBearer'
           ? chooseRingBearer(view, d) // CR 701.54a, D-196: the creature with the most power becomes the Ring-bearer
-          : d.purpose === 'amass'
+          : d.purpose === 'amass' || d.purpose === 'populate'
             ? chooseAmassArmy(view, d) // CR 701.47a, D-367: the Army with the most power gets the counters
             : d.purpose === 'untap'
               ? { kind: 'choosePermanents', objects: [...d.legal] } // CR 502.3, D-125: untap everything

@@ -19,6 +19,7 @@ import type {
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
@@ -31,6 +32,7 @@ import {
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
+  DELAYED_RETURN_TO_HAND,
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
@@ -50,6 +52,7 @@ import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
@@ -66,6 +69,8 @@ import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
+import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
@@ -81,9 +86,12 @@ import {
 } from './nouns';
 import { PILES_LOWERINGS } from './piles';
 import { PLANESWALKER_LOWERINGS } from './planeswalker';
+import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
+import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
+import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { VRASKA_LOWERINGS } from './vraska';
@@ -673,19 +681,67 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
 const MAY_CAST: Lowering<IrClause, Effects> = {
   head: 'mayCast',
   id: 'lower.may-cast',
-  needs: ['effect:mayCast', 'selector:target', 'duration:untilEndOfTurn'],
+  needs: [
+    'effect:mayCast',
+    'selector:target',
+    'duration:untilEndOfTurn',
+    'effect:gainActivatedAbilitiesOf',
+  ],
   lower(clause, ctx) {
     const objects = operand(clause, 'objects');
     if (objects?.kind !== 'noun' || objects.det !== 'target') return failure(clause);
     // D-359: "If that spell would be put into your graveyard, exile it instead" is the rider of the permission (`exileInstead`).
     const exile = arg(clause, 'exileInstead');
     if (exile !== undefined && exile.kind !== 'flag') return failure(clause);
+    // Issue 159 (Havengul Lich): "target creature card in a graveyard" (any player's), and the rider "When you cast it this turn, ~ gains all activated abilities of that card".
+    const any = arg(clause, 'anyGraveyard');
+    const rider = arg(clause, 'whenCast');
+    if (
+      (any !== undefined && any.kind !== 'flag') ||
+      (rider !== undefined && rider.kind !== 'flag')
+    ) {
+      return failure(clause);
+    }
     return eachObject(clause, ctx, (selected) => ({
       kind: 'mayCast',
       objects: selected,
       duration: 'untilEndOfTurn',
       ...(exile?.value === true ? { exileInstead: true as const } : {}),
+      ...(any?.value === true ? { anyGraveyard: true as const } : {}),
+      ...(rider?.value === true
+        ? {
+            whenCast: {
+              kind: 'gainActivatedAbilitiesOf' as const,
+              to: { kind: 'this' as const },
+              from: { kind: 'triggerSubject' as const },
+              duration: 'untilEndOfTurn' as const,
+            },
+          }
+        : {}),
     }));
+  },
+};
+
+/**
+ * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): the engine's `mayCastSpells`, a permission for the rest of the turn that covers
+ * every card of the controller's graveyard the filter describes.
+ */
+const MAY_CAST_SPELLS: Lowering<IrClause, Effects> = {
+  head: 'mayCastSpells',
+  id: 'lower.may-cast-spells',
+  // "You may" is the sentence's own offer and the permission is optional anyway (nobody has to cast).
+  acceptsOptional: true,
+  needs: ['effect:mayCastSpells', 'duration:untilEndOfTurn'],
+  lower(clause) {
+    const objects = operand(clause, 'objects');
+    if (objects?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter(objects);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [{ kind: 'mayCastSpells', spells: filter.value, duration: 'untilEndOfTurn' }],
+      rule: clause.rule,
+    };
   },
 };
 
@@ -831,6 +887,14 @@ function playerVerb(
       }
       // "Discard their hand" (stage P52, D-210, CR 701.9): as many cards as the hand holds, counted as the instruction comes up.
       if (verb === 'discard' && arg(clause, 'hand') !== undefined) {
+        // "Each player discards their hand" (Lorehold group 3, CR 701.9a): each player discards the hand they have as their instruction comes up, so the count is not the controller's.
+        if (player.value.kind !== 'you') {
+          return {
+            ok: true,
+            value: [{ kind: 'discard', player: player.value, count: 0, hand: true }],
+            rule: clause.rule,
+          };
+        }
         const blocked = missingFeatures(['amount:countOf']);
         if (blocked.length > 0) return failure(clause, blocked);
         return {
@@ -1498,9 +1562,11 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
   // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).
   const definesPt =
-    (token.power === undefined) !== (token.toughness === undefined)
-      ? null
-      : token.power === undefined;
+    token.ptAmount === true
+      ? false
+      : (token.power === undefined) !== (token.toughness === undefined)
+        ? null
+        : token.power === undefined;
   if (!creature || definesPt === null) {
     return { ok: false, needs: [], ...at };
   }
@@ -1514,6 +1580,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       const unsupportedDevour = missingFeatures(['ability:keyword', 'keyword:devour']);
       if (unsupportedDevour.length > 0) return { ok: false, needs: unsupportedDevour, ...at };
       abilities.push({ kind: 'keyword', keyword: { kind: 'devour', count: Number(devour[1]) } });
+      continue;
+    }
+    const toxic = /^toxic ([1-9]\d*)$/.exec(word);
+    if (toxic !== null) {
+      const unsupportedToxic = missingFeatures(['ability:keyword', 'keyword:toxic']);
+      if (unsupportedToxic.length > 0) return { ok: false, needs: unsupportedToxic, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'toxic', count: Number(toxic[1]) } });
       continue;
     }
     const kind = keywordKind(word);
@@ -1544,8 +1617,8 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     types,
     subtypes,
     colors,
-    power: token.power ?? '*',
-    toughness: token.toughness ?? '*',
+    power: token.power ?? (token.ptAmount === true ? 0 : '*'),
+    toughness: token.toughness ?? (token.ptAmount === true ? 0 : '*'),
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -1553,12 +1626,18 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], named),
     abilities,
   };
+  let ptAmount: Amount | undefined;
+  if (token.ptAmount === true) {
+    const amount = lowerAmount({ kind: 'x', span: token.span }, ctx, clause.rule);
+    if (!amount.ok) return amount;
+    ptAmount = amount.value;
+  }
   return {
     ok: true,
     value: [
       {
         kind: 'createToken',
-        token: { kind: 'custom', definition },
+        token: { kind: 'custom', definition, ...(ptAmount === undefined ? {} : { ptAmount }) },
         count: count.value,
         ...entersTapped,
         ...by,
@@ -1567,6 +1646,34 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     rule: clause.rule,
   };
 }
+
+const PLAYER_LOCK: Lowering<IrClause, Effects> = {
+  head: 'playerLock',
+  id: 'lower.player-lock',
+  needs: ['effect:grantPlayerProtectionEverything', 'effect:preventPlayerLifeTotalChange'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'player');
+    if (named?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(named, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+        {
+          kind: 'preventPlayerLifeTotalChange',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
 
 export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
@@ -1602,6 +1709,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   UNTAP_CHOSEN,
   RESELECT_ATTACK,
   MAY_CAST,
+  MAY_CAST_SPELLS,
   simple('counter'),
   COUNTER_UNLESS,
   simple('tap'),
@@ -1617,6 +1725,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainLife'),
   playerVerb('gainEnergy'),
   playerVerb('loseLife'),
+  PLAYER_LOCK,
   playerVerb('mill'),
   MANIFEST,
   playerVerb('shuffle'),
@@ -1644,6 +1753,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SET_PT,
   FLICKER,
   DELAYED_RETURN,
+  DELAYED_RETURN_TO_HAND,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
   SEARCH,
@@ -1684,9 +1794,18 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
+  // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
+  ...LOREHOLD_G1_LOWERINGS,
+  // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
+  ...LOREHOLD_G2_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
+  ...POPULATE_LOWERINGS,
+  ...ADDITIONAL_LAND_LOWERINGS,
+  ...SEARCH_PAIR_LOWERINGS,
+  ...ENCHANTED_PLAYER_LOWERINGS,
+  ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,
@@ -1733,9 +1852,14 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
             ? 'opponentControlsAtLeast'
             : test === 'sameName'
               ? 'sameNameAtLeast'
-              : test === 'attachedTo' || test === 'putThisWay' || test === 'exiledThisWay'
+              : test === 'attachedTo' ||
+                  test === 'putThisWay' ||
+                  test === 'exiledThisWay' ||
+                  test === 'milledThisWay'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
+                : test === 'discardedThisWay' ||
+                    test === 'discardedSpellThisWay' ||
+                    test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost'
                     ? 'amountIs'

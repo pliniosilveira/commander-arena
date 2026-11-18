@@ -477,7 +477,8 @@ function occurrences(
     case 'ringTempted':
       // CR 701.54d (D-196): each time the Ring tempts a player, whatever they could choose.
       // Galadriel group 1: the creature chosen is the subject, for "if you chose a creature other than ~ as your Ring-bearer" (`ringBearerChosen`); no other ability reads it.
-      return event.kind === 'ringTempted'
+      return event.kind === 'ringTempted' &&
+        (trigger.bearerChosen !== true || event.bearer !== null)
         ? [
             {
               subject: event.bearer,
@@ -494,6 +495,10 @@ function occurrences(
         seat: null,
         chapter,
       }));
+    case 'classLevel':
+      return event.kind === 'classLevelReached' && event.level === trigger.level
+        ? [{ subject: event.object, seat: null }]
+        : [];
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -507,6 +512,8 @@ interface Candidate {
   readonly controller: SeatId;
   /** What it is attached to, as it was when the event happened (D-111, `attached` subjects). */
   readonly attachedTo: ObjectId | null;
+  /** The player an Aura that enchants a player is attached to (D-629). */
+  readonly attachedToPlayer?: SeatId;
   /** Triggered abilities with their index among the object's abilities. */
   readonly triggered: readonly { readonly index: number; readonly ability: TriggeredAbility }[];
 }
@@ -551,6 +558,7 @@ function candidateFor(state: GameState, id: ObjectId): Candidate | null {
       id,
       controller: controllerOf(state, live),
       attachedTo: live.attachedTo,
+      ...(live.attachedToPlayer === undefined ? {} : { attachedToPlayer: live.attachedToPlayer }),
       triggered: triggeredOf(derive(state, live).abilities, live.zone === 'graveyard'),
     };
   }
@@ -561,6 +569,9 @@ function candidateFor(state: GameState, id: ObjectId): Candidate | null {
     id,
     controller: lki.object.controller, // stored controller
     attachedTo: lki.object.attachedTo,
+    ...(lki.object.attachedToPlayer === undefined
+      ? {}
+      : { attachedToPlayer: lki.object.attachedToPlayer }),
     triggered: triggeredOf(lki.abilities),
   };
 }
@@ -697,6 +708,14 @@ function matches(
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // D-629 (CR 303.4m, 508.1b): "Whenever enchanted player is attacked": the Aura's player was declared as attacked, as a player and not through a planeswalker.
+      if (
+        trigger.attackedEnchantedPlayer === true &&
+        (candidate.attachedToPlayer === undefined ||
+          !(occ.attacked ?? []).includes(candidate.attachedToPlayer))
+      ) {
+        return false;
+      }
       const attackers = occ.attackers ?? [];
       const counted =
         trigger.what === undefined
@@ -709,6 +728,9 @@ function matches(
     }
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
+      return subject !== null && subject.id === candidate.id;
+    case 'classLevel':
+      // CR 716.2: a Class's own level changed; another Class reaching the same level does not trigger this ability.
       return subject !== null && subject.id === candidate.id;
     case 'cycled':
       // CR 702.29c: "when you cycle this card": the card with the ability is the one that was cycled.
@@ -849,6 +871,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'becameTarget':
     case 'crimeCommitted':
     case 'ringTempted':
+    case 'classLevelReached':
       return true;
     case 'counterAdded':
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
@@ -918,6 +941,24 @@ function cardsThatLeftGraveyard(
     state.cards[e.card]?.owner === seat
       ? [e.to]
       : [],
+  );
+}
+
+/**
+ * The cards (as the objects they became) that the batch `discarded` trigger `trigger` names in these events (CR 603.2c, 701.9a; Lorehold group 1): each `discarded` event it
+ * matches (whose discard, `another`, the filter), in the order the cards were discarded.
+ */
+function discardedCards(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'discarded' }>,
+  events: readonly GameEvent[],
+  candidate: Candidate,
+  lore: { readonly before: number; readonly after: number } | null,
+): ObjectId[] {
+  return events.flatMap((e) =>
+    occurrences(state, trigger, e, lore).flatMap((occ) =>
+      occ.subject !== null && matches(state, trigger, occ, candidate) ? [occ.subject] : [],
+    ),
   );
 }
 
@@ -1007,9 +1048,15 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
         ) {
           continue;
         }
+        // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": every card of these events the trigger names, for "exile one of them".
+        const discardedBatch =
+          ability.trigger.kind === 'discarded' && ability.trigger.batch === true
+            ? discardedCards(state, ability.trigger, events, candidate, lore)
+            : null;
         for (const occ of occurrences(state, ability.trigger, event, lore)) {
           if (!matches(state, ability.trigger, occ, candidate)) continue;
           if (
+            (ability.trigger.kind === 'discarded' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
@@ -1075,6 +1122,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ...(ability.trigger.kind === 'leftGraveyard'
               ? { cards: cardsThatLeftGraveyard(state, events, candidate.controller) }
               : {}),
+            ...(discardedBatch === null ? {} : { cards: discardedBatch }),
           });
         }
       }
@@ -1188,6 +1236,9 @@ function findDelayedTriggers(
       .filter(
         (occ) =>
           (delayed.watched === undefined || occ.subject === delayed.watched) &&
+          // Issue 159: "When you cast it this turn": only a spell cast from that card.
+          (delayed.watchedCard === undefined ||
+            (occ.subject !== null && state.objects[occ.subject]?.card === delayed.watchedCard)) &&
           matches(state, trigger, occ, candidate),
       );
     if (matched.length === 0) {

@@ -415,6 +415,30 @@ describe('"Whenever an opponent casts ..." (CR 601.2i; D-111: by an opponent)', 
 });
 
 describe('power, toughness and mana value in a filter (CR 202.3, 208.1)', () => {
+  test('mana value X or less can use the life gained this turn as X (Moseo, issue 255)', () => {
+    const parsed = readAll(
+      'At the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value X or less from your graveyard to the battlefield, where X is the amount of life you gained this turn.',
+      'creature',
+    );
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        targets: [
+          {
+            id: 't1',
+            what: {
+              kind: 'object',
+              filter: {
+                zone: 'graveyard',
+                types: ['creature'],
+                manaValueAtMost: { kind: 'lifeGainedThisTurn' },
+              },
+            },
+          },
+        ],
+      },
+    ]);
+  });
   const OPPONENT = (cmp: 'atLeast' | 'atMost' | 'equal', value: number) => ({ cmp, value });
 
   test.each([

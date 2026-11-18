@@ -1,6 +1,7 @@
 /* The deck import screens (M4). Tokens only (styles.css); class prefix imp-. */
 
 .imp-screen {
+  position: relative; /* clips and scrolls its hidden inputs with it (issue 52) */
   flex: 1;
   min-height: 0;
   display: flex;

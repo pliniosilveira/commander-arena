@@ -53,6 +53,13 @@ test('a spell that resolves is named before what it did', () => {
   expect(lead?.objects).toEqual(['o1']);
 });
 
+test('a Class reaching its level is a public log event', () => {
+  const event: GameEvent = { kind: 'classLevelReached', object: 'o4', level: 3 };
+  const lines = describeEvents([event], state([]), state([]), 0);
+  expect(lines.map((entry) => entry.text)).toEqual(['Wrath Engine becomes level 3.']);
+  expect(lines[0]?.rule).toBe('CR 716.2');
+});
+
 test('a spell that changed nothing the log shows resolves as a detail line', () => {
   const events = [
     pass(0),

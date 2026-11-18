@@ -101,6 +101,7 @@ import {
 } from './permanents-angels';
 import { blightDetail, isBlight } from './permanents-blight';
 import { entersCopyConfirm, entersCopyDetail, isEntersCopy } from './permanents-dragons';
+import { isPopulate, populateDetail } from './permanents-populate';
 import { isRingBearer, ringBearerDetail } from './permanents-ring';
 import { isSoulbond, soulbondConfirm, soulbondDetail } from './permanents-soulbond';
 import {
@@ -512,11 +513,13 @@ function handlers(
                 ? ringBearerDetail(ui.permanents, index)
                 : isAmass(d)
                   ? amassDetail(ui.permanents, index)
-                  : isBlight(d)
-                    ? blightDetail(ui.permanents, index)
-                    : isSoulbond(d)
-                      ? soulbondDetail(ui.permanents, index)
-                      : permanentsDetail(ui.permanents, d),
+                  : isPopulate(d)
+                    ? populateDetail(ui.permanents, index)
+                    : isBlight(d)
+                      ? blightDetail(ui.permanents, index)
+                      : isSoulbond(d)
+                        ? soulbondDetail(ui.permanents, index)
+                        : permanentsDetail(ui.permanents, d),
             // A sacrifice or a crew that is a cost of an ability being activated can be taken back:
             // Cancel rewinds the whole activation (CR 602.2b, 733), like cancelling a cast.
             cancel: d.forCost ? button('cancel', 'Cancel', () => act({ kind: 'cancel' })) : null,

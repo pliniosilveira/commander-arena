@@ -1,10 +1,12 @@
 /**
  * Effect rules of the Hofri Ghostforge deck (stage P68, D-229). Each rule is one phrase; the lowerings are in `lower/hofri.ts`.
  */
+
 import { fail, literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrAmount, IrArg, IrFlag, IrNoun, IrToken } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { readQuotedAbility } from '../static/quoted';
+import { makeNoun } from '../trigger/subjects';
 import { type Clauses, makeClause, operands, single } from './operands';
 
 /**
@@ -186,6 +188,153 @@ export const EFFECT_BECOMES_IN_ADDITION = defineRule<Clauses>({
       ok: true,
       value: [makeClause(id, 'becomesInAddition', args, span)],
       pos: span.end,
+    };
+  },
+});
+
+const COLOR_WORDS = '(white|blue|black|red|green)';
+/** "It's a black Zombie in addition to its other colors and types" (singular), "They're black Zombies in addition to their other colors and types" (plural). */
+const BECOMES_COLORED_ONE = new RegExp(
+  `^[Ii]t['’]s an? ${COLOR_WORDS} ([A-Z][a-z]+) in addition to its other colors and types(?![\\p{L}\\p{N}])`,
+  'u',
+);
+const BECOMES_COLORED_MANY = new RegExp(
+  `^[Tt]hey['’]re ${COLOR_WORDS} ([A-Z][a-z]+)s in addition to their other colors and types(?![\\p{L}\\p{N}])`,
+  'u',
+);
+
+/**
+ * `effect.becomes-colored-in-addition`: what the permanents an earlier instruction put onto the battlefield are, "in addition to their other colors and types": "It's a black
+ * Zombie in addition to its other colors and types", "They're black Zombies in addition to their other colors and types" (Grimoire of the Dead, Necromantic Selection; issue 159;
+ * CR 105.3, 205.1b, 613.1d, 613.1e: the color and the creature type are added, and the effects have no end, CR 611.2a). The engine's additive `setColors` and `setTypes` of what was
+ * moved, with no duration. The plural is the creature type and an "s"; the lowering refuses a word that is not a creature type ("Elves"). Not read: another subject, "until end of turn", another word than one color.
+ */
+export const EFFECT_BECOMES_COLORED_IN_ADDITION = defineRule<Clauses>({
+  id: 'effect.becomes-colored-in-addition',
+  family: 'effect',
+  leading: ['it', 'it’s', "it's", 'they', 'they’re', "they're"],
+  cites: [
+    'CR 105.3 (Colors)',
+    'CR 205.1b (Type Line)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1e (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    "It's a black Zombie in addition to its other colors and types",
+    "They're black Zombies in addition to their other colors and types",
+    'They’re black Zombies in addition to their other colors and types',
+  ],
+  rejects: [
+    "It's a black Zombie in addition to its other types",
+    "It's a Zombie in addition to its other colors and types",
+    "They're black Zombies in addition to their other types",
+    "It's a black and blue Zombie in addition to its other colors and types",
+    "It's a black Zombie in addition to its other colors and types until end of turn",
+    "They're black Zombie in addition to their other colors and types",
+    "It's a black zombie in addition to its other colors and types",
+    "It's a black Zombie in addition to its other colors and types and draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.becomes-colored-in-addition';
+    const rest = ctx.text.slice(pos);
+    const one = BECOMES_COLORED_ONE.exec(rest);
+    const many = one === null ? BECOMES_COLORED_MANY.exec(rest) : null;
+    const found = one ?? many;
+    if (found === null) return fail(ctx, pos);
+    const span = { start: pos, end: pos + found[0].length };
+    const args: Record<string, IrArg> = {
+      types: {
+        kind: 'typeList',
+        subtypes: [found[2] ?? ''],
+        additive: true,
+        colors: [found[1] ?? ''],
+        span,
+        rule: id,
+      },
+    };
+    return { ok: true, value: [makeClause(id, 'becomesInAddition', args, span)], pos: span.end };
+  },
+});
+
+/**
+ * `effect.return-destroyed-card`: "return a creature card put into a graveyard this way to the battlefield under your control" (issue 159, Necromantic Selection; CR 608.2c,
+ * 400.7j, 110.2a): the player chooses one of the cards the instruction before it (a destroy) put into graveyards, whoever's they are, and puts it onto the battlefield under
+ * their control. The card type is the one word of the text. The engine's `moveToZone` of a `choose` among the moved cards (`fromMoved`, `fromAnyGraveyard`). Not read: a
+ * number of cards, "up to", another destination, another controller, another zone ("from your graveyard").
+ */
+export const EFFECT_RETURN_DESTROYED_CARD = defineRule<Clauses>({
+  id: 'effect.return-destroyed-card',
+  family: 'effect',
+  leading: ['return'],
+  cites: [
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 400.7j (General)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: [
+    'return a creature card put into a graveyard this way to the battlefield under your control',
+  ],
+  rejects: [
+    'return a creature card put into a graveyard this way to the battlefield',
+    "return a creature card put into a graveyard this way to the battlefield under its owner's control",
+    'return a creature card put into a graveyard this way to your hand',
+    'return two creature cards put into a graveyard this way to the battlefield under your control',
+    'return a creature put into a graveyard this way to the battlefield under your control',
+    'return a creature card from your graveyard to the battlefield under your control',
+    'return a creature card put into a graveyard this way to the battlefield under your control and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.return-destroyed-card';
+    const r = pattern(
+      /return an? (creature|artifact|enchantment|land|planeswalker) card put into a graveyard this way to the battlefield under your control(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const type = (r.value[1] ?? '').toLowerCase();
+    const objects = makeNoun(id, span, 'a', { types: [type], raw: `a ${type} card` });
+    return {
+      ok: true,
+      value: [makeClause(id, 'returnFromDestroyed', { objects }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `effect.opponents-attacking-do-same`: "each opponent attacking that player does the same" (issue 159, Curse of Disturbance; CR 508.6: a player is "attacking [a player]" if they
+ * control a creature attacking that player; CR 111.2: the player who creates a token controls it). The sentence after "create a 2/2 black Zombie creature token": every
+ * opponent of the controller who attacks the player the trigger is about makes the same tokens. The lowering checks that the clause before it is that one `createToken`. Not
+ * read: another subject ("each player", "that player"), another verb phrase ("does so", "do the same").
+ */
+export const EFFECT_OPPONENTS_ATTACKING_DO_SAME = defineRule<Clauses>({
+  id: 'effect.opponents-attacking-do-same',
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 508.6 (Declare Attackers Step)',
+    'CR 111.2 (Tokens)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['each opponent attacking that player does the same'],
+  rejects: [
+    'each opponent attacking that player does the same thing',
+    'each player attacking that player does the same',
+    'each opponent attacking you does the same',
+    'each opponent does the same',
+    'each opponent attacking that player does the same and draw a card',
+    'each opponent attacking that player do the same',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /each opponent attacking that player does the same(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause('effect.opponents-attacking-do-same', 'attackersDoSame', {}, span)],
+      pos: r.pos,
     };
   },
 });
@@ -625,7 +774,7 @@ export const EFFECT_BECOME_COPY_OF_THOSE_CARDS = defineRule<Clauses>({
 export const EFFECT_PHASE_OUT = defineRule<Clauses>({
   id: 'effect.phase-out',
   family: 'effect',
-  leading: ['any', 'it', 'target', 'up'],
+  leading: ['all', 'any', 'it', 'target', 'up'],
   cites: ['CR 702.26 (Phasing)', 'CR 702.26a (Phasing)', 'CR 702.26g (Phasing)'],
   examples: [
     'any number of other target creatures you control phase out',
@@ -633,6 +782,7 @@ export const EFFECT_PHASE_OUT = defineRule<Clauses>({
     'target creature you control phases out',
     'it phases out',
     'any number of target creatures phase out',
+    'all nonland permanents they control phase out',
   ],
   rejects: [
     'any number of other target creatures you control phase in',
@@ -640,6 +790,7 @@ export const EFFECT_PHASE_OUT = defineRule<Clauses>({
     'target creature phases',
     'target creature phase out',
     'any number of other target creatures you control phase out and draw a card',
+    'all nonland permanents they control phase in',
     'phase out',
   ],
   parse: single(
@@ -647,7 +798,13 @@ export const EFFECT_PHASE_OUT = defineRule<Clauses>({
     satisfy(
       sequence(
         operands(
-          ['noun.any-number-targets', 'noun.target-permanent', 'noun.it'],
+          [
+            'noun.any-number-targets',
+            'noun.target-permanent',
+            'noun.it',
+            'noun.all-nonland-they-control',
+            'noun.all-they-control',
+          ],
           'effect.phase-out',
         ),
         pattern(/ phases? out(?![\p{L}\p{N}])/iu),
@@ -740,4 +897,7 @@ export const HOFRI_EFFECT_RULES = [
   EFFECT_PLAYER_ADDS_MANA,
   EFFECT_COPY_THIS_SPELL,
   EFFECT_BECOMES_IN_ADDITION,
+  EFFECT_BECOMES_COLORED_IN_ADDITION,
+  EFFECT_OPPONENTS_ATTACKING_DO_SAME,
+  EFFECT_RETURN_DESTROYED_CARD,
 ];

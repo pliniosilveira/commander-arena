@@ -51,13 +51,26 @@ export function sameCombination(a: readonly ManaColor[], b: readonly ManaColor[]
  * What "Spend this mana only to cast an Angel spell" makes of the mana the ability adds (CR 106.6, D-149): a restriction the payment
  * planner and the pool read; null when the ability has none.
  */
-export function spendRestrictionOf(ability: ManaAbility): ManaRestriction | null {
+export function spendRestrictionOf(
+  ability: ManaAbility,
+  source?: { readonly chosen?: { readonly creatureType?: string } },
+): ManaRestriction | null {
   const only = ability.spendOnly;
   if (only === undefined) return null;
+  // Issue 199 (CR 106.6, 607.2d): "of the chosen type" is the creature type the source chose as it entered; none chosen, an empty list (no spell matches it).
+  const chosen = source?.chosen?.creatureType;
+  const subtypes =
+    only.chosenType === true
+      ? chosen === undefined
+        ? []
+        : [chosen]
+      : only.subtypes === undefined
+        ? undefined
+        : [...only.subtypes];
   return {
     kind: 'spellMatch',
     ...(only.types === undefined ? {} : { types: [...only.types] }),
-    ...(only.subtypes === undefined ? {} : { subtypes: [...only.subtypes] }),
+    ...(subtypes === undefined ? {} : { subtypes }),
     ...(only.alsoAbilities === true ? { alsoAbilities: true as const } : {}),
   };
 }
@@ -75,6 +88,10 @@ export function spentRiderOf(ability: ManaAbility, source: ObjectId): ManaRider 
       source,
       ...riderSpells(rider.spells),
     };
+  }
+  // Issue 241: "it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone": no trigger, the spell carries it.
+  if (typeof grants === 'object' && 'countersCommanderCasts' in grants) {
+    return { kind: 'counters', countCommanderCasts: true, ...riderSpells(rider.spells) };
   }
   const byCommander = typeof grants === 'object' && 'scryCommanderCasts' in grants;
   const scry = grants === 'haste' || byCommander ? null : (grants as { scry: number }).scry;

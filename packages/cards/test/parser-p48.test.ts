@@ -116,6 +116,159 @@ describe('flavor words (CR 207.2d): taken off only when the line does not read a
   });
 });
 
+describe('a Class becomes a level', () => {
+  test('the level three trigger names the level it reaches', () => {
+    expect(
+      readAll('When ~ becomes level 3, draw a card.', 'enchantment', ['Class']).abilities,
+    ).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'classLevel', level: 3 },
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    ]);
+  });
+});
+
+describe('Liesa, Forgotten Archangel', () => {
+  test('a nontoken creature that dies is returned to its owner’s hand at the next end step', () => {
+    expect(real('Liesa, Forgotten Archangel').support.status).toBe('supported');
+    expect(real('Liesa, Forgotten Archangel').support.unparsed).toEqual([]);
+  });
+});
+
+describe('Ob Nixilis of the Black Oath', () => {
+  test('the ultimate creates an emblem with an activated ability', () => {
+    const card = real('Ob Nixilis of the Black Oath');
+    expect(card.support.status).toBe('supported');
+    expect(card.support.unparsed).toEqual([]);
+    expect(card.definition.faces[0]?.abilities[2]).toMatchObject({
+      kind: 'activated',
+      effect: {
+        kind: 'createEmblem',
+        abilities: [{ kind: 'activated' }],
+      },
+    });
+  });
+});
+
+describe("Teferi's Reproach", () => {
+  test('protects the target through their next turn and phases out their nonland permanents', () => {
+    const card = real("Teferi's Reproach");
+    expect(card.support.unparsed).toEqual([]);
+    expect(card.support.status).toBe('supported');
+    expect(card.definition.faces[0]?.spell?.effect).toMatchObject({
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: { kind: 'target', id: 't1' },
+          duration: 'untilNextTurn',
+        },
+        {
+          kind: 'preventPlayerLifeTotalChange',
+          player: { kind: 'target', id: 't1' },
+          duration: 'untilNextTurn',
+        },
+        {
+          kind: 'phaseOut',
+          objects: {
+            kind: 'each',
+            filter: {
+              zone: 'battlefield',
+              notTypes: ['land'],
+              controlledBy: { kind: 'target', id: 't1' },
+            },
+          },
+        },
+        { kind: 'exile', objects: { kind: 'thisSpell' } },
+      ],
+    });
+  });
+});
+
+describe('a token with toxic and a quoted restriction', () => {
+  test('the upkeep trigger creates a Mite with toxic 1 and cannot block', () => {
+    const parsed = readAll(
+      'At the beginning of your upkeep, you lose 1 life and create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "This token can’t block."',
+      'enchantment',
+    );
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'loseLife', amount: 1 },
+            {
+              kind: 'createToken',
+              token: {
+                kind: 'custom',
+                definition: {
+                  power: 1,
+                  toughness: 1,
+                  colors: [],
+                  subtypes: ['Phyrexian', 'Mite'],
+                  supertypes: [],
+                  types: ['artifact', 'creature'],
+                  abilities: [
+                    { kind: 'keyword', keyword: { kind: 'toxic', count: 1 } },
+                    {
+                      kind: 'static',
+                      static: {
+                        kind: 'restriction',
+                        subject: { kind: 'this' },
+                        restriction: 'cantBlock',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+  });
+});
+
+describe("Skrelv's Hive", () => {
+  test('both the upkeep token and corrupted static ability parse completely', () => {
+    expect(real("Skrelv's Hive").support.unparsed).toEqual([]);
+    expect(real("Skrelv's Hive").support.status).toBe('supported');
+  });
+});
+
+describe('Authority of the Consuls', () => {
+  test('the opponent entry replacement and life trigger parse completely', () => {
+    expect(real('Authority of the Consuls').support.unparsed).toEqual([]);
+    expect(real('Authority of the Consuls').support.status).toBe('supported');
+  });
+});
+
+describe('Underworld Connections', () => {
+  test('the enchanted land receives its activated draw ability', () => {
+    expect(real('Underworld Connections').support.unparsed).toEqual([]);
+    expect(real('Underworld Connections').support.status).toBe('supported');
+  });
+});
+
+describe('Tragic Slip', () => {
+  test('the Morbid replacement reads whether a creature died this turn', () => {
+    expect(real('Tragic Slip').support.unparsed).toEqual([]);
+    expect(real('Tragic Slip').support.status).toBe('supported');
+  });
+});
+
+describe('Liesa, Shroud of Dusk', () => {
+  test('the commander tax life replacement parses as card cost data', () => {
+    const imported = real('Liesa, Shroud of Dusk');
+    expect(imported.support.unparsed).toEqual([]);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.commanderTaxLife).toBe(2);
+  });
+});
+
 describe('"That token gains haste until end of turn" and "then attach ~ to it": the token the text made (CR 111.2, 400.7j)', () => {
   const grantHaste = {
     kind: 'grantKeyword',

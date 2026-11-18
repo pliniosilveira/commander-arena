@@ -635,6 +635,31 @@ describe('effect.pay and condition.if-you-do: "You may pay [cost]. If you do, ..
     ).toMatchObject([{ effect: mayPay([{ kind: 'payLife', amount: 2 }], draw) }]);
   });
 
+  test('Tivash may pay the life gained this turn and creates a token of that size', () => {
+    expect(
+      abilities(
+        'At the beginning of your end step, if you gained life this turn, you may pay X life, where X is the amount of life you gained this turn. If you do, create an X/X black Demon creature token with flying.',
+      ),
+    ).toMatchObject([
+      {
+        kind: 'triggered',
+        effect: {
+          kind: 'mayPay',
+          cost: [{ kind: 'payLife', amount: { kind: 'lifeGainedThisTurn' } }],
+          effect: {
+            kind: 'createToken',
+            count: 1,
+            token: {
+              kind: 'custom',
+              ptAmount: { kind: 'lifeGainedThisTurn' },
+              definition: { power: 0, toughness: 0 },
+            },
+          },
+        },
+      },
+    ]);
+  });
+
   test('what the payment buys may be several instructions, a target among them, and an intervening "if" stays', () => {
     expect(
       abilities('When ~ enters, you may pay {2}. If you do, destroy target creature.'),
@@ -800,6 +825,11 @@ describe('amount.life-lost-this-way: "equal to the life lost this way" (CR 702.1
       'the loss comes after',
     ],
     ['Draw a card. You gain life equal to the life lost this way.', 'no loss before it'],
+    // Issue 159: "the damage dealt this way" is read, and needs a damage instruction before it.
+    [
+      'Each opponent loses 1 life. You gain life equal to the damage dealt this way.',
+      'no damage before it',
+    ],
   ])('"%s" is read and not run (%s)', (text, _why) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'notRunnable' });
   });
@@ -809,7 +839,6 @@ describe('amount.life-lost-this-way: "equal to the life lost this way" (CR 702.1
     'Each opponent loses 1 life. You gain life equal to the life lost.',
     'Each opponent loses 1 life. You gain life equal to life lost this way.',
     'Each opponent loses 1 life. You gain life equal to the life lost this turn.',
-    'Each opponent loses 1 life. You gain life equal to the damage dealt this way.',
     'Each opponent loses 1 life. You gain life equal to the life lost this way plus 1.',
   ])('"%s" is not read', (text) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised' });

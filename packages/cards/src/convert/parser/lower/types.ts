@@ -87,6 +87,8 @@ export interface LowerContext {
     readonly selector: PlayerSelector;
     readonly needs: readonly FeatureRef[];
   } | null;
+  /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
+  enchantedPlayerTrigger: boolean;
   /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
    * sentence are lowered, an X in them is this amount, written into each slot that says X. `used` is set when a slot
@@ -156,6 +158,8 @@ export interface LowerContext {
    * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
    */
   itDied: boolean;
+  /** True in any dies trigger body, including a trigger about another creature (D-599). */
+  diesTrigger: boolean;
   /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
@@ -176,10 +180,11 @@ export interface LowerContext {
   /**
    * What an earlier instruction of this text exiled (stage P34, D-152): `top` the cards of the top of the library ("exile the top card of
    * your library", the cards "that card" and "those cards" name), `cast` the card found by exiling until a card is found (Discover, "the
-   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."). Null before any. The
+   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."), `cards` (Lorehold group 1) the card an
+   * `exile` of the text exiled from where it was ("you may exile that card from your graveyard. If you do, you may play that card this turn"). Null before any. The
    * engine's `moved` names them.
    */
-  exiled: 'top' | 'cast' | 'milled' | null;
+  exiled: 'top' | 'cast' | 'milled' | 'cards' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
   /**
@@ -191,6 +196,10 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
+  didSearch: boolean;
+  /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
+  discardBatchTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -206,6 +215,16 @@ export interface LowerContext {
    * among them into your hand" are the cards that mill put into the graveyard. Any other clause lowered after it makes it false again.
    */
   milled: boolean;
+  /**
+   * True right after a clause that was a `destroy` (issue 159, Necromantic Selection): "a creature card put into a graveyard this way" names the cards that destroy
+   * put into graveyards, which the engine's `moved` holds until another instruction moves something.
+   */
+  destroyed: boolean;
+  /**
+   * The `createToken` the clause before it lowered to, when it was the only effect and made the tokens for the controller (issue 159, Curse of Disturbance): "Each opponent attacking
+   * that player does the same" makes the same tokens for other players. Null after any other clause.
+   */
+  createdToken: Extract<Effect, { kind: 'createToken' }> | null;
   /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
@@ -263,6 +282,7 @@ export function newContext(
     lowered: 0,
     thatPlayer: null,
     attackedPlayer: null,
+    enchantedPlayerTrigger: false,
     xIs: null,
     xDefined: false,
     exiled: null,
@@ -270,10 +290,14 @@ export function newContext(
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
     scryTrigger: false,
+    discardBatchTrigger: false,
+    didSearch: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,
     milled: false,
+    destroyed: false,
+    createdToken: null,
     movedToHand: false,
     exiledRef: null,
     namedInQuotes: false,
@@ -292,6 +316,7 @@ export function newContext(
     itIsCard: false,
     auraDies: false,
     itDied: false,
+    diesTrigger: false,
     cardName,
     selfName: '',
   };

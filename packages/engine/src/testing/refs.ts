@@ -179,6 +179,10 @@ export function tapAction(
     options.sacrifice === undefined
       ? {}
       : { sacrifice: resolveObject(ctx, options.sacrifice, { zones: ['battlefield'], seat }).id };
+  const tapped =
+    options.tapped === undefined
+      ? {}
+      : { tapped: resolveObject(ctx, options.tapped, { zones: ['battlefield'], seat }).id };
   if (options.color !== undefined) {
     return {
       kind: 'activateAbility',
@@ -186,6 +190,7 @@ export function tapAction(
       abilityIndex,
       color: options.color,
       ...sacrifice,
+      ...tapped,
     };
   }
   if (options.combination !== undefined) {
@@ -196,6 +201,7 @@ export function tapAction(
       color: null,
       combination: manaList(options.combination),
       ...sacrifice,
+      ...tapped,
     };
   }
   // No color given: a source with exactly one listed option uses it (including the color a
@@ -246,6 +252,7 @@ export function tapAction(
       ? { combination: only.combination }
       : {}),
     ...sacrifice,
+    ...tapped,
   };
 }
 
@@ -284,7 +291,9 @@ export function castAction(
   face?: number,
 ): Action {
   const zones: readonly Zone[] =
-    alternative === 'flashback' || alternative === 'escape'
+    alternative === 'flashback' ||
+    alternative === 'escape' ||
+    alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
       : ['hand', 'command', 'exile'];
   let obj: GameObject;

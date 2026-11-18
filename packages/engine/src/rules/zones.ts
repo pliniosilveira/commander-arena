@@ -72,6 +72,7 @@ import { becomeCopyAsItEnters, copyCandidates } from './enters-copy';
 import {
   addCounterMaps,
   enteredTappedByEffect,
+  groupEntersTapped,
   groupEntersUntapped,
   groupEntryCounters,
 } from './enters-group';
@@ -90,6 +91,7 @@ import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
+import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
@@ -390,6 +392,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     to = 'exile';
     toSeat = null;
   }
+  // CR 614.1a, 614.6 (Lorehold group 2): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead": a spell an effect let be cast with
+  // that rider goes to the bottom of its owner's library, not to a graveyard, whatever puts it there (resolving, being countered, fizzling). It belongs to the spell, as the exile of
+  // the one above does. It comes before the commander replacement below, which may then send a commander to the command zone instead (CR 903.9b).
+  let position = request.position;
+  if (old.zone === 'stack' && old.stack?.bottomInstead === true && to === 'graveyard') {
+    to = 'library';
+    toSeat = old.owner;
+    position = 'bottom';
+  }
   // CR 702.84a (Unearth, D-124): "If it would leave the battlefield, exile it instead of putting it anywhere
   // else." It belongs to the unearthed object, not to its abilities, so it holds when it lost them (CR 614.6).
   // It comes before the commander replacement below, whose zones (hand, library) it removes.
@@ -482,7 +493,9 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     !untappedByEffect &&
     request.tapped !== true &&
     !entersTapped(before, entering.abilities, enterCtx) &&
-    (lifeOf(payment) <= 0 || getSeat(state, enterController).life >= lifeOf(payment));
+    (lifeOf(payment) <= 0 ||
+      (!lifeTotalIsLocked(state, enterController) &&
+        getSeat(state, enterController).life >= lifeOf(payment)));
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.
   const revealRule = entering === null ? null : entersReveal(entering.abilities);
@@ -703,6 +716,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       const { counter, count } = request.withCounters;
       counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
     }
+    // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
+    // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
+    const manaCounters = old.zone === 'stack' ? (old.stack?.commanderCastCounters ?? 0) : 0;
+    if (manaCounters > 0 && old.card !== null) {
+      const extra = manaCounters * (state.commanderCasts[old.card] ?? 0);
+      if (extra > 0) counters = { ...counters, '+1/+1': (counters['+1/+1'] ?? 0) + extra };
+    }
     // CR 702.82a, 702.136a (D-185): the counters of devour and of the riot instances that chose the counter.
     counters = addCounterMaps(
       counters,
@@ -737,6 +757,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   }
 
   // CR 614.1c, 614.12 (D-519): "Until your next turn, creatures your opponents control enter tapped".
+  if (
+    to === 'battlefield' &&
+    !tapped &&
+    groupEntersTapped(before, {
+      ...old,
+      ...downEntry,
+      zone: 'battlefield',
+      controller: enterController,
+      face: faceIndex,
+    })
+  ) {
+    tapped = true;
+  }
   if (
     to === 'battlefield' &&
     !tapped &&
@@ -832,7 +865,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       : {}),
   };
   next = setObject(next, created);
-  next = addToZone(next, to, toSeat, newId, request.position ?? 'top');
+  next = addToZone(next, to, toSeat, newId, position ?? 'top');
   // CR 712.21 (D-277): a melded permanent that leaves the battlefield is one permanent that leaves and two cards that are put into the zone: the second
   // card becomes an object of its own, with its own new id and timestamp, in the zone its owner's card goes to (the command zone is the first card's alone,
   // CR 903.9c). The first card's object is made above, so what is shared (the replacement effects, the moment) is decided once for both (CR 712.21d).

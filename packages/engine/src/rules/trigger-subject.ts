@@ -42,6 +42,8 @@ export function readsTriggerPlayer(ability: Ability): boolean {
     (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"triggerPlayer"',
     ) ||
+      // Issue 159: "each opponent attacking that player" reads the player the trigger is about.
+      JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
       JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"'))
   );
 }

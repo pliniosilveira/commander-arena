@@ -93,7 +93,11 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.conditionKinds).toEqual([
       'controlsAtLeast',
       'opponentsAtLeast',
+      // D-599: corrupted checks an opponent's poison counters.
+      'opponentPoisonAtLeast',
       'kicked',
+      // Issue 244: "If you cast this spell during your main phase".
+      'castInOwnMainPhase',
       'replicated',
       'sacrificedAsCost',
       'controlCommander',
@@ -104,6 +108,8 @@ describe('the dimensions', () => {
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      // Lorehold group 3: "if a player has one or fewer cards in hand".
+      'aPlayerCardsInHand',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
@@ -147,6 +153,10 @@ describe('the dimensions', () => {
       'combatDamagedBy',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
+      // D-591: life gain and life loss are both recorded this turn.
+      'lifeGainedAndLostThisTurn',
+      // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+      'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
       'dieResult',

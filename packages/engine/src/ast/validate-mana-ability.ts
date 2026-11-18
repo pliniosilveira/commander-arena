@@ -31,6 +31,20 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'a mana ability sacrifices one permanent: no "any number" (D-491)',
       );
     }
+    if (c?.kind === 'tapPermanents' && c.count !== 1) {
+      issue(
+        out,
+        `${path}.cost[${i}].count`,
+        'a mana ability taps one permanent besides its source (D-625)',
+      );
+    }
+    if (c?.kind === 'tapPermanents' && (a.cost ?? []).some((o) => o?.kind === 'sacrifice')) {
+      issue(
+        out,
+        `${path}.cost[${i}]`,
+        'a mana ability that taps a permanent does not also sacrifice one: the player would name two choices (D-625)',
+      );
+    }
     if (c?.kind === 'sacrifice' && c.countX !== undefined) {
       issue(
         out,
@@ -74,8 +88,15 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
-      if (only.types === undefined && only.subtypes === undefined) {
+      if (only.types === undefined && only.subtypes === undefined && only.chosenType !== true) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
+      }
+      // Issue 199: "of the chosen type" stands in for the subtypes.
+      if (only.chosenType !== undefined && only.chosenType !== true) {
+        issue(out, `${path}.spendOnly.chosenType`, 'chosenType must be true when present');
+      }
+      if (only.chosenType === true && only.subtypes !== undefined) {
+        issue(out, `${path}.spendOnly`, 'spendOnly names subtypes or the chosen type, not both');
       }
       // D-151: "... or activate abilities of Dragons".
       if (only.alsoAbilities !== undefined && only.alsoAbilities !== true) {
@@ -113,6 +134,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           scry !== null &&
           (('scry' in scry && Number.isInteger(scry.scry) && scry.scry >= 1) ||
             ('scryCommanderCasts' in scry && scry.scryCommanderCasts === true) ||
+            ('countersCommanderCasts' in scry && scry.countersCommanderCasts === true) ||
             // D-328: "copy that spell" with or without "you may choose new targets for the copy".
             ('copySpell' in scry && (scry.copySpell === 'may' || scry.copySpell === 'no')))
         )
@@ -120,7 +142,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         issue(
           out,
           `${path}.spentRider.grants`,
-          'a rider is haste, a scry of one or more, a scry of the times the commander was cast or a copy of the spell',
+          'a rider is haste, a scry of one or more, a scry or counters of the times the commander was cast or a copy of the spell',
         );
       }
       if (rider.spells === null || typeof rider.spells !== 'object') {

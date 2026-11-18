@@ -17,6 +17,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test, vi } from 'vitest';
 import { GameHost } from '../src/game/host';
 import { createAppStore } from '../src/store';
+import { ExilePlayStrip } from '../src/ui/board/ExilePlayStrip';
 import { OtherZonesStrip } from '../src/ui/board/OtherZonesStrip';
 import { ManaPool, PlayerStrip } from '../src/ui/board/PlayerStrip';
 import { DecisionLayer } from '../src/ui/decisions/DecisionLayer';
@@ -149,12 +150,19 @@ describe('any number of cards, and any amount of mana', () => {
 });
 
 describe('cast from exile and from the top of the library', () => {
-  test('a card exiled to be played is a chip above the hand', async () => {
+  test('a card exiled to be played is a tile at the right of the battlefield', async () => {
     const store = await must(mayPlayFromExile, /Impulse Rite/, { seed: 3 });
     const view = store.getState().snapshot?.view as GameView;
-    const html = layer(store, <OtherZonesStrip view={view} />);
+    const html = layer(store, <ExilePlayStrip view={view} />);
     expect(html).toContain('aria-label="Cast from exile"');
-    expect(html).toMatch(/(Cast|Play) from exile<\/span>/);
+    expect(html).toContain('board-exile-anchor');
+    expect(html).toMatch(/board-exile-play-label">(Cast|Play) from exile<\/span>/);
+    // Nothing playable from exile: no column and no anchor at all.
+    const empty = layer(store, <ExilePlayStrip view={{ ...view, exile: [] }} />);
+    expect(empty).not.toContain('board-exile-anchor');
+    expect(empty).not.toContain('Cast from exile');
+    // The chip row above the hand no longer lists it a second time.
+    expect(layer(store, <OtherZonesStrip view={view} />)).not.toContain('Cast from exile');
   });
 
   test('the top card of the library: its own chip, and the card beside the library count can be clicked', async () => {

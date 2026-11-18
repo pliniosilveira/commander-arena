@@ -122,9 +122,11 @@ export function entersWithCounters(
           ? r.count
           : r.count.kind === 'countOf'
             ? counted(r.count)
-            : r.count.kind === 'timesKicked'
-              ? kicks
-              : x;
+            : r.count.kind === 'sum'
+              ? r.count.of.reduce((n, part) => n + counted(part), 0)
+              : r.count.kind === 'timesKicked'
+                ? kicks
+                : x;
       if (count > 0) counters = { ...counters, [r.counter]: (counters[r.counter] ?? 0) + count };
     }
   }
