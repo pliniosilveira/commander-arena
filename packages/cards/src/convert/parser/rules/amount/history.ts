@@ -12,6 +12,36 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: gain.pos,
     };
   }
+  // D-638 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
+  const spells = pattern(
+    /the number of (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (spells.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'spellsCastThisTurn',
+        ...(spells.value[1] === undefined ? {} : { ofTypes: ['instant', 'sorcery'] }),
+        span: { start: pos, end: spells.pos },
+      },
+      pos: spells.pos,
+    };
+  }
+  // D-646 (Prismari deck group 2, CR 202.3, 601.2i): the greatest mana value among the spells the controller has cast this turn.
+  const greatest = pattern(
+    /the greatest mana value among (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (greatest.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'greatestManaValueCast',
+        ...(greatest.value[1] === undefined ? {} : { ofTypes: ['instant', 'sorcery'] }),
+        span: { start: pos, end: greatest.pos },
+      },
+      pos: greatest.pos,
+    };
+  }
   // Grave Danger (issue 159, Liliana's Standard Bearer): "where X is the number of creatures that died under your control this turn".
   const died = pattern(
     /the number of creatures that died under your control this turn(?![\p{L}\p{N}])/iu,

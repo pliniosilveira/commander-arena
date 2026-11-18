@@ -46,6 +46,8 @@ type StateAmount = Extract<
       | 'opponentsWithMore'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
+      | 'spellsCastThisTurn'
+      | 'greatestManaValueCast'
       | 'sacrificedAsCost'
       | 'exiledAsCost'
       | 'cardTypesAmong';
@@ -81,6 +83,8 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'opponentsWithMore' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
+    amount.kind === 'spellsCastThisTurn' ||
+    amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'sacrificedAsCost' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong'
@@ -247,6 +251,15 @@ export function amountOf(
   if (amount.kind === 'manaSpent') {
     // D-217 (CR 113.7a): "the amount of mana spent to cast that spell": the spell the ability targeted, as it last was once countered.
     if (amount.of !== undefined) {
+      // D-646 (CR 601.2h, 113.7a): the spell that caused the trigger, as it is or as it last was.
+      if (amount.of.kind === 'triggerSubject') {
+        const id = ctx.triggerSubject;
+        return manaSpentOf(
+          id === undefined ? null : objectOrLki(state, id),
+          amount.fromType,
+          amount.snow === true,
+        );
+      }
       const slot = amount.of.id;
       const chosen = targets.find((t) => t.specId === slot);
       const spell = chosen?.kind === 'object' ? objectOrLki(state, chosen.id) : null;
@@ -345,6 +358,25 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'spellsCastThisTurn': {
+      // CR 601.2i (D-638): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
+      const types = amount.ofTypes;
+      if (types === undefined) return getSeat(state, ctx.controller).spellsCastThisTurn;
+      return state.turnLog.castSpells.filter(
+        (s) => s.seat === ctx.controller && s.types.some((t) => types.includes(t)),
+      ).length;
+    }
+    case 'greatestManaValueCast': {
+      // CR 202.3, 202.3e, 601.2i (D-646): the greatest mana value among the spells the controller has cast this turn (copies are not cast, CR 707.10), each as it was cast.
+      const types = amount.ofTypes;
+      let best = 0;
+      for (const s of state.turnLog.castSpells) {
+        if (s.seat !== ctx.controller) continue;
+        if (types !== undefined && !s.types.some((t) => types.includes(t))) continue;
+        best = Math.max(best, s.manaValue);
+      }
+      return best;
+    }
     case 'sacrificedAsCost': {
       // CR 602.2b, 701.21a (D-584): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
       // them, and its resolution reads them (`ResolutionContext.costSacrificed`, which an ability without such a cost does not have).

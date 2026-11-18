@@ -133,6 +133,11 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Improvise',
     'Delve',
     'Cascade',
+    // Prismari deck, group 3 (issue 87, D-665, D-666): Demonstrate and Retrace, alone and in a list (the reminder text is stripped before the line is read).
+    'Demonstrate',
+    'Retrace',
+    'Cascade, retrace',
+    'Retrace, flying',
     'Bushido 1',
     'Bushido 2',
     // Stage P40 (D-186, CR 702.82a, 702.136a): Devour N and Riot.

@@ -70,7 +70,7 @@ describe('Whip of Erebos', () => {
     g.expect.zone(BEARS, 'battlefield', { seat: 0 });
     g.expect.derived(BEARS, { keywords: ['haste', 'lifelink'] });
     g.advanceTo('end');
-    g.expect.stack([`${BEARS} (ability)`]);
+    g.expect.stack([`${whip.name} (ability)`]);
     g.passAll();
     g.expect.zone(BEARS, 'exile', { seat: 0 });
     g.expect.invariants();

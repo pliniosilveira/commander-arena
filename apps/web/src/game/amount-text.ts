@@ -27,6 +27,8 @@ export interface AmountContext {
   readonly self?: string;
   /** The object an effect already names as its subject, so "its power" says it ("it deals damage equal to its power"). */
   readonly same?: ObjectRef;
+  /** The ability is the trigger of a spell being cast (CR 601.2i): the trigger's subject is a spell, "that spell's mana value" (D-646). */
+  readonly spell?: true;
 }
 
 /**
@@ -50,10 +52,13 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return "this spell's";
     case 'target':
     case 'triggerSubject':
-      return "that creature's";
+      return ctx.spell === true && ref.kind === 'triggerSubject'
+        ? "that spell's"
+        : "that creature's";
     case 'chosen':
       return "the chosen creature's";
     case 'moved':
+    case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
       return 'its';
@@ -85,6 +90,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'chosen':
       return 'the chosen creature';
     case 'moved':
+    case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
       return 'it';
@@ -214,7 +220,13 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the number of times it was kicked';
     case 'manaSpent':
       // D-183 (CR 601.2h): the mana spent to cast the spell, in all or from sources of a card type.
-      return `the amount of ${manaSpentWords(amount.fromType)}`;
+      // D-646 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell", the spell a cast trigger names.
+      return `the amount of ${manaSpentWords(amount.fromType, amount.of?.kind === 'triggerSubject' ? 'that spell' : 'it')}`;
+    case 'greatestManaValueCast':
+      // D-646 (CR 202.3, 601.2i): "the greatest mana value among instant and sorcery spells you've cast this turn".
+      return amount.ofTypes === undefined
+        ? "the greatest mana value among spells you've cast this turn"
+        : `the greatest mana value among ${amount.ofTypes.join(' and ')} spells you've cast this turn`;
     case 'lifeLostThisWay':
       return 'the total life lost this way';
     case 'lifeLostThisTurn':
@@ -292,6 +304,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
+    case 'spellsCastThisTurn':
+      // D-638 (CR 601.2i): "the number of instant and sorcery spells you've cast this turn".
+      return amount.ofTypes === undefined
+        ? "the number of spells you've cast this turn"
+        : `the number of ${amount.ofTypes.join(' and ')} spells you've cast this turn`;
     case 'sacrificedAsCost':
       // D-491 (CR 118.8), D-584 (CR 602.2b): "for each creature sacrificed this way": the additional cost of the spell or the cost of the activated ability.
       return 'the number of permanents sacrificed as a cost';
@@ -318,10 +335,11 @@ export interface Definitions {
   readonly tail: () => string;
 }
 
-export function createDefinitions(): Definitions {
+export function createDefinitions(base: AmountContext = {}): Definitions {
   const phrases: string[] = [];
   return {
-    say(amount, ctx = {}) {
+    say(amount, given = {}) {
+      const ctx = { ...base, ...given };
       if (typeof amount === 'number') return String(amount);
       if (amount.kind === 'x' || amount.kind === 'enteredX') return 'X';
       // D-151: "deals that much damage": the number the reflexive ability reads is said as it is, never as a letter.

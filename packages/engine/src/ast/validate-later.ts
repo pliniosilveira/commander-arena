@@ -55,6 +55,22 @@ export function checkDelayedTrigger(
     }
     return;
   }
+  // D-639 (CR 603.7c, 701.21a): "Sacrifice it / those tokens at the beginning of the next end step", about the permanents an earlier effect of the same sequence made (`moved`: the
+  // tokens of `createToken`, `createCopies` or `populate`), as they are when the ability is created; sacrificed by the controller of the ability.
+  if (kind === 'sacrifice') {
+    const sacrifice = inner as Extract<Effect, { kind: 'sacrifice' }>;
+    if (!exiledAvailable || kindOf(sacrifice.objects) !== 'moved') {
+      issue(
+        out,
+        `${path}.effect.objects`,
+        "a delayed sacrifice names the objects an effect before it made: 'moved' after a token is created",
+      );
+    }
+    if (sacrifice.byController !== undefined || sacrifice.player !== undefined) {
+      issue(out, `${path}.effect`, 'a delayed sacrifice is a plain sacrifice of those objects');
+    }
+    return;
+  }
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';

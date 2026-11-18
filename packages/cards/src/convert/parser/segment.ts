@@ -244,6 +244,21 @@ const PUT_HAND_OTHER_BOTTOM =
   /^put one of them into your hand and the other on the bottom of your library\.$/i;
 
 /**
+ * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the second sentence
+ * says what happens to the mana the first adds, so the two are read as one instruction (`effect.add-mana-stays`).
+ */
+const ADD_MANA_SENTENCE = /^add [^.]*\.$/i;
+const MANA_STAYS_SENTENCE =
+  /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
+
+/**
+ * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-654, CR 707.12): the
+ * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
+ */
+const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
+const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
+
+/**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
  * bottom of your library in a random order." (stage P32, D-147): two sentences that are one instruction (what is revealed until, and where
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
@@ -314,6 +329,29 @@ const CHOOSE_GRAVEYARD_PAIR =
 const MAY_RETURN_THOSE_CARDS =
   /^you may return those cards to the battlefield under their owners['’] control\.$/i;
 
+/**
+ * "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that pile into
+ * your graveyard. Look at the cards in the other pile." (Prismari deck group 3, D-663, CR 700.3, 406.3): four sentences that are one instruction, kept together for `effect.exile-two-piles`.
+ */
+const EXILE_TWO_PILES_FIRST =
+  /^exile the top [^.]* cards of your library in a face-down pile, then exile the top [^.]* cards of your library in a face-up pile\.$/i;
+const OPPONENT_CHOOSES_ONE_PILE = /^an opponent chooses one of those piles\.$/i;
+const PUT_THAT_PILE_GRAVEYARD = /^put that pile into your graveyard\.$/i;
+const LOOK_AT_OTHER_PILE = /^look at the cards in the other pile\.$/i;
+/**
+ * "Shuffle your library, then reveal cards from the top of it until you reveal a nonland card. Exile that card and put the rest on the bottom of your library in a random order."
+ * (Creative Technique, D-664, CR 701.24, 701.20, 701.13): the second sentence says what is done with the card the first one reveals, so the two are read as one instruction
+ * (`effect.shuffle-reveal-until-exile`).
+ */
+const SHUFFLE_THEN_REVEAL_UNTIL =
+  /^shuffle your library, then reveal cards from the top of it until you reveal a [^.]*\.$/i;
+const EXILE_THAT_CARD_REST_BOTTOM =
+  /^exile that card and put the rest on the bottom of your library in a random order\.$/i;
+/**
+ * "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost." (Surge to Victory, D-662,
+ * CR 603.7, 707.12): the second sentence is what is done with the copy of the first, so the two are read as one delayed ability (`effect.delayed-combat-damage-copy-exiled`).
+ */
+const WHENEVER_COPY_EXILED_CARD = /^whenever a [^.]*, copy the exiled card\.$/i;
 /**
  * "Exile a card from your graveyard at random. You may play the exiled card this turn." (stage P75, D-235): "the exiled card" is the one the first sentence exiled, so the two
  * are read as one instruction.
@@ -406,7 +444,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     const [a, b, c] = [spans[i], spans[i + 1], spans[i + 2]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    const d = spans[i + 3];
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, EXILE_TWO_PILES_FIRST) &&
+      said(b, OPPONENT_CHOOSES_ONE_PILE) &&
+      said(c, PUT_THAT_PILE_GRAVEYARD) &&
+      said(d, LOOK_AT_OTHER_PILE)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       c !== undefined &&
       said(a, REVEAL_THE_TOP) &&
@@ -455,6 +504,10 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
+        (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
+        (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)))
     ) {
       out.push({ start: a.start, end: b.end });

@@ -543,3 +543,36 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
 - The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.
 - **The five most requested cards (D-630).** Their rulings were not fetched (the `Scryfall lookup` workflow of D-294 can); "you may exile target ..." is read only as "you may exile up to one other target ..." after a test of how the spell was cast; Explore's extra land is for its own turn only (CR 305.3).
+
+
+## The Prismari deck, group 1 (issue 87, D-638 to D-645)
+
+- Myriad (granted to Muddle) does nothing with two players, so it is exact in v1 and not built for a table (D-645, D-151).
+- The tapped and attacking copies of Redoubled Stormsinger attack as `enterAttacking` decides: the controller does not choose the player or planeswalker they attack (CR 508.4 allows the choice); in a two-player game the only choice of a player is the opponent.
+- `spellsCastThisTurn` counts the spells of the controller of the effect only; "each player", "an opponent" and "other than the first" counts are not built (D-638).
+- Strive supports mana costs only, on an instant or sorcery face; the cap of targets tries the payable cost for each count of the slot's legal targets and assumes no target for the question "may this be cast at all?" (D-641).
+- A copy "except it has <keyword>" works for the keywords the engine implements as abilities; "except it is a <type>" and "except its power is" are the older exceptions of D-382 and are not combined with the new `abilities` field in one effect (D-640).
+- `boundObjects` is the engine's own reference for a delayed ability about a group; it is never written in card data, and the validator rejects it there. A delayed exile or sacrifice of `moved` is now one ability for the group, so Whip of Erebos's delayed exile is named after the Whip, not the creature (D-643).
+- The casual agent copies the creature token with the most power plus toughness; a choice that weighs which token has an ability worth copying is not built.
+- The Scryfall rulings of the nine cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle texts are the cards of `golden.jsonl` taken from issue 87.
+
+## The Prismari deck, group 2 (issue 87, D-646 to D-659)
+
+- Mana that stays (D-650) is fixed mana of a spell or a triggered ability, kept until the cleanup step ends; a choice of mana, "all your mana" and another duration are not built.
+- A flashback cost may be mana and life only (D-647); a flashback with a sacrifice or a discard is still unsupported.
+- `canBlockOnlyFlying` is one fixed restriction (D-648); "can block only creatures with <quality>" is not built.
+- `ObjectFilter.named` is read only for "creatures named ~" in an effect, with the card's own name (D-656); a name that is not the card's own, and "named" in a cost, a condition or a target, are not built.
+- `copyCardAndCast` copies the card the effect before it exiled and offers the cast as the effect resolves (D-654); a copy that is cast with other costs, or "cast it" with the card itself, is not built.
+- `createToken.forEachOpponent` is for a custom token with keyword abilities and the "attack that opponent this turn if able" requirement (D-652); other per-opponent shapes are not built. In a multiplayer game the tokens are made in turn order.
+- The count of a target player's hand (D-649) works in the text of a spell; a power or toughness defined by it, and a static pump "for each card in target opponent's hand", are read and refused.
+- The spell a cast trigger reads (D-646) is for the cards of this group: the mana value, the mana spent and the greatest mana value among the spells the controller cast; "each player's" and "an opponent's" counts are not built.
+- The web says the new nodes in the gist of an ability; a spell's own effect text is shown from its Oracle text, so Rousing Refrain, Furygale Flocking and Magma Opus have no wording of their spell effect there.
+- The Scryfall rulings of the twelve cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle texts are the cards of `golden.jsonl` taken from issue 87.
+
+## The Prismari deck, group 3 (issue 87, D-660 to D-669)
+
+- `castFree.remaining` (D-660) is for the casts of one resolution; a cast that must be of a type or mana value limit uses the existing filter only.
+- Demonstrate (D-665) copies for the first opponent in turn order; in a game of more opponents the choice of which opponent is not offered.
+- Retrace (D-667) is printed only and never granted; it does not combine with another way to cast from the graveyard.
+- The Scryfall rulings of the seven cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+- The web shows the piles and the new choices with generic wording; the effect text of the spells is shown from the Oracle text.
