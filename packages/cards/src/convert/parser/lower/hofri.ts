@@ -154,6 +154,41 @@ const BECOMES_IN_ADDITION: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control." (issue 159, CR 608.2c, 400.7j): a `moveToZone` of a
+ * `choose` among the cards the destroy before it put into graveyards (`fromMoved`), in any player's graveyard (`fromAnyGraveyard`). The clause before it must be a destroy.
+ */
+const RETURN_FROM_DESTROYED: Lowering<IrClause, Effects> = {
+  head: 'returnFromDestroyed',
+  id: 'lower.return-from-destroyed',
+  needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAmongMoved'],
+  lower(clause, ctx) {
+    const objects = arg(clause, 'objects');
+    // "This way" is the destroy right before: after any other instruction it names something this lowering does not know (CR 608.2c).
+    if (objects?.kind !== 'noun' || !ctx.destroyed) return failure(clause);
+    const filter = lowerFilter(objects);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: {
+            kind: 'choose',
+            // `controller` is what the validator asks of a choice; the engine reads the cards of every graveyard (`fromAnyGraveyard`).
+            filter: { ...filter.value, zone: 'graveyard', controller: 'you' },
+            fromMoved: true,
+            fromAnyGraveyard: true,
+          },
+          to: 'battlefield',
+          controller: 'you',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Create a token that's a copy of that creature, except it's a Spirit in addition to its other types and it has "When ~ leaves the battlefield, return the exiled card to its
  * owner's graveyard."" (CR 707.2, 707.9b): the engine's `createToken` of a copy of the creature the trigger is about (read from last-known information), with the creature type
  * and the ability the exceptions add, and the card the instruction before exiled as its linked exile.
@@ -517,4 +552,5 @@ export const HOFRI_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PLAYER_ADDS_MANA,
   COPY_THIS_SPELL,
   BECOMES_IN_ADDITION,
+  RETURN_FROM_DESTROYED,
 ];

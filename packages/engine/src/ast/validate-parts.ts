@@ -2857,6 +2857,16 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
       );
     }
   }
+  if (
+    sel.fromAnyGraveyard !== undefined &&
+    (sel.fromAnyGraveyard !== true || sel.fromMoved !== true)
+  ) {
+    issue(
+      out,
+      `${path}.fromAnyGraveyard`,
+      'fromAnyGraveyard is true and only with fromMoved (issue 159)',
+    );
+  }
   // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
   if (sel.alsoGraveyard !== undefined) {
     if (sel.alsoGraveyard !== true) {
@@ -4214,11 +4224,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
-        if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
+        const among = e.objects as ChooseSelector;
+        if (
+          among.fromMoved === true &&
+          e.to !== 'hand' &&
+          !(e.to === 'battlefield' && among.fromAnyGraveyard === true)
+        ) {
           issue(
             out,
             `${path}.to`,
-            'a choice among the cards an earlier effect moved is put into the hand (D-411)',
+            'a choice among the cards an earlier effect moved is put into the hand (D-411), or onto the battlefield from any graveyard (issue 159)',
           );
         }
       } else {

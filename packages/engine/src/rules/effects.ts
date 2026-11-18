@@ -868,6 +868,7 @@ function runEffect(
                 ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
+                ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
                 ...(effect.objects.exceptSacrificed === true
                   ? {
                       among: Object.keys(state.objects).filter(

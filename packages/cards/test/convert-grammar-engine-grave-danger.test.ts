@@ -345,3 +345,55 @@ describe('Grimoire of the Dead: "{T}, Remove three study counters from this arti
     expect(g.act(0).try.activate(grimoire.name, { ability: 1 }).ok).toBe(false);
   });
 });
+
+describe('Necromantic Selection: "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control. It\'s a black Zombie in addition to its other colors and types. Exile this spell."', () => {
+  const selection = real('Necromantic Selection');
+  const start = () =>
+    scenario()
+      .define(selection)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(selection.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Llanowar Elves')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(selection)).toEqual([]);
+  });
+
+  test("every creature is destroyed, then one of them (any player's) returns under my control as a black Zombie, and the spell is exiled (CR 701.8, 110.2a)", () => {
+    const g = start();
+    g.act(0).cast(selection.name, { pay: true });
+    g.passAll();
+    // Both creatures are in graveyards (each in its owner's); the choice among them is mine.
+    g.act(0).chooseCards({ name: 'Llanowar Elves', seat: 1 });
+    g.passAll();
+    g.expect.zone(BEARS, 'graveyard', { seat: 0 });
+    // The opponent's card comes back under MY control (CR 110.2a), black in addition to green, and a Zombie.
+    expect(g.find({ name: 'Llanowar Elves', zone: 'battlefield' })).toHaveLength(1);
+    g.expect.derived({ name: 'Llanowar Elves', seat: 0 }, { colors: ['B', 'G'] });
+    g.expect.derived({ name: 'Llanowar Elves', seat: 0 }, { subtypes: ['Druid', 'Elf', 'Zombie'] });
+    g.expect.zone(selection.name, 'exile', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with no creature destroyed nothing returns and the spell is still exiled', () => {
+    const g = scenario()
+      .define(selection)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(selection.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(selection.name, { pay: true });
+    g.passAll();
+    g.expect.zone(selection.name, 'exile', { seat: 0 });
+  });
+});

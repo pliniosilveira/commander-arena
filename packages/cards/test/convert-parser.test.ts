@@ -626,6 +626,7 @@ describe('unmatched abilities', () => {
       'effect.copy-this-spell',
       'effect.becomes-in-addition',
       'effect.becomes-colored-in-addition',
+      'effect.return-destroyed-card',
       'effect.player-adds-chosen-color-mana',
       'effect.each-opponent-choose-keep',
       'effect.you-add-mana',

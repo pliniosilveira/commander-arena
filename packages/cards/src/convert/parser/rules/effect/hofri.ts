@@ -1,10 +1,12 @@
 /**
  * Effect rules of the Hofri Ghostforge deck (stage P68, D-229). Each rule is one phrase; the lowerings are in `lower/hofri.ts`.
  */
+
 import { fail, literal, pattern, satisfy, sequence } from '../../combinators';
 import type { IrAmount, IrArg, IrFlag, IrNoun, IrToken } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { readQuotedAbility } from '../static/quoted';
+import { makeNoun } from '../trigger/subjects';
 import { type Clauses, makeClause, operands, single } from './operands';
 
 /**
@@ -252,6 +254,50 @@ export const EFFECT_BECOMES_COLORED_IN_ADDITION = defineRule<Clauses>({
       },
     };
     return { ok: true, value: [makeClause(id, 'becomesInAddition', args, span)], pos: span.end };
+  },
+});
+
+/**
+ * `effect.return-destroyed-card`: "return a creature card put into a graveyard this way to the battlefield under your control" (issue 159, Necromantic Selection; CR 608.2c,
+ * 400.7j, 110.2a): the player chooses one of the cards the instruction before it (a destroy) put into graveyards, whoever's they are, and puts it onto the battlefield under
+ * their control. The card type is the one word of the text. The engine's `moveToZone` of a `choose` among the moved cards (`fromMoved`, `fromAnyGraveyard`). Not read: a
+ * number of cards, "up to", another destination, another controller, another zone ("from your graveyard").
+ */
+export const EFFECT_RETURN_DESTROYED_CARD = defineRule<Clauses>({
+  id: 'effect.return-destroyed-card',
+  family: 'effect',
+  leading: ['return'],
+  cites: [
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 400.7j (General)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: [
+    'return a creature card put into a graveyard this way to the battlefield under your control',
+  ],
+  rejects: [
+    'return a creature card put into a graveyard this way to the battlefield',
+    "return a creature card put into a graveyard this way to the battlefield under its owner's control",
+    'return a creature card put into a graveyard this way to your hand',
+    'return two creature cards put into a graveyard this way to the battlefield under your control',
+    'return a creature put into a graveyard this way to the battlefield under your control',
+    'return a creature card from your graveyard to the battlefield under your control',
+    'return a creature card put into a graveyard this way to the battlefield under your control and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.return-destroyed-card';
+    const r = pattern(
+      /return an? (creature|artifact|enchantment|land|planeswalker) card put into a graveyard this way to the battlefield under your control(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const type = (r.value[1] ?? '').toLowerCase();
+    const objects = makeNoun(id, span, 'a', { types: [type], raw: `a ${type} card` });
+    return {
+      ok: true,
+      value: [makeClause(id, 'returnFromDestroyed', { objects }, span)],
+      pos: r.pos,
+    };
   },
 });
 
@@ -814,4 +860,5 @@ export const HOFRI_EFFECT_RULES = [
   EFFECT_COPY_THIS_SPELL,
   EFFECT_BECOMES_IN_ADDITION,
   EFFECT_BECOMES_COLORED_IN_ADDITION,
+  EFFECT_RETURN_DESTROYED_CARD,
 ];

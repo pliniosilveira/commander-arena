@@ -199,6 +199,11 @@ export interface LowerContext {
    */
   milled: boolean;
   /**
+   * True right after a clause that was a `destroy` (issue 159, Necromantic Selection): "a creature card put into a graveyard this way" names the cards that destroy
+   * put into graveyards, which the engine's `moved` holds until another instruction moves something.
+   */
+  destroyed: boolean;
+  /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
    */
@@ -265,6 +270,7 @@ export function newContext(
     sacrificedRef: null,
     madeToken: null,
     milled: false,
+    destroyed: false,
     movedToHand: false,
     exiledRef: null,
     namedInQuotes: false,

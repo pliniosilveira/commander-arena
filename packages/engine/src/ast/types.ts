@@ -1336,6 +1336,12 @@ export interface ChooseSelector {
    */
   readonly fromMoved?: true;
   /**
+   * "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control" (issue 159, CR 608.2c, 400.7j): with
+   * `fromMoved`, the candidates are the cards the effect before it moved that are in any player's graveyard (not only the chooser's), and they may be put onto the
+   * battlefield as well as into the hand.
+   */
+  readonly fromAnyGraveyard?: true;
+  /**
    * "Put a land card from your hand or graveyard onto the battlefield" (Galadriel deck, group 2, D-544, CR 608.2d, 110.2a): the candidates are the matching cards of the
    * controller's hand and of their graveyard together (the filter's `zone` is `hand`, the graveyard is the one added). Only for `moveToZone` onto the battlefield, with
    * `filter.zone` `hand` and no `fromMoved`. The question is the `chooseCards` of purpose `move`, which lists both places.
