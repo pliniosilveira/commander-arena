@@ -116,7 +116,7 @@ describe('two piles of exiled cards: one face down, one face up (CR 700.3, 406.3
 
   test('the opponent chooses: only they are asked, and a choice of the controller is refused', () => {
     const g = game(FOUR_DOWN, FOUR_UP);
-    expect(getLegalActions(g.state, 0).map((a) => a.kind)).toEqual(['concede']);
+    expect(getLegalActions(g.state, 0)).toEqual([]);
     expect(getLegalActions(g.state, 1).map((a) => a.kind)).toEqual([
       'chooseOption',
       'chooseOption',
@@ -175,12 +175,14 @@ describe('the chosen pile goes to the graveyard, the controller may cast a spell
     // No second question: one spell.
     expect(g.state.pending?.kind).not.toBe('chooseCards');
     g.passAll();
-    expect(names(g, 'hand').sort()).toEqual([GAIN2, GAIN7, TRINKET].sort());
+    // The three spells not cast go to the hand, and the Big Study that was cast drew an Island.
+    expect(names(g, 'hand').sort()).toEqual([GAIN2, GAIN7, TRINKET, 'Island'].sort());
   });
 
   test('no spell in the other pile: nothing is asked, all of it goes to the hand', () => {
+    // The face-down pile of spells goes to the graveyard; the other pile has four lands.
     const g = game(FOUR_DOWN, ['Island', 'Island', 'Island', 'Island']);
-    g.act(1).chooseOption('pile2');
+    g.act(1).chooseOption('pile1');
     g.expect.pending('priority', 0);
     expect(g.state.seats[0]?.hand).toHaveLength(4);
     expect(g.state.exile).toHaveLength(0);
@@ -188,10 +190,10 @@ describe('the chosen pile goes to the graveyard, the controller may cast a spell
 
   test('the spell is cast without paying its mana cost (CR 118.9): no mana is spent', () => {
     const g = game(FOUR_DOWN, FOUR_UP, ['Island'], (b) => b.pool('UUUUUUUUUUU'));
-    const before = g.state.seats[0]?.pool.length ?? 0;
+    const before = JSON.stringify(g.state.seats[0]?.pool);
     g.act(1).chooseOption('pile2');
     g.act(0).chooseCards({ name: GAIN7, zone: 'exile', seat: 0 });
-    expect(g.state.seats[0]?.pool.length).toBe(before);
+    expect(JSON.stringify(g.state.seats[0]?.pool)).toBe(before);
   });
 
   test('a face-down card that is cast turns face up as it is cast (CR 406.3a)', () => {
@@ -237,7 +239,8 @@ describe('libraries shorter than the piles (CR 700.3d: a pile may hold no card)'
     expect(d.piles?.second).toEqual([]);
     g.act(1).chooseOption('pile1');
     g.expect.pending('priority', 0);
-    expect(names(g, 'graveyard')).toHaveLength(4);
+    // The four cards of the pile, and the Performance itself once it has finished resolving.
+    expect(names(g, 'graveyard')).toHaveLength(5);
     expect(g.state.seats[0]?.hand).toHaveLength(0);
   });
 
