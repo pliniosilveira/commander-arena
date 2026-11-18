@@ -164,6 +164,8 @@ export interface TargetChoiceSpec {
   readonly eachController?: true;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes). */
+  readonly differentFromAll?: readonly string[];
   /**
    * The slot as the card words it (the `TargetSpec` it came from, public like the card's text): the interface reads "target creature you control" from it so a
    * spell with several slots says what each slot is for. Absent when the engine builds a slot of its own (a changed target, an Aura's host).
@@ -1138,6 +1140,8 @@ export interface ChooseModesDecision extends DecisionBase {
    * instance, and `max` may be more than the number of modes. Absent otherwise.
    */
   readonly repeatable?: true;
+  /** "You may choose two" (`ModeChoice.allOrNone`): no mode or exactly `max` of them; `sets` holds only those. Absent otherwise. */
+  readonly allOrNone?: true;
   readonly sets: readonly (readonly number[])[];
   /** True for a triggered ability being put on the stack: it is not optional, so there is no `cancel`. */
   readonly forTrigger?: true;

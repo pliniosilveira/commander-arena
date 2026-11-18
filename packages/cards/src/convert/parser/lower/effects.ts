@@ -1490,6 +1490,20 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
     const objectsArg = arg(clause, 'objects');
+    // "Target player puts a +1/+1 counter on each creature they control" (CR 115.1, 122.6): the player is a target of its own (read first, so it is the slot "they" names), and the
+    // permanents are the `each` selector of that player's.
+    const putter = arg(clause, 'player');
+    if (putter !== undefined) {
+      if (
+        putter.kind !== 'noun' ||
+        objectsArg?.kind !== 'noun' ||
+        objectsArg.rule !== 'noun.each-permanent-they-control'
+      ) {
+        return failure(clause);
+      }
+      const who = playerSelectorOf(putter, ctx);
+      if (!who.ok) return who;
+    }
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&

@@ -129,6 +129,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedReturnToCommandZone',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
+    // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
+    'modeAllOrNone',
+    'modeDifferentTargets',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
@@ -1327,6 +1330,10 @@ export const ABILITY_FEATURES = [
   'delayedReturnToCommandZone',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
+  /** "At the beginning of combat on your turn, you may choose two." (CR 700.2, 700.2b): a triggered ability's `ModeChoice.allOrNone`, no mode or exactly `max` of them. */
+  'modeAllOrNone',
+  /** "Each mode must target a different player." (CR 700.2d): `ModeChoice.differentTargets`, no target is chosen for two of the chosen modes. */
+  'modeDifferentTargets',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
@@ -1998,6 +2005,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilCount: true,
   delayedReturnToCommandZone: true,
   modeCost: true,
+  modeAllOrNone: true,
+  modeDifferentTargets: true,
   sacrificeX: true,
   optionalSacrifice: true,
   sacrificeOneOrMore: true,

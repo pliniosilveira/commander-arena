@@ -70,7 +70,8 @@ const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you 
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
-const MODAL_HEADER = /^(?:choose\b|tiered(?:\n|$))/i;
+const MODAL_HEADER =
+  /^(?:choose\b|tiered(?:\n|$)|you may choose two\. each mode must target a different player\.(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
 /** "You may have ~ enter as a copy of any creature on the battlefield, except ..." (issue 104, CR 614.12): the replacement effect of a permanent that enters as a copy, said without "As". */
 const REPLACEMENT_ENTER_AS_COPY = /^you may have ~ enter as a copy of\b/i;

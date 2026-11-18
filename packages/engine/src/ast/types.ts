@@ -6061,6 +6061,16 @@ export interface ModeChoice {
    * or `notRepeatedThisTurn`.
    */
   readonly repeatable?: true;
+  /**
+   * "At the beginning of combat on your turn, you may choose two." (CR 700.2, 700.2b): the controller chooses no mode at all or exactly `max` of them, never fewer. `min`
+   * is 0. Only a triggered ability (no mode chosen removes it from the stack), not with `repeatable` or `maxIf`, and `max` is at least 2.
+   */
+  readonly allOrNone?: true;
+  /**
+   * "Each mode must target a different player." (CR 700.2d): no target is chosen for two of the chosen modes (the targets of one mode may still be several). A set of modes
+   * for which each target slot cannot get a target of its own is not offered. Not with `repeatable`.
+   */
+  readonly differentTargets?: true;
 }
 
 export interface SpellMode {
