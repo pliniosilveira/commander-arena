@@ -258,4 +258,29 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
     toughness: 2,
     oracleText: '',
   }),
+  // "Target player draws two cards. Flashback—{1}{U}, Pay 3 life."
+  singleFace({
+    name: 'SYNTHETIC Deep Study',
+    manaCost: ['3', 'U'],
+    types: ['sorcery'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'Target player draws two cards.\nFlashback\u2014{1}{U}, Pay 3 life.',
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: {
+          kind: 'flashback',
+          cost: [
+            { kind: 'mana', symbols: ['1', 'U'] },
+            { kind: 'payLife', amount: 3 },
+          ],
+        },
+      },
+    ],
+    spell: {
+      targets: [{ id: 't1', what: { kind: 'player', filter: 'any' } }],
+      effect: { kind: 'draw', player: { kind: 'target', id: 't1' }, count: 2 },
+    },
+  }),
 ];

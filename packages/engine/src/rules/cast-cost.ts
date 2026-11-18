@@ -385,8 +385,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
+  // D-633 (CR 702.34a, 118.9, 119.4): "Flashback—{1}{U}, Pay 3 life": the life of the flashback cost, paid with it.
   const life =
-    taxLife + lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
+    taxLife +
+    lifeOf(additional) +
+    (kicker === null ? 0 : lifeOf(kicker) * kicks) +
+    (flashback === null ? 0 : lifeOf(flashback)) +
+    perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
   const reduced = reduceGeneric(

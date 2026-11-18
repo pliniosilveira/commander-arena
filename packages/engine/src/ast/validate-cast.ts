@@ -24,13 +24,19 @@ export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIss
   });
 }
 
-/** CR 702.34a: the flashback cost is a mana cost (other flashback costs are not supported). */
+/**
+ * CR 702.34a: the flashback cost is mana, or mana and life (D-633, CR 119.4: "Flashback—{1}{U}, Pay 3 life."); any other cost of a flashback is not supported.
+ */
 export function checkFlashbackCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
   checkCosts(cost, path, out);
   if (!Array.isArray(cost)) return;
   cost.forEach((c, i) => {
-    if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana only');
+    if (c?.kind === 'payLife') {
+      if (!Number.isSafeInteger(c.amount) || c.amount < 1) {
+        issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');
+      }
+    } else if (c?.kind !== 'mana') {
+      issue(out, `${path}[${i}]`, 'a flashback cost may be mana or life only');
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }
