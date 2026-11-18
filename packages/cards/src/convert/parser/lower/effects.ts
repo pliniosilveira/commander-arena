@@ -134,6 +134,21 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
     : null;
 }
 
+/**
+ * "Choose an opponent at random that ~ didn't attack during your last combat. ~ attacks that player this combat if able. If you can't choose an opponent this way, tap ~." (CR 508.1d,
+ * 701.26a): the engine's `attackRandomOpponent` of the creature the ability belongs to.
+ */
+const ATTACK_RANDOM_OPPONENT: Lowering<IrClause, Effects> = {
+  head: 'attackRandomOpponent',
+  id: 'lower.attack-random-opponent',
+  needs: ['effect:attackRandomOpponent'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'attackRandomOpponent', creature: { kind: 'this' } }],
+    rule: clause.rule,
+  }),
+};
+
 /** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
@@ -1801,6 +1816,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('tap'),
   simple('untap'),
   GOAD,
+  ATTACK_RANDOM_OPPONENT,
   simple('transform'),
   REGENERATE,
   ADD_MANA,

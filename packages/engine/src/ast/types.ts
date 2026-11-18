@@ -2862,6 +2862,14 @@ export type Effect =
       readonly awayFromYou?: true;
     }
   /**
+   * "Choose an opponent at random that this creature didn't attack during your last combat. This creature attacks that player this combat if able. If you can't choose an opponent this
+   * way, tap this creature." (CR 508.1d, 508.6, 506.1, 701.26a): the controller of the effect "chooses" among their opponents still in the game that `creature` was not declared
+   * attacking in the last combat phase of that controller before this one (`GameState.lastCombatAttacks`; the combat of a creature that was not there is a combat it did not attack in),
+   * by the game's seeded generator: nobody decides. The creature, when it is on the battlefield, is required to attack that player this combat if able (`mustAttackPlayer`, until the
+   * combat ends). When no opponent can be chosen the creature is tapped. Only `this`: the creature of the ability.
+   */
+  | { readonly kind: 'attackRandomOpponent'; readonly creature: { readonly kind: 'this' } }
+  /**
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
    * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).

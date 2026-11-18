@@ -440,7 +440,12 @@ export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
         count,
         take,
         toGraveyard: { kind: 'flag', value: false, span: take.span, rule: 'effect.look-put-onto' },
-        ontoBattlefield: { kind: 'flag', value: true, span: take.span, rule: 'effect.look-put-onto' },
+        ontoBattlefield: {
+          kind: 'flag',
+          value: true,
+          span: take.span,
+          rule: 'effect.look-put-onto',
+        },
       },
     }),
   ),

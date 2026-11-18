@@ -624,6 +624,7 @@ describe('unmatched abilities', () => {
       'effect.require-attack',
       'effect.lose-hexproof-shroud',
       'effect.goad',
+      'effect.attack-random-opponent',
       'effect.shuffle-self-and-graveyard',
       'effect.shuffle-into-libraries',
       'effect.tap-or-untap',
