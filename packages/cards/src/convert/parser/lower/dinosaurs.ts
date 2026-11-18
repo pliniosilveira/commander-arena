@@ -226,9 +226,9 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
 
 /**
  * "~ deals X damage divided as you choose among any number of target creatures, where X is the greatest power among creatures you control as
- * you cast this spell" (CR 601.2d, 120.3): the spell's targets slot with `divide` (the total is read once, as the spell is cast) and the
- * engine's `dealDividedDamage` to it. Only a spell's own text; the total is a number or an amount that reads the game as the spell is cast,
- * never an announced X.
+ * you cast this spell" (CR 601.2d, 120.3): the targets slot with `divide` (the total is read once, as the spell is cast or the ability is put on the
+ * stack, CR 602.2b, 603.3d) and the engine's `dealDividedDamage` to it. A spell's own text or an activated or triggered ability; the total is a number
+ * or an amount that reads the game then, never an announced X.
  */
 export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
   head: 'dealDividedDamage',
@@ -236,7 +236,13 @@ export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
   needs: ['effect:dealDividedDamage', 'selector:target'],
   lower(clause, ctx) {
     const to = operand(clause, 'to');
-    if (to?.kind !== 'noun' || to.det !== 'target' || ctx.owner !== 'spell') return failure(clause);
+    if (to?.kind !== 'noun' || to.det !== 'target') return failure(clause);
+    // "it deals ...": the damage is dealt by the source of the ability (CR 113.7a), which is the one thing the engine's `dealDividedDamage` knows; an "it" that is
+    // another object is refused.
+    const source = arg(clause, 'source');
+    if (source !== undefined && (source.kind !== 'noun' || source.ref !== 'self')) {
+      return failure(clause);
+    }
     ctx.readAsCast = true;
     let total: Amount;
     try {

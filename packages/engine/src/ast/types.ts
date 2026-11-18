@@ -610,7 +610,9 @@ export interface ObjectFilter {
    * "Return target nonland permanent card with mana value X or less from your graveyard, where X is this creature's power" and "... where X is the amount of damage this
    * creature dealt to that player" (CR 202.3, 601.2c, D-230): the mana value of the object is at most the amount, read when the filter is read (as the targets are chosen
    * and again as the ability resolves; CR 608.2b). The amount is one that needs no target and no earlier instruction: the power of this ability's source (`powerOf` `this`), a
-   * `triggerDamage`, a number the game reads (`countOf`, `commanderCasts`...). Not in a static ability or a trigger's subject.
+   * `triggerDamage`, a number the game reads (`countOf`, `commanderCasts`...). Not in a static ability or a trigger's subject. "with mana value less than or equal to
+   * that spell's mana value" is the amount `manaValueOf` the `triggerSubject` of a `castSpell` trigger, read as the targets are chosen and again as the ability resolves
+   * (CR 603.3d, 608.2b); the spell stays on the stack with the ability (`rules/trigger-subject.ts`).
    */
   readonly manaValueAtMost?: Amount;
   /**
@@ -963,7 +965,8 @@ export interface TargetSpec {
    * targets of this slot as the spell is cast, each target getting at least 1. `total` is read once, as the spell is cast ("where X is the
    * greatest power among creatures you control as you cast this spell"): any amount that reads the game then (no X, no target). `max`
    * left out means any number (at most `total`, as each target needs 1); `min` defaults to 0 here. With a total of 0 no target can be chosen.
-   * Only a slot of a spell's own text (not an ability, not a mode), and a `dealDividedDamage` effect must name it.
+   * Only a slot of a spell's own text or of an activated or triggered ability (CR 601.2d, 602.2b, 603.3d: the division is announced as the ability is put on
+   * the stack), not of a mode or a reflexive ability; a `dealDividedDamage` effect of the same spell or ability must name it.
    */
   readonly divide?: { readonly total: Amount };
   /**

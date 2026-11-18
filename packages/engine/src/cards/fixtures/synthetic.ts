@@ -53,6 +53,7 @@ import { SYNTHETIC_DEVOTION_MANA_LIST } from './synthetic-devotion-mana';
 import { SYNTHETIC_DICE_LIST } from './synthetic-dice';
 import { SYNTHETIC_DIES_RETURN_LIST } from './synthetic-dies-return';
 import { SYNTHETIC_DIVIDE_LIST } from './synthetic-divide';
+import { SYNTHETIC_DIVIDE_ABILITIES_LIST } from './synthetic-divide-abilities';
 import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
@@ -511,6 +512,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_STUN_LIST,
   ...SYNTHETIC_FREE_CAST_LIST,
   ...SYNTHETIC_DIVIDE_LIST,
+  ...SYNTHETIC_DIVIDE_ABILITIES_LIST,
   ...SYNTHETIC_FIGHT_LIST,
   ...SYNTHETIC_PARSER_SHAPES_LIST,
   ...SYNTHETIC_REVEAL_LIST,

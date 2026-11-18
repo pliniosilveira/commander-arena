@@ -107,6 +107,10 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
+    // CR 608.2b: "mana value less than or equal to that spell's mana value" is read again as the ability resolves.
+    ...(obj.stack?.triggerSubject === undefined
+      ? {}
+      : { triggerSubject: obj.stack.triggerSubject }),
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 

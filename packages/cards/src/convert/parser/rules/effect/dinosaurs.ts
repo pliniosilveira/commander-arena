@@ -503,14 +503,22 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
  * `effect.damage-divided`: "~ deals X damage divided as you choose among any number of target creatures" (CR 601.2d: the caster divides
  * the damage among the targets as the spell is cast, each target getting at least 1; CR 120.3). The amount is a number or X (defined by
  * "..., where X is the greatest power among creatures you control as you cast this spell"); the targets are "any number of target
- * creatures" or "up to three target creatures" (the fewest is none). The lowering reads it only in a spell, with a total that is a
- * number or an amount read as the spell is cast.
+ * creatures" (also "creatures and/or planeswalkers your opponents control"), "up to three target creatures" (the fewest is none) or "one or two
+ * targets" (any target, at least one). The damage is dealt by "~" or by "it" (the source of the ability, CR 113.7a: the lowering reads only the
+ * "it" that is `~` itself). Spells, activated abilities and triggered abilities announce the division as they are put on the stack (CR 601.2d,
+ * 602.2b, 603.3d); the lowering reads it with a total that is a number or an amount read then.
  */
 export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
   id: 'effect.damage-divided',
   family: 'effect',
-  leading: ['~'],
-  cites: ['CR 601.2d (Casting Spells)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
+  leading: ['~', 'it'],
+  cites: [
+    'CR 601.2d (Casting Spells)',
+    'CR 602.2b (Activating Activated Abilities)',
+    'CR 603.3d (Handling Triggered Abilities)',
+    'CR 120.3 (Damage)',
+    'CR 115.1 (Targets)',
+  ],
   examples: [
     '~ deals X damage divided as you choose among any number of target creatures',
     '~ deals 3 damage divided as you choose among any number of target creatures',
@@ -518,6 +526,8 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals X damage divided as you choose among any number of target creatures you don’t control',
     // Prismari deck, group 2 (D-657, CR 115.4): any target, as many as the damage can be divided among.
     '~ deals 4 damage divided as you choose among any number of targets',
+    '~ deals 2 damage divided as you choose among one or two targets',
+    'it deals 5 damage divided as you choose among any number of target creatures and/or planeswalkers your opponents control',
   ],
   rejects: [
     '~ deals X damage divided as you choose among any number of target creatures and draw a card',
@@ -529,22 +539,40 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals damage divided as you choose among any number of target creatures',
     '~ deals X damage divided as you choose among any target',
     '~ deals 4 damage divided as you choose among any number of targets you control',
+    '~ deals 2 damage divided as you choose among one or two target',
+    'it deals 2 damage divided as you choose among one or two creatures',
+    'its deals 2 damage divided as you choose among one or two targets',
   ],
   parse: single(
     'effect.damage-divided',
     sequence(
-      literal('~ deals '),
+      choice(
+        map(literal('~ deals '), () => null),
+        map(
+          sequence(family<IrNoun>('noun', { only: ['noun.it'] }), literal(' deals ')),
+          ([it]) => it,
+        ),
+      ),
       family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
       literal(' damage divided as you choose among '),
       choice(
-        family<IrNoun>('noun', { only: ['noun.any-number-targets', 'noun.any-number-of-targets'] }),
+        family<IrNoun>('noun', {
+          only: [
+            'noun.any-number-targets',
+            'noun.any-number-of-targets',
+            'noun.one-or-two-targets-bare',
+          ],
+        }),
         satisfy(
           family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
           (noun) => noun.upTo && noun.plural,
         ),
       ),
     ),
-    ([, amount, , to]) => ({ verb: 'dealDividedDamage', args: { amount, to } }),
+    ([source, amount, , to]) => ({
+      verb: 'dealDividedDamage',
+      args: source === null ? { amount, to } : { source, amount, to },
+    }),
   ),
 });
 

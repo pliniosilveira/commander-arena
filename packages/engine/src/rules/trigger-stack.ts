@@ -199,7 +199,10 @@ function modesEvents(seat: SeatId, source: ObjectId, modes: readonly number[]): 
 /** Whether the choices need no decision: no legal target and none needed, or exactly as many as needed. */
 function isForced(choices: readonly TargetChoiceSpec[]): boolean {
   return choices.every(
-    (c) => c.legal.length === 0 || (c.min === c.max && c.min === c.legal.length),
+    (c) =>
+      c.legal.length === 0 ||
+      // CR 601.2d, 603.3d: a division is announced with the targets, so a slot that divides something is always asked.
+      (c.divide === undefined && c.min === c.max && c.min === c.legal.length),
   );
 }
 
@@ -232,6 +235,10 @@ function runQueue(input: GameState): PutResult {
       ...(trigger.player === undefined ? {} : { triggerPlayer: trigger.player }),
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
       ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
+      // CR 603.3d: a target filter that reads the object that caused the trigger ("mana value ... that spell's mana value").
+      ...(trigger.subject === null || !readsTriggerSubject(trigger.ability)
+        ? {}
+        : { triggerSubject: trigger.subject }),
     };
     const modal = modalOfAbility(trigger.ability);
     let modes: readonly number[] = [];
@@ -483,6 +490,7 @@ export function answerTriggerModes(
     ...(stack.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: stack.triggerTargetCount }),
+    ...(stack.triggerSubject === undefined ? {} : { triggerSubject: stack.triggerSubject }),
   };
   const patched = patchObject({ ...state, pending: null }, stackObject, {
     stack: { ...stack, chosenModes: chosen },

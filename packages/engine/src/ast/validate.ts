@@ -1365,7 +1365,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.targets,
         `${path}.targets`,
         out,
-        false,
+        // CR 601.2d, 603.3d: a triggered ability announces its division as it is put on the stack.
+        true,
         false,
         true,
         false,
@@ -1381,6 +1382,14 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         out,
       );
       const subject = subjectOf(a.trigger);
+      // CR 603.3d: a target filter reads the triggering object only where it is a spell (`manaValueAtMost` of its mana value).
+      if (JSON.stringify(a.targets ?? []).includes('"triggerSubject"') && subject !== 'stack') {
+        issue(
+          out,
+          `${path}.targets`,
+          'a target filter that reads the triggering spell needs a cast trigger',
+        );
+      }
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
@@ -1696,7 +1705,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           issue(out, `${path}.costReducedBy`, 'only a mana cost can be reduced');
         }
       }
-      const targets = declareTargets(a.targets, `${path}.targets`, out);
+      // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
+      const targets = declareTargets(a.targets, `${path}.targets`, out, true);
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
