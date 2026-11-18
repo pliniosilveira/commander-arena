@@ -119,6 +119,20 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
     : null;
 }
 
+/** "Goad target creature", "goad it" (CR 701.15a, D-589, D-601): the engine's `goad` on the one creature the operand names. */
+const GOAD: Lowering<IrClause, Effects> = {
+  head: 'goad',
+  id: 'lower.goad',
+  needs: ['effect:goad'],
+  lower(clause, ctx) {
+    const operandNoun = operand(clause, 'objects');
+    if (operandNoun?.kind !== 'noun') return failure(clause);
+    const object = objectRefOf(operandNoun, ctx, { moved: true });
+    if (!object.ok) return object;
+    return { ok: true, value: [{ kind: 'goad', objects: object.value }], rule: clause.rule };
+  },
+};
+
 function simple(
   verb: 'destroy' | 'exile' | 'counter' | 'tap' | 'untap' | 'transform',
 ): Lowering<IrClause, Effects> {
@@ -1509,6 +1523,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   COUNTER_UNLESS,
   simple('tap'),
   simple('untap'),
+  GOAD,
   simple('transform'),
   REGENERATE,
   ADD_MANA,

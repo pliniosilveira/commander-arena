@@ -66,3 +66,48 @@ describe('"Enchanted creature gets +N/+N and is goaded." (CR 701.15b, 613.4c)', 
     expect(dropped(`Enchant creature\n${text}`, 'enchantment', ['Aura']).stoppedAt).toBe(part);
   });
 });
+
+describe('"Goad target creature." and "goad it" as effects (CR 701.15a, D-601)', () => {
+  test('the real first line of Killian, Decisive Mentor: tap and goad the same creature', () => {
+    const abilities = readAll(
+      'Whenever an enchantment you control enters, tap up to one target creature and goad it.',
+      'creature',
+    ).abilities;
+    expect(abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { types: ['enchantment'], controller: 'you' } },
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+            min: 0,
+            max: 1,
+          },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'tap', objects: { kind: 'target', id: 't1' } },
+            { kind: 'goad', objects: { kind: 'target', id: 't1' } },
+          ],
+        },
+      },
+    ]);
+  });
+
+  test('a spell that goads a target (SYNTHETIC)', () => {
+    expect(readAll('Goad target creature.', 'instant').spell?.effect).toEqual({
+      kind: 'goad',
+      objects: { kind: 'target', id: 't1' },
+    });
+  });
+
+  test.each([
+    ['Goad each creature.', 'each creature.'],
+    ['Goad target player.', 'player.'],
+    ['Goad target creature until end of turn.', 'until end of turn.'],
+  ])('is dropped, never half read (SYNTHETIC): %s', (text, part) => {
+    expect(dropped(text, 'instant').stoppedAt).toBe(part);
+  });
+});

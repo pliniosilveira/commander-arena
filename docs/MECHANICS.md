@@ -5108,3 +5108,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `noun.each-other-attacking-opponent` (`rules/noun/edhrec.ts`), `effect.pump-each` (`rules/effect/pump.ts`), `lower/nouns.ts`.
 - Tests: engine `scenario-xx-attacking-opponent-players.test.ts` (a creature at the player gets it, the enchanted creature does not, one at a planeswalker does not; mutation-checked: players read as opponents and their planeswalkers, and the enchanted creature not left out); cards `parser-attacking-opponent.test.ts` (the real line of Martial Impetus, near misses).
 - Example cards: Martial Impetus (issue 89).
+
+## Goad as an effect and attackers enchanted by your Auras (issue 89, D-601)
+
+- CR: 701.15a (goad), 508.1 and 603.2c (an attack batch), 303.4e (an Aura's controller is separate from the enchanted creature's).
+- Gap class: T (the sentences); the engine ran both already (D-589, D-597).
+- AST nodes: `{ kind: 'goad', objects: { kind: 'target', id: 't1' } }` (after a `tap` of the same target in a `sequence`); `{ kind: 'attackBatch', who: 'any', atLeast: 1, what: { types: ['creature'], enchantedByYou: true } }`.
+- Parser: `effect.goad` (`rules/effect/goad.ts`), `lower.goad`, `trigger.enchanted-by-you-attack` (`rules/trigger/edhrec.ts`).
+- Tests: engine `scenario-xx-tap-and-goad.test.ts`, `scenario-xx-enchanted-attack-batch.test.ts`; cards `parser-goaded.test.ts`, `parser-enchanted-attack.test.ts`.
+- Example cards: Killian, Decisive Mentor (issue 89).

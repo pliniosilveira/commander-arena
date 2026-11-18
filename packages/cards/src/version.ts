@@ -37,4 +37,5 @@
 // 132: Read "a player attacks one of your opponents", "that attacking player", "that opponent" of that trigger and a token "that's attacking that opponent" (D-598, issue 89).
 // 133: Read "until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-599, issue 89).
 // 134: Read "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-600, issue 89).
-export const PARSER_VERSION = 134;
+// 135: Read "goad target creature" and "goad it", and "one or more creatures that are enchanted by an Aura you control attack" (D-601, issue 89).
+export const PARSER_VERSION = 135;

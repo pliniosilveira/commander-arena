@@ -1,5 +1,5 @@
 {
-  "parserVersion": 134,
+  "parserVersion": 135,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4066,27 +4066,10 @@
     "9c54bd34-667d-415c-ad26-82e0eb0ff409": {
       "name": "Killian, Decisive Mentor",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever an enchantment you control enters, tap up to one target creature and goad it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "ability.triggered"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever one or more creatures that are enchanted by an Aura you control attack, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "af55bbfc"
+      "ast": "e013309c"
     },
     "9c77eb0a-543a-41db-ba1f-aa0163837ae0": {
       "name": "Ajani's Chosen",
@@ -6771,7 +6754,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 437,
+      "supported": 438,
       "total": 480
     }
   }
