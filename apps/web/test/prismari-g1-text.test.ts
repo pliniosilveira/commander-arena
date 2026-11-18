@@ -144,7 +144,7 @@ test('populate: the question names the source and asks for a creature token; the
   expect(angelsBadge(POPULATE_QUESTION, tokens)).toBe(POPULATE_BADGE);
   expect(populateDetail([], tokens)).toMatch(/^Click a creature token/);
   expect(populateDetail(['o2'], tokens)).toBe(
-    'A token that is a copy of Beast will be created. Click it again to take it back.',
+    'A copy of Beast will be created. Click it again to take it back.',
   );
   expect([POPULATE_TITLE, populateDetail([], tokens)].join(' ')).not.toMatch(/[Ss]acrifice/);
 });
