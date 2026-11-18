@@ -30,4 +30,5 @@
 // 128: Activate emblem abilities from the command zone (D-606).
 // 129: Lock a player's life total and grant temporary protection from everything (D-607).
 // 130: Pay a cost that taps an untapped permanent before the mana of the same cost, and in a mana ability (D-609, issue 160).
-export const ENGINE_VERSION = 130;
+// 131: Count the opponents with fewer of a stat, discard the whole hand as a cost and search for up to an amount of cards (D-610, issue 160).
+export const ENGINE_VERSION = 131;

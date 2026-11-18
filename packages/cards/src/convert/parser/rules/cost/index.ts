@@ -228,7 +228,6 @@ export const COST_DISCARD = defineRule<IrCost>({
     'Discard this card',
     'Discard ~',
     'Discard a creature card',
-    'Discard your hand',
     'Discard a card at random',
     'Discard X cards',
     'Discard cards',
@@ -252,6 +251,36 @@ export const COST_DISCARD = defineRule<IrCost>({
     ),
     (amount) => ({ kind: 'discard', amount }),
   ),
+});
+
+/**
+ * `cost.discard-hand`: "Discard your hand" (issue 160, D-610, CR 701.9, 118.3): every card of the hand goes, the player chooses none, and a player with an empty hand
+ * pays it with nothing to discard. Not read: a number of cards ("Discard a card", `cost.discard`), "Discard your hand and" something more.
+ */
+export const COST_DISCARD_HAND = defineRule<IrCost>({
+  id: 'cost.discard-hand',
+  family: 'cost',
+  leading: ['discard'],
+  cites: ['CR 701.9 (Discard)', 'CR 118.3 (Costs)'],
+  examples: ['Discard your hand', 'discard your hand'],
+  rejects: [
+    'Discard',
+    'Discard a card',
+    'Discard hand',
+    'Discard your hand and',
+    'Discard their hand',
+    'Discard your hands',
+    'Discard your',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/discard your hand(?![\p{L}\p{N}])(?!\s+and)/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'discardHand', span: r.value.span, rule: 'cost.discard-hand' },
+      pos: r.pos,
+    };
+  },
 });
 
 /**
@@ -840,6 +869,7 @@ export const COST_RULES = [
   COST_MANA,
   COST_SACRIFICE,
   COST_DISCARD,
+  COST_DISCARD_HAND,
   COST_DISCARD_FILTERED,
   // Stage P68 (D-229): "Discard this card", "Exile ~".
   ...HOFRI_COST_RULES,

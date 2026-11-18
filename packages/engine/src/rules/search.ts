@@ -130,7 +130,7 @@ export function runSearch(
   if (instruction.chosen === null) {
     const legal = searchCandidates(state, seat, res.source, search.filter);
     // CR 701.23c: with nothing to find the player still searched (and shuffles if told to).
-    if (legal.length === 0) {
+    if (legal.length === 0 || search.max <= 0) {
       return done(state, [{ kind: 'librarySearched', seat, found: 0 }], shuffle);
     }
     const decision: Omit<ChooseCardsDecision, 'id'> = {

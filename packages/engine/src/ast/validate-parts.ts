@@ -1573,6 +1573,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(a.stat, PLAYER_STATS)) {
         issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
       }
+      if (a.fewer !== undefined && a.fewer !== true) {
+        issue(out, `${path}.fewer`, 'fewer is true when present');
+      }
       break;
     case 'timesKicked':
       // D-110: the card must have a kicker or multikicker (`checkCastFace`).
@@ -2074,6 +2077,18 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'discard':
+      if (cost.hand !== undefined) {
+        // D-610: "Discard your hand": the whole hand, so no count, filter or name narrows it.
+        if (
+          cost.hand !== true ||
+          cost.count !== 0 ||
+          cost.filter !== undefined ||
+          cost.named !== undefined
+        ) {
+          issue(out, `${path}.hand`, 'hand is true, with a count of 0 and no filter or name');
+        }
+        break;
+      }
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'discard count must be a positive integer');
       }
@@ -3187,6 +3202,22 @@ function checkSearch(
   }
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
+  }
+  // D-610: "up to X": an amount read as the search begins; the cards found all go to one place.
+  if (e.maxAmount !== undefined) {
+    checkAmount(e.maxAmount, `${path}.maxAmount`, scope, out);
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.maxAmount`,
+        "a search for up to an amount has a max of 1 (unread), one destination of 'rest' and no shared land type",
+      );
+    }
   }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {

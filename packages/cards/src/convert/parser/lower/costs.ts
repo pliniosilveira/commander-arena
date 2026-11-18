@@ -144,6 +144,11 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'mill', count: cost.amount.value })
         : failure(cost);
+    case 'discardHand':
+      // D-610 (CR 701.9, 118.3): the whole hand, the cost of an ordinary activated ability.
+      return options.ordinary === true
+        ? ok({ kind: 'discard', count: 0, hand: true })
+        : failure(cost);
     case 'discardThis':
       // CR 701.9, 113.6b (stage P68, D-229): the card itself, from the hand: the cost of an ordinary activated ability, which then works from the hand.
       return options.ordinary === true ? ok({ kind: 'discardThis' }) : failure(cost);

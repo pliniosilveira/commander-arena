@@ -452,6 +452,7 @@ export type IrAmount =
   | {
       readonly kind: 'opponentsWithMore';
       readonly stat: 'life' | 'cardsInHand' | 'creatures' | 'lands';
+      readonly fewer?: true;
       readonly span: Span;
     }
   // "for each creature sacrificed this way", "for each opponent who drew a card this way": what an earlier
@@ -711,6 +712,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
+    // "Discard your hand" (issue 160, D-610, CR 701.9): every card of the hand, none chosen
+    | { readonly kind: 'discardHand' }
     // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
     | { readonly kind: 'revealThis' }
     | { readonly kind: 'exileThis' }

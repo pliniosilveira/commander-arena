@@ -243,7 +243,12 @@ export type Amount =
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */
-  | { readonly kind: 'opponentsWithMore'; readonly stat: PlayerStat }
+  | {
+      readonly kind: 'opponentsWithMore';
+      readonly stat: PlayerStat;
+      /** D-610 (issue 160, "for each opponent who controls fewer creatures than you"): the opponents whose `stat` is less than the controller's. */
+      readonly fewer?: true;
+    }
   /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
@@ -1008,6 +1013,11 @@ export type Cost =
        * hand). Only in a cost of an activated ability.
        */
       readonly named?: true;
+      /**
+       * "Discard your hand" (D-610, CR 701.9, issue 160): every card of the hand, none chosen; `count` is 0 and unread, and a player with an empty hand pays it with
+       * nothing to discard. Only in a cost of an activated ability.
+       */
+      readonly hand?: true;
     }
   /**
    * "Behold a Jace" (CR 701.4, D-151): as an additional cost to cast a spell, reveal a matching
@@ -2778,6 +2788,12 @@ export type Effect =
        * condition on the choice as a whole: any one card may be found, two only when some land type is on both. The land cards are of `filter`; `max` is at least 2.
        */
       readonly sharedLandType?: true;
+      /**
+       * "Search your library for up to X basic land cards, where X is the number of tapped creatures you control" (D-610, issue 160): the most cards that may be found is
+       * this amount, worked out as the search begins (CR 608.2c, 107.3c); `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`. A count of 0 or
+       * less finds nothing (the player still searches and shuffles, CR 701.23c).
+       */
+      readonly maxAmount?: Amount;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

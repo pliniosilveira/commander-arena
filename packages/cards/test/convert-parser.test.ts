@@ -344,6 +344,7 @@ describe('unmatched abilities', () => {
       'cost.mana',
       'cost.sacrifice',
       'cost.discard',
+      'cost.discard-hand',
       'cost.discard-filtered',
       'cost.discard-this',
       'cost.exile-this-from-graveyard',

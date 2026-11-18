@@ -2160,7 +2160,11 @@ function runEffect(
           [],
           resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
             kind: 'search' as const,
-            search: effect,
+            // D-610 (CR 608.2c): "up to X" is read as the search begins.
+            search:
+              effect.maxAmount === undefined
+                ? effect
+                : { ...effect, max: Math.max(0, amountOf(state, effect.maxAmount, ctx, targets)) },
             seat,
             accepted: effect.optional === true ? null : true,
             chosen: null,

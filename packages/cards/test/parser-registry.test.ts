@@ -169,6 +169,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
+  'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
   // Stage P51 (D-209): the energy cost is the payment of an "unless you pay" of a spell.
   'cost.energy': spell((e) => `Draw a card. Then discard a card at random unless you pay ${e}.`),

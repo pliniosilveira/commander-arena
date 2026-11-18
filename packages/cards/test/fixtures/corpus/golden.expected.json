@@ -1,5 +1,5 @@
 {
-  "parserVersion": 142,
+  "parserVersion": 143,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -573,19 +573,10 @@
     "123d2b6e-114e-4767-860d-50790382ca4a": {
       "name": "Hornet Nest",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ is dealt damage, create that many 1/1 green Insect creature tokens with flying and deathtouch.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "effect.create-token"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "02d7de47"
+      "ast": "becae9c0"
     },
     "126a5d0b-e7d6-458e-87af-47d845678014": {
       "name": "Cyberdrive Awakener",
@@ -769,19 +760,10 @@
     "19bb51dd-2b93-45f0-927d-bbafddadd0a3": {
       "name": "Aura Mutation",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Destroy target enchantment. Create X 1/1 green Saproling creature tokens, where X is that enchantment's mana value.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.custom"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a450ecd5"
+      "ast": "75bbf9b2"
     },
     "19cf5798-4600-4a66-b1c7-de77bde157d0": {
       "name": "Tablet of Discovery",
@@ -866,19 +848,10 @@
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "−8: Create X 2/2 white Cat creature tokens, where X is your life total.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.custom"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "98f2f292"
+      "ast": "34102e76"
     },
     "1f91297a-ec2b-4ea8-9198-aa1daac20ff8": {
       "name": "Metallic Mimic",
@@ -3992,19 +3965,10 @@
     "9b40faad-1b96-4461-89d8-9a207b58e832": {
       "name": "Voice of Many",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, draw a card for each opponent who controls fewer creatures than you.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "amount.for-each"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "18a0bb53"
+      "ast": "8d19e6f7"
     },
     "9b598025-80a3-4144-be9a-863165161594": {
       "name": "Shield of the Oversoul",
@@ -4121,19 +4085,10 @@
     "a07483b4-c04f-42a4-b979-8b77c11fa8f5": {
       "name": "Slate of Ancestry",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "{4}, {T}, Discard your hand: Draw a card for each creature you control.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "cost.discard"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "64d4cb94"
+      "ast": "09b274da"
     },
     "a0753b28-e693-4f5b-a4e4-846e933058d3": {
       "name": "Roar of Resistance",
@@ -5821,18 +5776,10 @@
     "ea4a9299-c2b3-4092-89dd-28142b203d60": {
       "name": "White Sun's Zenith",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Create X 2/2 white Cat creature tokens. Shuffle ~ into its owner's library.",
-          "reason": "notRunnable",
-          "closestRule": "effect.shuffle-into-libraries"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "db283166"
+      "ast": "3c6e194d"
     },
     "ea86abfa-6cab-4ef0-8463-34136fc25b59": {
       "name": "Duplicant",
@@ -5893,19 +5840,10 @@
     "ec6d52f9-1c8f-48da-951c-be8d7813c7be": {
       "name": "Harvest Season",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.library-card"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f7a448a3"
+      "ast": "714aed94"
     },
     "ecd49d85-9c8c-4cc9-9a83-072ecd433677": {
       "name": "Flame of Anor",
@@ -6643,7 +6581,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 442,
+      "supported": 449,
       "total": 477
     }
   }

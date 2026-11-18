@@ -42,4 +42,5 @@
 // 140: Parse activated abilities carried by emblems (D-606).
 // 141: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-607).
 // 142: Read "Tap an untapped creature you control" next to a mana cost and {T}, and in a mana ability (D-609, issue 160).
-export const PARSER_VERSION = 142;
+// 143: Read "where X is your life total", the mana value of a destroyed enchantment, "that many" tokens after damage, "for each opponent who controls fewer creatures", "Discard your hand", "up to X" library searches and a spell shuffling itself into its library (D-610, issue 160).
+export const PARSER_VERSION = 143;

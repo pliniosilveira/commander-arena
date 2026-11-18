@@ -96,3 +96,223 @@ describe('"Tap an untapped creature you control" in the cost of an ability (D-60
     expect(g.state.seats[0]?.manaPool.map((m) => m.color)).toEqual(['W']);
   });
 });
+
+// ---- Group 2: tokens counted by an amount, and a spell that shuffles itself into its owner's library (D-610).
+
+const lifeGame = (life: number, ...extra: ((b: Builder) => Builder)[]) => {
+  let b = scenario()
+    .seat(0)
+    .life(life)
+    .library(...FILLER);
+  for (const f of extra) b = f(b);
+  return b
+    .seat(1)
+    .life(20)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0 })
+    .build();
+};
+
+const CAT_RITE = parsed(
+  'SYNTHETIC Parsed Cat Rite',
+  'Sorcery',
+  'Create X 2/2 white Cat creature tokens, where X is your life total.',
+  { manaCost: '{W}', colors: ['W'] },
+);
+const MUTATION = parsed(
+  'SYNTHETIC Parsed Mutation',
+  'Sorcery',
+  "Destroy target enchantment. Create X 1/1 green Saproling creature tokens, where X is that enchantment's mana value.",
+  { manaCost: '{1}{G}', colors: ['G'] },
+);
+const ENCHANTMENT = parsed('SYNTHETIC Parsed Enchantment', 'Enchantment', '', {
+  manaCost: '{2}{W}',
+  colors: ['W'],
+});
+const ZENITH = parsed(
+  'SYNTHETIC Parsed Zenith',
+  'Sorcery',
+  "Create X 2/2 white Cat creature tokens. Shuffle ~ into its owner's library.",
+  { manaCost: '{X}{W}{W}{W}', colors: ['W'] },
+);
+
+describe('X tokens counted by what the text says (D-610)', () => {
+  test('"where X is your life total": five tokens at 5 life, read as the spell resolves (CR 107.3c, 119.1)', () => {
+    const g = lifeGame(5, (b) => b.define(CAT_RITE).hand(CAT_RITE.name).battlefield('Plains'));
+    g.act(0).cast(CAT_RITE.name, { pay: true });
+    g.passAll();
+    expect(tokens(g, 'Cat')).toHaveLength(5);
+    g.expect.invariants();
+  });
+
+  test('"where X is that enchantment\'s mana value": the enchantment is destroyed and its mana value counts (CR 202.3, 608.2h)', () => {
+    const withTarget = scenario()
+      .seat(0)
+      .life(20)
+      .library(...FILLER)
+      .define(MUTATION)
+      .hand(MUTATION.name)
+      .battlefield('Forest', { count: 2 })
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .define(ENCHANTMENT)
+      .battlefield(ENCHANTMENT.name)
+      .at('precombatMain', { active: 0 })
+      .build();
+    withTarget.act(0).cast(MUTATION.name, {
+      targets: [{ name: ENCHANTMENT.name, zone: 'battlefield', seat: 1 }],
+      pay: true,
+    });
+    withTarget.passAll();
+    expect(tokens(withTarget, 'Saproling')).toHaveLength(3);
+    withTarget.expect.zone(ENCHANTMENT.name, 'graveyard');
+  });
+
+  test("a spell that shuffles itself into its owner's library goes to no graveyard (CR 608.2n, 701.24)", () => {
+    const g = lifeGame(20, (b) =>
+      b.define(ZENITH).hand(ZENITH.name).battlefield('Plains', { count: 5 }),
+    );
+    g.act(0).cast(ZENITH.name, { x: 2, pay: true });
+    g.passAll();
+    expect(tokens(g, 'Cat')).toHaveLength(2);
+    g.expect.zone(ZENITH.name, 'library');
+    expect(g.state.seats[0]?.graveyard ?? []).toHaveLength(0);
+    g.expect.invariants();
+  });
+});
+
+// ---- Group 3: damage-counted tokens and a draw for each opponent with fewer creatures (D-610).
+
+const NEST = parsed(
+  'SYNTHETIC Parsed Nest',
+  'Creature — Insect',
+  'Defender\nWhenever ~ is dealt damage, create that many 1/1 green Insect creature tokens with flying and deathtouch.',
+  { manaCost: '{1}{G}', colors: ['G'], power: '0', toughness: '3' },
+);
+const READER = parsed(
+  'SYNTHETIC Parsed Reader',
+  'Creature — Human',
+  'When ~ enters, draw a card for each opponent who controls fewer creatures than you.',
+  { manaCost: '{G}', colors: ['G'], power: '1', toughness: '1' },
+);
+
+describe('damage-counted tokens and "for each opponent who controls fewer creatures" (D-610)', () => {
+  test('a Nest dealt 3 damage makes 3 Insects, even when the damage kills it (CR 120.3, 603.2)', () => {
+    const g = main((b) =>
+      b.define(NEST).battlefield(NEST.name).hand('Lightning Bolt').battlefield('Mountain'),
+    );
+    g.act(0).cast('Lightning Bolt', {
+      targets: [{ name: NEST.name, zone: 'battlefield', seat: 0 }],
+      pay: true,
+    });
+    g.passAll();
+    const insects = tokens(g, 'Insect');
+    expect(insects).toHaveLength(3);
+    g.expect.invariants();
+  });
+
+  test('a Reader draws a card for each opponent with fewer creatures than you, and none for one with as many', () => {
+    const fewer = main((b) => b.define(READER).hand(READER.name).battlefield('Forest'));
+    fewer.act(0).cast(READER.name, { pay: true });
+    fewer.passAll();
+    // Hand: the Reader left it; one card was drawn.
+    fewer.expect.handSize(0, 1);
+    const equal = main(
+      (b) => b.define(READER).hand(READER.name).battlefield('Forest'),
+      (b) => b.battlefield(BEARS),
+    );
+    equal.act(0).cast(READER.name, { pay: true });
+    equal.passAll();
+    // The Reader makes one creature each: equal, not fewer.
+    equal.expect.handSize(0, 0);
+  });
+});
+
+const SLATE = parsed(
+  'SYNTHETIC Parsed Slate',
+  'Artifact',
+  '{4}, {T}, Discard your hand: Draw a card for each creature you control.',
+  { manaCost: '{3}' },
+);
+
+describe('"Discard your hand" as a cost (D-610, CR 701.9, 118.3)', () => {
+  test('the whole hand goes, none chosen, and the draw counts the creatures', () => {
+    const g = main((b) =>
+      b
+        .define(SLATE)
+        .battlefield(SLATE.name)
+        .battlefield('Plains', { count: 4 })
+        .battlefield(BEARS, { count: 2 })
+        .hand('Plains', 'Forest', 'Mountain'),
+    );
+    g.act(0).activate(SLATE.name, { pay: true });
+    g.expect.handSize(0, 0);
+    g.passAll();
+    g.expect.handSize(0, 2);
+    g.expect.invariants();
+  });
+
+  test('an empty hand pays it with nothing to discard', () => {
+    const g = main((b) =>
+      b
+        .define(SLATE)
+        .battlefield(SLATE.name)
+        .battlefield('Plains', { count: 4 })
+        .battlefield(BEARS, { count: 3 }),
+    );
+    g.act(0).activate(SLATE.name, { pay: true });
+    g.passAll();
+    g.expect.handSize(0, 3);
+  });
+});
+
+const HARVEST = parsed(
+  'SYNTHETIC Parsed Harvest',
+  'Sorcery',
+  'Search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle.',
+  { manaCost: '{G}', colors: ['G'] },
+);
+
+describe('"Search your library for up to X ..., where X is ..." (D-610, CR 701.23, 107.3c)', () => {
+  const harvest = (tappedBears: number) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .library('Forest', 'Forest', 'Forest', 'Forest', 'Plains')
+      .define(HARVEST)
+      .hand(HARVEST.name)
+      .battlefield('Forest')
+      .battlefield(BEARS, { count: Math.max(tappedBears, 1), tapped: tappedBears > 0 })
+      .battlefield('Llanowar Elves')
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('two tapped creatures: up to two basic lands, put onto the battlefield tapped', () => {
+    const g = harvest(2);
+    g.act(0).cast(HARVEST.name, { pay: true });
+    g.passAll();
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error('expected a search');
+    expect(d.max).toBe(2);
+    g.act(0).chooseCards(
+      { name: 'Forest', zone: 'library', seat: 0, nth: 0 },
+      { name: 'Forest', zone: 'library', seat: 0, nth: 1 },
+    );
+    // Two cards left the library for the battlefield, tapped.
+    expect(g.state.seats[0]?.library).toHaveLength(3);
+    g.expect.tapped({ name: 'Forest', zone: 'battlefield', seat: 0, nth: 1 }, true);
+    g.expect.tapped({ name: 'Forest', zone: 'battlefield', seat: 0, nth: 2 }, true);
+    g.expect.invariants();
+  });
+
+  test('no tapped creature: nothing may be found, and the player shuffles', () => {
+    const g = harvest(0);
+    g.act(0).cast(HARVEST.name, { pay: true });
+    g.passAll();
+    expect(g.state.pending?.kind).not.toBe('chooseCards');
+  });
+});

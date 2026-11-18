@@ -5117,3 +5117,14 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: `ui/decisions/payment.ts` (`asksTapped`, `setTapTapped`), `Chooser.tsx` ("Tap which permanent?"), `priority.ts`, `abilities.ts`, `Overlays.tsx`.
 - What the parser must produce: `{1}, {T}, Tap an untapped creature you control: Create a 1/1 green Saproling creature token.` reads to `activated { cost: [mana {1}, tap, tapPermanents { filter: creature, count: 1 }] }`; `{T}, Tap an untapped creature you control: Add one mana of any color.` reads to `mana { cost: [tap, tapPermanents { filter: creature, count: 1 }], production: anyColor }`.
 - Limits: see `docs/ROADMAP.md` (the planner's default choice of creature).
+
+## The Token Triumph deck (issue 160): amounts, shuffling a spell in, the whole hand, "up to X" (D-610)
+
+- CR: 107.3c (the text defines X), 119.1 (life total), 202.3 (mana value), 120.3 and 603.2 (damage dealt and its trigger), 608.2c and 608.2n (a spell that leaves the stack as it resolves), 701.9 (discard), 701.23 (search), 701.24 (shuffle), 118.3 (costs).
+- Gap class: T (the phrases) and P (`opponentsWithMore.fewer`, `discard.hand`, `search.maxAmount`); no S proposal.
+- Engine: `rules/amounts.ts` (`opponentsWithMore` with `fewer`), `rules/activate-costs.ts` and `rules/activate.ts` (`discardHand`, paid without a choice), `rules/effects.ts` and `rules/search.ts` (`maxAmount` read as the search begins; 0 finds nothing); `ast/validate-parts.ts` checks all three.
+- Parser: `rules/amount/value.ts` (`LIFE_TOTAL`, the mana value of more permanent types, `amount.for-each-opponent` with "fewer"), `rules/token/index.ts` (the count "that many"), `rules/cost/index.ts` (`cost.discard-hand`), `rules/noun/library.ts` and `rules/effect/search.ts` ("up to X ..., where X is ..."), `lower/hylda-g3.ts` (a spell shuffles itself in), `lower/effects-more.ts`, `lower/costs.ts`.
+- Tests: `ast-discard-hand-validate.test.ts` (engine); cards `convert-grammar-engine-issue160.test.ts` (the real wording, played).
+- Web: `game/amount-text.ts` ("opponents who control fewer creatures than you").
+- What the parser must produce: `Search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle.` reads to `search { max: 1, maxAmount: countOf tapped creatures you control, destinations: [{ zone: battlefield, tapped, count: rest }], shuffle: true }`; `{4}, {T}, Discard your hand: Draw a card for each creature you control.` reads to an activated ability with `discard { count: 0, hand: true }`.
+- Limits: see `docs/ROADMAP.md`.

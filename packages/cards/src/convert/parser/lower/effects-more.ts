@@ -2,10 +2,10 @@
  * Clause lowerings of stage P2: "gets +N/+N until end of turn" and library search. Same contract
  * as effects.ts: each declares the engine features it needs, and is checked before it runs.
  */
-import type { PlayerSelector, SearchDestination } from '@commander-arena/engine';
+import type { Amount, PlayerSelector, SearchDestination } from '@commander-arena/engine';
 import { type IrClause, isIrAmount } from '../ir/types';
 import { withoutZone } from '../rules/noun/phrases';
-import { lowerCountedPtStep, lowerPtTerm } from './amounts';
+import { lowerAmount, lowerCountedPtStep, lowerPtTerm } from './amounts';
 import { arg, type Effects, eachObject, failure } from './clauses';
 import { missingFeatures } from './features';
 import { lowerFilter, playerSelectorOf } from './nouns';
@@ -91,7 +91,18 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     if (sharing.length > 0) return { ok: false, needs: sharing, at: cards.span, rule: cards.rule };
     const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
-    const max = cards.count?.kind === 'number' ? cards.count.value : 1;
+    // D-610: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
+    const xCount = cards.count?.kind === 'x';
+    const maxAmount = arg(clause, 'maxAmount');
+    if (xCount !== (maxAmount !== undefined)) return failure(clause);
+    let amountValue: Amount | null = null;
+    if (maxAmount !== undefined) {
+      if (!isIrAmount(maxAmount)) return failure(clause);
+      const lowered = lowerAmount(maxAmount, ctx, clause.rule);
+      if (!lowered.ok) return lowered;
+      amountValue = lowered.value;
+    }
+    const max = xCount ? 1 : cards.count?.kind === 'number' ? cards.count.value : 1;
     const destinations: SearchDestination[] = [];
     for (const place of places.items) {
       if (
@@ -109,13 +120,14 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       destinations.push({
         zone: place.zone,
         ...(place.tapped === true ? { tapped: true } : {}),
-        count: place.count ?? max,
+        count: xCount ? 'rest' : (place.count ?? max),
       });
     }
+    if (xCount && destinations.length !== 1) return failure(clause);
     // D-178: the cards that were found are "it" and "that land" for what follows (the engine's `moved`).
     ctx.searched = cards.ref ?? null;
     const total = destinations.reduce((sum, d) => sum + (d.count === 'rest' ? 0 : d.count), 0);
-    if (total !== max) return failure(clause);
+    if (!xCount && total !== max) return failure(clause);
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).
     const who = arg(clause, 'player');
     const may = arg(clause, 'may');
@@ -136,6 +148,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
           ...(who === undefined ? {} : { optional: true as const }),
           filter: filter.value,
           max,
+          ...(amountValue === null ? {} : { maxAmount: amountValue }),
           ...(shared ? { sharedLandType: true as const } : {}),
           destinations,
           reveal: reveal.value,

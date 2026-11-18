@@ -544,6 +544,11 @@ function payDiscard(state: GameState, events: GameEvent[]): Result {
   const going = inProgress(state);
   if (!going) return fail('No activation is in progress');
   const { casting, costs } = going;
+  // D-610 (CR 701.9): "Discard your hand" discards every card of it, none chosen; an empty hand pays it with nothing to discard.
+  if (costs.discardHand) {
+    const all = [...(state.seats[casting.seat]?.hand ?? [])];
+    return all.length === 0 ? payExileCards(state, events) : discardChosen(state, events, all);
+  }
   if (costs.discard === 0) return payExileCards(state, events);
   // The activation is an object on the stack whose `source` is the permanent with the ability (D-207: "another card named ~" is that permanent's name).
   const source = state.objects[casting.object]?.stack?.source ?? casting.object;
