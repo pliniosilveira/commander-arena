@@ -1799,6 +1799,8 @@ export type Effect =
       /**
        * "Exile the top two cards of target opponent's library face down" (CR 406.3, 701.13, D-187): whose library, a selector that names exactly one player
        * (a target or an opponent); left out, the controller's own. The cards belong to that player (a card is exiled from its owner's library).
+       * Issue 279 (Etali, Primal Storm): `eachPlayer` ("exile the top card of each player's library") names every player: the top `count` cards of each library are exiled, one player after
+       * the other in the order CR 101.4 gives, and all of them are what `moved` names afterwards.
        */
       readonly from?: PlayerSelector;
       /**

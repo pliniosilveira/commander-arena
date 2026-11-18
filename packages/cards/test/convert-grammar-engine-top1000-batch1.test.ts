@@ -289,3 +289,74 @@ describe('"Each creature deals 1 damage to its controller." (CR 120.3)', () => {
     g.expect.life(1, 20);
   });
 });
+
+// ---- Etali, Primal Storm: "Whenever ~ attacks, exile the top card of each player's library, then you may cast any number of spells from among those cards without paying their mana costs." (CR 701.13, 608.2g, 118.9).
+
+const ETALI = parsed(
+  'SYNTHETIC Parsed Etali',
+  'Legendary Creature \u2014 Elder Dinosaur',
+  "Whenever ~ attacks, exile the top card of each player's library, then you may cast any number of spells from among those cards without paying their mana costs.",
+  { manaCost: '{4}{R}{R}', colors: ['R'], power: '6', toughness: '6' },
+);
+
+describe('"exile the top card of each player\'s library, then you may cast any number of spells from among those cards" (CR 701.13, 608.2g)', () => {
+  const start = () => {
+    const g = scenario()
+      .seat(0)
+      .define(ETALI)
+      .battlefield(ETALI.name)
+      .library('Grizzly Bears', 'Plains', 'Plains', 'Plains')
+      .seat(1)
+      .library('Giant Spider', 'Island', 'Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(ETALI.name);
+    return g;
+  };
+
+  test('the top card of each library is exiled, and any number of the spells are cast', () => {
+    const g = start();
+    g.passAll();
+    // Both cards are in exile and the controller may cast both.
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone('Giant Spider', 'exile', { seat: 1 });
+    // The question is asked again after each cast, one card at a time.
+    g.act(0).chooseCards('Grizzly Bears');
+    g.act(0).chooseCards({ name: 'Giant Spider', seat: 1 });
+    g.passAll();
+    // The spells are cast by seat 0 and enter under its control, whoever owns them.
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('casting none leaves every card in exile', () => {
+    const g = start();
+    g.passAll();
+    g.act(0).chooseCards();
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone('Giant Spider', 'exile', { seat: 1 });
+  });
+
+  test('a land among them is not cast', () => {
+    const g = scenario()
+      .seat(0)
+      .define(ETALI)
+      .battlefield(ETALI.name)
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .library('Giant Spider', 'Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(ETALI.name);
+    g.passAll();
+    g.expect.zone('Plains', 'exile', { seat: 0 });
+    g.act(0).chooseCards({ name: 'Giant Spider', seat: 1 });
+    g.passAll();
+    g.expect.zone('Plains', 'exile', { seat: 0 });
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
+  });
+});

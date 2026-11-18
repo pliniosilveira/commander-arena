@@ -558,6 +558,7 @@ describe('unmatched abilities', () => {
       'effect.shuffle-cards-into-library',
       'effect.deal-damage-to-itself',
       'effect.deal-damage-to-its-controller',
+      'effect.exile-top-each-library',
       'effect.cast-exiled-with-self',
       'effect.reveal-top-then',
       'effect.look-top-put',
