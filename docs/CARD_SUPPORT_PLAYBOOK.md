@@ -39,9 +39,9 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 9. **Record.**
    - `docs/MECHANICS.md`: a section per engine slice (the grammar rules themselves are documented in their rule files, `examples`, `rejects` and `cites`).
    - `docs/RULES_COVERAGE.md` for rules support; `docs/ROADMAP.md` for what is still missing.
-   - A decision bullet in `docs/decisions/` only when the choice binds future work (a policy, an architecture choice, a deviation from the CR); how the card is built goes in the pull request and in `docs/MECHANICS.md`.
+   - No decision entry: a choice that binds future work goes in the document that covers its subject (`AGENTS.md`, "Documentation duties").
    - A checklist of the request in the description of the pull request, kept as the groups are done.
-   - **Versions and generated files are touched once, at the end of the pull request (`docs/decisions/repo.md`).** The two version constants, the golden snapshot and the derive digests are the files every deck branch edits and every merge of `main` conflicts on, so a group does not bump a version and does not regenerate them. Inside a group, run the golden test without `UPDATE_GOLDEN` and read its diff to review the AST changes of that group (an unexpected change to a supported card is a regression); the test fails until the end, which is expected. When the last group is done and `main` is merged in, do it once, in this order, as one commit each:
+   - **Versions and generated files are touched once, at the end of the pull request.** The two version constants, the golden snapshot and the derive digests are the files every deck branch edits and every merge of `main` conflicts on, so a group does not bump a version and does not regenerate them. Inside a group, run the golden test without `UPDATE_GOLDEN` and read its diff to review the AST changes of that group (an unexpected change to a supported card is a regression); the test fails until the end, which is expected. When the last group is done and `main` is merged in, do it once, in this order, as one commit each:
      1. Bump `PARSER_VERSION` (`packages/cards/src/version.ts`) once, to the next number of `main`, if any card changed status or AST; and `ENGINE_VERSION` (`packages/engine/src/version.ts`) once, if the state shape or the behaviour of existing cards changed. Add one line per bump describing the whole pull request. Both invalidate cached support reports.
      2. Regenerate the golden snapshot (`UPDATE_GOLDEN=1`, above) and, when `ENGINE_VERSION` changed, the derive digests (`UPDATE_DERIVE_DIGESTS=1 pnpm exec vitest run packages/engine/test/derive-differential.test.ts`), and review the diff.
      A merge of `main` that conflicts in one of these files is resolved by taking `main`'s version of the file and regenerating it, never by hand.
@@ -53,7 +53,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 - Never mark a card supported without tests. Support is proven per grammar rule and primitive, not per card (D-008).
 - Never special-case a card by name in engine code. A one-off stays unsupported (D-167).
 - Never weaken an existing rule implementation to make a new card fit. When a test fixture stops being unsupported because the engine learned a feature, move the test to a feature that is still unsupported; do not loosen the test.
-- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it as a decision bullet (`docs/decisions/`).
+- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it in `docs/RULES_COVERAGE.md`.
 - Honesty: text the engine does not understand is dropped as a whole and flagged, never half run.
 
 ## Lessons learned
