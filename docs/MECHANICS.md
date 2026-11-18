@@ -5127,3 +5127,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `rules/static/grants.ts` (`PROTECTION`), `lower/statics.ts`.
 - Tests: engine `scenario-xx-protection-chosen-color.test.ts` (protection from the chosen color, the Aura stays attached, another red Aura can't be attached, no choice no protection; mutation-checked: the exception); cards `parser-protection-chosen-color.test.ts` (the real lines of Flickering Ward, near misses).
 - Example cards: Flickering Ward (issue 89).
+
+## A creature the controller chooses gets counters (issue 89, D-603)
+
+- CR: 122.6 (counters put on a permanent), 608.2d (the choice is made as the effect resolves), 115.1 (it is not a target), 603.4 and 508.6 (the intervening "if" of the attack trigger).
+- Gap class: P (`chooseObjects.exactly`) and T (the sentences).
+- AST node: `{ kind: 'chooseObjects', id: 'm1', filter: { types: ['creature'], controller: 'you' }, count: 1, exactly: true }` followed by `{ kind: 'addCounters', objects: { kind: 'chosen', id: 'm1' }, counter: '+1/+1', count: 2 }`; the choice is a `choosePermanent` decision with `min` equal to its `max`.
+- Parser: `effect.add-counters` (`rules/effect/counters.ts`), `lower.add-counters` (`lower/effects.ts`), `condition.attacked-has-more-life` (`rules/condition/angels.ts`, `lower/conditions.ts`, `lower/triggers.ts`).
+- Tests: engine `scenario-xx-attacks-choose-counters.test.ts` (the choice, the counters, choosing none refused; mutation-checked: the minimum); cards `parser-breena.test.ts` (the real line of Breena, near misses).
+- Example cards: Breena, the Demagogue (issue 89).

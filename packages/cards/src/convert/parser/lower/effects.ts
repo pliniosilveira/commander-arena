@@ -1255,8 +1255,12 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&
-      objectsArg.upTo === true &&
-      objectsArg.ref !== undefined
+      objectsArg.ref !== undefined &&
+      // D-603 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control" is one the controller must choose, as "up to one" is one they may.
+      (objectsArg.upTo === true ||
+        (objectsArg.filter.controller === 'you' &&
+          !objectsArg.plural &&
+          objectsArg.count === undefined))
     ) {
       const filter = lowerFilter(objectsArg);
       if (!filter.ok) return filter;
@@ -1271,6 +1275,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
             id: objectsArg.ref,
             filter: { ...filter.value, controller: 'you' },
             count: 1,
+            ...(objectsArg.upTo === true ? {} : { exactly: true as const }),
           },
           {
             kind: 'addCounters',
@@ -1657,7 +1662,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                     ? 'amountIs'
                     : test === 'attackersAtYou'
                       ? 'attackersAtYouAtLeast'
-                      : test;
+                      : test === 'attackedHasMoreLife'
+                        ? 'attackedHasMoreLifeThanOtherOpponent'
+                        : test;
     return failure(
       clause,
       kind === 'raw' ||

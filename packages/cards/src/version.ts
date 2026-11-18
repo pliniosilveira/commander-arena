@@ -39,4 +39,5 @@
 // 134: Read "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-600, issue 89).
 // 135: Read "goad target creature" and "goad it", and "one or more creatures that are enchanted by an Aura you control attack" (D-601, issue 89).
 // 136: Read "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-602, issue 89).
-export const PARSER_VERSION = 136;
+// 137: Read "... you put two +1/+1 counters on a creature you control" and "if that opponent has more life than another of your opponents" (D-603, issue 89).
+export const PARSER_VERSION = 137;

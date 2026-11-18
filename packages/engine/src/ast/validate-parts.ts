@@ -3479,6 +3479,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.id`, 'chooseObjects needs an id');
       if (!Number.isInteger(e.count) || e.count < 1)
         issue(out, `${path}.count`, 'chooseObjects count must be positive');
+      if (e.exactly !== undefined && e.exactly !== true)
+        issue(out, `${path}.exactly`, 'exactly must be true when present');
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }

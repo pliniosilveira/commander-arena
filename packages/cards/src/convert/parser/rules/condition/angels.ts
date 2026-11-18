@@ -228,9 +228,45 @@ export const CONDITION_THOSE_ATTACKING_YOU = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.attacked-has-more-life`: "that opponent has more life than another of your opponents" (CR 603.4, 508.6, D-603): the player attacked by the declaration that
+ * triggered the ability has more life than another opponent of the controller who is still in the game. The intervening "if" of `trigger.player-attacks-opponent`, which the
+ * lowering checks (the engine's `attackedHasMoreLifeThanOtherOpponent`).
+ */
+export const CONDITION_ATTACKED_HAS_MORE_LIFE = defineRule<IrCondition>({
+  id: 'condition.attacked-has-more-life',
+  family: 'condition',
+  leading: ['that'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 508.6 (Declare Attackers Step)'],
+  examples: ['that opponent has more life than another of your opponents'],
+  rejects: [
+    'that opponent has more life than you',
+    'that opponent has more life than each of your opponents',
+    'that opponent has more life than one of your opponents',
+    'that opponent has less life than another of your opponents',
+    'that player has more life than another of your opponents',
+    'that opponent has more life than another opponent',
+    'that opponent has more life than another of your opponents and',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /that opponent has more life than another of your opponents(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: conditionOf('condition.attacked-has-more-life', pos, r.pos, {
+        kind: 'attackedHasMoreLife',
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_CONDITION_RULES = [
   CONDITION_SAME_NAME,
   CONDITION_HAD_COUNTERS,
   CONDITION_THOSE_ATTACKED_YOU,
   CONDITION_THOSE_ATTACKING_YOU,
+  CONDITION_ATTACKED_HAS_MORE_LIFE,
 ].map(quietly);

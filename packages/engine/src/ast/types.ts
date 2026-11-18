@@ -1398,6 +1398,8 @@ export type Effect =
       readonly id: string;
       readonly filter: ObjectFilter;
       readonly count: number;
+      /** "Put two +1/+1 counters on a creature you control" (D-603): the controller must choose `count` permanents (or all there are when fewer), not up to that many. */
+      readonly exactly?: true;
     }
   | { readonly kind: 'chooseCreatureType' }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }

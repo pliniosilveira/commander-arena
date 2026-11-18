@@ -887,6 +887,7 @@ export type Instruction =
       readonly id: string;
       readonly filter: ObjectFilter;
       readonly count: number;
+      readonly exactly?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }

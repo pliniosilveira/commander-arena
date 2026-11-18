@@ -639,6 +639,8 @@ export interface IrCondition extends IrNode {
     // D-593 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control": at least that many of the attackers that triggered the ability were
     // declared attacking its controller or a planeswalker its controller controlled
     | { readonly kind: 'attackersAtYou'; readonly atLeast: number }
+    /** "that opponent has more life than another of your opponents" (D-603, CR 603.4): the player a `playerAttacksOpponent` trigger is about. */
+    | { readonly kind: 'attackedHasMoreLife' }
     // Stage P33 (D-150): "you control three or more lands with the same name": some name is shared by at least that many of the permanents
     // that match (CR 201.2: two objects have the same name when their names are identical)
     | { readonly kind: 'sameName'; readonly noun: IrNoun; readonly atLeast: number }

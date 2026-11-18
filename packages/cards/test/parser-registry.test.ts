@@ -434,6 +434,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.those-attacking-you': permanent(
     (e) => `Whenever an opponent attacks with creatures, if ${e}, draw a card.`,
   ),
+  // D-603: the intervening "if" of "a player attacks one of your opponents".
+  'condition.attacked-has-more-life': permanent(
+    (e) => `Whenever a player attacks one of your opponents, if ${e}, draw a card.`,
+  ),
   'condition.same-name': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
   'noun.that-card': spell(
     (e) =>

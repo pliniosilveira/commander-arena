@@ -1216,6 +1216,13 @@ export function lowerTriggered(
   ) {
     return failure(ability);
   }
+  // D-603 (CR 508.6): "if that opponent has more life than another of your opponents" is about the player a "whenever a player attacks one of your opponents" trigger is about.
+  if (
+    JSON.stringify(interveningIf ?? null).includes('"attackedHasMoreLifeThanOtherOpponent"') &&
+    !triggers.every((t) => t.kind === 'playerAttacksOpponent')
+  ) {
+    return failure(ability);
+  }
   const targets = ctx.targets.length > 0 ? { targets: [...ctx.targets] } : {};
   return {
     ok: true,

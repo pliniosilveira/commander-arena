@@ -1,5 +1,5 @@
 {
-  "parserVersion": 136,
+  "parserVersion": 137,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5359,19 +5359,10 @@
     "d11e627b-8a48-411d-a261-2c9a02a758ba": {
       "name": "Breena, the Demagogue",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever a player attacks one of your opponents, if that opponent has more life than another of your opponents, that attacking player draws a card and you put two +1/+1 counters on a creature you control.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "04241fc5"
+      "ast": "fa66ae9d"
     },
     "d13fc657-c6fc-4394-bc70-691050550226": {
       "name": "Sheltered by Ghosts",
@@ -6745,7 +6736,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 439,
+      "supported": 440,
       "total": 480
     }
   }

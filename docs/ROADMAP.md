@@ -530,3 +530,5 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Goad as an effect (D-601): one creature, a target or "it"; "goad each creature" and a group are not read.
 
 - Protection from the chosen color (D-602): the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
+
+- Chosen creature for counters (D-603): only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read. The three-player condition `attackedHasMoreLifeThanOtherOpponent` is tested directly (the scenario DSL has two seats), not through a full game.
