@@ -13,6 +13,8 @@ import { defineRule } from '../registry';
 const TYPE_WORDS = 'artifact|creature|enchantment|land|planeswalker';
 
 const THE_AMOUNT = /the amount of mana spent to cast (it|~|that spell)(?![\p{L}\p{N}])/iu;
+/** "the number of colors of mana spent to cast ~" (Converge, issue 310, CR 105.1, 601.2h). */
+const THE_COLORS = /the number of colors of mana spent to cast (it|~|that spell)(?![\p{L}\p{N}])/iu;
 const FOR_EACH = new RegExp(
   `for each (?:mana(?: from an? (${TYPE_WORDS}) source)?|(\\{S\\})) spent to cast (it|~)(?![\\p{L}\\p{N}])`,
   'iu',
@@ -20,10 +22,12 @@ const FOR_EACH = new RegExp(
 
 /** The value phrase "the amount of mana spent to cast it", as an atom of the value family (`where X is ...`, `equal to ...`). */
 export const MANA_SPENT_AMOUNT = (ctx: Parameters<ReturnType<typeof pattern>>[0], pos: number) => {
-  const r = pattern(THE_AMOUNT)(ctx, pos);
+  const colors = pattern(THE_COLORS)(ctx, pos);
+  const r = colors.ok ? colors : pattern(THE_AMOUNT)(ctx, pos);
   if (!r.ok) return r;
   const value: IrAmount = {
     kind: 'manaSpent',
+    ...(colors.ok ? { colors: true as const } : {}),
     // D-646 (CR 601.2h, 113.7a): "that spell" is the spell that caused a cast trigger (the lowering reads it there only).
     who: r.value[1] === '~' ? 'self' : r.value[1] === 'that spell' ? 'thatSpell' : 'it',
     span: { start: pos, end: r.pos },

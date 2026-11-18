@@ -112,6 +112,11 @@ export type Amount =
        */
       readonly snow?: true;
       /**
+       * "the number of colors of mana spent to cast this spell" (Converge, issue 310, CR 105.1, 601.2h): how many of the five colors the mana spent had, whatever the
+       * amount of it (colorless mana is no color). Not with `fromType` or `snow`; read where the spell is the source, as the rest of `manaSpent`.
+       */
+      readonly colors?: true;
+      /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
        * D-646 (CR 601.2h, 113.7a, Manaform Hellkite): or `{ kind: 'triggerSubject' }`, the spell that was cast, in a `castSpell` trigger ("Whenever you cast a noncreature spell, create an
@@ -464,6 +469,8 @@ export interface ObjectFilter {
   /** "Non-Zombie creature" (D-133, CR 205.3d): none of these creature types (or other subtypes). */
   readonly notSubtypes?: readonly Subtype[];
   readonly colors?: readonly Color[];
+  /** "Nonblack creature", "nonartifact, nonblack creature" (CR 105.2, 205.4): the object has none of these colors (a colorless object has none, CR 105.2c). */
+  readonly notColors?: readonly Color[];
   /** "Colorless creature" (D-133, CR 105.2c): the object has no color. */
   readonly colorless?: true;
   /**
@@ -2050,6 +2057,11 @@ export type Effect =
       readonly to?: 'battlefield' | 'hand';
       readonly tapped?: true;
       readonly onMatch?: Effect;
+      /**
+       * "Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand." (CR 701.20, 608.2c, issue 310):
+       * where the card goes when it does not match `ifMatches`, instead of staying on top. Only with `to`, and only into the hand.
+       */
+      readonly otherwiseTo?: 'hand';
     }
   /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an

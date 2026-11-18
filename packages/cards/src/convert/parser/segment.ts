@@ -472,6 +472,8 @@ const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your ha
 const REVEAL_TOP_CARD = /(?:^|, )(?:then )?(?:you may )?reveal the top card of your library\.$/i;
 const IF_REVEALED_CARD =
   /^if (?:it['’]s an? [^.,]* card|an? [^.,]* card is revealed this way), [^.]*\.$/i;
+/** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
+const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
  * "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto
  * the battlefield." (Galadriel deck, group 1, CR 401.2): the second sentence of the instruction of `LOOK_AT_TOP_CARD` that puts the card onto the battlefield (`effect.look-top-put`).
@@ -528,6 +530,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: d.end });
       i += 3;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_CARD) &&
+      said(c, OTHERWISE_PUT_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
     } else if (
       a !== undefined &&
       c !== undefined &&

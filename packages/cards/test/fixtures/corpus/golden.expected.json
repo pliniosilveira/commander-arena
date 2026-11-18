@@ -93,7 +93,7 @@
           "text": "+1: Tap up to one target artifact or creature. It doesn't untap during its controller's next untap step.",
           "reason": "unrecognised",
           "slot": "noun",
-          "closestRule": "effect.damage-hand-of-player"
+          "closestRule": "effect.fight"
         },
         {
           "face": 0,
@@ -738,22 +738,6 @@
       "reasons": [],
       "ast": "9f17fe16"
     },
-    "169a26d2-7bc9-4403-9c92-98d4bd5ca4f3": {
-      "name": "Temple of the Dragon Queen",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "508e006d"
-    },
-    "16aa790a-8f7c-401c-9d43-dc9440a6f585": {
-      "name": "Broodcaller Scourge",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "f95ba1bf"
-    },
     "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
       "name": "Consign to Memory",
       "group": "acceptance",
@@ -793,6 +777,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bb55ad41"
+    },
+    "17e905ca-c0bd-473d-95a7-e180ba5fea43": {
+      "name": "Mirror Entity",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.lose-hexproof-shroud"
+        }
+      ],
+      "reasons": [],
+      "ast": "fc0da47b"
     },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
@@ -874,14 +875,6 @@
       "reasons": [],
       "ast": "de917214"
     },
-    "1b162dd3-3be6-406d-bf86-f7cc9eff098d": {
-      "name": "Eshki, Temur's Roar",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "bc460d79"
-    },
     "1b26a54f-6c27-4940-b77e-2a66175c5eff": {
       "name": "Grasp of Fate",
       "group": "holdout",
@@ -953,14 +946,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9fbd6d07"
-    },
-    "1c772df4-bd88-4f7e-853c-5dd06f4cf70e": {
-      "name": "Territorial Hellkite",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "8b02ea48"
     },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
@@ -1283,6 +1268,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c4373f51"
+    },
+    "2987c385-011a-4032-a516-a46d1e9dc9e8": {
+      "name": "Crib Swap",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6172b659"
     },
     "2a18b3f0-8a78-46d8-b60f-3cd634062f1b": {
       "name": "Refute Destiny",
@@ -2107,14 +2100,6 @@
       "reasons": [],
       "ast": "c61941b0"
     },
-    "42d7ec93-0943-43e2-9b65-b7edc3349410": {
-      "name": "Gadrak, the Crown-Scourge",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "754f985b"
-    },
     "437b2dab-15e0-4b9a-a204-58622d37a3b3": {
       "name": "Fact or Fiction",
       "group": "acceptance",
@@ -2210,14 +2195,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "758a57d4"
-    },
-    "46f46bdd-52b8-436f-9a39-f5360a84b2cd": {
-      "name": "Opportunistic Dragon",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "0b4af901"
     },
     "473da1b6-232b-4428-a66d-30262246b47a": {
       "name": "Emeria Shepherd",
@@ -2380,14 +2357,6 @@
       "reasons": [],
       "ast": "45eadb9f"
     },
-    "4cfaa5cf-cc3d-49a7-9544-38a8bb7e9ec1": {
-      "name": "Frontier Siege",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c4ff9f42"
-    },
     "4d60dae0-7be4-4859-99ac-781a27bcfd93": {
       "name": "Thickest in the Thicket",
       "group": "training",
@@ -2403,14 +2372,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "957736af"
-    },
-    "4dabba8c-0490-41ec-a03e-f7d0c9f0edb6": {
-      "name": "Zenith Festival",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "4c2e76a3"
     },
     "4e552be1-0702-4e18-822f-98611f8a8e70": {
       "name": "Enter the Avatar State",
@@ -2459,14 +2420,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "511a0fc4"
-    },
-    "4fbfc814-df10-4d61-ada9-c96cc8ee8d8c": {
-      "name": "Whirlwing Stormbrood // Dynamic Soar",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "f32e05c4"
     },
     "515c522f-51d5-4f6d-b9b1-ea3c7f6a378e": {
       "name": "Rousing Refrain",
@@ -2724,6 +2677,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b3bf1ab3"
+    },
+    "58a2d15f-1b4b-4303-b524-8cc0d1b3e7d2": {
+      "name": "Painful Truths",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9413e7c1"
     },
     "58b0c737-0a84-4f9a-b3b7-300c5de43874": {
       "name": "Studious First-Year // Rampant Growth",
@@ -3325,6 +3286,14 @@
       "reasons": [],
       "ast": "ef7016e3"
     },
+    "69fd4ddf-9ed8-4c56-bef3-9944daf05e4f": {
+      "name": "Coiling Oracle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aba9480f"
+    },
     "6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66": {
       "name": "Kangee, Sky Warden",
       "group": "acceptance",
@@ -3544,6 +3513,14 @@
       "reasons": [],
       "ast": "cd6440cd"
     },
+    "717bbb9d-0a5b-4979-a24b-9d54aac7657a": {
+      "name": "Shriekmaw",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8ef2d21"
+    },
     "717c6beb-81c6-43ed-aab0-aedfc1cbac33": {
       "name": "Lake-town",
       "group": "acceptance",
@@ -3737,14 +3714,6 @@
       "reasons": [],
       "ast": "11c50930"
     },
-    "7830f600-c7c7-48f8-8020-3493c5745eed": {
-      "name": "Hammerhead Tyrant",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "76b6d4e6"
-    },
     "78826359-fe63-44ad-adc4-a17ffcd710e4": {
       "name": "Nature's Lore",
       "group": "training",
@@ -3808,14 +3777,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f632ebc5"
-    },
-    "7a770865-9383-45aa-883f-21ee649d1ea3": {
-      "name": "Stormbreath Dragon",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "00685848"
     },
     "7ad97dd9-1342-4ed4-bea9-1bb21d748e04": {
       "name": "Witch of the Moors",
@@ -4600,14 +4561,6 @@
       "reasons": [],
       "ast": "1b84d472"
     },
-    "96d7b761-b0b2-4ba3-98bd-3a9191ba544e": {
-      "name": "Deceptive Frostkite",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "379cf205"
-    },
     "971b30a8-4ab4-4e96-9d50-597da4d52994": {
       "name": "Danitha, New Benalia's Light",
       "group": "acceptance",
@@ -4648,6 +4601,23 @@
       "reasons": [],
       "ast": "f41e2416"
     },
+    "98492d7d-3b9e-4ae1-ac45-1b508d6d2670": {
+      "name": "Coveted Jewel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever one or more creatures an opponent controls attack you and aren't blocked, that player draws three cards and gains control of ~. Untap it.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "d071894b"
+    },
     "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
       "name": "Magma Opus",
       "group": "acceptance",
@@ -4663,14 +4633,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3d47f3bf"
-    },
-    "99c2d3ef-e5b4-48cd-b3f5-de9b02c7c36a": {
-      "name": "Ureni of the Unwritten",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "7acd4bf1"
     },
     "9a2fdc0e-e0de-47fc-95e4-04e725ddf060": {
       "name": "Trostani Discordant",
@@ -4799,14 +4761,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffd5f3d6"
-    },
-    "9d2aea05-f55c-4355-950f-bfdc4e985e80": {
-      "name": "Selvala's Stampede",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "65ab27c1"
     },
     "9d2d6479-531c-4ce1-b52b-00e36fa63b64": {
       "name": "Rancor",
@@ -5565,14 +5519,6 @@
       "reasons": [],
       "ast": "c7c592b1"
     },
-    "b75c3902-633e-4d24-acde-d7a9cc8f466e": {
-      "name": "Glorybringer",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "db901016"
-    },
     "b7a68899-c0d3-49e0-854b-19268ae9b89d": {
       "name": "Vivid Grove",
       "group": "acceptance",
@@ -5694,14 +5640,6 @@
       "reasons": [],
       "ast": "a3d03d1d"
     },
-    "bbcae463-ba05-4cfe-9c25-13f2e64698c7": {
-      "name": "Sarkhan, Soul Aflame",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "cef3d696"
-    },
     "bbd569cc-bc21-46df-b8eb-5b5bcd8fe762": {
       "name": "Rush of Inspiration // Crackling Falls",
       "group": "acceptance",
@@ -5798,14 +5736,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c8c6700c"
-    },
-    "bfbe28a2-b656-4575-8b7e-9dbc22f8d4bc": {
-      "name": "Skarrgan Hellkite",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "dc6ef299"
     },
     "bffdfe7b-f17a-41b6-a460-80280fe497d4": {
       "name": "Collective Resistance",
@@ -6007,14 +5937,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "672ddfb8"
-    },
-    "c5abd58f-3e00-447b-a978-64cb88ad501b": {
-      "name": "Hellkite Courser",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "4a5e0865"
     },
     "c5acf2a5-40f4-433d-a74d-1cb56c521464": {
       "name": "Arid Mesa",
@@ -6627,14 +6549,6 @@
       "reasons": [],
       "ast": "fd9f8577"
     },
-    "daff70a4-a990-47c9-b6ef-2c379272c8a3": {
-      "name": "Dragonlord Atarka",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "ac191059"
-    },
     "db266661-f783-4907-9e52-6963eec05431": {
       "name": "Hashaton, Scarab's Fist",
       "group": "acceptance",
@@ -6828,14 +6742,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a42cb03f"
-    },
-    "e24916ff-7566-4f27-8e31-732311a4a88c": {
-      "name": "Stormshriek Feral // Flush Out",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "4c1e5bba"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -7068,14 +6974,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d451c01"
-    },
-    "ebe1448e-21c5-4b73-8296-03d3e5097c50": {
-      "name": "Will of the Temur",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "cdf264fa"
     },
     "ec2968fb-163d-4907-862b-b84a1f167833": {
       "name": "Volcanic Torrent",
@@ -7352,14 +7250,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3852773f"
-    },
-    "f3b3173b-f7ae-420e-84ec-ea61414674a0": {
-      "name": "Vengeful Ancestor",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "88827ff7"
     },
     "f3c7af78-a77d-4134-82a2-a5ce84285a84": {
       "name": "Flooded Strand",
@@ -7766,8 +7656,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 615,
-      "total": 645
+      "supported": 597,
+      "total": 629
     }
   }
 }

@@ -578,6 +578,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     "where X is the greatest mana value among instant and sorcery spells you've cast this turn",
     // Stage P39 (D-184, CR 601.2h): the mana spent to cast the spell the ability is on.
     'where X is the amount of mana spent to cast it',
+    // Issue 310 (Converge, CR 105.1): how many of the five colors the mana spent had.
+    'where X is the number of colors of mana spent to cast it',
+    'where X is the number of colors of mana spent to cast ~',
     // Stage P37 (D-180): the card an earlier instruction exiled.
     "where X is the exiled card's power",
     // Stage P32 (D-147): the commanders' mana value, and a total read as the spell is cast.

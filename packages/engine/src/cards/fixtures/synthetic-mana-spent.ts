@@ -104,4 +104,27 @@ export const SYNTHETIC_MANA_SPENT_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Converge — You draw X cards and lose X life, where X is the number of colors of mana spent to cast this spell." (issue 310)
+  singleFace({
+    name: 'SYNTHETIC Converge Pact',
+    manaCost: ['2', 'B'],
+    types: ['sorcery'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'Converge — You draw X cards and lose X life, where X is the number of colors of mana spent to cast this spell.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'draw', player: { kind: 'you' }, count: { kind: 'manaSpent', colors: true } },
+          {
+            kind: 'loseLife',
+            player: { kind: 'you' },
+            amount: { kind: 'manaSpent', colors: true },
+          },
+        ],
+      },
+    },
+  }),
 ];

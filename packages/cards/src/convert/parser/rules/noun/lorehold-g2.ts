@@ -58,6 +58,7 @@ export const NOUN_TARGET_NONMATCHING_GRAVEYARD_CARD = defineRule<IrNoun>({
       parts.token === undefined &&
       parts.notSubtypes.length === 0 &&
       !parts.colorless &&
+      parts.notColors.length === 0 &&
       parts.keywords.length === 0 &&
       parts.notKeywords.length === 0 &&
       parts.notSupertypes.length === 0 &&

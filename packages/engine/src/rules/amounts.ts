@@ -268,16 +268,22 @@ export function amountOf(
           id === undefined ? null : objectOrLki(state, id),
           amount.fromType,
           amount.snow === true,
+          amount.colors === true,
         );
       }
       const slot = amount.of.id;
       const chosen = targets.find((t) => t.specId === slot);
       const spell = chosen?.kind === 'object' ? objectOrLki(state, chosen.id) : null;
-      return manaSpentOf(spell, amount.fromType, amount.snow === true);
+      return manaSpentOf(spell, amount.fromType, amount.snow === true, amount.colors === true);
     }
     return ctx.source === null
       ? 0
-      : manaSpentOf(objectOrLki(state, ctx.source), amount.fromType, amount.snow === true);
+      : manaSpentOf(
+          objectOrLki(state, ctx.source),
+          amount.fromType,
+          amount.snow === true,
+          amount.colors === true,
+        );
   }
   // D-131: arithmetic on other amounts. Each is read as the instruction runs, like the amounts it is made of.
   if (amount.kind === 'half') {

@@ -154,4 +154,33 @@ describe('the count of "enters with an additional counter"', () => {
       ),
     ).toEqual([]);
   });
+
+  test('the colors of the mana spent (Converge, CR 105.1): a flag, alone, read in the spell itself', () => {
+    const converge = (extra: Record<string, unknown>) =>
+      syntheticCard('SYNTHETIC Converge Pact') && {
+        ...syntheticCard('SYNTHETIC Converge Pact'),
+        faces: [
+          {
+            ...(syntheticCard('SYNTHETIC Converge Pact').faces[0] as object),
+            spell: {
+              effect: {
+                kind: 'draw',
+                player: { kind: 'you' },
+                count: { kind: 'manaSpent', colors: true, ...extra },
+              },
+            },
+          },
+        ],
+      };
+    expect(validateCard(converge({}) as never)).toEqual([]);
+    expect(messages(converge({ fromType: 'land' }) as never).join('\n')).toMatch(
+      /colors of the mana spent/,
+    );
+    expect(messages(converge({ snow: true }) as never).join('\n')).toMatch(
+      /colors of the mana spent/,
+    );
+    expect(messages(converge({ colors: 'yes' }) as never).join('\n')).toMatch(
+      /colors must be true/,
+    );
+  });
 });

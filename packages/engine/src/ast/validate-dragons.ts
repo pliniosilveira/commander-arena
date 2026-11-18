@@ -117,6 +117,13 @@ export function checkDragonsEffect(
         // Galadriel group 1: what is done when the card revealed matches. It reads nothing of the card (the engine does not name it), so no target and no "it".
         checkEffect(e.onMatch, `${path}.onMatch`, { ...scope, xAllowed: false }, out);
       }
+      if (e.otherwiseTo !== undefined && (e.otherwiseTo !== 'hand' || e.to === undefined)) {
+        issue(
+          out,
+          `${path}.otherwiseTo`,
+          'otherwiseTo is "hand", and only with `to` (a card that matches onMatch stays on top)',
+        );
+      }
       if (e.tapped !== undefined && (e.tapped !== true || e.to !== 'battlefield')) {
         issue(
           out,

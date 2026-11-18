@@ -29,6 +29,8 @@ export interface FilterParts {
   readonly notTypes: readonly string[];
   readonly supertypes: readonly string[];
   readonly colors: readonly string[];
+  /** "nonblack": none of these colors, as color words (CR 105.2, 205.4). */
+  readonly notColors: readonly string[];
   readonly tapped: boolean | undefined;
   readonly controller: 'you' | 'opponent' | 'triggerPlayer' | 'defendingPlayer' | undefined;
   /** "nontoken" (false), CR 111.1; stage P29. */
@@ -65,6 +67,7 @@ export const NO_PARTS: FilterParts = {
   notTypes: [],
   supertypes: [],
   colors: [],
+  notColors: [],
   tapped: undefined,
   controller: undefined,
   token: undefined,
@@ -122,6 +125,9 @@ export const MODIFIER: Parser<Modifier> = choice(
   // Stage P68 (D-230): "a nontoken, non-Angel creature": the comma between two modifiers.
   word('nontoken,', (p) => ({ ...p, token: false })),
   word('colorless', (p) => ({ ...p, colorless: true })),
+  // "nonblack creature" (CR 105.2, 205.4), the comma between two modifiers ("nonartifact, nonblack creature"): the engine's `notColors`.
+  ...COLOR_WORDS.map((c) => word(`non${c}`, (p) => ({ ...p, notColors: [...p.notColors, c] }))),
+  ...COLOR_WORDS.map((c) => word(`non${c},`, (p) => ({ ...p, notColors: [...p.notColors, c] }))),
   // Stage P30 (D-135): "nonbasic land" (CR 205.4: basic is a supertype), the engine's `notSupertypes`.
   word('nonbasic', (p) => ({ ...p, notSupertypes: [...p.notSupertypes, 'basic'] })),
   // D-644 (Prismari deck, group 1; CR 205.4: legendary is a supertype): "up to one target nonlegendary creature you control", the engine's `notSupertypes`.
@@ -223,6 +229,7 @@ export function toFilter(
     ...(p.notTypes.length > 0 ? { notTypes: p.notTypes } : {}),
     ...(p.supertypes.length > 0 ? { supertypes: p.supertypes } : {}),
     ...(p.colors.length > 0 ? { colors: p.colors } : {}),
+    ...(p.notColors.length > 0 ? { notColors: p.notColors } : {}),
     ...(p.tapped !== undefined ? { tapped: p.tapped } : {}),
     ...(p.controller !== undefined ? { controller: p.controller } : {}),
     ...(p.token !== undefined ? { token: p.token } : {}),
@@ -1060,6 +1067,7 @@ export function graveyardPhrase(
     // Only the words that leave a type out: a color, a supertype or a state is more than this reading says.
     const plain =
       parts.colors.length === 0 &&
+      parts.notColors.length === 0 &&
       parts.supertypes.length === 0 &&
       parts.tapped === undefined &&
       parts.token === undefined &&

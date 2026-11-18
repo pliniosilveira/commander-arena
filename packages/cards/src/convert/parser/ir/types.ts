@@ -223,6 +223,8 @@ export interface IrFilter {
   /** "non-Zombie" (stage P29, CR 205.3d): none of these subtypes. */
   readonly notSubtypes?: readonly string[];
   readonly colors?: readonly string[];
+  /** "nonblack" (CR 105.2, 205.4): none of these colors, as color words. */
+  readonly notColors?: readonly string[];
   /** "colorless" (stage P29, CR 105.2c). */
   readonly colorless?: true;
   /** "with flying" and "without flying" (stage P29): keywords without parameters, as the words spell them (lowercase). */
@@ -538,6 +540,8 @@ export type IrAmount =
       readonly fromType?: string;
       /** "for each {S} spent to cast ~" (D-260, CR 107.4h): only the mana of snow sources. */
       readonly snow?: true;
+      /** "the number of colors of mana spent to cast ~" (Converge, issue 310, CR 105.1): how many of the five colors the mana spent had. */
+      readonly colors?: true;
       readonly who: 'self' | 'it' | 'thatSpell';
       readonly span: Span;
     }
