@@ -272,6 +272,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'may',
     'reflexive',
     'mayCast',
+    // Issue 159: "You may cast Zombie spells from your graveyard this turn".
+    'mayCastSpells',
+    // Issue 159: "this creature gains all activated abilities of that card until end of turn".
+    'gainActivatedAbilitiesOf',
     // D-139: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand".
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
@@ -854,6 +858,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-252: "if you gained 3 or more life this turn".
     'lifeGainedThisTurn',
     'lifeGainedAndLostThisTurn',
+    // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+    'castFromGraveyardThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
@@ -1042,6 +1048,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
+    // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
+    'sacrificeFromGraveyard',
   ],
 };
 
@@ -1469,6 +1477,8 @@ export const CONDITION_KINDS = [
   'lifeGainedThisTurn',
   /** "If you gained and lost life this turn" (D-593). */
   'lifeGainedAndLostThisTurn',
+  /** "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2): the engine's `castFromGraveyardThisTurn`. */
+  'castFromGraveyardThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
@@ -1730,6 +1740,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'miracle',
   'foretell',
   'tapPermanents',
+  'sacrificeFromGraveyard',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 
@@ -1897,6 +1908,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   may: true,
   reflexive: true,
   mayCast: true,
+  mayCastSpells: true,
+  gainActivatedAbilitiesOf: true,
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,

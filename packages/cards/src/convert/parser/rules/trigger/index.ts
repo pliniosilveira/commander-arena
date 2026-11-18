@@ -64,6 +64,8 @@ type EventName =
   | 'becomesUntapped'
   | 'blocks'
   | 'becomesBlocked'
+  // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
+  | 'leavesBattlefield'
   // Stage P36 (D-178): "becomes the target of a spell", for the alternatives of `trigger.or` only.
   | 'becomesTargetSpell';
 
@@ -97,6 +99,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
     pattern(/ becomes blocked(?![\p{L}\p{N}])/iu),
     (): EventName => 'becomesBlocked',
   ),
+  // CR 603.6c: "leaves the battlefield" (a permanent that goes to another zone, wherever it went).
+  leavesBattlefield: map(
+    pattern(/ leaves the battlefield(?![\p{L}\p{N}])/iu),
+    (): EventName => 'leavesBattlefield',
+  ),
   // CR 603.2, 601.2c: "becomes the target of a spell" (a spell, not an ability: the engine's `becomesTarget` with `spellOnly`).
   becomesTargetSpell: map(
     pattern(/ becomes the target of a spell(?![\p{L}\p{N}])(?! or ability)/iu),
@@ -113,6 +120,9 @@ const ANY_EVENT = choice(
   EVENT_WORDS.blocks,
   EVENT_WORDS.becomesBlocked,
 );
+
+/** The events of `trigger.or-subjects`: those of `ANY_EVENT` and "leaves the battlefield" (CR 603.6c). */
+const OR_SUBJECTS_EVENT = choice(ANY_EVENT, EVENT_WORDS.leavesBattlefield);
 
 /** The events of `trigger.or`: those of any trigger of one subject, and (stage P36, D-178) "becomes the target of a spell". */
 const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell);
@@ -526,8 +536,11 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
     '~ or another creature enters',
     '~ or another artifact you control enters',
     '~ or another creature you control attacks',
+    '~ or another creature you control leaves the battlefield',
   ],
   rejects: [
+    '~ or a creature leaves the battlefield',
+    '~ or another creature leaves',
     '~ or a creature dies',
     '~ or another creature',
     '~ or another creature dies or attacks',
@@ -541,7 +554,7 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
       spanned(literal('~')),
       literal(' or '),
       satisfy(objectSubject('trigger.or-subjects'), (n) => n.other),
-      ANY_EVENT,
+      OR_SUBJECTS_EVENT,
     )(ctx, pos);
     if (!r.ok) return r;
     const [self, , other, event] = r.value;

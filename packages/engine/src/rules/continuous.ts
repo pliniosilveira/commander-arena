@@ -79,7 +79,11 @@ function changeOf(
         ...(node.additive === true ? { additive: true as const } : {}),
       };
     case 'setColors':
-      return { kind: 'setColors', colors: node.colors };
+      return {
+        kind: 'setColors',
+        colors: node.colors,
+        ...(node.additive === true ? { additive: true as const } : {}),
+      };
     case 'grantKeyword':
       return { kind: 'grantKeyword', keyword: node.keyword };
     case 'grantAbility':

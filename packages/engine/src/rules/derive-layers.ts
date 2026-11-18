@@ -126,7 +126,12 @@ export function applyColorLayer(
   devoid = false,
 ): readonly Color[] {
   let colors: readonly Color[] = devoid ? NO_COLORS : base;
-  for (const e of ofKind(effects, 'setColors')) colors = [...new Set(e.change.colors)];
+  for (const e of ofKind(effects, 'setColors')) {
+    // CR 105.3, 613.1e: "in addition to its other colors" adds to the colors the object has; otherwise they replace them.
+    colors = [
+      ...new Set(e.change.additive === true ? [...colors, ...e.change.colors] : e.change.colors),
+    ];
+  }
   return colors;
 }
 

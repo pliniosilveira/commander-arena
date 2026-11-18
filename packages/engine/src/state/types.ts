@@ -757,6 +757,11 @@ export interface DelayedTrigger {
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
   readonly watched?: ObjectId;
+  /**
+   * "When you cast it this turn" (`mayCast.whenCast`, issue 159, CR 603.7): the ability triggers only for a spell cast from this card (`GameObject.card`: the card is a new
+   * object on the stack, CR 400.7, but it is the same card).
+   */
+  readonly watchedCard?: CardId;
 }
 
 /**
@@ -1126,6 +1131,8 @@ export type Instruction =
        * before it moved (`ResolutionContext.lastMoved`), when the choice was made; the instruction also starts `performed` again, as a "you may" does (D-135).
        */
       readonly among?: readonly ObjectId[];
+      /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
+      readonly anyOwner?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1750,6 +1757,8 @@ export interface ThisWayCounts {
   readonly discardedNoncreature?: number;
   /** The instant and sorcery cards discarded by `discard` effects (D-358: "if you discarded an instant or sorcery card this way"). */
   readonly discardedInstantOrSorcery?: number;
+  /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
+  readonly damageDealt?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
@@ -1799,6 +1808,13 @@ export type ContinuousChange =
   | {
       readonly kind: 'castPermission';
       readonly seat: SeatId;
+      /**
+       * "You may cast Zombie spells from your graveyard this turn" (`mayCastSpells`, issue 159): instead of the cards the effect's `objects` names, every card of `seat`'s
+       * graveyard that this filter describes, whenever it is asked (`objects` is empty).
+       */
+      readonly spells?: ObjectFilter;
+      /** "You may cast target creature card in a graveyard this turn" (`mayCast.anyGraveyard`, issue 159): the named card may be in any player's graveyard. */
+      readonly anyGraveyard?: true;
       /**
        * "If that spell would be put into your graveyard, exile it instead" (D-359, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`
        * (`rules/cast.ts`, `beginCast`). Absent when the effect has no such rider.
@@ -1891,7 +1907,7 @@ export type ContinuousChange =
       /** D-229 (CR 205.1a): card types the object loses ("isn't a creature"); the subtypes only they allowed go with them. */
       readonly remove?: readonly CardType[];
     }
-  | { readonly kind: 'setColors'; readonly colors: readonly Color[] }
+  | { readonly kind: 'setColors'; readonly colors: readonly Color[]; readonly additive?: true }
   /**
    * Layer 1 (CR 613.2a): the object becomes a copy: the copiable values (CR 707.2) it was given when
    * the effect began replace its own (CR 707.2b: later changes to the original do not reach it).
@@ -2000,6 +2016,11 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly abilityIndex: number;
     readonly loyalty?: true;
+    /**
+     * The player who activated an ability of a card that was in a graveyard as it was activated (issue 159, "activated an ability of a card in a graveyard this turn").
+     * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.
+     */
+    readonly fromGraveyard?: SeatId;
   }[];
   /**
    * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
@@ -2085,7 +2106,12 @@ export interface TurnLog {
    * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
    */
-  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
+  readonly castSpells: readonly {
+    readonly seat: SeatId;
+    readonly types: readonly CardType[];
+    /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
+    readonly fromGraveyard?: true;
+  }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {

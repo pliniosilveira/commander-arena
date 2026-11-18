@@ -639,19 +639,67 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
 const MAY_CAST: Lowering<IrClause, Effects> = {
   head: 'mayCast',
   id: 'lower.may-cast',
-  needs: ['effect:mayCast', 'selector:target', 'duration:untilEndOfTurn'],
+  needs: [
+    'effect:mayCast',
+    'selector:target',
+    'duration:untilEndOfTurn',
+    'effect:gainActivatedAbilitiesOf',
+  ],
   lower(clause, ctx) {
     const objects = operand(clause, 'objects');
     if (objects?.kind !== 'noun' || objects.det !== 'target') return failure(clause);
     // D-359: "If that spell would be put into your graveyard, exile it instead" is the rider of the permission (`exileInstead`).
     const exile = arg(clause, 'exileInstead');
     if (exile !== undefined && exile.kind !== 'flag') return failure(clause);
+    // Issue 159 (Havengul Lich): "target creature card in a graveyard" (any player's), and the rider "When you cast it this turn, ~ gains all activated abilities of that card".
+    const any = arg(clause, 'anyGraveyard');
+    const rider = arg(clause, 'whenCast');
+    if (
+      (any !== undefined && any.kind !== 'flag') ||
+      (rider !== undefined && rider.kind !== 'flag')
+    ) {
+      return failure(clause);
+    }
     return eachObject(clause, ctx, (selected) => ({
       kind: 'mayCast',
       objects: selected,
       duration: 'untilEndOfTurn',
       ...(exile?.value === true ? { exileInstead: true as const } : {}),
+      ...(any?.value === true ? { anyGraveyard: true as const } : {}),
+      ...(rider?.value === true
+        ? {
+            whenCast: {
+              kind: 'gainActivatedAbilitiesOf' as const,
+              to: { kind: 'this' as const },
+              from: { kind: 'triggerSubject' as const },
+              duration: 'untilEndOfTurn' as const,
+            },
+          }
+        : {}),
     }));
+  },
+};
+
+/**
+ * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): the engine's `mayCastSpells`, a permission for the rest of the turn that covers
+ * every card of the controller's graveyard the filter describes.
+ */
+const MAY_CAST_SPELLS: Lowering<IrClause, Effects> = {
+  head: 'mayCastSpells',
+  id: 'lower.may-cast-spells',
+  // "You may" is the sentence's own offer and the permission is optional anyway (nobody has to cast).
+  acceptsOptional: true,
+  needs: ['effect:mayCastSpells', 'duration:untilEndOfTurn'],
+  lower(clause) {
+    const objects = operand(clause, 'objects');
+    if (objects?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter(objects);
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [{ kind: 'mayCastSpells', spells: filter.value, duration: 'untilEndOfTurn' }],
+      rule: clause.rule,
+    };
   },
 };
 
@@ -1552,6 +1600,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   UNTAP_CHOSEN,
   RESELECT_ATTACK,
   MAY_CAST,
+  MAY_CAST_SPELLS,
   simple('counter'),
   COUNTER_UNLESS,
   simple('tap'),
@@ -1691,7 +1740,10 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
             ? 'opponentControlsAtLeast'
             : test === 'sameName'
               ? 'sameNameAtLeast'
-              : test === 'attachedTo' || test === 'putThisWay' || test === 'exiledThisWay'
+              : test === 'attachedTo' ||
+                  test === 'putThisWay' ||
+                  test === 'exiledThisWay' ||
+                  test === 'milledThisWay'
                 ? 'objectMatches'
                 : test === 'discardedThisWay' ||
                     test === 'discardedSpellThisWay' ||

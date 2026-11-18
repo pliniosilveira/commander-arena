@@ -405,6 +405,8 @@ export interface AlternativeCostView {
   readonly exile?: number;
   /** For `tapPermanents` (D-149): how many untapped permanents of this filter are tapped as part of the cost. */
   readonly tap?: { readonly filter: ObjectFilter; readonly count: number };
+  /** For `sacrificeFromGraveyard` (issue 159): how many permanents of this filter are sacrificed as part of the cost. */
+  readonly sacrifice?: { readonly filter: ObjectFilter; readonly count: number };
 }
 
 /** One face of a multi-faced card, as printed: its name, cost, type line, rules text and values. */

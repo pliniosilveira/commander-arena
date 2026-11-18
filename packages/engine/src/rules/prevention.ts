@@ -151,6 +151,8 @@ export interface StaticPrevention {
   readonly object: ObjectId;
   readonly index: number;
   readonly scope: PreventScope;
+  /** The counter this prevention removes from the permanent for each damage event it prevents (issue 159). */
+  readonly removeCounter?: string;
 }
 
 /**
@@ -172,7 +174,12 @@ export function staticPreventions(
       a.static.kind === 'preventDamageToThis' &&
       (a.static.scope === 'all' || (a.static.scope === 'combat') === combat)
     ) {
-      found.push({ object: obj.id, index, scope: a.static.scope });
+      found.push({
+        object: obj.id,
+        index,
+        scope: a.static.scope,
+        ...(a.static.removeCounter === undefined ? {} : { removeCounter: a.static.removeCounter }),
+      });
     }
   });
   return found;

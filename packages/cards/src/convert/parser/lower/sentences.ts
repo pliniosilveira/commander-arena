@@ -100,11 +100,13 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     if (effect.kind === 'exile') ctx.exiled = 'cards';
     ctx.exiledRef =
       effect.kind === 'exile' && effect.objects.kind === 'target' ? effect.objects.id : null;
+    // `'*'` (issue 159): the instruction put objects onto the battlefield that no target names ("Put all creature cards from all graveyards onto the battlefield"): "they"
+    // are `moved`, as no target id can be '*'.
     ctx.movedOnto =
-      effect.kind === 'moveToZone' &&
-      effect.to === 'battlefield' &&
-      effect.objects.kind === 'target'
-        ? effect.objects.id
+      effect.kind === 'moveToZone' && effect.to === 'battlefield'
+        ? effect.objects.kind === 'target'
+          ? effect.objects.id
+          : '*'
         : null;
   }
 }
@@ -188,6 +190,11 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'mill' &&
       lowered.value[0].player.kind === 'you';
+    // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
+    const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
+    ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
+    // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
+    ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
     // D-412: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
     ctx.movedToHand =
       lowered.value.length === 1 &&
@@ -1253,6 +1260,9 @@ function countsWhatHappened(
     case 'tapped':
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
+    case 'damageDealt':
+      // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
+      return earlier.verb === 'dealDamage';
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';

@@ -125,6 +125,11 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'castFromGraveyardThisTurn': {
+      // Issue 159 (CR 601.2a, 602.2): the turn log of the controller of the condition.
+      const blocked = missingFeatures(['condition:castFromGraveyardThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'castFromGraveyardThisTurn' });
+    }
     case 'lifeGainedAndLostThisTurn': {
       const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });
@@ -360,6 +365,25 @@ export function lowerCondition(
       const of =
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
       return ok({ kind: 'objectMatches', of, filter: filter.value });
+    }
+    case 'milledThisWay': {
+      // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
+      const blocked = missingFeatures(['condition:objectMatches']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.milled !== true) return failure(c, []);
+      const filter = lowerFilter({
+        kind: 'noun',
+        det: 'a',
+        filter: test.filter,
+        upTo: false,
+        plural: false,
+        other: false,
+        span: c.span,
+        rule: c.rule,
+      });
+      return filter.ok
+        ? ok({ kind: 'objectMatches', of: { kind: 'moved' }, filter: filter.value, any: true })
+        : filter;
     }
     case 'exiledThisWay':
     case 'putThisWay': {

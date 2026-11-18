@@ -470,7 +470,8 @@ export type IrAmount =
         | 'destroyedOwnNontoken'
         | 'playersDrew'
         | 'tapped'
-        | 'milledValue';
+        | 'milledValue'
+        | 'damageDealt';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
       /** "that many" (stage P30): the number of whatever the instruction before it did, whichever words the text uses. */
@@ -563,6 +564,8 @@ export interface IrCondition extends IrNode {
       }
     // D-252 (the Bruna deck): "you gained 3 or more life this turn" (CR 119.3)
     | { readonly kind: 'lifeGainedThisTurn'; readonly atLeast: number }
+    // "you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2): read from the turn log
+    | { readonly kind: 'castFromGraveyardThisTurn' }
     | { readonly kind: 'lifeGainedAndLostThisTurn' }
     // D-318 (the Niv-Mizzet deck): "you've cast three or more spells this turn" (CR 601.2i)
     // D-444 (Feather): "you've cast an instant or sorcery spell this turn": only the spells of these card types count.
@@ -615,6 +618,8 @@ export interface IrCondition extends IrNode {
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
     | { readonly kind: 'putThisWay'; readonly filter: IrFilter; readonly zone?: 'hand' }
     | { readonly kind: 'exiledThisWay'; readonly filter: IrFilter }
+    // "at least one Zombie card is milled this way" (issue 159, CR 608.2c, 701.17a): any card the mill before it put into the graveyard is described by the filter.
+    | { readonly kind: 'milledThisWay'; readonly filter: IrFilter }
     // "If you don't, put a +1/+1 counter on ~" (Danitha deck group 2, D-411, CR 608.2c): the player did not put a card from among the cards the sentence before it milled into their hand
     | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)
@@ -875,6 +880,8 @@ export interface IrTypeList extends IrNode {
   readonly subtypes: readonly string[];
   readonly cardTypes?: readonly string[];
   readonly additive?: boolean;
+  /** "It's a black Zombie in addition to its other colors and types" (issue 159, CR 105.3): the color letters the object also has, as names ("black"). */
+  readonly colors?: readonly string[];
 }
 
 /** "base power and toughness 1/1": the numbers as written, not a change (CR 613.4b). */
@@ -1421,7 +1428,12 @@ export type IrStaticEffect =
    * "Prevent all combat damage that would be dealt to ~." (stage P33, D-150, CR 615.1): the damage of the kind named that would be dealt to
    * the permanent is prevented. The subject is `~`.
    */
-  | { readonly kind: 'preventDamageToThis'; readonly scope: 'all' | 'combat' | 'noncombat' }
+  | {
+      readonly kind: 'preventDamageToThis';
+      readonly scope: 'all' | 'combat' | 'noncombat';
+      /** "..., prevent that damage and remove a +1/+1 counter from it." (issue 159): the counter removed for each damage event prevented. */
+      readonly removeCounter?: string;
+    }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.
@@ -1448,6 +1460,16 @@ export type IrStaticEffect =
    */
   | {
       readonly kind: 'tapAlternative';
+      readonly cost: IrCost;
+      readonly what: IrNoun;
+      readonly count: number;
+    }
+  /**
+   * "You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost." (issue 159, CR 118.9, 601.2h, 701.21a): an alternative
+   * cost of the face, cast from the owner's graveyard, that pays `cost` (mana) and sacrifices `count` permanents `what` describes. The subject is `~`.
+   */
+  | {
+      readonly kind: 'graveyardSacrificeAlternative';
       readonly cost: IrCost;
       readonly what: IrNoun;
       readonly count: number;

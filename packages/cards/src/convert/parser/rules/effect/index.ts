@@ -312,8 +312,13 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     'it deals damage equal to its power to any target',
     'it deals X damage to any target',
     'it deals damage equal to the number of Dragons you control to any target',
+    // Grave Danger (issue 159, Lotleth Giant): the count after "for each" multiplies the quantity (CR 608.2c).
+    'it deals 1 damage to target opponent for each creature card in your graveyard',
+    'it deals 2 damage to each opponent for each creature you control',
   ],
   rejects: [
+    'it deals X damage to target opponent for each creature you control',
+    'it deals 1 damage to target opponent for each',
     'it deals damage equal to its power',
     'it deals 1 damage',
     'it deals damage to you',
@@ -324,14 +329,21 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.damage-by-it',
-    sequence(
-      family<IrNoun>('noun', { only: ['noun.it'] }),
-      literal(' deals '),
-      DAMAGE_AMOUNT,
-      literal(' to '),
-      operands(DAMAGE_RECIPIENTS, 'effect.damage-by-it'),
+    satisfy(
+      sequence(
+        family<IrNoun>('noun', { only: ['noun.it'] }),
+        literal(' deals '),
+        DAMAGE_AMOUNT,
+        literal(' to '),
+        operands(DAMAGE_RECIPIENTS, 'effect.damage-by-it'),
+        optional(FOR_EACH_TAIL, null),
+      ),
+      ([, , amount, , , each]) => each === null || scaled(amount, each) !== null,
     ),
-    ([source, , amount, , to]) => ({ verb: 'dealDamage', args: { source, amount, to } }),
+    ([source, , amount, , to, each]) => ({
+      verb: 'dealDamage',
+      args: { source, amount: each === null ? amount : (scaled(amount, each) ?? amount), to },
+    }),
   ),
 });
 
