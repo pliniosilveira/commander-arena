@@ -369,7 +369,7 @@ function lowerFilterAt(
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
   // D-131: "creatures attacking you" (CR 508.1b): the attackers whose attack target is the controller as a player.
-  if (filter.attackingYou === true) {
+  if (filter.attackingYou !== undefined) {
     const missing = missingFeatures(['selector:attackingYou']);
     if (missing.length > 0) return bad(missing);
   }
@@ -418,7 +418,7 @@ function lowerFilterAt(
     ...(filter.targetCountAtLeast !== undefined
       ? { targetCountAtLeast: filter.targetCountAtLeast }
       : {}),
-    ...(filter.attackingYou === true && !inner ? { attackingYou: true as const } : {}),
+    ...(filter.attackingYou !== undefined && !inner ? { attackingYou: filter.attackingYou } : {}),
     ...(filter.attackingOpponents !== undefined && !inner
       ? { attackingOpponents: filter.attackingOpponents }
       : {}),

@@ -324,6 +324,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
+  'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
   'noun.each-permanent': spell((e) => `Destroy ${e}.`),
@@ -469,6 +470,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'condition.those-attacked-you': permanent(
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
+  ),
+  'trigger.opponent-attacks-bare': whenever,
+  'condition.they-attacked-you': permanent(
+    (e) => `Whenever an opponent attacks, if ${e}, draw a card.`,
   ),
   'condition.those-attacking-you': permanent(
     (e) => `Whenever an opponent attacks with creatures, if ${e}, draw a card.`,

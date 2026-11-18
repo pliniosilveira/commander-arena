@@ -389,6 +389,9 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     // Issue 89 (D-638, CR 702.21a): ward a static ability gives, with a mana cost.
     'Enchanted creature has ward {2}.',
     'Enchanted creature gets +1/+0 and has lifelink and ward {2}.',
+    // CR 508.1a, 506.3 (Vow of Duty): the creature may not attack the Aura's controller or the planeswalkers they control.
+    "Enchanted creature can't attack you or planeswalkers you control.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack you or planeswalkers you control.",
   ],
   rejects: [
     'Enchanted creature gets +2/+2',
@@ -415,7 +418,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature has flying, first strike and vigilance.',
     'Enchanted creature loses flying.',
     "Enchanted creature can't attack or block alone.",
-    "Equipped creature can't attack you or planeswalkers you control.",
+    "Enchanted creature can't attack you or planeswalkers.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
     'Enchanted creature gets +1/+1 and loses flying.',
     'Equipped land has hexproof.',
     'Equipped creature has "{T}: Add {G}.".',

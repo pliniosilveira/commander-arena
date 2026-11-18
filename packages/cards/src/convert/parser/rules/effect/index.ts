@@ -422,6 +422,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile target creature an opponent controls until an opponent becomes the monarch',
     // Lorehold group 2 (issue 86): a card of your graveyard that is none of the types the words leave out.
     'exile target noncreature, nonland card from your graveyard',
+    // Soul Snare (CR 508.1b, 506.3): an attacker of the controller or of a planeswalker the controller controls.
+    "exile target creature that's attacking you or a planeswalker you control",
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -467,6 +469,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.that-object',
             // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
             'noun.attached-permanent',
+            // Soul Snare (CR 508.1b, 506.3): "Exile target creature that's attacking you or a planeswalker you control."
+            'noun.target-creature-attacking-you',
           ],
           'effect.exile',
         ),
