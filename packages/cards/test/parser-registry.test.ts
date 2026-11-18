@@ -235,6 +235,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.bare-land-type': permanent((e) => `Enchant ${e}`),
   // "Its controller": the pronoun needs a target before it (CR 109.4).
   'noun.its-controller': spell((e) => `Destroy target creature. ${cap(e)} gains 4 life.`),
+  // Issue 279 (Curse of the Swine).
+  'noun.each-exiled-controller': spell(
+    (e) => `Exile X target creatures. ${cap(e)} creates a 2/2 green Boar creature token.`,
+  ),
   'noun.library-card': spell(
     (e) =>
       `Search your library for ${e}, put ${e.startsWith('up to') ? 'them' : 'it'} into your hand, then shuffle.`,

@@ -21,7 +21,7 @@ import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
-import { NOUN_ITS_CONTROLLER } from './controller';
+import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER } from './controller';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
@@ -828,6 +828,8 @@ export const NOUN_RULES = [
   // D-392 (Hashaton, group 9): "that source's controller".
   ...HASHATON_G9_NOUN_RULES,
   NOUN_ITS_CONTROLLER,
+  // Issue 279 (Curse of the Swine): "for each creature exiled this way, its controller".
+  NOUN_EACH_EXILED_CONTROLLER,
   NOUN_ATTACKED_BY_IT,
   ...SUBJECT_NOUN_RULES,
   ...CHOOSE_NOUN_RULES,

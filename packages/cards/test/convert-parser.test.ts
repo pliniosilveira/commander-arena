@@ -857,6 +857,7 @@ describe('unmatched abilities', () => {
       'noun.the-chosen-cards',
       'noun.that-sources-controller',
       'noun.its-controller',
+      'noun.each-exiled-controller',
       'noun.attacked-by-it',
       'noun.attached-permanent',
       'noun.other-permanents',

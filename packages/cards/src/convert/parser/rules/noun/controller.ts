@@ -70,3 +70,64 @@ export const NOUN_ITS_CONTROLLER = defineRule<IrNoun>({
     return { ok: true, value: noun, pos: m.pos };
   }) satisfies Parser<IrNoun>,
 });
+
+/**
+ * `noun.each-exiled-controller`: "for each creature exiled this way, its controller" (issue 279, Curse of the Swine; CR 109.4, 608.2c, 608.2h): the player who controls each creature the
+ * instruction before it exiled, once for each creature (a player who controlled two is named twice). It stands for "those creatures' controllers", so the binding pass makes the group the
+ * most recent plural object of the text (the targets of the exile) and the lowering reads one controller for each of them from last-known information. Not read: another verb ("destroyed",
+ * "sacrificed"), "for each permanent", "its owner", "that creature's controller", the singular "that creature exiled", a missing "this way".
+ */
+export const NOUN_EACH_EXILED_CONTROLLER = defineRule<IrNoun>({
+  id: 'noun.each-exiled-controller',
+  family: 'noun',
+  leading: ['for'],
+  cites: [
+    'CR 109.4 (Objects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 608.2h (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'for each creature exiled this way, its controller',
+    'For each creature exiled this way, its controller',
+  ],
+  rejects: [
+    'for each creature destroyed this way, its controller',
+    'for each permanent exiled this way, its controller',
+    'for each creature exiled this way, its owner',
+    "for each creature exiled this way, that creature's controller",
+    'for each creature exiled this way its controller',
+    'for each creature exiled, its controller',
+    'each creature exiled this way, its controller',
+    'for each creature exiled this way, its controllers',
+  ],
+  parse: ((ctx, pos) => {
+    const m = pattern(/for each creature exiled this way, its controller(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!m.ok) return fail(ctx, pos);
+    const end = m.pos;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'anaphor',
+      filter: { raw: 'those creatures' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end },
+      rule: 'noun.each-exiled-controller',
+    };
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'controllerOf',
+      filter: { raw: ctx.text.slice(pos, end) },
+      upTo: false,
+      plural: false,
+      other: false,
+      of,
+      span: { start: pos, end },
+      rule: 'noun.each-exiled-controller',
+    };
+    return { ok: true, value: noun, pos: end };
+  }) satisfies Parser<IrNoun>,
+});

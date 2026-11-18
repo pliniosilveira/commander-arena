@@ -360,3 +360,50 @@ describe('"exile the top card of each player\'s library, then you may cast any n
     g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
   });
 });
+
+// ---- Curse of the Swine: "Exile X target creatures. For each creature exiled this way, its controller creates a 2/2 green Boar creature token." (CR 109.4, 608.2c, 608.2h, 111.2).
+
+const SWINE = parsed(
+  'SYNTHETIC Parsed Swine',
+  'Sorcery',
+  'Exile X target creatures. For each creature exiled this way, its controller creates a 2/2 green Boar creature token.',
+  { manaCost: '{X}{U}{U}', colors: ['U'] },
+);
+
+describe('"For each creature exiled this way, its controller creates a ... token" (CR 608.2c)', () => {
+  const start = () =>
+    main(
+      (b) =>
+        b
+          .define(SWINE)
+          .hand(SWINE.name)
+          .battlefield('Island', 'Island', 'Island', 'Island', 'Island')
+          .battlefield('Grizzly Bears'),
+      (b) => b.battlefield('Giant Spider', 'Serra Angel'),
+    );
+  test('each controller gets one Boar for each of their creatures exiled', () => {
+    const g = start();
+    g.act(0).cast(SWINE.name, {
+      x: 3,
+      targets: ['Grizzly Bears', 'Giant Spider', 'Serra Angel'],
+      pay: true,
+    });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone('Giant Spider', 'exile', { seat: 1 });
+    g.expect.zone('Serra Angel', 'exile', { seat: 1 });
+    // The caster controlled one creature, the opponent two.
+    g.expect.zone('Boar', 'battlefield', { seat: 0, count: 1 });
+    g.expect.zone('Boar', 'battlefield', { seat: 1, count: 2 });
+    g.expect.invariants();
+  });
+
+  test('a creature that was not exiled gives no token', () => {
+    const g = start();
+    g.act(0).cast(SWINE.name, { x: 1, targets: ['Giant Spider'], pay: true });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 1 });
+    g.expect.zone('Boar', 'battlefield', { seat: 0, count: 0 });
+    g.expect.zone('Boar', 'battlefield', { seat: 1, count: 1 });
+  });
+});
