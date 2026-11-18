@@ -378,7 +378,8 @@ export function choosePriorityAction(
     const best = Math.max(...retraces.map(manaValueOf));
     const top = retraces.filter((s) => manaValueOf(s) === best);
     const chosen = top[draw(top.length)];
-    if (chosen !== undefined) return { kind: 'castSpell', object: chosen.id, alternative: 'retrace' };
+    if (chosen !== undefined)
+      return { kind: 'castSpell', object: chosen.id, alternative: 'retrace' };
   }
 
   // 2c. Escape (CR 702.138a, D-124): like flashback, only once no worthwhile spell is left to cast from the hand.

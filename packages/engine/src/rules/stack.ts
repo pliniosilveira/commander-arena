@@ -446,11 +446,19 @@ export function answerResolutionChoice(
   const head = res?.queue[0];
   if (!res || head === undefined) return null;
   // D-655 (CR 303.4f): the permanent a token that is an Aura enters enchanting.
-  if (head.kind === 'enterToken' && state.pending?.kind === 'choosePermanent' && state.pending.purpose === 'auraHost') {
+  if (
+    head.kind === 'enterToken' &&
+    state.pending?.kind === 'choosePermanent' &&
+    state.pending.purpose === 'auraHost'
+  ) {
     const [host] = chosen;
     if (host === undefined) return null;
     return continueResolution(
-      { ...state, pending: null, resolution: { ...res, queue: [{ ...head, host }, ...res.queue.slice(1)] } },
+      {
+        ...state,
+        pending: null,
+        resolution: { ...res, queue: [{ ...head, host }, ...res.queue.slice(1)] },
+      },
       [],
     );
   }

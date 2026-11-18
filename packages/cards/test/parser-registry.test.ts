@@ -623,8 +623,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Prismari deck, group 3 (D-649): a delayed ability for the turn, after the exile of a card.
   'effect.delayed-combat-damage-copy-exiled': permanent(
-    (e) =>
-      `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
+    (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
   ),
   'condition.card-left-graveyard': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,

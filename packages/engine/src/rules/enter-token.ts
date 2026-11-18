@@ -12,6 +12,7 @@ import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat, loseLifeBy } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { attachEntered } from './attach';
 import { optionsFor } from './chosen';
 import { type OrderFlow, quietFlow } from './damage-order';
 import { bindEncoreToken } from './encore';
@@ -34,10 +35,9 @@ import {
   riotGivesHaste,
   riotInstances,
 } from './enters-keywords';
-import { attachEntered } from './attach';
 import { canReveal, revealChoices, revealEvents } from './enters-reveal';
-import { matchesFilter } from './select';
 import { lifeTotalIsLocked } from './player-lock';
+import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
 import { settleTokens } from './token-replacement';
 import { hypotheticalToken, makeTokens } from './tokens';
@@ -271,7 +271,12 @@ export function runEnterToken(
       const obj = state.objects[id];
       return (
         obj !== undefined &&
-        matchesFilter(state, obj, { ...enchant, zone: 'battlefield' }, { controller: seat, source: res.object })
+        matchesFilter(
+          state,
+          obj,
+          { ...enchant, zone: 'battlefield' },
+          { controller: seat, source: res.object },
+        )
       );
     });
     if (hosts.length === 0) return done(state);
@@ -338,7 +343,13 @@ export function runEnterToken(
           copied,
         );
   return {
-    ...done(bound, [...payEvents, ...sacrificed.events, ...made.events, ...copyEvents, ...hostEvents]),
+    ...done(bound, [
+      ...payEvents,
+      ...sacrificed.events,
+      ...made.events,
+      ...copyEvents,
+      ...hostEvents,
+    ]),
     lastMoved: [...(res.lastMoved ?? []), ...created],
   };
 }

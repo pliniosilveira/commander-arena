@@ -14,11 +14,19 @@ const SPIDER = 'Giant Spider';
 const FILLER = ['Island', 'Island', 'Island'] as const;
 
 function game(extra: (b: ReturnType<typeof scenario>) => void = () => {}) {
-  const b = scenario().seat(0).hand(COPY).pool('UUUUU').library(...FILLER);
+  const b = scenario()
+    .seat(0)
+    .hand(COPY)
+    .pool('UUUUU')
+    .library(...FILLER);
   b.battlefield(BEARS, { label: 'bears' });
   b.battlefield(AURA, { label: 'aura', attachedTo: 'bears' });
   extra(b);
-  const g = b.seat(1).library(...FILLER).at('precombatMain', { active: 0 }).build();
+  const g = b
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0 })
+    .build();
   g.act(0).cast(COPY, { pay: true, targets: [{ name: AURA, zone: 'battlefield', seat: 0 }] });
   g.passAll();
   g.act(0).decline(); // demonstrate: no copy of the spell
@@ -35,7 +43,9 @@ describe('a token that is a copy of an Aura (CR 303.4f)', () => {
     expect(d).toMatchObject({ seat: 0, purpose: 'auraHost' });
     expect(d.legal).toHaveLength(2);
     g.act(0).choosePermanents('spider');
-    const tokens = Object.values(g.state.objects).filter((o) => o.token !== null && o.zone === 'battlefield');
+    const tokens = Object.values(g.state.objects).filter(
+      (o) => o.token !== null && o.zone === 'battlefield',
+    );
     expect(tokens).toHaveLength(1);
     expect(tokens[0]?.attachedTo).toBe(g.id('spider'));
     g.expect.invariants();
@@ -44,7 +54,9 @@ describe('a token that is a copy of an Aura (CR 303.4f)', () => {
   test('with a single permanent it could enchant, nothing is asked', () => {
     const g = game();
     expect(g.state.pending?.kind).toBe('priority');
-    const token = Object.values(g.state.objects).find((o) => o.token !== null && o.zone === 'battlefield');
+    const token = Object.values(g.state.objects).find(
+      (o) => o.token !== null && o.zone === 'battlefield',
+    );
     expect(token?.attachedTo).toBe(g.id('bears'));
   });
 

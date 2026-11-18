@@ -4,7 +4,13 @@
  * prompt, the button labels and whether Cancel is offered. Six questions share the decision and are
  * told apart by `cost` and `purpose`, so their words live here, away from `model.ts`.
  */
-import type { ConfirmOptionalDecision, Cost, ObjectId, ObjectView } from '@commander-arena/engine';
+import {
+  type ConfirmOptionalDecision,
+  type Cost,
+  manaValue,
+  type ObjectId,
+  type ObjectView,
+} from '@commander-arena/engine';
 import { findEffect } from '../../game/artifacts-text';
 import { castCardOfAbility, castCardPrompt } from '../../game/cast-card-text';
 import {
@@ -484,6 +490,26 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       yes: 'Gift',
       no: 'No gift',
       cancellable: true,
+    };
+  }
+  if (d.purpose === 'exileMore') {
+    // D-649 (CR 701.13, 608.2d): "As many times as you choose, you may exile the top card of your library": asked again after each card, with what was exiled so far.
+    const exiled = (d.exiled ?? []).flatMap((id) => {
+      const card = index.get(id);
+      return card === undefined ? [] : [card];
+    });
+    const total = exiled.reduce(
+      (sum, c) => sum + (c.manaCost === null ? 0 : manaValue(c.manaCost)),
+      0,
+    );
+    return {
+      prompt:
+        exiled.length === 0
+          ? `${d.sourceName}: exile the top card of your library?`
+          : `${d.sourceName}: ${exiled.map((c) => c.name).join(', ')} exiled (total mana value ${total}). Exile the top card of your library again?`,
+      yes: 'Exile the top card',
+      no: 'Stop',
+      cancellable: false,
     };
   }
   if (d.purpose === 'castCard') {
