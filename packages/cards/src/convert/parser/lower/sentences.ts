@@ -98,11 +98,13 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     ctx.searched = null;
     ctx.exiledRef =
       effect.kind === 'exile' && effect.objects.kind === 'target' ? effect.objects.id : null;
+    // `'*'` (issue 159): the instruction put objects onto the battlefield that no target names ("Put all creature cards from all graveyards onto the battlefield"): "they"
+    // are `moved`, as no target id can be '*'.
     ctx.movedOnto =
-      effect.kind === 'moveToZone' &&
-      effect.to === 'battlefield' &&
-      effect.objects.kind === 'target'
-        ? effect.objects.id
+      effect.kind === 'moveToZone' && effect.to === 'battlefield'
+        ? effect.objects.kind === 'target'
+          ? effect.objects.id
+          : '*'
         : null;
   }
 }

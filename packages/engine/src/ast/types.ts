@@ -2321,6 +2321,8 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly colors: readonly Color[];
       readonly duration: Duration;
+      /** "... is a black Zombie in addition to its other colors and types" (issue 159, CR 105.3, 613.1e): the colors are added to the ones the object has instead of replacing them. */
+      readonly additive?: true;
     }
   /**
    * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230), and a resolving spell that grants an activated,

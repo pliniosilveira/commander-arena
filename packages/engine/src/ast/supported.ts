@@ -302,7 +302,11 @@ function walkEffect(
       // D-230: and no end at all (`permanent`, CR 611.2a) for what an effect gives a permanent it put onto the battlefield: a base power and toughness, types, a keyword.
       if (
         effect.duration === 'permanent' &&
-        (effect.kind === 'setPt' || effect.kind === 'setTypes' || effect.kind === 'grantKeyword')
+        (effect.kind === 'setPt' ||
+          effect.kind === 'setTypes' ||
+          effect.kind === 'grantKeyword' ||
+          // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
+          (effect.kind === 'setColors' && effect.additive === true))
       ) {
         return;
       }

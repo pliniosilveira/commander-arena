@@ -1853,7 +1853,7 @@ export type ContinuousChange =
       /** D-229 (CR 205.1a): card types the object loses ("isn't a creature"); the subtypes only they allowed go with them. */
       readonly remove?: readonly CardType[];
     }
-  | { readonly kind: 'setColors'; readonly colors: readonly Color[] }
+  | { readonly kind: 'setColors'; readonly colors: readonly Color[]; readonly additive?: true }
   /**
    * Layer 1 (CR 613.2a): the object becomes a copy: the copiable values (CR 707.2) it was given when
    * the effect began replace its own (CR 707.2b: later changes to the original do not reach it).

@@ -512,6 +512,10 @@ function costColon(text: string): number {
   return -1;
 }
 
+/**
+ * The costs of an activated ability, one span each (CR 118.1: costs are separated by commas). Grave Danger (issue 159, Grimoire of the Dead): the last cost may
+ * join "sacrifice it" to the one before with "and" ("Remove three study counters from ~ and sacrifice it"): it is two costs, the second read by `cost.sacrifice`.
+ */
 function costSpans(text: string, end: number): Span[] {
   const spans: Span[] = [];
   let from = 0;
@@ -519,7 +523,14 @@ function costSpans(text: string, end: number): Span[] {
     spans.push(trimmed(text, from, comma));
     from = comma + 1;
   }
-  spans.push(trimmed(text, from, end));
+  const last = trimmed(text, from, end);
+  const joined = /^(.*~) and (sacrifice it)$/isu.exec(text.slice(last.start, last.end));
+  if (joined !== null && joined[1] !== undefined) {
+    spans.push({ start: last.start, end: last.start + joined[1].length });
+    spans.push({ start: last.end - 'sacrifice it'.length, end: last.end });
+  } else {
+    spans.push(last);
+  }
   return spans;
 }
 

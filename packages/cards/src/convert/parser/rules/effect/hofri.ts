@@ -190,6 +190,71 @@ export const EFFECT_BECOMES_IN_ADDITION = defineRule<Clauses>({
   },
 });
 
+const COLOR_WORDS = '(white|blue|black|red|green)';
+/** "It's a black Zombie in addition to its other colors and types" (singular), "They're black Zombies in addition to their other colors and types" (plural). */
+const BECOMES_COLORED_ONE = new RegExp(
+  `^[Ii]t['’]s an? ${COLOR_WORDS} ([A-Z][a-z]+) in addition to its other colors and types(?![\\p{L}\\p{N}])`,
+  'u',
+);
+const BECOMES_COLORED_MANY = new RegExp(
+  `^[Tt]hey['’]re ${COLOR_WORDS} ([A-Z][a-z]+)s in addition to their other colors and types(?![\\p{L}\\p{N}])`,
+  'u',
+);
+
+/**
+ * `effect.becomes-colored-in-addition`: what the permanents an earlier instruction put onto the battlefield are, "in addition to their other colors and types": "It's a black
+ * Zombie in addition to its other colors and types", "They're black Zombies in addition to their other colors and types" (Grimoire of the Dead, Necromantic Selection; issue 159;
+ * CR 105.3, 205.1b, 613.1d, 613.1e: the color and the creature type are added, and the effects have no end, CR 611.2a). The engine's additive `setColors` and `setTypes` of what was
+ * moved, with no duration. The plural is the creature type and an "s"; the lowering refuses a word that is not a creature type ("Elves"). Not read: another subject, "until end of turn", another word than one color.
+ */
+export const EFFECT_BECOMES_COLORED_IN_ADDITION = defineRule<Clauses>({
+  id: 'effect.becomes-colored-in-addition',
+  family: 'effect',
+  leading: ['it', 'it’s', "it's", 'they', 'they’re', "they're"],
+  cites: [
+    'CR 105.3 (Colors)',
+    'CR 205.1b (Type Line)',
+    'CR 613.1d (Interaction of Continuous Effects)',
+    'CR 613.1e (Interaction of Continuous Effects)',
+    'CR 611.2a (Continuous Effects)',
+  ],
+  examples: [
+    "It's a black Zombie in addition to its other colors and types",
+    "They're black Zombies in addition to their other colors and types",
+    'They’re black Zombies in addition to their other colors and types',
+  ],
+  rejects: [
+    "It's a black Zombie in addition to its other types",
+    "It's a Zombie in addition to its other colors and types",
+    "They're black Zombies in addition to their other types",
+    "It's a black and blue Zombie in addition to its other colors and types",
+    "It's a black Zombie in addition to its other colors and types until end of turn",
+    "They're black Zombie in addition to their other colors and types",
+    "It's a black zombie in addition to its other colors and types",
+    "It's a black Zombie in addition to its other colors and types and draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.becomes-colored-in-addition';
+    const rest = ctx.text.slice(pos);
+    const one = BECOMES_COLORED_ONE.exec(rest);
+    const many = one === null ? BECOMES_COLORED_MANY.exec(rest) : null;
+    const found = one ?? many;
+    if (found === null) return fail(ctx, pos);
+    const span = { start: pos, end: pos + found[0].length };
+    const args: Record<string, IrArg> = {
+      types: {
+        kind: 'typeList',
+        subtypes: [found[2] ?? ''],
+        additive: true,
+        colors: [found[1] ?? ''],
+        span,
+        rule: id,
+      },
+    };
+    return { ok: true, value: [makeClause(id, 'becomesInAddition', args, span)], pos: span.end };
+  },
+});
+
 /**
  * `effect.return-exiled-card`: "return the exiled card to its owner's graveyard" and "return the exiled card to the battlefield under its owner's control" (CR 607.2a,
  * 400.3, 110.2a: the linked ability of the permanent returns the card it exiled, which goes to its owner's graveyard or enters under its owner's control). The engine's
@@ -748,4 +813,5 @@ export const HOFRI_EFFECT_RULES = [
   EFFECT_PLAYER_ADDS_MANA,
   EFFECT_COPY_THIS_SPELL,
   EFFECT_BECOMES_IN_ADDITION,
+  EFFECT_BECOMES_COLORED_IN_ADDITION,
 ];

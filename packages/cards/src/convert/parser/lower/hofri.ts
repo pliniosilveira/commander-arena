@@ -17,6 +17,7 @@ import {
   plainKeyword,
   type SimpleKeyword,
 } from '../rules/keyword/vocabulary';
+import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { type FeatureRef, missingFeatures } from './features';
 import { colorLetter, lowerFilter, objectRefOf, playerSelectorOf } from './nouns';
@@ -86,11 +87,37 @@ const BECOMES_IN_ADDITION: Lowering<IrClause, Effects> = {
   head: 'becomesInAddition',
   id: 'lower.becomes-in-addition',
   needs: ['effect:setTypes', 'effect:grantKeyword', 'selector:moved'],
-  lower: (clause) => {
+  lower: (clause, ctx) => {
     const types = arg(clause, 'types');
     const pt = arg(clause, 'basePt');
     const words = arg(clause, 'keywords');
     if (types?.kind !== 'typeList' || types.additive !== true) return failure(clause);
+    // Issue 159 (Grimoire of the Dead): "It's a black Zombie in addition to its other colors and types": the objects an instruction before it put onto the battlefield.
+    if (types.colors !== undefined) {
+      if (ctx.movedOnto === null || pt !== undefined || words !== undefined) return failure(clause);
+      if (!types.subtypes.every((t) => CREATURE_TYPES.has(t))) return failure(clause);
+      const colors: Color[] = [];
+      for (const word of types.colors) {
+        const letter = colorLetter(word);
+        if (letter === undefined) return failure(clause);
+        colors.push(letter);
+      }
+      const objects = { kind: 'moved' } as const;
+      return {
+        ok: true,
+        value: [
+          { kind: 'setColors', objects, colors, additive: true, duration: 'permanent' },
+          {
+            kind: 'setTypes',
+            objects,
+            subtypes: [...types.subtypes],
+            additive: true,
+            duration: 'permanent',
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     const kinds: SimpleKeyword[] = [];
     for (const name of words?.kind === 'keywordList' ? words.names : []) {
       const kind = keywordKind(name);

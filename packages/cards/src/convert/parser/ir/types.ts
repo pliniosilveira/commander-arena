@@ -863,6 +863,8 @@ export interface IrTypeList extends IrNode {
   readonly subtypes: readonly string[];
   readonly cardTypes?: readonly string[];
   readonly additive?: boolean;
+  /** "It's a black Zombie in addition to its other colors and types" (issue 159, CR 105.3): the color letters the object also has, as names ("black"). */
+  readonly colors?: readonly string[];
 }
 
 /** "base power and toughness 1/1": the numbers as written, not a change (CR 613.4b). */

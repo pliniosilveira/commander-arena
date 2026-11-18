@@ -301,3 +301,47 @@ describe('Gisa and Geralf: "When this creature enters, mill four cards. Once dur
     expect(g.act(0).try.cast(BEARS).ok).toBe(false);
   });
 });
+
+describe('Grimoire of the Dead: "{T}, Remove three study counters from this artifact and sacrifice it: Put all creature cards from all graveyards onto the battlefield under your control. They\'re black Zombies in addition to their other colors and types."', () => {
+  const grimoire = real('Grimoire of the Dead');
+  const MINE = 'Grizzly Bears';
+  const start = (counters: number) =>
+    scenario()
+      .define(grimoire)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(grimoire.name, counters > 0 ? { counters: { study: counters } } : {})
+      .graveyard(MINE, 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .graveyard('Llanowar Elves')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(grimoire)).toEqual([]);
+  });
+
+  test('three study counters: every creature card of every graveyard comes back under my control as a black Zombie (CR 110.2a, 205.1b, 105.3)', () => {
+    const g = start(3);
+    g.act(0).activate(grimoire.name, { ability: 1, pay: true });
+    g.passAll();
+    g.expect.zone(grimoire.name, 'graveyard', { seat: 0 });
+    for (const [name, subtypes] of [
+      [MINE, ['Bear', 'Zombie']],
+      ['Llanowar Elves', ['Elf', 'Druid', 'Zombie']],
+    ] as const) {
+      expect(g.find({ name, zone: 'battlefield' }), name).toHaveLength(1);
+      // Its own green stays and black is added (in addition); the Zombie type is added to the others.
+      g.expect.derived({ name, seat: 0 }, { colors: ['B', 'G'], subtypes });
+    }
+    // The land card stays in the graveyard.
+    g.expect.zone('Swamp', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('fewer than three study counters: the ability cannot be activated', () => {
+    const g = start(2);
+    expect(g.act(0).try.activate(grimoire.name, { ability: 1 }).ok).toBe(false);
+  });
+});
