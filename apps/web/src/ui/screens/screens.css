@@ -393,6 +393,9 @@
 }
 
 .scr-color-filter {
+  border: 0;
+  padding: 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 6px;

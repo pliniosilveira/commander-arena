@@ -136,7 +136,7 @@ export function DeckDialog({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <div className="scr-color-filter" role="group" aria-label="Filter by colors">
+        <fieldset className="scr-color-filter" aria-label="Filter by colors">
           {COLOR_FILTERS.map((color) => (
             <button
               key={color}
@@ -155,7 +155,7 @@ export function DeckDialog({
               Clear
             </button>
           )}
-        </div>
+        </fieldset>
         <div role="tabpanel" className="scr-decks-list">
           {shown.length === 0 && inTab.length > 0 && (
             <p className="scr-note" role="note">
