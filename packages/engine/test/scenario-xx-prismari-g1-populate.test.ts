@@ -104,6 +104,18 @@ describe('populate with several creature tokens (CR 701.36a: the controller choo
     g.expect.invariants();
   });
 
+  test('a token that is not a creature is not a choice: with one creature token and a Treasure, nothing is asked and the creature token is copied (CR 701.36a)', () => {
+    const g = game((b) => b.hand('SYNTHETIC Prismari Treasure Call').battlefield('Mountain'));
+    call(g, SOLDIER_CALL);
+    call(g, 'SYNTHETIC Prismari Treasure Call');
+    expect(idsOf(g, 'Treasure')).toHaveLength(1);
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    expect(soldiers(g)).toHaveLength(2);
+    expect(idsOf(g, 'Treasure')).toHaveLength(1);
+    g.expect.invariants();
+  });
+
   test('a token that is not a creature is not a choice (CR 701.36a)', () => {
     const g = game((b) => b.battlefield('Sol Ring'));
     // Sol Ring is not a token and not a creature: with no creature token populate does nothing.

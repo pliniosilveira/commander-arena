@@ -3167,6 +3167,8 @@ export const PRISMARI_G1_NAMES = [
   'SYNTHETIC Prismari Cantrip',
   'SYNTHETIC Prismari Grand Study',
   'SYNTHETIC Prismari Grand Flash',
+  'SYNTHETIC Prismari Echo Study',
+  'SYNTHETIC Prismari Treasure Call',
 ] as const;
 
 /** The prismariG1 style: every card of the group twice, the token makers three times, and bodies for the copies. */

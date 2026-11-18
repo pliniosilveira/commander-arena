@@ -527,4 +527,32 @@ export const SYNTHETIC_PRISMARI_G1_LIST: readonly CardDefinition[] = [
     oracleText: 'Draw a card.',
     spell: { effect: { kind: 'draw', player: { kind: 'you' }, count: 1 } },
   }),
+  // A sorcery of mana value 5 that can be cast from the graveyard, for "from your hand": a cast from anywhere else does not prepare the Focusmage.
+  singleFace({
+    name: 'SYNTHETIC Prismari Echo Study',
+    manaCost: ['3', 'U', 'U'],
+    types: ['sorcery'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'Draw a card. Flashback {5}{U}',
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: { kind: 'flashback', cost: [{ kind: 'mana', symbols: ['5', 'U'] }] },
+      },
+    ],
+    spell: { effect: { kind: 'draw', player: { kind: 'you' }, count: 1 } },
+  }),
+  // A token that is not a creature, for populate: only creature tokens can be chosen.
+  singleFace({
+    name: 'SYNTHETIC Prismari Treasure Call',
+    manaCost: ['R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Create a Treasure token.',
+    spell: {
+      effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Treasure' }, count: 1 },
+    },
+  }),
 ];

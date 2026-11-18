@@ -16,6 +16,7 @@ const SOLDIER_CALL = 'SYNTHETIC Soldier Call';
 const CANTRIP = 'SYNTHETIC Prismari Cantrip';
 const GRAND_STUDY = 'SYNTHETIC Prismari Grand Study'; // sorcery {4}{U}, mana value 5
 const GRAND_FLASH = 'SYNTHETIC Prismari Grand Flash'; // instant {5}{U}, mana value 6
+const ECHO_STUDY = 'SYNTHETIC Prismari Echo Study'; // sorcery {3}{U}{U}, mana value 5, flashback {5}{U}
 const LEGEND = 'SYNTHETIC Prismari Legend';
 const BEARS = 'Grizzly Bears';
 const ANGEL = 'Serra Angel'; // creature, mana value 5
@@ -182,6 +183,22 @@ describe('Dirgur Focusmage: it becomes prepared when you cast an instant or sorc
     castHand(g, ANGEL);
     g.passAll();
     expect(view(g, FOCUS_FRONT)?.prepared).toBeUndefined();
+  });
+
+  test('a spell of mana value 5 cast from the graveyard does not: it was not cast from the hand (CR 601.2a)', () => {
+    const g = focus((b) => b.graveyard(ECHO_STUDY).battlefield('Island', { count: 4 }));
+    g.act(0).cast(ECHO_STUDY, { alternative: 'flashback', pay: true });
+    g.passAll();
+    expect(g.find({ name: ECHO_STUDY, zone: 'exile', seat: 0 })).toHaveLength(1);
+    expect(view(g, FOCUS_FRONT)?.prepared).toBeUndefined();
+    g.expect.invariants();
+  });
+
+  test('the same spell cast from the hand does', () => {
+    const g = focus((b) => b.hand(ECHO_STUDY));
+    castHand(g, ECHO_STUDY);
+    g.passAll();
+    expect(view(g, FOCUS_FRONT)?.prepared).toBe(true);
   });
 
   test('an opponent’s spell does not', () => {
