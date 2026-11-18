@@ -35,12 +35,19 @@ export const SHUFFLE_GRAVEYARD_IN: Lowering<IrClause, Effects> = {
 type Static = Extract<IrAbility, { kind: 'static' }>;
 type KorvoldStaticEffect = Extract<
   IrStaticEffect,
-  { kind: 'groupEntersUntapped' | 'opponentsCantCast' | 'spellsCantBeCountered' }
+  {
+    kind:
+      | 'groupEntersUntapped'
+      | 'groupEntersTapped'
+      | 'opponentsCantCast'
+      | 'spellsCantBeCountered';
+  }
 >;
 
 export function isKorvoldStatic(effect: IrStaticEffect): effect is KorvoldStaticEffect {
   return (
     effect.kind === 'groupEntersUntapped' ||
+    effect.kind === 'groupEntersTapped' ||
     effect.kind === 'opponentsCantCast' ||
     effect.kind === 'spellsCantBeCountered'
   );
@@ -112,13 +119,27 @@ export function lowerKorvoldStatic(
       rule: ability.rule,
     };
   }
-  const blocked = missingFeatures(['ability:replacement', 'replacement:groupEntersUntapped']);
+  const entersTapped = effect.kind === 'groupEntersTapped';
+  const blocked = missingFeatures([
+    'ability:replacement',
+    entersTapped ? 'replacement:groupEntersTapped' : 'replacement:groupEntersUntapped',
+  ]);
   if (blocked.length > 0) return staticFailure(ability, blocked);
   const { subject } = statement;
   const { zone, ...rest } = subject.filter;
   void zone;
   const what = lowerFilter({ ...subject, filter: rest });
   if (!what.ok) return what;
+  if (entersTapped) {
+    if (what.value.controller !== 'opponent' || subject.other) return staticFailure(ability);
+    return {
+      ok: true,
+      value: [
+        { kind: 'replacement', replacement: { kind: 'groupEntersTapped', what: what.value } },
+      ],
+      rule: ability.rule,
+    };
+  }
   const { types = [], subtypes = [], anyOf } = what.value;
   const itself =
     anyOf !== undefined ||
@@ -210,6 +231,7 @@ export const KORVOLD_NEEDS: readonly FeatureRef[] = [
   'static:opponentsCantCastOnYourTurn',
   'static:spellsCantBeCountered',
   'replacement:groupEntersUntapped',
+  'replacement:groupEntersTapped',
   'condition:objectMatches',
   'selector:attached',
   'effect:chooseOne',

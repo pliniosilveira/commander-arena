@@ -93,6 +93,8 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.conditionKinds).toEqual([
       'controlsAtLeast',
       'opponentsAtLeast',
+      // D-599: corrupted checks an opponent's poison counters.
+      'opponentPoisonAtLeast',
       'kicked',
       'replicated',
       'sacrificedAsCost',
@@ -143,6 +145,8 @@ describe('the dimensions', () => {
       'combatDamagedBy',
       // D-252: "if you gained 3 or more life this turn".
       'lifeGainedThisTurn',
+      // D-591: life gain and life loss are both recorded this turn.
+      'lifeGainedAndLostThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
       'dieResult',

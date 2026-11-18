@@ -201,10 +201,7 @@ const SYNTHETIC: readonly Line[] = [
     kind: 'creature',
     stats: ['*', '*'],
     text: "~'s power and toughness are each equal to twice the number of lands you control.",
-    expect: no(
-      "~'s power and toughness are each equal to twice the number of lands you control.",
-      'none',
-    ),
+    expect: no('.', 'static.defines-pt'),
     note: 'SYNTHETIC; "twice" is not read',
   },
   {

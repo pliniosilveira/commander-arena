@@ -123,6 +123,22 @@ describe('"Whenever the Ring tempts you" (CR 701.54d)', () => {
     });
   });
 
+  test('choosing a creature as Ring-bearer is a narrower trigger than being tempted', () => {
+    expect(
+      ability(
+        'Whenever you choose a creature as your Ring-bearer, you may pay 2 life. If you do, draw a card.',
+      ),
+    ).toMatchObject({
+      kind: 'triggered',
+      trigger: { kind: 'ringTempted', bearerChosen: true },
+      effect: {
+        kind: 'mayPay',
+        cost: [{ kind: 'payLife', amount: 2 }],
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    });
+  });
+
   test.each([
     'Whenever the Ring tempts an opponent, draw a card.',
     'Whenever the Ring tempts a player, draw a card.',

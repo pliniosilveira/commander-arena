@@ -101,7 +101,7 @@ export function App() {
   const settled = useApp((s) => s.screen === 'playing' && s.snapshot !== null && !s.busy);
   const revision = useApp((s) => s.snapshot?.revision ?? 0);
   return (
-    <div className="app" data-settled={settled} data-revision={revision}>
+    <div className="app" data-screen={screen} data-settled={settled} data-revision={revision}>
       {screen === 'menu' ? (
         <Menu />
       ) : screen === 'import' ? (

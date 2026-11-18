@@ -78,6 +78,13 @@ export function staticConditionHolds(
       return controlsCommander(state, controllerOf(state, source), condition);
     case 'lifeTotal':
       return lifeTotalHolds(state, controllerOf(state, source), condition);
+    case 'opponentPoisonAtLeast':
+      return state.seats.some(
+        (seat) =>
+          seat.id !== controllerOf(state, source) &&
+          !seat.hasLost &&
+          seat.poison >= condition.count,
+      );
     case 'chosenOption': // D-151: what the permanent chose as it entered, which no layer changes
       return source.chosen?.option === condition.option;
     case 'enteredThisTurn': // D-151: the turn log, which no layer changes

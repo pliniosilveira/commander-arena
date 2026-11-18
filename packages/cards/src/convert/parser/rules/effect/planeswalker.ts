@@ -5,6 +5,7 @@
  */
 import { literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
 import type {
+  IrAmount,
   IrArg,
   IrBasePt,
   IrClause,
@@ -19,6 +20,38 @@ import { CREATURE_TYPE_LIST } from './becomes';
 import { type Clauses, makeClause, single } from './operands';
 
 const NUMBER = family<IrArg>('amount', { only: ['amount.number'] });
+
+const EFFECT_DOUBLE_LIFE_TOTAL = defineRule<Clauses>({
+  id: 'effect.double-life-total',
+  family: 'effect',
+  leading: ['double'],
+  cites: ['CR 119.1 (Life)', 'CR 119.5 (Life)', 'CR 107.1a (Fractions)'],
+  examples: ['Double your life total'],
+  rejects: [
+    'Double your life',
+    'Double their life total',
+    'Double your life total until end of turn',
+  ],
+  parse: single(
+    'effect.double-life-total',
+    map(spanned(pattern(/double your life total(?![\p{L}\p{N}])/iu)), ({ span }) => {
+      const you: IrNoun = {
+        kind: 'noun',
+        det: 'you',
+        filter: { raw: 'you' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span,
+        rule: 'effect.double-life-total',
+      };
+      const total: IrAmount = { kind: 'lifeTotalOf', of: you, span };
+      const amount: IrAmount = { kind: 'multiple', factor: 2, of: total, span };
+      return { player: you, amount };
+    }),
+    ({ player, amount }) => ({ verb: 'setLifeTotal', args: { player, amount } }),
+  ),
+});
 
 /**
  * `effect.empower-jace`: "Empower Jace 6", "empower Jace 2" (CR 701.71a): create a blue Jace planeswalker token with the two abilities if you
@@ -214,6 +247,7 @@ export const EFFECT_LIFE_TOTAL_BECOMES = defineRule<Clauses>({
 });
 
 export const PLANESWALKER_EFFECT_RULES = [
+  EFFECT_DOUBLE_LIFE_TOTAL,
   EFFECT_LIFE_TOTAL_BECOMES,
   EFFECT_EMPOWER_JACE,
   EFFECT_GET_EMBLEM,

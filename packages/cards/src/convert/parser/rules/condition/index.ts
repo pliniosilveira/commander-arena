@@ -358,6 +358,78 @@ export const CONDITION_OPPONENTS_AT_LEAST = defineRule<IrCondition>({
   },
 });
 
+/** `condition.opponent-poison-at-least`: an opponent's poison counters cross a threshold (D-601). */
+export const CONDITION_OPPONENT_POISON_AT_LEAST = defineRule<IrCondition>({
+  id: 'condition.opponent-poison-at-least',
+  family: 'condition',
+  leading: ['an'],
+  cites: ['CR 122.1 (Counters)', 'CR 704.5c (State-Based Actions)'],
+  examples: [
+    'an opponent has three or more poison counters',
+    'an opponent has four or more poison counters',
+  ],
+  rejects: [
+    'an opponent has poison counters',
+    'an opponent has two poison counters',
+    'an opponent has three or fewer poison counters',
+    'you have three or more poison counters',
+    'an opponent controls three or more poison counters',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('an opponent has '),
+      spanned(satisfy(quantity, (n) => n >= 1)),
+      literal(' or more poison counters'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: condition('condition.opponent-poison-at-least', span, {
+        kind: 'opponentPoisonAtLeast',
+        atLeast: amountOf(r.value[1]),
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/** Morbid: whether any creature died this turn. */
+export const CONDITION_CREATURE_DIED_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.creature-died-this-turn',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 700.4 (Dies)', 'CR 608.2c (Instructions in Order)'],
+  examples: ['a creature died this turn'],
+  rejects: [
+    'a creature died last turn',
+    'a creature will die this turn',
+    'a creature dies this turn',
+    'a creature card died this turn',
+    'a creature died this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a creature died this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'diedThisTurn',
+      controller: 'any',
+      types: ['creature'],
+      span,
+    };
+    return {
+      ok: true,
+      value: condition('condition.creature-died-this-turn', span, {
+        kind: 'amountIs',
+        amount,
+        compare: { cmp: 'atLeast', value: 1 },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
@@ -409,6 +481,8 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_AT_MOST,
   CONDITION_CONTROL_NONE,
   CONDITION_CONTROL_LAND_TYPE,
+  CONDITION_OPPONENT_POISON_AT_LEAST,
+  CONDITION_CREATURE_DIED_THIS_TURN,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,

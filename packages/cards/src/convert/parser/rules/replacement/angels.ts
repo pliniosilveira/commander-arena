@@ -68,4 +68,48 @@ export const REPLACEMENT_LIFE_GAIN_BONUS = defineRule<IrAbility>({
   },
 });
 
-export const ANGEL_REPLACEMENT_RULES = [REPLACEMENT_LIFE_GAIN_BONUS].map(quietly);
+/** `replacement.life-gain-double`: the doubled event is ordered with other life-gain replacements (CR 614.1a, 616.1). */
+export const REPLACEMENT_LIFE_GAIN_DOUBLE = defineRule<IrAbility>({
+  id: 'replacement.life-gain-double',
+  family: 'replacement',
+  leading: ['if'],
+  cites: [
+    'CR 119.10 (Life)',
+    'CR 614.1a (Replacement Effects)',
+    'CR 616.1 (Interaction of Replacement and/or Prevention Effects)',
+  ],
+  examples: ['If you would gain life, you gain twice that much life instead.'],
+  rejects: [
+    'If you would gain life, you gain twice that much life instead',
+    'If you would gain life, you gain twice as much life instead.',
+    'If you would gain life, you gain twice that much life.',
+    'If an opponent would gain life, they gain twice that much life instead.',
+    'If you would gain 1 life, you gain twice that much life instead.',
+  ],
+  parse: (ctx, pos) => {
+    const text = literal('if you would gain life, you gain twice that much life instead.')(
+      ctx,
+      pos,
+    );
+    if (!text.ok) return text;
+    const span = { start: pos, end: text.pos };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'lifeGainDouble',
+      args: {},
+      optional: false,
+      span,
+      rule: 'replacement.life-gain-double',
+    };
+    return {
+      ok: true,
+      value: replacement('replacement.life-gain-double', span, event),
+      pos: text.pos,
+    };
+  },
+});
+
+export const ANGEL_REPLACEMENT_RULES = [
+  REPLACEMENT_LIFE_GAIN_BONUS,
+  REPLACEMENT_LIFE_GAIN_DOUBLE,
+].map(quietly);

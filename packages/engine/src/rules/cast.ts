@@ -252,7 +252,7 @@ export function beginCast(
     ? null
     : castTiming(state, seat, castAs(obj, seat, face)).onlyTargets;
   // The cost, the kicker and the legality look at the face being cast only (CR 709.3a, 712.11c).
-  const { tax } = spellCost(state, {
+  const { tax, taxLife } = spellCost(state, {
     seat,
     spell: castAs(obj, seat, face),
     zone,
@@ -270,6 +270,7 @@ export function beginCast(
       stage: 'modes',
       totalCost: [],
       commanderTax: tax,
+      ...(taxLife === 0 ? {} : { commanderTaxLife: taxLife }),
       activation: null,
       snapshot: state,
       ...(resolving ? { duringResolution: true as const } : {}),
@@ -908,6 +909,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
       ...casting,
       stage: 'payment',
       totalCost: symbols,
+      ...(cost.life === 0 ? {} : { lifePaid: cost.life }),
       extra: {
         sacrifice: cost.sacrifice,
         ...(cost.sacrificeCount === undefined ? {} : { sacrificeCount: cost.sacrificeCount }),
@@ -1079,6 +1081,7 @@ function toMana(state: GameState, events: GameEvent[]): Result {
       seat: casting.seat,
       source: casting.object,
       totalCost: casting.totalCost,
+      ...(casting.lifePaid === undefined ? {} : { lifePaid: casting.lifePaid }),
       manaSources: payableSources(next, casting.seat),
     }),
     events,
@@ -1443,6 +1446,9 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
     object: casting.object,
     fromZone: casting.fromZone,
     commanderTax: casting.commanderTax,
+    ...(casting.commanderTaxLife === undefined
+      ? {}
+      : { commanderTaxLife: casting.commanderTaxLife }),
     nth: getSeat(next, casting.seat).spellsCastThisTurn,
     targetCount: obj.stack?.chosenTargets.length ?? 0,
     ...(obj.stack?.kicked ? { kicked: true as const } : {}),

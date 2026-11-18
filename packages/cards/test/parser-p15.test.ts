@@ -347,6 +347,19 @@ describe('a choice of types, each with its own modifiers, and a card of a choice
     });
   });
 
+  test('plural graveyard cards accept an instant or sorcery type union', () => {
+    expect(spell('Exile all instant or sorcery cards from a graveyard.').effect).toEqual({
+      kind: 'exile',
+      objects: {
+        kind: 'each',
+        filter: {
+          zone: 'graveyard',
+          anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
+        },
+      },
+    });
+  });
+
   test('"another target artifact card from your graveyard" leaves out the card itself', () => {
     expect(
       abilities(
@@ -375,7 +388,6 @@ describe('a choice of types, each with its own modifiers, and a card of a choice
       'Return target instant or sorcery cards from your graveyard to your hand.',
       'cards from your graveyard to your hand.',
     ],
-    ['Exile all instant or sorcery cards from a graveyard.', 'or sorcery cards from a graveyard.'],
     ['Exile target Banana card from a graveyard.', 'Banana card from a graveyard.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text)).toMatchObject({ stoppedAt });

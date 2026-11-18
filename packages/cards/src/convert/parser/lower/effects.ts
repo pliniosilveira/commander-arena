@@ -30,6 +30,7 @@ import {
   BECOMES,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
+  DELAYED_RETURN_TO_HAND,
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
@@ -1391,9 +1392,11 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
   // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).
   const definesPt =
-    (token.power === undefined) !== (token.toughness === undefined)
-      ? null
-      : token.power === undefined;
+    token.ptAmount === true
+      ? false
+      : (token.power === undefined) !== (token.toughness === undefined)
+        ? null
+        : token.power === undefined;
   if (!creature || definesPt === null) {
     return { ok: false, needs: [], ...at };
   }
@@ -1407,6 +1410,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       const unsupportedDevour = missingFeatures(['ability:keyword', 'keyword:devour']);
       if (unsupportedDevour.length > 0) return { ok: false, needs: unsupportedDevour, ...at };
       abilities.push({ kind: 'keyword', keyword: { kind: 'devour', count: Number(devour[1]) } });
+      continue;
+    }
+    const toxic = /^toxic ([1-9]\d*)$/.exec(word);
+    if (toxic !== null) {
+      const unsupportedToxic = missingFeatures(['ability:keyword', 'keyword:toxic']);
+      if (unsupportedToxic.length > 0) return { ok: false, needs: unsupportedToxic, ...at };
+      abilities.push({ kind: 'keyword', keyword: { kind: 'toxic', count: Number(toxic[1]) } });
       continue;
     }
     const kind = keywordKind(word);
@@ -1437,8 +1447,8 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     types,
     subtypes,
     colors,
-    power: token.power ?? '*',
-    toughness: token.toughness ?? '*',
+    power: token.power ?? (token.ptAmount === true ? 0 : '*'),
+    toughness: token.toughness ?? (token.ptAmount === true ? 0 : '*'),
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -1446,12 +1456,18 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     oracleText: tokenRulesText(token.keywords ?? [], token.abilities ?? [], named),
     abilities,
   };
+  let ptAmount: Amount | undefined;
+  if (token.ptAmount === true) {
+    const amount = lowerAmount({ kind: 'x', span: token.span }, ctx, clause.rule);
+    if (!amount.ok) return amount;
+    ptAmount = amount.value;
+  }
   return {
     ok: true,
     value: [
       {
         kind: 'createToken',
-        token: { kind: 'custom', definition },
+        token: { kind: 'custom', definition, ...(ptAmount === undefined ? {} : { ptAmount }) },
         count: count.value,
         ...entersTapped,
         ...by,
@@ -1460,6 +1476,34 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     rule: clause.rule,
   };
 }
+
+const PLAYER_LOCK: Lowering<IrClause, Effects> = {
+  head: 'playerLock',
+  id: 'lower.player-lock',
+  needs: ['effect:grantPlayerProtectionEverything', 'effect:preventPlayerLifeTotalChange'],
+  lower(clause, ctx) {
+    const named = arg(clause, 'player');
+    if (named?.kind !== 'noun') return failure(clause);
+    const player = playerSelectorOf(named, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'grantPlayerProtectionEverything',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+        {
+          kind: 'preventPlayerLifeTotalChange',
+          player: player.value,
+          duration: 'untilNextTurn',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
 
 export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
@@ -1509,6 +1553,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('gainLife'),
   playerVerb('gainEnergy'),
   playerVerb('loseLife'),
+  PLAYER_LOCK,
   playerVerb('mill'),
   MANIFEST,
   playerVerb('shuffle'),
@@ -1535,6 +1580,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SET_PT,
   FLICKER,
   DELAYED_RETURN,
+  DELAYED_RETURN_TO_HAND,
   DELAYED_RETURN_AT_UPKEEP,
   SEARCH,
   PREVENT_DAMAGE,

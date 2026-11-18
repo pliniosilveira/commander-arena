@@ -9,7 +9,7 @@
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-amounts.ts, synthetic-player-effects.ts) or real fixtures.
 import { describe, expect, test } from 'vitest';
 import type { Amount, Condition, ObjectId } from '../src/index';
-import { syntheticCard, validateCard } from '../src/index';
+import { getView, syntheticCard, validateCard } from '../src/index';
 import { amountOf } from '../src/rules/amounts';
 import { evaluateCondition } from '../src/rules/conditions';
 import { scenario } from '../src/testing/index';
@@ -27,6 +27,35 @@ const BURN = 'SYNTHETIC Shared Burn'; // 2 damage to you and target opponent (in
 const WARD = 'SYNTHETIC Shared Ward'; // prevent all damage to you and target opponent (instant)
 const FLAT_BITE = 'SYNTHETIC Flat Bite'; // target creature you control deals 3 damage to target creature you don't control
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
+
+test('a characteristic-defining toughness reads the controller’s devotion', () => {
+  const g = twoSeatGame((b) => b.battlefield('SYNTHETIC White Devotion Body', { count: 3 }));
+  const body = getView(g.state, 0).battlefield.find(
+    (object) => object.name === 'SYNTHETIC White Devotion Body',
+  );
+  expect(body?.toughness).toBe(6);
+});
+
+test('gained-and-lost-life requires both events in the current turn', () => {
+  const condition = { kind: 'lifeGainedAndLostThisTurn' } as const;
+  const g = twoSeatGame(
+    (b) =>
+      b
+        .hand('SYNTHETIC Graveyard Count')
+        .battlefield('Swamp')
+        .graveyard('Grizzly Bears', { count: 3 }),
+    (b) => b.hand('Lightning Bolt').battlefield('Mountain'),
+  );
+  const holds = () => evaluateCondition(g.state, condition, { controller: 0, source: null });
+  expect(holds()).toBe(false);
+  g.act(0).cast('SYNTHETIC Graveyard Count', { pay: true });
+  g.passAll();
+  expect(holds()).toBe(false);
+  g.pass();
+  g.act(1).cast('Lightning Bolt', { targets: [{ player: 0 }], pay: true });
+  g.passAll();
+  expect(holds()).toBe(true);
+});
 
 type Builder = ReturnType<typeof scenario>;
 

@@ -31,6 +31,7 @@ import {
 } from './mana-abilities';
 import { isCombinationProduction, productionOutcomes, spendRestrictionOf } from './mana-outcomes';
 import { additionalManaFor } from './mana-triggers';
+import { lifeTotalIsLocked } from './player-lock';
 
 const sourcesBySeat = new WeakMap<GameState, Map<SeatId, readonly PaymentSource[]>>();
 
@@ -147,7 +148,7 @@ function planWithout(
     x: 0,
     pool: getSeat(state, seat).manaPool,
     sources,
-    lifeAvailable: Math.max(0, getSeat(state, seat).life - 1),
+    lifeAvailable: lifeTotalIsLocked(state, seat) ? 0 : Math.max(0, getSeat(state, seat).life - 1),
     spell,
     ...(reserve ? { reserve } : {}),
   });

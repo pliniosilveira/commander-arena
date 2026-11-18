@@ -44,6 +44,21 @@ describe('"Your opponents can\'t gain life." (CR 119.7)', () => {
   });
 });
 
+describe('gained and lost life this turn', () => {
+  test('reads the combined end-step condition', () => {
+    const parsed = readAll(
+      'At the beginning of your end step, if you gained and lost life this turn, create a 1/1 black Bat creature token with flying.',
+      'enchantment',
+    );
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        interveningIf: { kind: 'lifeGainedAndLostThisTurn' },
+      },
+    ]);
+  });
+});
+
 describe('"each opponent loses life equal to the life that player lost this turn" (CR 119.3)', () => {
   test('the real line: at each end step, each opponent, their own number', () => {
     const parsed = readAll(

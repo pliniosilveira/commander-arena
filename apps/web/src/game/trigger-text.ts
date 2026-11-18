@@ -646,6 +646,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'state':
       // D-139 (CR 603.8): the condition itself is worded by `condition-text.ts`, which this module cannot import (it imports this one).
       return 'When a condition this permanent watches for becomes true';
+    case 'classLevel':
+      // D-598 (CR 716.2): a Class ability triggers when its level increases to this number.
+      return `When this Class becomes level ${trigger.level}`;
     case 'chapter': {
       const chapters: string[] = [];
       for (let n = trigger.from; n <= trigger.to; n += 1) chapters.push(romanNumeral(n));

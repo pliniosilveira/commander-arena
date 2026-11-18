@@ -7,13 +7,14 @@
 // CR 603.7 (the sacrifice is a delayed triggered ability), CR 611.2b ("for as long as you control this Saga"), CR 704.5j (the legend rule sees the supertype).
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-ring.ts; There and Back Again has the real wording of the owner's request file) or real fixtures.
 import { describe, expect, test } from 'vitest';
-import type { GameEvent } from '../src/index';
+import type { CardDefinition, GameEvent } from '../src/index';
 import { getView, syntheticCard, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
 const SAGA = 'SYNTHETIC There and Back Again';
 const RITE = 'SYNTHETIC Ring Rite'; // {1}{B} sorcery: the Ring tempts you
 const WATCHER = 'SYNTHETIC Ring Watcher'; // {1}{W} enchantment: whenever the Ring tempts you, gain 1 life
+const CHOICE_WATCHER = 'SYNTHETIC Ring Choice Watcher';
 const OATH = 'SYNTHETIC Bearer Oath'; // {U} instant: if you control your Ring-bearer, draw a card
 const BORROW = 'SYNTHETIC Borrow Creature'; // gain control of target creature until end of turn
 const BREAKER = 'SYNTHETIC Saga Breaker'; // destroy target Saga
@@ -24,6 +25,30 @@ const WALL = 'Wall of Stone'; // 0/8 defender
 const MURDER = 'Murder';
 const FILLER = Array.from({ length: 14 }, () => 'Plains');
 const SWAMPS = ['Swamp', 'Swamp'] as const;
+const RING_CHOICE_WATCHER: CardDefinition = (() => {
+  const base = syntheticCard(WATCHER);
+  const face = base.faces[0];
+  if (face === undefined) throw new Error('no synthetic face');
+  return {
+    ...base,
+    name: CHOICE_WATCHER,
+    faces: [
+      {
+        ...face,
+        name: CHOICE_WATCHER,
+        types: ['enchantment'],
+        subtypes: [],
+        abilities: [
+          {
+            kind: 'triggered',
+            trigger: { kind: 'ringTempted', bearerChosen: true },
+            effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 2 },
+          },
+        ],
+      },
+    ],
+  };
+})();
 
 type Builder = ReturnType<typeof scenario>;
 const game = (mine: (b: Builder) => Builder, theirs: (b: Builder) => Builder = (b) => b) =>
@@ -137,6 +162,30 @@ describe('the Ring tempts you (CR 701.54a)', () => {
     // the ability went on the stack as the Ring tempted, and resolved with the rest of the stack
     expect(g.eventsSince(mark).filter((e) => e.kind === 'abilityTriggered')).toHaveLength(1);
     g.expect.life(0, 21);
+  });
+
+  test('a trigger that requires a chosen Ring-bearer does not fire when there was no creature to choose', () => {
+    const g = game((b) =>
+      b
+        .define(RING_CHOICE_WATCHER)
+        .hand(RITE)
+        .battlefield(...SWAMPS, CHOICE_WATCHER),
+    );
+    temptWithRite(g);
+    expect(g.eventsSince(0).filter((e) => e.kind === 'abilityTriggered')).toHaveLength(0);
+    g.expect.life(0, 20);
+  });
+
+  test('a trigger that requires a chosen Ring-bearer fires after a creature is chosen', () => {
+    const g = game((b) =>
+      b
+        .define(RING_CHOICE_WATCHER)
+        .hand(RITE)
+        .battlefield(...SWAMPS, CHOICE_WATCHER, V22),
+    );
+    temptWithRite(g);
+    expect(g.eventsSince(0).filter((e) => e.kind === 'abilityTriggered')).toHaveLength(1);
+    g.expect.life(0, 22);
   });
 
   test('"whenever the Ring tempts you" triggers for its controller only, once for each tempt', () => {

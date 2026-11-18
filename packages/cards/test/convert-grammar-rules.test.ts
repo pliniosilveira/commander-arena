@@ -404,6 +404,18 @@ describe('spell clauses: players, mana and the library', () => {
       kind: 'shuffle',
       player: { kind: 'target', id: 't1' },
     });
+    expect(spellFace('Target opponent loses half their life, rounded up.').spell).toEqual({
+      targets: [{ id: 't1', what: { kind: 'player', filter: 'opponent' } }],
+      effect: {
+        kind: 'loseLife',
+        player: { kind: 'target', id: 't1' },
+        amount: {
+          kind: 'half',
+          of: { kind: 'lifeTotalOf', player: { kind: 'target', id: 't1' } },
+          round: 'up',
+        },
+      },
+    });
   });
 
   test('one subject doing several things is one slot', () => {

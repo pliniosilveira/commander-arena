@@ -9,7 +9,7 @@
  * costs and no other cost ("sacrifice").
  */
 import { choice, literal, map, optional, sequence } from '../../combinators';
-import type { IrCost } from '../../ir/types';
+import type { IrAmount, IrCost } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
@@ -77,6 +77,21 @@ export const EFFECT_PAY = defineRule<Clauses>({
             ),
           ),
           ([, cost, discard]): readonly IrCost[] => (discard === null ? [cost] : [cost, discard]),
+        ),
+        map(
+          sequence(
+            literal('pay X life, '),
+            family<IrAmount>('amount', { only: ['amount.where-x'] }),
+          ),
+          ([, amount]): readonly IrCost[] => [
+            {
+              kind: 'payLife',
+              amount,
+              definesX: true,
+              span: amount.span,
+              rule: RULE,
+            },
+          ],
         ),
         // D-364: "pay that much life", the life that caused the trigger of a life gain.
         map(

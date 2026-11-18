@@ -451,7 +451,8 @@ function occurrences(
     case 'ringTempted':
       // CR 701.54d (D-196): each time the Ring tempts a player, whatever they could choose.
       // Galadriel group 1: the creature chosen is the subject, for "if you chose a creature other than ~ as your Ring-bearer" (`ringBearerChosen`); no other ability reads it.
-      return event.kind === 'ringTempted'
+      return event.kind === 'ringTempted' &&
+        (trigger.bearerChosen !== true || event.bearer !== null)
         ? [
             {
               subject: event.bearer,
@@ -468,6 +469,10 @@ function occurrences(
         seat: null,
         chapter,
       }));
+    case 'classLevel':
+      return event.kind === 'classLevelReached' && event.level === trigger.level
+        ? [{ subject: event.object, seat: null }]
+        : [];
     default: {
       const unreachable: never = trigger;
       return unreachable;
@@ -679,6 +684,9 @@ function matches(
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
       return subject !== null && subject.id === candidate.id;
+    case 'classLevel':
+      // CR 716.2: a Class's own level changed; another Class reaching the same level does not trigger this ability.
+      return subject !== null && subject.id === candidate.id;
     case 'cycled':
       // CR 702.29c: "when you cycle this card": the card with the ability is the one that was cycled.
       return subject !== null && subject.id === candidate.id;
@@ -818,6 +826,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'becameTarget':
     case 'crimeCommitted':
     case 'ringTempted':
+    case 'classLevelReached':
       return true;
     case 'counterAdded':
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)

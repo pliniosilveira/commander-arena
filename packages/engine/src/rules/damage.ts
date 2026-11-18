@@ -25,6 +25,7 @@ import { derive } from './derive';
 import { abilitiesHaveKeyword } from './keywords';
 import { gainLife } from './life-gain';
 import { commanderCardOf } from './melded';
+import { lifeTotalIsLocked } from './player-lock';
 import { playerHasProtectionFrom } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { commanderDamageKey } from './sba';
@@ -238,7 +239,7 @@ export function dealDamageAsking(
         from: seat.poison,
         to: seat.poison + amount,
       });
-    } else {
+    } else if (!lifeTotalIsLocked(state, to.seat)) {
       state = loseLifeBy(state, to.seat, amount);
       events.push({ kind: 'lifeChanged', seat: to.seat, from: seat.life, to: seat.life - amount });
     }
@@ -313,7 +314,8 @@ export function dealDamageAsking(
 
   if (info?.lifelink) {
     // CR 120.3f, 702.15b: the source's controller gains that much life.
-    const gained = gainLife(state, info.controller, amount);
+    const gained = gainLife(state, info.controller, amount, flow, source);
+    if (gained.kind === 'asked') return { kind: 'asked', decision: gained.decision };
     state = gained.state;
     events.push(...gained.events);
   }

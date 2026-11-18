@@ -4,12 +4,65 @@
 // by the emblem). The emblems of the three SYNTHETIC rites are written from the real wording of the ultimates of Elspeth, Sun's Champion and
 // Chandra, Torch of Defiance (the owner's golden corpus).
 import { describe, expect, test } from 'vitest';
+import { singleFace } from '../src/cards/fixtures/helpers';
 import { getView, syntheticCard, validateCard } from '../src/index';
 import { scenario } from '../src/testing/index';
 
 const ANTHEM = 'SYNTHETIC Anthem Emblem Rite';
 const BURN = 'SYNTHETIC Burn Emblem Rite';
 const BEARS = 'Grizzly Bears';
+const ACTIVATED_RITE = 'SYNTHETIC Activated Emblem Rite';
+const SACRIFICE_POWER = 'SYNTHETIC Sacrifice Power Creature';
+
+const activatedEmblemRite = singleFace({
+  name: ACTIVATED_RITE,
+  manaCost: ['3', 'B', 'B'],
+  types: ['sorcery'],
+  colors: ['B'],
+  colorIdentity: ['B'],
+  oracleText: 'SYNTHETIC fixture that creates an activated emblem.',
+  spell: {
+    effect: {
+      kind: 'createEmblem',
+      text: '{1}{B}, Sacrifice a creature: You gain X life and draw X cards, where X is its power.',
+      abilities: [
+        {
+          kind: 'activated',
+          cost: [
+            { kind: 'mana', symbols: ['1', 'B'] },
+            { kind: 'sacrifice', what: { types: ['creature'] } },
+          ],
+          effect: {
+            kind: 'sequence',
+            effects: [
+              {
+                kind: 'gainLife',
+                player: { kind: 'you' },
+                amount: { kind: 'powerOf', of: { kind: 'sacrificedCost' } },
+              },
+              {
+                kind: 'draw',
+                player: { kind: 'you' },
+                count: { kind: 'powerOf', of: { kind: 'sacrificedCost' } },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+});
+
+const sacrificePower = singleFace({
+  name: SACRIFICE_POWER,
+  manaCost: ['3'],
+  types: ['creature'],
+  colors: [],
+  colorIdentity: [],
+  power: 5,
+  toughness: 5,
+  oracleText: 'SYNTHETIC fixture for testing sacrificed power.',
+});
 
 const emblems = (g: ReturnType<ReturnType<typeof scenario>['build']>, seat: 0 | 1) =>
   getView(g.state, seat).seats[seat]?.command.filter((o) => o.name === 'Emblem') ?? [];
@@ -130,6 +183,35 @@ describe('the triggered ability of an emblem (CR 114.4, 603.2)', () => {
   });
 });
 
+describe('the activated ability of an emblem (CR 114.4, 602)', () => {
+  test("it can be activated from the command zone and reads the sacrificed creature's power", () => {
+    const g = scenario()
+      .define(activatedEmblemRite)
+      .define(sacrificePower)
+      .seat(0)
+      .hand(ACTIVATED_RITE)
+      .battlefield('Swamp', { count: 7 })
+      .battlefield(SACRIFICE_POWER)
+      .battlefield(BEARS)
+      .library('Island', { count: 8 })
+      .seat(1)
+      .build();
+    g.act(0).cast(ACTIVATED_RITE, { pay: true });
+    g.passAll();
+    const emblem = emblems(g, 0)[0];
+    if (emblem === undefined) throw new Error('the spell did not create an emblem');
+    g.act(0).activate(emblem.id, { pay: true });
+    g.act(0).choosePermanents(SACRIFICE_POWER);
+    g.expect.stack(['Emblem (ability)']);
+    g.passAll();
+    g.expect.life(0, 45);
+    g.expect.zone(SACRIFICE_POWER, 'graveyard', { seat: 0 });
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    expect(g.view(0).seats[0]?.hand).toHaveLength(5);
+    expect(emblems(g, 0)).toHaveLength(1);
+  });
+});
+
 describe('an emblem cannot be removed (CR 114.5)', () => {
   test('it is not a token that ceases to exist, and no effect names it', () => {
     const g = scenario().seat(0).hand(ANTHEM).battlefield('Plains', 'Plains', 'Plains').build();
@@ -164,35 +246,10 @@ describe('the command zone holds an emblem and a commander together (CR 114.2, 9
 });
 
 describe('validation', () => {
-  test('the rites are executable, and an emblem needs static or triggered abilities', () => {
+  test('the rites are executable, and an emblem can carry an activated ability', () => {
     expect(validateCard(syntheticCard(ANTHEM))).toEqual([]);
     expect(validateCard(syntheticCard(BURN))).toEqual([]);
-    const bad = {
-      ...syntheticCard(ANTHEM),
-      faces: [
-        {
-          ...syntheticCard(ANTHEM).faces[0],
-          spell: {
-            effect: {
-              kind: 'createEmblem' as const,
-              text: '',
-              abilities: [
-                {
-                  kind: 'activated' as const,
-                  cost: [{ kind: 'tap' as const }],
-                  effect: { kind: 'draw' as const, player: { kind: 'you' as const }, count: 1 },
-                },
-              ],
-            },
-          },
-        },
-      ],
-    };
-    expect(
-      validateCard(bad as never)
-        .map((i) => i.message)
-        .join('|'),
-    ).toContain('static and triggered abilities');
+    expect(validateCard(activatedEmblemRite)).toEqual([]);
     const none = JSON.parse(JSON.stringify(syntheticCard(ANTHEM)));
     none.faces[0].spell.effect.abilities = [];
     expect(

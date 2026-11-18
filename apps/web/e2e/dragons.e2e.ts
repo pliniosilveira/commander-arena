@@ -192,16 +192,14 @@ test('Behold: the dock lists the cards of the hand and the permanents you contro
   expect(errors).toEqual([]);
 });
 
-test('A card exiled to be played: a chip above the hand says "Cast from exile" or "Play from exile", and a click plays it', async ({
+test('A card exiled to be played: a tile at the left of the battlefield says "Cast from exile" or "Play from exile", and a click plays it', async ({
   page,
 }) => {
   test.setTimeout(420_000);
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const rite = 'SYNTHETIC Impulse Rite';
-  const chip = page
-    .getByRole('region', { name: 'Cast from exile' })
-    .locator('.board-flashback-chip');
+  const chip = page.getByRole('region', { name: 'Cast from exile' }).locator('.board-exile-play');
   // The deck is Mountains and Rites, so the top card is nearly always a land; the Rite is cast while the land drop of the turn is still
   // there, so the land it exiles can be played. A seed that exiles a card that cannot be played now is not the one: the next is tried.
   let reached = false;
@@ -233,14 +231,16 @@ test('A card exiled to be played: a chip above the hand says "Cast from exile" o
   await page.mouse.move(700, 300);
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
-  await expect(chip.first().locator('span')).toHaveText(/^(Cast|Play) from exile$/);
+  await expect(chip.first().locator('.board-exile-play-label')).toHaveText(
+    /^(Cast|Play) from exile$/,
+  );
   await expect(logText(page)).toContainText('is exiled from the top of your library.');
   // The card that was lifted under the pointer settles back (a transition).
   await page.waitForTimeout(700);
   await page.screenshot({ path: `${SHOTS}/impulse-chip.png` });
 
   // The card is in exile with a permission: one click casts the spell or plays the land.
-  const name = (await chip.first().locator('b').textContent()) ?? '';
+  const name = (await chip.first().locator('.board-exile-play-name').textContent()) ?? '';
   await chip.first().click();
   await settled(page);
   await expect(page.getByRole('region', { name: 'Cast from exile' })).toBeHidden();

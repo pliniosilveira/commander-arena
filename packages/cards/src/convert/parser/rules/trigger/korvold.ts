@@ -210,9 +210,39 @@ export const TRIGGER_RING_TEMPTS = defineRule<IrTrigger>({
   },
 });
 
+/** "you choose a creature as your Ring-bearer": a Ring tempt that actually chose a creature (CR 701.54a). */
+export const TRIGGER_RING_BEARER_CHOSEN = defineRule<IrTrigger>({
+  id: 'trigger.ring-bearer-chosen',
+  family: 'trigger',
+  leading: ['you'],
+  cites: ['CR 701.54a (The Ring Tempts You)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: ['you choose a creature as your Ring-bearer'],
+  rejects: [
+    'you choose a creature as a Ring-bearer',
+    'you choose a creature as your Ring-bearer or',
+    'you choose a creature as your Ring-bearer again',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/you choose a creature as your Ring-bearer(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'ringBearerChosen',
+        args: {},
+        span: { start: pos, end: r.pos },
+        rule: 'trigger.ring-bearer-chosen',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const KORVOLD_TRIGGER_RULES = [
   TRIGGER_CYCLED,
   TRIGGER_CAST_SELF,
   TRIGGER_YOU_ATTACK,
   TRIGGER_RING_TEMPTS,
+  TRIGGER_RING_BEARER_CHOSEN,
 ];

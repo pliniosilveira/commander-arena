@@ -184,6 +184,8 @@ export interface PayManaDecision extends DecisionBase {
   readonly kind: 'payMana';
   readonly source: ObjectId;
   readonly totalCost: readonly string[];
+  /** Life already paid as part of the locked total cost, shown in the payment prompt when present. */
+  readonly lifePaid?: number;
   /**
    * Mana abilities of permanents the seat may tap now, as object and ability index. `colors` is
    * set when the player picks the color the source makes (any color, "{U} or {B}", the commander's
@@ -961,7 +963,7 @@ export interface TokenReplacementQuestion {
   readonly choices: readonly TokenReplacementChoice[];
   readonly event?: undefined;
   readonly destroy?: undefined;
-  readonly resume?: undefined;
+  readonly resume?: DamageResume;
 }
 
 /**
@@ -979,13 +981,34 @@ export interface DestroyReplacementQuestion {
   readonly choices: readonly DestroyReplacementChoice[];
   readonly event?: undefined;
   readonly tokens?: undefined;
-  readonly resume?: undefined;
+  readonly resume?: DamageResume;
+}
+
+/** The outcome of applying one life-gain replacement first and the remaining ones in the default order. */
+export interface LifeGainReplacementChoice {
+  readonly kind: 'lifeGain';
+  readonly option: string;
+  readonly text: string;
+  readonly object?: ObjectId;
+  readonly objectName?: string;
+  readonly outcome: { readonly amount: number };
+}
+
+/** CR 616.1: the player gaining life orders applicable replacements when the order changes the amount gained. */
+export interface LifeGainReplacementQuestion {
+  readonly lifeGain: { readonly seat: SeatId; readonly amount: number };
+  readonly choices: readonly LifeGainReplacementChoice[];
+  readonly event?: undefined;
+  readonly tokens?: undefined;
+  readonly destroy?: undefined;
+  readonly resume?: DamageResume;
 }
 
 export type ReplacementQuestion =
   | DamageReplacementQuestion
   | TokenReplacementQuestion
-  | DestroyReplacementQuestion;
+  | DestroyReplacementQuestion
+  | LifeGainReplacementQuestion;
 
 /**
  * CR 107.3a, 601.2b, 602.2b (D-103): the controller of a spell or activated ability with an {X} in its

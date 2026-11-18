@@ -16,7 +16,7 @@ import {
 } from '../../combinators';
 import type { IrComparison, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
-import { defineRule, node, spanned } from '../registry';
+import { defineRule, family, node, spanned } from '../registry';
 import { graveyardPhrase, PLURAL_TYPE_UNION, permanentPhrase, withoutZone } from './phrases';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -364,7 +364,6 @@ export const NOUN_ALL_THEY_CONTROL = defineRule<IrNoun>({
     'all permanents they control that are two or more colors',
     'all permanents they control that are exactly one color',
     'all creatures they control',
-    'all nonland permanents they control',
     'all artifacts and enchantments they control',
   ],
   rejects: [
@@ -381,7 +380,9 @@ export const NOUN_ALL_THEY_CONTROL = defineRule<IrNoun>({
         literal('all '),
         satisfy(
           choice(PLURAL_TYPE_UNION, permanentPhrase(true, 'all')),
-          (filter) => filter.controller === undefined,
+          (filter) =>
+            filter.controller === undefined &&
+            !(filter.notTypes?.includes('land') && filter.raw === 'nonland permanents'),
         ),
         literal(' they control'),
         optional(COLOR_COUNT_SUFFIX, undefined),
@@ -400,11 +401,50 @@ export const NOUN_ALL_THEY_CONTROL = defineRule<IrNoun>({
   ),
 });
 
+/** The nonland phasing instruction binds its singular "they" to the earlier chosen player. */
+export const NOUN_ALL_NONLAND_THEY_CONTROL = defineRule<IrNoun>({
+  id: 'noun.all-nonland-they-control',
+  family: 'noun',
+  leading: ['all'],
+  cites: ['CR 109.4 (Objects)', 'CR 110.1 (Permanents)', 'CR 702.26 (Phasing)'],
+  examples: ['all nonland permanents they control'],
+  rejects: ['all lands they control', 'all nonland permanent they control'],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('all nonland permanents '),
+      family<IrNoun>('noun', { only: ['noun.they'] }),
+      literal(' control'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, player] = r.value;
+    return {
+      ok: true,
+      value: {
+        kind: 'noun',
+        det: 'each',
+        filter: {
+          notTypes: ['land'],
+          zone: 'battlefield',
+          controller: { noun: player },
+          raw: ctx.text.slice(pos, r.pos),
+        },
+        upTo: false,
+        plural: true,
+        other: false,
+        span: { start: pos, end: r.pos },
+        rule: 'noun.all-nonland-they-control',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const CHOOSE_NOUN_RULES = [
   NOUN_SELF,
   NOUN_A_GREATEST_PERMANENT,
   NOUN_A_PERMANENT,
   NOUN_ANY_NUMBER_PERMANENTS,
   NOUN_ONE_OR_MORE_PERMANENTS,
+  NOUN_ALL_NONLAND_THEY_CONTROL,
   NOUN_ALL_THEY_CONTROL,
 ];

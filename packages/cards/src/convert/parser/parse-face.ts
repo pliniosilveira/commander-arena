@@ -33,6 +33,8 @@ export interface FaceParse {
   readonly alternativeCosts: readonly AlternativeCost[];
   /** "..., sacrifice an artifact or creature or pay {4}" (stage P38, D-182, CR 118.8): the face's `additionalCostChoice`, or null. */
   readonly additionalCostChoice: readonly [readonly Cost[], readonly Cost[]] | null;
+  /** Life substituted for each previous command-zone cast tax instance, if printed. */
+  readonly commanderTaxLife: number | null;
   /** The abilities that did not; they are dropped from the definition, never half-executed. */
   readonly unparsed: readonly UnparsedAbility[];
   /** The normalized text, one entry per ability line (what `ability` indexes into). */
@@ -86,9 +88,19 @@ export function parseFaceText(
   const additionalCosts: Cost[] = [];
   const alternativeCosts: AlternativeCost[] = [];
   let additionalCostChoice: readonly [readonly Cost[], readonly Cost[]] | null = null;
+  let commanderTaxLife: number | null = null;
   // The line each ability came from, for a refusal that is found only once every line is read (a linked exile, stage P31).
   const lineOf: { index: number; text: string; ruleId: string }[] = [];
   for (const [index, text] of lines.entries()) {
+    if (
+      /^Rather than pay \{2\} for each previous time you've cast ~ from the command zone this game, pay 2 life that many times\.$/u.test(
+        text,
+      ) &&
+      commanderTaxLife === null
+    ) {
+      commanderTaxLife = 2;
+      continue;
+    }
     const lineOptions: CompileOptions = {
       rules: ruleSet,
       face,
@@ -175,6 +187,7 @@ export function parseFaceText(
     additionalCosts,
     alternativeCosts,
     additionalCostChoice,
+    commanderTaxLife,
     unparsed,
     lines,
   };
@@ -208,7 +221,7 @@ function joinInsteadLines(lines: readonly string[]): string[] {
  * is unread as a whole, as the line was alone.
  */
 const REFERENCE_LINE =
-  /^If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.$/u;
+  /^(?:If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
 
 function joinReferenceLines(lines: readonly string[]): string[] {
   const out: string[] = [];

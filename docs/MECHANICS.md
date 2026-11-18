@@ -1413,11 +1413,13 @@ Engine slice, `ENGINE_VERSION` 18. The kinds are found in the event stream like 
 
 - Panharmonicon ("triggers an additional time", D-108 point 8): see `docs/ROADMAP.md`.
 
-## Modal spells and abilities (engine slice; D-105, D-114; CR 700.2, 700.2a-d, 601.2b-c, 602.2b, 603.3c, 608.2b-c, 903.3d)
+## Modal spells and abilities (engine slice; D-105, D-114, D-583; CR 700.2, 700.2a-d, 601.2b-c, 602.2b, 603.3c, 608.2b-c, 903.3d)
 
 Entries for "Choose one —" and the like, on spells, triggered abilities and activated abilities (about 0.10 of the corpus replay's unread weight, D-105). The engine side only. All tests use SYNTHETIC cards (`packages/engine/src/cards/fixtures/synthetic-modal.ts`, `SYNTHETIC Modal Choice` in `synthetic.ts`, and cards defined in the test files); run them with `pnpm exec vitest run packages/engine/test/scenario-xx-modal packages/engine/test/ast-modal-validate.test.ts packages/ai/test/casual-modes.test.ts packages/ai/test/modal-games.test.ts`. Code: `rules/modes.ts`, `rules/cast.ts`, `rules/activate.ts`, `rules/trigger-stack.ts`, `rules/stack.ts`, `rules/legality.ts`, `rules/activate-legality.ts`, `ast/validate-modes.ts`, `api.ts`, `legal-actions.ts`.
 
 How modes are chosen, for every entry below. The controller answers a `chooseModes { source, sourceName, sourceOracleText, purpose, modes: { index, text, legal }[], min, max, sets, forTrigger? }` decision with `chooseModes { modes }`, one of `sets` (each in printed order, fewest modes first; any order is accepted). It comes first in the cast (before the kicker, X and the targets), first in an activation (before X, the targets and the costs) and first as a triggered ability goes on the stack (before its targets). Only the modes whose targets can all be chosen are in a set (CR 700.2a). With one legal set the engine chooses it (`modesChosen { automatic: true }`), with none the spell is not castable, the activated ability is not offered and the triggered ability is removed (`abilityRemoved { reason: 'noLegalModes' }`). `cancel` rewinds a cast or activation, never a trigger. The targets of the chosen modes are asked in one `targets` decision, mode by mode, each slot tagged with its `mode`; the target ids are unique across the modes. On resolution the chosen modes' effects run in printed order.
+
+For triggered abilities with `notRepeatedBySource`, each selected mode is recorded in `GameState.modesChosenBySource`, keyed by the source object's identity. The record persists across turns while that object remains; leaving and returning creates a new object and therefore a fresh history. The same trigger machinery records an automatically selected sole legal mode. The parser currently uses this for “choose one that hasn't been chosen —”; per-turn history remains a separate `ModeChoice.notRepeatedThisTurn` feature (D-583).
 
 ### "Choose one —", "Choose two —", "Choose one or both —", "Choose one or more —" (a modal spell)
 
@@ -2946,17 +2948,27 @@ The engine half of the owner's Angels precon (23 cards). Each entry says what th
 | Tome of Legends | `ObjectFilter.commander: 'yours'` (new value); `entersWithCounters`, `addCounters`, `removeCounters` cost (existing) |
 | Vanguard Seraph | `lifeGained` trigger with `firstEachTurn` (new); `surveil` (existing) |
 
-### "If you would gain life, you gain that much life plus 1 instead.", "Whenever you gain life, put a +1/+1 counter on this creature.", "Whenever you gain life for the first time each turn, surveil 1."
+### "If you would gain life, you gain that much life plus 1 instead.", "If you would gain life, you gain twice that much life instead.", "Whenever you gain life, put a +1/+1 counter on this creature.", "Whenever you gain life for the first time each turn, surveil 1."
 
 - CR: 119.3, 119.9, 119.10, 614.1a, 702.15
-- Gap class: P (a replacement of the amount and a trigger on the event)
-- Code: `ast/types.ts` (`Replacement` `lifeGainBonus`, `Trigger` `lifeGained`), `rules/life-gain.ts` (`gainLife`: the one place life is gained, by the `gainLife` effect and by lifelink), `rules/triggers.ts` (`occurrences` of `lifeGained`, `nth` from `TurnLog.lifeGained`), `state/events.ts` (`lifeGained`), `ast/validate-angels.ts` (`checkAngelsTrigger`, `checkAngelsReplacement`)
-- AST node: Angel of Vitality `{ kind: 'replacement', replacement: { kind: 'lifeGainBonus', amount: 1 } }` and `{ kind: 'static', static: { kind: 'modifyPt', subject: { kind: 'this' }, power: 2, toughness: 2 }, condition: { kind: 'lifeTotal', compare: { cmp: 'atLeast', value: 25 } } }`; Exemplar of Light's first line `{ kind: 'triggered', trigger: { kind: 'lifeGained', who: 'you' }, effect: { kind: 'addCounters', objects: { kind: 'this' }, counter: '+1/+1', count: 1 } }`; Vanguard Seraph `{ kind: 'triggered', trigger: { kind: 'lifeGained', who: 'you', firstEachTurn: true }, effect: { kind: 'surveil', count: 1 } }`. `who` is `'you'`, `'opponent'` or `'any'`; `firstEachTurn` is true or left out. The replacement applies to its controller's every gain (the effect and lifelink alike), several add up, a gain of 0 is no event and is not replaced (CR 119.10). The trigger fires once for each gain, with the amount after the replacement in the event (`lifeGained.amount`, and `nth` the player's gains this turn); no `Amount` reads that number yet.
+- Gap class: P (a replacement of the amount and a trigger on the event); D-581 adds the order question for life-gain replacements.
+- Code: `ast/types.ts` (`Replacement` `lifeGainBonus` and `lifeGainDouble`, `Trigger` `lifeGained`), `rules/life-gain.ts` (`gainLife`: the one place life is gained, by effects, `setLifeTotal` and lifelink), the shared `OrderFlow` in `rules/damage-order.ts`, `rules/damage.ts` and `rules/effects.ts` (replay a damage batch or effect instruction when the decision is answered), `rules/triggers.ts` (`occurrences` of `lifeGained`, `nth` from `TurnLog.lifeGained`), `state/events.ts` (`lifeGained`), `ast/validate-angels.ts` (`checkAngelsTrigger`, `checkAngelsReplacement`)
+- AST node: Angel of Vitality `{ kind: 'replacement', replacement: { kind: 'lifeGainBonus', amount: 1 } }`, Rhox Faithmender / The Wind Crystal `{ kind: 'replacement', replacement: { kind: 'lifeGainDouble' } }`, and the Angel of Vitality conditional static `{ kind: 'modifyPt', subject: { kind: 'this' }, power: 2, toughness: 2 }` over `lifeTotal`; Exemplar of Light's first line `{ kind: 'triggered', trigger: { kind: 'lifeGained', who: 'you' }, effect: { kind: 'addCounters', objects: { kind: 'this' }, counter: '+1/+1', count: 1 } }`; Vanguard Seraph `{ kind: 'triggered', trigger: { kind: 'lifeGained', who: 'you', firstEachTurn: true }, effect: { kind: 'surveil', count: 1 } }`. `who` is `'you'`, `'opponent'` or `'any'`; `firstEachTurn` is true or left out. Every replacement applies once; additions and multipliers each commute within their own kind. When both kinds apply, the gaining player chooses the order, and the engine asks again only if a remaining addition and multiplier still interact. A gain of 0 is no event and is not replaced (CR 119.10). The trigger fires once for each gain, with the final amount in `lifeGained.amount`, and `nth` the player's gains this turn; no `Amount` reads that number yet.
 - Decision and action: none (a surveil asks its own question).
-- Tests: `scenario-xx-life-gain.test.ts` (a gain of 3 is 4 with a bonus of 1, the number is the card's (3 makes 6), two bonuses each apply once and add up, a gain of 0 is no event and is not replaced, the controller's gains only and not the opponent's permanent's, lifelink is a gain too, the ability goes with the permanent, the conditional +2/+2 at 25 life; the trigger "for the first time each turn": one gain, two gains in a resolution trigger it once, a second spell in the same turn does not and the next turn does, an opponent's gain is not mine, surveil 1 asks the controller; "a player" and "an opponent" gains). Mutation checks: a handful of targeted mutants per mechanic on a scratch copy, each killed by these tests.
-- Added in: `ENGINE_VERSION` 33, 2026-10-29
-- Web: `game/trigger-text.ts` words `lifeGained` (done, minimal); the `lifeGained` event has no log line of its own (the `lifeChanged` line it comes with is the line); no words for the `lifeGainBonus` replacement.
-- What the parser must produce: the three shapes above. Needs `replacement:lifeGainBonus`, `trigger:lifeGained`.
+- Tests: `scenario-xx-life-gain.test.ts` covers additive and multiplicative replacement ordering both ways, replay during a lifelink combat batch, zero gains, controller scope and triggers; `convert-grammar-engine-life-gain-double.test.ts` proves Rhox Faithmender and The Wind Crystal parse as supported and Rhox doubles a real-card game gain.
+- Added in: D-149 (engine 33, 2026-10-29); life-gain replacement ordering D-581 (`ENGINE_VERSION` 114, `PARSER_VERSION` 121), 2026-11-17.
+- Web: `game/trigger-text.ts` words `lifeGained`; `ui/decisions/option-names.ts` names the replacement-order dialog and shows each resulting life total. `CasualAgent` picks the first legal replacement; `HeuristicAgent` chooses the order that gains more life.
+- What the parser must produce: the replacement and trigger shapes above. Needs `replacement:lifeGainBonus`, `replacement:lifeGainDouble`, `trigger:lifeGained`.
+
+### “Double your life total” and “lose half their life, rounded up” (D-584)
+
+- CR: 119.1, 119.3, 119.5, 107.1a.
+- Gap class: P (read a player's current life total as an effect amount and allow `setLifeTotal` to use an amount).
+- Code: `Amount.lifeTotalOf`, `Effect.setLifeTotal.amount`, `rules/amounts.ts`, `rules/effects.ts`, parser `amount.lifeTotalOf` lowering and the player and life-total effect rules.
+- Behaviour: amounts are read as each instruction resolves. Setting a higher total still proposes a life gain and passes through the existing replacement flow; setting a lower total loses the difference. “Half” uses the written rounding direction.
+- Tests: `scenario-xx-life-total-arithmetic.test.ts` checks doubling, odd-life rounding and a life-gain replacement; `convert-grammar-rules.test.ts` checks the target-bound half-life amount; `convert-grammar-engine-revival-revenge.test.ts` imports and plays the real split card.
+- Cards unlocked: Revival // Revenge's Revenge face through the ordinary importer; the Revival face was already supported.
+- Limit: this parser addition reads the Oracle forms used by this card, not arbitrary prose that refers to another player's life total.
 
 ### "Whenever you put one or more +1/+1 counters on this creature, draw a card. This ability triggers only once each turn."
 
@@ -3971,6 +3983,8 @@ Emissary Green reads completely and passes `validateCard` (run from the owner's 
 There and Back Again reads completely and passes `validateCard` (run from the owner's request file wording through `convert-grammar-engine-p45.test.ts`, its parsed abilities equal the engine fixture's). It is not in the golden corpus (it is an acceptance name for the owner's `pnpm corpus:extract`), and no card of the corpus changed status or AST: the snapshot moved only its version, training 162 of 192, hold-out 52 of 61, acceptance 1 of 1 (a gap of 0.8 points). A Saga has no power or toughness, so nothing in the SYNTHETIC fixture is invented; the card's layout (`saga`) and the chapter symbols come from the owner's file and Scryfall's data when the owner imports it.
 
 ## Planeswalkers: loyalty abilities, planeswalker tokens, emblems, Empower Jace (engine D-200, D-201; parser stage P47, D-202; agents and web D-203; `ENGINE_VERSION` 48, `PARSER_VERSION` 52)
+
+Activated emblem abilities (D-599) use the ordinary activation path from the command zone under CR 114.4. Activation legality exempts the emblem source from battlefield presence requirements; costs and effects retain ordinary controller and last-known information semantics. Quoted activated abilities are lowered only when their cost and effect forms are supported. `test/scenario-xx-emblems.test.ts` covers activation, sacrifice, last-known power, life gain, draw and the emblem remaining in command.
 
 - CR: 306.5a to 306.5d and 122.1e (printed loyalty, the intrinsic replacement effect "enters with loyalty counters", loyalty as the number of counters), 606.1 to 606.6 and 107.15 (loyalty abilities: an activated ability with a loyalty symbol in its cost, once a turn for each permanent at sorcery timing, "[+N]" puts counters, "[-N]" removes, "[0]" neither, "[-X]", a negative cost needs that many counters), 704.5i (0 loyalty), 113.7a (an ability still resolves after its walker is gone), 306.6, 506.3, 506.4, 506.4c, 506.4d, 508.5, 509.1a, 510.1b (attacking and blocking planeswalkers, removal from combat), 120.3c and 120.3 (damage to a planeswalker removes loyalty), 115.1 ("target player or planeswalker"), 205.3j and 205.3d (planeswalker types), 114.1 to 114.5 (emblems), 701.71a (Empower Jace), 119.5 and 119.9 (a life total that becomes a number), 903.3, 903.8, 903.9, 903.10a and 113.6n (a planeswalker commander). Two old rules are gone from this CR and are not implemented: 306.4 (the planeswalker uniqueness rule) and 306.7 (redirecting damage from a player to a planeswalker).
 - Gap class: S (`docs/design/planeswalkers.md`): a new ability family with its own timing rule, a new token kind, a new object kind (the emblem), new decisions and UI.
@@ -5016,6 +5030,96 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - **Engine and UI:** `revealAndSeparate.faceDownPile` privately gives the separator the top cards and makes pile 1 face down. The public event contains only the face-up pile's names and the hidden pile's size. The chooser's pending decision and preview omit hidden object IDs; the pile picker shows that public size and renders one face-down card back per hidden card. Choosing the hidden pile emits no card names. Piles move through the normal zone pipeline, then `ringTempts` resolves.
 - **Proof:** `scenario-xx-saurons-ransom.test.ts` checks the separator's card view, the chooser's redacted pending data, the public event, the hidden pile going to hand, hidden event names, and Ring temptation. The importer acceptance test checks the issue fixture.
 - **Limit:** the parser-only route still does not read this private-pile wording. The two-player game has one opponent, so the separator is unambiguous. Card text is from issue 57.
+
+## The Kambal deck, issue 255, Daxos (D-592)
+
+- **Engine:** characteristic-defining power/toughness amounts may read devotion. `derive-count.ts` evaluates the devotion of the source's current controller as layer 7a derives the defined characteristic.
+- **Proof:** `scenario-xx-amounts-rules.test.ts` checks that each of three Daxos-like synthetic permanents sees all three white mana costs; the golden acceptance corpus checks Daxos's complete text.
+- **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Lunar Convocation (D-593)
+
+- **Engine:** `lifeGainedAndLostThisTurn` checks both the controller's accumulated life gain and `SeatState.lifeLostThisTurn`; the current life total is not used. The new condition works with existing condition conjunction and intervening-if timing.
+- **Proof:** parser coverage includes the exact token ability; an engine scenario gains life, loses life to a spell, and checks false before both events and true afterward. The golden acceptance corpus checks the complete card.
+- **Limit:** the local CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Wall of Reverence (D-594)
+
+- **Parser:** the generic power amount grammar accepts "the power of target creature you control" and carries that target into the `powerOf` amount, so targeting and amount calculation use the same chosen object.
+- **Proof:** `parser-p11.test.ts` checks the trigger target and the linked power reference; the golden corpus checks full card import.
+- **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Moseo (D-595)
+
+- **Engine and parser:** a graveyard target's `manaValueAtMost` may use `lifeGainedThisTurn`; the usual selector reads the turn log when it checks the object.
+- **Proof:** `parser-p18.test.ts` checks Moseo's target filter and amount; `ast-references-validate.test.ts` proves the engine accepts the generic selector shape; the golden corpus checks full card support.
+- **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Tivash (D-596)
+
+- **Parser:** the value after "pay X life, where X is ..." defines X for the payment and the following instruction; an X/X custom token uses the same amount for both stats, with its count remaining one.
+- **Proof:** `parser-p21.test.ts` checks the payment and token AST; the golden acceptance corpus checks the complete card.
+- **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Call of the Ring (D-597)
+
+- **Engine and parser:** `ringTempted` may require a non-null chosen bearer; the trigger wording “you choose a creature as your Ring-bearer” lowers to that filter.
+- **Proof:** `scenario-xx-ring.test.ts` proves it does not trigger when no creature was available and does trigger when a creature was chosen; `parser-p45.test.ts` checks the exact trigger and payment effect.
+- **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Cleric Class (D-598)
+
+- **Engine and parser:** changing a Class's level emits `classLevelReached`; `classLevel` triggers only for the same Class object reaching the named level. The game log names the level change.
+- **Proof:** `scenario-xx-class-level.test.ts` checks a level-three trigger, `parser-p48.test.ts` checks the trigger grammar, and the real-card integration test returns its targeted creature and gains life equal to its toughness.
+- **Limit:** CR text and rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Liesa, Forgotten Archangel (D-599)
+
+- **Engine and parser:** a dies trigger can create a delayed triggered ability that returns the card the creature became in the graveyard to its owner's hand at the next end step. The existing `triggerCard` reference and delayed-trigger machinery handle object identity and scheduling; token cards are excluded.
+- **Proof:** `scenario-xx-dies-return.test.ts` checks creation and resolution of the delayed hand return; `parser-p48.test.ts` checks Liesa's complete real-card import and the golden corpus records its support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Skrelv's Hive token (D-600)
+
+- **Parser:** custom token descriptions can include numbered Toxic and a quoted static `cantBlock` restriction, alongside the existing keyword list and quoted ability handling.
+- **Proof:** `parser-p48.test.ts` reads the full upkeep trigger and checks the Mite's types, Toxic value and blocking restriction.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Skrelv's Hive corrupted ability (D-601)
+
+- **Engine and parser:** `opponentPoisonAtLeast` reads whether an opponent still in the game has the specified number of poison counters. Skrelv's Hive grants lifelink to creatures its controller controls with Toxic while that condition holds; Toxic is tested as a keyword presence and its value is unchanged.
+- **Proof:** `scenario-xx-corrupted.test.ts` checks that the grant is absent below three poison counters and present at three. `parser-p48.test.ts` checks complete real-card parsing and the golden corpus records its support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Authority of the Consuls (D-602)
+
+- **Engine and parser:** A permanent's `groupEntersTapped` replacement makes matching permanents enter tapped. Authority of the Consuls applies it to creatures its controller's opponents control. The existing parser and engine handle its life-gain trigger when an opponent's creature enters.
+- **Proof:** `scenario-xx-authority.test.ts` checks that an opponent's creature spell enters tapped; `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Underworld Connections (D-603)
+
+- **Parser and engine:** An Aura may grant an activated ability to an enchanted land. The granted ability is lowered with the host's land type so tap costs and activation rules apply to the land; Underworld Connections' ability pays 1 life and draws a card.
+- **Proof:** `scenario-xx-underworld.test.ts` activates the granted ability and checks the life payment, tap and draw. `parser-p48.test.ts` checks complete import of the real card and golden acceptance support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Tragic Slip (D-604)
+
+- **Parser and engine:** The condition "a creature died this turn" reads the turn's creature-death history. The spell parser joins Tragic Slip's following "That creature gets ... instead if ..." paragraph to its preceding pump instruction and lowers it as a conditional replacement.
+- **Proof:** `parser-registry.test.ts` exercises the condition through the full pipeline; `parser-p48.test.ts` checks complete real-card parsing; the golden corpus records support.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Liesa, Shroud of Dusk (D-605)
+
+- **Engine and parser:** `CardFace.commanderTaxLife` replaces each prior-cast {2} tax increment with the stated life amount, only for a cast from the command zone. Mana reductions do not reduce that life cost. The object view and payment prompt expose the life amount, and the cast event records it.
+- **Proof:** `scenario-22-commander-tax.test.ts` covers multiple prior casts, mana reductions, cancellation, casting from hand and insufficient life. `parser-p48.test.ts` checks complete real-card parsing and golden acceptance support; `costs-model.test.ts` and `references-model.test.ts` cover the cost label and payment prompt.
+- **Limit:** CR text and Scryfall rulings were unavailable for independent verification.
+
+## The Kambal deck, issue 255, Teferi's Reproach (D-607)
+
+- **Engine and parser:** Temporary player protection from everything and a life-total lock end as the chosen player's next turn begins. The life lock prevents life gains, life losses, damage-based life changes, life-total setting and payment of life costs. The spell phases out all nonland permanents controlled by its chosen player; anaphoric "they" binds to the earlier target, and the existing phasing rules carry attached permanents with them.
+- **Proof:** `scenario-xx-player-lock.test.ts` checks protection, loss/gain/set life attempts, life-paid spell costs, damage when only the life lock is present, simultaneous nonland phasing, land preservation, and expiration at the target's next turn. `parser-p48.test.ts` and the golden corpus check the real card.
+- **Limit:** The local CR text and Scryfall rulings were unavailable for independent verification.
 
 ## The VRA 2 deck (issue 258): Radiant Lotus, "Sacrifice one or more artifacts", a chosen color of mana for a target player (D-583 to D-587)
 

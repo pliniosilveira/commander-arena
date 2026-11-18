@@ -4,7 +4,7 @@
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
 import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
-import { GRANTABLE_KEYWORDS } from './features';
+import { FILTERABLE_KEYWORDS } from './features';
 import type {
   Ability,
   Amount,
@@ -253,8 +253,8 @@ export function checkFilter(
       'token must be a boolean (true: tokens only, false: nontokens only)',
     );
   }
-  checkEnumList(out, `${path}.keywords`, f.keywords, GRANTABLE_KEYWORDS, 'keyword');
-  checkEnumList(out, `${path}.notKeywords`, f.notKeywords, GRANTABLE_KEYWORDS, 'keyword');
+  checkEnumList(out, `${path}.keywords`, f.keywords, FILTERABLE_KEYWORDS, 'keyword');
+  checkEnumList(out, `${path}.notKeywords`, f.notKeywords, FILTERABLE_KEYWORDS, 'keyword');
   if (
     f.controller !== undefined &&
     !isOneOf(f.controller, ['you', 'opponent', 'any', 'triggerPlayer', 'defendingPlayer'])
@@ -345,6 +345,7 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      a?.kind === 'lifeGainedThisTurn' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
@@ -1524,6 +1525,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'commanderManaValue':
     case 'commanderCasts':
       break;
+    case 'lifeTotalOf':
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
@@ -1844,6 +1848,11 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   const amount = a as { kind?: string; factor?: number; of?: unknown };
+  if (amount?.kind === 'devotion') {
+    if (plain)
+      issue(out, path, 'devotion is not supported as a plain static power/toughness modifier');
+    return;
+  }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
     if (!plain) {
@@ -2250,6 +2259,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'opponentsAtLeast':
       if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
       break;
+    case 'opponentPoisonAtLeast':
+      if (!positive(c.count)) issue(out, `${path}.count`, 'count must be a positive integer');
+      break;
     case 'opponentControlsAtLeast':
       // D-135: some one opponent's battlefield permanents that match the filter; whose they are and where they are are the condition's.
       checkFilter(c.filter, `${path}.filter`, out);
@@ -2508,6 +2520,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-252, CR 119.3: the life the controller has gained this turn.
       if (!isCount(c.atLeast) || c.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
+    case 'lifeGainedAndLostThisTurn':
+      if (Object.keys(c).some((key) => key !== 'kind')) {
+        issue(out, path, 'the gained-and-lost-life condition has no extra fields');
       }
       break;
     case 'spellsCastThisTurn':
@@ -3708,6 +3725,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'grantPlayerProtectionEverything':
+    case 'preventPlayerLifeTotalChange':
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilNextTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          "this player effect lasts until the named player's next turn",
+        );
+      }
+      break;
     case 'gainControl': {
       // CR 613.1b (D-189): a layer 2 effect for one named permanent: a target or the permanent that caused the trigger.
       const named = kindOf(e.objects);
@@ -4046,16 +4074,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 701.54a (D-196): no operand; the Ring tempts the controller of the effect.
       break;
     case 'createEmblem':
-      // CR 114.1, 114.4 (D-201): an emblem has static and triggered abilities, which work from the command zone: at least one, and no other kind.
+      // CR 114.1, 114.4 (D-201): an emblem can have static, triggered or activated abilities that work from the command zone: at least one, and no other kind.
       if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
         issue(out, `${path}.abilities`, 'an emblem has at least one ability');
       } else {
         e.abilities.forEach((a, i) => {
-          if (a?.kind !== 'static' && a?.kind !== 'triggered') {
+          if (a?.kind !== 'static' && a?.kind !== 'triggered' && a?.kind !== 'activated') {
             issue(
               out,
               `${path}.abilities[${i}]`,
-              `an emblem has static and triggered abilities, not ${kindOf(a)}`,
+              `an emblem has static, triggered and activated abilities, not ${kindOf(a)}`,
             );
           } else {
             scope.checkAbility(a, `${path}.abilities[${i}]`, out);
@@ -4693,13 +4721,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
-      if (!isCount(e.amount)) {
-        issue(
-          out,
-          `${path}.amount`,
-          'a life total that becomes a number is a whole number of 0 or more',
-        );
-      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
