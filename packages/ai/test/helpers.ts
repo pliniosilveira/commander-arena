@@ -2096,6 +2096,9 @@ export const VRASKA_NAMES = [
   'SYNTHETIC Mill Stone',
   'SYNTHETIC Copy Mirror',
   'SYNTHETIC Prepared Scout // Scout Tidings',
+  // Lorehold group 3: a preparation card that becomes prepared at its controller's upkeep when a player has one or fewer cards in hand, and whose prepare spell makes each player
+  // discard their hand and draw seven cards.
+  'SYNTHETIC Lore Jackal // Spin of Fate',
 ] as const;
 
 /**
