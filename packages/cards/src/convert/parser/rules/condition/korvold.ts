@@ -180,6 +180,8 @@ export const CONDITION_MILLED_THIS_WAY = defineRule<IrCondition>({
   parse: (ctx, pos) => {
     const r = spanned(
       sequence(
+        // A lookahead first: "a player cast two or more spells last turn" and the like stop where they always did.
+        pattern(/(?=(?:at least one|an?) [^.,]* is milled this way)/iu),
         pattern(/(?:at least one|an?) /iu),
         WHAT_IT_IS,
         pattern(/ is milled this way(?![\p{L}\p{N}])/iu),
@@ -190,7 +192,7 @@ export const CONDITION_MILLED_THIS_WAY = defineRule<IrCondition>({
       ok: true,
       value: {
         kind: 'condition',
-        test: { kind: 'milledThisWay', filter: r.value.value[1] },
+        test: { kind: 'milledThisWay', filter: r.value.value[2] },
         span: { start: pos, end: r.pos },
         rule: 'condition.milled-this-way',
       },

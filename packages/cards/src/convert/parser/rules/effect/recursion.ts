@@ -220,6 +220,8 @@ export const EFFECT_MAY_CAST_ANY_GRAVEYARD = defineRule<Clauses>({
   parse: single(
     MAY_CAST_ANY_RULE,
     sequence(
+      // A lookahead first, as `effect.may-cast` has: "you may cast ~ without paying its mana cost" (the free cast) stops where it always did.
+      pattern(/(?=you may cast target )/iu),
       literal('you may cast '),
       satisfy(
         family<IrNoun>('noun', { only: ['noun.target-card-in-a-graveyard'] }),
@@ -228,7 +230,7 @@ export const EFFECT_MAY_CAST_ANY_GRAVEYARD = defineRule<Clauses>({
       choice(literal(' this turn'), literal(' until end of turn')),
       optional(spanned(WHEN_CAST_GAINS_ABILITIES), null),
     ),
-    ([, objects, , whenCast]) => ({
+    ([, , objects, , whenCast]) => ({
       verb: 'mayCast',
       args: {
         objects,
