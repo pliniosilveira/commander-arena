@@ -289,12 +289,12 @@ describe('"up to two spells from among them" (CR 608.2g)', () => {
     const g = twin([GAIN2, GAIN7, 'Island']);
     g.act(0).chooseCards({ name: GAIN2, zone: 'exile', seat: 0 });
     g.act(0).chooseCards({ name: GAIN7, zone: 'exile', seat: 0 });
-    const top = g.state.objects[g.state.stack[g.state.stack.length - 1] as `o${number}`];
-    g.expect.stack([GAIN2, GAIN7]);
-    expect(top?.stack?.kind).toBe('spell');
+    // Top first: Gain Seven was cast last, so it resolves first.
+    g.expect.stack([GAIN7, GAIN2]);
     g.pass();
     g.pass();
     g.expect.life(0, 47);
+    g.expect.stack([GAIN2]);
   });
 
   test('cancelling the second cast rewinds to its question, with the first spell still on the stack', () => {
@@ -304,6 +304,6 @@ describe('"up to two spells from among them" (CR 608.2g)', () => {
     expect(g.state.pending?.kind).toBe('chooseCards');
     g.act(0).cancel();
     expect(chooseCardsDecision(g)).toMatchObject({ purpose: 'cast' });
-    g.expect.stack([GAIN2]);
+    g.expect.stack([GAIN2, TWIN]);
   });
 });

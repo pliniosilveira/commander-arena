@@ -199,6 +199,30 @@ export const SYNTHETIC_PRISMARI_G3_LIST: readonly CardDefinition[] = [
       { kind: 'keyword', keyword: { kind: 'retrace' } },
     ],
   }),
+  // The same without the shuffle, so a test knows which cards are on top: "As many times as you choose, you may exile the top card of your library. If the total mana value of the
+  // cards exiled this way is 13 or less, you may cast any number of spells from among those cards without paying their mana costs."
+  singleFace({
+    name: 'SYNTHETIC Calamity Unshuffled',
+    manaCost: ['7', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'As many times as you choose, you may exile the top card of your library. If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells from among those cards without paying their mana costs.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'exileTopAnyNumber' },
+          {
+            kind: 'conditional',
+            condition: { kind: 'movedTotalManaValue', compare: { cmp: 'atMost', value: 13 } },
+            effect: { kind: 'castFree', objects: MOVED, max: 'any' },
+          },
+        ],
+      },
+    },
+  }),
   // "Exile the top three cards of your library. You may cast up to two spells from among them without paying their mana costs."
   singleFace({
     name: 'SYNTHETIC Twin Cast',
