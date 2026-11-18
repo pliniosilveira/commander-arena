@@ -406,6 +406,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   abilityTriggered: [],
   abilityRemoved: [],
   permanentsChosen: [],
+  cardsChosen: [],
   proliferated: [],
   fought: [],
   becameTarget: [],
