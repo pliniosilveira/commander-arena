@@ -7,4 +7,4 @@
  * What each version added: `git log -p -- packages/cards/src/version.ts` and `docs/MECHANICS.md`.
  * Keep this file to the one constant: a comment per version made every parser pull request conflict.
  */
-export const PARSER_VERSION = 151;
+export const PARSER_VERSION = 152;

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 151,
+  "parserVersion": 152,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -285,6 +285,14 @@
       "reasons": [],
       "ast": "5d9fd28c"
     },
+    "078def07-ae5d-4591-8db6-d156834aab97": {
+      "name": "Etali, Primal Storm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3449358e"
+    },
     "07a0cba9-8768-4fd9-a3d5-b0f83b4bf8e8": {
       "name": "Chaos Warp",
       "group": "training",
@@ -333,6 +341,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "04b35336"
+    },
+    "08becc07-28bc-4a2f-a6b0-28a2998d2f50": {
+      "name": "Windfall",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1bc914df"
     },
     "08d80efc-9542-4ba2-824c-c8615d8d07f2": {
       "name": "Undercity Sewers",
@@ -1559,6 +1575,14 @@
       ],
       "ast": "6f040bf3"
     },
+    "3589bcfc-42b0-414a-adce-bc690dc631c8": {
+      "name": "Windbrisk Heights",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e71e09a8"
+    },
     "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
       "name": "Goddric, Cloaked Reveler",
       "group": "training",
@@ -2323,6 +2347,14 @@
       "reasons": [],
       "ast": "ff07c294"
     },
+    "5669ea7c-c4fc-494c-896b-4bce9b494817": {
+      "name": "Curse of the Swine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f8050fce"
+    },
     "56fd0752-9fb0-4c05-90e5-c3b268b57c6f": {
       "name": "Cone of Cold",
       "group": "acceptance",
@@ -2543,6 +2575,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "48dd05c9"
+    },
+    "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
+      "name": "Rakdos Charm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e4b2006b"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -4236,6 +4276,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "efbbb092"
+    },
+    "9b9a10ff-5a5d-4df8-88aa-18d84ff9117c": {
+      "name": "Inspiring Call",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7262f39b"
     },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
@@ -6006,6 +6054,23 @@
       "reasons": [],
       "ast": "90b0e9dd"
     },
+    "e1d294e8-67b1-4a4a-86b8-f98f28a327d9": {
+      "name": "Promise of Loyalty",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "cb0a7c4e"
+    },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
       "group": "acceptance",
@@ -6125,6 +6190,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4704e4be"
+    },
+    "e88027a6-24cc-4a8b-86db-734f26149ea8": {
+      "name": "Oran-Rief, the Vastwood",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "71f19d82"
     },
     "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
       "name": "Fall from Favor",
@@ -7014,8 +7087,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 520,
-      "total": 541
+      "supported": 527,
+      "total": 549
     }
   }
 }
