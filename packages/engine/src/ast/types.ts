@@ -3477,7 +3477,15 @@ export type Keyword =
    * abilities (`rules/derive.ts`). `power` is N, a positive integer.
    */
   | { readonly kind: 'crew'; readonly power: number }
-  | { readonly kind: 'protection'; readonly from: 'color'; readonly colors: readonly Color[] }
+  /**
+   * `exceptSource` (D-602): only what `chosenColor` becomes once applied, never written in a card: the object whose attachment this protection does not stop (CR 702.16d).
+   */
+  | {
+      readonly kind: 'protection';
+      readonly from: 'color';
+      readonly colors: readonly Color[];
+      readonly exceptSource?: ObjectId;
+    }
   /**
    * "Protection from each color that's not in your commander's color identity" (CR 702.16h, 702.16i, 903.4, 903.4f; D-259): protection from each of
    * the colors the controller's commanders (all of them, as `commanderIdentity`) do not have in their color identity. "Your" is the controller of the
@@ -3499,6 +3507,13 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
+   * "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (CR 702.16a, 607.2d, D-602; Flickering Ward): protection from the
+   * color the permanent that gives the keyword chose as it entered (needs `asEntersChoose` `color`); it chose none: nothing is given. `exceptSource`: the Aura that gives
+   * it is not stopped by it (an Aura of the chosen color stays attached, CR 702.16d, 704.5m).
+   */
+  | { readonly kind: 'protection'; readonly from: 'chosenColor'; readonly exceptSource?: true }
+
   /** Protection from a creature that currently has the Ring-bearer designation (D-577). */
   | { readonly kind: 'protection'; readonly from: 'ringBearer' }
   /**

@@ -226,6 +226,17 @@ function effectOf(
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
       // commander's color identity.
       // CR 702.16a, 607.2d (Hashaton deck group 6, D-376): or from the card type the permanent that gives it chose as it entered.
+      if (effect.chosenColor === true) {
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: {
+            kind: 'protection',
+            from: 'chosenColor',
+            ...(effect.exceptSource === true ? { exceptSource: true as const } : {}),
+          },
+        });
+      }
       if (effect.chosenCardType === true) {
         return ok({
           kind: 'grantKeyword',

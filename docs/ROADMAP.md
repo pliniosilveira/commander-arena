@@ -528,3 +528,5 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Attacking one of your opponents (D-600): only "each other creature that's attacking one of your opponents gets +N/+N until end of turn" is read; the plural without "other", other effects and a battle protected by an opponent are not.
 
 - Goad as an effect (D-601): one creature, a target or "it"; "goad each creature" and a group are not read.
+
+- Protection from the chosen color (D-602): the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.

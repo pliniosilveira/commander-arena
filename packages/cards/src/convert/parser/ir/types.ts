@@ -1240,6 +1240,9 @@ export type IrStaticEffect =
       readonly cardTypes?: readonly string[];
       /** "protection from the chosen card type" (Hashaton deck group 6, D-376, CR 702.16a): the card type the source of the ability chose as it entered. */
       readonly chosenCardType?: true;
+      /** "protection from the chosen color" (Flickering Ward, D-602, CR 702.16a): the color the source chose as it entered; `exceptSource`: "This effect doesn't remove ~." */
+      readonly chosenColor?: true;
+      readonly exceptSource?: true;
     }
   /** `has "{T}: Add {G}."` (stage P14): a quoted mana ability, read as an activated ability. */
   | { readonly kind: 'grantAbility'; readonly ability: IrQuotedAbility }

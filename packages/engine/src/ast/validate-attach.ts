@@ -173,6 +173,7 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
     } else if (
       k.from !== 'colorsNotInCommanderIdentity' &&
       k.from !== 'chosenCardType' &&
+      k.from !== 'chosenColor' &&
       k.from !== 'ringBearer'
     ) {
       issue(

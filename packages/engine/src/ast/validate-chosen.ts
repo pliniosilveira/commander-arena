@@ -30,6 +30,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   if (o.kind === 'chosenColor') found.add('color');
   // D-376: "protection from the chosen card type", on a keyword or a player's protection, reads the card type the permanent chose.
   if (o.from === 'chosenCardType') found.add('cardType');
+  // D-602: "protection from the chosen color" reads the color the permanent chose.
+  if (o.from === 'chosenColor') found.add('color');
   // D-151: "Khans — ..." reads the option the permanent chose.
   if (o.kind === 'chosenOption') found.add('option');
   for (const [key, v] of Object.entries(o)) {

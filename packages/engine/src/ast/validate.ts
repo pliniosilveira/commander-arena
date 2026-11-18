@@ -169,6 +169,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (k.from === 'ringBearer') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
+      // D-602 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).
+      if (k.from === 'chosenColor') {
+        if (k.exceptSource !== undefined && k.exceptSource !== true) {
+          issue(out, `${path}.exceptSource`, 'exceptSource must be true when present');
+        }
+        break;
+      }
       if (k.from === 'cardType') {
         checkProtectionTypes(k.types, `${path}.types`, out);
         break;
@@ -180,6 +187,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
           `unknown protection quality ${String((k as { from: unknown }).from)}`,
         );
         break;
+      }
+      if (k.exceptSource !== undefined) {
+        issue(
+          out,
+          `${path}.exceptSource`,
+          'exceptSource is what chosenColor becomes, never written',
+        );
       }
       if (!Array.isArray(k.colors) || k.colors.length === 0) {
         issue(out, `${path}.colors`, 'protection needs at least one color');

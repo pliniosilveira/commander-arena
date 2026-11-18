@@ -15,6 +15,7 @@ import {
   literal,
   many,
   map,
+  optional,
   type Parser,
   pattern,
   quiet,
@@ -101,6 +102,21 @@ const BASE_PT: Parser<Effects> = map(
  * one protection a static ability gives, with the colors it names or the colors outside the commander's color identity.
  */
 const PROTECTION: Parser<Effects> = choice(
+  // D-602 (Flickering Ward, CR 702.16a, 607.2d): "protection from the chosen color", and the sentence that follows it on that Aura, "This effect doesn't remove ~."
+  // (the Aura of the chosen color stays attached, CR 702.16d, 704.5m).
+  map(
+    sequence(
+      pattern(/protection from the chosen color(?![\p{L}\p{N}])/iu),
+      optional(pattern(/\. This effect doesn['\u2019]t remove ~(?![\p{L}\p{N}])/iu), null),
+    ),
+    ([, tail]): Effects => [
+      {
+        kind: 'grantProtection',
+        chosenColor: true,
+        ...(tail === null ? {} : { exceptSource: true }),
+      },
+    ],
+  ),
   map(
     PROTECTION_OUTSIDE_COMMANDER_IDENTITY,
     (): Effects => [{ kind: 'grantProtection', commanderIdentity: true }],

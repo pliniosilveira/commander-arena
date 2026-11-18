@@ -5117,3 +5117,13 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `effect.goad` (`rules/effect/goad.ts`), `lower.goad`, `trigger.enchanted-by-you-attack` (`rules/trigger/edhrec.ts`).
 - Tests: engine `scenario-xx-tap-and-goad.test.ts`, `scenario-xx-enchanted-attack-batch.test.ts`; cards `parser-goaded.test.ts`, `parser-enchanted-attack.test.ts`.
 - Example cards: Killian, Decisive Mentor (issue 89).
+
+## Protection from the chosen color (issue 89, D-602)
+
+- CR: 702.16a, 702.16d (an Aura of that color can't enchant it), 607.2d (the choice linked to the ability), 704.5m (an Aura attached to an illegal object).
+- Gap class: P (the keyword quality and the exception) and T (the sentences).
+- AST node: `{ kind: 'static', static: { kind: 'grantKeyword', subject: { kind: 'attached', types: ['creature'] }, keyword: { kind: 'protection', from: 'chosenColor', exceptSource: true } } }` with the replacement `asEntersChoose` `color`.
+- Engine: `rules/derive-statics.ts` (the resolved keyword), `rules/protection.ts` (`protectedColors` takes the source, `hasProtectionFrom`).
+- Parser: `rules/static/grants.ts` (`PROTECTION`), `lower/statics.ts`.
+- Tests: engine `scenario-xx-protection-chosen-color.test.ts` (protection from the chosen color, the Aura stays attached, another red Aura can't be attached, no choice no protection; mutation-checked: the exception); cards `parser-protection-chosen-color.test.ts` (the real lines of Flickering Ward, near misses).
+- Example cards: Flickering Ward (issue 89).
