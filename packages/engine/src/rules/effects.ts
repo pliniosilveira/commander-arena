@@ -10,7 +10,15 @@ import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
-import { getObject, getSeat, objectsInZone, patchObject, patchSeat, setSeat } from '../state/ops';
+import {
+  getObject,
+  getSeat,
+  objectsInZone,
+  opponentsOf,
+  patchObject,
+  patchSeat,
+  setSeat,
+} from '../state/ops';
 import type {
   ChosenTarget,
   GameState,
@@ -1085,11 +1093,14 @@ function runEffect(
           performed: spells.length,
         };
       }
+      // D-652 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
+      const opponent = effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
+      if (effect.copier === 'opponent' && opponent === undefined) return done(state);
       return {
         ...done(
           state,
           [],
-          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets)),
+          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets, opponent)),
         ),
         performed: copies > 0 ? spells.length : 0,
       };
