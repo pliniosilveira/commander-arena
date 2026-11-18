@@ -129,7 +129,30 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
       };
     }
     const placed = spanned(sequence(literal(', put '), put))(ctx, afterReveal);
-    if (!placed.ok) return placed;
+    if (!placed.ok) {
+      // Lorehold group 1 (CR 701.23): "search your library for a Plains card and put it onto the battlefield tapped": one card put at once, with no reveal and no shuffle in the same
+      // sentence (a shuffle after it is a sentence of its own: "If you search your library this way, shuffle.").
+      const andPut =
+        yours && !plural && !reveal.ok
+          ? spanned(sequence(literal(' and put '), all))(ctx, afterReveal)
+          : fail(ctx, afterReveal);
+      if (!andPut.ok) return placed;
+      const [, zones] = andPut.value.value;
+      return {
+        ok: true,
+        value: {
+          reveal: revealFlag,
+          destinations: {
+            kind: 'destinations',
+            items: zones,
+            span: andPut.value.span,
+            rule: RULE,
+          },
+          shuffle: flag(false, { start: andPut.pos, end: andPut.pos }),
+        },
+        pos: andPut.pos,
+      };
+    }
     const items = placed.value.value[1];
     const destinations: IrDestinationList = {
       kind: 'destinations',
@@ -166,6 +189,9 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put that card into your graveyard, then shuffle',
     'search your library for an artifact card, reveal that card, put it into your hand, then shuffle',
     'search your library for a basic land card, put it into your hand',
+    // Lorehold group 1 (Claim Jumper): the put is joined with "and", and a shuffle is another sentence.
+    'search your library for a Plains card and put it onto the battlefield tapped',
+    'search your library for a basic land card and put it into your hand',
     // D-405 (CR 701.24b): the found card is left out of the shuffle and put on top.
     'search your library for an enchantment card, reveal it, then shuffle and put that card on top',
     'search your library for an instant or sorcery card, reveal it, then shuffle and put it on top of your library',
@@ -183,6 +209,10 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put it into your hand, discard a card at random, then shuffle',
     'search your library for up to three basic land cards, put one onto the battlefield and the other into your hand, then shuffle',
     'search your library for a basic land card and put it onto the battlefield tapped, then shuffle',
+    'search your library for a basic land card and put them onto the battlefield tapped',
+    'search your library for up to two basic land cards and put them onto the battlefield tapped',
+    'search your library for a creature card, reveal it and put it into your hand',
+    'search their library for a basic land card and put it onto the battlefield',
     'search their library for a basic land card, put it onto the battlefield, then shuffle',
     'search your library for a creature card with mana value 3 or less, put it onto the battlefield, then shuffle',
     'search your library for a card, reveal those cards, put it into your hand, then shuffle',

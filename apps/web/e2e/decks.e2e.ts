@@ -1,4 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
+import {
+  chooseDeck,
+  chooseDeckById,
+  OPPONENT_DIALOG,
+  openStartFlow,
+  select,
+  startDefaultGame,
+} from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
@@ -56,7 +64,8 @@ async function saveMine(page: Page): Promise<void> {
 }
 
 async function saveDeck(page: Page, name: string, text: string): Promise<void> {
-  await page.getByRole('button', { name: 'Import a deck' }).click();
+  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'Paste a list' }).click();
   await page.getByLabel('Deck name').fill(name);
   await page.getByLabel(/^Decklist/).fill(text);
   await page.getByRole('button', { name: 'Import', exact: true }).click();
@@ -114,7 +123,13 @@ test.describe('precons on the decks page', () => {
     await editPrecon(page, '1x SYNTHETIC Bear 01');
     await saveMine(page);
     await page.getByRole('button', { name: 'Back to menu' }).click();
-    await expect(page.locator('.scr-deck-tag')).toHaveCount(2);
+    // The edited precon is marked in both dialogs of the start-game flow.
+    const mine = await openStartFlow(page);
+    await expect(mine.locator('.scr-deck-tag')).toHaveCount(1);
+    // Selecting your deck opens the opponent's dialog, which marks it too.
+    await select(mine);
+    const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+    await expect(theirs.locator('.scr-deck-tag')).toHaveCount(1);
   });
 
   test('a precon with a card the engine cannot run is refused with the reason, and reset makes it playable', async ({
@@ -132,23 +147,22 @@ test.describe('precons on the decks page', () => {
     await page.getByRole('button', { name: 'Back to menu' }).click();
 
     const other = installed.find((id) => id !== PRECON);
-    const opponent = page.locator('fieldset', { hasText: "Opponent's deck" });
-    await opponent.locator(`input[value="${PRECON}"]`).check();
-    await page
-      .locator('fieldset', { hasText: 'Your deck' })
-      .locator(`input[value="${other}"]`)
-      .check();
-    await page.getByRole('button', { name: 'Start game' }).click();
+    const mine = await openStartFlow(page);
+    await chooseDeckById(mine, 'Precons', String(other));
+    const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+    await chooseDeckById(theirs, 'Precons', PRECON);
     const alert = page.getByRole('alert');
     await expect(alert).toContainText(`"${PRECON_NAME}" cannot be played`);
     await expect(alert).toContainText('abilities the engine cannot run yet');
 
-    // Resetting from the decks page brings the shipped, playable deck back.
-    await page.getByRole('button', { name: 'Your decks' }).click();
+    // Resetting from the decks page brings the shipped, playable deck back. The refusal left the
+    // opponent's dialog open: close it first.
+    await theirs.getByRole('button', { name: 'Cancel' }).click();
+    await page.getByRole('button', { name: 'Your Decks' }).click();
     await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Back to menu' }).click();
-    await page.getByRole('button', { name: 'Start game' }).click();
+    await startDefaultGame(page);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
   });
 });
@@ -160,11 +174,11 @@ test.describe('a saved deck as the opponent', () => {
     await fakeScryfall(page);
     await page.goto('/');
     await saveDeck(page, 'SYNTHETIC Saved', supportedList());
-    await expect(page.getByText('Saved in this browser').first()).toBeVisible();
-    const opponent = page.locator('fieldset', { hasText: "Opponent's deck" });
-    await opponent.getByRole('radio', { name: /SYNTHETIC Saved/ }).check();
     await page.getByLabel('Seed').fill('7');
-    await page.getByRole('button', { name: 'Start game' }).click();
+    const mine = await openStartFlow(page);
+    await select(mine);
+    const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+    await chooseDeck(theirs, 'Your Decks', /SYNTHETIC Saved/);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
     // The opponent's commander is the saved deck's, in the opponent's command zone.
@@ -177,9 +191,10 @@ test.describe('a saved deck as the opponent', () => {
     await fakeScryfall(page);
     await page.goto('/');
     await saveDeck(page, 'SYNTHETIC Unsupported', unsupportedList());
-    const opponent = page.locator('fieldset', { hasText: "Opponent's deck" });
-    await opponent.getByRole('radio', { name: /SYNTHETIC Unsupported/ }).check();
-    await page.getByRole('button', { name: 'Start game' }).click();
+    const mine = await openStartFlow(page);
+    await select(mine);
+    const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
+    await chooseDeck(theirs, 'Your Decks', /SYNTHETIC Unsupported/);
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('"SYNTHETIC Unsupported" cannot be played');
     await expect(alert).toContainText('abilities the engine cannot run yet');

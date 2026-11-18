@@ -126,6 +126,8 @@ const LEAD_CONDITIONS = [
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.
   'condition.discarded-spell-this-way',
+  // Lorehold group 1: "If you search your library this way, shuffle." after a search.
+  'condition.searched-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,

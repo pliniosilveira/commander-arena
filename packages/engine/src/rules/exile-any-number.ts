@@ -6,8 +6,9 @@
  * the player knows what they have before they choose again). Accepting exiles the card, face up, as an ordinary zone change (CR 400.7: a new object in exile, which triggers what it
  * would) and asks again; declining ends the effect. A library with no card is not asked about. Every card exiled is what `moved` names afterwards.
  */
-import type { Instruction, ResolutionContext, GameState } from '../state/types';
+
 import { getSeat } from '../state/ops';
+import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { sourceInfo } from './source-info';
 import { done, type StepOutcome } from './step-outcome';
 import { moveObject } from './zones';

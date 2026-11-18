@@ -1,5 +1,5 @@
 {
-  "parserVersion": 141,
+  "parserVersion": 142,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -463,14 +463,6 @@
       "reasons": [],
       "ast": "21f03046"
     },
-    "0ca4e80e-c19c-4b74-b531-c5a4dc5a8ba9": {
-      "name": "Restless Spire",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "dc66dcae"
-    },
     "0d4ecdb1-ec90-497f-a7a4-1c68092b8757": {
       "name": "Teferi's Protection",
       "group": "training",
@@ -523,10 +515,19 @@
     "0fd114c4-092b-4e28-b0dc-ef529f3bc73e": {
       "name": "Jeska's Will",
       "group": "holdout",
-      "status": "supported",
-      "unparsed": [],
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Choose one. If you control a commander as you cast ~, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.add-mana"
+        }
+      ],
       "reasons": [],
-      "ast": "e7e7699c"
+      "ast": "9f7467d2"
     },
     "0fe16212-66c3-4e45-a641-7391e9b2e304": {
       "name": "Shivan Reef",
@@ -642,25 +643,6 @@
       "reasons": [],
       "ast": "07985f6a"
     },
-    "163baf58-b35d-4f2b-aa53-8384b8b5800a": {
-      "name": "Replication Technique",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Demonstrate",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [
-        "faces[0].spell.effect.token.object: a token copy of a permanent that could be an Aura is not implemented by the engine yet (CR 303.4f)"
-      ],
-      "ast": "58dd939e"
-    },
     "16c39265-72d9-4c86-a961-8dd38ff9adcd": {
       "name": "Consign to Memory",
       "group": "acceptance",
@@ -693,6 +675,14 @@
       "reasons": [],
       "ast": "63bacb23"
     },
+    "17b4778b-82b1-4845-ad08-00f3ff66877b": {
+      "name": "Perpetual Timepiece",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bb55ad41"
+    },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
       "group": "acceptance",
@@ -724,6 +714,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "28a7effb"
+    },
+    "18f0cd0b-3e4f-4637-a62e-75dd1b2f3fce": {
+      "name": "Claim Jumper",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1b453ff1"
     },
     "19b5c94b-b4fa-41a9-b649-51c4e6f03602": {
       "name": "Might of the Meek",
@@ -941,6 +939,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "83eaa363"
+    },
+    "24f7143c-d43a-4120-baa0-0235b15d8186": {
+      "name": "Wave of Reckoning",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "343abdf9"
     },
     "25012c1f-c069-43d7-b930-a3a5a7eb1389": {
       "name": "Dismantling Wave",
@@ -1360,14 +1366,6 @@
       "reasons": [],
       "ast": "7e2b33f9"
     },
-    "348c67ef-9ccc-4651-9038-efdf1ad1b36a": {
-      "name": "Rootha, Mastering the Moment",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "219e1a5a"
-    },
     "3494a575-f68e-4e78-9f6b-142cd8a0edea": {
       "name": "Combustible Gearhulk",
       "group": "acceptance",
@@ -1683,23 +1681,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ffd3bd2b"
-    },
-    "3e0e3676-e634-4e64-bdfd-4aaa5885461f": {
-      "name": "Abstract Performance",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that pile into your graveyard. Look at the cards in the other pile. You may cast a spell from among them without paying its mana cost. Put the rest into your hand.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.exile-top"
-        }
-      ],
-      "reasons": [],
-      "ast": "78cbf41c"
     },
     "3f4e300a-ec5c-42f3-a97b-d58e62abe22b": {
       "name": "Season of Growth",
@@ -2030,14 +2011,6 @@
       "reasons": [],
       "ast": "511a0fc4"
     },
-    "515c522f-51d5-4f6d-b9b1-ea3c7f6a378e": {
-      "name": "Rousing Refrain",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "de6cec4d"
-    },
     "516101be-be39-4d84-8fee-d8a79930dd0a": {
       "name": "Sphinx of the Second Sun",
       "group": "acceptance",
@@ -2151,6 +2124,14 @@
       "reasons": [],
       "ast": "9e8374f4"
     },
+    "54d48e54-be4a-4a78-a778-b28e74ef7134": {
+      "name": "Containment Construct",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "823cbaec"
+    },
     "5548ff43-e5f6-4a63-8562-a2b1de06d6f5": {
       "name": "Riveteers Overlook",
       "group": "acceptance",
@@ -2206,14 +2187,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bdf7e65d"
-    },
-    "579cbd92-797f-4cdf-91ed-fca7a523eae5": {
-      "name": "Deep Analysis",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "110187e4"
     },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
@@ -2452,39 +2425,6 @@
       "reasons": [],
       "ast": "42a23b9a"
     },
-    "615b4189-e800-408b-99e0-71ae7089b937": {
-      "name": "Dance with Calamity",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Shuffle your library. As many times as you choose, you may exile the top card of your library. If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells from among those cards without paying their mana costs.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
-      "reasons": [],
-      "ast": "7c45de04"
-    },
-    "61747805-0c34-4beb-8cbf-97bac7a998d0": {
-      "name": "Renegade Bull",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "0458692c"
-    },
-    "61816f98-9d1a-4b16-9194-cb7249880710": {
-      "name": "Leitmotif Composer",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "1e8ef60d"
-    },
     "619173f4-0403-49cd-9659-2fedd5028a90": {
       "name": "Shire Terrace",
       "group": "acceptance",
@@ -2597,14 +2537,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9b4c079b"
-    },
-    "655ee0db-1913-464f-bd06-072c6bf446bd": {
-      "name": "Dirgur Focusmage // Braingeyser",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "b5d13efb"
     },
     "65756e6d-9825-4ed6-91c4-79f1e3bd4ae5": {
       "name": "Supernatural Stamina",
@@ -3114,14 +3046,6 @@
       "reasons": [],
       "ast": "fd3ec62c"
     },
-    "792c4d38-41e6-49eb-bd4e-de0a5ac8330f": {
-      "name": "Redoubled Stormsinger",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "72a49612"
-    },
     "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
       "name": "Midnight Tilling",
       "group": "acceptance",
@@ -3472,14 +3396,6 @@
       "reasons": [],
       "ast": "7e69df7b"
     },
-    "83cf1169-5853-4332-b897-7b17d72d76ab": {
-      "name": "Twinflame",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "0a13d3ed"
-    },
     "84275aab-f718-4896-b61c-63bf49fb483b": {
       "name": "Merchant of Truth",
       "group": "training",
@@ -3769,23 +3685,6 @@
       "reasons": [],
       "ast": "fa12f890"
     },
-    "8ea414c1-88cf-46d4-9a54-6dee9847c537": {
-      "name": "Surge to Victory",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile target instant or sorcery card from your graveyard. Creatures you control get +X/+0 until end of turn, where X is that card's mana value. Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.delayed-combat-prepare"
-        }
-      ],
-      "reasons": [],
-      "ast": "06e7c0bc"
-    },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
       "group": "acceptance",
@@ -3857,14 +3756,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ca25ff73"
-    },
-    "943fc88d-c281-46bb-9dc7-1052f789362b": {
-      "name": "Furygale Flocking",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "7a1ba9a7"
     },
     "9464ddf2-4bcb-44f6-b945-89a132544de6": {
       "name": "Maestros Theater",
@@ -3938,14 +3829,6 @@
       "reasons": [],
       "ast": "f41e2416"
     },
-    "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
-      "name": "Magma Opus",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "93a767d7"
-    },
     "9965d9c5-2ebf-4a6c-930e-55c5890979be": {
       "name": "Thought Vessel",
       "group": "holdout",
@@ -3953,14 +3836,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3d47f3bf"
-    },
-    "9a8f6e5e-6cde-49df-861c-a26cb09c9b12": {
-      "name": "Muddle, the Ever-Changing",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "b9062661"
     },
     "9aace0d3-89e6-4254-b96f-ee3a878f2f91": {
       "name": "Conqueror's Flail",
@@ -4059,6 +3934,14 @@
       "reasons": [],
       "ast": "658cbe5a"
     },
+    "9d2f02f7-adcd-4d23-a051-ebca70f22ba5": {
+      "name": "Fateful Tempest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a7e1b70a"
+    },
     "9d3c7c96-056f-408e-a834-fa45a430d3d4": {
       "name": "Daxos, Blessed by the Sun",
       "group": "acceptance",
@@ -4098,23 +3981,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "49f61e6e"
-    },
-    "9e769a65-7aa5-484d-9493-badb485b5964": {
-      "name": "Plargg and Nassari",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, each player exiles cards from the top of their library until they exile a nonland card. An opponent chooses a nonland card exiled this way. You may cast up to two spells from among the other cards exiled this way without paying their mana costs.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
-      "reasons": [],
-      "ast": "10612be7"
     },
     "9e96d12b-8381-4706-8089-3521aa2b5422": {
       "name": "Gau, Feral Youth",
@@ -4316,14 +4182,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3d2e0fca"
-    },
-    "a7ac5d98-805e-4212-be94-333a0c0c44a7": {
-      "name": "Brudiclad, Telchor Engineer",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "d7b5fa8f"
     },
     "a7c6c9b3-91f2-4ecf-b2b0-b0edd96974d9": {
       "name": "Zul Ashur, Lich Lord",
@@ -4825,14 +4683,6 @@
       "reasons": [],
       "ast": "1a4191d5"
     },
-    "be4f47e9-1bd2-4aa9-bc85-3f203ad21639": {
-      "name": "Rionya, Fire Dancer",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "4e265a4c"
-    },
     "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
       "name": "Renewed Solidarity",
       "group": "acceptance",
@@ -4930,31 +4780,6 @@
       "reasons": [],
       "ast": "d2ef975e"
     },
-    "c336b735-3e6b-471e-be7a-84d7402ae2f5": {
-      "name": "Creative Technique",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Demonstrate",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Shuffle your library, then reveal cards from the top of it until you reveal a nonland card. Exile that card and put the rest on the bottom of your library in a random order. You may cast the exiled card without paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
-      "reasons": [],
-      "ast": "aa696e5c"
-    },
     "c3974ec7-7af0-4b65-baf6-4c1c4fe8a5c4": {
       "name": "Ajani, Strength of the Pride",
       "group": "acceptance",
@@ -4978,6 +4803,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "57262890"
+    },
+    "c3d38129-b955-4fb5-8486-095f918935b9": {
+      "name": "Quintorius, Loremaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "92408abf"
     },
     "c43e7fa5-ff93-42d9-af79-ee417a8e41a7": {
       "name": "Emissary Green",
@@ -5051,6 +4884,14 @@
       "reasons": [],
       "ast": "b989839b"
     },
+    "c78783e5-868d-4a8b-a4f8-95a92853cf0a": {
+      "name": "Naktamun Lorespinner // Wheel of Fortune",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "be655290"
+    },
     "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
       "name": "Expressive Iteration",
       "group": "acceptance",
@@ -5058,14 +4899,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "140f0528"
-    },
-    "c7b044c3-3cfa-407e-bf20-2875e8e04b7b": {
-      "name": "Brazen Borrower // Petty Theft",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "81cef160"
     },
     "c7b72d38-0aa0-4e17-9dd5-9276d7cb21ec": {
       "name": "Kaervek the Merciless",
@@ -5429,14 +5262,6 @@
       "reasons": [],
       "ast": "1d05c81c"
     },
-    "d751580b-bb72-4d1d-be27-d0410f883b2a": {
-      "name": "Inspired Skypainter // Maestro's Gift",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "8f45de5d"
-    },
     "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b": {
       "name": "Cyclonic Rift",
       "group": "training",
@@ -5734,23 +5559,6 @@
       "reasons": [],
       "ast": "6cb785aa"
     },
-    "e3444fcf-70ed-4d6e-aea9-030af15cad56": {
-      "name": "Throes of Chaos",
-      "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Retrace",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        }
-      ],
-      "reasons": [],
-      "ast": "40e03bb5"
-    },
     "e3afc704-220f-498f-9eaa-0821b17dc24c": {
       "name": "Sakura-Tribe Elder",
       "group": "holdout",
@@ -5774,14 +5582,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c9b9a65c"
-    },
-    "e4ed7935-0263-4cde-8118-ac18fffce3ef": {
-      "name": "Determined Iteration",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "fe9ecaed"
     },
     "e5e8e116-10fe-48b0-b3d8-6edb39bd5f90": {
       "name": "Alibou, Ancient Witness",
@@ -5894,14 +5694,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d451c01"
-    },
-    "ec2968fb-163d-4907-862b-b84a1f167833": {
-      "name": "Volcanic Torrent",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "7b262078"
     },
     "ecd49d85-9c8c-4cc9-9a83-072ecd433677": {
       "name": "Flame of Anor",
@@ -6163,14 +5955,6 @@
       "reasons": [],
       "ast": "b8bc1bbf"
     },
-    "f426aa1a-e1dc-4563-b450-2e23d6bd980b": {
-      "name": "Manaform Hellkite",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "1601ff88"
-    },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
       "group": "acceptance",
@@ -6194,14 +5978,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "be0487d5"
-    },
-    "f58117e4-ba85-41b8-8fd5-4245716a84dc": {
-      "name": "Prismari Pianist",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "9bce244c"
     },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
@@ -6307,14 +6083,6 @@
       "reasons": [],
       "ast": "1f6c4af4"
     },
-    "f9217532-f7cf-4436-b476-72d97a3147dc": {
-      "name": "Galazeth Prismari",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c6f51ee3"
-    },
     "f92aaa00-6ece-4033-b3df-b2fc2c4718d9": {
       "name": "Leyline Tyrant",
       "group": "training",
@@ -6355,6 +6123,14 @@
       "reasons": [],
       "ast": "5691b2db"
     },
+    "fa81e7ff-0f2c-40df-9169-c0a22f00cd76": {
+      "name": "Conspiracy Theorist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15e4af96"
+    },
     "fab29bc7-1f0a-4df4-b8f1-c008ce5583d2": {
       "name": "Search for Glory",
       "group": "acceptance",
@@ -6378,14 +6154,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "24a689f7"
-    },
-    "fb60739e-1dc3-481d-a056-ad72e665c680": {
-      "name": "Rite of Replication",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "82dbd195"
     },
     "fb69bc57-f05a-41c2-9b7b-9a9761ef0cd3": {
       "name": "Sacred Peaks",
@@ -6667,12 +6435,12 @@
       "total": 192
     },
     "holdout": {
-      "supported": 56,
+      "supported": 55,
       "total": 61
     },
     "acceptance": {
-      "supported": 461,
-      "total": 489
+      "supported": 447,
+      "total": 468
     }
   }
 }

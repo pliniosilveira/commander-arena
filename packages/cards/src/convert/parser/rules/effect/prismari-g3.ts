@@ -158,10 +158,9 @@ export const EFFECT_PUT_THE_REST_HAND = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.put-the-rest-into-your-hand';
-    const r = pattern(/put the rest into your hand(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu)(
-      ctx,
-      pos,
-    );
+    const r = pattern(
+      /put the rest into your hand(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,
@@ -180,12 +179,7 @@ export const EFFECT_SHUFFLE_REVEAL_UNTIL_EXILE = defineRule<Clauses>({
   id: 'effect.shuffle-reveal-until-exile',
   family: 'effect',
   leading: ['shuffle'],
-  cites: [
-    'CR 701.24 (Shuffle)',
-    'CR 701.20 (Reveal)',
-    'CR 701.13 (Exile)',
-    'CR 401.4 (Library)',
-  ],
+  cites: ['CR 701.24 (Shuffle)', 'CR 701.20 (Reveal)', 'CR 701.13 (Exile)', 'CR 401.4 (Library)'],
   examples: [
     'shuffle your library, then reveal cards from the top of it until you reveal a nonland card. exile that card and put the rest on the bottom of your library in a random order',
     'Shuffle your library, then reveal cards from the top of it until you reveal a nonland card. Exile that card and put the rest on the bottom of your library in a random order',

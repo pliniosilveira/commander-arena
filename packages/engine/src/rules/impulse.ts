@@ -101,7 +101,12 @@ export function runMayPlay(
       timestamp,
       objects: [id],
       until,
-      change: { kind: 'playPermission', seat: res.controller },
+      change: {
+        kind: 'playPermission',
+        seat: res.controller,
+        // Lorehold group 1: "you may cast it this turn" is no permission to play a land.
+        ...(effect.castOnly === true ? { castOnly: true as const } : {}),
+      },
     });
   }
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });

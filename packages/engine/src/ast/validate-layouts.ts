@@ -368,7 +368,9 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
       });
     }
     // D-653 (CR 702.81a): retrace is read from the front face of a card that is not split, as the flashback cost is.
-    const retrace = face.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'retrace');
+    const retrace = face.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'retrace',
+    );
     if (retrace && (i > 0 || def.layout === 'split')) {
       out.push({
         path: `faces[${i}].abilities`,

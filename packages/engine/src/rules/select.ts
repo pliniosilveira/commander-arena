@@ -248,6 +248,10 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    // CR 607.2a, 400.7 (Lorehold group 2): the cards the source exiled with its linked ability; a source that left the battlefield is a new object with none.
+    ...(filter.exiledWithSource === true
+      ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
+      : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
   };
@@ -268,6 +272,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.controllerDealtDamageBySource === true ||
     f.putFromBattlefieldThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
@@ -568,7 +573,8 @@ export function resolveObjects(
       // D-626 (CR 603.7c, 400.7): the objects a delayed ability was created about that are still those objects on the battlefield.
       // D-649 (CR 400.7): a card the ability was made about in exile (`zone` 'exile'), found only while it is still that object there.
       return selector.ids.filter(
-        (id) => state.objects[id]?.zone === (selector.zone === undefined ? 'battlefield' : selector.zone),
+        (id) =>
+          state.objects[id]?.zone === (selector.zone === undefined ? 'battlefield' : selector.zone),
       );
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).

@@ -16,13 +16,14 @@ type Builder = ReturnType<typeof scenario>;
 
 /** Casts the Technique with this library (the shuffle makes the order of it a matter of the seed: `library` is the whole of it). */
 function game(library: readonly string[], seed = 1, extra: (b: Builder) => void = () => {}) {
-  const b = scenario().seat(0).hand(TECHNIQUE).pool('RRRRR').seed(seed).library(...library);
+  const b = scenario()
+    .seat(0)
+    .hand(TECHNIQUE)
+    .pool('RRRRR')
+    .seed(seed)
+    .library(...library);
   extra(b);
-  const g = b
-    .seat(1)
-    .library('Island', 'Island')
-    .at('precombatMain', { active: 0 })
-    .build();
+  const g = b.seat(1).library('Island', 'Island').at('precombatMain', { active: 0 }).build();
   g.act(0).cast(TECHNIQUE, { pay: true });
   // Demonstrate: the cast trigger asks whether to copy the spell; no copy here (demonstrate has its own tests).
   g.passAll();
@@ -92,7 +93,13 @@ describe('reveal until a nonland card, exile it, the rest on the bottom (CR 701.
   });
 
   test('the shuffle comes first: the same cards under another seed give another card exiled first', () => {
-    const lib = [GAIN2, GAIN7, 'SYNTHETIC Prismari Big Study', 'SYNTHETIC Prismari Trinket', 'Island'];
+    const lib = [
+      GAIN2,
+      GAIN7,
+      'SYNTHETIC Prismari Big Study',
+      'SYNTHETIC Prismari Trinket',
+      'Island',
+    ];
     const first = (seed: number) => {
       const g = game(lib, seed);
       return exiled(g)[0]?.card;

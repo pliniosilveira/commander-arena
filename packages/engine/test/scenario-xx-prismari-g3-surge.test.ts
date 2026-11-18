@@ -148,7 +148,10 @@ describe('"Whenever a creature you control deals combat damage to a player this 
   });
 
   test('a creature of the opponent that deals combat damage in the next turn does not trigger it: the ability has ended', () => {
-    const g = castSurge(game([GAIN2], (b) => b.seat(1).battlefield(SPIDER)), GAIN2);
+    const g = castSurge(
+      game([GAIN2], (b) => b.seat(1).battlefield(SPIDER)),
+      GAIN2,
+    );
     g.advanceTo('upkeep', { turn: 'next' });
     g.advanceTo('declareAttackers');
     g.act(1).attack({ name: SPIDER, zone: 'battlefield', seat: 1 });

@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
+import { decksIn, OPPONENT_DIALOG, openStartFlow, select, startDefaultGame } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { untilHandPlayable } from './harness/resolve';
 
@@ -21,13 +22,39 @@ test('the menu starts the installed precon', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Commander Arena' })).toBeVisible();
   await expect(page.getByText(/No precon is installed yet/)).toHaveCount(0);
   await expect(page.getByText(/not real precons/i)).toHaveCount(0);
-  await expect(page.getByRole('radio')).toHaveCount(2 * installed.length);
-  await page.getByLabel('Seed').fill('7');
-  await page.getByRole('button', { name: 'Start game' }).click();
+  // The home has no deck list: the decks are chosen in the start-game dialogs.
+  await expect(page.locator('.scr-deck')).toHaveCount(0);
+  const dialog = await openStartFlow(page);
+  await expect(await decksIn(dialog, 'Precons')).toHaveCount(installed.length);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await startDefaultGame(page, '7');
   await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
   await page.getByRole('button', { name: 'Keep', exact: true }).click();
   await expect(primary(page)).toBeVisible({ timeout: 15_000 });
   expect(errors).toEqual([]);
+});
+
+test('the random buttons mark a deck and Select confirms it', async ({ page }) => {
+  await page.goto('/');
+  const dialog = await openStartFlow(page);
+  // Select is first and Cancel to its right; the random buttons are on the other side.
+  const buttons = await dialog.getByRole('button').allInnerTexts();
+  expect(buttons.slice(-5)).toEqual([
+    'Select',
+    'Cancel',
+    'Random all',
+    'Random precon',
+    'Random mine',
+  ]);
+  // Nothing is saved in a fresh browser, so there is nothing to pick from.
+  await expect(dialog.getByRole('button', { name: 'Random mine' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Random precon' }).click();
+  await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1);
+  await dialog.getByRole('button', { name: 'Random all' }).click();
+  await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1);
+  await select(dialog);
+  await expect(page.getByRole('dialog', { name: OPPONENT_DIALOG })).toBeVisible();
 });
 
 test('autostart to a playable game: keep, play a land, pass turns without extra clicks', async ({

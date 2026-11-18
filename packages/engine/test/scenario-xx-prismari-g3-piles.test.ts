@@ -6,9 +6,9 @@
 // without paying its mana cost), CR 403.3 and 400.7 (what leaves a zone is a new object), CR 903.9b (a commander going to the hand asks its owner).
 import { describe, expect, test } from 'vitest';
 import { getLegalActions, getView, syntheticCard, validateCard } from '../src/index';
+import { definitionOf } from '../src/state/ops';
 import type { ScenarioGame } from '../src/testing/index';
 import { scenario } from '../src/testing/index';
-import { definitionOf } from '../src/state/ops';
 import { chooseCardsDecision, chooseOptionDecision } from './pending-helpers';
 
 const PERFORMANCE = 'SYNTHETIC Pile Performance';
@@ -36,11 +36,7 @@ function game(
   });
   for (const name of rest) b.library(name);
   extra(b);
-  const g = b
-    .seat(1)
-    .library('Island', 'Island')
-    .at('precombatMain', { active: 0 })
-    .build();
+  const g = b.seat(1).library('Island', 'Island').at('precombatMain', { active: 0 }).build();
   g.act(0).cast(PERFORMANCE, { pay: true });
   g.passAll();
   return g;
@@ -134,7 +130,11 @@ describe('the chosen pile goes to the graveyard, the controller may cast a spell
     const cast = chooseCardsDecision(g);
     expect(cast).toMatchObject({ seat: 0, purpose: 'cast', zone: 'exile' });
     expect(cast.legal).toHaveLength(2); // Gain Two and Gain Seven; the lands cannot be cast
-    expect(getView(g.state, 0).pendingCards?.map((o) => o.name).sort()).toEqual([GAIN2, GAIN7].sort());
+    expect(
+      getView(g.state, 0)
+        .pendingCards?.map((o) => o.name)
+        .sort(),
+    ).toEqual([GAIN2, GAIN7].sort());
     g.act(0).chooseCards({ name: GAIN7, zone: 'exile', seat: 0 });
     // The rest of the pile goes into the hand: the other three cards of the pile.
     g.passAll();

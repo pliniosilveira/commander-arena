@@ -150,12 +150,17 @@ describe('any number of cards, and any amount of mana', () => {
 });
 
 describe('cast from exile and from the top of the library', () => {
-  test('a card exiled to be played is a tile at the left of the battlefield', async () => {
+  test('a card exiled to be played is a tile at the right of the battlefield', async () => {
     const store = await must(mayPlayFromExile, /Impulse Rite/, { seed: 3 });
     const view = store.getState().snapshot?.view as GameView;
     const html = layer(store, <ExilePlayStrip view={view} />);
     expect(html).toContain('aria-label="Cast from exile"');
+    expect(html).toContain('board-exile-anchor');
     expect(html).toMatch(/board-exile-play-label">(Cast|Play) from exile<\/span>/);
+    // Nothing playable from exile: no column and no anchor at all.
+    const empty = layer(store, <ExilePlayStrip view={{ ...view, exile: [] }} />);
+    expect(empty).not.toContain('board-exile-anchor');
+    expect(empty).not.toContain('Cast from exile');
     // The chip row above the hand no longer lists it a second time.
     expect(layer(store, <OtherZonesStrip view={view} />)).not.toContain('Cast from exile');
   });

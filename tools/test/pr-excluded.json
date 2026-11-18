@@ -46,6 +46,8 @@
   "prismari-g1-games.test.ts",
   "prismari-g2-games.test.ts",
   "hylda-g2-games.test.ts",
+  "lorehold-g1-games.test.ts",
+  "lorehold-g2-games.test.ts",
   "galadriel-g1-games.test.ts",
   "keyword-batch-games.test.ts",
   "keyword-batch2-games.test.ts",

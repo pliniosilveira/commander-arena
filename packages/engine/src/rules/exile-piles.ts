@@ -70,10 +70,7 @@ export function runExilePiles(
     return done(
       state,
       [],
-      [
-        ...exileTop(state, res.controller, ins.count, false),
-        { ...ins, stage: 'choose', first },
-      ],
+      [...exileTop(state, res.controller, ins.count, false), { ...ins, stage: 'choose', first }],
     );
   }
   if (ins.stage === 'finish') {

@@ -41,6 +41,23 @@ export function cardsInLibraryHolds(
 }
 
 /**
+ * CR 402.1 (Hand), 603.4: some player still in the game has a number of cards in hand that meets the comparison ("one or fewer" is at most 1). A player who has lost has left the
+ * game, so their hand is not looked at (CR 800.4a).
+ */
+export function aPlayerCardsInHandHolds(
+  state: GameState,
+  compare: Extract<Condition, { kind: 'aPlayerCardsInHand' }>['compare'],
+): boolean {
+  return state.seats.some((seat) => {
+    if (seat.hasLost) return false;
+    const n = seat.hand.length;
+    if (compare.cmp === 'atLeast') return n >= compare.value;
+    if (compare.cmp === 'atMost') return n <= compare.value;
+    return n === compare.value;
+  });
+}
+
+/**
  * CR 119.1, 903.7 (D-133): whether `seat`'s life total, or its difference from the life total the players started with, meets
  * the comparison.
  */
@@ -173,6 +190,8 @@ export function plainConditionHolds(
       return cardsInGraveyardHolds(state, controller, condition.compare);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, controller, condition.compare);
+    case 'aPlayerCardsInHand':
+      return aPlayerCardsInHandHolds(state, condition.compare);
     case 'ownTurnNumber': {
       if (state.turn.activeSeat !== controller) return false;
       const turns = getSeat(state, controller).turnsTaken;

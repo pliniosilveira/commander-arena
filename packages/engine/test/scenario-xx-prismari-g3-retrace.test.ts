@@ -23,7 +23,10 @@ function game(
   hand: readonly string[],
   extra: (b: Builder) => void = () => {},
 ) {
-  const b = scenario().seat(0).library(...FILLER).pool('RRRRRR');
+  const b = scenario()
+    .seat(0)
+    .library(...FILLER)
+    .pool('RRRRRR');
   for (const card of graveyard) b.graveyard(card);
   for (const card of hand) b.hand(card);
   extra(b);

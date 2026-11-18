@@ -65,6 +65,8 @@ import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
+import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
@@ -821,6 +823,14 @@ function playerVerb(
       }
       // "Discard their hand" (stage P52, D-210, CR 701.9): as many cards as the hand holds, counted as the instruction comes up.
       if (verb === 'discard' && arg(clause, 'hand') !== undefined) {
+        // "Each player discards their hand" (Lorehold group 3, CR 701.9a): each player discards the hand they have as their instruction comes up, so the count is not the controller's.
+        if (player.value.kind !== 'you') {
+          return {
+            ok: true,
+            value: [{ kind: 'discard', player: player.value, count: 0, hand: true }],
+            rule: clause.rule,
+          };
+        }
         const blocked = missingFeatures(['amount:countOf']);
         if (blocked.length > 0) return failure(clause, blocked);
         return {
@@ -1677,6 +1687,10 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
+  // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
+  ...LOREHOLD_G1_LOWERINGS,
+  // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
+  ...LOREHOLD_G2_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
@@ -1731,7 +1745,9 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   test === 'exiledThisWay' ||
                   test === 'triggerSpellManaValue'
                 ? 'objectMatches'
-                : test === 'discardedThisWay' || test === 'discardedSpellThisWay'
+                : test === 'discardedThisWay' ||
+                    test === 'discardedSpellThisWay' ||
+                    test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost'
                     ? 'amountIs'

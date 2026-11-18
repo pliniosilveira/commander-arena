@@ -795,6 +795,29 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Target creature gets -1/-1 until end of turn. That creature gets -13/-13 until end of turn instead if ${e}.`,
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
+  // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
+  'condition.searched-this-way': permanent(
+    (e) =>
+      `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
+  ),
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
+  'condition.a-player-cards-in-hand': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,
+  ),
+  'noun.any-number-target-graveyard-cards': permanent(
+    (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,
+  ),
+  // Lorehold Spirit deck, group 2 (issue 86): a card of your graveyard that is none of two types, "card exiled with ~" and the three sentences of the free cast, and the votes counted.
+  'noun.target-nonmatching-graveyard-card': permanent(
+    (e) => `At the beginning of your end step, exile ${e}.`,
+  ),
+  'noun.target-card-exiled-with-self': permanent(
+    (e) => `{1}, {T}: Choose ${e}. You may cast that card this turn without paying its mana cost.`,
+  ),
+  'effect.cast-exiled-with-self': permanent((e) => `{1}, {T}: ${cap(e)}.`),
+  'amount.for-each-vote': spell(
+    (e) => `Starting with you, each player votes for past or present. You mill a card ${e}.`,
+  ),
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,
   ),

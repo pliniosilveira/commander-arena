@@ -22,8 +22,15 @@ const FILLER = ['Island', 'Island', 'Island', 'Island', 'Island', 'Island'] as c
 type Builder = ReturnType<typeof scenario>;
 
 /** Seat 0's upkeep of turn 3 with the Orc's trigger on the stack: seat 0's library and seat 1's, top first. */
-function upkeep(mine: readonly string[], theirs: readonly string[], extra: (b: Builder) => void = () => {}) {
-  const b = scenario().seat(0).battlefield(ORC).library(...mine, ...FILLER);
+function upkeep(
+  mine: readonly string[],
+  theirs: readonly string[],
+  extra: (b: Builder) => void = () => {},
+) {
+  const b = scenario()
+    .seat(0)
+    .battlefield(ORC)
+    .library(...mine, ...FILLER);
   extra(b);
   const g = b
     .seat(1)
@@ -106,7 +113,13 @@ describe('an opponent chooses a nonland card exiled this way (CR 608.2d)', () =>
     const d = chooseCardsDecision(g);
     expect(d).toMatchObject({ seat: 1, purpose: 'opponentChoice', zone: 'exile', min: 1, max: 1 });
     expect(d.legal.map((id) => g.state.objects[id]?.card)).toHaveLength(2);
-    const names = d.legal.map((id) => g.find({ name: GAIN2, zone: 'exile' }).concat(g.find({ name: GAIN7, zone: 'exile' })).find((o) => o.id === id)?.id);
+    const names = d.legal.map(
+      (id) =>
+        g
+          .find({ name: GAIN2, zone: 'exile' })
+          .concat(g.find({ name: GAIN7, zone: 'exile' }))
+          .find((o) => o.id === id)?.id,
+    );
     expect(names).toHaveLength(2);
     // No land is among them.
     expect(d.legal.every((id) => g.state.objects[id]?.zone === 'exile')).toBe(true);
@@ -223,7 +236,11 @@ describe('an opponent chooses a nonland card exiled this way (CR 608.2d)', () =>
 
 /** Seat 0 casts Twin Cast with three known cards on top of the library. */
 function twin(top: readonly string[], extra: (b: Builder) => void = () => {}) {
-  const b = scenario().seat(0).hand(TWIN).library(...top, ...FILLER).pool('RRRRR');
+  const b = scenario()
+    .seat(0)
+    .hand(TWIN)
+    .library(...top, ...FILLER)
+    .pool('RRRRR');
   extra(b);
   const g = b
     .seat(1)

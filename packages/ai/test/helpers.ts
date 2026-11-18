@@ -2096,6 +2096,9 @@ export const VRASKA_NAMES = [
   'SYNTHETIC Mill Stone',
   'SYNTHETIC Copy Mirror',
   'SYNTHETIC Prepared Scout // Scout Tidings',
+  // Lorehold group 3: a preparation card that becomes prepared at its controller's upkeep when a player has one or fewer cards in hand, and whose prepare spell makes each player
+  // discard their hand and draw seven cards.
+  'SYNTHETIC Lore Jackal // Spin of Fate',
 ] as const;
 
 /**
@@ -3269,6 +3272,57 @@ export const PRISMARI_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-610 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
+ * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
+ * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
+ * that discards two cards, an artifact that mills and shuffles cards of the graveyard into the library, a sorcery in which each creature deals damage to itself equal to its power and a 3/5
+ * with deathtouch and lifelink. The "you may" of the searches, the cards to discard, the card to exile and the permission to play change which answers the generic pools ask for, which
+ * games-100 expects only from dedicated styles.
+ */
+export const LOREHOLD_G1_NAMES = [
+  'SYNTHETIC Land Claimer',
+  'SYNTHETIC Quarantine Golem',
+  'SYNTHETIC Cast Golem',
+  'SYNTHETIC Doubting Seer',
+  'SYNTHETIC Discard Watcher',
+  'SYNTHETIC Twin Discard',
+  'SYNTHETIC Memory Clock',
+  'SYNTHETIC Reckoning Tide',
+  'SYNTHETIC Venom Titan',
+] as const;
+
+/** The loreholdG1 style: every card of the group twice, the draw-and-discard sorcery of the generic pool for more discards, bodies, and a burn spell. */
+export const LOREHOLD_G1_SPELLS = [
+  ...supported(LOREHOLD_G1_NAMES),
+  ...supported(LOREHOLD_G1_NAMES),
+  ...supported(['SYNTHETIC Loot', 'SYNTHETIC Loot']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Raging Goblin']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Plains for the Claimer to find and for white, Mountains and Islands for the red and blue, Swamps for the Titan. */
+export const LOREHOLD_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Lorehold group 1 soak test (issue 86): a mirror match and both mixed ways. */
+export const LOREHOLD_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['loreholdG1', 'loreholdG1'],
+  ['loreholdG1', 'spells'],
+  ['spells', 'loreholdG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-528 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
  * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
  * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
@@ -3315,6 +3369,50 @@ export const GALADRIEL_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
   ['galadrielG1', 'galadrielG1'],
   ['galadrielG1', 'spells'],
   ['spells', 'galadrielG1'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Lorehold Spirit deck (issue 86, D-618 and later): a sorcery in which each player votes for past or present (a card milled for each past vote and damage for
+ * the mana value of what was milled, a card exiled for each present vote to play until the end of the next turn), a 3/5 with vigilance that exiles a noncreature, nonland card of its controller's
+ * graveyard at their end step for a 3/2 Spirit and casts it for free later by sacrificing a Spirit, and a plain Spirit. The vote, the targets, the sacrifice and the free cast change which answers the
+ * generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const LOREHOLD_G2_NAMES = [
+  'SYNTHETIC Verdict Tempest',
+  'SYNTHETIC Lore Elephant',
+  'SYNTHETIC Bound Spirit',
+] as const;
+
+/** The loreholdG2 style: every card of the group twice, cards that go to the graveyard to be exiled and cast (instants, sorceries and an artifact), bodies, and burn. */
+export const LOREHOLD_G2_SPELLS = [
+  ...supported(LOREHOLD_G2_NAMES),
+  ...supported(LOREHOLD_G2_NAMES),
+  ...supported(['SYNTHETIC Verdict Tempest', 'SYNTHETIC Bound Spirit']),
+  ...supported(['SYNTHETIC Loot', 'SYNTHETIC Loot']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Divination', 'Sol Ring']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Raging Goblin']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Mountains for the red and Plains for the white of the Elephant and the Spirits, Islands for the blue of the Divination and the Loot, Swamps. */
+export const LOREHOLD_G2_LANDS = supported([
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Lorehold group 2 soak test (issue 86): a mirror match and both mixed ways. */
+export const LOREHOLD_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['loreholdG2', 'loreholdG2'],
+  ['loreholdG2', 'spells'],
+  ['spells', 'loreholdG2'],
 ];
 
 /**
@@ -4313,6 +4411,10 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(PRISMARI_G1_NAMES as readonly string[]).includes(card.name))
   // The Prismari group 2 cards (issue 87) ask the targets of a divided slot, the copy of an exiled card to cast, the flashback payment and mana that stays: a style of their own.
   .filter((card) => !(PRISMARI_G2_NAMES as readonly string[]).includes(card.name))
+  // The Lorehold group 1 cards (issue 86) ask a "you may" before a search, which cards to discard, which card to exile and whether to pay {1} and discard: a style of their own.
+  .filter((card) => !(LOREHOLD_G1_NAMES as readonly string[]).includes(card.name))
+  // The Lorehold group 2 cards (issue 86) ask each player to vote, which card to exile, which Spirit to sacrifice and whether to cast a card without paying: a style of their own.
+  .filter((card) => !(LOREHOLD_G2_NAMES as readonly string[]).includes(card.name))
   // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
   .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
@@ -4541,6 +4643,8 @@ export type DeckStyle =
   | 'hyldaG1'
   | 'prismariG1'
   | 'prismariG2'
+  | 'loreholdG1'
+  | 'loreholdG2'
   | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
@@ -4634,6 +4738,8 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
   if (style === 'prismariG1' && PRISMARI_G1_SPELLS.length > 0) return PRISMARI_G1_SPELLS;
   if (style === 'prismariG2' && PRISMARI_G2_SPELLS.length > 0) return PRISMARI_G2_SPELLS;
+  if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
+  if (style === 'loreholdG2' && LOREHOLD_G2_SPELLS.length > 0) return LOREHOLD_G2_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
@@ -4839,6 +4945,8 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
   if (style === 'prismariG1' && BASIC_LANDS.length > 0) return PRISMARI_G1_LANDS;
   if (style === 'prismariG2' && BASIC_LANDS.length > 0) return PRISMARI_G2_LANDS;
+  if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;
+  if (style === 'loreholdG2' && BASIC_LANDS.length > 0) return LOREHOLD_G2_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;

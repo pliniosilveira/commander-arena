@@ -436,6 +436,12 @@ export interface StackData {
    */
   readonly exileInstead?: true;
   /**
+   * True when an effect says "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): when this spell would
+   * leave the stack for a graveyard (it resolved, was countered, fizzled) the card goes to the bottom of its owner's library instead. It belongs to the spell, not to a permanent: it ends
+   * when the card becomes another object (CR 400.7). Absent otherwise, and for an ability.
+   */
+  readonly bottomInstead?: true;
+  /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (D-439,
    * CR 614.1a, 608.2n, 603.7): set on a spell by the effect `exileOnResolve`. When this instant or sorcery resolves and would be put into its owner's graveyard it is exiled instead, and
    * a delayed triggered ability of `by` (with `source` as its source) returns the card to its owner's hand at the beginning of the next end step. A spell that does not resolve is not
@@ -453,8 +459,8 @@ export interface StackData {
   readonly exileWithTimeCounters?: number;
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
-   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
-   * Absent otherwise, and for an ability.
+   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own. Also (Lorehold group 2) a card in exile cast for no mana cost because an
+   * effect gave a permission to ("You may cast that card this turn without paying its mana cost", `mayCast.free`). Absent otherwise, and for an ability.
    */
   readonly byEffect?: true;
   /**
@@ -1338,6 +1344,8 @@ export type Instruction =
       readonly anyNumber?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
+      /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
+      readonly hand?: true;
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */
       readonly conniver?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
@@ -1791,6 +1799,8 @@ export interface ThisWayCounts {
   readonly discardedInstantOrSorcery?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
+  /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
+  readonly searched?: number;
 }
 
 /** An attacking creature (CR 508.1k). `blocked` stays true even if its blockers leave (CR 509.1h). */
@@ -1853,7 +1863,22 @@ export type ContinuousChange =
    * "You may play that card this turn" (`mayPlay`, D-151, CR 601.2, 305.1, 611.2a): `seat` may cast the card in exile `objects` names, or play it when it
    * is a land, until the effect ends. No layer: read where casting and playing are decided (`rules/legality.ts`, `mayPlayFromExile`).
    */
-  | { readonly kind: 'playPermission'; readonly seat: SeatId }
+  | {
+      readonly kind: 'playPermission';
+      readonly seat: SeatId;
+      /** "You may cast it this turn" (`mayPlay.castOnly`, Lorehold group 1): the card may be cast, not played as a land. */
+      readonly castOnly?: true;
+      /**
+       * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
+       * (the plain cast, paying the mana cost, is not allowed by this permission). Only with `castOnly`.
+       */
+      readonly free?: true;
+      /**
+       * "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (`mayCast.bottomInstead`, Lorehold group 2, CR 614.1a): the spell cast with
+       * this permission carries `StackData.bottomInstead` (`rules/cast.ts`, `beginCast`).
+       */
+      readonly bottomInstead?: true;
+    }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }

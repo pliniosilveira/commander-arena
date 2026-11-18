@@ -44,6 +44,8 @@ import {
 import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
+import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
+import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
 import { PAIR_NOUN_RULES } from './pair';
 import {
@@ -716,6 +718,11 @@ export const NOUN_RULES = [
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "any number of target cards from your graveyard", read by `effect.shuffle-cards-into-library` only.
+  ...LOREHOLD_G1_NOUN_RULES,
+  // Lorehold Spirit deck, group 2 (issue 86): "target noncreature, nonland card from your graveyard" (read by `effect.exile` only) and "target card exiled with ~" (read by
+  // `effect.cast-exiled-with-self` only).
+  ...LOREHOLD_G2_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "those creatures" and "X target creatures".
   ...HYLDA_G2_NOUN_RULES,
   NOUN_PLAYER_GRAVEYARD,

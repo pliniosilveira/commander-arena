@@ -34,6 +34,7 @@ import { runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
+import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runChooseOne } from './choose-one';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
@@ -44,7 +45,7 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
-import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
+import { asking, runDealDamage, runDealDamageToSelf, runDealDividedDamage } from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
@@ -66,8 +67,11 @@ import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
+import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
+import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
+import { runExileUntilFound } from './exile-until-found';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
@@ -104,10 +108,6 @@ import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
 import { runRevealUntil } from './reveal-until';
-import { runExileAnyNumber } from './exile-any-number';
-import { runExilePiles, startExilePiles } from './exile-piles';
-import { runExileUntilFound } from './exile-until-found';
-import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
 import { controlledCandidates, sacrificeCandidates, sacrificePermanent } from './sacrifice';
@@ -668,6 +668,10 @@ function runEffect(
     case 'dealDividedDamage':
       return runDealDividedDamage(state, res, effect, targets, flow);
 
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."
+      return runDealDamageToSelf(state, effect, ctx, targets, flow);
+
     case 'destroy': {
       // CR 701.8 (Destroy): indestructible permanents are not destroyed (CR 702.12b).
       const ids = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
@@ -1094,7 +1098,8 @@ function runEffect(
         };
       }
       // D-652 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
-      const opponent = effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
+      const opponent =
+        effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
       if (effect.copier === 'opponent' && opponent === undefined) return done(state);
       return {
         ...done(
@@ -1991,8 +1996,10 @@ function runEffect(
     case 'discard': {
       // CR 701.9: each player named discards that many cards, choosing which (CR 701.9b).
       const anyNumber = effect.anyNumber === true;
-      const count = anyNumber ? 0 : amountOf(state, effect.count, ctx, targets);
-      if (count <= 0 && !anyNumber) return done(state);
+      // CR 701.9a: "discards their hand" is read for each player as their instruction runs (`runDiscard`), so there is no count here.
+      const wholeHand = effect.hand === true;
+      const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
+      if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);
       return done(
         state,
@@ -2002,6 +2009,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
           chosen: null,
@@ -2099,6 +2107,27 @@ function runEffect(
           ),
         ],
       );
+
+    case 'exileFromTriggerCards': {
+      // CR 603.2c, 608.2d, 400.7 (Lorehold group 1): "you may exile one of them from your graveyard": the controller chooses none or one of the cards that triggered this ability
+      // that are still in their graveyard, which the choice's own question offers; with none there nothing is asked and nothing is done.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'graveyard' as const },
+            count: 1,
+            to: 'exile' as const,
+            position: 'top' as const,
+            optional: true as const,
+            among: res.triggerCards ?? [],
+            chosen: null,
+          },
+        ],
+      );
+    }
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.

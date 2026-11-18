@@ -47,7 +47,11 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
     if (!may.value && !clause.optional) return failure(clause);
     // "The other cards exiled this way" are the cards the opponent did not choose; "them" and "those cards" are the cards an instruction exiled.
     const before = ctx.lastEffectKind;
-    if (other.value ? before !== 'opponentChoosesCard' : before === null || !EXILES_CARDS.includes(before)) {
+    if (
+      other.value
+        ? before !== 'opponentChoosesCard'
+        : before === null || !EXILES_CARDS.includes(before)
+    ) {
       return failure(clause);
     }
     const any = arg(clause, 'any');

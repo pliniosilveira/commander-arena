@@ -23,7 +23,11 @@ const MANA = 'RRRRRRRR';
 type Builder = ReturnType<typeof scenario>;
 
 function dance(card: string, top: readonly string[], extra: (b: Builder) => void = () => {}) {
-  const b = scenario().seat(0).hand(card).library(...top, ...FILLER).pool(MANA);
+  const b = scenario()
+    .seat(0)
+    .hand(card)
+    .library(...top, ...FILLER)
+    .pool(MANA);
   extra(b);
   const g = b
     .seat(1)
