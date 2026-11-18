@@ -29,9 +29,10 @@ import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
 import { DASH_RETURN_ABILITY } from './derive-alt';
+import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
-import { isAdventureSpell } from './layouts';
+import { isAdventureSpell, isOmenSpell } from './layouts';
 import { faceOf, targetSpecsOf } from './legality';
 import { chosenEffect, modalOfObject } from './modes';
 import { runPayAmount } from './pay-amount';
@@ -346,6 +347,14 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !exiled &&
       obj.stack.flashback !== true &&
       obj.stack.exileInstead !== true;
+    // Omen: "Then shuffle this card into its owner's library" instead of the graveyard, for a spell that resolves (a countered one goes to the graveyard) and that no
+    // other effect sends to exile or the hand.
+    const omen =
+      isOmenSpell(next, obj) &&
+      !exiled &&
+      !boughtBack &&
+      obj.stack?.flashback !== true &&
+      obj.stack?.exileInstead !== true;
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
@@ -354,7 +363,9 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
           ? 'exile'
           : boughtBack
             ? 'hand'
-            : 'graveyard',
+            : omen
+              ? 'library'
+              : 'graveyard',
       // CR 400.3 (D-353): an instant or sorcery that resolves goes to its OWNER's graveyard, whoever cast it (a card cast from another player's graveyard); a
       // permanent enters under its controller's control (CR 110.2), and an Adventure is exiled for its caster (CR 715.3d).
       toSeat: permanent || adventure ? controllerOf(state, obj) : obj.owner,
@@ -369,6 +380,11 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     if (moved.kind === 'done') {
       next = moved.state;
       events.push(...moved.events);
+      if (omen) {
+        const shuffled = shuffleLibrary(next, obj.owner);
+        next = shuffled.state;
+        events.push(...shuffled.events);
+      }
       if (auraHost !== null && moved.newObject !== null) {
         const attached = attachEntered(next, moved.newObject, auraHost);
         next = attached.state;

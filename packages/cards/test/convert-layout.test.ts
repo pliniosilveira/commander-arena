@@ -158,7 +158,7 @@ describe('the Adventure face (CR 715.2)', () => {
     const imported = parse(multi('adventure', [bear, creature('SYNTHETIC Other')]));
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.reasons).toEqual([
-      'layout "adventure": face 1 (SYNTHETIC Other) must be an instant or sorcery with the Adventure subtype',
+      'layout "adventure": face 1 (SYNTHETIC Other) must be an instant or sorcery with the Adventure or Omen subtype',
     ]);
   });
 
@@ -166,7 +166,7 @@ describe('the Adventure face (CR 715.2)', () => {
     const imported = parse(multi('adventure', [bear, { ...chop, typeLine: 'Instant' }]));
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.reasons).toEqual([
-      'layout "adventure": face 1 (SYNTHETIC Chop) must be an instant or sorcery with the Adventure subtype',
+      'layout "adventure": face 1 (SYNTHETIC Chop) must be an instant or sorcery with the Adventure or Omen subtype',
     ]);
   });
 });

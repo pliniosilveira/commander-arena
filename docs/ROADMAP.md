@@ -514,3 +514,4 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The condition `sacrificedAsCost` of an activated ability is read from its resolution; an intervening "if" of a triggered ability cannot read what an activated ability sacrificed.
 - The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
 - The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.
+- An Omen (Tarkir: Dragonstorm) follows its reminder text, shuffled into its owner's library as it resolves; the Comprehensive Rules text for Omen could not be checked, and a copy of an Omen spell is not looked at.

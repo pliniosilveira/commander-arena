@@ -58,7 +58,7 @@ function FaceList({ object }: { object: ObjectView }) {
               data-face={i}
             >
               <p className="board-preview-face-head">
-                <span className="board-preview-face-role">{faceRole(layout, i)}</span>
+                <span className="board-preview-face-role">{faceRole(layout, i, face)}</span>
                 <b>{face.name}</b>
                 {current && <span className="board-flag">showing</span>}
               </p>
