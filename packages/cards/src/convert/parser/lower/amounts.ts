@@ -436,6 +436,23 @@ export function lowerAmount(
       if (parts.length < 2) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'sum', of: parts }, rule };
     }
+    case 'extreme': {
+      const blocked = needs('extreme');
+      if (blocked !== null) return blocked;
+      const parts: Amount[] = [];
+      for (const part of amount.of) {
+        const lowered = lowerAmount(part, ctx, rule);
+        if (!lowered.ok) return lowered;
+        parts.push(lowered.value);
+      }
+      if (parts.length < 2) return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'extreme', pick: amount.pick, of: parts }, rule };
+    }
+    case 'opponentCount': {
+      const blocked = needs('opponentCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'opponentCount' }, rule };
+    }
     case 'opponentsWithMore': {
       const blocked = needs('opponentsWithMore');
       if (blocked !== null) return blocked;
@@ -730,6 +747,8 @@ export const AMOUNT_NEEDS = [
   'amount:multiple',
   'amount:minus',
   'amount:sum',
+  'amount:extreme',
+  'amount:opponentCount',
   'amount:opponentsWithMore',
   'amount:thisWay',
   'amount:triggerDamage',

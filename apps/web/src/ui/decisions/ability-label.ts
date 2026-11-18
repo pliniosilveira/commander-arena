@@ -286,12 +286,16 @@ export function targetText(spec: TargetSpec | undefined): string {
       if (
         spec.upToThatMany === true ||
         spec.upToTriggerAmount === true ||
+        spec.upToAmount !== undefined ||
         ((spec.max ?? 1) > 1 && (spec.min ?? 1) === 0)
       ) {
+        // Issue 104 (CR 603.3d): "up to X target Zombie cards ..., where X is the number of opponents you have": the number is an amount of the game, fixed as the ability triggers.
         const count =
-          spec.upToThatMany === true || spec.upToTriggerAmount === true
-            ? 'that many'
-            : numberWord(spec.max ?? 1);
+          spec.upToAmount !== undefined
+            ? 'X'
+            : spec.upToThatMany === true || spec.upToTriggerAmount === true
+              ? 'that many'
+              : numberWord(spec.max ?? 1);
         return `up to ${count} target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
       // D-639: "another target creature you control": the source of the ability is left out.

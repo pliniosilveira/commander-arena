@@ -860,6 +860,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };
       default:
@@ -937,6 +938,7 @@ export function lowerTriggered(
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.triggeredBody = true;
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);

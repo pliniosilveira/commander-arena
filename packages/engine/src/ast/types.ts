@@ -226,6 +226,15 @@ export type Amount =
   /** "The number of Zombies on the battlefield plus the number of Zombie cards in all graveyards" (D-131): the sum of two or more amounts. */
   | { readonly kind: 'sum'; readonly of: readonly Amount[] }
   /**
+   * "The number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater" (CR 608.2c, 107.1): the greater (`pick: 'greater'`) or
+   * the lesser (`'lesser'`) of two or more amounts, each read as the instruction runs. Not for a static ability's power or toughness.
+   */
+  | {
+      readonly kind: 'extreme';
+      readonly pick: 'greater' | 'lesser';
+      readonly of: readonly Amount[];
+    }
+  /**
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
    * controllers sacrifice), "for each creature destroyed this way" (`destroyed`: the permanents an earlier
@@ -253,6 +262,10 @@ export type Amount =
       /** D-626 (issue 160, "for each opponent who controls fewer creatures than you"): the opponents whose `stat` is less than the controller's. */
       readonly fewer?: true;
     }
+  /**
+   * "The number of opponents you have" (CR 102.2, 102.3): the opponents of the controller still in the game, now. Not for a static ability's power or toughness.
+   */
+  | { readonly kind: 'opponentCount' }
   /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
@@ -964,6 +977,13 @@ export interface TargetSpec {
    * engine writes it into `max` (and a `min` of 0) of the ability that goes on the stack. Only a slot of a triggered ability whose trigger is `scries`, with `min` and `max` left out.
    */
   readonly upToTriggerAmount?: true;
+  /**
+   * "Return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (CR 107.3c, 603.3d, 601.2c): the slot takes up to as many
+   * targets as this amount is as the ability is put on the stack (none to that many); the number is fixed then, and the engine writes it into `max` (and a `min` of 0) of the ability that
+   * goes on the stack. The amount reads the game only (no target, no X): a count of objects, of opponents, and what is made of them. With 0 the ability has no target and, having
+   * nothing else to do for it, is not put on the stack. Only a slot of a triggered ability, with `min` and `max` left out.
+   */
+  readonly upToAmount?: Amount;
   /**
    * "Return X target creature cards from your graveyard to your hand" (CR 107.3a, 601.2b, 601.2c, D-386): the slot takes exactly as many
    * targets as the X the caster announced for the spell. X is announced before the targets (CR 601.2b), so `chooseX` offers no X larger than the

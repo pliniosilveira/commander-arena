@@ -198,6 +198,8 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** True in the body of a triggered ability (CR 603.3d): the number of targets of a slot ("up to X target ...") may be read as it triggers. */
+  triggeredBody: boolean;
   /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
   didSearch: boolean;
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
@@ -298,6 +300,7 @@ export function newContext(
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
     scryTrigger: false,
+    triggeredBody: false,
     discardBatchTrigger: false,
     didSearch: false,
     searched: null,

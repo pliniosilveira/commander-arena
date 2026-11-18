@@ -454,6 +454,8 @@ export type IrAmount =
   // "your devotion to black" (CR 700.5), "the number of colors in your commanders' color identity" (CR 903.4)
   | { readonly kind: 'devotion'; readonly colors: readonly string[]; readonly span: Span }
   | { readonly kind: 'commanderColors'; readonly span: Span }
+  // "the number of opponents you have" (CR 102.2)
+  | { readonly kind: 'opponentCount'; readonly span: Span }
   // "half the number of Zombies you control, rounded down" (CR 107.1a: the rounding is stated)
   | {
       readonly kind: 'half';
@@ -472,6 +474,13 @@ export type IrAmount =
   | { readonly kind: 'minus'; readonly of: IrAmount; readonly by: number; readonly span: Span }
   // "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards"
   | { readonly kind: 'sum'; readonly of: readonly IrAmount[]; readonly span: Span }
+  // "the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater" (CR 608.2c)
+  | {
+      readonly kind: 'extreme';
+      readonly pick: 'greater' | 'lesser';
+      readonly of: readonly IrAmount[];
+      readonly span: Span;
+    }
   // "for each opponent who has more cards in hand than you"
   | {
       readonly kind: 'opponentsWithMore';
@@ -1710,12 +1719,14 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'aggregate',
   'devotion',
   'commanderColors',
+  'opponentCount',
   'commanderManaValue',
   'commanderCasts',
   'half',
   'multiple',
   'minus',
   'sum',
+  'extreme',
   'opponentsWithMore',
   'thisWay',
   'triggerDamage',
@@ -1748,6 +1759,7 @@ export function nounsOfAmount(amount: IrAmount): IrNoun[] {
     case 'multiple':
     case 'minus':
       return nounsOfAmount(amount.of);
+    case 'extreme':
     case 'sum':
       return amount.of.flatMap(nounsOfAmount);
     default:

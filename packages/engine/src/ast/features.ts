@@ -796,6 +796,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'upToThatMany',
     // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
     'upToTriggerAmount',
+    // CR 107.3c, 603.3d: "return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (`TargetSpec.upToAmount`).
+    'upToAmount',
     // D-386 (provisional): "Return X target creature cards from your graveyard to your hand" (`TargetSpec.countX`).
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
@@ -1060,6 +1062,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-321: "the number of cards in your hand minus 4".
     'minus',
     'sum',
+    'extreme',
+    'opponentCount',
     'opponentsWithMore',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
@@ -1427,6 +1431,8 @@ export const SELECTOR_KINDS = [
   'upToThatMany',
   /** "Up to X target nonland permanents" where X is the cards looked at while scrying (CR 603.3d, 701.22, D-513): the engine's `TargetSpec.upToTriggerAmount`. */
   'upToTriggerAmount',
+  /** "Up to X target Zombie cards ..., where X is the number of opponents you have" (CR 107.3c, 603.3d): the engine's `TargetSpec.upToAmount`, read as the ability triggers. */
+  'upToAmount',
   /** "X target creature cards" (CR 601.2b, 601.2c, D-386): the engine's `TargetSpec.countX`, as many targets as the X announced. */
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
@@ -1765,6 +1771,10 @@ export const AMOUNT_KINDS = [
   'minus',
   /** "... plus ..." (D-131): the engine's `sum`. */
   'sum',
+  /** "... or ..., whichever is greater" (CR 608.2c): the engine's `extreme`, the greater or the lesser of two or more amounts. */
+  'extreme',
+  /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
+  'opponentCount',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */

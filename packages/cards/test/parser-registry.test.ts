@@ -201,6 +201,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 10 of the Hashaton deck (D-386): "discard X cards" is an additional cost of a spell, and "X target creature cards" the targets that read the X it announces.
   'cost.discard-x': permanent((e) => `${e}: Draw X cards.`),
   'noun.x-target-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
+  // Issue 104: the number of targets of a triggered ability, set by the X its sentence defines.
+  'noun.up-to-x-target-graveyard-cards': permanent(
+    (e) =>
+      `When ~ enters, return ${e} to the battlefield, where X is the number of opponents you have.`,
+  ),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.

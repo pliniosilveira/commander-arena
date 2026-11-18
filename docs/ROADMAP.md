@@ -583,3 +583,10 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 
 - A dies trigger that returns the card to the battlefield at the beginning of the next end step (as opposed to your next upkeep) is not read.
 - The Scryfall rulings were not fetched (the host is blocked in a cloud session).
+
+## Counting phrases and amounts (issue #104)
+
+- `upToAmount` is read as the triggered ability triggers and only in a triggered ability; "up to X target ..." with an X the sentence does not define, in a triggered or activated ability, and a spell's "up to X" with a defined X are not read.
+- "..., whichever is greater" and "..., whichever is less" join two amounts; three or more, and "whichever is higher/lower", are not read. The amounts `extreme` and `opponentCount` are not readable by a static ability's power or toughness.
+- "In target player's graveyard" counts cards in a graveyard; a count of permanents "target player controls" was already read (D-499).
+- The Scryfall rulings of Corpse Augur, Rot Hulk and Prophet of the Scarab were not fetched (the host is blocked in a cloud session) and are unverified.
