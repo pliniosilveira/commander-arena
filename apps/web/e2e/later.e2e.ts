@@ -187,7 +187,13 @@ test('Madness: cycling discards the card to exile, the question names the cost, 
   await page.getByRole('button', { name: 'Full Control' }).click();
 
   // Cycling {1}: the card is discarded as a cost and exiled by madness instead of the graveyard.
+  // A card in the hand asks about its ability even when it is the only one (#40), so the click
+  // opens the chooser and the ability is picked in it.
   await handCard(page, cycler).first().click();
+  await page
+    .locator('.dec-ability-chooser')
+    .getByRole('button', { name: /^Cycling/ })
+    .click();
   await settled(page);
   await expect(logText(page)).toContainText(`${cycler} was exiled with madness.`);
   const wording = stack(page).locator('[data-later-wording]');

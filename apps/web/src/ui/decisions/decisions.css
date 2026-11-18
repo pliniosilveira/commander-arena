@@ -401,6 +401,11 @@
   padding: var(--gap);
   background: color-mix(in srgb, var(--bg-sunken) 90%, transparent);
 }
+.dec-overlay-popup {
+  /* Over the whole window, the side panels and the hand included (issue 48). */
+  position: fixed;
+  z-index: 120;
+}
 .dec-dialog {
   max-width: 100%;
   padding: 16px 18px;
@@ -408,6 +413,16 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+.dec-mulligan {
+  width: min(2000px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+}
+.dec-opponent .mana-cost {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 2px;
 }
 .dec-title {
   margin: 0;
@@ -633,6 +648,30 @@
   justify-content: center;
   gap: 8px;
 }
+/* Issue 48 (opening hand, discard): whole cards in one row that scrolls sideways, as large as the
+   height of the window allows, scaled by --dec-hand-scale: never under 141px or over 239px wide
+   (200px and 340px before the scale), and never taller than what the title and the buttons leave
+   (a card is 488:680). */
+.dec-hand-grid {
+  /* The height the title, the buttons and the padding of the dialog take; what the cards may not use. */
+  --dec-hand-chrome: 270px;
+  /* A third smaller than the largest cards the window would take, and 5% back: 0.67 * 1.05. */
+  --dec-hand-scale: 0.7035;
+  --card-w: calc(
+    clamp(200px, calc((100dvh - var(--dec-hand-chrome)) / 1.3935), 340px) *
+    var(--dec-hand-scale)
+  );
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--card-w);
+  /* Centred when they fit, from the start (so the first card can be reached) when they do not. */
+  justify-content: safe center;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  /* Room for the selected card's ring, which the scroll box would clip, and for the scroll bar. */
+  padding: 4px 4px 10px;
+}
 .dec-card {
   position: relative;
   width: var(--hand-w);
@@ -645,6 +684,44 @@
 }
 .dec-card-button {
   cursor: pointer;
+}
+/* Issue 48: the card picture fills the card. Until it has loaded, and when it cannot, the name of
+   the card shows in its place; once it is there the name stays in the page for assistive technology
+   but is not seen. */
+.dec-card-pic {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: calc(var(--radius) + 2px);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+}
+.dec-card-name {
+  display: block;
+  padding: 8px;
+  font-size: calc(14px * var(--text-scale));
+  font-weight: 600;
+}
+.dec-card-img {
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dec-card-img.is-loaded {
+  opacity: 1;
+}
+.dec-card-pic:has(.dec-card-img.is-loaded) {
+  background: none;
+  border-color: transparent;
+}
+.dec-card-pic:has(.dec-card-img.is-loaded) .dec-card-name {
+  opacity: 0;
 }
 .dec-card-button:hover {
   border-color: var(--text-dim);

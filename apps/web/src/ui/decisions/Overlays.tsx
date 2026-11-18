@@ -10,7 +10,7 @@ import {
   type ObjectId,
   type PendingDecision,
 } from '@commander-arena/engine';
-import type { ReactNode } from 'react';
+import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
 import { ManaCost } from '../mana';
@@ -30,6 +30,7 @@ import { MiniCard } from './MiniCard';
 import { ModesDialog } from './ModesDialog';
 import type { DecisionModel } from './model';
 import { NamedOptionDialog } from './NamedOptionDialog';
+import { OpponentCommanders } from './OpponentCommanders';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
@@ -71,18 +72,29 @@ function Hand({
   onPick?: (id: ObjectId) => void;
 }) {
   const cards = myHand(view).filter((o) => ids.includes(o.id));
-  // Everything fits on one row of the overlay: shrink the cards for big hands.
-  const width = Math.max(
-    64,
-    Math.min(100, Math.floor((730 - 8 * (cards.length - 1)) / Math.max(1, cards.length))),
-  );
+  // Issue 48: whole cards in one row that scrolls sideways (`.dec-hand-grid` sizes them). When the
+  // row is wider than the dialog it opens centred on the middle card (the 4th of 7), so a card is
+  // cut off at each end and none is hidden. It centres again when the hand changes, not when a
+  // card is picked.
+  const row = useRef<HTMLDivElement>(null);
+  const hand = cards.map((card) => card.id).join(',');
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `hand` is what tells a new hand
+  useLayoutEffect(() => {
+    const box = row.current;
+    const middle = box?.children[Math.floor((cards.length - 1) / 2)];
+    if (box === null || middle === undefined) return;
+    const at = box.getBoundingClientRect();
+    const card = middle.getBoundingClientRect();
+    box.scrollLeft += card.left + card.width / 2 - (at.left + at.width / 2);
+  }, [hand]);
   return (
-    <div className="dec-hand">
+    <div className="dec-hand dec-hand-grid" ref={row}>
       {cards.map((card) => (
         <MiniCard
           key={card.id}
           card={card}
-          width={width}
+          width="var(--card-w)"
+          full
           selected={selected.includes(card.id)}
           onClick={onPick === undefined ? undefined : () => onPick(card.id)}
         />
@@ -126,7 +138,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     mulligan: (d) => {
       const taken = view.seats[view.viewer]?.mulligans ?? 0;
       return (
-        <Dialog label="Opening hand" className="dec-mulligan">
+        <Dialog label="Opening hand" className="dec-mulligan" popup>
           <h2 className="dec-title">Your opening hand</h2>
           <p className="dec-sub">
             {taken === 0 ? 'First hand.' : `Mulligans taken: ${taken}.`}{' '}
@@ -137,12 +149,13 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
           <Hand view={view} ids={d.hand} selected={[]} />
           <BarButtons buttons={model.bar.buttons} />
           {d.canMulligan ? null : <p className="dec-sub">No more mulligans are possible.</p>}
+          <OpponentCommanders view={view} />
         </Dialog>
       );
     },
 
     mulliganBottom: (d) => (
-      <Dialog label={model.bar.prompt} className="dec-mulligan">
+      <Dialog label={model.bar.prompt} className="dec-mulligan" popup>
         <h2 className="dec-title">{model.bar.prompt}</h2>
         <p className="dec-sub dec-pick-hint">
           Click {d.count === 1 ? 'the card' : `${d.count} cards`} below to choose, then press
@@ -162,7 +175,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     ),
 
     discard: (d) => (
-      <Dialog label={model.bar.prompt} className="dec-mulligan">
+      <Dialog label={model.bar.prompt} className="dec-mulligan" popup>
         <h2 className="dec-title">{model.bar.prompt}</h2>
         <p className="dec-sub dec-pick-hint">
           Click {d.count === 1 ? 'the card' : `${d.count} cards`} below to choose, then press
