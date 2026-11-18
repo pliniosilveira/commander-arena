@@ -3272,6 +3272,55 @@ export const PRISMARI_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
 ];
 
 /**
+ * The SYNTHETIC cards of group 3 of the Prismari deck (issue 87, D-647 and later): sorceries and a creature that exile cards and cast spells from among them without paying their mana
+ * costs (up to two, any number, one, the card revealed until a nonland card), two piles of exiled cards one of them face down with an opponent's choice, the cards each player exiles until
+ * a nonland card and the opponent's choice among them, Demonstrate, a sorcery that copies an exiled card whenever a creature deals combat damage, Retrace, and the cheap and dear spells,
+ * the one with an additional cost and the permanents that these cast. They ask the cards to cast one at a time, the opponent's pile and card, the cards to discard for retrace and whether to
+ * copy: a style of their own.
+ */
+export const PRISMARI_G3_NAMES = [
+  'SYNTHETIC Calamity Dance',
+  'SYNTHETIC Calamity Unshuffled',
+  'SYNTHETIC Chaos Orc',
+  'SYNTHETIC Pile Performance',
+  'SYNTHETIC Reveal Technique',
+  'SYNTHETIC Copy Technique',
+  'SYNTHETIC Demo Bolt',
+  'SYNTHETIC Surge Victory',
+  'SYNTHETIC Chaos Retrace',
+  'SYNTHETIC Retrace Bolt',
+  'SYNTHETIC Retrace X Drain',
+  'SYNTHETIC Twin Cast',
+  'SYNTHETIC Calamity Gain Two',
+  'SYNTHETIC Calamity Gain Seven',
+  'SYNTHETIC Calamity Discard Draw',
+] as const;
+
+/** The prismariG3 style: every card of the group twice, cheap spells to cast for free, and bodies to attack with. */
+export const PRISMARI_G3_SPELLS = [
+  ...supported(PRISMARI_G3_NAMES),
+  ...supported(PRISMARI_G3_NAMES),
+  ...supported([
+    'SYNTHETIC Calamity Gain Two',
+    'SYNTHETIC Calamity Gain Seven',
+    'SYNTHETIC Prismari Big Study',
+    'SYNTHETIC Prismari Trinket',
+  ]),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red, for every cost of the group. */
+export const PRISMARI_G3_LANDS = PRISMARI_G2_LANDS;
+
+/** Style pairs of the Prismari group 3 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG3', 'prismariG3'],
+  ['prismariG3', 'spells'],
+  ['spells', 'prismariG3'],
+];
+
+/**
  * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-610 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
  * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
  * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
@@ -4643,6 +4692,7 @@ export type DeckStyle =
   | 'hyldaG1'
   | 'prismariG1'
   | 'prismariG2'
+  | 'prismariG3'
   | 'loreholdG1'
   | 'loreholdG2'
   | 'galadrielG1'
@@ -4738,6 +4788,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
   if (style === 'prismariG1' && PRISMARI_G1_SPELLS.length > 0) return PRISMARI_G1_SPELLS;
   if (style === 'prismariG2' && PRISMARI_G2_SPELLS.length > 0) return PRISMARI_G2_SPELLS;
+  if (style === 'prismariG3' && PRISMARI_G3_SPELLS.length > 0) return PRISMARI_G3_SPELLS;
   if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
   if (style === 'loreholdG2' && LOREHOLD_G2_SPELLS.length > 0) return LOREHOLD_G2_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
@@ -4945,6 +4996,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
   if (style === 'prismariG1' && BASIC_LANDS.length > 0) return PRISMARI_G1_LANDS;
   if (style === 'prismariG2' && BASIC_LANDS.length > 0) return PRISMARI_G2_LANDS;
+  if (style === 'prismariG3' && BASIC_LANDS.length > 0) return PRISMARI_G3_LANDS;
   if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;
   if (style === 'loreholdG2' && BASIC_LANDS.length > 0) return LOREHOLD_G2_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
