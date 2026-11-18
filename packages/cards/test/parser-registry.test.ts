@@ -598,6 +598,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
+  // Issue 279 (Windbrisk Heights).
+  'condition.attacked-with-creatures': permanent(
+    (e) => `{W}, {T}: You may play the exiled card without paying its mana cost if ${e}.`,
+  ),
   'condition.mana-spent-or-more': permanent(
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,

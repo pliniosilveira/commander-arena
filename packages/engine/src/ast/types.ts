@@ -4286,6 +4286,12 @@ export type Condition =
       readonly ofTypes?: readonly CardType[];
     }
   /**
+   * "If you attacked with three or more creatures this turn" (issue 279, CR 508.1): the controller of the condition declared at least `atLeast` different
+   * creatures as attackers this turn, in any combat phase (a creature that attacks twice counts once), from `TurnLog.attackedWith`; a creature that has died
+   * since still counts. Reads the turn log only, so it is read as the ability is activated or resolves. Not for a static ability.
+   */
+  | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
+  /**
    * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
    */

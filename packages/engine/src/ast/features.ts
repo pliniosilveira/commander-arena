@@ -856,6 +856,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGainedAndLostThisTurn',
     // D-318: "Activate only if you've cast three or more spells this turn".
     'spellsCastThisTurn',
+    // Issue 279: "if you attacked with three or more creatures this turn".
+    'attackedWithCreaturesThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
@@ -1471,6 +1473,8 @@ export const CONDITION_KINDS = [
   'lifeGainedAndLostThisTurn',
   /** "Activate only if you've cast three or more spells this turn" (CR 602.5b, D-318): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
+  /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
+  'attackedWithCreaturesThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */

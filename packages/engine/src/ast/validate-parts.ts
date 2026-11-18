@@ -2561,6 +2561,12 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         }
       }
       break;
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279, CR 508.1: the different creatures the controller attacked with this turn.
+      if (!isCount(c.atLeast) || c.atLeast < 1) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
+      }
+      break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
       issue(

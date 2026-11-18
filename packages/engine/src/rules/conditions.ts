@@ -461,6 +461,13 @@ export function evaluateCondition(
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
       );
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
+      return (
+        new Set(
+          state.turnLog.attackedWith.filter((a) => a.seat === ctx.controller).map((a) => a.object),
+        ).size >= condition.atLeast
+      );
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;

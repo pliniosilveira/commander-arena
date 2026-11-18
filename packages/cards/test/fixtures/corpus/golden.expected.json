@@ -1542,19 +1542,10 @@
     "3589bcfc-42b0-414a-adce-bc690dc631c8": {
       "name": "Windbrisk Heights",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 3,
-          "text": "{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.cast-free"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d156f283"
+      "ast": "e71e09a8"
     },
     "35b2b172-5fbc-4e4d-a011-390ee1b6c848": {
       "name": "Goddric, Cloaked Reveler",
@@ -6767,7 +6758,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 471,
+      "supported": 472,
       "total": 500
     }
   }

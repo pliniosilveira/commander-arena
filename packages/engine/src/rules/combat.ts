@@ -70,6 +70,11 @@ export function declareAttackers(
     turnLog: {
       ...state.turnLog,
       attacked: [...state.turnLog.attacked, ...attacks.map((a) => a.attacker)],
+      // CR 508.1: the player who declares the attackers is the one who attacked with them (issue 279).
+      attackedWith: [
+        ...state.turnLog.attackedWith,
+        ...attacks.map((a) => ({ object: a.attacker, seat })),
+      ],
       // CR 508.6 (D-269): only an attack on a player is an attack on that player; one on a planeswalker or a battle is not.
       attackedPlayers: [
         ...state.turnLog.attackedPlayers,

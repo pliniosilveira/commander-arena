@@ -140,6 +140,13 @@ export function lowerCondition(
             ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
           });
     }
+    case 'attackedWithCreaturesThisTurn': {
+      // CR 508.1 (issue 279): the different creatures the controller declared as attackers this turn, from the turn log.
+      const blocked = missingFeatures(['condition:attackedWithCreaturesThisTurn']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'attackedWithCreaturesThisTurn', atLeast: test.atLeast });
+    }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
       // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.
@@ -640,6 +647,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeGainedThisTurn',
   'condition:lifeGainedAndLostThisTurn',
   'condition:spellsCastThisTurn',
+  'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
   'condition:ownsAndControlsNamed',

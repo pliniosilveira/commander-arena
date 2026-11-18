@@ -2,7 +2,7 @@
 // fixture), defines them in an engine scenario and plays them through applyAction. Every card name starts with "SYNTHETIC"; the wording of each text is that of the real card, taken
 // from the card data of the issue's comment. No real card's text is claimed beyond that.
 import { scenario } from '@commander-arena/engine/testing';
-import { describe, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { parsed } from './convert-grammar-helpers';
 
 const FILLER = ['Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains', 'Plains'] as const;
@@ -158,5 +158,68 @@ describe('"Put a +1/+1 counter on each green creature that entered this turn." (
     g.expect.pt(RED_BEAR.name, 2, 2);
     g.expect.pt(OLD_GREEN.name, 2, 2);
     g.expect.invariants();
+  });
+});
+
+// ---- Windbrisk Heights: "{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn." (CR 508.1, 702.75a).
+
+const WINDBRISK = parsed(
+  'SYNTHETIC Parsed Windbrisk',
+  'Land',
+  'Hideaway 4 (When this land enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom in a random order.)\nThis land enters tapped.\n{T}: Add {W}.\n{W}, {T}: You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn.',
+);
+
+describe('"... if you attacked with three or more creatures this turn" (CR 508.1)', () => {
+  // The land enters tapped: it is played, then used in the controller's next turn, after a combat in which some creatures attack.
+  const start = () => {
+    const g = scenario()
+      .seat(0)
+      .hand(WINDBRISK.name)
+      .battlefield('Plains', 'Grizzly Bears', 'Grizzly Bears', 'Grizzly Bears')
+      .library('Giant Spider', 'Serra Angel', 'Swamp', 'Plains', 'Island')
+      .seat(1)
+      .library('Island', 'Island', 'Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .define(WINDBRISK)
+      .build();
+    g.act(0).playLand(WINDBRISK.name);
+    g.passAll();
+    g.act(0).chooseCards('Giant Spider');
+    g.advanceTo('precombatMain', { turn: 'next' }).advanceTo('precombatMain', { turn: 'next' });
+    return g;
+  };
+
+  test('with three attackers the hidden card is played', () => {
+    const g = start();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(['Grizzly Bears[0]', 'Grizzly Bears[1]', 'Grizzly Bears[2]']);
+    g.advanceTo('postcombatMain');
+    g.act(0).activate(WINDBRISK.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards('Giant Spider');
+    g.passAll();
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with two attackers the card stays hidden', () => {
+    const g = start();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(['Grizzly Bears[0]', 'Grizzly Bears[1]']);
+    g.advanceTo('postcombatMain');
+    g.act(0).activate(WINDBRISK.name, { pay: true });
+    g.passAll();
+    // The condition is false: the effect does nothing, so no card is offered to be played.
+    expect(g.state.pending?.kind).toBe('priority');
+    g.expect.zone('Giant Spider', 'exile', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with no attack the card stays hidden', () => {
+    const g = start();
+    g.act(0).activate(WINDBRISK.name, { pay: true });
+    g.passAll();
+    expect(g.state.pending?.kind).toBe('priority');
+    g.expect.zone('Giant Spider', 'exile', { seat: 0 });
   });
 });
