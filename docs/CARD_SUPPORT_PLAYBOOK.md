@@ -27,7 +27,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
    - **K, keyword.** A keyword ability or action implemented once, generically, after its CR rule (keyword abilities expand in `derive`, `rules/derive-keywords.ts`; actions are effects).
    - **S, subsystem.** New engine machinery: a layout, face-down permanents, phasing, day and night, the monarch, voting, extra turns, control of another player, a new `PendingDecision` kind that changes existing flows.
    - **O, one-off.** Text no general rule would reuse. There is no per-card route (the community definitions were removed, D-167): the card stays unsupported for now, and the reason goes in the report of step 10. The goal is every card (D-317): a card is never left out because it is costly, so look for the primitive that would generalise it, or write the S proposal, and give the cost and the order. Do not write card-specific code or data; if the text looks like a shape other cards share, it is T or P after all.
-4. **Approval gate for S.** Write the proposal as a comment on the issue (the rules, the engine changes, the risks, the planned tests, the cards it unlocks by the backlog's counts) and ask the owner before building it. Go on with the other cards meanwhile. A slice that reuses an existing machinery for a new case (D-089 reused the target decision for triggers) is P, not S; record it as a `D-` entry.
+4. **Approval gate for S.** Write the proposal as a comment on the issue (the rules, the engine changes, the risks, the planned tests, the cards it unlocks by the backlog's counts) and ask the owner before building it. Go on with the other cards meanwhile. A slice that reuses an existing machinery for a new case (D-089 reused the target decision for triggers) is P, not S; say so in the pull request.
 5. **Measure the impact.** With the planned change, run `pnpm corpus:replay` (offline) and, owner-side, `pnpm coverage:cards --file <bulk>`: which cards become supported, which supported cards change AST. Prefer the general solution that unlocks the most cards correctly.
 6. **Write the tests first.**
    - Engine: scenario tests through `applyAction` with the DSL (`packages/engine/src/testing`), one per relevant ruling and CR rule, with layers, replacement effects and stack timing where they matter. SYNTHETIC fixtures in `packages/engine/src/cards/fixtures/` say `SYNTHETIC` in their names.
@@ -39,7 +39,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 9. **Record.**
    - `docs/MECHANICS.md`: a section per engine slice (the grammar rules themselves are documented in their rule files, `examples`, `rejects` and `cites`).
    - `docs/RULES_COVERAGE.md` for rules support; `docs/ROADMAP.md` for what is still missing.
-   - A `D-` entry in `docs/DECISIONS.md` for any choice.
+   - A decision file in `docs/decisions/` only when the choice binds future work (a policy, an architecture choice, a deviation from the CR); how the card is built goes in the pull request and in `docs/MECHANICS.md`.
    - A checklist of the request in the description of the pull request, kept as the groups are done.
    - Regenerate the generated files the change moves: the golden snapshot (`UPDATE_GOLDEN=1`, above) and, when `ENGINE_VERSION` changes, the derive digests (`UPDATE_DERIVE_DIGESTS=1 pnpm exec vitest run packages/engine/test/derive-differential.test.ts`).
    - Bump `PARSER_VERSION` (`packages/cards/src/version.ts`) whenever any card changes status or AST, and `ENGINE_VERSION` (`packages/engine/src/version.ts`) when the state shape or behaviour of existing cards changes. Both invalidate cached support reports.
@@ -51,7 +51,7 @@ Never invent card text, rulings or numbers. A card whose text you could not fetc
 - Never mark a card supported without tests. Support is proven per grammar rule and primitive, not per card (D-008).
 - Never special-case a card by name in engine code. A one-off stays unsupported (D-167).
 - Never weaken an existing rule implementation to make a new card fit. When a test fixture stops being unsupported because the engine learned a feature, move the test to a feature that is still unsupported; do not loosen the test.
-- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it in `docs/DECISIONS.md`.
+- If the CR and a Scryfall ruling seem to disagree, follow the CR and record it in a decision file (`docs/decisions/`).
 - Honesty: text the engine does not understand is dropped as a whole and flagged, never half run.
 
 ## Lessons learned
