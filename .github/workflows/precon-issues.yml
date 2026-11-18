@@ -107,9 +107,12 @@ jobs:
             echo "opened: $url"
             printf '%s\n%s\n' "$title" "$marker" >> precon-work/existing.txt
             opened=$((opened + 1))
+            # An issue opened with the workflow's token does not start other workflows by itself, so the workflow is started the way D-292 allows, by its issue number:
+            # the triage and the snapshot of the precon for an issue that needs support work, the snapshot alone for one that needs none.
             if [ "$needs" = "true" ]; then
-              # An issue opened with the workflow's token does not start other workflows by itself, so the triage is started the way D-292 allows, by its issue number.
               gh workflow run deck-support-triage.yml -f issue="${url##*/}" || echo "the triage could not be started for $url"
+            else
+              gh workflow run deck-support-triage.yml -f issue="${url##*/}" -f snapshot_only=true || echo "the snapshot could not be started for $url"
             fi
             sleep 3
           done
