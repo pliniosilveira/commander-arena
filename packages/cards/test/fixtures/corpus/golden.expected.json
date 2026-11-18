@@ -1,5 +1,5 @@
 {
-  "parserVersion": 148,
+  "parserVersion": 149,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1127,19 +1127,10 @@
     "2b7c4dab-e432-4b34-b058-3cec5c0d72df": {
       "name": "Martial Coup",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Create X 1/1 white Soldier creature tokens. If X is 5 or more, destroy all other creatures.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "84a306f0"
+      "ast": "702db583"
     },
     "2bd111bb-ce02-414c-b5b7-e0e037d8d96b": {
       "name": "Bolas's Citadel",
@@ -1249,19 +1240,10 @@
     "2ef75cf3-30dc-4852-a6d1-1d6391fad022": {
       "name": "Forgotten Ancient",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of your upkeep, you may move any number of +1/+1 counters from ~ onto other creatures.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "545fc18d"
+      "ast": "edb4089c"
     },
     "2ef797ef-c05f-4309-85c7-1bd151dac3fa": {
       "name": "Far Wanderings",
@@ -4428,19 +4410,10 @@
     "aae76e5c-f5e0-4d18-b465-e6a829be908a": {
       "name": "Shiny Impetus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +2/+2 and is goaded.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "213d106f"
+      "ast": "f8ca8a2c"
     },
     "ab1cc360-b9de-48d9-9983-4dfe4a7d2a37": {
       "name": "Arcane Denial",
@@ -4501,19 +4474,10 @@
     "abc37d6c-6300-47b5-a679-9db5b83eb54f": {
       "name": "Syphon Mind",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Each other player discards a card. You draw a card for each card discarded this way.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "amount.for-each"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "15d460bc"
+      "ast": "87b253a7"
     },
     "ac10d218-f9a6-4058-9cda-a15ca1b0b7b5": {
       "name": "Assassin's Trophy",
@@ -4754,18 +4718,10 @@
     "b7a68899-c0d3-49e0-854b-19268ae9b89d": {
       "name": "Vivid Grove",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{T}, Remove a charge counter from ~: Add one mana of any color.",
-          "reason": "notRunnable",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "681c160d"
+      "ast": "71fca4cd"
     },
     "b81eaa2f-0554-41c6-bdf6-d1cb73b8f56f": {
       "name": "Realmwalker",
@@ -6715,7 +6671,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 471,
+      "supported": 476,
       "total": 497
     }
   }

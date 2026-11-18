@@ -1153,6 +1153,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'empowerJace':
       // D-201 (CR 701.71a): the keyword action, as the cards write it.
       return `Empower Jace ${effect.amount}`;
+    case 'moveCountersOnto':
+      // Issue 230 (CR 122.1): the effect as the card writes it.
+      return `Move any number of ${effect.counter} counters from this creature onto other creatures`;
     case 'populate':
       // D-627 (CR 701.36): the keyword action.
       return 'Populate';

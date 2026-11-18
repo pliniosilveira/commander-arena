@@ -98,6 +98,8 @@ describe('the dimensions', () => {
       'kicked',
       // Issue 244: "If you cast this spell during your main phase".
       'castInOwnMainPhase',
+      // Issue 233: "If X is 5 or more".
+      'xAtLeast',
       'replicated',
       'sacrificedAsCost',
       'controlCommander',
@@ -172,6 +174,8 @@ describe('the dimensions', () => {
     expect(SUPPORTED_FEATURES.staticKinds).toEqual([
       'allCreatureTypes',
       'noMaximumHandSize',
+      // Issue 201: "Enchanted creature ... is goaded".
+      'goaded',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',

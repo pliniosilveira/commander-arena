@@ -274,3 +274,112 @@ describe('"If X is 5 or more, destroy all other creatures" (CR 107.3a, 608.2c)',
     g.expect.invariants();
   });
 });
+
+// ---- Forgotten Ancient: "you may move any number of +1/+1 counters from ~ onto other creatures" (CR 122.1, 608.2d).
+
+const ANCIENT = parsed(
+  'SYNTHETIC Parsed Ancient',
+  'Creature — Elemental',
+  'Whenever a player casts a spell, you may put a +1/+1 counter on this creature.\nAt the beginning of your upkeep, you may move any number of +1/+1 counters from this creature onto other creatures.',
+  { manaCost: '{3}{G}', colors: ['G'], power: '0', toughness: '3' },
+);
+
+describe('moving counters one at a time onto other creatures (CR 122.1)', () => {
+  const start = () => {
+    const g = scenario()
+      .seat(0)
+      .define(ANCIENT)
+      .battlefield(ANCIENT.name, { counters: { '+1/+1': 3 } })
+      .battlefield('Grizzly Bears')
+      .battlefield('Giant Spider')
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('postcombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.passAll();
+    // "you may": the trigger asks first; then every counter is its own choice.
+    g.act(0).accept();
+    return g;
+  };
+
+  const counters = (g: ReturnType<typeof start>, name: string) =>
+    g.state.objects[g.id(name)]?.counters['+1/+1'] ?? 0;
+
+  test('each counter is its own choice: two onto one creature, one onto another, then none', () => {
+    const g = start();
+    expect(g.state.pending?.kind).toBe('choosePermanent');
+    g.act(0).choosePermanents('Grizzly Bears');
+    g.act(0).choosePermanents('Grizzly Bears');
+    g.act(0).choosePermanents('Giant Spider');
+    expect(counters(g, ANCIENT.name)).toBe(0);
+    expect(counters(g, 'Grizzly Bears')).toBe(2);
+    expect(counters(g, 'Giant Spider')).toBe(1);
+    g.expect.invariants();
+  });
+
+  test('choosing none stops: the counters left stay on the Ancient', () => {
+    const g = start();
+    g.act(0).choosePermanents('Giant Spider');
+    g.act(0).choosePermanents();
+    expect(counters(g, ANCIENT.name)).toBe(2);
+    expect(counters(g, 'Giant Spider')).toBe(1);
+    expect(g.state.pending?.kind).not.toBe('choosePermanent');
+  });
+
+  test('the Ancient itself is not offered', () => {
+    const g = start();
+    const d = g.state.pending;
+    if (d?.kind !== 'choosePermanent') throw new Error('expected a choice of permanents');
+    expect(d.legal).not.toContain(g.id(ANCIENT.name));
+    expect(d.min).toBe(0);
+    expect(d.max).toBe(1);
+  });
+});
+
+// ---- Shiny Impetus: "Enchanted creature gets +2/+2 and is goaded." (CR 701.15, 508.1d).
+
+const IMPETUS = parsed(
+  'SYNTHETIC Parsed Impetus',
+  'Enchantment — Aura',
+  'Enchant creature\nEnchanted creature gets +2/+2 and is goaded.\nWhenever enchanted creature attacks, you create a Treasure token.',
+  { manaCost: '{2}{R}', colors: ['R'] },
+);
+
+describe('a goaded creature (CR 701.15)', () => {
+  const start = () => {
+    const g = scenario()
+      .seat(0)
+      .define(IMPETUS)
+      .battlefield(IMPETUS.name, { attachedTo: 'Giant Spider' })
+      .library(...FILLER)
+      .seat(1)
+      .battlefield('Giant Spider')
+      .battlefield('Grizzly Bears')
+      .library(...FILLER)
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    return g;
+  };
+
+  test('the enchanted creature gets +2/+2', () => {
+    const g = start();
+    const spider = g.view(1).battlefield.find((o) => o.name === 'Giant Spider');
+    expect(spider?.power).toBe(4);
+    expect(spider?.toughness).toBe(6);
+  });
+
+  test('it must attack each combat if able; the other creature need not', () => {
+    const g = start();
+    const d = g.state.pending;
+    if (d?.kind !== 'declareAttackers')
+      throw new Error(`expected declareAttackers, got ${d?.kind}`);
+    expect(d.mustAttack).toEqual([g.id('Giant Spider')]);
+    expect(g.act(1).try.declareAttackers([]).ok).toBe(false);
+    expect(g.act(1).try.declareAttackers([{ attacker: 'Grizzly Bears' }]).ok).toBe(false);
+    g.act(1).attack(['Giant Spider']);
+    g.expect.combat({ attackers: ['Giant Spider'] });
+  });
+});

@@ -82,7 +82,7 @@ const EXCLUDED_COLORS: Readonly<Record<string, 'W' | 'U' | 'B' | 'R' | 'G'>> = {
  * color." (CR 614.1c, 614.12, 614.12a: "as this enters" is a replacement effect, and the choice is made
  * before the permanent is on the battlefield; D-100). The words that read the choice are other
  * abilities of the card ("Creatures you control of the chosen type get +1/+1."). A choice with more
- * words ("choose a color other than white", "choose two colors"), another kind of choice (a card
+ * words ("choose two colors"; "other than" a color is read, issue 184), another kind of choice (a card
  * name, a number, a basic land type, an opponent) and "you may choose" are not read: the engine asks the two questions it has and no other.
  */
 export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
@@ -108,7 +108,6 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters the battlefield, choose a card type.',
     // Issue 184 (Thriving Isle): a color other than one.
     'As ~ enters, choose a color other than blue.',
-    'as it enters, choose a color other than white.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',

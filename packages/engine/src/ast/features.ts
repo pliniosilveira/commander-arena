@@ -292,6 +292,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'populate',
     // Issue 208: "You may play an additional land this turn." (CR 305.2).
     'additionalLandDropThisTurn',
+    // Issue 230: "Move any number of +1/+1 counters from this creature onto other creatures" (CR 122.1).
+    'moveCountersOnto',
     // D-201: "You get an emblem with ..." (CR 114).
     'createEmblem',
     'delayedSacrifice',
@@ -904,6 +906,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   staticKinds: [
     'allCreatureTypes',
     'noMaximumHandSize',
+    // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
+    'goaded',
     // D-125: "You may play an additional land on each of your turns."
     'additionalLandDrops',
     // D-125: "You may look at the top card of your library any time."
@@ -1543,6 +1547,8 @@ export const STATIC_KINDS = [
   'noMaximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
   'allCreatureTypes',
+  /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
+  'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */
@@ -1928,6 +1934,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   amass: true,
   populate: true,
   additionalLandDropThisTurn: true,
+  moveCountersOnto: true,
   createEmblem: true,
   delayedSacrifice: true,
   exileIfLeaves: true,

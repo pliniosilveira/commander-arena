@@ -115,6 +115,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'CR 903.4 (Commander)',
   ],
   examples: [
+    // Issue 184 (Thriving Isle): a fixed color, or the one the permanent chose.
+    'add {U} or one mana of the chosen color',
     'add {G}',
     'add {C}{C}',
     'add {W}{U}{B}{R}{G}',
@@ -148,7 +150,6 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add one mana of the chosen type',
     'add one mana of the chosen colors',
     'add {G} or {G}',
-    'add {U} or one mana of the chosen color',
     'add {U} or one mana of the chosen colors',
     'add {U} or two mana of the chosen color',
     'add {U}{B} or one mana of the chosen color',

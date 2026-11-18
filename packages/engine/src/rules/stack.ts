@@ -448,6 +448,7 @@ export function answerResolutionChoice(
     head.kind !== 'empowerJace' &&
     head.kind !== 'amass' &&
     head.kind !== 'populate' &&
+    head.kind !== 'moveCounters' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {

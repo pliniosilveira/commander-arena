@@ -78,6 +78,7 @@ import {
   EFFECT_CHOOSE_CREATURE_TYPE,
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
+import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
 import { NIV_GROUP_3_A_EFFECT_RULES } from './niv-group-3-a';
@@ -957,6 +958,7 @@ export const EFFECT_RULES = [
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...MOVE_COUNTERS_EFFECT_RULES,
   ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,
   // Issue 160 (D-628): "Each player gains control of all creatures they own."

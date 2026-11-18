@@ -1033,6 +1033,16 @@ export type Instruction =
    */
   | { readonly kind: 'populate'; readonly chosen: readonly ObjectId[] | null }
   /**
+   * "Move any number of +1/+1 counters from this creature onto other creatures" (`moveCountersOnto`, issue 230): one counter at a time, a `choosePermanent` decision of purpose
+   * 'moveCounters' (`min` 0, `max` 1) names the permanent it goes onto, or none to stop. `chosen` is the answer, null until then. See rules/move-counters.ts.
+   */
+  | {
+      readonly kind: 'moveCounters';
+      readonly counter: string;
+      readonly to: ObjectFilter;
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
    * Permanents instructed to connive at the same time (`connive`, CR 701.50c, D-223): `pending` are the ones still to connive, each with the player who
    * controls it (or last controlled it, if it is no longer on the battlefield: CR 701.50b). The first player in APNAP order who controls one or more of them
    * chooses one of them (a `choosePermanent` decision of purpose 'conniveOrder', asked only when that player has more than one) and it connives: its controller

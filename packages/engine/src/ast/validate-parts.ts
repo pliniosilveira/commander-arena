@@ -4151,6 +4151,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'populate':
       // CR 701.36 (D-627): no fields.
       break;
+    case 'moveCountersOnto':
+      // CR 122.1 (issue 230): a kind of counter and the permanents it moves onto.
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'moveCountersOnto names a kind of counter');
+      }
+      checkFilter(e.to, `${path}.to`, out);
+      break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
       if (!isCount(e.count) || e.count < 1) {

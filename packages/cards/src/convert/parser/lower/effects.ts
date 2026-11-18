@@ -70,6 +70,7 @@ import { KORVOLD_LOWERINGS } from './korvold';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
+import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
 import {
@@ -1644,6 +1645,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...MOVE_COUNTERS_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,

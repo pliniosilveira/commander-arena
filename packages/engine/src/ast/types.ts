@@ -2498,6 +2498,14 @@ export type Effect =
    */
   | { readonly kind: 'populate' }
   /**
+   * "Move any number of +1/+1 counters from this creature onto other creatures." (issue 230, Forgotten Ancient; CR 122.1, 122.6, 608.2d): the controller moves, one at a time, a
+   * counter of the kind `counter` from the permanent with the ability onto a permanent `to` matches (the source itself is left out), as many times as they choose, up to the
+   * counters on it. Each move is a choice of a permanent among those it may go to or of none (a `choosePermanent` decision of purpose 'moveCounters'), asked again after every
+   * move until the player chooses none, no counter is left on the source or nothing can receive one. A counter a permanent can't have (CR 122.6) stays where it is. Only the
+   * effect of a triggered or activated ability of a permanent, whose source is that permanent.
+   */
+  | { readonly kind: 'moveCountersOnto'; readonly counter: string; readonly to: ObjectFilter }
+  /**
    * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
    * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
    */
@@ -4776,6 +4784,12 @@ export type StaticEffect =
       readonly subject: StaticSubject;
       readonly restriction: Restriction;
     }
+  /**
+   * "Enchanted creature gets +2/+2 and is goaded." (issue 201, Shiny Impetus; CR 701.15, 508.1d): the subject is goaded by the controller of the permanent with the ability, for as long
+   * as the ability applies: it attacks each combat if able (it has the restriction `attacksEachCombat`) and attacks a player other than that controller if able (the players it could
+   * attack are narrowed as the attack is declared; with no other player to attack it attacks them, CR 701.15b). Read where attackers are declared, not in a layer.
+   */
+  | { readonly kind: 'goaded'; readonly subject: StaticSubject }
   /**
    * "Rhonas can't attack or block unless you control another creature with power 4 or greater" (D-145, CR 508.1a, 509.1a, 113.6): the
    * permanent has the restrictions `restrictions` (`cantAttack`, `cantBlock`) except while `unless` holds. `unless` is a full condition, read

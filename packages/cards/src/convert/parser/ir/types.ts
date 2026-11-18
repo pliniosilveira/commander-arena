@@ -1216,7 +1216,9 @@ export type IrRestrictionKind =
   // "can't be blocked by more than one creature" (stage P29, D-133, CR 509.1b)
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
-  | 'mustBlock';
+  | 'mustBlock'
+  // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.
+  | 'goaded';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }

@@ -48,4 +48,5 @@
 // 146: Read "creatures with power less than ~'s power can't block creatures you control", an enchanted creature with a granted activated ability and "each player gains control of all creatures they own" (D-628, issue 160).
 // 147: Read "Enchant player", "whenever enchanted player is attacked" and "each opponent attacking that player untaps all nonland permanents they control" (D-629, issue 160).
 // 148: Read "You may play an additional land this turn", a search for a card of each of two kinds, mana spent only on a creature spell of the chosen type, "If you cast this spell during your main phase, you may exile up to one other target ..." and the counters a commander gets from mana of its color identity (D-630, issues 199, 208, 226, 241, 244).
-export const PARSER_VERSION = 148;
+// 149: Read "as it enters, choose a color other than blue", "{U} or one mana of the chosen color", "enters tapped with two charge counters", the cost "Remove a charge counter" in a mana ability, "or activate an ability of a creature source of the chosen type", "for each card discarded this way", "If X is 5 or more, destroy all other creatures", "move any number of +1/+1 counters from ~ onto other creatures" and "is goaded" (D-631, issues 151, 184, 201, 230, 233, 244, 245).
+export const PARSER_VERSION = 149;
