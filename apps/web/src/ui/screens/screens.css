@@ -298,7 +298,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-height: 0;
+  /* A stable height, so an empty tab does not collapse the dialog. */
+  min-height: min(280px, 40vh);
   overflow-y: auto;
 }
 .scr-link {
