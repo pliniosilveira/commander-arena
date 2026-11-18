@@ -67,7 +67,8 @@ export function DeckDialog({
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
-  const [marked, setMarked] = useState(value);
+  // null until the player marks a deck: then the first deck of the tab is marked already.
+  const [picked, setPicked] = useState<string | null>(null);
   const [tab, setTab] = useState<DeckTab>(initialTab ?? 'saved');
   const [query, setQuery] = useState('');
   const [colorFilter, setColorFilter] = useState<readonly ColorFilter[]>([]);
@@ -82,6 +83,9 @@ export function DeckDialog({
       (needle === '' ||
         `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle)),
   );
+
+  const marked = picked ?? (shown.some((d) => d.id === value) ? value : (shown[0]?.id ?? value));
+  const setMarked = setPicked;
 
   // A random button marks a deck (and shows its tab); Select still confirms it.
   const markRandom = (scope: RandomScope) => {
@@ -178,6 +182,7 @@ export function DeckDialog({
           {shown.map((deck) => (
             <label className="scr-deck" key={deck.id} data-selected={marked === deck.id}>
               <input
+                className="scr-deck-radio"
                 type="radio"
                 name={name}
                 value={deck.id}
