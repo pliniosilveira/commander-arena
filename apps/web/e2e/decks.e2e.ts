@@ -39,7 +39,7 @@ function unsupportedList(): string {
 
 async function openDecks(page: Page): Promise<void> {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'My decks' }).click();
   await expect(page.getByRole('heading', { name: 'Built-in decks' })).toBeVisible();
 }
 
@@ -64,7 +64,7 @@ async function saveMine(page: Page): Promise<void> {
 }
 
 async function saveDeck(page: Page, name: string, text: string): Promise<void> {
-  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'My decks' }).click();
   await page.getByRole('button', { name: 'Paste a list' }).click();
   await page.getByLabel('Deck name').fill(name);
   await page.getByLabel(/^Decklist/).fill(text);
@@ -96,12 +96,12 @@ test.describe('precons on the decks page', () => {
     await expect(table.getByRole('row', { name: /Sol Ring/ })).toHaveCount(0);
     await saveMine(page);
 
-    await page.getByRole('button', { name: 'Your decks', exact: true }).click();
+    await page.getByRole('button', { name: 'My decks', exact: true }).click();
     await expect(row(page).getByTestId('precon-tag')).toHaveText('Edited by you');
 
     // The edit stays in this browser across a reload; the menu says which precon is edited.
     await page.reload();
-    await page.getByRole('button', { name: 'Your decks' }).click();
+    await page.getByRole('button', { name: 'My decks' }).click();
     await expect(row(page).getByTestId('precon-tag')).toHaveText('Edited by you');
     await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
     // A second click confirms: the edits are lost for good.
@@ -158,7 +158,7 @@ test.describe('precons on the decks page', () => {
     // Resetting from the decks page brings the shipped, playable deck back. The refusal left the
     // opponent's dialog open: close it first.
     await theirs.getByRole('button', { name: 'Cancel' }).click();
-    await page.getByRole('button', { name: 'Your Decks' }).click();
+    await page.getByRole('button', { name: 'My Decks' }).click();
     await page.getByRole('button', { name: 'Reset to default Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Yes, reset Ghoulcaller Gisa Zombies' }).click();
     await page.getByRole('button', { name: 'Back to menu' }).click();
@@ -178,7 +178,7 @@ test.describe('a saved deck as the opponent', () => {
     const mine = await openStartFlow(page);
     await select(mine);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
-    await chooseDeck(theirs, 'Your Decks', /SYNTHETIC Saved/);
+    await chooseDeck(theirs, 'My Decks', /SYNTHETIC Saved/);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
     // The opponent's commander is the saved deck's, in the opponent's command zone.
@@ -194,7 +194,7 @@ test.describe('a saved deck as the opponent', () => {
     const mine = await openStartFlow(page);
     await select(mine);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
-    await chooseDeck(theirs, 'Your Decks', /SYNTHETIC Unsupported/);
+    await chooseDeck(theirs, 'My Decks', /SYNTHETIC Unsupported/);
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('"SYNTHETIC Unsupported" cannot be played');
     await expect(alert).toContainText('abilities the engine cannot run yet');

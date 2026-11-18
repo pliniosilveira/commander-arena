@@ -1,7 +1,7 @@
 /**
  * A step of the start-game flow (issue 53): a dialog that asks for one deck, for you or for the
- * opponent. Two tabs split the choices, "Your decks" (decks saved in this browser) and "Precons"
- * (the shipped precons, edited ones included, D-215); "Your decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
+ * opponent. Two tabs split the choices, "My decks" (decks saved in this browser) and "Precons"
+ * (the shipped precons, edited ones included, D-215); "My decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
  * A deck is marked by clicking it, or by one of the three Random buttons; the Select button under
  * the list confirms the step.
  */
@@ -20,7 +20,7 @@ import {
 export type DeckTab = 'saved' | 'precon';
 
 const TABS: readonly { readonly id: DeckTab; readonly label: string }[] = [
-  { id: 'saved', label: 'Your Decks' },
+  { id: 'saved', label: 'My Decks' },
   { id: 'precon', label: 'Precons' },
 ];
 
@@ -62,7 +62,7 @@ export function DeckDialog({
   onCancel: () => void;
   /** Opens the page that imports a deck. */
   onImport: () => void;
-  /** The tab shown first; "Your Decks" when left out. */
+  /** The tab shown first; "My Decks" when left out. */
   initialTab?: DeckTab;
 }) {
   const titleId = useId();

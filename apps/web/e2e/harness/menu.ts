@@ -5,7 +5,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
  * and confirming it with Select opens a dialog for the opponent's deck, where Select starts the game. The seed
  * and the mulligan setting are on the home, so set them before Start game.
  */
-export type DeckTab = 'Your Decks' | 'Precons';
+export type DeckTab = 'My Decks' | 'Precons';
 export const PLAYER_DIALOG = 'Choose your deck';
 export const OPPONENT_DIALOG = "Choose opponent's deck";
 

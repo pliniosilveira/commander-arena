@@ -50,7 +50,7 @@ Press **Import a deck** and paste a Commander list copied from Moxfield, Archide
 
 A deck can be played only when the game supports every card in it. The game never guesses at a card it does not fully understand, so a card is either supported or not. If some of your cards are not supported yet, the report says why, and the button **Ask for support on GitHub** opens a request with everything already filled in. You only press Submit. Requests are worked through in the order they arrive.
 
-Your imported decks are saved in your browser and appear on the **Your decks** page, where you can also edit the ready-made decks.
+Your imported decks are saved in your browser and appear on the **My decks** page, where you can also edit the ready-made decks.
 
 ## Controls
 

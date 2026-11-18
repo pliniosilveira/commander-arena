@@ -1,7 +1,7 @@
 /**
- * The start screen (SPEC 10 "Screens", issue 53): two cards, "Play a game" and "Your decks", the
+ * The start screen (SPEC 10 "Screens", issue 53): two cards, "Play a game" and "My decks", the
  * seed and mulligan settings and a short how-to. Start game opens two dialogs in turn, your deck and
- * the opponent's deck; choosing the second starts the game. Your Decks opens the page that lists
+ * the opponent's deck; choosing the second starts the game. My Decks opens the page that lists
  * and imports decks.
  */
 import { useState } from 'react';
@@ -90,7 +90,7 @@ export function Menu() {
       </section>
 
       <section className="scr-card" aria-labelledby="scr-decks-h">
-        <h2 id="scr-decks-h">Your decks</h2>
+        <h2 id="scr-decks-h">My decks</h2>
         <p className="scr-help">Manage your saved decks and import a new decklist.</p>
         <div className="scr-modal-group">
           <button
@@ -105,7 +105,7 @@ export function Menu() {
             className="scr-btn scr-btn-primary"
             onClick={() => actions.openImport('decks')}
           >
-            Your Decks
+            My Decks
           </button>
         </div>
       </section>
