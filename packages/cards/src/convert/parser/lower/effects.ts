@@ -31,10 +31,12 @@ import {
   BECOMES,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
+  DELAYED_RETURN_THIS_CARD,
   DELAYED_RETURN_TO_HAND,
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
+  LOSE_HEXPROOF_SHROUD,
   RESTRICT,
   SET_PT,
 } from './continuous';
@@ -130,6 +132,20 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
     ? failure(clause)
     : null;
 }
+
+/** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
+const GOAD: Lowering<IrClause, Effects> = {
+  head: 'goad',
+  id: 'lower.goad',
+  needs: ['effect:goad'],
+  lower(clause, ctx) {
+    const operandNoun = operand(clause, 'objects');
+    if (operandNoun?.kind !== 'noun') return failure(clause);
+    const object = objectRefOf(operandNoun, ctx, { moved: true });
+    if (!object.ok) return object;
+    return { ok: true, value: [{ kind: 'goad', objects: object.value }], rule: clause.rule };
+  },
+};
 
 function simple(
   verb: 'destroy' | 'exile' | 'counter' | 'tap' | 'untap' | 'transform',
@@ -342,6 +358,32 @@ function lowerReturnSelf(
   ctx: LowerContext,
 ): LowerResult<Effects> {
   const what = operand(clause, 'objects');
+  // D-657 (Screams from Within, CR 603.10a, 303.4f): "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard
+  // with the creature and comes back as the card it is now (`thisCard`); it chooses what it enchants as it enters (`rules/aura-entry.ts`).
+  if (
+    what?.kind === 'noun' &&
+    what.det === 'self' &&
+    ctx.auraDies &&
+    to.zone === 'battlefield' &&
+    operand(clause, 'attachTo') === undefined
+  ) {
+    const blockedCard = missingFeatures(['selector:thisCard']);
+    if (blockedCard.length > 0) return failure(clause, blockedCard);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: { kind: 'thisCard' },
+          to: 'battlefield',
+          controller: to.whose ?? 'you',
+          ...(to.tapped === true ? { tapped: true } : {}),
+          ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+        },
+      ],
+      rule: clause.rule,
+    };
+  }
   if (what?.kind !== 'noun' || what.det !== 'self' || !ctx.graveyardSource) return failure(clause);
   const blocked = missingFeatures(['selector:this']);
   if (blocked.length > 0) return failure(clause, blocked);
@@ -1133,25 +1175,60 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       atMost = lowered.value;
     }
-    return {
-      ok: true,
-      value: [
-        {
-          kind: 'lookAtTop',
-          count: count.value,
-          take: {
-            filter: filter.value,
-            max: 1,
-            ...(toBattlefield ? { to: 'battlefield' as const } : {}),
-            ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
-          },
-          // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
-          // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
-          rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
-        },
-      ],
-      rule: clause.rule,
+    const look: Effect = {
+      kind: 'lookAtTop',
+      count: count.value,
+      take: {
+        filter: filter.value,
+        max: 1,
+        ...(toBattlefield ? { to: 'battlefield' as const } : {}),
+        ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
+      },
+      // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
+      // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
+      rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
     };
+    // D-658 (Armored Skyhunter, CR 301.5, 701.3): "If an Equipment is put onto the battlefield this way, you may attach it to a creature you control": the creature is chosen as
+    // the effect resolves (none: the Equipment stays unattached), and only for an Equipment.
+    const attach = arg(clause, 'attachEquipment');
+    if (attach?.kind === 'flag' && attach.value) {
+      if (!toBattlefield) return failure(clause);
+      const blocked = missingFeatures([
+        'effect:chooseObjects',
+        'effect:attach',
+        'effect:conditional',
+      ]);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const id = 'attach1';
+      return {
+        ok: true,
+        value: [
+          look,
+          {
+            kind: 'conditional',
+            condition: {
+              kind: 'objectMatches',
+              of: { kind: 'moved' },
+              filter: { subtypes: ['Equipment'] },
+            },
+            effect: {
+              kind: 'sequence',
+              effects: [
+                {
+                  kind: 'chooseObjects',
+                  id,
+                  filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+                  count: 1,
+                },
+                { kind: 'attach', object: { kind: 'moved' }, to: { kind: 'chosen', id } },
+              ],
+            },
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    return { ok: true, value: [look], rule: clause.rule };
   },
 };
 
@@ -1305,7 +1382,22 @@ const ATTACH: Lowering<IrClause, Effects> = {
   head: 'attach',
   id: 'lower.attach',
   needs: ['effect:attach'],
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the test of the clause is read when the instruction comes up.
+  takesObjectTest: true,
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the engine's `may` of the attach, asked as it comes up.
+  acceptsOptional: true,
   lower(clause, ctx) {
+    if (clause.optional) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const attached = ATTACH.lower({ ...clause, optional: false }, ctx);
+      if (!attached.ok) return attached;
+      return {
+        ok: true,
+        value: attached.value.map((effect) => ({ kind: 'may' as const, effect })),
+        rule: clause.rule,
+      };
+    }
     const object = arg(clause, 'object');
     const to = arg(clause, 'to');
     if (object?.kind !== 'noun' || to?.kind !== 'noun') return failure(clause);
@@ -1313,9 +1405,10 @@ const ATTACH: Lowering<IrClause, Effects> = {
     if (to.plural || to.upTo || (to.count?.kind === 'number' && to.count.value !== 1)) {
       return failure(clause);
     }
-    const what = objectRefOf(object, ctx);
+    // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura the trigger is about, read for a trigger of an enchantment entering.
+    const what = objectRefOf(object, ctx, { triggerSubject: true });
     if (!what.ok) return what;
-    if (what.value.kind !== 'this') return failure(clause);
+    if (what.value.kind !== 'this' && what.value.kind !== 'triggerSubject') return failure(clause);
     const onto = objectRefOf(to, ctx, { token: true, triggerSubject: true });
     if (!onto.ok) return onto;
     return {
@@ -1339,8 +1432,12 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&
-      objectsArg.upTo === true &&
-      objectsArg.ref !== undefined
+      objectsArg.ref !== undefined &&
+      // D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control" is one the controller must choose, as "up to one" is one they may.
+      (objectsArg.upTo === true ||
+        (objectsArg.filter.controller === 'you' &&
+          !objectsArg.plural &&
+          objectsArg.count === undefined))
     ) {
       const filter = lowerFilter(objectsArg);
       if (!filter.ok) return filter;
@@ -1355,6 +1452,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
             id: objectsArg.ref,
             filter: { ...filter.value, controller: 'you' },
             count: 1,
+            ...(objectsArg.upTo === true ? {} : { exactly: true as const }),
           },
           {
             kind: 'addCounters',
@@ -1468,7 +1566,18 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const missing = missingFeatures(['token:tapped']);
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
   }
-  const entersTapped = token.tapped === true ? { tapped: true as const } : {};
+  // D-648 (CR 508.4): "that's attacking that opponent": only in a trigger about a player attacking one of your opponents, which names the player attacked.
+  let entersAttacking: { attacking?: { at: PlayerSelector } } = {};
+  if (token.attackingThatOpponent === true) {
+    if (ctx.attackedPlayer === null) return { ok: false, needs: [], ...at };
+    const missing = missingFeatures([...ctx.attackedPlayer.needs, 'token:attacking']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    entersAttacking = { attacking: { at: ctx.attackedPlayer.selector } };
+  }
+  const entersTapped = {
+    ...(token.tapped === true ? { tapped: true as const } : {}),
+    ...entersAttacking,
+  };
   // "Its controller creates ...": the token is created under that player's control (CR 111.2).
   const who = arg(clause, 'player');
   let by: { controller?: PlayerSelector } = {};
@@ -1664,6 +1773,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   COUNTER_UNLESS,
   simple('tap'),
   simple('untap'),
+  GOAD,
   simple('transform'),
   REGENERATE,
   ADD_MANA,
@@ -1697,12 +1807,14 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   GRANT_ABILITY,
   RESTRICT,
   LOSE_ALL_ABILITIES,
+  LOSE_HEXPROOF_SHROUD,
   BECOMES,
   SET_PT,
   FLICKER,
   DELAYED_RETURN,
   DELAYED_RETURN_TO_HAND,
   DELAYED_RETURN_AT_UPKEEP,
+  DELAYED_RETURN_THIS_CARD,
   SEARCH,
   PREVENT_DAMAGE,
   ATTACH,
@@ -1818,7 +1930,11 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost' || test === 'xAtLeast'
                     ? 'amountIs'
-                    : test;
+                    : test === 'attackersAtYou'
+                      ? 'attackersAtYouAtLeast'
+                      : test === 'attackedHasMoreLife'
+                        ? 'attackedHasMoreLifeThanOtherOpponent'
+                        : test;
     return failure(
       clause,
       kind === 'raw' ||

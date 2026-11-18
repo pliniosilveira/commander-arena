@@ -486,6 +486,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         by: t.by,
       });
     }
+    case 'playerAttacksOpponent': {
+      // "Whenever a player attacks one of your opponents" (D-648, CR 508.1, 508.6): once for each opponent the declaration attacks.
+      if (t.actor?.det !== 'eachPlayer') return failure(t);
+      return ok({ kind: 'playerAttacksOpponent' });
+    }
     case 'attackBatch': {
       // "Whenever you attack with two or more creatures" (stage P33, D-150, CR 508.1): once for the declaration; "another player" is
       // an opponent of the controller.
@@ -605,6 +610,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'becomesTarget',
       'lifeGained',
       'attackBatch',
+      // D-648: the attacking player ("that attacking player").
+      'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
       'tokenCreated',
@@ -932,6 +939,14 @@ export function lowerTriggered(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  // D-648: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
+  ctx.attackedPlayer =
+    events.length === 1 && events[0]?.event === 'playerAttacksOpponent'
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
   ctx.enchantedPlayerTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
@@ -1063,6 +1078,10 @@ export function lowerTriggered(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  // D-657: "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard as well.
+  ctx.auraDies = triggers.every(
+    (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'attached',
+  );
   // D-284: "it" is the card of a creature that died only when every event is `~` dying: a leave-the-battlefield trigger may find the card in any zone.
   ctx.itDied = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
@@ -1164,7 +1183,12 @@ export function lowerTriggered(
       c.verb === 'putMovedOntoBattlefield' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong');
-  const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
+  // `optional` could not). Without a condition the "you may" of an attach stays the ability's.
+  const conditionalAttach = (s: Sentence) =>
+    s.condition !== undefined && s.clauses.every((c) => c.verb === 'attach' && c.optional);
+  const permission = (s: Sentence) =>
+    conditionalAttach(s) || s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&
     !unlessSentence(s) &&
@@ -1191,7 +1215,10 @@ export function lowerTriggered(
         // The sentences of an offer keep their "you may": `lowerSentences` reads it, and refuses a "you
         // may" inside what a payment buys.
         // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run). So do the two instructions of D-394.
-        optional: ownMay(s, i) || (permission(s) && !asksItself(c)) ? false : c.optional,
+        optional:
+          ownMay(s, i) || (permission(s) && !asksItself(c) && !conditionalAttach(s))
+            ? false
+            : c.optional,
       })),
     })),
     ctx,
@@ -1218,8 +1245,29 @@ export function lowerTriggered(
   }
   // "none of those creatures attacked you" is about the attackers of the declaration that triggered the ability (stage P33, D-150, CR 508.1b).
   if (
-    JSON.stringify(effect).includes('"attackersAttackedYou"') &&
+    JSON.stringify([effect, interveningIf ?? null]).includes('"attackersAttackedYou"') &&
     !triggers.every((t) => t.kind === 'attackBatch')
+  ) {
+    return failure(ability);
+  }
+  // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control" is about the attackers of the declaration that triggered the ability.
+  if (
+    JSON.stringify(interveningIf ?? null).includes('"attackersAtYouAtLeast"') &&
+    !triggers.every((t) => t.kind === 'attackBatch')
+  ) {
+    return failure(ability);
+  }
+  // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" is about the permanent that left the battlefield, which only a `dies` or `leavesBattlefield` trigger has.
+  if (
+    JSON.stringify(effect).includes('"aurasAttachedToTriggerSubject"') &&
+    !triggers.every((t) => t.kind === 'dies' || t.kind === 'leavesBattlefield')
+  ) {
+    return failure(ability);
+  }
+  // D-653 (CR 508.6): "if that opponent has more life than another of your opponents" is about the player a "whenever a player attacks one of your opponents" trigger is about.
+  if (
+    JSON.stringify(interveningIf ?? null).includes('"attackedHasMoreLifeThanOtherOpponent"') &&
+    !triggers.every((t) => t.kind === 'playerAttacksOpponent')
   ) {
     return failure(ability);
   }
@@ -1326,6 +1374,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',
+  'trigger:playerAttacksOpponent',
   'trigger:entersBatch',
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',

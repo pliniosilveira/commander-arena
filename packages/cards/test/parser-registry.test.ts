@@ -151,6 +151,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
   ),
   'trigger.dies-own-graveyard': whenever,
+  // D-654: "an enchanted creature dies".
+  'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
@@ -166,6 +168,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
+  'static.spells-have-affinity': asIs,
+  'noun.each-creature-enchanted-by-you': permanent(
+    (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
+  ),
   'static.additional-cost': asIs,
   'static.free-cast': asIs,
   // Stage P20: power and toughness from a count; the statements are lines of their own.
@@ -343,6 +349,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attacks-you': whenever,
   'trigger.dealt-damage': whenever,
   'noun.that-player': permanent((e) => `Whenever an opponent draws a card, ${e} loses 1 life.`),
+  'noun.that-attacking-player': permanent(
+    (e) => `Whenever a player attacks one of your opponents, ${e} draws a card.`,
+  ),
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
@@ -445,12 +454,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.life-gained': whenever,
   'trigger.counters-added': whenever,
   'trigger.attack-batch': whenever,
+  'trigger.opponent-attacks': whenever,
+  'trigger.player-attacks-opponent': whenever,
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,
   ),
   'condition.those-attacked-you': permanent(
     (e) => `Whenever another player attacks with two or more creatures, they draw a card if ${e}.`,
+  ),
+  'condition.those-attacking-you': permanent(
+    (e) => `Whenever an opponent attacks with creatures, if ${e}, draw a card.`,
+  ),
+  // D-653: the intervening "if" of "a player attacks one of your opponents".
+  'condition.attacked-has-more-life': permanent(
+    (e) => `Whenever a player attacks one of your opponents, if ${e}, draw a card.`,
   ),
   'condition.same-name': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
   'noun.that-card': spell(
@@ -510,6 +528,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.each-other-opponent': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.other-targets': spell((e) => `~ deals 1 damage to any target and 1 damage to ${e}.`),
+  // D-654: the Auras the controller controlled that were attached to the creature that died.
+  'amount.for-each-aura-attached': permanent(
+    (e) => `Whenever an enchanted creature dies, draw a card ${e}.`,
+  ),
   'amount.for-each-still-exiled': spell((e) => `~ deals 2 damage to each opponent ${e}.`),
   // Stage P35 (D-176): the Korvold deck's text and token slice. The effect is a sentence of its own; the noun follows a sentence about a target.
   'effect.it-has-ability': permanent(
@@ -690,9 +712,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
+  'trigger.enchanted-by-you-attack': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
+  // D-650: "each other creature that's attacking one of your opponents".
+  'noun.each-other-attacking-opponent': permanent(
+    (e) => `When ~ enters, ${e} gets +1/+0 until end of turn.`,
+  ),
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
   // Stage P64 (D-217): the nouns, effects and conditions of the Vraska EDHREC deck's second group.
   'noun.token-permanents': permanent((e) => `${cap(e)} have haste.`),

@@ -495,6 +495,8 @@ export interface StackData {
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** For a triggered ability that reads `attackersAtYouAtLeast` (D-643): who each creature of its attack event was declared attacking, a player or the controller of a planeswalker. */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /**
    * For an activated ability whose cost sacrificed permanents (D-133): the ids they had on the battlefield, which the
    * `sacrificedCost` reference reads (from last-known information: they are gone). For a spell whose additional cost sacrificed any number of permanents
@@ -694,6 +696,11 @@ export interface LastKnownInfo {
   readonly toughness: number | null;
   /** The base power it had (CR 208.4b, D-431); absent in a record made before it was kept. */
   readonly basePower?: number | null;
+  /**
+   * The Auras attached to it as it left the battlefield, with the player who controlled each (CR 113.7a, 303.4e, D-654): "for each Aura you controlled that was attached to it"
+   * (`aurasAttachedToTriggerSubject`). Absent when none was.
+   */
+  readonly auras?: readonly { readonly id: ObjectId; readonly controller: SeatId }[];
 }
 
 /**
@@ -738,6 +745,8 @@ export interface PendingTrigger {
   readonly cards?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
   readonly attacked?: readonly SeatId[];
+  /** For an `attackBatch` trigger (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked (a battle is neither), in the order declared. */
+  readonly attackedAt?: readonly SeatId[];
   /** For a chapter ability (CR 714.2): the chapter number that was reached. Absent otherwise. */
   readonly chapter?: number;
   /**
@@ -928,6 +937,7 @@ export type Instruction =
       readonly id: string;
       readonly filter: ObjectFilter;
       readonly count: number;
+      readonly exactly?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
   | { readonly kind: 'chooseCreatureType'; readonly chosen: string | null }
@@ -1693,6 +1703,7 @@ export type Instruction =
       readonly kind: 'castFree';
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
+      readonly filter?: ObjectFilter;
       /** D-660: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
       readonly remaining?: number | 'any';
       readonly chosen: readonly ObjectId[] | null;
@@ -1760,6 +1771,8 @@ export interface ResolutionContext {
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** What `attackersAtYouAtLeast` reads (D-643): `StackData.triggerAttackedAt`. */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
   /** The cards the cost of this activated ability exiled from the graveyard (D-232, `StackData.exiledAsCost`). */
@@ -1922,6 +1935,8 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
+  /** "Lose hexproof and shroud and can't have them" (`loseHexproofShroud`, D-649, CR 613.1f): layer 6, applied after every grant whatever its timestamp. */
+  | { readonly kind: 'loseHexproofShroud' }
   /**
    * A regeneration shield (CR 701.19a, D-120): no layer, it is read where a permanent would be destroyed
    * (`rules/regenerate.ts`). One shield protects the one permanent in `objects`, once, until end of turn.
@@ -1962,6 +1977,12 @@ export type ContinuousChange =
       readonly controller: SeatId;
       readonly awayFrom?: SeatId;
     }
+  /**
+   * "Goad target creature" (`goad`, CR 701.15a-d, D-639): the objects of the effect are goaded by the player `by`: they attack each combat if able and attack a player other
+   * than `by` if able, until the next turn of `by` begins (`until`). The designation is not a characteristic or an ability (CR 701.15b): read in `rules/combat-legality.ts`,
+   * not in a layer. At most one such effect for an object and a player (CR 701.15d).
+   */
+  | { readonly kind: 'goaded'; readonly by: SeatId }
   /**
    * "Attacks that opponent this turn if able" (`encore`, CR 702.141a, 508.1d, D-185): the objects of the effect must attack the player `seat` when
    * attackers are declared, if they are able to attack that player; a permanent or another player they could attack instead does not satisfy it.

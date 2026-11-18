@@ -67,6 +67,7 @@ export interface Scope {
           | 'modifyPt'
           | 'setPt'
           | 'loseAllAbilities'
+          | 'loseHexproofShroud'
           | 'setTypes'
           | 'setColors'
           | 'grantKeyword'
@@ -112,6 +113,8 @@ export interface Scope {
   readonly selfCast?: boolean;
   /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
   readonly diesTrigger?: boolean;
+  /** True in the effect of the trigger "when enchanted creature dies" of an Aura: the card of the Aura itself (`thisCard`) may be returned by a delayed ability (D-657). */
+  readonly auraDiesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
   /**
@@ -292,7 +295,6 @@ export function checkFilter(
   for (const key of [
     'attacking',
     'attackingYou',
-    'attackingOpponents',
     'attackingOrBlocking',
     'powerLessThanSource',
     'powerAboveBase',
@@ -307,6 +309,14 @@ export function checkFilter(
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
+  // D-218, D-650: "attacking your opponents and/or planeswalkers they control" is a flag; `'players'` is "attacking one of your opponents".
+  if (
+    f.attackingOpponents !== undefined &&
+    f.attackingOpponents !== true &&
+    f.attackingOpponents !== 'players'
+  ) {
+    issue(out, `${path}.attackingOpponents`, "attackingOpponents must be true or 'players'");
+  }
   // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
   if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
   if (f.enchanted !== undefined && typeof f.enchanted !== 'boolean') {
@@ -316,11 +326,24 @@ export function checkFilter(
       'enchanted must be a boolean (true: has an Aura, false: has none)',
     );
   }
+  if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
+    issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
+  }
+  if (f.enchantedByYou === true && f.enchanted === false) {
+    issue(
+      out,
+      `${path}.enchantedByYou`,
+      'a permanent enchanted by an Aura you control is enchanted: enchanted is not false',
+    );
+  }
   if (f.hostOfSource !== undefined && f.hostOfSource !== true) {
     issue(out, `${path}.hostOfSource`, 'hostOfSource must be true');
   }
   if (
-    (f.attachedTo !== undefined || f.enchanted !== undefined || f.hostOfSource === true) &&
+    (f.attachedTo !== undefined ||
+      f.enchanted !== undefined ||
+      f.enchantedByYou === true ||
+      f.hostOfSource === true) &&
     f.zone !== undefined &&
     f.zone !== 'battlefield'
   ) {
@@ -367,7 +390,7 @@ export function checkFilter(
     (f.attacking === true ||
       f.notAttacking === true ||
       f.attackingYou === true ||
-      f.attackingOpponents === true ||
+      f.attackingOpponents !== undefined ||
       f.attackingOrBlocking === true) &&
     f.zone !== undefined &&
     f.zone !== 'battlefield'
@@ -1106,7 +1129,12 @@ export function checkObjectSelector(
     const each = sel as Extract<ObjectSelector, { kind: 'each' }>;
     checkFilter(each.filter, `${path}.filter`, out, scope);
     // D-151: "each other creature" besides the one an effect names.
-    if (each.except !== undefined) checkRef(each.except, 'object', `${path}.except`, scope, out);
+    // D-650: "each other creature that's attacking ..." of an Aura's attack trigger: besides the creature the trigger is about.
+    if (each.except?.kind === 'triggerSubject') {
+      checkSubjectRef(each.except, 'permanent', `${path}.except`, scope, out);
+    } else if (each.except !== undefined) {
+      checkRef(each.except, 'object', `${path}.except`, scope, out);
+    }
     return;
   }
   checkRef(sel as ObjectRef, expect, path, scope, out);
@@ -1136,6 +1164,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
           out,
           path,
           "'triggerPlayer' needs a triggered ability whose event is about a player (a draw, a cast, an attack, damage to a player, becoming a target, a sacrifice)",
+        );
+      }
+      break;
+    case 'triggerAttackedPlayer':
+      // D-648: "that opponent": the player a `playerAttacksOpponent` trigger is about.
+      if (scope.triggerAttacked !== true) {
+        issue(
+          out,
+          path,
+          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents",
         );
       }
       break;
@@ -1468,6 +1506,18 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           'dieResult needs a rollDie before it in the same sequence (the result of the roll is what it reads)',
         );
       }
+      break;
+    case 'aurasAttachedToTriggerSubject':
+      // CR 603.10a, 113.7a (D-654): the Auras that were attached to the permanent the trigger is about as it left.
+      if (scope.triggerSubject !== 'permanent') {
+        issue(
+          out,
+          path,
+          "'aurasAttachedToTriggerSubject' needs a trigger whose subject is a permanent",
+        );
+      }
+      if (a.controlledBy !== 'you')
+        issue(out, `${path}.controlledBy`, "controlledBy must be 'you'");
       break;
     case 'enteredX':
       // CR 107.3m (Hylda group 3): only the enters trigger of the permanent itself reads the X of the spell it came from (the card's {X} is checked with the face).
@@ -2402,6 +2452,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         );
       }
       break;
+    case 'attackedHasMoreLifeThanOtherOpponent':
+      // D-648: no parameters; where it may stand (the intervening "if" of a playerAttacksOpponent trigger) is checked with the trigger (validate.ts).
+      break;
+    case 'attackersAtYouAtLeast':
+      // D-643: read from the declaration of the attack event; where it may stand (the intervening "if" of an attackBatch trigger) is checked with the trigger (validate.ts).
+      if (!isCount(c.count) || c.count < 1) {
+        issue(out, `${path}.count`, 'count must be a positive integer');
+      }
+      break;
     case 'attackersAttackedYou':
       // D-149: read from the declaration of the attack event, so only a conditional effect of an attackBatch trigger.
       issue(
@@ -2760,6 +2819,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'search' ||
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
     (e?.kind === 'lookAndSplit' && e.exile > 0) ||
+    // D-658: the card a `lookAtTop` put onto the battlefield is "it" ("If an Equipment is put onto the battlefield this way, you may attach it to a creature you control").
+    (e?.kind === 'lookAtTop' && e.take?.to === 'battlefield') ||
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
     e?.kind === 'mill' ||
     // Lorehold group 1: the card `exileFromTriggerCards` exiled is "it" ("If you do, you may cast it this turn").
@@ -3662,6 +3723,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.id`, 'chooseObjects needs an id');
       if (!Number.isInteger(e.count) || e.count < 1)
         issue(out, `${path}.count`, 'chooseObjects count must be positive');
+      if (e.exactly !== undefined && e.exactly !== true)
+        issue(out, `${path}.exactly`, 'exactly must be true when present');
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
@@ -3883,6 +3946,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
+      // D-648 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
+      if (e.attacking !== undefined) {
+        checkPlayerSelector(e.attacking.at, `${path}.attacking.at`, scope, out);
+      }
       // D-652 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
       // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
       if (e.forEachOpponent !== undefined) {
@@ -4088,6 +4155,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.cantBeRegenerated`, 'cantBeRegenerated must be true when present');
       }
       break;
+    case 'goad':
+      // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'regenerate':
       // CR 701.19a: a shield for each permanent the selector names, until end of turn.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -4144,7 +4215,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
-      checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
+      checkDelayedTrigger(
+        e,
+        path,
+        out,
+        scope.movedAvailable === true,
+        scope.diesTrigger === true,
+        scope.auraDiesTrigger === true,
+      );
       break;
     case 'prepare':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -4556,6 +4634,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'moveToZone':
+      // D-655 (CR 401.4): "in a random order" is for several cards put at the bottom of a library at once.
+      if (
+        e.random !== undefined &&
+        (e.random !== true || e.to !== 'library' || e.position !== 'bottom')
+      ) {
+        issue(out, `${path}.random`, "random is true, with to 'library' and position 'bottom'");
+      }
       if (kindOf(e.objects) === 'triggerCard') {
         // D-230: "return that card to the battlefield" of a dies trigger.
         if (scope.triggerSubject !== 'permanent') {
@@ -4793,6 +4878,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       const objects = e.objects as ChooseSelector | ObjectRef;
+      // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
+      if (e.filter !== undefined) {
+        if (kindOf(objects) === 'choose') {
+          issue(out, `${path}.filter`, 'a choice from the hand has its own filter');
+        } else {
+          checkFilter(e.filter, `${path}.filter`, out);
+        }
+      }
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
         checkFilter(choose.filter, `${path}.objects.filter`, out);
@@ -4895,11 +4988,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'none'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield, into the hand or into exile, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {
@@ -5140,6 +5233,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'modifyPt':
     case 'setPt':
     case 'loseAllAbilities':
+    case 'loseHexproofShroud':
     case 'setTypes':
     case 'setColors':
     case 'grantKeyword':
@@ -5213,7 +5307,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
-      checkRef(e.object, 'object', `${path}.object`, scope, out);
+      // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura or Equipment the trigger is about.
+      if (kindOf(e.object) === 'triggerSubject')
+        checkSubjectRef(e.object, 'permanent', `${path}.object`, scope, out);
+      else checkRef(e.object, 'object', `${path}.object`, scope, out);
       // D-406: "Whenever a creature enters, you may attach this Aura to that creature": the permanent the trigger is about.
       if (kindOf(e.to) === 'triggerSubject')
         checkSubjectRef(e.to, 'permanent', `${path}.to`, scope, out);

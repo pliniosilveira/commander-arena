@@ -59,6 +59,8 @@ export interface SelectContext {
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
+  /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-643). */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
   readonly owners?: readonly SeatId[];
   /** The seats a `controlledBy` selector of the filter names (D-179, see `FilterContext.controllers`). */
@@ -229,6 +231,10 @@ export function matchesFilter(
     (filter.anyOf?.some((m) => m.attackingOpponents === true) ?? false)
       ? { attackersOfOpponents: attackersOfOpponents(state, ctx.controller) }
       : {}),
+    ...(filter.attackingOpponents === 'players' ||
+    (filter.anyOf?.some((m) => m.attackingOpponents === 'players') ?? false)
+      ? { attackersOfOpponentPlayers: attackersOfOpponentPlayers(state, ctx.controller) }
+      : {}),
     ...(filter.powerLessThanSource === true && ctx.source !== null
       ? { sourcePower: powerOfObject(state, ctx.source) }
       : {}),
@@ -264,7 +270,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.attacking === true ||
     f.notAttacking === true ||
     f.attackingYou === true ||
-    f.attackingOpponents === true ||
+    f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.manaValueAtMost !== undefined ||
     f.powerLessThanSource === true ||
@@ -371,6 +377,14 @@ function attackersOfOpponents(state: GameState, seat: SeatId): readonly ObjectId
       const attacked = state.objects[a.target.object];
       return attacked !== undefined && a.defender !== undefined && opponents.includes(a.defender);
     })
+    .map((a) => a.object);
+}
+
+/** The creatures attacking an opponent of `seat` as a player (CR 508.1b, D-650): a creature at a planeswalker or battle is not. */
+function attackersOfOpponentPlayers(state: GameState, seat: SeatId): readonly ObjectId[] {
+  const opponents = opponentsOf(state, seat);
+  return (state.combat?.attackers ?? [])
+    .filter((a) => a.target.kind === 'player' && opponents.includes(a.target.seat))
     .map((a) => a.object);
 }
 
@@ -727,6 +741,11 @@ export function resolvePlayers(
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
         ? []
         : [ctx.triggerPlayer];
+    case 'triggerAttackedPlayer': {
+      // CR 508.6 (D-648): "that opponent": the player the declaration attacked that made the trigger, if still in the game.
+      const attacked = ctx.triggerAttacked?.[0];
+      return attacked === undefined || getSeat(state, attacked).hasLost ? [] : [attacked];
+    }
     case 'opponentsAttackingTriggerPlayer': {
       // CR 508.6 (issue 159): the player who declared the attackers of the trigger's declaration (`triggerPlayer` of an `attackBatch` trigger), when they are an opponent of the
       // controller of the ability and still in the game: an opponent "attacking that player". The controller attacking the enchanted player is not an opponent.

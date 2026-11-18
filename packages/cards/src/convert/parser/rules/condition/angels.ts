@@ -186,8 +186,87 @@ export const CONDITION_SAME_NAME = defineRule<IrCondition>({
   },
 });
 
+const COUNT_WORDS: Readonly<Record<string, number>> = { two: 2, three: 3, four: 4, five: 5 };
+
+/**
+ * `condition.those-attacking-you`: "two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b: a creature is declared as attacking a
+ * player, a planeswalker or a battle; this counts the declaration at "you" and at the planeswalkers "you" control, together; D-643). "Those creatures" are the attackers that
+ * triggered the ability (`trigger.attack-batch`), which the lowering checks, and the condition is the intervening "if" of the ability.
+ */
+export const CONDITION_THOSE_ATTACKING_YOU = defineRule<IrCondition>({
+  id: 'condition.those-attacking-you',
+  family: 'condition',
+  leading: ['two', 'three', 'four', 'five'],
+  cites: ['CR 508.1b (Declare Attackers Step)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    'two or more of those creatures are attacking you and/or planeswalkers you control',
+    'three or more of those creatures are attacking you and/or planeswalkers you control',
+  ],
+  rejects: [
+    'one or more of those creatures are attacking you and/or planeswalkers you control',
+    'two or more of those creatures are attacking you',
+    'two or more of those creatures are attacking you or planeswalkers you control',
+    'two or more of those creatures attack you and/or planeswalkers you control',
+    'two or more of the creatures are attacking you and/or planeswalkers you control',
+    'two of those creatures are attacking you and/or planeswalkers you control',
+    'two or more of those creatures are attacking you and/or planeswalkers you control and',
+    'two or more of those creatures are attacking you and/or planeswalkers they control',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /(two|three|four|five) or more of those creatures are attacking you and\/or planeswalkers you control(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: conditionOf('condition.those-attacking-you', pos, r.pos, {
+        kind: 'attackersAtYou',
+        atLeast: COUNT_WORDS[(r.value[1] ?? '').toLowerCase()] ?? 0,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.attacked-has-more-life`: "that opponent has more life than another of your opponents" (CR 603.4, 508.6, D-653): the player attacked by the declaration that
+ * triggered the ability has more life than another opponent of the controller who is still in the game. The intervening "if" of `trigger.player-attacks-opponent`, which the
+ * lowering checks (the engine's `attackedHasMoreLifeThanOtherOpponent`).
+ */
+export const CONDITION_ATTACKED_HAS_MORE_LIFE = defineRule<IrCondition>({
+  id: 'condition.attacked-has-more-life',
+  family: 'condition',
+  leading: ['that'],
+  cites: ['CR 603.4 (Handling Triggered Abilities)', 'CR 508.6 (Declare Attackers Step)'],
+  examples: ['that opponent has more life than another of your opponents'],
+  rejects: [
+    'that opponent has more life than you',
+    'that opponent has more life than each of your opponents',
+    'that opponent has more life than one of your opponents',
+    'that opponent has less life than another of your opponents',
+    'that player has more life than another of your opponents',
+    'that opponent has more life than another opponent',
+    'that opponent has more life than another of your opponents and',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /that opponent has more life than another of your opponents(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: conditionOf('condition.attacked-has-more-life', pos, r.pos, {
+        kind: 'attackedHasMoreLife',
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_CONDITION_RULES = [
   CONDITION_SAME_NAME,
   CONDITION_HAD_COUNTERS,
   CONDITION_THOSE_ATTACKED_YOU,
+  CONDITION_THOSE_ATTACKING_YOU,
+  CONDITION_ATTACKED_HAS_MORE_LIFE,
 ].map(quietly);

@@ -462,6 +462,20 @@ export function lowerCondition(
       if (!filter.ok) return filter;
       return ok({ kind: 'controlsGreatest', filter: filter.value, stat: test.stat });
     }
+    case 'attackersAtYou': {
+      // CR 508.1b, 603.4 (D-643): read from the declaration of the `attackBatch` trigger the ability belongs to, as its intervening "if"; `validateCard` refuses it anywhere else.
+      const blocked = missingFeatures(['condition:attackersAtYouAtLeast']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'attackersAtYouAtLeast', count: test.atLeast });
+    }
+    case 'attackedHasMoreLife': {
+      // CR 603.4, 508.6 (D-653): read for the player the `playerAttacksOpponent` trigger of the ability is about, as its intervening "if"; `validateCard` refuses it anywhere else.
+      const blocked = missingFeatures(['condition:attackedHasMoreLifeThanOtherOpponent']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'attackedHasMoreLifeThanOtherOpponent' });
+    }
     case 'attackersAttackedYou': {
       // CR 508.1b (stage P33, D-150): read from the declaration of the `attackBatch` trigger the ability belongs to; `validateCard` refuses it
       // anywhere else.
@@ -696,6 +710,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:opponentControlsAtLeast',
   'condition:controlsGreatest',
   'condition:attackersAttackedYou',
+  'condition:attackersAtYouAtLeast',
+  'condition:attackedHasMoreLifeThanOtherOpponent',
   'condition:sameNameAtLeast',
   'condition:attackingMostLife',
   'condition:attackersTotalPower',

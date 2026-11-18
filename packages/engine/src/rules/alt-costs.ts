@@ -80,6 +80,23 @@ export function kickerLikeCostOf(face: CardFace | null): readonly Cost[] | null 
   return kickerCostOf(face) ?? multikickerCostOf(face);
 }
 
+/**
+ * The alternative cost of the card's own "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost" (CR 118.9, D-656), or null when the face has
+ * no such ability (or its ability has no cost of its own).
+ */
+export function graveyardCostOf(face: CardFace | null): readonly Cost[] | null {
+  for (const a of face?.abilities ?? []) {
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'castFromGraveyard' &&
+      a.static.cost !== undefined
+    ) {
+      return a.static.cost;
+    }
+  }
+  return null;
+}
+
 /** The flashback cost of the face, or null when it has no flashback (CR 702.34a). */
 export function flashbackCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'flashback');
