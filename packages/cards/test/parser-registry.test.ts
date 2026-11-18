@@ -588,6 +588,14 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated-source': permanent(
     (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
   ),
+  // Scriv, the Obligator (CR 303.4f): an Aura token created attached to a target, and the "it's attacking one of your opponents" condition.
+  'token.aura': permanent(
+    (e) =>
+      `Whenever ~ attacks, create ${e} attached to target creature. The token has enchant creature.`,
+  ),
+  'condition.it-attacking-opponents': permanent(
+    (e) => `Whenever enchanted creature attacks, it gets +2/+0 until end of turn if ${e}.`,
+  ),
   // Shadrix Silverquill: "you may choose two" with a different player for each mode (CR 700.2d).
   'modal.choose-may-different': permanent(
     (e) =>

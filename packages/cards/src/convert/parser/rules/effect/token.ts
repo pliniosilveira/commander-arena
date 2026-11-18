@@ -79,7 +79,7 @@ const AURA_TOKEN_TAIL: Parser<{
     literal(' attached to '),
     refuseAt(
       family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
-      (n) => !n.plural,
+      (n) => !n.plural && !n.upTo && n.anyNumber !== true,
       (_n, _ctx, start) => start,
     ),
     literal('. The token has enchant creature'),
