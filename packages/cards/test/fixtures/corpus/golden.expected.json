@@ -1,5 +1,5 @@
 {
-  "parserVersion": 144,
+  "parserVersion": 145,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3836,19 +3836,10 @@
     "922c6e1b-abcf-40e0-847e-9ebb7d0b6fd4": {
       "name": "Grimoire of the Dead",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}, Remove three study counters from ~ and sacrifice it: Put all creature cards from all graveyards onto the battlefield under your control. They're black Zombies in addition to their other colors and types.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "cost.remove-counters"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "86508488"
+      "ast": "4ece6bfc"
     },
     "9270eb03-4600-40cc-83a5-ea987d5d4978": {
       "name": "Gix's Command",
@@ -4651,19 +4642,10 @@
     "b48a149c-aead-43b2-a99e-c964d6d28aa0": {
       "name": "Necromantic Selection",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control. It's a black Zombie in addition to its other colors and types. Exile ~.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2c4dadac"
+      "ast": "861ce866"
     },
     "b548578c-4910-402c-8e78-498924e0a9be": {
       "name": "Consumed by Greed",
@@ -6581,7 +6563,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 448,
+      "supported": 450,
       "total": 476
     }
   }

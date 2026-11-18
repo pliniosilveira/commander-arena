@@ -44,4 +44,5 @@
 // 142: Grave Danger deck: "for each" after "it deals N damage", "leaves the battlefield" after "~ or another creature", "the number of creatures that died under your control this turn", flashback with life (D-609).
 // 143: Grave Danger deck, second group: "for each A and each B" enters-with counts, prevention that removes a counter, "equal to the damage dealt this way" (D-610).
 // 144: A creature type before "creature spell" in the once-each-turn graveyard permission (D-611).
-export const PARSER_VERSION = 144;
+// 145: Grave Danger deck, third group: "... and sacrifice it" costs, "in addition to its other colors and types", "a creature card put into a graveyard this way" (D-612).
+export const PARSER_VERSION = 145;

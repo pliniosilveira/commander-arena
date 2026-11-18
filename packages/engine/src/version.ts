@@ -31,4 +31,5 @@
 // 129: Lock a player's life total and grant temporary protection from everything (D-607).
 // 130: Pay the life of a flashback cost (D-609).
 // 131: Enter with a sum of counts, prevent damage to a permanent and remove a counter, count the damage a resolution dealt (D-610).
-export const ENGINE_VERSION = 131;
+// 132: Add colors without replacing the others, choose among the cards a destroy put into any graveyard (D-612).
+export const ENGINE_VERSION = 132;
