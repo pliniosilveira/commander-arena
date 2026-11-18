@@ -119,7 +119,13 @@ const skypainterSpell = singleFace({
     "Create a token that's a copy of target creature you control. That token gains haste until end of turn.",
   spell: {
     targets: [
-      { id: 't1', what: { kind: 'object', filter: { types: ['creature'], controller: 'you' } } },
+      {
+        id: 't1',
+        what: {
+          kind: 'object',
+          filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+        },
+      },
     ],
     effect: {
       kind: 'sequence',
@@ -324,7 +330,7 @@ export const SYNTHETIC_PRISMARI_G1_LIST: readonly CardDefinition[] = [
             id: 't1',
             what: {
               kind: 'object',
-              filter: { types: ['creature'], controller: 'you', other: true },
+              filter: { zone: 'battlefield', types: ['creature'], controller: 'you', other: true },
             },
           },
         ],
@@ -364,7 +370,12 @@ export const SYNTHETIC_PRISMARI_G1_LIST: readonly CardDefinition[] = [
       { kind: 'keyword', keyword: { kind: 'kicker', cost: [{ kind: 'mana', symbols: ['5'] }] } },
     ],
     spell: {
-      targets: [{ id: 't1', what: { kind: 'object', filter: { types: ['creature'] } } }],
+      targets: [
+        {
+          id: 't1',
+          what: { kind: 'object', filter: { zone: 'battlefield', types: ['creature'] } },
+        },
+      ],
       effect: {
         kind: 'conditional',
         condition: { kind: 'kicked' },
@@ -393,7 +404,10 @@ export const SYNTHETIC_PRISMARI_G1_LIST: readonly CardDefinition[] = [
       targets: [
         {
           id: 't1',
-          what: { kind: 'object', filter: { types: ['creature'], controller: 'you' } },
+          what: {
+            kind: 'object',
+            filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+          },
           anyNumber: true,
         },
       ],
@@ -431,7 +445,12 @@ export const SYNTHETIC_PRISMARI_G1_LIST: readonly CardDefinition[] = [
             id: 't1',
             what: {
               kind: 'object',
-              filter: { types: ['creature'], controller: 'you', notSupertypes: ['legendary'] },
+              filter: {
+                zone: 'battlefield',
+                types: ['creature'],
+                controller: 'you',
+                notSupertypes: ['legendary'],
+              },
             },
             min: 0,
             max: 1,

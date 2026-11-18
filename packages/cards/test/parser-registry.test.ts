@@ -204,6 +204,15 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
   'static.graveyard-ability-cost-reduction': asIs,
+  // Prismari deck, group 1 (D-624, D-627, D-630): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
+  'static.cost-per-extra-target': spell((e) => e),
+  'token.copies-x': permanent(
+    (e) =>
+      `At the beginning of combat on your turn, create ${e}, where X is the number of creatures you control.`,
+  ),
+  'trigger.cast-from-hand': whenever,
+  'trigger.token-combat-damage-batch': whenever,
+  'trigger.enters-and-token-damage': permanent((e) => `When ${e}, you gain 1 life.`),
   'effect.exile-instead-when-leaving': permanent(
     (e) => `{T}: Return target creature card from your graveyard to the battlefield. ${cap(e)}.`,
   ),
