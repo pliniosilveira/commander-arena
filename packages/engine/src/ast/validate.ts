@@ -35,6 +35,7 @@ import {
 } from './validate-attach';
 import { kindOf, triggerHasPlayer } from './validate-base';
 import {
+  castPhaseTargetsUsedUnguarded,
   checkCastFace,
   checkFlashbackCost,
   checkKickerCost,
@@ -118,6 +119,12 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       // CR 702.5a: what an Aura spell can target and what it can stay attached to: permanents.
       if (k.filter === undefined || k.filter === null) {
         issue(out, `${path}.filter`, 'enchant needs a filter');
+      } else if (k.player !== undefined) {
+        // Issue 159 (CR 702.5a, 702.5d): "Enchant player": a player, never a permanent, so there is nothing to describe.
+        if (k.player !== true) issue(out, `${path}.player`, 'player must be true when present');
+        if (Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
       }
@@ -279,6 +286,25 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'sum') {
+        // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
+        const parts = (r.count as { of?: unknown }).of;
+        if (!Array.isArray(parts) || parts.length < 2) {
+          issue(out, `${path}.count.of`, 'a sum of counts needs at least two counts');
+        } else {
+          parts.forEach((part, i) => {
+            if (kindOf(part) !== 'countOf') {
+              issue(out, `${path}.count.of[${i}]`, 'an enters-with sum is made of countOf amounts');
+            } else {
+              checkStateAmount(
+                part as Amount,
+                `${path}.count.of[${i}]`,
+                out,
+                'an enters-with count',
+              );
+            }
+          });
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&
@@ -287,7 +313,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(
           out,
           `${path}.count`,
-          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" } or a countOf',
+          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" }, a countOf or a sum of them',
         );
       }
       // CR 702.138c (D-124): "escapes with" is the only conditional form; it needs an escape cost (`checkCastFace`).
@@ -1862,6 +1888,14 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.spell.targets`,
         `target "${id}" exists only in the matching gift branch: use it only in that branch`,
+      );
+    }
+    // Issue 244, CR 601.2c: a target chosen only if the spell was cast during its controller's main phase is used only in a `castInOwnMainPhase` conditional.
+    for (const id of castPhaseTargetsUsedUnguarded(face.spell)) {
+      issue(
+        out,
+        `${path}.spell.targets`,
+        `target "${id}" exists only if the spell was cast during its controller's main phase: use it only in the effect of a castInOwnMainPhase conditional`,
       );
     }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.

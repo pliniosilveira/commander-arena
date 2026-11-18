@@ -330,7 +330,11 @@ function walkEffect(
       // D-230: and no end at all (`permanent`, CR 611.2a) for what an effect gives a permanent it put onto the battlefield: a base power and toughness, types, a keyword.
       if (
         effect.duration === 'permanent' &&
-        (effect.kind === 'setPt' || effect.kind === 'setTypes' || effect.kind === 'grantKeyword')
+        (effect.kind === 'setPt' ||
+          effect.kind === 'setTypes' ||
+          effect.kind === 'grantKeyword' ||
+          // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
+          (effect.kind === 'setColors' && effect.additive === true))
       ) {
         return;
       }
@@ -812,7 +816,7 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana, and life (D-647: "Flashback—{1}{U}, Pay 3 life.", paid by the cast with the mana, rules/cast-cost.ts).
+        // CR 702.34a: an alternative cost; mana and life ("Flashback—{1}{U}, Pay 3 life."; rules/cast-cost.ts, rules/cast.ts).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'echo') {
         // CR 702.30a: paid as the echo trigger resolves (rules/pay-unless.ts); mana only, no X (D-127).

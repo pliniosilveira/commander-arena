@@ -322,7 +322,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The pair "you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." is the only "if you don't" sentence that reads; "If you don't" alone, with another second instruction, or with a rider is refused (never guessed).
 - Protection from card types is read in the plural, for a static grant (an attached permanent or a group) only: the keyword line of a card ("Protection from artifacts") still reads colors only, and a modifier ("nonblack creatures"), a creature type and "everything" are not read.
 - The cast trigger reads " you control" after the card type of what a spell targets, not "you don't control" or a creature type.
-- The graveyard permission names subtypes of permanents (Aura, Curse, Equipment, Fortification, Saga, Shrine, Vehicle); the creature types ("cast a Human spell from your graveyard") and the rider "that artifact enters tapped" for a spell that is not a pure artifact filter are not read.
+- The graveyard permission names subtypes of permanents (Aura, Curse, Equipment, Fortification, Saga, Shrine, Vehicle) and, since D-633, "a <creature type> creature spell"; the bare creature type ("cast a Human spell from your graveyard") and the rider "that artifact enters tapped" for a spell that is not a pure artifact filter are not read.
 
 ## The Danitha deck, group 5 (issue 26, D-405 to D-409)
 
@@ -542,6 +542,8 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The condition `sacrificedAsCost` of an activated ability is read from its resolution; an intervening "if" of a triggered ability cannot read what an activated ability sacrificed.
 - The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
 - The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.
+- **The five most requested cards (D-630).** Their rulings were not fetched (the `Scryfall lookup` workflow of D-294 can); "you may exile target ..." is read only as "you may exile up to one other target ..." after a test of how the spell was cast; Explore's extra land is for its own turn only (CR 305.3).
+
 
 ## The Prismari deck, group 1 (issue 87, D-638 to D-645)
 

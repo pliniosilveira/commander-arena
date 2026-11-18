@@ -35,5 +35,7 @@
 // 133: Populate, the choice of a creature token to copy (D-627, issue 160).
 // 134: Give every creature back to its owner as layer 2 effects (D-628, issue 160).
 // 135: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-629, issue 160).
-// 136: Prismari Artistry deck (issue 87): token copies and the token a populate made, strive, copy-and-cast, free casts from exile and from piles, retrace and demonstrate, spells' mana values, mana that stays, flashback with life (D-638 to D-669).
-export const ENGINE_VERSION = 136;
+// 136: Additional land plays for a turn, a target slot and a condition about the phase a spell was cast in, mana spent on the chosen creature type, and counters on a commander cast with marked mana (D-630, issues 199, 208, 241, 244).
+// 137: Grave Danger deck (issue 159): flashback with life, enters with a sum of counts, prevention that removes a counter, damage dealt this way, additive colors, a destroy's cards from any graveyard, casting from a graveyard by sacrificing, spell-filter and any-graveyard cast permissions with a cast rider, the turn-log casts and activations from a graveyard, the opponents attacking the attacked player (D-631 to D-636).
+// 138: Prismari Artistry deck (issue 87): token copies and the token a populate made, strive, copy-and-cast, free casts from exile and from piles, retrace and demonstrate, spells' mana values, mana that stays (D-638 to D-669).
+export const ENGINE_VERSION = 138;

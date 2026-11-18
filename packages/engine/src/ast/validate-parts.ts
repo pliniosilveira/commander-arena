@@ -758,6 +758,10 @@ export function declareTargets(
       issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be boolean when present');
     }
     // D-181, CR 702.33g, 601.2c: a slot chosen only if the spell was kicked, or only if it was not.
+    // Issue 244, CR 601.2c: a slot chosen only if the spell was cast during its controller's main phase.
+    if (spec.ifCastInOwnMain !== undefined && spec.ifCastInOwnMain !== true) {
+      issue(out, `${p}.ifCastInOwnMain`, 'ifCastInOwnMain must be true when present');
+    }
     for (const key of ['ifKicked', 'unlessKicked'] as const) {
       if (spec[key] !== undefined && spec[key] !== true) {
         issue(out, `${p}.${key}`, `${key} must be true when present`);
@@ -1135,6 +1139,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'opponentsAttackingTriggerPlayer':
+      // Issue 159 (CR 508.6): "each opponent attacking that player": the trigger is about an attacked player.
+      if (scope.triggerPlayer !== true) {
+        issue(
+          out,
+          path,
+          "'opponentsAttackingTriggerPlayer' needs the effect of a trigger about an attacked player (attackBatch)",
+        );
+      }
+      break;
     case 'declinedPlayer':
       if (scope.declinedPlayer !== true) {
         issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
@@ -1274,6 +1288,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
+  damageDealt: 'a dealDamage effect',
   searched: 'a search effect',
 };
 
@@ -1292,6 +1307,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'discard')
     return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
   if (e?.kind === 'mill') return ['milledValue'];
+  if (e?.kind === 'dealDamage') return ['damageDealt'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -2593,6 +2609,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'castFromGraveyardThisTurn':
+      if (Object.keys(c).some((key) => key !== 'kind')) {
+        issue(out, path, 'the cast-from-a-graveyard condition has no extra fields');
+      }
+      break;
     case 'lifeGainedAndLostThisTurn':
       if (Object.keys(c).some((key) => key !== 'kind')) {
         issue(out, path, 'the gained-and-lost-life condition has no extra fields');
@@ -2624,6 +2645,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
+    case 'castInOwnMainPhase': // issue 244: no parameters; it reads the spell it is asked of
     case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
@@ -2950,6 +2972,16 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
         'fromMoved ("from among them") needs an effect before it in the sequence that moved cards (a mill)',
       );
     }
+  }
+  if (
+    sel.fromAnyGraveyard !== undefined &&
+    (sel.fromAnyGraveyard !== true || sel.fromMoved !== true)
+  ) {
+    issue(
+      out,
+      `${path}.fromAnyGraveyard`,
+      'fromAnyGraveyard is true and only with fromMoved (issue 159)',
+    );
   }
   // D-544: "from your hand or graveyard": the graveyard is added to a choice among the cards of the hand; the destination (the battlefield) is checked with the move.
   if (sel.alsoGraveyard !== undefined) {
@@ -3468,6 +3500,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       // D-412: "If you put a Town card into your hand this way": the card is where the earlier instruction put it.
       if (c.inZone !== undefined && c.inZone !== 'hand' && c.inZone !== 'exile') {
         issue(out, `${path}.inZone`, "inZone is only 'hand' or 'exile'");
+      }
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects that were moved.
+      if (c.any !== undefined && (c.any !== true || ofKind !== 'moved')) {
+        issue(out, `${path}.any`, 'any is true, and only with the moved reference');
       }
       break;
     }
@@ -4082,9 +4118,6 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'prepare':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
-    case 'populate':
-      // D-639 (CR 701.36): no operand; the controller chooses a creature token they control.
-      break;
     case 'forEachPlayer':
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkEffect(e.effect, `${path}.effect`, scope, out);
@@ -4363,6 +4396,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'populate':
+      // CR 701.36 (D-627): no fields.
+      break;
+    case 'additionalLandDropThisTurn':
+      // CR 305.2: a positive whole number of additional land plays.
+      if (!isCount(e.count) || e.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'additionalLandDropThisTurn adds a positive whole number of land plays',
+        );
+      }
+      break;
     case 'amass':
       // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).
       checkAmount(e.count, `${path}.count`, scope, out);
@@ -4510,11 +4556,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
-        if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
+        const among = e.objects as ChooseSelector;
+        if (
+          among.fromMoved === true &&
+          e.to !== 'hand' &&
+          !(e.to === 'battlefield' && among.fromAnyGraveyard === true)
+        ) {
           issue(
             out,
             `${path}.to`,
-            'a choice among the cards an earlier effect moved is put into the hand (D-411)',
+            'a choice among the cards an earlier effect moved is put into the hand (D-411), or onto the battlefield from any graveyard (issue 159)',
           );
         }
       } else {
@@ -5305,6 +5356,73 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.exileInstead`,
           'a card cast from exile has bottomInstead, not exileInstead',
         );
+      }
+      if (e.anyGraveyard !== undefined && e.anyGraveyard !== true) {
+        issue(out, `${path}.anyGraveyard`, 'anyGraveyard must be true when present');
+      }
+      // Issue 159: "When you cast it this turn, this creature gains all activated abilities of that card": a delayed trigger of the cast of that card, which does
+      // something to the permanent with the ability (`this`) with the spell cast (`triggerSubject`), and nothing of the ability that made it is left to name (CR 603.7c).
+      if (e.whenCast !== undefined) {
+        const inner = e.whenCast;
+        if (
+          inner?.kind !== 'gainActivatedAbilitiesOf' ||
+          kindOf(inner.from) !== 'triggerSubject' ||
+          kindOf(inner.to) !== 'this'
+        ) {
+          issue(
+            out,
+            `${path}.whenCast`,
+            'a cast rider gives the permanent with the ability the abilities of the spell cast (gainActivatedAbilitiesOf from triggerSubject to this)',
+          );
+        } else {
+          checkEffect(
+            inner,
+            `${path}.whenCast`,
+            {
+              owner: 'ability',
+              targets: new Map(),
+              xAllowed: false,
+              triggerSubject: 'stack',
+              triggerPlayer: true,
+              checkAbility: scope.checkAbility,
+              checkContinuous: scope.checkContinuous,
+              checkEffectExt: scope.checkEffectExt,
+            },
+            out,
+          );
+        }
+      }
+      break;
+    case 'gainActivatedAbilitiesOf':
+      // Issue 159: the abilities of the spell cast (`triggerSubject`, only where a cast trigger names it) or of an object a reference names, given to the permanent that has this effect.
+      if (kindOf(e.to) !== 'this') {
+        issue(out, `${path}.to`, 'the abilities go to the permanent with the ability (this)');
+      }
+      if (kindOf(e.from) !== 'triggerSubject') {
+        issue(out, `${path}.from`, 'the abilities are those of the spell cast (triggerSubject)');
+      } else {
+        checkSubjectRef(e.from as ObjectRef, 'stack', `${path}.from`, scope, out);
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
+      }
+      break;
+    case 'mayCastSpells':
+      // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.
+      checkFilter(e.spells, `${path}.spells`, out);
+      if (
+        e.spells?.zone !== undefined ||
+        e.spells?.controller !== undefined ||
+        e.spells?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.spells`,
+          'the spells name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'a cast permission lasts until end of turn');
       }
       break;
     case 'shuffle':

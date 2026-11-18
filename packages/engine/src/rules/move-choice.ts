@@ -112,18 +112,38 @@ export function runChooseMove(
   };
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
-  const legal = fromCards
-    ? cardCandidates(
-        state,
-        chooser,
-        res.source,
-        instruction.filter,
-        instruction.alsoGraveyard === true,
-      ).filter(
-        // D-411: only the cards the effect before it moved.
-        (id) => instruction.among === undefined || instruction.among.includes(id),
-      )
-    : controlledCandidates(state, chooser, res.source, instruction.filter);
+  const legal =
+    fromCards && instruction.anyOwner === true
+      ? // Issue 159: "a creature card put into a graveyard this way": the cards the effect before it moved that are in any graveyard and match the filter.
+        (instruction.among ?? []).filter((id) => {
+          const obj = state.objects[id];
+          const { controller: _owner, ...described } = instruction.filter;
+          return (
+            obj !== undefined &&
+            obj.zone === 'graveyard' &&
+            matchesFilter(
+              state,
+              obj,
+              { ...described, zone: 'graveyard' },
+              {
+                controller: chooser,
+                source: res.source,
+              },
+            )
+          );
+        })
+      : fromCards
+        ? cardCandidates(
+            state,
+            chooser,
+            res.source,
+            instruction.filter,
+            instruction.alsoGraveyard === true,
+          ).filter(
+            // D-411: only the cards the effect before it moved.
+            (id) => instruction.among === undefined || instruction.among.includes(id),
+          )
+        : controlledCandidates(state, chooser, res.source, instruction.filter);
   if (legal.length === 0) return { ...done(state), lastMoved: [], ...restart };
   const optional = instruction.optional === true;
   if (!optional && legal.length <= instruction.count) return run(legal, true);
@@ -159,7 +179,12 @@ export function runChooseMove(
               : instruction.alsoGraveyard === true
                 ? 'from your hand or graveyard'
                 : `from your ${zone}`
-        } to put ${WHERE[instruction.to]}`,
+        } to put ${WHERE[instruction.to]}`.replace(
+          'from among the cards put into your graveyard',
+          instruction.anyOwner === true
+            ? 'from among the cards put into a graveyard'
+            : 'from among the cards put into your graveyard',
+        ),
       },
     };
   }

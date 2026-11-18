@@ -379,6 +379,15 @@ const EXILE_THAT_SPELL_INSTEAD_YOUR =
   /^if that spell would be put into your graveyard, exile it instead\.$/i;
 
 /**
+ * "You may cast target creature card in a graveyard this turn. When you cast it this turn, ~ gains all activated abilities of that card until end of turn." (issue 159, CR 603.7,
+ * Havengul Lich): the rider is a delayed ability of the permission (`effect.may-cast-any-graveyard`), so the two sentences are one instruction.
+ */
+const MAY_CAST_IN_A_GRAVEYARD =
+  /(?:^|, )you may cast target [^.,]* cards? in a graveyard (?:this turn|until end of turn)\.$/i;
+const WHEN_CAST_IT_GAINS_ABILITIES =
+  /^when you cast it this turn, ~ gains all activated abilities of that card until end of turn\.$/i;
+
+/**
  * "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. If that spell would be put into a graveyard, put it on the bottom of its owner's library
  * instead." (Lorehold group 2, issue 86, CR 607.2a, 601.2, 118.9, 614.1a): "that card" is the target of the first sentence and "that spell" the one cast with the permission of the second, so
  * the three sentences (or the first two, with no rider) are one instruction (`effect.cast-exiled-with-self`).
@@ -498,7 +507,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
-        (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)))
+        (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -593,6 +603,10 @@ function costColon(text: string): number {
   return -1;
 }
 
+/**
+ * The costs of an activated ability, one span each (CR 118.1: costs are separated by commas). Grave Danger (issue 159, Grimoire of the Dead): the last cost may
+ * join "sacrifice it" to the one before with "and" ("Remove three study counters from ~ and sacrifice it"): it is two costs, the second read by `cost.sacrifice`.
+ */
 function costSpans(text: string, end: number): Span[] {
   const spans: Span[] = [];
   let from = 0;
@@ -600,7 +614,14 @@ function costSpans(text: string, end: number): Span[] {
     spans.push(trimmed(text, from, comma));
     from = comma + 1;
   }
-  spans.push(trimmed(text, from, end));
+  const last = trimmed(text, from, end);
+  const joined = /^(.*~) and (sacrifice it)$/isu.exec(text.slice(last.start, last.end));
+  if (joined !== null && joined[1] !== undefined) {
+    spans.push({ start: last.start, end: last.start + joined[1].length });
+    spans.push({ start: last.end - 'sacrifice it'.length, end: last.end });
+  } else {
+    spans.push(last);
+  }
   return spans;
 }
 

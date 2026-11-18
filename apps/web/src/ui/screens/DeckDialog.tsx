@@ -7,6 +7,7 @@
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import type { DeckChoice } from '../../precons';
+import { ManaCost } from '../mana';
 import { pickRandomDeck, type RandomScope } from './menu-model';
 
 export type DeckTab = 'saved' | 'precon';
@@ -156,14 +157,31 @@ export function DeckDialog({
                 disabled={busy}
                 onChange={() => setMarked(deck.id)}
               />
-              <span className="scr-deck-name">
-                {deck.name}
-                {deck.edited && <span className="scr-deck-tag">edited</span>}
+              {deck.commanderImage !== undefined && (
+                <img
+                  className="scr-deck-art"
+                  src={deck.commanderImage}
+                  alt=""
+                  loading="lazy"
+                  width={96}
+                  height={70}
+                />
+              )}
+              <span className="scr-deck-text">
+                <span className="scr-deck-name">
+                  {deck.name}
+                  {deck.edited && <span className="scr-deck-tag">edited</span>}
+                </span>
+                <span className="scr-deck-blurb">{deck.blurb}</span>
+                <span className="scr-deck-commander">
+                  {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
+                </span>
               </span>
-              <span className="scr-deck-blurb">{deck.blurb}</span>
-              <span className="scr-deck-commander">
-                {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
-              </span>
+              {deck.colors !== undefined && (
+                <span className="scr-deck-colors" data-testid="deck-colors">
+                  <ManaCost cost={deck.colors.length === 0 ? ['C'] : deck.colors} />
+                </span>
+              )}
             </label>
           ))}
         </div>

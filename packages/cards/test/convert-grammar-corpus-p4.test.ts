@@ -172,7 +172,7 @@ const FLASHBACK: readonly Line[] = [
     kind: 'sorcery',
     text: 'Draw a card.\nFlashback—{1}{U}, Pay 3 life.',
     expect: OK,
-    note: 'the real Deep Analysis cost, read since D-647: a mana cost and a life payment (the life alone, or another cost, is still refused)',
+    note: 'SYNTHETIC; a mana cost and a payment of life (Deep Analysis, Grave Danger deck, issue 159)',
   },
   {
     kind: 'sorcery',

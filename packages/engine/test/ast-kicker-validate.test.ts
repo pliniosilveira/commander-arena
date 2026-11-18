@@ -324,8 +324,7 @@ describe('flashback', () => {
     expect(validateCard(spell([flashback(mana('2', 'U'))], draw, ['instant']))).toEqual([]);
   });
 
-  test('mana, or mana and life (D-647): X, other costs and an empty cost are not', () => {
-    // "Flashback—{1}{U}, Pay 3 life." (CR 702.34a, 119.4): life is a cost a flashback may have.
+  test('a mana cost with life is fine (Deep Analysis, CR 702.34a); another cost, X and an empty cost are not', () => {
     expect(
       structure(spell([flashback(mana('1', 'U'), { kind: 'payLife', amount: 3 })], draw)),
     ).toEqual([]);

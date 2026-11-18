@@ -1,5 +1,5 @@
 {
-  "parserVersion": 148,
+  "parserVersion": 150,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -730,6 +730,14 @@
       "reasons": [],
       "ast": "f8995fba"
     },
+    "185e34f0-60ae-4b07-94ac-96cef11b1604": {
+      "name": "Vela the Night-Clad",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f301d892"
+    },
     "186b4def-4fff-4a2b-bcbf-5318b0ac5fa9": {
       "name": "Garruk Wildspeaker",
       "group": "acceptance",
@@ -850,6 +858,14 @@
       "reasons": [],
       "ast": "74084e43"
     },
+    "1c6a0d19-c7dd-4353-95ad-dfdef2d5d2d9": {
+      "name": "Laboratory Drudge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fbd6d07"
+    },
     "1d5ff280-7f4d-4801-aefd-9b6e6b1f2818": {
       "name": "Ajani, Caller of the Pride",
       "group": "acceptance",
@@ -865,6 +881,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d4f4daf"
+    },
+    "1fb02bad-0d1f-437f-a269-f51cc19b280f": {
+      "name": "Havengul Lich",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "16010b8f"
     },
     "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
       "name": "Scavenging Ooze",
@@ -889,6 +913,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "57e20b87"
+    },
+    "20e94d0f-6887-45f8-a137-877011d786c6": {
+      "name": "Gisa and Geralf",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "01389bc9"
     },
     "212d058b-69c6-4dc2-8c93-bdfe26dc2ffe": {
       "name": "Hammer of Purphoros",
@@ -1260,6 +1292,14 @@
       "reasons": [],
       "ast": "812829a8"
     },
+    "3029df1d-d02a-4fed-8ab4-000a2096f823": {
+      "name": "Return to Dust",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0221e7df"
+    },
     "30377bd5-99ab-4888-9ea7-e5a069b527e8": {
       "name": "Return the Favor",
       "group": "training",
@@ -1364,6 +1404,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5ecccdb8"
+    },
+    "32972d7a-c7c6-437c-8e7c-6c7d56b130e4": {
+      "name": "Scourge of Nel Toth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8bf43001"
     },
     "32e5339e-9e4f-46f8-b305-f9d6d3ba8bb5": {
       "name": "Lotus Petal",
@@ -2058,6 +2106,14 @@
       "reasons": [],
       "ast": "fb10320f"
     },
+    "4f66489c-5a19-40ad-9126-461fa8231f1b": {
+      "name": "Liliana, Untouched by Death",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a20f8a8a"
+    },
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
       "group": "training",
@@ -2291,6 +2347,14 @@
       "reasons": [],
       "ast": "78ac417b"
     },
+    "584b15f2-6ae9-413a-8b8d-9244dbea4878": {
+      "name": "Unclaimed Territory",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "396cf337"
+    },
     "58916455-844c-4d97-908f-8205bdc117c0": {
       "name": "Exorcise",
       "group": "training",
@@ -2455,6 +2519,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ac73db81"
+    },
+    "5e0bd136-e7e9-49f0-910b-a9fb0b9c481a": {
+      "name": "Lotleth Giant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "48dd05c9"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -2770,6 +2842,14 @@
       "reasons": [],
       "ast": "7dc278bb"
     },
+    "67ee7c8b-afcc-4f09-a184-3db01f2ab175": {
+      "name": "Enter the God-Eternals",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "64a9cf50"
+    },
     "6812e4d3-0034-4fc8-9ee9-520f76a0ea94": {
       "name": "Innovative Commons",
       "group": "acceptance",
@@ -2865,6 +2945,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f33c1d4"
+    },
+    "6cbd36d9-de47-41b0-9ef4-a72ca01adccd": {
+      "name": "Curse of Disturbance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "40fb9d8c"
     },
     "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
       "name": "Steel Hellkite",
@@ -3228,6 +3316,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "973b74f5"
+    },
+    "7b600c0e-5ad2-48a2-a147-346ca78c8629": {
+      "name": "Liliana's Standard Bearer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "11943bc2"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -3868,6 +3964,14 @@
       "reasons": [],
       "ast": "8047fe32"
     },
+    "922c6e1b-abcf-40e0-847e-9ebb7d0b6fd4": {
+      "name": "Grimoire of the Dead",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4ece6bfc"
+    },
     "9270eb03-4600-40cc-83a5-ea987d5d4978": {
       "name": "Gix's Command",
       "group": "acceptance",
@@ -4470,6 +4574,14 @@
       "reasons": [],
       "ast": "844655b9"
     },
+    "aa6723a2-75da-49f5-a1ba-cbfa82c55301": {
+      "name": "Opal Palace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe25527f"
+    },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
       "group": "acceptance",
@@ -4730,6 +4842,14 @@
       "reasons": [],
       "ast": "2885e63d"
     },
+    "b3b8c7d0-46b9-4519-808a-154e503a58b6": {
+      "name": "Liliana's Devotee",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5052b74e"
+    },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
       "group": "holdout",
@@ -4737,6 +4857,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e798f6e7"
+    },
+    "b48a149c-aead-43b2-a99e-c964d6d28aa0": {
+      "name": "Necromantic Selection",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "861ce866"
     },
     "b548578c-4910-402c-8e78-498924e0a9be": {
       "name": "Consumed by Greed",
@@ -4801,6 +4929,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "11b5a0e9"
+    },
+    "b8f566ea-8283-4afa-9ac8-737e26419283": {
+      "name": "Explore",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2783dba8"
     },
     "b91b65b3-b35c-460e-a49b-333000a9a519": {
       "name": "Serra Avenger",
@@ -5597,6 +5733,14 @@
       "reasons": [],
       "ast": "4e7b1cbf"
     },
+    "d9a10971-f32b-4978-952d-fed0a5bc9e36": {
+      "name": "Krosan Verge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5454867a"
+    },
     "d9c36ed5-629c-4709-bff5-2f10fcde608a": {
       "name": "Orb of Dragonkind",
       "group": "training",
@@ -5909,6 +6053,22 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0b2f7e49"
+    },
+    "e6cd9203-e4d3-4d9f-b59f-4e454fc5a477": {
+      "name": "Unbreathing Horde",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ca4d6498"
+    },
+    "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7": {
+      "name": "Crippling Fear",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4704e4be"
     },
     "e89e1fae-bac3-4cc0-a233-24b9e08a5290": {
       "name": "Fall from Favor",
@@ -6798,8 +6958,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 493,
-      "total": 514
+      "supported": 513,
+      "total": 534
     }
   }
 }

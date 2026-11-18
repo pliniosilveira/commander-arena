@@ -322,7 +322,9 @@ export type ThisWayKind =
   // D-358: "If you discarded an instant or sorcery card this way" (Vohar, Vodalian Desecrator): the instant and sorcery cards `discard` effects discarded.
   | 'discardedInstantOrSorcery'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
-  | 'searched';
+  | 'searched'
+  // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
+  | 'damageDealt';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -832,6 +834,12 @@ export type PlayerSelector =
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
   | { readonly kind: 'declinedPlayer' }
   /**
+   * "Each opponent attacking that player" (issue 159, CR 508.6: a player is "attacking [a player]" if they control a creature that is attacking that player): in the effect of an
+   * `attackBatch` trigger, whose `triggerPlayer` is the player who declared the attackers, that player when they are an opponent of the controller of the ability and still in the
+   * game, and nobody otherwise (the controller who attacks is not an opponent). Valid only where `triggerPlayer` is.
+   */
+  | { readonly kind: 'opponentsAttackingTriggerPlayer' }
+  /**
    * "The chosen player", "they" in the gift ability (CR 702.174a, D-135): the opponent the caster chose when they promised the
    * gift, read from the spell on the stack, from the permanent that remembers it, or from last-known information (CR 113.7a).
    * Nobody when no gift was promised. Valid only where the engine writes the gift ability, and in a card's text that reads
@@ -869,6 +877,12 @@ export interface TargetSpec {
    * face with Kicker (not Multikicker), and the effect uses it only in the `then` of a `kicked` conditional.
    */
   readonly ifKicked?: true;
+  /**
+   * "Exile target artifact or enchantment. If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment." (CR 601.2c, issue 244):
+   * the slot exists only if the spell was cast during its controller's main phase (a main phase of a turn of that player, so they are the active player); a spell cast at any
+   * other time is cast as if the slot was not in its text. Only a slot of a spell's own text, and the effect uses it only in the `then` of a `castInOwnMainPhase` conditional.
+   */
+  readonly ifCastInOwnMain?: true;
   /**
    * "Exile target artifact or enchantment. If this spell was kicked, exile target nonland permanent instead." (CR 601.2c: "a spell may require
    * alternative targets only if an alternative or additional cost was chosen for it", D-181): the slot exists only if the spell was not kicked, so a
@@ -1156,7 +1170,8 @@ export type NamedAlternativeKind =
   | 'madness'
   | 'miracle'
   | 'foretell'
-  | 'tapPermanents';
+  | 'tapPermanents'
+  | 'sacrificeFromGraveyard';
 
 /**
  * What a permanent remembers about how it got onto the battlefield (D-121, D-124): that its evoke, dash or
@@ -1216,6 +1231,10 @@ export type PermanentAlternativeKind =
  *   first and plans it so as to leave enough permanents to tap; then the caster chooses which (a `choosePermanent` decision of
  *   purpose `tap` and `forCost`, none when exactly `count` qualify). The filter's controller is `you` or left out, its zone the
  *   battlefield, and it does not say `tapped`. Not with Convoke, Improvise or Delve, and not on a land.
+ * - `sacrificeFromGraveyard` (issue 159, CR 118.9, 601.2h, 701.21a): "You may cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than
+ *   paying its mana cost": the card is cast from its owner's graveyard, the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also sacrifices
+ *   `count` permanents they control that match `filter` as part of it (the sacrifice is chosen with the same question as the sacrifice of an additional cost). The spell is an
+ *   ordinary spell otherwise: it goes to the graveyard when it leaves the stack. Not on a land; not with Convoke, Improvise or Delve.
  * The `castSpell` action chooses one with `alternative`; the card is cast from the zones it could be
  * cast from anyway. Additional costs, commander tax and cost reductions still apply to it (CR
  * 118.9d, 601.2f, 903.8). `condition` is read for the player casting, with the card as the source;
@@ -1227,7 +1246,10 @@ export type AlternativeCost =
       readonly condition?: Condition;
     }
   | {
-      readonly kind: Exclude<NamedAlternativeKind, 'escape' | 'tapPermanents'>;
+      readonly kind: Exclude<
+        NamedAlternativeKind,
+        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard'
+      >;
       readonly cost: readonly Cost[];
       readonly condition?: Condition;
     }
@@ -1235,6 +1257,15 @@ export type AlternativeCost =
       readonly kind: 'tapPermanents';
       readonly cost: readonly Cost[];
       /** The permanents tapped as part of the cost (D-149): untapped ones the caster controls that match. */
+      readonly filter: ObjectFilter;
+      /** How many: at least 1. */
+      readonly count: number;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'sacrificeFromGraveyard';
+      readonly cost: readonly Cost[];
+      /** The permanents sacrificed as part of the cost (issue 159): ones the caster controls that match. */
       readonly filter: ObjectFilter;
       /** How many: at least 1. */
       readonly count: number;
@@ -1390,6 +1421,12 @@ export interface ChooseSelector {
    * card was put into the hand, not the cards the mill moved.
    */
   readonly fromMoved?: true;
+  /**
+   * "Destroy all creatures, then return a creature card put into a graveyard this way to the battlefield under your control" (issue 159, CR 608.2c, 400.7j): with
+   * `fromMoved`, the candidates are the cards the effect before it moved that are in any player's graveyard (not only the chooser's), and they may be put onto the
+   * battlefield as well as into the hand.
+   */
+  readonly fromAnyGraveyard?: true;
   /**
    * "Put a land card from your hand or graveyard onto the battlefield" (Galadriel deck, group 2, D-544, CR 608.2d, 110.2a): the candidates are the matching cards of the
    * controller's hand and of their graveyard together (the filter's `zone` is `hand`, the graveyard is the one added). Only for `moveToZone` onto the battlefield, with
@@ -1703,6 +1740,39 @@ export type Effect =
       readonly from?: 'exile';
       readonly free?: true;
       readonly bottomInstead?: true;
+      /**
+       * "You may cast target creature card in a graveyard this turn" (issue 159, CR 601.2, 108.3): the card may be in the graveyard of any player, not only the controller's. The
+       * spell is cast by the controller of this effect, who controls the permanent it becomes; if it does not resolve it goes to its owner's graveyard (CR 108.3).
+       */
+      readonly anyGraveyard?: true;
+      /**
+       * "When you cast it this turn, this creature gains all activated abilities of that card until end of turn" (issue 159, CR 603.7, 603.7a): a delayed triggered ability of
+       * the controller, created with the permission, that triggers once when the card is cast this turn (the spell is its `triggerSubject`) and ends with the turn. Its source is
+       * the source of this effect. `effect` may name only the permanent with the ability (`this`) and the spell cast (`triggerSubject`).
+       */
+      readonly whenCast?: Effect;
+    }
+  /**
+   * "This creature gains all activated abilities of that card until end of turn" (issue 159, CR 613.1f, 113.6): the permanent `to` has, until end of turn, every activated and mana
+   * ability that `from` (a card or spell, read as it is as the effect resolves, or as it last was) has. They are abilities of `to`: their text says "this creature" and means it.
+   * Only in the `whenCast` effect of a `mayCast`, where `from` is the spell cast.
+   */
+  | {
+      readonly kind: 'gainActivatedAbilitiesOf';
+      readonly to: ObjectRef;
+      readonly from: ObjectRef;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "You may cast Zombie spells from your graveyard this turn" (issue 159, CR 601.2, 611.2a): until end of turn the controller of this effect may cast, from their own graveyard,
+   * every card there that `spells` describes (a Zombie card: its types, subtypes, mana value, as the card it is; the filter names no zone, controller or owner), at the timing of its
+   * type and paying its ordinary cost (no alternative cost, no commander tax). It names the cards as they are whenever the turn asks, so a card that enters the graveyard later this
+   * turn is covered too. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'mayCastSpells';
+      readonly spells: ObjectFilter;
+      readonly duration: 'untilEndOfTurn';
     }
   /**
    * "Exile the top card of your library", "Exile the top two cards of your library", "Exile the top X cards of your library, where X is the
@@ -2504,6 +2574,8 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly colors: readonly Color[];
       readonly duration: Duration;
+      /** "... is a black Zombie in addition to its other colors and types" (issue 159, CR 105.3, 613.1e): the colors are added to the ones the object has instead of replacing them. */
+      readonly additive?: true;
     }
   /**
    * "It also gains the non-backup abilities of this creature printed below this one until end of turn" (Backup, CR 702.165a, 613.1f, D-230), and a resolving spell that grants an activated,
@@ -2626,6 +2698,11 @@ export type Effect =
    * is created (CR 701.36b). With two or more creature tokens the controller is asked which (a `choosePermanent` decision of purpose 'populate'); with one it is chosen.
    */
   | { readonly kind: 'populate' }
+  /**
+   * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
+   * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
+   */
+  | { readonly kind: 'additionalLandDropThisTurn'; readonly count: number }
   /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
@@ -3704,7 +3781,7 @@ export type Keyword =
   /**
    * CR 702.34a (Flashback), on an instant or sorcery: it may be cast from its owner's graveyard by
    * paying `cost` rather than its mana cost (an alternative cost, CR 118.9), and a spell cast that
-   * way is exiled instead of going anywhere else when it leaves the stack. Only `mana` costs.
+   * way is exiled instead of going anywhere else when it leaves the stack. `mana` and `payLife` costs.
    */
   | { readonly kind: 'flashback'; readonly cost: readonly Cost[] }
   | { readonly kind: 'ward'; readonly cost: readonly Cost[] }
@@ -4118,6 +4195,11 @@ export type Condition =
    */
   | { readonly kind: 'kicked' }
   /**
+   * "If you cast this spell during your main phase" (CR 505.1, 601.2, issue 244): the spell is on the stack having been cast (not a copy) during a main phase of a turn of its
+   * controller. A phase cannot end with a spell on the stack, so the turn's phase and active player as the spell resolves are those it was cast in. Read from the spell.
+   */
+  | { readonly kind: 'castInOwnMainPhase' }
+  /**
    * CR 702.56a (Replicate, D-129): "if a replicate cost was paid for it": the spell was cast with its replicate cost
    * paid at least once. Read from the spell, or from its last-known information once it has left (CR 113.7a).
    * Needs a replicate ability on the card.
@@ -4265,6 +4347,11 @@ export type Condition =
       readonly of: ObjectRef;
       readonly filter: ObjectFilter;
       readonly inZone?: 'hand' | 'exile';
+      /**
+       * "If at least one Zombie card is milled this way" (issue 159, CR 608.2c, 400.7j): with `of: moved`, true when any of the objects the instruction before it
+       * moved matches the filter, not only the first. Only with the `moved` reference.
+       */
+      readonly any?: true;
     }
   /**
    * "During your first, second, or third turn of the game" (CR 500.1, D-149): it is the turn of the player the condition is read for and
@@ -4459,6 +4546,12 @@ export type Condition =
       readonly ofTypes?: readonly CardType[];
     }
   /**
+   * "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2, 603.4): the controller of the condition has
+   * cast a spell from a graveyard this turn, or activated an ability of a card that was in a graveyard as it was activated (`TurnLog.castSpells` and `TurnLog.activated`, the
+   * `fromGraveyard` marks). Reads the turn log only, so it is read as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'castFromGraveyardThisTurn' }
+  /**
    * "If the result is 1", "if the result is 10 or more" (CR 706.2, 706.3a, D-271): the result of the latest `rollDie` of this resolution against a whole number.
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
    */
@@ -4559,7 +4652,9 @@ export type Replacement =
         | number
         | { readonly kind: 'x' }
         | { readonly kind: 'timesKicked' }
-        | CountAmount;
+        | CountAmount
+        /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
+        | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
       /**
        * "This permanent escapes with a +1/+1 counter" (CR 702.138c, D-124): the counters are put on it only if it
        * escaped, i.e. its spell was cast from a graveyard for its escape cost. Only on a face with an escape cost.
@@ -5195,6 +5290,12 @@ export type StaticEffect =
       readonly kind: 'preventDamageToThis';
       readonly subject: { readonly kind: 'this' };
       readonly scope: PreventScope;
+      /**
+       * "If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it." (issue 159, CR 615.1, 122.1): each
+       * damage event this ability prevents also removes one counter of this kind from the permanent, if it has one (the damage is prevented
+       * either way). The counter is a power and toughness counter, `+1/+1` or `-1/-1`.
+       */
+      readonly removeCounter?: string;
     }
   /**
    * "Damage isn't removed from this creature during cleanup steps." (CR 514.2, 113.6, D-192): a static ability of a permanent: at the cleanup
@@ -5436,6 +5537,12 @@ export interface ManaAbility {
      * a permanent that has at least one of the card types and at least one of the subtypes (each when given), besides the spells it names.
      */
     readonly alsoAbilities?: true;
+    /**
+     * "Spend this mana only to cast a creature spell of the chosen type." (CR 106.6, 614.12, 607.2d; issue 199): the spell must have the creature type the permanent
+     * chose as it entered (`GameObject.chosen.creatureType`, `asEntersChoose` of `creatureType`), read as the mana is made. With no type chosen the mana can be spent
+     * on no spell. Replaces `subtypes`: a card gives one or the other, never both.
+     */
+    readonly chosenType?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability
@@ -5473,6 +5580,12 @@ export interface ManaAbility {
       | 'haste'
       | { readonly scry: number }
       | { readonly scryCommanderCasts: true }
+      /**
+       * `{ countersCommanderCasts: true }` (issue 241, Opal Palace, CR 106.6, 122.6, 903.8): "If you spend this mana to cast your commander, it enters with a number of additional
+       * +1/+1 counters on it equal to the number of times it's been cast from the command zone this game": the commander cast with this mana enters with that many more
+       * +1/+1 counters (this cast included), for each such mana spent on it. Read as the permanent enters.
+       */
+      | { readonly countersCommanderCasts: true }
       | { readonly copySpell: 'may' | 'no' };
   };
   /**

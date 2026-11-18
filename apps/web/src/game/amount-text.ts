@@ -168,6 +168,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'searched':
       // Lorehold group 1: "If you search your library this way".
       return 'the number of times you searched your library this way';
+    case 'damageDealt':
+      // Issue 159: "equal to the damage dealt this way".
+      return 'the damage dealt this way';
   }
 }
 

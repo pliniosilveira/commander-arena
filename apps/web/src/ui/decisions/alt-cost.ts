@@ -19,6 +19,8 @@ export function alternativeLabel(kind: NamedAlternative, card: ObjectView | unde
   if (entry === undefined) return ALTERNATIVE_NAMES[kind];
   // D-149 (CR 118.9): "Cast for {W}, tapping four creatures with flying".
   if (kind === 'tapPermanents') return tapAlternativeLabel(entry);
+  // Issue 159: "Cast for {B}{B}, sacrificing 2 creatures".
+  if (kind === 'sacrificeFromGraveyard') return sacrificeAlternativeLabel(entry);
   const label = `${ALTERNATIVE_NAMES[kind]} ${symbolsText(withX(entry.cost, 0))}`;
   return entry.exile === undefined ? label : `${label}, exile ${plural(entry.exile, 'other card')}`;
 }
@@ -40,6 +42,22 @@ export function tapAlternativeLabel(
   return mana.length === 0
     ? `Cast by tapping ${what}`
     : `Cast for ${symbolsText(mana)}, tapping ${what}`;
+}
+
+/**
+ * "Cast for {B}{B}, sacrificing 2 creatures" (issue 159): the cast button of the alternative cost that sacrifices permanents (`AlternativeCostView.sacrifice`). The count and
+ * the kind of permanent are the card's, read from the view.
+ */
+export function sacrificeAlternativeLabel(
+  entry: NonNullable<ObjectView['alternativeCosts']>[number],
+): string {
+  const { sacrifice } = entry;
+  if (sacrifice === undefined) return ALTERNATIVE_NAMES.sacrificeFromGraveyard;
+  const mana = withX(entry.cost, 0);
+  const what = plural(sacrifice.count, sacrifice.filter.types?.[0] ?? 'permanent');
+  return mana.length === 0
+    ? `Cast by sacrificing ${what}`
+    : `Cast for ${symbolsText(mana)}, sacrificing ${what}`;
 }
 
 /** "Cast for {R}": the button of a foretold card, from its `alternativeCosts` (D-128). */

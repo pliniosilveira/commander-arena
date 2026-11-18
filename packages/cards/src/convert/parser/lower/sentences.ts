@@ -100,11 +100,13 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     if (effect.kind === 'exile') ctx.exiled = 'cards';
     ctx.exiledRef =
       effect.kind === 'exile' && effect.objects.kind === 'target' ? effect.objects.id : null;
+    // `'*'` (issue 159): the instruction put objects onto the battlefield that no target names ("Put all creature cards from all graveyards onto the battlefield"): "they"
+    // are `moved`, as no target id can be '*'.
     ctx.movedOnto =
-      effect.kind === 'moveToZone' &&
-      effect.to === 'battlefield' &&
-      effect.objects.kind === 'target'
-        ? effect.objects.id
+      effect.kind === 'moveToZone' && effect.to === 'battlefield'
+        ? effect.objects.kind === 'target'
+          ? effect.objects.id
+          : '*'
         : null;
   }
 }
@@ -211,6 +213,11 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'mill' &&
       lowered.value[0].player.kind === 'you';
+    // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
+    const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
+    ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
+    // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
+    ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
     // D-412: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
     ctx.movedToHand =
       lowered.value.length === 1 &&
@@ -1319,6 +1326,9 @@ function countsWhatHappened(
     case 'tapped':
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
+    case 'damageDealt':
+      // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
+      return earlier.verb === 'dealDamage';
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
@@ -1743,8 +1753,29 @@ function lowerStep(
   const previous = steps[steps.length - 1];
   if (sentence.instead !== true) {
     const targetsBefore = ctx.targets.length;
-    const lowered = lowerClauses(sentence.clauses, ctx);
-    if (!lowered.ok) return stop(lowered);
+    // "If you cast ~ during your main phase, you may exile up to one other target ...": one optional exile of a target; the question is asked as it resolves (the engine's
+    // `may`, CR 608.2d) and the target is chosen as the spell is cast (CR 601.2c).
+    const [only] = sentence.clauses;
+    const mayExile =
+      sentence.clauses.length === 1 && only?.optional === true && only.verb === 'exile';
+    if (mayExile) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+    }
+    const lowerOnce = lowerClauses(
+      mayExile && only !== undefined ? [{ ...only, optional: false }] : sentence.clauses,
+      ctx,
+    );
+    if (!lowerOnce.ok) return stop(lowerOnce);
+    const [exiled, ...others] = lowerOnce.value;
+    if (mayExile && (exiled === undefined || others.length > 0)) return stop(refuse(sentence));
+    const lowered = {
+      ...lowerOnce,
+      value:
+        mayExile && exiled !== undefined
+          ? [{ kind: 'may' as const, effect: exiled }]
+          : lowerOnce.value,
+    };
     // "If the gift was promised, return target creature card ...": the slot exists only if the gift was promised (CR 702.174m).
     if (sentence.condition.test.kind === 'giftPromised') {
       for (let k = targetsBefore; k < ctx.targets.length; k += 1) {
@@ -1759,6 +1790,16 @@ function lowerStep(
     ) {
       const blocked = missingFeatures(['ability:ifKicked']);
       if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+    }
+    // "If you cast ~ during your main phase, you may exile up to one other target ...": the slot exists only if the spell was cast in its controller's main phase (CR 601.2c).
+    if (sentence.condition.test.kind === 'castInOwnMainPhase') {
+      if (ctx.owner !== 'spell') return stop(refuse(sentence));
+      const blocked = missingFeatures(['ability:ifCastInOwnMain']);
+      if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+      for (let k = targetsBefore; k < ctx.targets.length; k += 1) {
+        const spec = ctx.targets[k];
+        if (spec !== undefined) ctx.targets[k] = { ...spec, ifCastInOwnMain: true };
+      }
     }
     const effect: Effect = {
       kind: 'conditional',

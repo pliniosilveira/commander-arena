@@ -256,7 +256,7 @@ export function activateManaAbility(
         source,
         snow,
         made,
-        spendRestrictionOf(found.ability),
+        spendRestrictionOf(found.ability, obj),
         spentRiderOf(found.ability, source),
         derive(state, obj).types,
       ),

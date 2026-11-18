@@ -51,10 +51,14 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
+  // Issue 159 (Liliana, Untouched by Death): "If at least one Zombie card is milled this way, each opponent loses 2 life."
+  'condition.milled-this-way',
   // D-412 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."
   'condition.cast-from-graveyard',
+  // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
+  'condition.cast-in-own-main-phase',
 ] as const;
 
 /**
@@ -88,6 +92,8 @@ const TURN_CONDITIONS = [
   // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
   'condition.life-gained-this-turn',
   'condition.life-above-starting',
+  // Issue 159 (Laboratory Drudge): "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+  'condition.cast-from-graveyard-this-turn',
 ] as const;
 
 /**
@@ -443,7 +449,8 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             map(
               (c, p) => {
                 const ahead = pattern(
-                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield))/iu,
+                  // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
+                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
                 )(c, p);
                 return ahead.ok ? literal('you may ')(c, p) : ahead;
               },

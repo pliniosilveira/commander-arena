@@ -47,6 +47,7 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'playerDealtDamage',
   'lifeGainedThisTurn',
   'lifeGainedAndLostThisTurn',
+  'castFromGraveyardThisTurn',
   'cardsInGraveyard',
   'cardsInLibrary',
   'controlCommander',
@@ -164,6 +165,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
+    case 'castFromGraveyardThisTurn': // Issue 159: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'cardsInLibrary': // D-331: the cards in a zone, which no layer changes
     case 'chosenOption': // D-151: what the permanent chose as it entered

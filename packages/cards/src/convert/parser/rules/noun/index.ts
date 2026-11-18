@@ -147,6 +147,16 @@ function targetOf(
     });
     return { ok: true, value, pos: filter.pos };
   };
+  // "up to one other target artifact or enchantment" (issue 244, CR 115.3, 601.2c): none or one target, which is not a target of the slot before it in the same text.
+  const upToOneOther: Parser<Bare> = map(
+    sequence(spanned(literal('up to one')), literal(' other target '), targetPhrase(false)),
+    ([count, , filter]) =>
+      bare('target', filter, {
+        count: { kind: 'number', value: 1, span: count.span },
+        upTo: true,
+        otherTarget: true,
+      }),
+  );
   // "up to that many target creatures" (stage P41, D-188, CR 603.12): the number is what a sacrifice before a reflexive ability made; always plural,
   // with no count of its own.
   const upToThatMany: Parser<Bare> = map(
@@ -172,6 +182,7 @@ function targetOf(
       ...(allowX ? [xTargets] : []),
       eachOf,
       oneOrTwo,
+      upToOneOther,
       upTo,
       upToThatMany,
       counted,
@@ -359,6 +370,39 @@ export const NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD = defineRule<IrNoun>({
     'all creature cards in your graveyard',
   ],
   parse: targetOf('noun.target-cards-in-your-graveyard', (plural) => graveyardPhrase(plural, 'in')),
+});
+
+/**
+ * `noun.target-card-in-a-graveyard` (issue 159, Havengul Lich): "target creature card in a graveyard": the cards of `noun.target-graveyard-card`, said with "in" and of any player's
+ * graveyard (CR 404.1, 115.1). One card only. Another noun rule so that the "in a graveyard" is read only where a rule asks for this noun by its id.
+ */
+export const NOUN_TARGET_CARD_IN_A_GRAVEYARD = defineRule<IrNoun>({
+  id: 'noun.target-card-in-a-graveyard',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 404.1 (Graveyard)', 'CR 115.1 (Targets)'],
+  examples: [
+    'target creature card in a graveyard',
+    'target card in a graveyard',
+    'target Zombie creature card in a graveyard',
+  ],
+  rejects: [
+    'target creature card in your graveyard',
+    "target creature card in an opponent's graveyard",
+    'target creature card from a graveyard',
+    'two target creature cards in a graveyard',
+    'target creature in a graveyard',
+    'target card',
+    'all creature cards in a graveyard',
+  ],
+  parse: (ctx, pos) => {
+    const r = targetOf('noun.target-card-in-a-graveyard', (plural) =>
+      graveyardPhrase(plural, 'inAny'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    // One card only: "two target creature cards in a graveyard", "up to one ..." are other statements.
+    return r.value.plural || r.value.upTo || r.value.count !== undefined ? fail(ctx, pos) : r;
+  },
 });
 
 /**
@@ -716,6 +760,7 @@ export const NOUN_RULES = [
   NOUN_UP_TO_GRAVEYARD_CARDS,
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
+  NOUN_TARGET_CARD_IN_A_GRAVEYARD,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "any number of target cards from your graveyard", read by `effect.shuffle-cards-into-library` only.

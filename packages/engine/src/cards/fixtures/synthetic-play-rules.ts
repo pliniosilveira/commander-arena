@@ -30,6 +30,25 @@ const attackTax = (symbols: string[], planeswalkers?: true): Ability => ({
 const optionalUntap: Ability = { kind: 'static', static: { kind: 'optionalUntap' } };
 
 export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
+  // "You may play an additional land this turn." and, at instant speed, the same (CR 305.2).
+  singleFace({
+    name: 'SYNTHETIC Extra Land Sorcery',
+    manaCost: ['1', 'G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You may play an additional land this turn.',
+    spell: { effect: { kind: 'additionalLandDropThisTurn', count: 1 } },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Extra Land Instant',
+    manaCost: ['G'],
+    types: ['instant'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You may play an additional land this turn.',
+    spell: { effect: { kind: 'additionalLandDropThisTurn', count: 1 } },
+  }),
   singleFace({
     name: 'SYNTHETIC Wandering Path',
     manaCost: ['2', 'G'],

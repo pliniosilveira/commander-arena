@@ -299,6 +299,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `{T}: Draw a card, then discard a card. If ${e}, you gain 1 life.`,
   ),
   'effect.may-cast': spell((e) => `${cap(e).replace('. if that', '. If that')}.`),
+  'effect.may-cast-spells': spell((e) => `${cap(e)}.`),
+  'effect.may-cast-any-graveyard': spell((e) => `${cap(e).replace('. when', '. When')}.`),
+  'noun.target-card-in-a-graveyard': spell((e) => `You may cast ${e} this turn.`),
   'noun.player-graveyard': spell((e) => `Exile ${e}.`),
   'noun.all-graveyard-cards': spell((e) => `Exile ${e}.`),
   'noun.all-graveyards': spell((e) => `Exile ${e}.`),
@@ -414,6 +417,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-self': asIs,
+  'static.prevent-damage-to-self-remove-counter': asIs,
+  'static.graveyard-sacrifice-alt-cost': asIs,
+  'amount.damage-dealt-this-way': spell(
+    (e) => `~ deals 3 damage to target creature. You gain life ${e}.`,
+  ),
   'static.cant-cast-early': asIs,
   // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
   'static.opponents-cant-gain-life': asIs,
@@ -533,6 +541,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.paired-creatures': permanent(
     (e) => `As long as ~ is paired with another creature, ${e} has flying.`,
   ),
+  'condition.milled-this-way': spell(
+    (e) => `Mill three cards. If ${e}, each opponent loses 2 life.`,
+  ),
+  'condition.cast-from-graveyard-this-turn': permanent(
+    (e) => `At the beginning of your end step, draw a card if ${e}.`,
+  ),
   'condition.put-this-way': spell(
     (e) => `You may put a land card from your hand onto the battlefield. If ${e}, you gain 4 life.`,
   ),
@@ -647,6 +661,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
+  'trigger.enchanted-player-attacked': whenever,
+  'effect.opponents-attacking-do-same': spell(
+    (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
+  ),
   // Danitha deck, group 5 (D-407, D-408): the blight cost of an ordinary ability, and the spell's own permission to be cast as though it had flash (a line of its own).
   'cost.blight': permanent((e) => `{1}, ${e}: Draw a card.`),
   'static.cast-self-as-though-flash': asIs,
@@ -658,7 +676,6 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
-  'trigger.enchanted-player-attacked': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
@@ -674,6 +691,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-from-graveyard': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
+  ),
+  // Issue 244 (Return to Dust).
+  'condition.cast-in-own-main-phase': spell(
+    (e) => `Exile target artifact. If ${e}, exile target enchantment.`,
   ),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
@@ -745,6 +766,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Issue 241 (Opal Palace).
+  'effect.mana-rider-counters-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
   'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),

@@ -25,7 +25,8 @@ export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIss
 }
 
 /**
- * CR 702.34a: the flashback cost is mana, or mana and life (D-647, CR 119.4: "Flashback—{1}{U}, Pay 3 life."); any other cost of a flashback is not supported.
+ * CR 702.34a: the flashback cost is a mana cost, or a mana cost and a payment of life ("Flashback—{1}{U}, Pay 3 life.",
+ * Deep Analysis); a flashback cost with another cost is not supported.
  */
 export function checkFlashbackCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
   checkCosts(cost, path, out);
@@ -68,6 +69,15 @@ function mentionsEscaped(node: unknown): boolean {
   const record = node as Record<string, unknown>;
   if (record.kind === 'escaped' || record.ifEscaped === true) return true;
   return Object.values(record).some(mentionsEscaped);
+}
+
+/** True when `node` (any JSON) holds a target slot that exists only if the spell was cast during its controller's main phase (issue 244). */
+function mentionsCastPhaseTarget(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsCastPhaseTarget);
+  if (node === null || typeof node !== 'object') return false;
+  const record = node as Record<string, unknown>;
+  if (record.ifCastInOwnMain === true) return true;
+  return Object.values(record).some(mentionsCastPhaseTarget);
 }
 
 /** True when `node` (any JSON) holds a target slot that exists only if the spell was kicked, or only if it was not (D-181). */
@@ -173,6 +183,27 @@ export function checkCastFace(
       );
     }
   }
+  // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'sacrificeFromGraveyard')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'sacrificeFromGraveyard is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'sacrificeFromGraveyard with convoke, improvise or delve is not supported',
+      );
+    }
+  }
   // CR 702.35a, 702.94a, 702.143a (D-128, D-274): madness, miracle and foretell are ways to cast a card, so they are on a
   // card that is not a land (a land is played, never cast).
   for (const kind of ['madness', 'miracle', 'foretell'] as const) {
@@ -270,6 +301,13 @@ export function checkCastFace(
       "a target that exists only if the gift was promised is a spell's (CR 702.174m)",
     );
   }
+  if (mentionsCastPhaseTarget(abilities)) {
+    issue(
+      out,
+      `${path}.abilities`,
+      "a target chosen only if the spell was cast during its controller's main phase is a spell's",
+    );
+  }
   // D-181, CR 702.33g: the slots that depend on the kicker are a spell's own, with one kicker cost (not Multikicker) and no modes.
   if (mentionsKickedTarget(abilities)) {
     issue(
@@ -334,6 +372,33 @@ export function giftTargetsUsedUnguarded(spell: SpellText): string[] {
   };
   return slots
     .filter((slot) => unguarded(spell.effect, slot.id, slot.ifGiftPromised === true, null))
+    .map((slot) => slot.id);
+}
+
+/**
+ * The target slots of a spell that exist only if it was cast during its controller's main phase (`TargetSpec.ifCastInOwnMain`, issue 244) and that the effect uses
+ * anywhere but the `effect` of a `castInOwnMainPhase` conditional: elsewhere the slot would be empty. Also true of a slot in a modal spell, which this does not run.
+ */
+export function castPhaseTargetsUsedUnguarded(spell: SpellText): string[] {
+  const slots = (spell.targets ?? []).filter((t) => t.ifCastInOwnMain === true);
+  const unguarded = (node: unknown, id: string, guarded: boolean): boolean => {
+    if (Array.isArray(node)) return node.some((n) => unguarded(n, id, guarded));
+    if (node === null || typeof node !== 'object') return false;
+    const record = node as Record<string, unknown>;
+    if (record.kind === 'target' && record.id === id) return !guarded;
+    if (record.kind === 'conditional') {
+      const phase = (record.condition as { kind?: unknown } | null)?.kind === 'castInOwnMainPhase';
+      return (
+        unguarded(record.condition, id, guarded) ||
+        unguarded(record.effect, id, guarded || phase) ||
+        unguarded(record.else, id, guarded)
+      );
+    }
+    return Object.values(record).some((n) => unguarded(n, id, guarded));
+  };
+  const modal = spell.modes !== undefined || spell.chooseModes !== undefined;
+  return slots
+    .filter((slot) => modal || unguarded(spell.effect, slot.id, false))
     .map((slot) => slot.id);
 }
 

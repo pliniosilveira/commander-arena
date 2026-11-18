@@ -469,6 +469,9 @@ function recipientText(
       return "the player or planeswalker it's attacking";
     case 'triggerPlayer':
       return 'that player';
+    case 'opponentsAttackingTriggerPlayer':
+      // Issue 159 (CR 508.6).
+      return 'each opponent attacking that player';
     case 'declinedPlayer':
       return 'the player who declined';
     case 'giftRecipient':
@@ -635,6 +638,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
+    case 'opponentsAttackingTriggerPlayer':
+      return { who: 'they', third: false };
     case 'declinedPlayer':
       return { who: 'the player who declined', third: true };
     case 'giftRecipient':
@@ -1200,11 +1205,23 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       }
       // D-135 (CR 601.2, 611.2a): "You may cast target Zombie creature card from your graveyard this turn".
       // D-359 (CR 614.1a): the rider "If that spell would be put into your graveyard, exile it instead".
+      // Issue 159: "in a graveyard" (any player's) and the rider "When you cast it this turn, this creature gains all activated abilities of that card until end of turn".
       return `You may cast ${object(effect.objects)} this turn${
         effect.exileInstead === true
           ? '. If that spell would be put into your graveyard, exile it instead'
           : ''
+      }${
+        effect.whenCast === undefined
+          ? ''
+          : '. When you cast it this turn, this creature gains all activated abilities of that card until end of turn'
       }`;
+    case 'mayCastSpells':
+      // Issue 159 (CR 601.2, 611.2a): "You may cast Zombie spells from your graveyard this turn".
+      // The one word of the filter: a creature type ("Zombie spells") or a card type ("creature spells").
+      return `You may cast ${effect.spells.subtypes?.[0] ?? effect.spells.types?.[0] ?? ''} spells from your graveyard this turn`;
+    case 'gainActivatedAbilitiesOf':
+      // Issue 159 (CR 613.1f): "This creature gains all activated abilities of that card until end of turn".
+      return 'This creature gains all activated abilities of that card until end of turn';
     case 'exile': {
       // D-149 (CR 610.3): "Exile target creature until this enchantment leaves the battlefield", one for each opponent.
       if (effect.until !== undefined) {
