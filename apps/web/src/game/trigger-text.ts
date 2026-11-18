@@ -83,6 +83,8 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'powerLessThanSource',
   // D-431: "with power greater than its base power".
   'powerAboveBase',
+  // D-638 (CR 601.2a): "from your hand", said by `withText`.
+  'castFromHand',
   // D-133: nontoken, non-Zombie, colorless, with and without a keyword.
   'token',
   'notSubtypes',
@@ -192,7 +194,9 @@ export function withText(filter: ObjectFilter): string {
     filter.controllerDealtDamageBySource === true
       ? ' whose controller was dealt combat damage by this creature this turn'
       : '';
-  return `${parts.length === 0 ? '' : ` with ${parts.join(' and ')}`}${without === '' ? '' : ` without ${without}`}${whose}`;
+  // CR 601.2a (D-638): "an instant or sorcery spell with mana value 5 or greater from your hand".
+  const hand = filter.castFromHand === true ? ' from your hand' : '';
+  return `${parts.length === 0 ? '' : ` with ${parts.join(' and ')}`}${without === '' ? '' : ` without ${without}`}${whose}${hand}`;
 }
 
 /** "a counter on it" for any counter, "a stun counter on it" for a named kind (D-145, CR 122.1). */

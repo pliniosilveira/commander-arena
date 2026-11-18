@@ -241,6 +241,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copySpell',
     // D-439: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
     'exileOnResolve',
+    // D-651: "Exile this spell with three time counters on it" (CR 608.2n, 122.1).
+    'exileSpellWithTimeCounters',
     // D-181: "Change the target of target spell or ability with a single target" (CR 115.7a).
     'changeTarget',
     'storm',
@@ -261,6 +263,17 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-128: an effect that creates a delayed triggered ability (CR 603.7): "at the beginning of the next turn's upkeep".
     'delayedTrigger',
     'prepare',
+    // D-654: "copy it. You may cast the copy without paying its mana cost" (CR 707.12).
+    'copyCardAndCast',
+    // D-660: "each player exiles cards from the top of their library until they exile a nonland card" and "an opponent chooses a nonland card exiled this way".
+    'exileUntilFound',
+    'opponentChoosesCard',
+    // D-663: "exile the top four cards in a face-down pile, then ... in a face-up pile. An opponent chooses one of those piles" (CR 700.3).
+    'exilePiles',
+    // D-661: "as many times as you choose, you may exile the top card of your library".
+    'exileTopAnyNumber',
+    // D-662: "whenever a creature you control deals combat damage to a player this turn, ..." (CR 603.7).
+    'delayedCombatDamageTurn',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -486,6 +499,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'improvise',
     'delve',
     'cascade',
+    // D-665: Demonstrate (CR 702.144a); D-667: Retrace (CR 702.81a).
+    'demonstrate',
+    'retrace',
     // D-124: Unearth (CR 702.84a).
     'unearth',
     // D-185: Encore (CR 702.141a), Devour (CR 702.82a) and Riot (CR 702.136a).
@@ -576,7 +592,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
-  sacrificeSelectors: ['this', 'choose', 'each'],
+  // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
+  sacrificeSelectors: ['this', 'choose', 'each', 'moved'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
   tokenPresets: ['Treasure', 'Food', 'Clue'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
@@ -677,6 +694,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromBattlefieldThisTurn',
     // D-235: "spells you cast from anywhere other than your hand" (`ObjectFilter.notCastFromHand`).
     'notCastFromHand',
+    // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
+    'castFromHand',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
@@ -699,6 +718,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'isSource',
     // D-438: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
     'copyForEach',
+    // D-489, D-656: "creatures named ~" (`ObjectFilter.named`).
+    'named',
+    // D-652: "for each opponent, create two 3/3 tokens that attack that opponent this turn if able" (`createToken.forEachOpponent`).
+    'tokensPerOpponent',
+    // D-650: "Until end of turn, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfTurn`).
+    'manaStays',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -823,6 +848,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-135: "if you do" (CR 603.12), "if it's a Zombie card", "if the gift was promised", "if an opponent controls four or
     // more nonbasic lands".
     'didPrevious',
+    // D-661: "if the total mana value of the cards exiled this way is 13 or less" (`movedTotalManaValue`).
+    'movedTotalManaValue',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -917,6 +944,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantAbility',
     'restriction',
     'costReduction',
+    // D-641: "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f).
+    'costPerExtraTarget',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
     'abilityCostReduction',
     'setTypes',
@@ -1021,6 +1050,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    // D-638: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
+    'spellsCastThisTurn',
+    // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
+    'greatestManaValueCast',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
     // D-575: "for each card exiled this way" for a spell's additional cost.
@@ -1048,6 +1081,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
+    // D-667: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
+    'retrace',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
   ],
@@ -1107,6 +1142,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // D-648: "This creature can block only creatures with flying."
+  'canBlockOnlyFlying',
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
   'mustBeBlocked',
@@ -1291,12 +1328,20 @@ export const SELECTOR_KINDS = [
   'isSource',
   /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-438): the engine's `copySpell.forEach` and `copier`. */
   'copyForEach',
+  /** "Creatures named Leitmotif Composer" (CR 201.2, D-489, D-656): the engine's `ObjectFilter.named`, the name of the objects as they are now. */
+  'named',
+  /** "For each opponent, create two 3/3 tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, D-652): the engine's `createToken.forEachOpponent`. */
+  'tokensPerOpponent',
+  /** "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-650): the engine's `staysUntilEndOfTurn` of a fixed `addMana` production. */
+  'manaStays',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "with one or more targets" on a cast trigger (D-574). */
   'targetCountAtLeast',
   /** "Spells you cast from anywhere other than your hand" (CR 601.2a, D-235): the engine's `ObjectFilter.notCastFromHand`. */
   'notCastFromHand',
+  /** "A spell you cast from your hand" (CR 601.2a, D-638): the engine's `ObjectFilter.castFromHand`. */
+  'castFromHand',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -1437,6 +1482,8 @@ export const CONDITION_KINDS = [
   'opponentControlsAtLeast',
   /** "If you do" (CR 603.12, D-135): the engine's `didPrevious`, after a `may` effect. */
   'didPrevious',
+  /** "If the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c, D-661): the engine's `movedTotalManaValue`. */
+  'movedTotalManaValue',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -1554,6 +1601,8 @@ export const STATIC_KINDS = [
   'untapInOthersUntapStep',
   /** "~ costs {1} less to cast for each ...", "Artifact spells you cast cost {1} less" (D-095): the engine's `costReduction`. */
   'costReduction',
+  /** "Strive — ~ costs {2}{R} more to cast for each target beyond the first" (CR 601.2f, D-641): the engine's `costPerExtraTarget`. */
+  'costPerExtraTarget',
   /** "Equip abilities you activate that target enchanted creature cost {3} less to activate." (CR 601.2f, 602.2b, 702.6a, D-425): the engine's `abilityCostReduction`. */
   'abilityCostReduction',
   /** "~ is the chosen type in addition to its other types." (D-100): the engine's `setTypes` static, layer 4. */
@@ -1705,6 +1754,10 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-638): the engine's `spellsCastThisTurn`. */
+  'spellsCastThisTurn',
+  /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */
+  'greatestManaValueCast',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
@@ -1740,6 +1793,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'miracle',
   'foretell',
   'tapPermanents',
+  'retrace',
   'sacrificeFromGraveyard',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
@@ -1891,6 +1945,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cascade: true,
   copySpell: true,
   exileOnResolve: true,
+  exileSpellWithTimeCounters: true,
   changeTarget: true,
   storm: true,
   replicate: true,
@@ -1900,6 +1955,12 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   becomeMonarch: true,
   delayedTrigger: true,
   prepare: true,
+  copyCardAndCast: true,
+  exileUntilFound: true,
+  opponentChoosesCard: true,
+  exilePiles: true,
+  exileTopAnyNumber: true,
+  delayedCombatDamageTurn: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
@@ -2057,6 +2118,8 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   improvise: true,
   delve: true,
   cascade: true,
+  demonstrate: true,
+  retrace: true,
   unearth: true,
   encore: true,
   eternalize: true,

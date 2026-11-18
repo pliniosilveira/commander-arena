@@ -119,6 +119,7 @@ describe('the dimensions', () => {
       'lifeTotal',
       'thisMatches',
       'didPrevious',
+      'movedTotalManaValue',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
@@ -186,6 +187,8 @@ describe('the dimensions', () => {
       'grantAbility',
       'restriction',
       'costReduction',
+      // D-641 (CR 601.2f): strive, "costs {2}{R} more to cast for each target beyond the first".
+      'costPerExtraTarget',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
       'abilityCostReduction',
       'setTypes',

@@ -445,9 +445,12 @@ export function afterDiscard(input: GameState, prior: readonly GameEvent[] = [])
       events: [...expired.events, ...settled.events, ...granted.events],
     };
   }
+  // CR 500.5, 514.2 (D-650): the cleanup step ends and the turn with it: the mana an effect kept "until end of turn" empties now (a turn whose cleanup step gave nobody priority
+  // does not go through `endStep`).
+  const emptied = emptyManaPools(settled.state, true);
   return join(
-    { state: settled.state, events: [...expired.events, ...settled.events] },
-    startNextTurn(settled.state),
+    { state: emptied.state, events: [...expired.events, ...settled.events, ...emptied.events] },
+    startNextTurn(emptied.state),
   );
 }
 

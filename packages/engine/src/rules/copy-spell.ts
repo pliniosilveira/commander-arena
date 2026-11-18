@@ -191,8 +191,9 @@ function makeCopy(
 }
 
 /** The context the targets of the copy are chosen in: its controller, with the copy as the source (CR 601.2c). */
-function copyContext(res: ResolutionContext, copy: GameObject): SelectContext {
-  return { controller: res.controller, source: copy.id };
+function copyContext(_res: ResolutionContext, copy: GameObject): SelectContext {
+  // D-665 (CR 702.144a): the player a copy belongs to chooses its new targets, whoever controls the ability that made it.
+  return { controller: copy.controller, source: copy.id };
 }
 
 /** The slots of the question for `copy`: every legal target, and the targets the copy has now (CR 707.10c). */
@@ -228,7 +229,7 @@ function copyDecision(
   });
   return {
     kind: 'targets',
-    seat: res.controller,
+    seat: copy.controller,
     source: copy.id,
     specs: slots,
     forCopy: true,

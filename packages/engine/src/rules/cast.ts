@@ -101,6 +101,7 @@ import {
   targetsPossible,
 } from './legality';
 import { applyPaymentPlan, payableSources } from './mana-engine';
+import { manaValueOfCost } from './mana-value';
 import { legalModeSets, modalOfSpellText, modesDecision, printedOrder, specModes } from './modes';
 import { payByTapping } from './pay-manual';
 import {
@@ -122,6 +123,7 @@ import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter } from './select';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
+import { striveTargetCap } from './strive';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
 import { payableSpellTargets } from './target-payable';
 import { collectTriggers } from './triggers';
@@ -189,7 +191,10 @@ export function beginCast(
   // CR 601.2a: move the card to the stack, with the chosen face up (CR 709.3, 712.11b, 715.3);
   // the caster becomes its controller.
   const graveyardUse =
-    zone === 'graveyard' && !resolving && !mayCastFromGraveyard(state, seat, obj)
+    zone === 'graveyard' &&
+    !resolving &&
+    alternative !== 'retrace' &&
+    !mayCastFromGraveyard(state, seat, obj)
       ? graveyardPlayPermission(state, seat, obj, false)
       : null;
   const moved = moveObject(state, { object: objectId, to: 'stack', face });
@@ -212,6 +217,8 @@ export function beginCast(
       castFrom: zone,
       kicked: false,
       flashback: alternative === 'flashback',
+      // D-667 (CR 702.81a): cast from the graveyard by its retrace ability.
+      ...(alternative === 'retrace' ? { retrace: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
@@ -815,6 +822,8 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           casting.flashTargets ?? null,
           // D-424: a cost that is cheaper for some targets is payable only with them: only those are offered.
           payableSpellTargets(state, casting, specs, ctx),
+          // D-641: "costs {2}{R} more to cast for each target beyond the first": no more targets than the cost can be paid for.
+          striveTargetCap(state, casting, specs, ctx),
         ),
       },
     ),
@@ -915,6 +924,7 @@ function toPayment(state: GameState, events: GameEvent[]): Result {
         ...(cost.sacrificeCount === undefined ? {} : { sacrificeCount: cost.sacrificeCount }),
         ...(cost.sacrificeAny === undefined ? {} : { sacrificeAny: cost.sacrificeAny }),
         discard: cost.discard,
+        ...(cost.discardFilter === undefined ? {} : { discardFilter: cost.discardFilter }),
         behold: cost.behold,
         exile: cost.exile,
         ...(cost.exileFromHand === null ? {} : { exileFromHand: [...(stack?.exiledAsCost ?? [])] }),
@@ -1435,6 +1445,11 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
           {
             seat: casting.seat,
             types: derive(next, getObject(next, casting.object)).types,
+            // D-646 (CR 202.3e): the mana value the spell has on the stack, with the X announced.
+            manaValue: manaValueOfCost(
+              derive(next, getObject(next, casting.object)).manaCost,
+              getObject(next, casting.object),
+            ),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
           },
