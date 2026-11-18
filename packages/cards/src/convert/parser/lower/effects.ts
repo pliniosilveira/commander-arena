@@ -19,6 +19,7 @@ import type {
 } from '@commander-arena/engine';
 import type { IrClause, IrManaSpec, IrNoun, IrZoneSpec } from '../ir/types';
 import { keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
+import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
@@ -88,6 +89,7 @@ import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
+import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { VRASKA_LOWERINGS } from './vraska';
@@ -1639,6 +1641,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...ADDITIONAL_LAND_LOWERINGS,
+  ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,

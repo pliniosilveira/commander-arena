@@ -649,6 +649,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Issue 244 (Return to Dust).
+  'condition.cast-in-own-main-phase': spell(
+    (e) => `Exile target artifact. If ${e}, exile target enchantment.`,
+  ),
   'static.during-your-turn': asIs,
   // Stage P50 (D-207): the costs, nouns and conditions of the Vraska deck's third group.
   'condition.it-targets': permanent((e) => `~ costs {3} less to cast if ${e}.`),
@@ -719,6 +723,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Issue 241 (Opal Palace).
+  'effect.mana-rider-counters-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
   'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),

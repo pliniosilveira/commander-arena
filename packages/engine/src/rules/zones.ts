@@ -708,6 +708,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       const { counter, count } = request.withCounters;
       counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
     }
+    // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
+    // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
+    const manaCounters = old.zone === 'stack' ? (old.stack?.commanderCastCounters ?? 0) : 0;
+    if (manaCounters > 0 && old.card !== null) {
+      const extra = manaCounters * (state.commanderCasts[old.card] ?? 0);
+      if (extra > 0) counters = { ...counters, '+1/+1': (counters['+1/+1'] ?? 0) + extra };
+    }
     // CR 702.82a, 702.136a (D-185): the counters of devour and of the riot instances that chose the counter.
     counters = addCounterMaps(
       counters,

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 147,
+  "parserVersion": 148,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1253,6 +1253,14 @@
       "reasons": [],
       "ast": "812829a8"
     },
+    "3029df1d-d02a-4fed-8ab4-000a2096f823": {
+      "name": "Return to Dust",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0221e7df"
+    },
     "30377bd5-99ab-4888-9ea7-e5a069b527e8": {
       "name": "Return the Favor",
       "group": "training",
@@ -2251,6 +2259,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "78ac417b"
+    },
+    "584b15f2-6ae9-413a-8b8d-9244dbea4878": {
+      "name": "Unclaimed Territory",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "396cf337"
     },
     "58916455-844c-4d97-908f-8205bdc117c0": {
       "name": "Exorcise",
@@ -4335,6 +4351,14 @@
       "reasons": [],
       "ast": "844655b9"
     },
+    "aa6723a2-75da-49f5-a1ba-cbfa82c55301": {
+      "name": "Opal Palace",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fe25527f"
+    },
     "aa913409-7a7a-4e74-82ff-7ff8195585ad": {
       "name": "Roll-Roll-Roll-Roll",
       "group": "acceptance",
@@ -4666,6 +4690,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "11b5a0e9"
+    },
+    "b8f566ea-8283-4afa-9ac8-737e26419283": {
+      "name": "Explore",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2783dba8"
     },
     "b91b65b3-b35c-460e-a49b-333000a9a519": {
       "name": "Serra Avenger",
@@ -5429,6 +5461,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4e7b1cbf"
+    },
+    "d9a10971-f32b-4978-952d-fed0a5bc9e36": {
+      "name": "Krosan Verge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5454867a"
     },
     "d9c36ed5-629c-4709-bff5-2f10fcde608a": {
       "name": "Orb of Dragonkind",
@@ -6575,8 +6615,8 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 464,
-      "total": 485
+      "supported": 469,
+      "total": 490
     }
   }
 }

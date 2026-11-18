@@ -96,6 +96,8 @@ describe('the dimensions', () => {
       // D-599: corrupted checks an opponent's poison counters.
       'opponentPoisonAtLeast',
       'kicked',
+      // Issue 244: "If you cast this spell during your main phase".
+      'castInOwnMainPhase',
       'replicated',
       'sacrificedAsCost',
       'controlCommander',

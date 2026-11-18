@@ -832,6 +832,12 @@ export interface TargetSpec {
    */
   readonly ifKicked?: true;
   /**
+   * "Exile target artifact or enchantment. If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment." (CR 601.2c, issue 244):
+   * the slot exists only if the spell was cast during its controller's main phase (a main phase of a turn of that player, so they are the active player); a spell cast at any
+   * other time is cast as if the slot was not in its text. Only a slot of a spell's own text, and the effect uses it only in the `then` of a `castInOwnMainPhase` conditional.
+   */
+  readonly ifCastInOwnMain?: true;
+  /**
    * "Exile target artifact or enchantment. If this spell was kicked, exile target nonland permanent instead." (CR 601.2c: "a spell may require
    * alternative targets only if an alternative or additional cost was chosen for it", D-181): the slot exists only if the spell was not kicked, so a
    * kicked spell chooses the targets of its `ifKicked` slots only. As `ifKicked` for the rest, and used only in the `else` of a `kicked` conditional.
@@ -2492,6 +2498,11 @@ export type Effect =
    */
   | { readonly kind: 'populate' }
   /**
+   * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
+   * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
+   */
+  | { readonly kind: 'additionalLandDropThisTurn'; readonly count: number }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
@@ -3937,6 +3948,11 @@ export type Condition =
    */
   | { readonly kind: 'kicked' }
   /**
+   * "If you cast this spell during your main phase" (CR 505.1, 601.2, issue 244): the spell is on the stack having been cast (not a copy) during a main phase of a turn of its
+   * controller. A phase cannot end with a spell on the stack, so the turn's phase and active player as the spell resolves are those it was cast in. Read from the spell.
+   */
+  | { readonly kind: 'castInOwnMainPhase' }
+  /**
    * CR 702.56a (Replicate, D-129): "if a replicate cost was paid for it": the spell was cast with its replicate cost
    * paid at least once. Read from the spell, or from its last-known information once it has left (CR 113.7a).
    * Needs a replicate ability on the card.
@@ -5240,6 +5256,12 @@ export interface ManaAbility {
      * a permanent that has at least one of the card types and at least one of the subtypes (each when given), besides the spells it names.
      */
     readonly alsoAbilities?: true;
+    /**
+     * "Spend this mana only to cast a creature spell of the chosen type." (CR 106.6, 614.12, 607.2d; issue 199): the spell must have the creature type the permanent
+     * chose as it entered (`GameObject.chosen.creatureType`, `asEntersChoose` of `creatureType`), read as the mana is made. With no type chosen the mana can be spent
+     * on no spell. Replaces `subtypes`: a card gives one or the other, never both.
+     */
+    readonly chosenType?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability
@@ -5277,6 +5299,12 @@ export interface ManaAbility {
       | 'haste'
       | { readonly scry: number }
       | { readonly scryCommanderCasts: true }
+      /**
+       * `{ countersCommanderCasts: true }` (issue 241, Opal Palace, CR 106.6, 122.6, 903.8): "If you spend this mana to cast your commander, it enters with a number of additional
+       * +1/+1 counters on it equal to the number of times it's been cast from the command zone this game": the commander cast with this mana enters with that many more
+       * +1/+1 counters (this cast included), for each such mana spent on it. Read as the permanent enters.
+       */
+      | { readonly countersCommanderCasts: true }
       | { readonly copySpell: 'may' | 'no' };
   };
   /**

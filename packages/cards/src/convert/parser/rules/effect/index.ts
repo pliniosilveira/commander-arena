@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
@@ -118,6 +119,7 @@ import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
+import { SEARCH_PAIR_RULES } from './search-pair';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { VOTE_EFFECT_RULES } from './vote';
@@ -954,6 +956,8 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
+  ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,
   // Issue 160 (D-628): "Each player gains control of all creatures they own."
   ...RETURN_CONTROL_EFFECT_RULES,

@@ -757,6 +757,10 @@ export function declareTargets(
       issue(out, `${p}.ifGiftPromised`, 'ifGiftPromised must be boolean when present');
     }
     // D-181, CR 702.33g, 601.2c: a slot chosen only if the spell was kicked, or only if it was not.
+    // Issue 244, CR 601.2c: a slot chosen only if the spell was cast during its controller's main phase.
+    if (spec.ifCastInOwnMain !== undefined && spec.ifCastInOwnMain !== true) {
+      issue(out, `${p}.ifCastInOwnMain`, 'ifCastInOwnMain must be true when present');
+    }
     for (const key of ['ifKicked', 'unlessKicked'] as const) {
       if (spec[key] !== undefined && spec[key] !== true) {
         issue(out, `${p}.${key}`, `${key} must be true when present`);
@@ -2569,6 +2573,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
     case 'kicked':
+    case 'castInOwnMainPhase': // issue 244: no parameters; it reads the spell it is asked of
     case 'sacrificedAsCost': // D-491: the face must list a cost that sacrifices any number of permanents (`checkSacrificedAsCost`)
     case 'replicated': // D-129: the face must list a replicate cost (`checkCastFace`)
     case 'cameUnderControlSinceLastUpkeep': // D-127: where it may stand is checked with the trigger (validate.ts)
@@ -4140,6 +4145,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'populate':
       // CR 701.36 (D-627): no fields.
+      break;
+    case 'additionalLandDropThisTurn':
+      // CR 305.2: a positive whole number of additional land plays.
+      if (!isCount(e.count) || e.count < 1) {
+        issue(
+          out,
+          `${path}.count`,
+          'additionalLandDropThisTurn adds a positive whole number of land plays',
+        );
+      }
       break;
     case 'amass':
       // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).

@@ -18,6 +18,7 @@ import {
   castAs,
   isNamedAlternative,
 } from './cast-cost';
+import { castInOwnMainPhase } from './cast-phase';
 import {
   castForbiddenByOpponentsPermanent,
   castForbiddenByOwnAbility,
@@ -466,9 +467,9 @@ export function targetSpecsOf(
   )
     .filter((spec) => spec.ifGiftPromised === undefined || spec.ifGiftPromised === promised)
     // CR 702.33g, 601.2c (D-181): a slot of the kicked spell's text, or of the unkicked spell's, is chosen only in that case.
-    .filter(
-      (spec) => (spec.ifKicked !== true || kicked) && (spec.unlessKicked !== true || !kicked),
-    );
+    .filter((spec) => (spec.ifKicked !== true || kicked) && (spec.unlessKicked !== true || !kicked))
+    // Issue 244, CR 601.2c: a slot of the text that applies only to a spell cast during its controller's main phase.
+    .filter((spec) => spec.ifCastInOwnMain !== true || castInOwnMainPhase(state, obj));
   // Only a card that is not on the battlefield is being cast (an Aura permanent has no spell text).
   const aura = obj.zone === 'battlefield' ? null : auraTargetSpec(face);
   return aura === null ? declared : [aura, ...declared];

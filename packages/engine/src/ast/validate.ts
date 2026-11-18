@@ -35,6 +35,7 @@ import {
 } from './validate-attach';
 import { kindOf, triggerHasPlayer } from './validate-base';
 import {
+  castPhaseTargetsUsedUnguarded,
   checkCastFace,
   checkFlashbackCost,
   checkKickerCost,
@@ -1844,6 +1845,14 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         out,
         `${path}.spell.targets`,
         `target "${id}" exists only in the matching gift branch: use it only in that branch`,
+      );
+    }
+    // Issue 244, CR 601.2c: a target chosen only if the spell was cast during its controller's main phase is used only in a `castInOwnMainPhase` conditional.
+    for (const id of castPhaseTargetsUsedUnguarded(face.spell)) {
+      issue(
+        out,
+        `${path}.spell.targets`,
+        `target "${id}" exists only if the spell was cast during its controller's main phase: use it only in the effect of a castInOwnMainPhase conditional`,
       );
     }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.

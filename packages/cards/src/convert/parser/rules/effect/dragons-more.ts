@@ -574,6 +574,45 @@ export const EFFECT_MANA_RIDER_SCRY_COMMANDER = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.mana-rider-counters-commander`: "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number
+ * of times it's been cast from the command zone this game." (issue 241, Opal Palace; CR 106.6, 122.6, 903.3, 903.8: mana a mana ability adds may carry a rider that applies
+ * when it is spent on a spell; the commander enters with that many more +1/+1 counters, this cast included). Says something about the mana ability before it, which the
+ * lowering of that ability reads. Only "your commander", "+1/+1" counters and that count.
+ */
+export const EFFECT_MANA_RIDER_COUNTERS_COMMANDER = defineRule<Clauses>({
+  id: 'effect.mana-rider-counters-commander',
+  family: 'effect',
+  leading: ['if'],
+  cites: ['CR 106.6 (Mana)', 'CR 122.6 (Counters)', 'CR 903.3 (Commander)', 'CR 903.8 (Commander)'],
+  examples: [
+    "if you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game",
+  ],
+  rejects: [
+    "if you spend this mana to cast a commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game",
+    "if you spend this mana to cast your commander, it enters with a number of additional -1/-1 counters on it equal to the number of times it's been cast from the command zone this game",
+    "if you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast this game",
+    "if you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from your hand this game",
+    "if that mana is spent to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game",
+    "if you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone",
+    "if you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this turn",
+    'if you spend this mana to cast your commander, it enters with an additional +1/+1 counter on it',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.mana-rider-counters-commander';
+    const r = pattern(
+      /if you spend this mana to cast your commander, it enters with a number of additional \+1\/\+1 counters on it equal to the number of times it['’]s been cast from the command zone this game(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'spentRider', { commanderCastCounters: flag(id, true, span) }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 export const DRAGON_LIBRARY_EFFECT_RULES = [
   EFFECT_SHUFFLE_REVEAL_TOP,
   EFFECT_LOOK_TOP_TAKE,
@@ -582,6 +621,7 @@ export const DRAGON_LIBRARY_EFFECT_RULES = [
   EFFECT_MANA_RIDER,
   EFFECT_MANA_RIDER_SCRY,
   EFFECT_MANA_RIDER_SCRY_COMMANDER,
+  EFFECT_MANA_RIDER_COUNTERS_COMMANDER,
   EFFECT_DAMAGE_OTHER_TARGETS,
   EFFECT_DISCARD_ANY_NUMBER,
 ].map(quietly);

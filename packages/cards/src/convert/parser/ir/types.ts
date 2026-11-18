@@ -543,6 +543,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'opponentPoisonAtLeast'; readonly atLeast: IrAmount }
     // "~ was kicked", "it was kicked" (CR 702.33d); `who` is the word the text used for the object
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
+    // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
+    | { readonly kind: 'castInOwnMainPhase' }
     // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included
     | { readonly kind: 'abilityResolvedTimes'; readonly times: number }
     // "you chose a creature other than ~ as your Ring-bearer" (Galadriel deck group 1, CR 701.54a): the creature the Ring tempted the controller to choose, not the permanent itself

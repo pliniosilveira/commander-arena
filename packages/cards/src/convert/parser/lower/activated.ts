@@ -87,9 +87,19 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
  * The card types and the creature types a noun of spells names (stage P33, D-150): a choice of types or a choice of creature types, never a
  * mix of the two, and nothing else (a color or a quality says more than the engine's restriction and its rider). Null when the words say more.
  */
-function spellKindsOf(filter: IrFilter): { types?: CardType[]; subtypes?: string[] } | null {
-  const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw']);
+function spellKindsOf(
+  filter: IrFilter,
+): { types?: CardType[]; subtypes?: string[]; chosenType?: true } | null {
+  const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw', 'chosen']);
   if (Object.keys(filter).some((key) => !known.has(key))) return null;
+  // Issue 199 (CR 106.6, 607.2d): "a creature spell of the chosen type": the card types, and the creature type the permanent chose as it entered; not with named creature types.
+  if (filter.chosen === 'type') {
+    const only = filter.types ?? [];
+    if (only.length === 0 || filter.subtypes !== undefined || filter.anyOf !== undefined)
+      return null;
+    if (!only.every((t) => (CARD_TYPES as readonly string[]).includes(t))) return null;
+    return { types: only as CardType[], chosenType: true };
+  }
   const types = [...(filter.types ?? [])];
   const subtypes = [...(filter.subtypes ?? [])];
   const members = filter.anyOf ?? [];
@@ -121,6 +131,13 @@ function spentRiderOf(clause: IrClause): ManaAbility['spentRider'] | null {
   if (byCommander?.kind === 'flag' && byCommander.value) {
     if (!plainClause(clause)) return null;
     return { spells: { commander: true }, grants: { scryCommanderCasts: true } };
+  }
+  // "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command
+  // zone this game" (issue 241, CR 122.6, 903.8): the spells are the caster's commanders and the commander enters with that many more counters.
+  const counters = clause.args.commanderCastCounters;
+  if (counters?.kind === 'flag' && counters.value) {
+    if (!plainClause(clause)) return null;
+    return { spells: { commander: true }, grants: { countersCommanderCasts: true } };
   }
   const spells = clause.args.spells;
   if (spells?.kind !== 'noun' || !plainClause(clause)) return null;
@@ -246,6 +263,7 @@ function lowerManaAbility(
     `manaProduction:${production.kind}`,
     ...effects.map((e): FeatureRef => `manaAlso:${e.kind}`),
     ...(spendClause === undefined ? [] : (['ability:manaSpendOnly'] as const)),
+    ...(spendOnly?.chosenType === true ? (['ability:manaSpendOnlyChosenType'] as const) : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -253,6 +271,12 @@ function lowerManaAbility(
     typeof spentRider.grants === 'object' &&
     'copySpell' in spentRider.grants
       ? (['ability:manaSpentRiderCopy'] as const)
+      : []),
+    ...(spentRider !== undefined &&
+    spentRider !== null &&
+    typeof spentRider.grants === 'object' &&
+    'countersCommanderCasts' in spentRider.grants
+      ? (['ability:manaSpentRiderCounters'] as const)
       : []),
     ...(production.kind === 'anyCombination' && production.distinct === true
       ? (['ability:manaDistinctColors'] as const)
@@ -745,9 +769,11 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:combination',
   'manaProduction:chosenColor',
   'ability:manaSpendOnly',
+  'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',
   'ability:manaSpentRiderCopy',
+  'ability:manaSpentRiderCounters',
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'ability:activateOnlyIf',

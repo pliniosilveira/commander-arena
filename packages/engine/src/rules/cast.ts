@@ -1311,6 +1311,15 @@ function withSpentRiders(
   ) {
     next = patchObject(next, casting.object, { stack: { ...stack, hasteUntilEnd: true } });
   }
+  // Issue 241: "it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone": the spell remembers how
+  // many such mana were spent on it; the counters are put on as it enters.
+  const counterMana = riders.filter((r) => r.kind === 'counters' && matches(r)).length;
+  const withCounters = state.objects[casting.object]?.stack;
+  if (counterMana > 0 && withCounters !== null && withCounters !== undefined) {
+    next = patchObject(next, casting.object, {
+      stack: { ...withCounters, commanderCastCounters: counterMana },
+    });
+  }
   // Group 4 of the Vraska deck (CR 603.2, 701.22): "When that mana is spent to cast a creature spell that shares a creature type with your commander,
   // scry 1." is a triggered ability of the permanent that made the mana, for each mana spent; it waits to go on the stack above the spell.
   const scries: PendingTrigger[] = [];

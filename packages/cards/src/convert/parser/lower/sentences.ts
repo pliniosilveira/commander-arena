@@ -1670,8 +1670,29 @@ function lowerStep(
   const previous = steps[steps.length - 1];
   if (sentence.instead !== true) {
     const targetsBefore = ctx.targets.length;
-    const lowered = lowerClauses(sentence.clauses, ctx);
-    if (!lowered.ok) return stop(lowered);
+    // "If you cast ~ during your main phase, you may exile up to one other target ...": one optional exile of a target; the question is asked as it resolves (the engine's
+    // `may`, CR 608.2d) and the target is chosen as the spell is cast (CR 601.2c).
+    const [only] = sentence.clauses;
+    const mayExile =
+      sentence.clauses.length === 1 && only?.optional === true && only.verb === 'exile';
+    if (mayExile) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+    }
+    const lowerOnce = lowerClauses(
+      mayExile && only !== undefined ? [{ ...only, optional: false }] : sentence.clauses,
+      ctx,
+    );
+    if (!lowerOnce.ok) return stop(lowerOnce);
+    const [exiled, ...others] = lowerOnce.value;
+    if (mayExile && (exiled === undefined || others.length > 0)) return stop(refuse(sentence));
+    const lowered = {
+      ...lowerOnce,
+      value:
+        mayExile && exiled !== undefined
+          ? [{ kind: 'may' as const, effect: exiled }]
+          : lowerOnce.value,
+    };
     // "If the gift was promised, return target creature card ...": the slot exists only if the gift was promised (CR 702.174m).
     if (sentence.condition.test.kind === 'giftPromised') {
       for (let k = targetsBefore; k < ctx.targets.length; k += 1) {
@@ -1686,6 +1707,16 @@ function lowerStep(
     ) {
       const blocked = missingFeatures(['ability:ifKicked']);
       if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+    }
+    // "If you cast ~ during your main phase, you may exile up to one other target ...": the slot exists only if the spell was cast in its controller's main phase (CR 601.2c).
+    if (sentence.condition.test.kind === 'castInOwnMainPhase') {
+      if (ctx.owner !== 'spell') return stop(refuse(sentence));
+      const blocked = missingFeatures(['ability:ifCastInOwnMain']);
+      if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+      for (let k = targetsBefore; k < ctx.targets.length; k += 1) {
+        const spec = ctx.targets[k];
+        if (spec !== undefined) ctx.targets[k] = { ...spec, ifCastInOwnMain: true };
+      }
     }
     const effect: Effect = {
       kind: 'conditional',
