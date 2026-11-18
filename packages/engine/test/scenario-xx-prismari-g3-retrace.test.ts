@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 3: Retrace (CR 702.81a, D-653), the keyword of Throes of Chaos: "You may cast this card from your graveyard by discarding a land card in addition to
+// The Prismari deck (issue 87), group 3: Retrace (CR 702.81a, D-654), the keyword of Throes of Chaos: "You may cast this card from your graveyard by discarding a land card in addition to
 // paying its other costs." (SYNTHETIC Chaos Retrace, "Cascade. Retrace.", src/cards/fixtures/synthetic-prismari-g3.ts; SYNTHETIC Retrace Bolt below has an effect of its own.) Pins: CR 702.81a
 // (a static ability that works while the card is in a player's graveyard: cast from the graveyard, a land card discarded as an additional cost, the mana cost still paid), CR 601.2b and 601.2f-h
 // (additional costs: the discard is chosen and paid with the mana, and the cast can be taken back, CR 733), CR 118.3 (a cost that cannot be paid is not paid: no land card in hand, no

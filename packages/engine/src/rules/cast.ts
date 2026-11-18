@@ -217,7 +217,7 @@ export function beginCast(
       castFrom: zone,
       kicked: false,
       flashback: alternative === 'flashback',
-      // D-653 (CR 702.81a): cast from the graveyard by its retrace ability.
+      // D-654 (CR 702.81a): cast from the graveyard by its retrace ability.
       ...(alternative === 'retrace' ? { retrace: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),

@@ -229,7 +229,7 @@ export function checkCastFace(
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
   }
-  // D-653 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
+  // D-654 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
   if (has('retrace') && face.types.includes('land')) {
     issue(out, `${path}.abilities`, 'retrace is on a card that is cast, not a land (CR 702.81a)');
   }

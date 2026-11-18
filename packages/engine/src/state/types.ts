@@ -381,7 +381,7 @@ export interface StackData {
    */
   readonly flashback: boolean;
   /**
-   * True when cast from the graveyard by its retrace ability (CR 702.81a, D-653): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
+   * True when cast from the graveyard by its retrace ability (CR 702.81a, D-654): the mana cost was paid and a land card was discarded as an additional cost. The spell goes to the
    * graveyard as any spell does when it leaves the stack. Absent otherwise, and for an ability.
    */
   readonly retrace?: true;
@@ -862,7 +862,7 @@ export interface CastingContext {
     readonly sacrificeAny?: ObjectFilter | null;
     readonly sacrificeAnyAsked?: true;
     readonly discard: number;
-    /** D-653 (CR 702.81a): the cards discarded are only those this filter matches ("a land card"); absent for any card. */
+    /** D-654 (CR 702.81a): the cards discarded are only those this filter matches ("a land card"); absent for any card. */
     readonly discardFilter?: ObjectFilter;
     /** The filter of a Behold additional cost, or null. */
     readonly behold?: ObjectFilter | null;

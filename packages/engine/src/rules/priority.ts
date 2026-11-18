@@ -43,7 +43,7 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const object of flashbackObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'flashback' });
   }
-  // CR 702.81a (Retrace, D-653): a card with retrace in the graveyard is cast by discarding a land card, one option for each.
+  // CR 702.81a (Retrace, D-654): a card with retrace in the graveyard is cast by discarding a land card, one option for each.
   for (const object of retraceObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'retrace' });
   }

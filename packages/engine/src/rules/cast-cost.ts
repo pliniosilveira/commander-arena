@@ -87,7 +87,7 @@ export interface SpellCost {
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
-  /** D-653 (CR 702.81a): the cards that may be discarded are those this filter matches ("a land card"); absent when any card may be. */
+  /** D-654 (CR 702.81a): the cards that may be discarded are those this filter matches ("a land card"); absent when any card may be. */
   readonly discardFilter?: ObjectFilter;
   /** The filter of the single Behold cost, or null. */
   readonly behold: ObjectFilter | null;
@@ -470,7 +470,7 @@ export function discardable(state: GameState, seat: SeatId, spell: ObjectId): Ob
   return getSeat(state, seat).hand.filter((id) => id !== spell);
 }
 
-/** D-653 (CR 702.81a): the card discarded for retrace is a land card. */
+/** D-654 (CR 702.81a): the card discarded for retrace is a land card. */
 export const RETRACE_DISCARD: ObjectFilter = { types: ['land'] };
 
 /**

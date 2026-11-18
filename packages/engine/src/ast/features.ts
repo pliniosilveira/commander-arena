@@ -485,7 +485,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'improvise',
     'delve',
     'cascade',
-    // D-652: Demonstrate (CR 702.144a); D-653: Retrace (CR 702.81a).
+    // D-652: Demonstrate (CR 702.144a); D-654: Retrace (CR 702.81a).
     'demonstrate',
     'retrace',
     // D-124: Unearth (CR 702.84a).
@@ -1062,7 +1062,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
-    // D-653: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
+    // D-654: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
     'retrace',
   ],
 };

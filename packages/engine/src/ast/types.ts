@@ -3899,7 +3899,7 @@ export type Keyword =
    */
   | { readonly kind: 'demonstrate' }
   /**
-   * CR 702.81a (Retrace, D-653): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it." A static ability that functions while the
+   * CR 702.81a (Retrace, D-654): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it." A static ability that functions while the
    * card is in its owner's graveyard: the card is cast from there, at the timing of its type, paying its mana cost and discarding a land card from the hand as an additional cost
    * (CR 601.2b, 601.2f-h). The engine offers it as its own way of casting (`castSpell` with `alternative` `retrace`: it is not an alternative cost, CR 118.9, but a permission
    * that, like Flashback and Escape, is used by naming it). Not for a land card (a land is played, not cast).
