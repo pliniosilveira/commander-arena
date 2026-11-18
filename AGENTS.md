@@ -82,11 +82,11 @@ Scripts under `tools/` are TypeScript run with `node file.ts` (Node type strippi
 | `tools/precon` | `pnpm precon:from-issue` and `pnpm precon:from-comment` (the snapshot of a precon issue and its decoding), `pnpm precon:snapshot`: the card-data snapshot of a precon, from the bulk file and a decklist of `decks/` (D-137). |
 | `.claude/skills/deck-support` | The routine that builds a complete "deck support" issue from anyone, oldest first, when the token budget allows (D-251); `tools/corpus/check-issue.ts` and `.github/workflows/deck-support-triage.yml` decide whether the issue is complete. |
 | `decks/` | Real decklists the owner supplies, one `.txt` per deck, for `pnpm corpus:decks`; `README.md` says how. |
-| `docs/` | `SPEC.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `RULES_COVERAGE.md`, `MECHANICS.md`, `CARD_SUPPORT_PLAYBOOK.md`, `CORPUS.md`, `rules/` (CR version record, bulletins). Working notes (status reports, build checklists, design drafts) are not kept in the repository: they live in the issue, the pull request description and its comments, and the git history has the earlier ones. |
+| `docs/` | `SPEC.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `RULES_COVERAGE.md`, `CARD_SUPPORT_PLAYBOOK.md`, `CORPUS.md`, `rules/` (CR version record, bulletins). Working notes (status reports, build checklists, design drafts) are not kept in the repository: they live in the issue, the pull request description and its comments, and the git history has the earlier ones. |
 
-All four packages are real. `docs/ARCHITECTURE.md` marks what is real and what is planned, `docs/MECHANICS.md` is the per-mechanic reference, and `docs/RULES_COVERAGE.md` lists rules by CR section.
+All four packages are real. `docs/ARCHITECTURE.md` marks what is real and what is planned, and `docs/RULES_COVERAGE.md` lists rules by CR section. What mechanics exist is read from the code: `packages/engine/src/ast/types.ts` and `ast/features.ts`, and the parser rule files with their `examples`.
 
-References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/`, `docs/proposals/`, `docs/design/` and `docs/PRIOR_ART.md` point to notes that were removed in a cleanup of the repository. Read one with `git log --diff-filter=D -n 1 --format=%H -- <path>`, then `git show <that commit>^:<path>`.
+References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/`, `docs/proposals/`, `docs/design/`, `docs/PRIOR_ART.md`, `docs/MECHANICS.md` and `docs/DECISIONS.md` (and a `D-nnn` number) point to notes that were removed in a cleanup of the repository. Read one with `git log --diff-filter=D -n 1 --format=%H -- <path>`, then `git show <that commit>^:<path>`.
 
 ## Codebase rules
 
@@ -110,14 +110,15 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 
 | Document | Update when |
 | --- | --- |
-| `docs/ARCHITECTURE.md` | A module, type or data flow changes. Move items from planned to real in the same change. |
-| `docs/ROADMAP.md` | Work is deferred or a known limitation is found. |
-| `docs/RULES_COVERAGE.md` | Rules support changes. |
-| `docs/MECHANICS.md` | A mechanic is added (from M5). |
+| `docs/ARCHITECTURE.md` | A module, a type that crosses packages or a data flow changes; never for a card or a deck. |
+| `docs/ROADMAP.md` | A known limit is found (one line) or fixed (delete the line). |
+| `docs/RULES_COVERAGE.md` | The status of a rule changes (edit its row). |
 | `README.md` | User-facing behavior changes. |
 | `docs/SPEC.md` | Only with the human's approval. |
 
-There is no decision log. A choice that binds future work (an architecture or stack choice, a policy, a deliberate deviation from the CR or the SPEC) is written in the document that covers its subject: this file, the SPEC, `ARCHITECTURE.md`, `ROADMAP.md` or `RULES_COVERAGE.md`, with one sentence of why. How one card or one rule is built goes in the pull request, in a comment that cites the CR rule, and in `docs/MECHANICS.md`. An old `D-nnn` in code or docs is history: `git log --diff-filter=D -n 1 --format=%H -- docs/DECISIONS.md`, then `git show <that commit>^:docs/DECISIONS.md`.
+There is no decision log. A choice that binds future work (an architecture or stack choice, a policy, a deliberate deviation from the CR or the SPEC) is written in the document that covers its subject: this file, the SPEC, `ARCHITECTURE.md`, `ROADMAP.md` or `RULES_COVERAGE.md`, with one sentence of why. How one card or one rule is built goes in the pull request and in a comment that cites the CR rule.
+
+**What a card or deck pull request may write in `docs/`.** Two things only: the status of a row of `docs/RULES_COVERAGE.md` when rules support changes (edit the row, or add one row; never a section for a deck, a group or an issue), and one line of at most 40 words in `docs/ROADMAP.md` for each new known limit, deleted in the change that fixes it. No lists of files, tests or AST nodes, no rule text, no account of how the card was built: the diff and the pull request description hold that, and the code is the reference for what exists (`ast/types.ts`, `ast/features.ts`, the parser rule files with their `examples`). `docs/ARCHITECTURE.md` changes only when a module, a type that crosses packages or a data flow changes. `tools/docs/docs.test.ts` holds a word ceiling for each document: to add, cut something first.
 
 Do not write a test count into any document; it goes stale. Say how to run the checks instead.
 
@@ -134,7 +135,7 @@ Do not write a test count into any document; it goes stale. Say how to run the c
 
 ## Card support
 
-The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record it in `docs/MECHANICS.md`. An S-class gap needs a proposal (a comment on the issue) and the human's approval first.
+The procedure for adding support for a card is `docs/CARD_SUPPORT_PLAYBOOK.md`. In short: research the card and its rulings, classify the gap (T template, P primitive, K keyword, S subsystem, O one-off override), write tests first, implement the general fix, run the checks of your change (the full suite runs every night on GitHub), then record only what the documentation duties above allow. An S-class gap needs a proposal (a comment on the issue) and the human's approval first.
 
 ## Network
 

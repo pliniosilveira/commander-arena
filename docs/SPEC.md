@@ -151,7 +151,7 @@ A deck that contains an unsupported card is invalid: the validation panel names 
 - The grammar is a library of composable typed rules with stable IDs (for example `trigger.etb`, `effect.draw`), not a regex per card. A rule must consume the whole ability; leftover text makes the ability unparsed. On failure the parser reports the ability, the position, the closest rule and a reason (`unrecognised`, `notRunnable` or `unboundReference`, with the slot, the rules recognised and the engine features needed; A30, D-064). The coverage report depends on this diagnostic.
 - Match current Oracle templating and include older wording in tests so the grammar tolerates both. Keywords use Scryfall's `keywords` array together with the keyword line, including parameterized keywords.
 - Layouts: normal, split, adventure, transform, modal double-faced and Saga, plus Equipment, Auras and Vehicles. Any other layout (meld, flip, leveler, prototype, face-down mechanics and so on) is unsupported until implemented (face-down: `docs/proposals/face-down.md`).
-- The mechanics and templates supported are listed per mechanic in `docs/MECHANICS.md` and by CR section in `docs/RULES_COVERAGE.md`.
+- The mechanics and templates supported are listed by CR section in `docs/RULES_COVERAGE.md`; the code (`ast/types.ts`, `ast/features.ts`, the parser rule files) is the reference for each mechanic.
 
 ### 7.3 Coverage tooling
 
@@ -163,7 +163,7 @@ A deck that contains an unsupported card is invalid: the validation panel names 
 
 ### 8.1 Goal
 
-When a card cannot run, the coding agent analyses it, works out which capability is missing and adds it in the most general form that is correct, so the card works and so does every other card using the mechanic or template. The knowledge stays in the repository: grammar rules, primitives and keyword modules in the code; entries in `docs/MECHANICS.md`; lessons in `docs/CARD_SUPPORT_PLAYBOOK.md`. A card to support comes from the owner or from a GitHub issue (D-166).
+When a card cannot run, the coding agent analyses it, works out which capability is missing and adds it in the most general form that is correct, so the card works and so does every other card using the mechanic or template. The knowledge stays in the repository: grammar rules, primitives and keyword modules in the code; lessons in `docs/CARD_SUPPORT_PLAYBOOK.md`. A card to support comes from the owner or from a GitHub issue (D-166).
 
 ### 8.2 In the app (removed)
 
@@ -171,7 +171,7 @@ The request dialog, "Request support" buttons, inbox, "Your requests" list, requ
 
 ### 8.3 Agent procedure and rules
 
-The procedure is `docs/CARD_SUPPORT_PLAYBOOK.md`: intake, research (the card, its rulings, the CR rules, `docs/MECHANICS.md`, later Update Bulletins), diagnosis, an approval gate for subsystems, measuring impact over the bulk file, tests first, implementation, verification, recording, report. Gaps are classified at the lowest level that fixes them correctly: **T** template (the grammar does not recognize a wording), **P** primitive (a new effect, selector, condition, cost or duration), **K** keyword, **S** subsystem (new engine machinery: a layout, face-down permanents, phasing, day and night, the monarch, voting, extra turns, a new decision kind that changes existing flows). An **S** gap needs a proposal in `docs/proposals/` and the owner's approval first. The former class O (one-off override) has no route any more: such a card stays unsupported (D-167).
+The procedure is `docs/CARD_SUPPORT_PLAYBOOK.md`: intake, research (the card, its rulings, the CR rules, the existing code, later Update Bulletins), diagnosis, an approval gate for subsystems, measuring impact over the bulk file, tests first, implementation, verification, recording, report. Gaps are classified at the lowest level that fixes them correctly: **T** template (the grammar does not recognize a wording), **P** primitive (a new effect, selector, condition, cost or duration), **K** keyword, **S** subsystem (new engine machinery: a layout, face-down permanents, phasing, day and night, the monarch, voting, extra turns, a new decision kind that changes existing flows). An **S** gap needs a proposal in `docs/proposals/` and the owner's approval first. The former class O (one-off override) has no route any more: such a card stays unsupported (D-167).
 
 Rules for the loop, still binding:
 
@@ -272,7 +272,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 | `docs/SPEC.md` | This document. Changed only with the owner's approval. |
 | `docs/ARCHITECTURE.md` | Module map, state model, data flow; real and planned kept apart. |
 | `docs/rules/` | The CR text, `RULES_VERSION.md` and bulletins. |
-| `docs/RULES_COVERAGE.md`, `docs/MECHANICS.md` | Rules support by CR section; the per-mechanic catalogue, read before adding anything. |
+| `docs/RULES_COVERAGE.md` | Rules support by CR section. |
 | `docs/CARD_SUPPORT_PLAYBOOK.md` | The procedure of 8.3 and its lessons learned. |
 | `docs/ROADMAP.md` | Deferred work and known limitations. |
 | `docs/CORPUS.md`, `reports/` | The corpus and coverage tooling and its generated reports. |
@@ -294,7 +294,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 | M2 | Combat: all steps, combat keywords, damage division, planeswalkers and battles as attack targets, commander damage | Done |
 | M3 | First playable: the web UI on the Worker architecture, a full 1v1 game, static deploy | Done |
 | M4 | Card data and deck import: decklist parser, Scryfall client and queue, cache, validation, commander selection, coverage report, "Why unsupported?", versioned support status | Done |
-| M5 | The ability system: AST and interpreter, triggered, activated and static abilities, layers, replacement and prevention, targeting, keywords, tokens, Equipment, Auras, Vehicles, the multi-face layouts, `docs/MECHANICS.md` | Done |
+| M5 | The ability system: AST and interpreter, triggered, activated and static abilities, layers, replacement and prevention, targeting, keywords, tokens, Equipment, Auras, Vehicles, the multi-face layouts | Done |
 | M6 | Oracle parser growth, coverage tooling, the card support procedure and playbook | Done |
 | M7 | The stronger AI: `determinize`, evaluator, `GreedyAgent`, `HeuristicAgent`, `pnpm ai:arena`, property and soak tests | Done |
 | M8 | The full Arena-style UI (section 10) | Built as slices together with the M9 track (D-138 to D-153); no separate report |

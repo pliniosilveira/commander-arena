@@ -4,7 +4,7 @@
  * recomputed when it changes. Rule ids are part of that contract: renaming one needs a bump,
  * because ids appear in reports.
  *
- * What each version added: `git log -p -- packages/cards/src/version.ts` and `docs/MECHANICS.md`.
+ * What each version added: `git log -p -- packages/cards/src/version.ts`.
  * Keep this file to the one constant: a comment per version made every parser pull request conflict.
  */
 export const PARSER_VERSION = 151;
