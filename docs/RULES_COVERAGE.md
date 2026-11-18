@@ -867,3 +867,9 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 201.2 | Creatures named like the card | Implemented (D-643): the name the object has now. | `rules/filter-match.ts`. `test/scenario-xx-prismari-g2-named.test.ts`. |
 | 115.4, 601.2d | Damage divided among any number of targets | Implemented (D-644). | `rules/cast.ts`, `effects.ts`. `test/scenario-xx-prismari-g2-divided-any.test.ts`. |
 | 106.6 | Mana that may be spent only on instants and sorceries, granted to artifacts | Implemented (D-645). | `rules/mana-outcomes.ts`. `test/scenario-xx-prismari-g2-granted-mana.test.ts`. |
+| 608.2g, 601.2i, 608.2d | Casts of up to N or any number of spells while resolving; a choice by an opponent | Implemented (D-647). | `rules/cast-free*.ts`, `choose-aside.ts`. `test/scenario-xx-prismari-g3-cast-many.test.ts` |
+| 701.13, 202.3 | Exile until a nonland card; the total mana value; exile any number | Implemented (D-648, D-649). | `rules/exile-until-found.ts`, `exile-any-number.ts`. `test/scenario-xx-prismari-g3-calamity.test.ts` |
+| 700.3, 406.3 | Piles of exiled cards, one face down, chosen by an opponent | Implemented (D-650, D-651). | `rules/exile-piles.ts`. `test/scenario-xx-prismari-g3-piles.test.ts` |
+| 702.144a, 707.10 | Demonstrate | Implemented (D-652, D-653). | `rules/derive-keywords.ts`, `copy-spell.ts`. `test/scenario-xx-prismari-g3-demonstrate.test.ts` |
+| 702.81a | Retrace | Implemented (D-654). | `rules/cast-additional.ts`, `cast.ts`. `test/scenario-xx-prismari-g3-retrace.test.ts` |
+| 303.4f | A token copy of an Aura chooses what it enchants | Implemented (D-655). | `rules/enter-token.ts`. `test/scenario-xx-prismari-g3-aura-token.test.ts` |

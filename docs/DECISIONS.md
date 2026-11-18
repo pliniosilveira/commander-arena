@@ -4063,3 +4063,63 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Decision: Each card is supported, with the SYNTHETIC siblings of `synthetic-prismari-g2.ts` holding the same ASTs the parser makes from the real text (compared by `convert-grammar-engine-prismari-g2.test.ts`). The web words the new nodes, and an ability whose cost discards the card is labelled "Cycling" only when the cost is the cycling keyword's (`discardThis` with `cycling: true`): Magma Opus's "Discard this card: Create a Treasure token" had been shown as Cycling. The AI soak has its own style `prismariG2` (`packages/ai/test/helpers.ts`) and the test `prismari-g2-games.test.ts`. Jeska's Will, a hold-out card of the golden corpus, reads its first mode now (D-636) and is a side effect: it is supported and played in `convert-grammar-engine-prismari-g2.test.ts`.
 - Alternatives: Splitting the group into more branches (the cards share the nodes of the spell that was cast).
 - Consequences: `ENGINE_VERSION`, `PARSER_VERSION`, the golden snapshot and the derive digests are not touched by this branch: the owner regenerates them. The golden test fails until then, with the twelve cards and Jeska's Will flipping from unsupported to supported.
+
+## D-647: Free casts of several spells from the cards exiled, and the opponent's choice (2026-11-18, issue 87)
+- Context: Abstract Performance and Creative Technique: "you may cast up to two spells from among them without paying their mana costs", "any number of spells", "an opponent chooses a nonland card exiled this way".
+- Decision: `castFree` has `remaining` (a number or `any`): the cast is offered again after each spell cast until the count is used or the player declines (CR 608.2g: casting while resolving, the spell is cast in full, 601.2i). `opponentChoosesCard` (`rules/choose-aside.ts`) asks the opponent once, among the cards the instruction before exiled (CR 608.2d, 101.4); the cards are public.
+- Alternatives: One effect with a count for every wording, instead of one effect per count.
+- Consequences: The AI answers every offer legally: it casts while a legal cast exists, and the opponent sets aside the card with the greatest mana value.
+
+## D-648: Each player exiles from their library until a nonland card (2026-11-18, issue 87)
+- Context: Replication Technique and Dance with Calamity: cards exiled "until a nonland card".
+- Decision: `exileUntilFound` (`rules/exile-until-found.ts`, CR 701.13, 101.4) runs for each player the selector names, in turn order, on their own library; a short library exiles all it has and finds nothing. `lastMoved` names the cards exiled, the nonland card being the one found.
+- Alternatives: Reusing `lookAtTop` (it keeps the cards in the library).
+- Consequences: The cards not chosen are what the next instruction casts for free.
+
+## D-649: The total mana value of the exiled cards and "as many times as you choose" (2026-11-18, issue 87)
+- Context: Dance with Calamity: "if the total mana value of the cards exiled this way is 13 or less", and "as many times as you choose, you may exile the top card of your library".
+- Decision: The condition `totalManaValueOf` counts the cards `lastMoved` names (CR 202.3, 608.2c: a split card or the front of a modal card counts the mana value it has in exile). `exileTopAnyNumber` (`rules/exile-any-number.ts`) asks again after each card with the cards exiled so far, and stops on a decline or an empty library (CR 701.13, 608.2d).
+- Alternatives: Asking the number first (the text decides one card at a time).
+- Consequences: The AI exiles while the total stays at 8 or less.
+
+## D-650: Piles of exiled cards: face down and face up, an opponent chooses (2026-11-18, issue 87)
+- Context: Surge to Victory: "exile the top four cards in a face-down pile, then ... a face-up pile. An opponent chooses one of those piles".
+- Decision: `exilePiles` (`rules/exile-piles.ts`, CR 700.3, 406.3) exiles the two piles (one face down, visible to nobody until chosen), asks the opponent for the pile through the existing `chooseOption` purpose `pile`, and puts the pile chosen into the graveyard; the player looks at the other. The four sentences are one instruction for the parser (`joinLookAtTop`). A delayed ability for the turn adds the copy of a card exiled when a creature deals combat damage.
+- Alternatives: A new decision kind (the pile choice of Fact or Fiction fits).
+- Consequences: The face-down pile is hidden in the opponent's view until it is chosen.
+
+## D-651: The piles stay in exile while chosen between; "the exiled card" in the text of a spell (2026-11-18, issue 87)
+- Context: Surge to Victory.
+- Decision: The cards of both piles stay in exile as the choice is made (CR 700.3c), and the controller may then cast a spell from the pile not chosen. In the text of a spell "the exiled card" is the card the instruction before exiled (CR 701.20, 701.13, 608.2g), there being no permanent for the linked ability to name.
+- Alternatives: Reading the pronoun as a permanent (a spell has none).
+- Consequences: `ctx.lastEffectKind` of the parser gates the pronoun to the sentences after an exile.
+
+## D-652: Demonstrate (2026-11-18, issue 87)
+- Context: Replication Technique: Demonstrate (CR 702.144a).
+- Decision: Demonstrate expands in `derive-keywords` to a cast trigger of the spell itself: its controller may copy it, and when they do, an opponent (the first in turn order) copies it too; the copy's controller chooses new targets (CR 707.10c). The keyword is printed only, never granted.
+- Alternatives: A dedicated rule for the keyword (a triggered ability with existing nodes is enough).
+- Consequences: `copier: 'opponent'` of `copySpell` is the only new field.
+
+## D-653: Demonstrate and Retrace as keywords of the parser (2026-11-18, issue 87)
+- Context: Replication Technique, Dance with Calamity and Throes of Chaos (Retrace).
+- Decision: The parser reads Demonstrate and Retrace alone and in a list, the reminder text stripped (`rules/keyword/vocabulary.ts`). A sorcery with keywords only is valid (`validate.ts`).
+- Alternatives: Treating the reminder text as an ability.
+- Consequences: The golden corpus flips the seven cards once the owner regenerates it.
+
+## D-654: Retrace as a way to cast a spell from the graveyard (2026-11-18, issue 87)
+- Context: Throes of Chaos: Retrace (CR 702.81a).
+- Decision: A `CastAlternative` `retrace` (not an alternative cost, CR 118.9: the mana cost is paid in full, and the discard of a land card is an additional cost, 601.2b and 601.2f). It lets the spell be cast from the graveyard at the speed of a sorcery with a card of type land discarded (`discardFilter`); a flag in `StackData` keeps it for the copies. The AI casts it only with spare lands; the web names it in the label of the cast.
+- Alternatives: An alternative cost (a retrace card pays its mana cost).
+- Consequences: Retrace and flashback do not mix: the spell goes to the graveyard again.
+
+## D-655: A token copy of an Aura chooses what it enchants as it enters (2026-11-18, issue 87)
+- Context: Replication Technique makes a token copy of a spell; the engine had refused a copy of an Aura.
+- Decision: CR 303.4f: the token's controller chooses what it enchants among the permanents its enchant ability allows, as it enters (`rules/enter-token.ts`, `auraHost`), and the token is not created when there is none. The validator accepts a source that may be an Aura.
+- Alternatives: Refusing the copy (a card with it would be flagged unsupported).
+- Consequences: `scenario-xx-hashaton-g5` no longer pins the refusal.
+
+## D-656: Group 3 of the Prismari deck is built without a new subsystem (2026-11-18, issue 87)
+- Context: The seven cards of group 3 (Abstract Performance, Creative Technique, Replication Technique, Dance with Calamity, Plargg and Nassari, Surge to Victory, Throes of Chaos) cast spells from exile and from the graveyard.
+- Decision: Each card is supported through the parser, with the SYNTHETIC siblings of `synthetic-prismari-g3.ts` holding the same ASTs as the real text (compared by `convert-grammar-engine-prismari-g3.test.ts`). All gaps were class T or P; none needed a proposal.
+- Alternatives: One branch per card (they share `castFree`).
+- Consequences: `ENGINE_VERSION`, `PARSER_VERSION`, the golden snapshot and the derive digests are not touched by this branch: the owner regenerates them. The golden test fails until then, with the seven cards.

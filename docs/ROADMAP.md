@@ -566,3 +566,11 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The spell a cast trigger reads (D-633) is for the cards of this group: the mana value, the mana spent and the greatest mana value among the spells the controller cast; "each player's" and "an opponent's" counts are not built.
 - The web says the new nodes in the gist of an ability; a spell's own effect text is shown from its Oracle text, so Rousing Refrain, Furygale Flocking and Magma Opus have no wording of their spell effect there.
 - The Scryfall rulings of the twelve cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle texts are the cards of `golden.jsonl` taken from issue 87.
+
+## The Prismari deck, group 3 (issue 87, D-647 to D-656)
+
+- `castFree.remaining` (D-647) is for the casts of one resolution; a cast that must be of a type or mana value limit uses the existing filter only.
+- Demonstrate (D-652) copies for the first opponent in turn order; in a game of more opponents the choice of which opponent is not offered.
+- Retrace (D-654) is printed only and never granted; it does not combine with another way to cast from the graveyard.
+- The Scryfall rulings of the seven cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
+- The web shows the piles and the new choices with generic wording; the effect text of the spells is shown from the Oracle text.

@@ -5172,3 +5172,15 @@ Twelve cards of Prismari Artistry (Secrets of Strixhaven): Prismari Pianist; Roo
 - Web: wording for each node (`game/amount-text.ts`, `game/condition-text.ts`, `game/pt-text.ts`, `game/mana-spent-text.ts`, `game/static-text.ts`, `ui/board/keywords.ts`, `ui/decisions/ability-label.ts`); an ability that discards its card is labelled Cycling only for the cycling keyword's cost.
 - Tests: engine `scenario-xx-prismari-g2-{cast,flashback-life,block-only,refrain,divided-any,flocking,named,manland,granted-mana,copy-cast}.test.ts`; cards `parser-prismari-g2.test.ts` (readings, near misses and needed features), `convert-grammar-engine-prismari-g2.test.ts` (the real text, played); web `prismari-g2-text.test.ts`; AI the soak `prismari-g2-games.test.ts` (style `prismariG2`, 100 games clean).
 - Limits: see `docs/ROADMAP.md`.
+
+## The Prismari deck, group 3 (issue 87, D-647 to D-656)
+
+Seven cards of Prismari Artistry (Secrets of Strixhaven): Abstract Performance, Creative Technique, Replication Technique, Dance with Calamity, Plargg and Nassari, Surge to Victory, Throes of Chaos. Each reads, in the golden corpus, to the same AST as its SYNTHETIC sibling in `synthetic-prismari-g3.ts`.
+
+- CR: 608.2g and 601.2i (casting while resolving), 608.2d and 101.4 (a choice by an opponent), 701.13 (exile), 700.3 and 406.3 (piles), 202.3 (mana value), 702.144a (Demonstrate), 702.81a (Retrace), 707.10 (copies of spells), 303.4f (an Aura token).
+- Gap class: P (`castFree.remaining`, `opponentChoosesCard`, `exileUntilFound`, `exileTopAnyNumber`, `exilePiles`, the condition `totalManaValueOf`, `copySpell.copier`, the cast alternative `retrace`, the host of an Aura token) and T (the parser rules).
+- Engine: `rules/choose-aside.ts`, `exile-until-found.ts`, `exile-piles.ts`, `exile-any-number.ts`, `cast-free.ts`, `cast-free-answer.ts`, `copy-spell.ts`, `derive-keywords.ts`, `cast-additional.ts`, `enter-token.ts`.
+- Parser: `rules/effect/prismari-g3.ts`, `rules/condition/prismari-g3.ts`, `lower/prismari-g3.ts`.
+- Web: wording in `game/describe.ts`, `game/alt-cost.ts`, `game/condition-text.ts`, `ui/decisions/` (the piles, the card to set aside, the optional copy, the retrace label).
+- Tests: engine `scenario-xx-prismari-g3-{cast-many,calamity,piles,technique,demonstrate,surge,retrace,aura-token}.test.ts`; cards `parser-prismari-g3.test.ts`, `convert-grammar-engine-prismari-g3.test.ts`; AI `prismari-g3-games.test.ts` (soak, the `prismariG3` style).
+- Limits: see `docs/ROADMAP.md`.
