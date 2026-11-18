@@ -61,7 +61,8 @@ export const FIGHT: Lowering<IrClause, Effects> = {
     const fighter = operand(clause, 'fighters');
     const against = operand(clause, 'against');
     if (fighter?.kind !== 'noun' || against?.kind !== 'noun') return failure(clause);
-    const first = objectSelectorOf(fighter, ctx);
+    // "It" may be the permanent whose event caused the trigger ("Whenever a creature you control with flying enters, you may have it fight ...").
+    const first = objectSelectorOf(fighter, ctx, { triggerSubject: true });
     if (!first.ok) return first;
     const second = objectSelectorOf(against, ctx);
     if (!second.ok) return second;

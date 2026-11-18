@@ -432,7 +432,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'step': {
       const whose = whoseOf(t.actor);
       if (whose === null || t.step === undefined) return failure(t);
-      return ok({ kind: 'step', step: t.step satisfies TriggerStep, whose });
+      return ok({
+        kind: 'step',
+        step: t.step satisfies TriggerStep,
+        whose,
+        ...(t.alsoStep === undefined ? {} : { alsoStep: t.alsoStep satisfies TriggerStep }),
+      });
     }
     case 'diesBatch': {
       // "Whenever one or more other creatures and/or artifacts you control die" (stage P49, D-206, CR 603.10a, 603.2c).

@@ -1007,6 +1007,17 @@ export interface IrToken extends IrNode {
     readonly subtypes: readonly string[];
   };
   /**
+   * "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103, CR 707.9b): with `copyOf`, the copy has this power and toughness,
+   * these creature types and card types besides the ones it copies, and these keywords (as written, lowercase) besides its abilities.
+   */
+  readonly copyExceptAdditive?: {
+    readonly power: number;
+    readonly toughness: number;
+    readonly subtypes: readonly string[];
+    readonly cardTypes: readonly string[];
+    readonly keywords: readonly string[];
+  };
+  /**
    * "..., except it's not legendary and its starting loyalty is 1" (Galadriel deck group 3, CR 707.9b, 205.4a, 306.5b): with `copyOf`, the copy has no legendary supertype
    * (`copyNotLegendary`) and the loyalty it enters with (`copyStartingLoyalty`, a copiable value of a planeswalker).
    */
@@ -1170,6 +1181,8 @@ export interface IrTrigger extends IrNode {
   /** "enters or attacks": one ability, two events (CR 603.2c). */
   readonly alternatives?: readonly IrTrigger[];
   /** 'step': which step or phase the trigger is at the beginning of (stage P18, CR 500.2). */
+  /** "each of your main phases" (Frontier Siege): the postcombat main phase too, besides the step. */
+  readonly alsoStep?: 'main2';
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
   /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
   readonly nth?: number;

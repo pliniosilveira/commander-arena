@@ -12,6 +12,8 @@ vi.mock('@commander-arena/engine', async (importOriginal) =>
 
 import { DECLARED_NEEDS } from '../src/convert/parser/index';
 import { BLOCKED } from './blocked-features';
+import { parseOnly } from './convert-grammar-helpers';
+import { syntheticCard } from './convert-helpers';
 import { read, readAll, withoutFeature } from './parser-p5-helpers';
 
 const REAL =
@@ -73,7 +75,6 @@ describe('"At the beginning of each of your postcombat main phases, there is an 
 
   test.each([
     // whose turns, which phase, how many
-    'At the beginning of each of your main phases, there is an additional beginning phase after this phase.',
     'At the beginning of each of their postcombat main phases, there is an additional beginning phase after this phase.',
     'At the beginning of each of your postcombat main phase, there is an additional beginning phase after this phase.',
     // another phase or another place
@@ -89,6 +90,25 @@ describe('"At the beginning of each of your postcombat main phases, there is an 
     const parsed = read(text, 'creature', ['Sphinx']);
     expect(parsed.abilities).toEqual([]);
     expect(parsed.unparsed).toHaveLength(1);
+  });
+});
+
+describe('"each of your main phases" (issue 103, CR 505.1) is read as a trigger, and the engine refuses the extra beginning phase on it', () => {
+  test('the card does not import as supported: only a postcombat main phase trigger can add the phase', () => {
+    const text =
+      'At the beginning of each of your main phases, there is an additional beginning phase after this phase.';
+    const imported = parseOnly(
+      syntheticCard({
+        name: 'SYNTHETIC Main Phases',
+        typeLine: 'Creature — Sphinx',
+        oracleText: text,
+        manaCost: '{2}',
+        power: '1',
+        toughness: '1',
+      }),
+    );
+    expect(imported.support.status).toBe('unsupported');
+    expect(imported.support.reasons.join(' ')).toContain('additional beginning phase');
   });
 });
 

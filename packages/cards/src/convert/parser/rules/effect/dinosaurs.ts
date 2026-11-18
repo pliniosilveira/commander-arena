@@ -112,7 +112,7 @@ const isOne = (noun: IrNoun): boolean => !noun.plural && !noun.upTo && noun.coun
 export const EFFECT_FIGHT = defineRule<Clauses>({
   id: 'effect.fight',
   family: 'effect',
-  leading: ['target', 'another', '~', 'it'],
+  leading: ['target', 'another', '~', 'it', 'have'],
   cites: ['CR 701.14 (Fight)', 'CR 701.14b (Fight)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
   examples: [
     "target creature you control fights target creature you don't control",
@@ -120,8 +120,15 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     '~ fights target creature',
     'it fights target creature',
     'another target creature you control fights target creature an opponent controls',
+    // Frontier Siege (issue 103, "you may" is read apart): the permanent is made to fight.
+    "have it fight target creature you don't control",
+    'have target creature you control fight target creature an opponent controls',
   ],
   rejects: [
+    "have it fights target creature you don't control",
+    "it fight target creature you don't control",
+    'have it fight',
+    'have it fight each creature',
     'target creature fights',
     'target creatures fight each other',
     'target creature you control fights up to one target creature',
@@ -134,10 +141,22 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.fight',
-    sequence(
-      satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
-      literal(' fights '),
-      satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+    choice(
+      sequence(
+        satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
+        literal(' fights '),
+        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+      ),
+      // "have it fight target creature": the causative form, with the bare verb.
+      map(
+        sequence(
+          literal('have '),
+          satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
+          literal(' fight '),
+          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+        ),
+        ([, fighter, , against]): [IrNoun, string, IrNoun] => [fighter, ' fights ', against],
+      ),
     ),
     ([fighter, , against]) => ({ verb: 'fight', args: { fighters: fighter, against } }),
   ),

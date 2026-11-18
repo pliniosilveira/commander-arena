@@ -573,6 +573,7 @@ export interface Expectations {
     card: CardRef,
     expected: {
       readonly types?: readonly string[];
+      readonly supertypes?: readonly string[];
       readonly subtypes?: readonly string[];
       readonly colors?: readonly string[];
       readonly keywords?: readonly string[];
