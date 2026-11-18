@@ -116,6 +116,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.attack-tax': asIs,
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
+  'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
@@ -632,6 +633,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
+  'trigger.enchanted-player-attacked': whenever,
+  'effect.opponents-attacking-do-same': spell(
+    (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
+  ),
   // Danitha deck, group 5 (D-407, D-408): the blight cost of an ordinary ability, and the spell's own permission to be cast as though it had flash (a line of its own).
   'cost.blight': permanent((e) => `{1}, ${e}: Draw a card.`),
   'static.cast-self-as-though-flash': asIs,

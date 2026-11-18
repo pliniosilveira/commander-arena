@@ -363,6 +363,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGained',
     'countersAdded',
     'attackBatch',
+    // Issue 159: "Whenever enchanted player is attacked" (CR 508.3b).
+    'playerAttacked',
     // D-179: "When you cycle this card" (CR 702.29c).
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
@@ -1932,6 +1934,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeGained: true,
   countersAdded: true,
   attackBatch: true,
+  playerAttacked: true,
   cycled: true,
   ringTempted: true,
   classLevel: true,

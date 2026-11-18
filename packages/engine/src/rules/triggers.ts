@@ -102,6 +102,8 @@ interface Occurrence {
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
+  /** For `playerAttacked`: the player that creatures were declared as attacking (issue 159, CR 508.3b). */
+  readonly attackedPlayer?: SeatId;
 }
 
 /** The controller of a damage source, as it is or as it last was (CR 113.7a); null when unknown. */
@@ -448,6 +450,22 @@ function occurrences(
             },
           ]
         : [];
+    case 'playerAttacked': {
+      // CR 508.3b, 508.6 (issue 159): once for each player that one or more creatures of the declaration attack; a planeswalker or a battle is not a player, and a creature
+      // put onto the battlefield attacking is not declared (it has no `attackersDeclared`).
+      if (event.kind !== 'attackersDeclared') return [];
+      const players = [
+        ...new Set(
+          event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+        ),
+      ];
+      return players.map((seat) => ({
+        subject: null,
+        seat: event.seat,
+        player: seat,
+        attackedPlayer: seat,
+      }));
+    }
     case 'ringTempted':
       // CR 701.54d (D-196): each time the Ring tempts a player, whatever they could choose.
       // Galadriel group 1: the creature chosen is the subject, for "if you chose a creature other than ~ as your Ring-bearer" (`ringBearerChosen`); no other ability reads it.
@@ -681,6 +699,12 @@ function matches(
             }).length;
       return counted >= trigger.atLeast;
     }
+    case 'playerAttacked':
+      // CR 303.4m (issue 159): "enchanted player" is the player the Aura with the ability is attached to.
+      return (
+        occ.attackedPlayer !== undefined &&
+        state.objects[candidate.id]?.enchantedPlayer === occ.attackedPlayer
+      );
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
       return subject !== null && subject.id === candidate.id;

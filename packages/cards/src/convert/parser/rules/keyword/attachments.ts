@@ -13,8 +13,8 @@ import { defineRule, family, node } from '../registry';
  * `keyword.enchant`: "Enchant creature", "Enchant creature you control", "Enchant land", "Enchant
  * permanent", "Enchant artifact or creature" (CR 702.5a: the object an Aura spell can target and
  * an Aura can stay attached to). The object is a permanent phrase (`noun.bare-permanent`) or a
- * basic land type (`noun.bare-land-type`: "Enchant Forest"); "Enchant player" and "Enchant creature
- * card in a graveyard" name something a permanent does not, and "Enchant creature with flying"
+ * basic land type (`noun.bare-land-type`: "Enchant Forest"); "Enchant player" is `keyword.enchant-player`, and "Enchant creature
+ * card in a graveyard" names something a permanent does not, and "Enchant creature with flying"
  * something it cannot say yet, so those stay unread.
  */
 export const KEYWORD_ENCHANT = defineRule<readonly IrKeyword[]>({
@@ -35,7 +35,6 @@ export const KEYWORD_ENCHANT = defineRule<readonly IrKeyword[]>({
   ],
   rejects: [
     'Enchant',
-    'Enchant player',
     'Enchant Forest or Island',
     'Enchant forest',
     'Enchant Dragon',
@@ -58,6 +57,36 @@ export const KEYWORD_ENCHANT = defineRule<readonly IrKeyword[]>({
         ([, what]) => what,
       ),
       (what) => ({ kind: 'keyword', name: 'enchant', params: [what] }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
+/**
+ * `keyword.enchant-player`: "Enchant player" (issue 159, Curse of Disturbance; CR 702.5a, 702.5d: an Aura that can enchant a player can target and be attached to
+ * players, and to no permanent). The keyword with the quality `player`; the engine's `enchant` with `player: true`. Not read: "Enchant opponent", "Enchant players",
+ * "Enchant player or planeswalker".
+ */
+export const KEYWORD_ENCHANT_PLAYER = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.enchant-player',
+  family: 'keyword',
+  leading: ['enchant'],
+  cites: ['CR 702.5a (Enchant)', 'CR 702.5d (Enchant)', 'CR 303.4 (Enchantments)'],
+  examples: ['Enchant player', 'enchant player'],
+  rejects: [
+    'Enchant',
+    'Enchant opponent',
+    'Enchant players',
+    'Enchant player.',
+    'Enchant player or planeswalker',
+    'Enchant creature',
+    'Enchanted player',
+  ],
+  parse: map(
+    node<string, IrKeyword>(
+      'keyword.enchant-player',
+      map(pattern(/enchant player(?![\p{L}\p{N}.])/iu), (m) => m[0]),
+      () => ({ kind: 'keyword', name: 'enchant', params: [], quality: 'player' }),
     ),
     (keyword): readonly IrKeyword[] => [keyword],
   ),
@@ -238,6 +267,7 @@ export const KEYWORD_EQUIP_COMMANDER = defineRule<readonly IrKeyword[]>({
 
 export const ATTACHMENT_KEYWORD_RULES = [
   KEYWORD_ENCHANT,
+  KEYWORD_ENCHANT_PLAYER,
   KEYWORD_EQUIP,
   KEYWORD_EQUIP_QUALITY,
   KEYWORD_EQUIP_COMMANDER,

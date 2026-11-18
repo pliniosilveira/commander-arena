@@ -715,6 +715,23 @@ export function resolvePlayers(
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
         ? []
         : [ctx.triggerPlayer];
+    case 'opponentsAttackingTriggerPlayer': {
+      // CR 508.6 (issue 159): the opponents of the controller who control a creature that is attacking the player the trigger is about, now.
+      const attacked = ctx.triggerPlayer;
+      if (attacked === undefined || state.combat === null) return [];
+      const attackers = state.combat.attackers.filter(
+        (a) => a.target.kind === 'player' && a.target.seat === attacked && a.targetGone !== true,
+      );
+      return apnapOrder(
+        state,
+        opponentsOf(state, ctx.controller).filter((seat) =>
+          attackers.some((a) => {
+            const creature = objectOrLki(state, a.object);
+            return creature !== null && controllerOf(state, creature) === seat;
+          }),
+        ),
+      );
+    }
     case 'declinedPlayer':
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []

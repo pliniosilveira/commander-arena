@@ -33,6 +33,7 @@ import { CONTROL_TRIGGER_RULES } from './control';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
+import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
 import { EVENT_TRIGGER_RULES } from './events';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
@@ -1150,6 +1151,7 @@ export const TRIGGER_RULES = [
   ...EVENT_TRIGGER_RULES,
   // Issue 25 (D-333): "a source you control deals noncombat damage to an opponent".
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
+  ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".
   ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".

@@ -782,6 +782,12 @@ export type PlayerSelector =
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
   | { readonly kind: 'declinedPlayer' }
   /**
+   * "Each opponent attacking that player" (issue 159, CR 508.6: a player is "attacking [a player]" if they control a creature that is attacking that player): the opponents of
+   * the controller of the ability, still in the game, who control a creature attacking `triggerPlayer`, read as the ability resolves. Valid only in the effect of a
+   * `playerAttacked` trigger, whose `triggerPlayer` is the attacked player.
+   */
+  | { readonly kind: 'opponentsAttackingTriggerPlayer' }
+  /**
    * "The chosen player", "they" in the gift ability (CR 702.174a, D-135): the opponent the caster chose when they promised the
    * gift, read from the spell on the stack, from the permanent that remembers it, or from last-known information (CR 113.7a).
    * Nobody when no gift was promised. Valid only where the engine writes the gift ability, and in a card's text that reads
@@ -3363,6 +3369,12 @@ export type Trigger =
       readonly what?: ObjectFilter;
     }
   /**
+   * "Whenever enchanted player is attacked" (issue 159, CR 508.3b, 508.6, 303.4m): once when one or more creatures are declared as attackers attacking the player the Aura
+   * with this ability enchants ("Enchant player"); not when a creature is put onto the battlefield attacking, and not for a planeswalker or a battle that player controls.
+   * `triggerPlayer` is the attacked player ("that player"). Only on an Aura that enchants a player (`validateCard`).
+   */
+  | { readonly kind: 'playerAttacked'; readonly who: 'enchanted' }
+  /**
    * "Whenever [this permanent] becomes the target of a spell or ability [an opponent controls]"
    * (CR 603.2, 702.21a Ward): `what` is the permanent targeted, `by` whose spell or ability it is
    * (relative to the controller of this ability). The triggering spell or ability is the trigger's
@@ -3469,7 +3481,15 @@ export type Keyword =
    * battlefield, relative to the Aura's controller ("Enchant creature you control" sets
    * `controller: 'you'`). Only permanents are supported: `zone` is unset or 'battlefield'.
    */
-  | { readonly kind: 'enchant'; readonly filter: ObjectFilter }
+  | {
+      readonly kind: 'enchant';
+      readonly filter: ObjectFilter;
+      /**
+       * "Enchant player" (issue 159, CR 702.5a, 702.5d, 303.4): the Aura targets and enchants a player (any player, the Aura's controller included) and never a permanent.
+       * `filter` is then empty. The Aura's abilities may say "enchanted player" (`playerAttacked` with `who: 'enchanted'`).
+       */
+      readonly player?: true;
+    }
   /**
    * CR 702.6a (Equip): "Equip [cost]" means "[Cost]: Attach this permanent to target creature you
    * control. Activate only as a sorcery." The engine expands it when it derives the object's

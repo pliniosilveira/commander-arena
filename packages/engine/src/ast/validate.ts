@@ -117,6 +117,12 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       // CR 702.5a: what an Aura spell can target and what it can stay attached to: permanents.
       if (k.filter === undefined || k.filter === null) {
         issue(out, `${path}.filter`, 'enchant needs a filter');
+      } else if (k.player !== undefined) {
+        // Issue 159 (CR 702.5a, 702.5d): "Enchant player": a player, never a permanent, so there is nothing to describe.
+        if (k.player !== true) issue(out, `${path}.player`, 'player must be true when present');
+        if (Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
       }

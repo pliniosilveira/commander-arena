@@ -484,6 +484,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         by: t.by,
       });
     }
+    case 'playerAttacked': {
+      // "Whenever enchanted player is attacked" (issue 159, CR 508.3b, 303.4m): the Aura's own ability; the engine refuses it on a card that is not an Aura that enchants a player.
+      const missing = missingFeatures(['trigger:playerAttacked']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'playerAttacked', who: 'enchanted' });
+    }
     case 'attackBatch': {
       // "Whenever you attack with two or more creatures" (stage P33, D-150, CR 508.1): once for the declaration; "another player" is
       // an opponent of the controller.
@@ -1309,6 +1315,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:state',
   'trigger:lifeGained',
   'trigger:noncombatDamageDealt',
+  'trigger:playerAttacked',
   'trigger:countersAdded',
   'trigger:attackBatch',
   'trigger:entersBatch',

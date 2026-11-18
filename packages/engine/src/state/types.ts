@@ -109,6 +109,12 @@ export interface GameObject {
   readonly copyOf?: CardId;
   /** The object an Aura or Equipment is attached to (CR 303.4, 301.5). */
   readonly attachedTo: ObjectId | null;
+  /**
+   * The player an Aura that can enchant a player is attached to (issue 159, CR 303.4, 303.4b, 702.5a, 702.5d): "Enchant player". It enchants a player and never a permanent, so
+   * `attachedTo` is null while this is set. An Aura of the kind is put into the graveyard when this player has left the game, or when it names none (CR 704.5m, 303.4c).
+   * Read where "enchanted player" is (CR 303.4m).
+   */
+  readonly enchantedPlayer?: SeatId;
   /** For a battle: the player who protects it (CR 310.8). Null for everything else. */
   readonly protector: SeatId | null;
   /** Stack objects only. */

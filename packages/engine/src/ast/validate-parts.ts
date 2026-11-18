@@ -1117,6 +1117,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'opponentsAttackingTriggerPlayer':
+      // Issue 159 (CR 508.6): "each opponent attacking that player": the trigger is about an attacked player.
+      if (scope.triggerPlayer !== true) {
+        issue(
+          out,
+          path,
+          "'opponentsAttackingTriggerPlayer' needs the effect of a trigger about an attacked player (playerAttacked)",
+        );
+      }
+      break;
     case 'declinedPlayer':
       if (scope.declinedPlayer !== true) {
         issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");

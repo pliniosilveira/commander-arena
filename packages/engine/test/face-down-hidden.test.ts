@@ -426,6 +426,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   suspended: [],
   foretold: [],
   attached: [],
+  attachedToPlayer: [],
   unattached: [],
   commanderMovedToCommandZone: ['card'],
   playerLost: [],

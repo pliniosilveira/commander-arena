@@ -583,6 +583,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'playerAttacked':
+      // Issue 159 (CR 508.3b): "Whenever enchanted player is attacked".
+      return 'Whenever enchanted player is attacked';
     case 'attackBatch': {
       // D-149 (CR 508.1): "Whenever you attack with two or more creatures", "Whenever another player attacks with two or more creatures".
       const core = trigger.what === undefined ? 'creature' : nounCore(trigger.what, 'creature');

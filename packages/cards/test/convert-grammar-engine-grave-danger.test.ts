@@ -662,3 +662,94 @@ describe('Havengul Lich: "{1}: You may cast target creature card in a graveyard 
     expect(g.act(0).try.cast({ name: ELVES, seat: 1 }).ok).toBe(false);
   });
 });
+
+describe('Curse of Disturbance: "Enchant player. Whenever enchanted player is attacked, create a 2/2 black Zombie creature token. Each opponent attacking that player does the same."', () => {
+  const curse = real('Curse of Disturbance');
+  const zombies = (
+    g: { find: (q: { name: string; zone: 'battlefield'; seat: number }) => unknown[] },
+    seat: number,
+  ) => g.find({ name: 'Zombie', zone: 'battlefield', seat }).length;
+  const start = (active: number) =>
+    scenario()
+      .define(curse)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(curse.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Llanowar Elves')
+      .at('precombatMain', { active, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(curse)).toEqual([]);
+  });
+
+  test('an Aura that enchants a player: it is cast on a player and enters attached to them (CR 303.4, 702.5a)', () => {
+    const g = start(0);
+    g.act(0).cast(curse.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.zone(curse.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('it cannot be cast on a permanent (CR 702.5d)', () => {
+    const g = start(0);
+    expect(() => g.act(0).cast(curse.name, { targets: [BEARS], pay: true })).toThrow();
+  });
+
+  test('the enchanted player is attacked: its controller creates a 2/2 black Zombie (CR 508.3b)', () => {
+    const g = start(0);
+    g.act(0).cast(curse.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(BEARS);
+    g.passAll();
+    expect(zombies(g, 0)).toBe(1);
+    g.expect.derived({ name: 'Zombie', seat: 0 }, { colors: ['B'], subtypes: ['Zombie'] });
+    g.expect.pt('Zombie', 2, 2);
+    g.expect.invariants();
+  });
+
+  test('the trigger is once for the whole declaration, however many creatures attack', () => {
+    const g = scenario()
+      .define(curse)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(curse.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', BEARS, 'Llanowar Elves')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(curse.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([BEARS, 'Llanowar Elves']);
+    g.passAll();
+    expect(zombies(g, 0)).toBe(1);
+  });
+
+  test('a player that is not the enchanted one being attacked does nothing', () => {
+    const g = start(0);
+    g.act(0).cast(curse.name, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(BEARS);
+    g.passAll();
+    expect(zombies(g, 0)).toBe(0);
+  });
+
+  test('I enchant myself and an opponent attacks me: I create a Zombie and so does each opponent attacking me', () => {
+    const g = start(0);
+    g.act(0).cast(curse.name, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers', { turn: 4 });
+    g.act(1).attack('Llanowar Elves');
+    g.passAll();
+    expect(zombies(g, 0)).toBe(1);
+    expect(zombies(g, 1)).toBe(1);
+    g.expect.invariants();
+  });
+});

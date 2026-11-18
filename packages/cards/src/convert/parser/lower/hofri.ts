@@ -189,6 +189,26 @@ const RETURN_FROM_DESTROYED: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Each opponent attacking that player does the same." (issue 159, CR 508.6, 111.2): the `createToken` the clause before it lowered to, for every opponent of the controller who
+ * controls a creature attacking the player the trigger is about (`opponentsAttackingTriggerPlayer`). After any other clause "the same" names something this lowering does not know
+ * (CR 608.2c).
+ */
+const ATTACKERS_DO_SAME: Lowering<IrClause, Effects> = {
+  head: 'attackersDoSame',
+  id: 'lower.attackers-do-same',
+  needs: ['effect:createToken'],
+  lower(clause, ctx) {
+    const token = ctx.createdToken;
+    if (token === null) return failure(clause);
+    return {
+      ok: true,
+      value: [{ ...token, controller: { kind: 'opponentsAttackingTriggerPlayer' } }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Create a token that's a copy of that creature, except it's a Spirit in addition to its other types and it has "When ~ leaves the battlefield, return the exiled card to its
  * owner's graveyard."" (CR 707.2, 707.9b): the engine's `createToken` of a copy of the creature the trigger is about (read from last-known information), with the creature type
  * and the ability the exceptions add, and the card the instruction before exiled as its linked exile.
@@ -553,4 +573,5 @@ export const HOFRI_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   COPY_THIS_SPELL,
   BECOMES_IN_ADDITION,
   RETURN_FROM_DESTROYED,
+  ATTACKERS_DO_SAME,
 ];

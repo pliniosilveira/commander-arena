@@ -302,6 +302,44 @@ export const EFFECT_RETURN_DESTROYED_CARD = defineRule<Clauses>({
 });
 
 /**
+ * `effect.opponents-attacking-do-same`: "each opponent attacking that player does the same" (issue 159, Curse of Disturbance; CR 508.6: a player is "attacking [a player]" if they
+ * control a creature attacking that player; CR 111.2: the player who creates a token controls it). The sentence after "create a 2/2 black Zombie creature token": every
+ * opponent of the controller who attacks the player the trigger is about makes the same tokens. The lowering checks that the clause before it is that one `createToken`. Not
+ * read: another subject ("each player", "that player"), another verb phrase ("does so", "do the same").
+ */
+export const EFFECT_OPPONENTS_ATTACKING_DO_SAME = defineRule<Clauses>({
+  id: 'effect.opponents-attacking-do-same',
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 508.6 (Declare Attackers Step)',
+    'CR 111.2 (Tokens)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['each opponent attacking that player does the same'],
+  rejects: [
+    'each opponent attacking that player does the same thing',
+    'each player attacking that player does the same',
+    'each opponent attacking you does the same',
+    'each opponent does the same',
+    'each opponent attacking that player does the same and draw a card',
+    'each opponent attacking that player do the same',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /each opponent attacking that player does the same(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause('effect.opponents-attacking-do-same', 'attackersDoSame', {}, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.return-exiled-card`: "return the exiled card to its owner's graveyard" and "return the exiled card to the battlefield under its owner's control" (CR 607.2a,
  * 400.3, 110.2a: the linked ability of the permanent returns the card it exiled, which goes to its owner's graveyard or enters under its owner's control). The engine's
  * `moveToZone` of `linkedExile`, read from the last-known information of a permanent that left (CR 603.10a). Not read: "the exiled cards", another zone, "your" control, a
@@ -860,5 +898,6 @@ export const HOFRI_EFFECT_RULES = [
   EFFECT_COPY_THIS_SPELL,
   EFFECT_BECOMES_IN_ADDITION,
   EFFECT_BECOMES_COLORED_IN_ADDITION,
+  EFFECT_OPPONENTS_ATTACKING_DO_SAME,
   EFFECT_RETURN_DESTROYED_CARD,
 ];

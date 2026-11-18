@@ -38,6 +38,12 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         issue(out, `${path}.by`, `unknown player ${String(t.by)}`);
       }
       return true;
+    case 'playerAttacked':
+      // Issue 159 (CR 508.3b): only "enchanted player" is read.
+      if (t.who !== 'enchanted') {
+        issue(out, `${path}.who`, `unknown player ${String((t as { who: unknown }).who)}`);
+      }
+      return true;
     case 'attackBatch':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);

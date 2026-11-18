@@ -1183,6 +1183,20 @@ export function describeEvent(
         'CR 701.3',
       );
     }
+    case 'attachedToPlayer': {
+      // Issue 159 (CR 303.4, 702.5d): an Aura with "Enchant player" enters attached to a player; its controller put it there as it resolved.
+      const attacher = after.objects[event.object]?.controller;
+      const to = event.player === attacher ? 'themselves' : who(event.player);
+      return line(
+        'major',
+        attacher === undefined
+          ? `${name(event.object)} enchants ${who(event.player)}.`
+          : `${who(attacher)} ${verb(attacher, 'enchant', 'enchants')} ${to} with ${name(event.object)}.`,
+        attacher ?? null,
+        [event.object],
+        'CR 303.4',
+      );
+    }
     case 'unattached':
       // `from` may have left the battlefield: `name` falls back to last-known information. An
       // Equipment that moves emits `unattached` (replaced) and then `attached` (CR 701.3c).

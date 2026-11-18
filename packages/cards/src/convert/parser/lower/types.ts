@@ -204,6 +204,11 @@ export interface LowerContext {
    */
   destroyed: boolean;
   /**
+   * The `createToken` the clause before it lowered to, when it was the only effect and made the tokens for the controller (issue 159, Curse of Disturbance): "Each opponent attacking
+   * that player does the same" makes the same tokens for other players. Null after any other clause.
+   */
+  createdToken: Extract<Effect, { kind: 'createToken' }> | null;
+  /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
    */
@@ -271,6 +276,7 @@ export function newContext(
     madeToken: null,
     milled: false,
     destroyed: false,
+    createdToken: null,
     movedToHand: false,
     exiledRef: null,
     namedInQuotes: false,

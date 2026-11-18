@@ -420,6 +420,9 @@ function recipientText(
       return "the player or planeswalker it's attacking";
     case 'triggerPlayer':
       return 'that player';
+    case 'opponentsAttackingTriggerPlayer':
+      // Issue 159 (CR 508.6).
+      return 'each opponent attacking that player';
     case 'declinedPlayer':
       return 'the player who declined';
     case 'giftRecipient':
@@ -584,6 +587,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
+    case 'opponentsAttackingTriggerPlayer':
+      return { who: 'they', third: false };
     case 'declinedPlayer':
       return { who: 'the player who declined', third: true };
     case 'giftRecipient':
