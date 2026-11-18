@@ -400,6 +400,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
+  'static.graveyard-sacrifice-alt-cost': asIs,
   'amount.damage-dealt-this-way': spell(
     (e) => `~ deals 3 damage to target creature. You gain life ${e}.`,
   ),

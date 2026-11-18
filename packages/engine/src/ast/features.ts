@@ -1019,6 +1019,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
+    // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
+    'sacrificeFromGraveyard',
   ],
 };
 
@@ -1695,6 +1697,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'miracle',
   'foretell',
   'tapPermanents',
+  'sacrificeFromGraveyard',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 

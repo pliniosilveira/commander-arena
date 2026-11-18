@@ -1446,6 +1446,16 @@ export type IrStaticEffect =
       readonly count: number;
     }
   /**
+   * "You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost." (issue 159, CR 118.9, 601.2h, 701.21a): an alternative
+   * cost of the face, cast from the owner's graveyard, that pays `cost` (mana) and sacrifices `count` permanents `what` describes. The subject is `~`.
+   */
+  | {
+      readonly kind: 'graveyardSacrificeAlternative';
+      readonly cost: IrCost;
+      readonly what: IrNoun;
+      readonly count: number;
+    }
+  /**
    * "You don't lose unspent red mana as steps and phases end." (stage P34, D-152, CR 500.5, 106.4): mana of these colors (letters, `C` colorless) in
    * the controller's pool does not empty as a step or a phase ends. The subject is `you`.
    */

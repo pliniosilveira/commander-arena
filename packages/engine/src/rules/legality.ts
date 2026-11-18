@@ -337,6 +337,13 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     return alternativeOf(faceOf(state, obj), 'escape') === null ? null : 'graveyard';
   }
+  // Issue 159: a card with a `sacrificeFromGraveyard` cost is cast from its owner's graveyard only.
+  if (alternative === 'sacrificeFromGraveyard') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    return alternativeOf(faceOf(state, obj), 'sacrificeFromGraveyard') === null
+      ? null
+      : 'graveyard';
+  }
   // CR 702.35a, 702.94a (D-128, D-274): a card is cast for its madness or miracle cost only as that ability resolves
   // (`castExiled`); it is never cast that way from a hand, so `canCast` and the option lists never offer it.
   if (alternative === 'madness' || alternative === 'miracle') return null;
@@ -754,6 +761,13 @@ export function foretellCastObjects(state: GameState, seat: SeatId): ObjectId[] 
 export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'escape'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now for their `sacrificeFromGraveyard` cost (issue 159). */
+export function sacrificeFromGraveyardObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'sacrificeFromGraveyard'),
   );
 }
 

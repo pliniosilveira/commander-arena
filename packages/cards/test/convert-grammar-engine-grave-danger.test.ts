@@ -397,3 +397,43 @@ describe('Necromantic Selection: "Destroy all creatures, then return a creature 
     g.expect.zone(selection.name, 'exile', { seat: 0 });
   });
 });
+
+describe('Scourge of Nel Toth: "You may cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost."', () => {
+  const scourge = real('Scourge of Nel Toth');
+  const ALT = 'sacrificeFromGraveyard' as const;
+  const start = (creatures: readonly string[], swamps = 2) =>
+    scenario()
+      .define(scourge)
+      .seat(0)
+      .library(...LIBRARY)
+      .graveyard(scourge.name)
+      .battlefield(...Array.from({ length: swamps }, () => 'Swamp'), ...creatures)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(scourge)).toEqual([]);
+  });
+
+  test('{B}{B} and two creatures sacrificed: it is cast from the graveyard and enters (CR 118.9, 601.2h)', () => {
+    const g = start([BEARS, 'Llanowar Elves']);
+    g.act(0).cast(scourge.name, { alternative: ALT, pay: true });
+    g.passAll();
+    g.expect.zone(scourge.name, 'battlefield', { seat: 0 });
+    g.expect.zone(BEARS, 'graveyard', { seat: 0 });
+    g.expect.zone('Llanowar Elves', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with only one creature it cannot be cast this way', () => {
+    const g = start([BEARS]);
+    expect(g.act(0).try.cast(scourge.name, { alternative: ALT }).ok).toBe(false);
+  });
+
+  test('the ordinary cost is not offered from the graveyard', () => {
+    const g = start([BEARS, 'Llanowar Elves'], 7);
+    expect(g.act(0).try.cast(scourge.name).ok).toBe(false);
+  });
+});

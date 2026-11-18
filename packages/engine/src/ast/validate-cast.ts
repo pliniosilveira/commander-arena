@@ -172,6 +172,27 @@ export function checkCastFace(
       );
     }
   }
+  // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'sacrificeFromGraveyard')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'sacrificeFromGraveyard is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'sacrificeFromGraveyard with convoke, improvise or delve is not supported',
+      );
+    }
+  }
   // CR 702.35a, 702.94a, 702.143a (D-128, D-274): madness, miracle and foretell are ways to cast a card, so they are on a
   // card that is not a land (a land is played, never cast).
   for (const kind of ['madness', 'miracle', 'foretell'] as const) {

@@ -16,6 +16,7 @@ import {
   flashbackObjects,
   foretellCastObjects,
   playableLands,
+  sacrificeFromGraveyardObjects,
 } from './legality';
 import { activationChoices, manaSacrificeCandidates } from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
@@ -45,6 +46,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // CR 702.138a (Escape, D-124): a card in the graveyard is cast for its escape cost, one option for each.
   for (const object of escapeObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'escape' });
+  }
+  // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
+  for (const object of sacrificeFromGraveyardObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'sacrificeFromGraveyard' });
   }
   // CR 702.143a (Foretell, D-128): a foretold card in exile is cast for its foretell cost, in a later turn.
   for (const object of foretellCastObjects(state, seat)) {

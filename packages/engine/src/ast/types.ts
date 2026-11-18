@@ -1101,7 +1101,8 @@ export type NamedAlternativeKind =
   | 'madness'
   | 'miracle'
   | 'foretell'
-  | 'tapPermanents';
+  | 'tapPermanents'
+  | 'sacrificeFromGraveyard';
 
 /**
  * What a permanent remembers about how it got onto the battlefield (D-121, D-124): that its evoke, dash or
@@ -1161,6 +1162,10 @@ export type PermanentAlternativeKind =
  *   first and plans it so as to leave enough permanents to tap; then the caster chooses which (a `choosePermanent` decision of
  *   purpose `tap` and `forCost`, none when exactly `count` qualify). The filter's controller is `you` or left out, its zone the
  *   battlefield, and it does not say `tapped`. Not with Convoke, Improvise or Delve, and not on a land.
+ * - `sacrificeFromGraveyard` (issue 159, CR 118.9, 601.2h, 701.21a): "You may cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than
+ *   paying its mana cost": the card is cast from its owner's graveyard, the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also sacrifices
+ *   `count` permanents they control that match `filter` as part of it (the sacrifice is chosen with the same question as the sacrifice of an additional cost). The spell is an
+ *   ordinary spell otherwise: it goes to the graveyard when it leaves the stack. Not on a land; not with Convoke, Improvise or Delve.
  * The `castSpell` action chooses one with `alternative`; the card is cast from the zones it could be
  * cast from anyway. Additional costs, commander tax and cost reductions still apply to it (CR
  * 118.9d, 601.2f, 903.8). `condition` is read for the player casting, with the card as the source;
@@ -1172,7 +1177,10 @@ export type AlternativeCost =
       readonly condition?: Condition;
     }
   | {
-      readonly kind: Exclude<NamedAlternativeKind, 'escape' | 'tapPermanents'>;
+      readonly kind: Exclude<
+        NamedAlternativeKind,
+        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard'
+      >;
       readonly cost: readonly Cost[];
       readonly condition?: Condition;
     }
@@ -1180,6 +1188,15 @@ export type AlternativeCost =
       readonly kind: 'tapPermanents';
       readonly cost: readonly Cost[];
       /** The permanents tapped as part of the cost (D-149): untapped ones the caster controls that match. */
+      readonly filter: ObjectFilter;
+      /** How many: at least 1. */
+      readonly count: number;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'sacrificeFromGraveyard';
+      readonly cost: readonly Cost[];
+      /** The permanents sacrificed as part of the cost (issue 159): ones the caster controls that match. */
       readonly filter: ObjectFilter;
       /** How many: at least 1. */
       readonly count: number;

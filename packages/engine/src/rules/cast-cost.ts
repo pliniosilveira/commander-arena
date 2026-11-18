@@ -117,7 +117,8 @@ export function isNamedAlternative(
     alternative === 'madness' ||
     alternative === 'miracle' ||
     alternative === 'foretell' ||
-    alternative === 'tapPermanents'
+    alternative === 'tapPermanents' ||
+    alternative === 'sacrificeFromGraveyard'
   );
 }
 
@@ -399,6 +400,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
+  // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
+  const sacAlt =
+    alternative === 'sacrificeFromGraveyard' ? alternativeOf(face, 'sacrificeFromGraveyard') : null;
+  if (sacAlt !== null) {
+    sacrifice = sacAlt.filter;
+    sacrificeCount = sacAlt.count;
+  }
   const anyType = request.anyType === true || spell.stack?.anyManaType === true;
   return {
     symbols: reduced,
@@ -610,6 +618,8 @@ export interface AlternativeCostInfo {
   readonly exile?: number;
   /** For `tapPermanents` (D-149): the untapped permanents tapped too. */
   readonly tap?: TapRequirement;
+  /** For `sacrificeFromGraveyard` (issue 159): the permanents sacrificed too. */
+  readonly sacrifice?: TapRequirement;
 }
 
 /**
@@ -636,9 +646,14 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
     // Madness and miracle are cast only as their ability resolves (CR 702.35a, 702.94a), never from a hand: no cast option, so no cost to show.
     if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.
-    const home = alt.kind === 'escape' ? 'graveyard' : alt.kind === 'foretell' ? 'exile' : 'hand';
+    const home =
+      alt.kind === 'escape' || alt.kind === 'sacrificeFromGraveyard'
+        ? 'graveyard'
+        : alt.kind === 'foretell'
+          ? 'exile'
+          : 'hand';
     if (home !== (zone === 'command' ? 'hand' : zone)) continue;
-    const { symbols, exile, tap } = spellCost(state, {
+    const { symbols, exile, tap, sacrifice, sacrificeCount } = spellCost(state, {
       seat: obj.owner,
       spell,
       zone,
@@ -651,6 +666,9 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
       cost: symbols,
       ...(exile > 0 ? { exile } : {}),
       ...(tap === null ? {} : { tap }),
+      ...(alt.kind === 'sacrificeFromGraveyard' && sacrifice !== null
+        ? { sacrifice: { filter: sacrifice, count: sacrificeCount ?? 1 } }
+        : {}),
     });
   }
   return out;
