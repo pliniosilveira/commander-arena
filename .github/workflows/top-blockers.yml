@@ -1,0 +1,40 @@
+name: Top blockers
+
+# One-off report: the unsupported cards of the 1,000 most popular Commander cards, crossed with the unsupported cards named by the open
+# `deck-support:ready` issues. Runs on a runner because it needs Scryfall's bulk file. Read only; the report is printed in the job summary.
+
+on:
+  push:
+    branches: [claude/elegant-planck-brdix1]
+    paths: [.github/workflows/top-blockers.yml, tools/corpus/top-blockers.ts]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Download the bulk file
+        run: pnpm coverage:cards --download --out .coverage
+      - name: Read the ready issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh api --paginate "repos/${{ github.repository }}/issues?state=open&labels=deck-support:ready&per_page=100"
+          --jq '[.[] | {number, title, body}]' | jq -s 'add' > issues.json
+      - name: Report
+        run: |
+          file=$(ls .cache/corpus/oracle_cards* | head -n 1)
+          node tools/corpus/top-blockers-cli.ts --file "$file" --issues issues.json --top 10 | tee report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
