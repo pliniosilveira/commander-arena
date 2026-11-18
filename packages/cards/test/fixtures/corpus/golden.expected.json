@@ -1,5 +1,5 @@
 {
-  "parserVersion": 146,
+  "parserVersion": 147,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2782,27 +2782,10 @@
     "6cbd36d9-de47-41b0-9ef4-a72ca01adccd": {
       "name": "Curse of Disturbance",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Enchant player",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "keyword.enchant"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever enchanted player is attacked, create a 2/2 black Zombie creature token. Each opponent attacking that player does the same.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "aab313a9"
+      "ast": "1c1a9413"
     },
     "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
       "name": "Steel Hellkite",
@@ -6520,7 +6503,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 454,
+      "supported": 455,
       "total": 476
     }
   }

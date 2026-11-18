@@ -33,4 +33,5 @@
 // 131: Enter with a sum of counts, prevent damage to a permanent and remove a counter, count the damage a resolution dealt (D-610).
 // 132: Add colors without replacing the others, choose among the cards a destroy put into any graveyard (D-612).
 // 133: Alternative cost that sacrifices permanents from a graveyard cast, spell-filter cast permissions, any-graveyard permissions with a cast rider, turn-log cast and activation from a graveyard (D-613).
-export const ENGINE_VERSION = 133;
+// 134: Auras that enchant a player, the trigger "enchanted player is attacked", the selector of the opponents attacking that player (D-614).
+export const ENGINE_VERSION = 134;

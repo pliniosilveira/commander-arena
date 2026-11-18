@@ -307,6 +307,7 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   ability: 'public',
   activated: 'public',
   attachedTo: 'public',
+  enchantedPlayer: 'public',
   attachments: 'public',
   regenerationShields: 'public',
   kicked: 'public',

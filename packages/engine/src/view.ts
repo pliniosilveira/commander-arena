@@ -202,6 +202,8 @@ export interface ObjectView {
    * 303.4b). The UI draws it on or under that permanent. Absent when it is attached to nothing.
    */
   readonly attachedTo?: ObjectId;
+  /** For an Aura that enchants a player ("Enchant player", issue 159, CR 303.4b, 702.5d): that player. Absent for every other object. */
+  readonly enchantedPlayer?: SeatId;
   /**
    * For a permanent: the Auras and Equipment on the battlefield attached to it, oldest first. Absent
    * when there are none.
@@ -783,6 +785,9 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
       : {}),
     ...(activated.length === 0 ? {} : { activated }),
     ...(d.attachedTo === null ? {} : { attachedTo: d.attachedTo }),
+    ...(obj.enchantedPlayer === undefined || obj.zone !== 'battlefield'
+      ? {}
+      : { enchantedPlayer: obj.enchantedPlayer }),
     ...(d.attachments.length === 0 ? {} : { attachments: d.attachments }),
     ...(obj.zone === 'battlefield' && regenerationShieldsOn(state, id) > 0
       ? { regenerationShields: regenerationShieldsOn(state, id) }
