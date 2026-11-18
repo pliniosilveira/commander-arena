@@ -537,6 +537,8 @@ describe('unmatched abilities', () => {
       'effect.lose-all-player-counters',
       'effect.copy-spell-each',
       'effect.exile-on-resolve',
+      'effect.put-commander-from-command-zone',
+      'effect.return-to-command-zone-at-end-step',
       'effect.gain-keyword-for-good',
       'effect.exile-at-end-step',
       'effect.exile-instead-when-leaving',

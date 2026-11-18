@@ -206,7 +206,7 @@ function walkEffect(
       if (
         effect.to === 'battlefield' &&
         effect.objects.kind === 'choose' &&
-        !['hand', 'graveyard', 'exile'].includes(effect.objects.filter.zone ?? '')
+        !['hand', 'graveyard', 'exile', 'command'].includes(effect.objects.filter.zone ?? '')
       ) {
         auraEntryIssue(named, `${path}.objects`, out);
       }

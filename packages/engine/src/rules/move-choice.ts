@@ -21,7 +21,13 @@ type ChooseMoveInstruction = Extract<Instruction, { kind: 'chooseMove' }>;
 
 /** A choice among the cards the player owns in their hand or graveyard (D-139), not among their permanents. */
 export function isCardZoneChoice(filter: ObjectFilter): boolean {
-  return filter.zone === 'hand' || filter.zone === 'graveyard' || filter.zone === 'exile';
+  return (
+    filter.zone === 'hand' ||
+    filter.zone === 'graveyard' ||
+    filter.zone === 'exile' ||
+    // Issue 103 (Hellkite Courser): "a commander you own from the command zone".
+    filter.zone === 'command'
+  );
 }
 
 /** The cards `seat` owns in the zone the filter names that match it (`source` is what "another" excludes). */
@@ -50,11 +56,12 @@ function cardCandidates(
       );
     });
   }
-  const zone = filter.zone === 'graveyard' ? 'graveyard' : 'hand';
+  const zone =
+    filter.zone === 'graveyard' ? 'graveyard' : filter.zone === 'command' ? 'command' : 'hand';
   // The zone belongs to the player ("your hand"), so whose the card is does not need saying again.
   const { controller: _you, ...described } = filter;
   // D-544: "from your hand or graveyard": the hand first, then the graveyard (the order of the words).
-  const zones: readonly ('hand' | 'graveyard')[] =
+  const zones: readonly ('hand' | 'graveyard' | 'command')[] =
     alsoGraveyard && zone === 'hand' ? ['hand', 'graveyard'] : [zone];
   return zones.flatMap((z) =>
     zoneList(state, z, seat).filter((id) => {
@@ -70,6 +77,7 @@ const WHERE: Readonly<Record<ChooseMoveInstruction['to'], string>> = {
   graveyard: 'into your graveyard',
   library: 'into your library',
   battlefield: 'onto the battlefield',
+  command: 'into the command zone',
 };
 
 /**
@@ -169,7 +177,9 @@ export function runChooseMove(
         ? 'graveyard'
         : instruction.filter.zone === 'exile'
           ? 'exile'
-          : 'hand';
+          : instruction.filter.zone === 'command'
+            ? 'command'
+            : 'hand';
     return {
       state,
       events: [],
@@ -192,7 +202,9 @@ export function runChooseMove(
               ? 'exiled with this permanent'
               : instruction.alsoGraveyard === true
                 ? 'from your hand or graveyard'
-                : `from your ${zone}`
+                : zone === 'command'
+                  ? 'from your command zone'
+                  : `from your ${zone}`
         } to put ${WHERE[instruction.to]}`.replace(
           'from among the cards put into your graveyard',
           instruction.anyOwner === true

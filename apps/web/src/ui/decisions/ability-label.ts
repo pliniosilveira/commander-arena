@@ -813,6 +813,9 @@ function moveText(
     // CR 406.1: only a chosen card is exiled by a `moveToZone` (the choice is worded above); anything else is the `exile` effect.
     case 'exile':
       return `Exile ${what}`;
+    // Issue 103 (CR 903.9): "Return it to the command zone", the delayed return of a commander.
+    case 'command':
+      return `Return ${what} to the command zone`;
     case 'battlefield': {
       const kept = effect.withCounters;
       const withCounters =

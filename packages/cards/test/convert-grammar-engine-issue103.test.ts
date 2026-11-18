@@ -69,6 +69,30 @@ describe('Temple of the Dragon Queen (reveal a Dragon card or control a Dragon, 
     g.expect.tapped(TEMPLE.name, false);
   });
 
+  test('a reveal and a choice are the only two questions a land may ask as it enters', () => {
+    const face = TEMPLE.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const withPayment = {
+      ...TEMPLE,
+      faces: [
+        {
+          ...face,
+          abilities: [
+            ...face.abilities,
+            {
+              kind: 'replacement',
+              replacement: {
+                kind: 'entersTappedUnlessPays',
+                cost: [{ kind: 'payLife', amount: 2 }],
+              },
+            },
+          ],
+        },
+      ],
+    } as never;
+    expect(validateCard(withPayment).length).toBeGreaterThan(0);
+  });
+
   test('no Dragon in hand or on the battlefield: nothing to reveal, it enters tapped', () => {
     const g = game(['Island']);
     g.act(0).playLand(TEMPLE.name);
@@ -223,6 +247,67 @@ describe('Broodcaller Scourge (one or more Dragons you control deal combat damag
     g.passAll();
     g.act(0).decline();
     g.expect.zone('Sol Ring', 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+});
+
+const COURSER = real('Hellkite Courser');
+const KNIGHT = 'Isamaru, Hound of Konda';
+
+describe('Hellkite Courser (put a commander you own from the command zone onto the battlefield, it gains haste, return it to the command zone at the beginning of the next end step)', () => {
+  const game = () =>
+    scenario()
+      .define(COURSER)
+      .seat(0)
+      .library(...FILLER)
+      .hand(COURSER.name)
+      .command(KNIGHT, { commander: true })
+      .battlefield('Mountain', { count: 6 })
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 });
+
+  const enter = (g: ReturnType<ReturnType<typeof game>['build']>) => {
+    g.act(0).cast(COURSER.name, { pay: true });
+    g.passAll();
+  };
+
+  test('the commander enters under your control, can attack with haste, and goes back at the beginning of the next end step (CR 903.9, 603.7c)', () => {
+    const g = game().build();
+    enter(g);
+    g.act(0).chooseCards(KNIGHT);
+    g.passAll();
+    g.expect.zone(KNIGHT, 'battlefield', { seat: 0 });
+    g.advanceTo('declareAttackers', { attack: false });
+    g.expect.canAttack(KNIGHT, true);
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.zone(KNIGHT, 'command', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('declining leaves the commander in the command zone', () => {
+    const g = game().build();
+    enter(g);
+    g.act(0).chooseCards();
+    g.passAll();
+    g.expect.zone(KNIGHT, 'command', { seat: 0 });
+  });
+
+  test('only a commander you own is offered: the opponent commander is not', () => {
+    const g = scenario()
+      .define(COURSER)
+      .seat(0)
+      .library(...FILLER)
+      .hand(COURSER.name)
+      .battlefield('Mountain', { count: 6 })
+      .seat(1)
+      .library(...FILLER)
+      .command(KNIGHT, { commander: true })
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    enter(g);
+    g.expect.zone(KNIGHT, 'command', { seat: 1 });
     g.expect.invariants();
   });
 });

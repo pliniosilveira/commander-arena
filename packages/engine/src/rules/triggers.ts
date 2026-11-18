@@ -53,7 +53,7 @@ import { matchesFilter, type SelectContext } from './select';
 import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
-import { readsTriggerPlayer } from './trigger-subject';
+import { readsTriggerDamage, readsTriggerPlayer } from './trigger-subject';
 
 /** Trigger kinds that look back in time (CR 603.10a). */
 const LOOK_BACK: ReadonlySet<Trigger['kind']> = new Set(LOOK_BACK_TRIGGER_KINDS);
@@ -1251,7 +1251,7 @@ function batchTriggers(
           ability,
           subject: null,
           player: seat,
-          damage: dealt,
+          ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
         });
       }
     }

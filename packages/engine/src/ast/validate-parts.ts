@@ -3079,7 +3079,7 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (
     sel.filter?.zone !== undefined &&
-    !isOneOf(sel.filter.zone, ['battlefield', 'hand', 'graveyard', 'exile'])
+    !isOneOf(sel.filter.zone, ['battlefield', 'hand', 'graveyard', 'exile', 'command'])
   ) {
     issue(
       out,
@@ -4789,7 +4789,15 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // graveyard (D-139) is put onto the battlefield, by the controller of the effect. A card that could be an Aura would need to
         // choose what to enchant (CR 303.4f): not run (`ast/supported.ts`).
         const zone = (e.objects as ChooseSelector).filter?.zone;
-        const fromCards = zone === 'hand' || zone === 'graveyard';
+        // Issue 103 (Hellkite Courser): "a commander you own from the command zone" is a card chosen from the command zone, only to put onto the battlefield.
+        const fromCards = zone === 'hand' || zone === 'graveyard' || zone === 'command';
+        if (zone === 'command' && e.to !== 'battlefield') {
+          issue(
+            out,
+            `${path}.to`,
+            'a commander chosen from the command zone is put onto the battlefield',
+          );
+        }
         if (zone === 'exile' && e.to === 'battlefield') {
           issue(
             out,
@@ -4839,6 +4847,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       if (!isOneOf(e.to, ['hand', 'graveyard', 'library', 'battlefield', 'exile'])) {
+        // Issue 103: 'command' is the return of a delayed trigger (`checkDelayedTrigger`), never a move of its own.
         issue(out, `${path}.to`, `cannot move to zone ${JSON.stringify(e.to)}`);
       }
       // CR 406.1, 608.2d: a card chosen from the hand or the graveyard can be exiled by the choice itself; every other exile is the `exile` effect.

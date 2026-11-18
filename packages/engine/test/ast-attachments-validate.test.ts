@@ -126,7 +126,7 @@ describe('Auras (CR 303.4a, 702.5a)', () => {
       });
     // D-149: an Aura card named by a target, `moved` or `each` enters attached to what its controller chooses (`rules/aura-entry.ts`).
     expect(messages(reanimate({}))).toEqual([]);
-    // A card picked by a `choose` selector from the graveyard is not run for a card that could be an Aura.
+    // Issue 103: a card picked by a `choose` selector from the graveyard (or the hand, exile or command zone) that could be an Aura chooses what it enchants too (`runChooseMove`).
     const chosen = singleFace({
       name: 'SYNTHETIC Test Reanimate Chosen',
       manaCost: ['B'],
@@ -142,7 +142,7 @@ describe('Auras (CR 303.4a, 702.5a)', () => {
         },
       },
     });
-    expect(messages(chosen)).toEqual([expect.stringContaining('Aura onto the battlefield')]);
+    expect(messages(chosen)).toEqual([]);
     // A creature card, a land or a basic land cannot be an Aura.
     for (const filter of [
       { types: ['creature'] },
