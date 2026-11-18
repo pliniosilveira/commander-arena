@@ -475,14 +475,14 @@ function activationCostIssues(
   const tappingPermanents = costs.filter((c) => c.kind === 'tapPermanents').length;
   if (
     tappingPermanents > 1 ||
-    (tappingPermanents === 1 && costs.some((c) => c.kind === 'mana' || c.kind === 'tapCreatures'))
+    (tappingPermanents === 1 && costs.some((c) => c.kind === 'tapCreatures'))
   ) {
-    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the sacrifice and the discard and never
-    // with mana: the player could have tapped them for mana first, and nothing promises they are still untapped.
+    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the mana, the sacrifice and the discard (D-625: next to a mana
+    // cost too, the player chooses them before paying the mana); it has no place for a second one or for a crew cost.
     out.push({
       path,
       message:
-        'a cost that taps untapped permanents combined with another one, a mana cost or a creature-tapping cost is not implemented by the engine yet',
+        'a cost that taps untapped permanents combined with another one or a creature-tapping cost is not implemented by the engine yet',
     });
   }
   if (

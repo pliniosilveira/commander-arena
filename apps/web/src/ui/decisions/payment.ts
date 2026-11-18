@@ -17,6 +17,8 @@ export interface Tap {
   readonly combination?: readonly ManaColor[];
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): chosen when there is more than one to give up. */
   readonly sacrifice?: ObjectId;
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-625): chosen when there is more than one to tap. */
+  readonly tapped?: ObjectId;
 }
 
 type Sources = PayManaDecision['manaSources'];
@@ -37,9 +39,16 @@ export function asksSacrifice(source: Source): boolean {
   return (source.sacrifices?.length ?? 0) > 1;
 }
 
-/** True when the player must say something before the source is tapped: a color, a combination or what to sacrifice. */
+/** True when the player must say which permanent the source's cost taps ("{T}, Tap an untapped creature you control: Add ...", D-625): the engine offers more than one. */
+export function asksTapped(source: Source): boolean {
+  return (source.tappables?.length ?? 0) > 1;
+}
+
+/** True when the player must say something before the source is tapped: a color, a combination, what to sacrifice or what to tap. */
 export function asksChoice(source: Source): boolean {
-  return asksColor(source) || asksCombination(source) || asksSacrifice(source);
+  return (
+    asksColor(source) || asksCombination(source) || asksSacrifice(source) || asksTapped(source)
+  );
 }
 
 /**
@@ -74,6 +83,7 @@ export function setTapColor(
   abilityIndex: number,
   color: ManaColor,
   sacrifice?: ObjectId,
+  tapped?: ObjectId,
 ): readonly Tap[] {
   const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
   if (offered === undefined || !(offered.colors ?? []).includes(color)) return taps;
@@ -82,6 +92,7 @@ export function setTapColor(
     abilityIndex,
     color,
     ...(sacrifice === undefined ? {} : { sacrifice }),
+    ...(tapped === undefined ? {} : { tapped }),
   });
 }
 
@@ -99,6 +110,22 @@ export function setTapSacrifice(
   const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
   if (offered === undefined || !(offered.sacrifices ?? []).includes(sacrifice)) return taps;
   return putTap(taps, { ...plainTap(object, offered), sacrifice });
+}
+
+/**
+ * Taps the source's ability tapping `tapped` too (D-625: "{T}, Tap an untapped creature you control: Add ..."). The permanent must be one the engine offered for that ability;
+ * anything else changes nothing.
+ */
+export function setTapTapped(
+  taps: readonly Tap[],
+  sources: Sources,
+  object: ObjectId,
+  abilityIndex: number,
+  tapped: ObjectId,
+): readonly Tap[] {
+  const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
+  if (offered === undefined || !(offered.tappables ?? []).includes(tapped)) return taps;
+  return putTap(taps, { ...plainTap(object, offered), tapped });
 }
 
 /** Puts the tap in the payment: it replaces an earlier tap of the source and keeps its place. */
@@ -124,6 +151,7 @@ export function setTapCombination(
   abilityIndex: number,
   combination: readonly ManaColor[],
   sacrifice?: ObjectId,
+  tapped?: ObjectId,
 ): readonly Tap[] {
   const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
   const found = (offered?.combinations ?? []).find((c) => sameCombination(c, combination));
@@ -133,6 +161,7 @@ export function setTapCombination(
     abilityIndex,
     combination: found,
     ...(sacrifice === undefined ? {} : { sacrifice }),
+    ...(tapped === undefined ? {} : { tapped }),
   });
 }
 

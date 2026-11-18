@@ -335,6 +335,14 @@ export function DockPanel(props: OverlayProps): ReactNode {
           {sacrifices.length === 0 ? null : (
             <p className="dec-sub dec-left">{sacrifices.join(', ')} will be sacrificed.</p>
           )}
+          {ui.taps.some((t) => t.tapped !== undefined) ? (
+            <p className="dec-sub dec-left">
+              {ui.taps
+                .flatMap((t) => (t.tapped === undefined ? [] : [nameOf(index, t.tapped)]))
+                .join(', ')}{' '}
+              will be tapped too.
+            </p>
+          ) : null}
           <ErrorLine error={error} />
         </section>
       );

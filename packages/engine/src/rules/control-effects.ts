@@ -131,6 +131,48 @@ export function runGainControl(
 }
 
 /**
+ * Runs `returnControlToOwners` (CR 613.1b, 611.2a, 611.2c, D-628): "each player gains control of all creatures they own". The permanents the selector names now are grouped by
+ * owner and each owner gets one layer 2 effect with no duration (CR 613.7b: each has a timestamp, made one after the other in seat order), so an earlier effect that gave a
+ * permanent to someone else no longer decides who controls it, and a later one decides over this one. A permanent whose controller changed leaves combat (CR 506.4).
+ */
+export function runReturnControl(
+  state: GameState,
+  node: Extract<Effect, { kind: 'returnControlToOwners' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const affected = resolveObjects(state, node.objects, ctx, targets).filter(
+    (id) => state.objects[id]?.zone === 'battlefield',
+  );
+  if (affected.length === 0) return done(state);
+  const before = controllersOf(state, affected);
+  const bySeat = new Map<SeatId, ObjectId[]>();
+  for (const id of affected) {
+    const owner = state.objects[id]?.owner;
+    if (owner === undefined) continue;
+    bySeat.set(owner, [...(bySeat.get(owner) ?? []), id]);
+  }
+  let next = state;
+  const effects: ContinuousEffect[] = [];
+  for (const seat of [...bySeat.keys()].sort((a, b) => a - b)) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    effects.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: bySeat.get(seat) ?? [],
+      until: 'permanent',
+      change: { kind: 'control', seat },
+    });
+  }
+  const changed = controlChanges(
+    { ...next, continuousEffects: [...next.continuousEffects, ...effects] },
+    before,
+  );
+  return done(changed.state, changed.events);
+}
+
+/**
  * Runs `exchangeControl` (CR 701.12a, 701.12b, 613.1b, 611.2a; Galadriel group 3): the two permanents swap controllers. The whole exchange is made or none of it: both selectors must
  * name a permanent on the battlefield, and two different players must control them (CR 701.12b: "if those permanents are controlled by the same player, the exchange effect does
  * nothing"). Each player gains control of the permanent the other controlled as the exchange begins, at the same moment: two layer 2 effects with no duration, made together (each

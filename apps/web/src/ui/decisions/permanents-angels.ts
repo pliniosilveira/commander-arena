@@ -197,7 +197,7 @@ export function angelsPermanentPrompt(
   if (isRingBearer(decision)) return ringBearerPrompt(decision, index);
   // D-370 (CR 701.47a): "Choose an Army creature you control".
   if (isAmass(decision)) return amassPrompt(decision, index);
-  // D-631 (CR 701.36a): "Choose a creature token you control" to copy.
+  // D-627 (CR 701.36a): "Choose a creature token you control".
   if (isPopulate(decision)) return populatePrompt(decision, index);
   // D-407 (CR 701.68a): "Blight 1", a cost that puts -1/-1 counters on a creature you control.
   if (isBlight(decision)) return blightPrompt(decision, index);

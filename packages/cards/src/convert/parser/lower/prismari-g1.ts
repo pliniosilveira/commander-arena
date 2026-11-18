@@ -16,13 +16,6 @@ const HASTE = { kind: 'keyword', keyword: { kind: 'haste' } } as const;
 /** The clause is about the tokens the instruction before made. */
 const aboutMadeTokens = (ctx: LowerContext): boolean => ctx.tokensMade;
 
-const POPULATE: Lowering<IrClause, Effects> = {
-  head: 'populate',
-  id: 'lower.populate',
-  needs: ['effect:populate'],
-  lower: (clause) => ({ ok: true, value: [{ kind: 'populate' }], rule: clause.rule }),
-};
-
 const GRANT_TO_MADE: Lowering<IrClause, Effects> = {
   head: 'grantKeywordToMade',
   id: 'lower.grant-keyword-to-made',
@@ -239,7 +232,6 @@ const BECOME_COPY_EXCEPT: Lowering<IrClause, Effects> = {
 };
 
 export const PRISMARI_G1_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
-  POPULATE,
   GRANT_TO_MADE,
   atEndStep('sacrifice'),
   atEndStep('exile'),

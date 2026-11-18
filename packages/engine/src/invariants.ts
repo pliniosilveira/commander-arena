@@ -126,6 +126,14 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(`${id} is attached but is not on the battlefield`);
       if (obj.attachedTo === obj.id) problems.push(`${id} is attached to itself`);
     }
+    // CR 303.4, 303.4d (D-629): an Aura that enchants a player is on the battlefield (or phased out), enchants a seat of the game, and is attached to no object.
+    if (obj.attachedToPlayer !== undefined) {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased')
+        problems.push(`${id} enchants a player but is not on the battlefield`);
+      if (state.seats[obj.attachedToPlayer] === undefined)
+        problems.push(`${id} enchants a player who is not in the game`);
+      if (obj.attachedTo !== null) problems.push(`${id} is attached to an object and a player`);
+    }
     for (const [counter, n] of Object.entries(obj.counters)) {
       if (n < 0) problems.push(`${id} has a negative ${counter} counter count`);
     }

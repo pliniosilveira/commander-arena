@@ -502,6 +502,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         who,
         atLeast: t.atLeast,
         ...(what === undefined ? {} : { what }),
+        ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
       });
     }
     case 'entersBatch': {
@@ -931,6 +932,9 @@ export function lowerTriggered(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  ctx.enchantedPlayerTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);

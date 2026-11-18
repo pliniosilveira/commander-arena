@@ -40,7 +40,7 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl } from './control-effects';
+import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -1393,6 +1393,10 @@ function runEffect(
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
 
+    case 'populate':
+      // CR 701.36 (D-627): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
+      return done(state, [], [{ kind: 'populate', chosen: null }]);
+
     case 'amass':
       // CR 701.47a (D-367): N is read now (CR 608.2h); the token, the choice of the Army and the counters come up as the instruction runs (rules/amass.ts).
       return done(
@@ -2336,7 +2340,11 @@ function runEffect(
           [],
           resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
             kind: 'search' as const,
-            search: effect,
+            // D-626 (CR 608.2c): "up to X" is read as the search begins.
+            search:
+              effect.maxAmount === undefined
+                ? effect
+                : { ...effect, max: Math.max(0, amountOf(state, effect.maxAmount, ctx, targets)) },
             seat,
             accepted: effect.optional === true ? null : true,
             chosen: null,
@@ -2538,6 +2546,10 @@ function runEffect(
     case 'gainControl':
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).
       return runGainControl(state, effect, ctx, targets);
+
+    case 'returnControlToOwners':
+      // CR 613.1b, 611.2a (D-628): one layer 2 effect for each owner (`rules/control-effects.ts`).
+      return runReturnControl(state, effect, ctx, targets);
 
     case 'exchangeControl':
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).

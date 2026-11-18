@@ -439,7 +439,15 @@ export function lowerAmount(
     case 'opponentsWithMore': {
       const blocked = needs('opponentsWithMore');
       if (blocked !== null) return blocked;
-      return { ok: true, value: { kind: 'opponentsWithMore', stat: amount.stat }, rule };
+      return {
+        ok: true,
+        value: {
+          kind: 'opponentsWithMore',
+          stat: amount.stat,
+          ...(amount.fewer === true ? { fewer: true as const } : {}),
+        },
+        rule,
+      };
     }
     case 'shortfall': {
       // CR 701.57 (stage P34, D-152): the limit less the mana value of the card an earlier instruction of this text found by exiling cards

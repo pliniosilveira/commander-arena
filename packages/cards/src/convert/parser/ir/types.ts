@@ -364,6 +364,8 @@ export interface IrFilter {
   readonly targetsHost?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
+  /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
+  readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /**
@@ -474,6 +476,7 @@ export type IrAmount =
   | {
       readonly kind: 'opponentsWithMore';
       readonly stat: 'life' | 'cardsInHand' | 'creatures' | 'lands';
+      readonly fewer?: true;
       readonly span: Span;
     }
   // "for each creature sacrificed this way", "for each opponent who drew a card this way": what an earlier
@@ -742,6 +745,8 @@ export type IrCost = IrNode &
     | { readonly kind: 'exileFromHand'; readonly what: IrNoun }
     // "Discard this card" (stage P68, D-229, CR 701.9, 113.6b): the card itself, from the hand; "Exile ~" (CR 118.1): the permanent itself
     | { readonly kind: 'discardThis' }
+    // "Discard your hand" (issue 160, D-626, CR 701.9): every card of the hand, none chosen
+    | { readonly kind: 'discardHand' }
     // "Reveal this card from your hand" (Gisa deck, group 4, D-462, CR 701.20a, 113.6b): the card itself is shown, from the hand
     | { readonly kind: 'revealThis' }
     | { readonly kind: 'exileThis' }
@@ -1171,6 +1176,8 @@ export interface IrTrigger extends IrNode {
    * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
    */
   readonly atLeast?: number;
+  /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
+  readonly attackedEnchantedPlayer?: true;
   /**
    * 'lifeGained': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.

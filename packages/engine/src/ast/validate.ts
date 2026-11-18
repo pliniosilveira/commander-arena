@@ -121,6 +121,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
       }
+      // D-629: "Enchant player": the Aura enchants a player; the filter of permanents says nothing then.
+      if (k.player !== undefined) {
+        if (k.player !== true) issue(out, `${path}.player`, 'player is true when present');
+        else if (k.filter !== undefined && k.filter !== null && Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
+      }
       break;
     case 'equip':
       // CR 702.6a: "[Cost]: Attach this permanent to target creature you control."

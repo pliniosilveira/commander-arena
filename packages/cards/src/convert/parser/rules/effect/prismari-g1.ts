@@ -1,7 +1,6 @@
 /**
  * Effect rules of group 1 of the Prismari deck (issue 87, D-630 to D-637): the tokens that are copies and the sentences about the tokens an instruction just made.
  *
- * - `effect.populate`: "populate" (CR 701.36a). The engine's `populate`.
  * - `effect.made-tokens-gain-keywords`, `effect.end-step-made-tokens`, `effect.leave-made-tokens`: "The token created this way gains haste.", "They gain haste.", "Sacrifice it at the
  *   beginning of the next end step.", "Exile them at the beginning of the next end step.", "sacrifice those tokens" (CR 603.7c, 400.7j): about the tokens the instruction before
  *   them made (`moved`), which the lowering checks (`ctx.tokensMade`); never about another object.
@@ -26,27 +25,6 @@ const BOUNDARY = '(?![\\p{L}\\p{N}])';
 /** Succeeds, reading nothing, when the text from here on is the end of the sentence (a period or the end of the text). */
 const endsSentence = (ctx: { text: string }, pos: number): boolean =>
   /^(?:\.|$)/u.test(ctx.text.slice(pos));
-
-/** `effect.populate`: "populate" (CR 701.36a). Not read: "populate" with anything after it. */
-export const EFFECT_POPULATE = defineRule<Clauses>({
-  id: 'effect.populate',
-  family: 'effect',
-  leading: ['populate'],
-  cites: ['CR 701.36a (Populate)', 'CR 701.36b (Populate)', 'CR 111.10 (Tokens)'],
-  examples: ['populate', 'Populate'],
-  rejects: [
-    'populates',
-    'populated',
-    'populate twice',
-    'populate a token',
-    'to populate',
-    'populating',
-  ],
-  parse: (ctx, pos) =>
-    map(spanned(pattern(new RegExp(`populate${BOUNDARY}`, 'iu'))), ({ span }) => [
-      makeClause('effect.populate', 'populate', {}, span),
-    ])(ctx, pos),
-});
 
 /**
  * `effect.made-tokens-gain-keywords`: "The token created this way gains haste.", "They gain haste.", "Those tokens gain flying and haste." (CR 611.2a, 613.1f: no duration, so it
@@ -568,7 +546,6 @@ export const EFFECT_BECOMES_COPY_EXCEPT_KEYWORD = defineRule<Clauses>({
 
 /** Quiet: a line these rules do not read stops where it always did. */
 export const PRISMARI_G1_EFFECT_RULES = [
-  quietly(EFFECT_POPULATE),
   quietly(EFFECT_MADE_TOKENS_GAIN_KEYWORDS),
   quietly(EFFECT_END_STEP_MADE_TOKENS),
   quietly(EFFECT_LEAVE_MADE_TOKENS),

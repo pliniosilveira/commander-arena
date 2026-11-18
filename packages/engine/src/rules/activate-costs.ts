@@ -57,6 +57,8 @@ export interface CostBreakdown {
   readonly cycling: boolean;
   /** How many cards to discard from the hand, chosen by the player (CR 701.9, D-095); 0 for none. */
   readonly discard: number;
+  /** "Discard your hand" (D-626, CR 701.9): every card of the hand goes, none chosen; `discard` is 0 then. */
+  readonly discardHand: boolean;
   /** "Discard a legendary card" / "another card named ~" (D-207): what narrows the cards that may be discarded, or null for any. */
   readonly discardOf: Pick<Extract<Cost, { kind: 'discard' }>, 'filter' | 'named'> | null;
   /** The mana symbols of every `mana` cost, in order. */
@@ -98,6 +100,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let cycling = false;
   let discard = 0;
   let discards = 0;
+  let discardHand = false;
   let discardOf: CostBreakdown['discardOf'] = null;
   let sacrifice: CostBreakdown['sacrifice'] = null;
   let sacrificeCount = 1;
@@ -163,6 +166,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'discard':
         discards += 1;
         discard += cost.count;
+        if (cost.hand === true) discardHand = true;
         if (cost.filter !== undefined || cost.named !== undefined) {
           discardOf = {
             ...(cost.filter === undefined ? {} : { filter: cost.filter }),
@@ -216,9 +220,10 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   if (tapCreatures !== null && (mana.length > 0 || sacrifice !== null || discard > 0)) return null;
   // D-407: the creature to blight is chosen after the permanents to tap and before the sacrifice, which a crew cost (its creatures are chosen last, alone) has no place for.
   if (blight > 0 && tapCreatures !== null) return null;
-  // D-133: the permanents to tap are chosen before the sacrifice and the discard, and could have been tapped for mana first,
-  // so a tap cost is not combined with mana (or with a crew cost).
-  if (tapPermanents !== null && (mana.length > 0 || tapCreatures !== null)) return null;
+  // D-133: the permanents to tap are chosen before the sacrifice and the discard, so a tap cost is not combined with a crew cost.
+  // D-625: next to a mana cost they are chosen before the mana is paid (CR 601.2h: the costs are paid in the order the player likes), so
+  // the mana is paid from the sources that are still untapped.
+  if (tapPermanents !== null && tapCreatures !== null) return null;
   return {
     tap,
     life,
@@ -231,6 +236,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     mill,
     cycling,
     discard,
+    discardHand,
     discardOf,
     mana,
     sacrifice,

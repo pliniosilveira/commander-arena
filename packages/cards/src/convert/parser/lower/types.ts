@@ -94,6 +94,8 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
+  /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
+  enchantedPlayerTrigger: boolean;
   /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
    * sentence are lowered, an X in them is this amount, written into each slot that says X. `used` is set when a slot
@@ -278,6 +280,7 @@ export function newContext(
     lastToken: null,
     lowered: 0,
     thatPlayer: null,
+    enchantedPlayerTrigger: false,
     xIs: null,
     xDefined: false,
     exiled: null,

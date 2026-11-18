@@ -369,6 +369,8 @@ describe('supported feature gate', () => {
       'payLife',
       // Group 4 of the Vraska deck: "{T}, Mill a card" (Millikin).
       'mill',
+      // D-625: "{T}, Tap an untapped creature you control: Add one mana of any color" (Jaspera Sentinel, Holdout Settlement).
+      'tapPermanents',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

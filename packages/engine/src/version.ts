@@ -30,4 +30,10 @@
 // 128: Activate emblem abilities from the command zone (D-606).
 // 129: Lock a player's life total and grant temporary protection from everything (D-607).
 // 130: Lorehold Spirit deck: discard in a payment, batch discard trigger, cast-only and free play permissions from exile, linked exile filter, damage to itself, a search counted for "this way" and the repeat of an offered search, a free cast from exile that ends on the bottom of the library, a hand-size condition over every player, discard of a whole hand (D-610 to D-624, issue 86).
-export const ENGINE_VERSION = 130;
+// 131: Pay a cost that taps an untapped permanent before the mana of the same cost, and in a mana ability (D-625, issue 160).
+// 132: Count the opponents with fewer of a stat, discard the whole hand as a cost and search for up to an amount of cards (D-626, issue 160).
+// 133: Populate, the choice of a creature token to copy (D-627, issue 160).
+// 134: Give every creature back to its owner as layer 2 effects (D-628, issue 160).
+// 135: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-629, issue 160).
+// 136: Prismari Artistry deck (issue 87): token copies and the token a populate made, strive, copy-and-cast, free casts from exile and from piles, retrace and demonstrate, spells' mana values, mana that stays, flashback with life (D-630 to D-661).
+export const ENGINE_VERSION = 136;

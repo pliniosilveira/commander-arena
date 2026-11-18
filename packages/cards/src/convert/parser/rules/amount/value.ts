@@ -241,7 +241,7 @@ const STAT_OF =
   };
 
 const MANA_VALUE_OF_HEAD =
-  /(its|that (?:creature|permanent|card|spell)['’]s) mana value(?![\p{L}\p{N}])/iu;
+  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s) mana value(?![\p{L}\p{N}])/iu;
 
 /** "its mana value", "that card's mana value" (CR 202.3). */
 const MANA_VALUE_OF =
@@ -255,6 +255,25 @@ const MANA_VALUE_OF =
       value: { kind: 'manaValueOf', of, span: { start: pos, end: m.pos } },
       pos: m.pos,
     };
+  };
+
+/** "your life total" (CR 119.1: a player's life total, read as the instruction runs; D-626). */
+const LIFE_TOTAL =
+  (rule: string): Parser<IrAmount> =>
+  (ctx, pos) => {
+    const r = spanned(pattern(/your life total(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: r.value.span,
+      rule,
+    };
+    return { ok: true, value: { kind: 'lifeTotalOf', of, span: r.value.span }, pos: r.pos };
   };
 
 /** One number read from the game: what "plus", "half" and "twice" combine. */
@@ -271,6 +290,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),
+    LIFE_TOTAL(rule),
     // Stage P39 (D-184): "the amount of mana spent to cast it".
     MANA_SPENT_AMOUNT,
     // Stage P68 (D-230): "the amount of damage ~ dealt to that player".
@@ -536,6 +556,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'X is the number of Zombies you control',
     'where X is the amount of mana spent',
     'where X is the mana spent to cast it',
+    'where X is your life',
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);
@@ -587,28 +608,42 @@ export const AMOUNT_FOR_EACH_OPPONENT = defineRule<IrAmount>({
     'for each opponent who has more cards in hand than you',
     'for each opponent who has more life than you',
     'for each opponent who controls more creatures than you',
+    // Issue 160 (D-626): the opponents with less.
+    'for each opponent who controls fewer creatures than you',
+    'for each opponent who has fewer cards in hand than you',
   ],
   rejects: [
     'for each opponent',
     'for each opponent who has more cards in hand',
     'for each opponent who has more cards in hand than each other player',
-    'for each opponent who has fewer cards in hand than you',
     'for each opponent who has more lands than you',
+    'for each opponent who has fewer lands than you',
     'for each player who has more life than you',
     'for each opponent who controls more creatures',
+    'for each opponent who has more creatures than you',
+    'for each opponent who controls more life than you',
   ],
   parse: (ctx, pos) => {
     const r = spanned(
       pattern(
-        /for each opponent who (?:has more (life|cards in hand)|controls more (creatures)) than you(?![\p{L}\p{N}])/iu,
+        /for each opponent who (?:(?:has|controls) (more|fewer) (life|cards in hand|creatures)) than you(?![\p{L}\p{N}])/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const word = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
+    const word = (r.value.value[2] ?? '').toLowerCase();
+    const fewer = (r.value.value[1] ?? '').toLowerCase() === 'fewer';
+    // "has more life", "has more cards in hand", "controls more creatures" (and "fewer"): the verb goes with its stat.
+    const verb = /(has|controls)/i.exec(r.value.value[0] ?? '')?.[1]?.toLowerCase();
+    if ((word === 'creatures') !== (verb === 'controls')) return fail(ctx, pos);
     const stat = word === 'life' ? 'life' : word === 'creatures' ? 'creatures' : 'cardsInHand';
     return {
       ok: true,
-      value: { kind: 'opponentsWithMore', stat, span: r.value.span },
+      value: {
+        kind: 'opponentsWithMore',
+        stat,
+        ...(fewer ? { fewer: true as const } : {}),
+        span: r.value.span,
+      },
       pos: r.pos,
     };
   },

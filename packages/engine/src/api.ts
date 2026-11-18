@@ -164,7 +164,8 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         o.abilityIndex === action.abilityIndex &&
         sameColor(o.color, action.color) &&
         sameChoice(o.combination, action.combination) &&
-        o.sacrifice === action.sacrifice
+        o.sacrifice === action.sacrifice &&
+        o.tapped === action.tapped
       );
     }
     // A cast and a flashback cast of the same object are different plays (CR 118.9a), and so are
@@ -741,6 +742,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.color,
             action.combination ?? null,
             action.sacrifice,
+            action.tapped,
           );
           if ('error' in why) return fail(`That is not a legal play now. ${why.error}`);
         }
@@ -773,6 +775,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.color,
             action.combination ?? null,
             action.sacrifice,
+            action.tapped,
           );
           if ('error' in r) return fail(r.error);
           const next = {

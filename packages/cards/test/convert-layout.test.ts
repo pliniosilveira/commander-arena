@@ -99,11 +99,7 @@ describe('what the engine reports about a split card, as the player is told it',
 
   test('a half the grammar cannot read makes the card unsupported, naming the face', () => {
     const imported = parse(
-      multi(
-        'split',
-        [singe, { ...mend, oracleText: 'Venture into the dungeon, then draw a card.' }],
-        ['W', 'R'],
-      ),
+      multi('split', [singe, { ...mend, oracleText: 'Learn, then draw a card.' }], ['W', 'R']),
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed.map((u) => u.face)).toEqual([1]);

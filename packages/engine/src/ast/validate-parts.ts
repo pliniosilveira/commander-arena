@@ -1609,6 +1609,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(a.stat, PLAYER_STATS)) {
         issue(out, `${path}.stat`, `unknown player stat ${JSON.stringify(a.stat)}`);
       }
+      if (a.fewer !== undefined && a.fewer !== true) {
+        issue(out, `${path}.fewer`, 'fewer is true when present');
+      }
       break;
     case 'timesKicked':
       // D-110: the card must have a kicker or multikicker (`checkCastFace`).
@@ -2141,6 +2144,18 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       }
       break;
     case 'discard':
+      if (cost.hand !== undefined) {
+        // D-626: "Discard your hand": the whole hand, so no count, filter or name narrows it.
+        if (
+          cost.hand !== true ||
+          cost.count !== 0 ||
+          cost.filter !== undefined ||
+          cost.named !== undefined
+        ) {
+          issue(out, `${path}.hand`, 'hand is true, with a count of 0 and no filter or name');
+        }
+        break;
+      }
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'discard count must be a positive integer');
       }
@@ -3277,6 +3292,22 @@ function checkSearch(
   if (!isCount(e.max) || e.max < 1) {
     issue(out, `${path}.max`, 'max must be a positive integer');
   }
+  // D-626: "up to X": an amount read as the search begins; the cards found all go to one place.
+  if (e.maxAmount !== undefined) {
+    checkAmount(e.maxAmount, `${path}.maxAmount`, scope, out);
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.maxAmount`,
+        "a search for up to an amount has a max of 1 (unread), one destination of 'rest' and no shared land type",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {
@@ -3914,6 +3945,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'returnControlToOwners':
+      // CR 613.1b (D-628): a group, a target or the permanent with the ability.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'exchangeControl': {
       // CR 701.12a (Galadriel group 3): two permanents, each the permanent with the ability or a target; never the same one twice.
       const sides = [
@@ -4327,6 +4362,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'Empower Jace puts a positive whole number of loyalty counters',
         );
       }
+      break;
+    case 'populate':
+      // CR 701.36 (D-627): no fields.
       break;
     case 'amass':
       // CR 701.47a (D-367): N +1/+1 counters and the creature type of the token and of the change; the type is a creature type (an Army is a creature).

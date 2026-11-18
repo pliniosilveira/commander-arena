@@ -46,6 +46,13 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       if (!isCount(t.atLeast) || t.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast is a whole number of 1 or more');
       }
+      if (t.attackedEnchantedPlayer !== undefined && t.attackedEnchantedPlayer !== true) {
+        issue(
+          out,
+          `${path}.attackedEnchantedPlayer`,
+          'attackedEnchantedPlayer is true when present',
+        );
+      }
       if (t.what !== undefined) {
         checkFilter(t.what, `${path}.what`, out);
         if (

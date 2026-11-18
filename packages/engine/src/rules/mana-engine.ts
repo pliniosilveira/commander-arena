@@ -28,11 +28,13 @@ import {
   manaAbilitiesOf,
   manaCostSymbols,
   manaSacrificeCandidates,
+  manaTapCandidates,
   outcomeColor,
   payManaAbilityCosts,
   physicalRefusal,
   sacrificeFilterOf,
   showCost,
+  tapFilterOf,
 } from './mana-abilities';
 import {
   isCombinationProduction,
@@ -185,6 +187,8 @@ export function activateManaAbility(
   combination: readonly ManaColor[] | null = null,
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-216, D-222): required when the player has more than one to give up. */
   sacrifice?: ObjectId,
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-625): required when the player has more than one to tap. */
+  tapped?: ObjectId,
 ): ActivationResult {
   // A source that does not exist (a stale or invented id in a payManual action) is an illegal
   // action, which the caller answers with an error; it must not throw.
@@ -204,6 +208,16 @@ export function activateManaAbility(
     }
     if (sacrifice === undefined && legal.length > 1) {
       return refuse(`Choose which permanent to sacrifice for ${name}`);
+    }
+  }
+  // CR 601.2b, 605.3b (D-625): the player chooses the permanent a cost "Tap an untapped creature you control" taps, as for a sacrifice.
+  if (tapFilterOf(found.ability) !== null) {
+    const legal = manaTapCandidates(state, seat, source, found.ability);
+    if (tapped !== undefined && !legal.includes(tapped)) {
+      return refuse(`${name} cannot tap that permanent`);
+    }
+    if (tapped === undefined && legal.length > 1) {
+      return refuse(`Choose which permanent to tap for ${name}`);
     }
   }
   const picked = pickOutcome(
@@ -231,7 +245,7 @@ export function activateManaAbility(
       manaPool: getSeat(working, seat).manaPool.filter((_, i) => !spent.has(i)),
     });
   }
-  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice);
+  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice, tapped);
   // CR 605.4a (D-139): the triggered mana abilities of "whenever you tap a permanent for {C}" resolve at once, into the same pool.
   const extra = additionalManaFor(working, obj, found.ability, chosen);
   const made = [...chosen, ...extra];
@@ -292,7 +306,16 @@ export function applyPaymentPlan(
       ? manaAbilitiesOf(next, obj).find((m) => m.abilityIndex === tap.abilityIndex)?.ability
       : undefined;
     if (!ability) continue;
-    const paid = payManaAbilityCosts(next, seat, tap.object, ability);
+    // D-625: a cost "Tap an untapped creature you control" leaves alone the other sources of the plan, which are tapped for their mana.
+    const paid = payManaAbilityCosts(
+      next,
+      seat,
+      tap.object,
+      ability,
+      undefined,
+      undefined,
+      new Set(plan.taps.map((t) => t.object)),
+    );
     next = paid.state;
     events.push(...paid.events);
     // D-151: mana of a source that was tapped for this payment and not left over was spent on it, with what it carries.
