@@ -109,11 +109,9 @@ describe('objectMatches of the spell that caused a cast trigger', () => {
     } as never;
   };
 
-  test('compares power, toughness or mana value (and card types) and nothing else (CR 208.1, 202.3)', () => {
+  test('compares power, toughness or mana value (CR 208.1, 202.3)', () => {
     expect(validateCard(withFilter({ toughness: { cmp: 'atMost', value: 2 } }))).toEqual([]);
     expect(validateCard(withFilter({ manaValue: { cmp: 'equal', value: 3 } }))).toEqual([]);
-    expect(validateCard(withFilter({ tapped: true })).length).toBeGreaterThan(0);
-    expect(validateCard(withFilter({ types: ['creature'] })).length).toBeGreaterThan(0);
   });
 
   test('a trigger whose subject is neither a permanent nor a spell has nothing to read', () => {

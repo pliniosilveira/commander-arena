@@ -401,7 +401,7 @@ export const CONDITION_OPPONENT_CONTROLS_AT_LEAST = defineRule<IrCondition>({
 });
 
 /**
- * `condition.that-spells-stat`: "that spell's power is 4 or greater", "that spell's toughness is 2 or less", "that spell's mana value is 5 or greater" (CR 208.1, 202.3,
+ * `condition.that-spells-stat`: "that spell's power is 4 or greater", "that spell's toughness is 2 or less" (CR 208.1, 202.3,
  * 608.2c: the power, toughness or mana value of a spell as it is on the stack, which a cast trigger reads when it resolves; a spell that is not a creature spell has
  * no power or toughness and fails the comparison). "That spell" is the spell that caused a cast trigger, which the lowering reads as the engine's `objectMatches` of
  * the `triggerSubject`. Not read: an exact value, "more" and "fewer", another possessor, "was" and the lack of a number.
@@ -419,8 +419,6 @@ export const CONDITION_THAT_SPELLS_STAT = defineRule<IrCondition>({
     "that spell's power is 4 or greater",
     'that spell’s power is 6 or greater',
     "that spell's toughness is 2 or less",
-    "that spell's mana value is 5 or greater",
-    "that spell's mana value is 0 or less",
   ],
   rejects: [
     "that spell's power is 4",
@@ -432,12 +430,12 @@ export const CONDITION_THAT_SPELLS_STAT = defineRule<IrCondition>({
     "that creature's power is 4 or greater",
     'that spells power is 4 or greater',
     "that spell's power is 4 or greater or less",
-    "that spell's mana is 4 or greater",
+    "that spell's mana value is 5 or greater",
     'its power is 4 or greater',
   ],
   parse: (ctx, pos) => {
     const r = pattern(
-      /that spell['’]s (power|toughness|mana value) is (\d+) or (greater|less)(?![\p{L}\p{N}])/iu,
+      /that spell['’]s (power|toughness) is (\d+) or (greater|less)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!r.ok) return r;
     const value = Number(r.value[2]);
@@ -460,7 +458,6 @@ export const CONDITION_THAT_SPELLS_STAT = defineRule<IrCondition>({
     const filter: IrFilter = {
       ...(stat === 'power' ? { power: comparison } : {}),
       ...(stat === 'toughness' ? { toughness: comparison } : {}),
-      ...(stat === 'mana value' ? { manaValue: comparison } : {}),
       raw: r.value[0],
     };
     return {

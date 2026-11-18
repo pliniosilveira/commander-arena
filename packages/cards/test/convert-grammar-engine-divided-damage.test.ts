@@ -1,5 +1,5 @@
 // Damage divided as an ability is put on the stack, and cast triggers that read the spell that caused them: the REAL Oracle text of Dragonlord Atarka, Skarrgan Hellkite,
-// Hammerhead Tyrant and Eshki, Temur's Roar (divided-damage-cards.jsonl, the cards of a deck support issue) goes through the grammar as a card with no override, is
+// Hammerhead Tyrant and Eshki, Temur's Roar (golden.jsonl, the cards of a deck support issue) goes through the grammar as a card with no override, is
 // defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 601.2d,
 // 602.2b and 603.3d (the division is announced with the targets, each target gets at least 1), CR 115.1 (any number of targets, one or two), CR 602.5b ("Activate
 // only if"), CR 702.136a (Riot), CR 202.3 and 603.3 (the mana value of the spell that caused the trigger), CR 208.1 and 608.2c (its power, as the instruction comes up).
