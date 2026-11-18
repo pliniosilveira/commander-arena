@@ -3078,6 +3078,12 @@ export type Effect =
       readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
       readonly anyManaType?: true;
       readonly exileInstead?: true;
+      /**
+       * "You may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost" (CR 608.2g, 118.9): the spell is cast without paying its mana cost
+       * (its additional costs, and the costs of the modes it must choose, are still paid, as for `castFree`). `object` may name a slot of several targets (one for each opponent,
+       * `TargetSpec.onePerOpponent`): each card still a legal target is asked about, and cast, in the order the targets were chosen. Not with `anyManaType`.
+       */
+      readonly free?: true;
     }
   /**
    * CR 701.14 (Fight, D-145): each creature in `fighters` fights a creature in `against`: the two deal damage equal to their own power to

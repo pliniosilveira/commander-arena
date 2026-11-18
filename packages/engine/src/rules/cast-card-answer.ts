@@ -50,10 +50,17 @@ export function acceptCastCard(state: GameState): Result {
   const a = asking(state);
   const res = state.resolution;
   if (a === null || res === null) return fail('Nothing is asking');
-  const begun = beginCast(state, res.controller, a.head.card, undefined, 0, true, false, {
-    anyManaType: a.head.anyManaType,
-    exileInstead: a.head.exileInstead,
-  });
+  // CR 118.9 (`free`): "without paying its mana cost" is the free cast of the effect; otherwise the card's mana cost is paid.
+  const begun = beginCast(
+    state,
+    res.controller,
+    a.head.card,
+    a.head.free === true ? 'free' : undefined,
+    0,
+    true,
+    false,
+    { anyManaType: a.head.anyManaType, exileInstead: a.head.exileInstead },
+  );
   if (!begun.ok) return begun;
   const resolving = begun.state.resolution;
   if (resolving === null) return fail('The resolution is gone');

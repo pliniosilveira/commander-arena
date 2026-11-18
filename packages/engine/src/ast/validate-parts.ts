@@ -5063,6 +5063,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.exileInstead !== undefined && e.exileInstead !== true) {
         issue(out, `${path}.exileInstead`, 'exileInstead must be true when present');
       }
+      if (e.free !== undefined && e.free !== true) {
+        issue(out, `${path}.free`, 'free must be true when present');
+      }
+      if (e.free === true && e.anyManaType === true) {
+        issue(
+          out,
+          `${path}.free`,
+          'a spell cast without paying its mana cost has no mana to spend',
+        );
+      }
       break;
     case 'fight':
       // CR 701.14 (D-145): creatures fight. Without a pairing each side is one creature; with `differentChosen` the group on the

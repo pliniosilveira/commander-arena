@@ -45,6 +45,8 @@ export interface SlotPlan {
    * even ask about it).
    */
   readonly cast?: true;
+  /** "... without paying its mana cost" (`castCard.free`): the card is cast for nothing, so the mana at hand is no limit, and the dearest card is the best. */
+  readonly free?: true;
 }
 
 /** The triggered ability on the stack that this targets decision is for, when it is one. */
@@ -132,7 +134,13 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
     case 'castCard':
       // The mana is read from the view where the slot is scored (`manaAvailable`), as the ability goes on the stack.
       return isTarget(effect.object, id)
-        ? { stance: 'help', damage: null, untap: false, cast: true }
+        ? {
+            stance: 'help',
+            damage: null,
+            untap: false,
+            cast: true,
+            ...(effect.free === true ? { free: true as const } : {}),
+          }
         : null;
     default:
       return null;
@@ -141,7 +149,7 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
 
 /** How much the agent wants to choose `t` for a slot with this plan; below 0 means "avoid". */
 function score(view: GameView, t: ChosenTarget, plan: SlotPlan): number {
-  if (plan.cast !== undefined) return scoreCast(view, t);
+  if (plan.cast !== undefined) return scoreCast(view, t, plan.free === true);
   const wantsOpponent = plan.stance === 'harm';
   if (t.kind === 'player') return (t.seat !== view.viewer) === wantsOpponent ? 3 : -1;
   const o = findObject(view, t.id);
@@ -171,12 +179,12 @@ function manaAvailable(view: GameView): number {
 }
 
 /** D-350: the card to cast from a graveyard: the most expensive one that fits the mana at hand scores highest (whoever owns it); one that does not fit scores 0. */
-function scoreCast(view: GameView, t: ChosenTarget): number {
+function scoreCast(view: GameView, t: ChosenTarget, free: boolean): number {
   if (t.kind !== 'object') return -1;
   const o = findObject(view, t.id);
   if (o === undefined) return -1;
   const value = manaValueOf(o);
-  return value <= manaAvailable(view) ? 1 + value / 100 : 0;
+  return free || value <= manaAvailable(view) ? 1 + value / 100 : 0;
 }
 
 /**

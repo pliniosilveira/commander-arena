@@ -139,6 +139,7 @@ import { SYNTHETIC_POPULATE_LIST } from './synthetic-populate';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
 import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
+import { SYNTHETIC_PRIMORDIAL_LIST } from './synthetic-primordial';
 import { SYNTHETIC_PRISMARI_G1_LIST } from './synthetic-prismari-g1';
 import { SYNTHETIC_PRISMARI_G2_LIST } from './synthetic-prismari-g2';
 import { SYNTHETIC_PRISMARI_G3_LIST } from './synthetic-prismari-g3';
@@ -419,6 +420,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_NIV_GROUP_3_A_LIST,
   ...SYNTHETIC_NIV_GROUP_3_B_LIST,
   ...SYNTHETIC_NIV_GROUP_3_C_LIST,
+  ...SYNTHETIC_PRIMORDIAL_LIST,
   ...SYNTHETIC_HASHATON_G6_LIST,
   ...SYNTHETIC_HASHATON_G5_LIST,
   ...SYNTHETIC_EMBALM_LIST,

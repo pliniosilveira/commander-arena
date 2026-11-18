@@ -2333,20 +2333,20 @@ function runEffect(
 
     case 'castCard': {
       // CR 608.2g, 608.2b (D-350): "you may cast target [card] from a graveyard": the target, if it is still a legal one (rules/cast-card.ts).
-      const [card] = resolveObjects(state, effect.object, ctx, targets);
-      if (card === undefined) return done(state);
+      // A slot of several targets (one for each opponent) is asked about card by card, in the order the targets were chosen (CR 608.2g).
+      const cards = resolveObjects(state, effect.object, ctx, targets);
+      if (cards.length === 0) return done(state);
       return done(
         state,
         [],
-        [
-          {
-            kind: 'castCard',
-            stage: 'start',
-            card,
-            anyManaType: effect.anyManaType === true,
-            exileInstead: effect.exileInstead === true,
-          },
-        ],
+        cards.map((card) => ({
+          kind: 'castCard' as const,
+          stage: 'start' as const,
+          card,
+          anyManaType: effect.anyManaType === true,
+          exileInstead: effect.exileInstead === true,
+          ...(effect.free === true ? { free: true } : {}),
+        })),
       );
     }
 
