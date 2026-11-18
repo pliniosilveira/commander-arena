@@ -821,6 +821,7 @@ describe('unmatched abilities', () => {
       'amount.mana-value-of',
       'amount.life-lost-this-way',
       'amount.milled-value-this-way',
+      'amount.damage-dealt-this-way',
       'amount.for-each-and-each',
       'amount.for-each',
       'amount.number-of',

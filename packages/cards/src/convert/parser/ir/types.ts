@@ -465,7 +465,8 @@ export type IrAmount =
         | 'destroyedOwnNontoken'
         | 'playersDrew'
         | 'tapped'
-        | 'milledValue';
+        | 'milledValue'
+        | 'damageDealt';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
       /** "that many" (stage P30): the number of whatever the instruction before it did, whichever words the text uses. */

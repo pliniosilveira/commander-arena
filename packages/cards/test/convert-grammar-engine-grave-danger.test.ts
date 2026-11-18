@@ -233,3 +233,35 @@ describe('Unbreathing Horde: "enters with a +1/+1 counter ... for each other Zom
     g.expect.invariants();
   });
 });
+
+describe('Enter the God-Eternals: "deals 4 damage to target creature and you gain life equal to the damage dealt this way. Target player mills four cards. Amass Zombies 4."', () => {
+  const spell = real('Enter the God-Eternals');
+  const start = (theirs: readonly string[]) =>
+    scenario()
+      .define(spell)
+      .seat(0)
+      .life(20)
+      .library(...LIBRARY)
+      .hand(spell.name)
+      .battlefield('Island', 'Island', 'Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(...theirs)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(spell)).toEqual([]);
+  });
+
+  test('4 damage to the creature, 4 life, four cards milled and a 4/4 Zombie Army (CR 701.47, 120.3)', () => {
+    const g = start([BEARS]);
+    g.act(0).cast(spell.name, { targets: [BEARS, { player: 1 }], pay: true });
+    g.passAll();
+    g.expect.life(0, 24);
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    expect(g.find({ name: 'Zombie Army', zone: 'battlefield' })).toHaveLength(1);
+    g.expect.counters('Zombie Army', { '+1/+1': 4 });
+    g.expect.invariants();
+  });
+});

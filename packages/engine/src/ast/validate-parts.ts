@@ -1256,6 +1256,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedCreature: 'a discard effect',
   discardedNoncreature: 'a discard effect',
   discardedInstantOrSorcery: 'a discard effect',
+  damageDealt: 'a dealDamage effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1273,6 +1274,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'discard')
     return ['discarded', 'discardedCreature', 'discardedNoncreature', 'discardedInstantOrSorcery'];
   if (e?.kind === 'mill') return ['milledValue'];
+  if (e?.kind === 'dealDamage') return ['damageDealt'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
   if (e?.kind === 'playersMay') return thisWayProduced(e.effect);
   return [];

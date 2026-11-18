@@ -251,6 +251,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 discardedInstantOrSorcery:
                   (res.thisWay?.discardedInstantOrSorcery ?? 0) +
                   (out.thisWay.discardedInstantOrSorcery ?? 0),
+                damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),

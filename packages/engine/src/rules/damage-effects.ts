@@ -107,7 +107,9 @@ export function runDealDamage(
     next = r.state;
     events.push(...r.events);
   }
-  return done(next, events);
+  // Issue 159: "you gain life equal to the damage dealt this way" reads the damage that was dealt, after prevention (CR 615.6).
+  const dealt = events.reduce((n, e) => (e.kind === 'damageDealt' ? n + e.amount : n), 0);
+  return { ...done(next, events), ...(dealt > 0 ? { thisWay: { damageDealt: dealt } } : {}) };
 }
 
 /** The shares of a divided spell (CR 601.2d, 608.2b, D-145): each target still legal is dealt the share the caster gave it, by the spell. */

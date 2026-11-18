@@ -158,6 +158,9 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'damageDealt':
+      // Issue 159: "equal to the damage dealt this way".
+      return 'the damage dealt this way';
   }
 }
 

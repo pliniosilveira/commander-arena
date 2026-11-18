@@ -1164,6 +1164,9 @@ function countsWhatHappened(
     case 'tapped':
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
+    case 'damageDealt':
+      // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
+      return earlier.verb === 'dealDamage';
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
