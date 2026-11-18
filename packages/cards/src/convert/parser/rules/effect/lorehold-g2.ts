@@ -6,7 +6,7 @@
 import { literal, optional, pattern, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
-import { defineRule, family, spanned } from '../registry';
+import { defineRule, family, quietly, spanned } from '../registry';
 import { flag } from './dragons';
 import { type Clauses, single } from './operands';
 
@@ -80,4 +80,5 @@ export const EFFECT_CAST_EXILED_WITH_SELF = defineRule<Clauses>({
   ),
 });
 
-export const LOREHOLD_G2_EFFECT_RULES = [EFFECT_CAST_EXILED_WITH_SELF];
+/** Quiet: it starts like "choose ...", and must leave the diagnostics of the lines it does not read where they were. */
+export const LOREHOLD_G2_EFFECT_RULES = [quietly(EFFECT_CAST_EXILED_WITH_SELF)];
