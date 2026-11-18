@@ -116,6 +116,7 @@ import {
 import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
+import { PRIMORDIAL_EFFECT_RULES } from './primordial';
 import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
@@ -1001,6 +1002,8 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
+  ...PRIMORDIAL_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
