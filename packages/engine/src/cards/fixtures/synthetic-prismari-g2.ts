@@ -283,4 +283,24 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
       effect: { kind: 'draw', player: { kind: 'target', id: 't1' }, count: 2 },
     },
   }),
+  // "Flash\nFlying\nThis creature can block only creatures with flying."
+  singleFace({
+    name: 'SYNTHETIC Skittish Borrower',
+    manaCost: ['1', 'U', 'U'],
+    types: ['creature'],
+    subtypes: ['Faerie', 'Rogue'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 3,
+    toughness: 1,
+    oracleText: 'Flash\nFlying\nThis creature can block only creatures with flying.',
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'flash' } },
+      FLYING,
+      {
+        kind: 'static',
+        static: { kind: 'restriction', subject: { kind: 'this' }, restriction: 'canBlockOnlyFlying' },
+      },
+    ],
+  }),
 ];

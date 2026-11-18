@@ -3383,6 +3383,8 @@ export type Trigger =
  * - `cantBlock`: it can't block (CR 509.1b);
  * - `cantAttack`: it can't attack (CR 508.1a, D-145);
  * - `cantBeBlocked`: it can't be blocked (CR 509.1b, an evasion restriction);
+ * - `canBlockOnlyFlying`: it can block only creatures with flying (CR 509.1b, D-634: "This creature can block only creatures with flying"; flying, not reach: a creature with reach
+ *   that does not fly is not one it can block);
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -3399,6 +3401,7 @@ export type Restriction =
   | 'cantBlock'
   | 'cantAttack'
   | 'cantBeBlocked'
+  | 'canBlockOnlyFlying'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
   | 'mustBlock'

@@ -1087,6 +1087,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // D-634: "This creature can block only creatures with flying."
+  'canBlockOnlyFlying',
   'cantBeBlockedByMoreThanOne',
   'attacksEachCombat',
   'mustBeBlocked',
