@@ -2671,19 +2671,10 @@
     "655ee0db-1913-464f-bd06-072c6bf446bd": {
       "name": "Dirgur Focusmage // Braingeyser",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever you cast an instant or sorcery spell with mana value 5 or greater from your hand, ~ becomes prepared.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "124215b0"
+      "ast": "b5d13efb"
     },
     "65756e6d-9825-4ed6-91c4-79f1e3bd4ae5": {
       "name": "Supernatural Stamina",
@@ -3196,19 +3187,10 @@
     "792c4d38-41e6-49eb-bd4e-de0a5ac8330f": {
       "name": "Redoubled Stormsinger",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ attacks, for each creature token you control that entered this turn, create a tapped and attacking token that's a copy of that token. At the beginning of the next end step, sacrifice those tokens.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d7e8dfbd"
+      "ast": "72a49612"
     },
     "79bc2c6d-b03d-4ceb-b468-293378ec73ae": {
       "name": "Midnight Tilling",
@@ -3563,27 +3545,10 @@
     "83cf1169-5853-4332-b897-7b17d72d76ab": {
       "name": "Twinflame",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~ costs {2}{R} more to cast for each target beyond the first.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.self-cost-reduction"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Choose any number of target creatures you control. For each of them, create a token that's a copy of that creature, except it has haste. Exile those tokens at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "bc9a81f6"
+      "ast": "0a13d3ed"
     },
     "84275aab-f718-4896-b61c-63bf49fb483b": {
       "name": "Merchant of Truth",
@@ -4088,19 +4053,10 @@
     "9a8f6e5e-6cde-49df-861c-a26cb09c9b12": {
       "name": "Muddle, the Ever-Changing",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you cast an instant or sorcery spell, ~ becomes a copy of up to one target nonlegendary creature you control until end of turn, except it has myriad.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.becomes"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "67f0a831"
+      "ast": "b9062661"
     },
     "9aace0d3-89e6-4254-b96f-ee3a878f2f91": {
       "name": "Conqueror's Flail",
@@ -4460,19 +4416,10 @@
     "a7ac5d98-805e-4212-be94-333a0c0c44a7": {
       "name": "Brudiclad, Telchor Engineer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of combat on your turn, create a 2/1 blue Phyrexian Myr artifact creature token. Then you may choose a token you control. If you do, each other token you control becomes a copy of that token.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c7f92777"
+      "ast": "d7b5fa8f"
     },
     "a7c6c9b3-91f2-4ecf-b2b0-b0edd96974d9": {
       "name": "Zul Ashur, Lich Lord",
@@ -4977,19 +4924,10 @@
     "be4f47e9-1bd2-4aa9-bc85-3f203ad21639": {
       "name": "Rionya, Fire Dancer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of combat on your turn, create X tokens that are copies of another target creature you control, where X is one plus the number of instant and sorcery spells you've cast this turn. They gain haste. Exile them at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.predefined"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "526af87c"
+      "ast": "4e265a4c"
     },
     "bea3ff6e-7649-4e51-b2ad-763f9ac2d4b8": {
       "name": "Renewed Solidarity",
@@ -5599,26 +5537,10 @@
     "d751580b-bb72-4d1d-be27-d0410f883b2a": {
       "name": "Inspired Skypainter // Maestro's Gift",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters and whenever one or more creature tokens you control deal combat damage to a player, ~ becomes prepared.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.enters"
-        },
-        {
-          "face": 1,
-          "ability": 0,
-          "text": "Create a token that's a copy of target creature you control. That token gains haste until end of turn.",
-          "reason": "unboundReference",
-          "closestRule": "noun.that-token"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ccdb2f75"
+      "ast": "8f45de5d"
     },
     "d75b9c82-1b49-4c3e-a1b5-aeef57d6644b": {
       "name": "Cyclonic Rift",
@@ -5961,19 +5883,10 @@
     "e4ed7935-0263-4cde-8118-ac18fffce3ef": {
       "name": "Determined Iteration",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of combat on your turn, populate. The token created this way gains haste. Sacrifice it at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d9a39876"
+      "ast": "fe9ecaed"
     },
     "e5e8e116-10fe-48b0-b3d8-6edb39bd5f90": {
       "name": "Alibou, Ancient Witness",
@@ -6090,19 +6003,10 @@
     "ec2968fb-163d-4907-862b-b84a1f167833": {
       "name": "Volcanic Torrent",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "~ deals X damage to each creature and planeswalker your opponents control, where X is the number of spells you've cast this turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "91d346f2"
+      "ast": "7b262078"
     },
     "ecd49d85-9c8c-4cc9-9a83-072ecd433677": {
       "name": "Flame of Anor",
@@ -6609,19 +6513,10 @@
     "fb60739e-1dc3-481d-a056-ad72e665c680": {
       "name": "Rite of Replication",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Create a token that's a copy of target creature. If ~ was kicked, create five of those tokens instead.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.predefined"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "0692e7ac"
+      "ast": "82dbd195"
     },
     "fb69bc57-f05a-41c2-9b7b-9a9761ef0cd3": {
       "name": "Sacred Peaks",
@@ -6907,7 +6802,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 439,
+      "supported": 449,
       "total": 489
     }
   }
