@@ -101,8 +101,9 @@ function conditionNamesLayerValue(condition: Condition): boolean {
 
 /**
  * A group of permanents: the filter without a zone, and "other" on the subject, as the fixtures. With `keywords` (stage P33, D-150) the
- * filter may name a keyword ("Other creatures you control with flying have indestructible."): only a keyword grant may, which the engine
- * reads after the effects that do not read keywords and again until none more applies (CR 613.8).
+ * filter may name a keyword ("Other creatures you control with flying have indestructible."): only a keyword grant or a "+N/+N" may,
+ * which the engine reads after the effects that do not read keywords (a keyword grant again until none more applies, a "+N/+N" once
+ * layer 6 is done, CR 613.8).
  */
 function groupSubject(noun: IrNoun, keywords = false): LowerResult<StaticSubject> {
   const filter = lowerFilter({ ...noun, other: false, filter: withoutZone(noun.filter) });
@@ -696,11 +697,18 @@ function lowerPart(
   condition: Condition | undefined,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
-  // Stage P33 (D-150): a subject that names a keyword is read for keyword grants only (the engine's `grantKeyword`).
+  // Stage P33 (D-150): a subject that names a keyword is read for keyword grants and "+N/+N" effects only (the engine's `grantKeyword` and `modifyPt`).
   const subject = subjectOf(
     part.subject,
     ctx,
-    part.effects.every((e) => e.kind === 'grantKeyword' || e.kind === 'grantProtection'),
+    // First-flight statics (D-149): a "+N/+N" (layer 7c) may name one too; `derive` applies it after layer 6 (CR 613.1f, 613.4c).
+    part.effects.every(
+      (e) =>
+        e.kind === 'grantKeyword' ||
+        e.kind === 'grantProtection' ||
+        e.kind === 'pt' ||
+        e.kind === 'ptCount',
+    ),
   );
   if (!subject.ok) return subject;
   // D-286 (CR 702.95b): "each of those creatures" is read for a granted ability (the Seraph's line) and only "as long as ~ is paired with another creature": the engine

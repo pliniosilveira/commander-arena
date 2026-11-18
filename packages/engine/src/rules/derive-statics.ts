@@ -79,6 +79,11 @@ interface ModifierEntry {
   readonly pt: boolean;
   /** Its subject names a keyword: it applies after the effects that give keywords (CR 613.8a). */
   readonly keywords: boolean;
+  /**
+   * A "+N/+N" static ability whose subject names a keyword (D-149): layer 7c depends on layer 6 (CR 613.1f, 613.4c), so it applies
+   * after every effect of layer 6 has, to the keywords the target has then.
+   */
+  readonly late: boolean;
   /** Its place in the order the static abilities are applied in (battlefield order). */
   readonly seq: number;
 }
@@ -197,6 +202,8 @@ interface BoardIndex {
   readonly immediate: EntryLists;
   /** The static abilities that depend on power, toughness or keywords, in battlefield order (applied after `immediate`). */
   readonly deferred: EntryLists;
+  /** The "+N/+N" static abilities whose subject names a keyword, in battlefield order (applied after `deferred`, D-149). */
+  readonly late: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
   /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
@@ -415,12 +422,21 @@ function buildIndex(state: GameState): BoardIndex {
   }
   const immediate: ModifierEntry[] = [];
   const deferred: ModifierEntry[] = [];
+  const late: ModifierEntry[] = [];
   let seq = 0;
   for (const source of sources) {
     for (const mod of source.modifiers) {
       const pt = dependsOnPt(mod);
       const keywords = dependsOnKeywords(mod);
-      (pt || keywords ? deferred : immediate).push({ source, mod, pt, keywords, seq });
+      const isLate = keywords && mod.kind === 'modifyPt';
+      (isLate ? late : pt || keywords ? deferred : immediate).push({
+        source,
+        mod,
+        pt,
+        keywords,
+        late: isLate,
+        seq,
+      });
       seq += 1;
     }
   }
@@ -430,6 +446,7 @@ function buildIndex(state: GameState): BoardIndex {
     effects: state.continuousEffects,
     immediate: listEntries(immediate),
     deferred: listEntries(deferred),
+    late: listEntries(late),
     reductions,
     abilityReductions,
     flashes,
@@ -535,6 +552,16 @@ export interface StaticBase extends FilterSubject {
    * a static ability reads that grants a keyword to "creatures you control with flying" (CR 613.8a, 613.8b).
    */
   readonly keywordsWith: (grants: readonly StaticGrant[]) => readonly Keyword['kind'][];
+  /**
+   * The keywords without parameters another object has after layer 6 (D-149): what a "+N/+N for each other creature you control with
+   * flying" counts (CR 613.4c reads layer 6, 613.8). Left out where no count names a keyword.
+   */
+  readonly keywordsOf?: (other: GameObject) => readonly Keyword['kind'][];
+  /**
+   * Set while only layer 6 is wanted (`keywordsAfterLayer6`): the "+N/+N" static abilities (layer 7c) are not applied, which is what
+   * keeps a count of keywords from reading itself.
+   */
+  readonly layer6Only?: boolean;
   readonly ptWith: (
     power: number,
     toughness: number,
@@ -732,12 +759,15 @@ export function staticEffectsOn(
           toughness: number(c.toughness, defined?.toughness),
         });
       }
+    } else if (base.layer6Only === true) {
+      // D-149: only layer 6 is wanted: no layer 7c effect is applied (see `StaticBase.layer6Only`).
+      return true;
     } else {
       // CR 613.4c: sublayer 7c holds only additions, which commute, so the timestamp order that
       // CR 613.7 gives (an Aura's or Equipment's own timestamp) does not change the sum. A counted amount
       // is worked out now, from the board as it is (CR 611.3a, D-115).
-      power += staticAmountOf(state, mod.power, source.object, target);
-      toughness += staticAmountOf(state, mod.toughness, source.object, target);
+      power += staticAmountOf(state, mod.power, source.object, target, base.keywordsOf);
+      toughness += staticAmountOf(state, mod.toughness, source.object, target, base.keywordsOf);
     }
     return true;
   };
@@ -763,6 +793,18 @@ export function staticEffectsOn(
     }
     progress = unapplied.length < waiting.length;
     waiting = unapplied;
+  }
+  // D-149 (CR 613.1f, 613.4c): a "+N/+N" whose subject names a keyword applies once layer 6 is done: it reads the keywords the target
+  // has then, whatever the order on the battlefield. Layer 7c effects commute (CR 613.4c), so the order among them does not matter.
+  if (base.layer6Only !== true) {
+    const keywordsNow = base.keywordsWith(grants);
+    for (const { source, mod, pt } of entriesFor(index.late, target.id)) {
+      apply(source, mod, {
+        ...base,
+        ...(pt ? base.ptWith(power, toughness, sets) : {}),
+        keywords: keywordsNow,
+      });
+    }
   }
   const host = target.attachedTo === null ? undefined : state.objects[target.attachedTo];
   return {

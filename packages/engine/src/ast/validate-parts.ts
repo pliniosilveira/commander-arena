@@ -1976,6 +1976,8 @@ function checkCountOnly(
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
   kind: 'countOf' | 'colorsAmong' = 'countOf',
+  /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
+  allowKeywords = false,
 ): void {
   const amount = a as { kind?: string; filter?: ObjectFilter };
   if (amount?.kind !== kind) {
@@ -2008,11 +2010,11 @@ function checkCountOnly(
       'a count in a static ability cannot read the combat or the source power (D-120)',
     );
   }
-  if (filterSome(amount.filter, readsKeywords)) {
+  if (!allowKeywords && filterSome(amount.filter, readsKeywords)) {
     issue(
       out,
       `${path}.filter`,
-      'a count in a static ability cannot name a keyword: it would depend on layer 6 (CR 613.8)',
+      'a count in a characteristic-defining ability cannot name a keyword: it would depend on layer 6 (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, (f) => f.power !== undefined || f.toughness !== undefined)) {
@@ -2067,7 +2069,7 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not colors');
     }
-    checkCountOnly(amount, path, out, 'colorsAmong');
+    checkCountOnly(amount, path, out, 'colorsAmong', false);
     return;
   }
   if (amount?.kind === 'sum') {
@@ -2076,7 +2078,7 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, `${path}.of`, 'a sum needs at least two counts');
     } else {
       amount.of.forEach((part, i) => {
-        checkCountOnly(part, `${path}.of[${i}]`, out);
+        checkCountOnly(part, `${path}.of[${i}]`, out, 'countOf', plain);
       });
     }
     return;
@@ -2091,10 +2093,10 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
         'a characteristic-defining ability sets a count or a positive multiple of one',
       );
     }
-    checkCountOnly(amount.of, `${path}.of`, out);
+    checkCountOnly(amount.of, `${path}.of`, out, 'countOf', plain);
     return;
   }
-  checkCountOnly(a, path, out);
+  checkCountOnly(a, path, out, 'countOf', plain);
 }
 
 // ---- Costs (CR 118)

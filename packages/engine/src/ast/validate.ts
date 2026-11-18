@@ -486,7 +486,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'modifyPt':
-      checkStaticSubject(s.subject, `${path}.subject`, out, false, true);
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
       // D-115: an integer, or a count of objects (or a multiple of one) that follows the board.
       checkStaticPtAmount(s.power, `${path}.power`, true, out);
       checkStaticPtAmount(s.toughness, `${path}.toughness`, true, out);

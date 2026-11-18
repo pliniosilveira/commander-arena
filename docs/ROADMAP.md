@@ -135,6 +135,7 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- A "+N/+N" that names a keyword is applied after layer 6, so a grant or a power-comparing subject does not see it; a keyword count skips layer 7c (a grant named by power may miscount).
 - Grammar-only import does not read Fandaniel's full may-sacrifice clause, Lord of the Nazgûl's Ring-bearer protection and group base-power clause, Maskwood Nexus's all-creature-types scopes or Sauron's Ransom's hidden-pile clause; these cards use hand-written fixtures.
 - Protection from a color applies its prevention before the other prevention effects of a damage event; CR 616.1 lets the affected player choose the order.
 - Protection from a quality that is not a color (a card type, a player, everything) is not read.
