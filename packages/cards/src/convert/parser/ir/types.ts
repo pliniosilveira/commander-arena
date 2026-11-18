@@ -376,6 +376,11 @@ export interface IrFilter {
   readonly castTargetsSelf?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
+  /**
+   * "with power greater than target creature's power" (CR 208.1, 608.2c): the engine's `powerGreaterThan` of the target this noun is. A target noun of its own, numbered with
+   * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
+   */
+  readonly powerGreaterThanNoun?: IrNoun;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */

@@ -206,6 +206,18 @@ export function checkFilter(
       }
     }
   }
+  // CR 208.1, 608.2c: "power greater than target creature's power" names an object the effect knows, so only an `each` selector reads it.
+  if (f.powerGreaterThan !== undefined) {
+    if (ownerScope === undefined) {
+      issue(
+        out,
+        `${path}.powerGreaterThan`,
+        "powerGreaterThan is only read in the 'each' selector of an effect (not in a target slot, trigger, condition, static ability, search or cost)",
+      );
+    } else {
+      checkRef(f.powerGreaterThan, 'object', `${path}.powerGreaterThan`, ownerScope, out);
+    }
+  }
   if (f.owner !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -634,6 +646,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.blocking !== undefined ||
   f.powerLessThanSource === true ||
   f.powerAboveBase === true ||
+  f.powerGreaterThan !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||

@@ -112,6 +112,11 @@ export interface FilterContext {
    * has none or is not known; absent fails the comparison closed.
    */
   readonly sourcePower?: number | null;
+  /**
+   * The power of the object `powerGreaterThan` names, read by the caller as the effect resolves (CR 208.1, 608.2c); null when it names nothing or has no power.
+   * Absent fails the comparison closed.
+   */
+  readonly powerLimit?: number | null;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
   /**
@@ -360,6 +365,14 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power < power)) return false;
+  }
+  // CR 208.1, 608.2c: "with power greater than target creature's power": more than the power of the object the effect names.
+  if (filter.powerGreaterThan !== undefined) {
+    const limit = ctx.powerLimit;
+    if (limit === null || limit === undefined || d.power === null || d.power === undefined) {
+      return false;
+    }
+    if (!(d.power > limit)) return false;
   }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {

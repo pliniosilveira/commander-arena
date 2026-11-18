@@ -681,6 +681,12 @@ export interface ObjectFilter {
    */
   readonly powerAboveBase?: true;
   /**
+   * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
+   * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
+   * (as `controlledBy` is). An object with no power, or a reference that names nothing, matches nothing.
+   */
+  readonly powerGreaterThan?: ObjectRef;
+  /**
    * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.

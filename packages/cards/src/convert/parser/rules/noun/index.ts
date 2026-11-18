@@ -59,6 +59,7 @@ import {
   withColorList,
 } from './phrases';
 import { PLAYER_NOUN_RULES } from './players';
+import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
@@ -808,6 +809,8 @@ export const NOUN_RULES = [
   ...ENCHANTED_BY_YOU_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
   ...HYLDA_G2_EARLY_NOUN_RULES,
+  // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
+  ...POWER_ABOVE_TARGET_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
