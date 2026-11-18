@@ -3204,6 +3204,71 @@ export const PRISMARI_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
 ];
 
 /**
+ * The SYNTHETIC cards of group 2 of the Prismari deck (issue 87, D-632 and later): creatures whose triggers read the spell that was cast (its mana value, the mana spent on it, the
+ * greatest mana value this turn), one that exiles a card from the graveyard to cast a copy of it, a spell that deals divided damage among any number of targets (and can be discarded for a
+ * Treasure), a spell that makes tokens that must attack each opponent and costs less for the instants and sorceries in the graveyard, a creature that copies itself and has creatures with its
+ * name unblockable, a land that becomes a creature, a dragon that gives artifacts a mana ability to spend on instants and sorceries, a creature that can block only creatures with flying, a
+ * draw spell with flashback that costs life, a sorcery that adds mana that stays and is suspended, and the spells and permanents that feed them. They ask the targets of a divided slot, the
+ * copy to cast, the mana to spend and the flashback payment, which the generic pools are not built to follow: a style of their own.
+ */
+export const PRISMARI_G2_NAMES = [
+  'SYNTHETIC Piano Elemental',
+  'SYNTHETIC Moment Master',
+  'SYNTHETIC Charging Ox',
+  'SYNTHETIC Manaform Drake',
+  'SYNTHETIC Opus Burst',
+  'SYNTHETIC Flocking Gale',
+  'SYNTHETIC Name Composer',
+  'SYNTHETIC Spire Land',
+  'SYNTHETIC Prism Dragon',
+  'SYNTHETIC Skittish Borrower',
+  'SYNTHETIC Deep Study',
+  'SYNTHETIC Rushing Refrain',
+  'SYNTHETIC Prismari Big Study',
+  'SYNTHETIC Prismari X Spell',
+  'SYNTHETIC Prismari Trinket',
+  'SYNTHETIC Prismari Discounter',
+  'SYNTHETIC Prismari Apprentice',
+] as const;
+
+/** The prismariG2 style: every card of the group twice, the spells that feed the triggers three times, and bodies. */
+export const PRISMARI_G2_SPELLS = [
+  ...supported(PRISMARI_G2_NAMES),
+  ...supported(PRISMARI_G2_NAMES),
+  ...supported([
+    'SYNTHETIC Prismari Cantrip',
+    'SYNTHETIC Prismari Grand Study',
+    'SYNTHETIC Prismari Big Study',
+  ]),
+  ...supported(['SYNTHETIC Charging Ox', 'SYNTHETIC Charging Ox', 'SYNTHETIC Prismari Cantrip']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red, for every cost of the group. */
+export const PRISMARI_G2_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+]);
+
+/** Style pairs of the Prismari group 2 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG2', 'prismariG2'],
+  ['prismariG2', 'spells'],
+  ['spells', 'prismariG2'],
+];
+
+/**
  * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-528 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
  * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
  * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
@@ -4246,6 +4311,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
   // The Prismari group 1 cards (issue 87) populate, copy tokens, ask for any number of targets, a kicker, a strive cost and a token to choose: a style of their own.
   .filter((card) => !(PRISMARI_G1_NAMES as readonly string[]).includes(card.name))
+  // The Prismari group 2 cards (issue 87) ask the targets of a divided slot, the copy of an exiled card to cast, the flashback payment and mana that stays: a style of their own.
+  .filter((card) => !(PRISMARI_G2_NAMES as readonly string[]).includes(card.name))
   // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
   .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
@@ -4473,6 +4540,7 @@ export type DeckStyle =
   | 'gisaG4'
   | 'hyldaG1'
   | 'prismariG1'
+  | 'prismariG2'
   | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
@@ -4565,6 +4633,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
   if (style === 'prismariG1' && PRISMARI_G1_SPELLS.length > 0) return PRISMARI_G1_SPELLS;
+  if (style === 'prismariG2' && PRISMARI_G2_SPELLS.length > 0) return PRISMARI_G2_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
@@ -4769,6 +4838,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
   if (style === 'prismariG1' && BASIC_LANDS.length > 0) return PRISMARI_G1_LANDS;
+  if (style === 'prismariG2' && BASIC_LANDS.length > 0) return PRISMARI_G2_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;
