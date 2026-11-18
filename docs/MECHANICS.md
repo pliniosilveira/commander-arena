@@ -5146,3 +5146,60 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: the cost "Sacrifice one or more artifacts" (`game/cost-text.ts`), the sacrifice prompt "Sacrifice one or more artifacts to pay for ..." (`ui/decisions/permanents.ts`), the label "Choose a color. Target player adds three mana of that color for each permanent sacrificed this way" (`game/chosen-color-text.ts`, `ui/decisions/ability-label.ts`), the question "Choose a color for ..." (`ui/decisions/option-names.ts`), the amount "the number of permanents sacrificed as a cost" (`game/amount-text.ts`). AI: unchanged (the casual agent never activates such an ability and `choosePermanentToSacrifice` takes `min`); the SYNTHETIC cards are kept out of the generic soak pools (`SACRIFICE_MANA_NAMES`), the style `sacrificeMana`.
 - Tests: engine `scenario-xx-sacrifice-mana.test.ts`, `ast-sacrifice-mana-validate.test.ts`; cards `parser-sacrifice-mana.test.ts`, `convert-grammar-engine-sacrifice-mana.test.ts`; web `sacrifice-mana-text.test.ts`; AI soak `sacrifice-mana-games.test.ts` (100 games clean).
 - Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): "Tap an untapped creature you control" with mana and in a mana ability (D-625)
+
+- CR: 118.3 (a cost that cannot be paid cannot be paid), 601.2h and 602.2b (the costs are paid in the order the player likes), 605.1a and 605.3b (a mana ability uses no stack and is paid as it is activated), 302.6 (summoning sickness holds back only a creature's own {T} ability), 701.26a (tap), 733 (a cost taken back).
+- Gap class: P (the cost next to mana, and in a mana ability) and T (the grammar's guards); no S proposal and no new decision kind.
+- Engine: `rules/activate-costs.ts` `breakDown` and `ast/supported.ts` accept `tapPermanents` with a mana cost; `rules/activate.ts` `payCosts` asks the permanents to tap (`choosePermanent` of purpose `tap`) before the `payMana` decision when the cost has both (`askMana`). A mana ability may carry one `tapPermanents` cost (`ast/features.ts` `manaAbilityCostKinds`, `ast/validate-mana-ability.ts`): `rules/mana-abilities.ts` `tapFilterOf`, `manaTapCandidates`, `manaTapChoice`, `physicalRefusal`, `payManaAbilityCosts`; `rules/mana-engine.ts` `activateManaAbility` names the permanent as for a sacrifice; `rules/priority.ts` lists one option for each candidate; `rules/mana-sources.ts` `payableSources` (`tappables`) and `tapConflicts` for the planner.
+- Parser: `lower/activated.ts` (the mana ability and the ordinary ability) and `lower/costs.ts` no longer refuse the cost; `cost.tap-permanents` (D-133) reads the words.
+- Decision and action: `activateAbility` option and action `tapped`, `payMana` source `tappables`, `payManual` tap `tapped` (D-625).
+- Tests: engine `scenario-xx-tap-cost-mana.test.ts` (with the SYNTHETIC cards of `synthetic-tap-cost.ts`), `scenario-xx-creature-costs.test.ts`; cards `convert-grammar-engine-issue160.test.ts` (the real wording, played).
+- Web: `ui/decisions/payment.ts` (`asksTapped`, `setTapTapped`), `Chooser.tsx` ("Tap which permanent?"), `priority.ts`, `abilities.ts`, `Overlays.tsx`.
+- What the parser must produce: `{1}, {T}, Tap an untapped creature you control: Create a 1/1 green Saproling creature token.` reads to `activated { cost: [mana {1}, tap, tapPermanents { filter: creature, count: 1 }] }`; `{T}, Tap an untapped creature you control: Add one mana of any color.` reads to `mana { cost: [tap, tapPermanents { filter: creature, count: 1 }], production: anyColor }`.
+- Limits: see `docs/ROADMAP.md` (the planner's default choice of creature).
+
+## The Token Triumph deck (issue 160): amounts, shuffling a spell in, the whole hand, "up to X" (D-626)
+
+- CR: 107.3c (the text defines X), 119.1 (life total), 202.3 (mana value), 120.3 and 603.2 (damage dealt and its trigger), 608.2c and 608.2n (a spell that leaves the stack as it resolves), 701.9 (discard), 701.23 (search), 701.24 (shuffle), 118.3 (costs).
+- Gap class: T (the phrases) and P (`opponentsWithMore.fewer`, `discard.hand`, `search.maxAmount`); no S proposal.
+- Engine: `rules/amounts.ts` (`opponentsWithMore` with `fewer`), `rules/activate-costs.ts` and `rules/activate.ts` (`discardHand`, paid without a choice), `rules/effects.ts` and `rules/search.ts` (`maxAmount` read as the search begins; 0 finds nothing); `ast/validate-parts.ts` checks all three.
+- Parser: `rules/amount/value.ts` (`LIFE_TOTAL`, the mana value of more permanent types, `amount.for-each-opponent` with "fewer"), `rules/token/index.ts` (the count "that many"), `rules/cost/index.ts` (`cost.discard-hand`), `rules/noun/library.ts` and `rules/effect/search.ts` ("up to X ..., where X is ..."), `lower/hylda-g3.ts` (a spell shuffles itself in), `lower/effects-more.ts`, `lower/costs.ts`.
+- Tests: `ast-discard-hand-validate.test.ts` (engine); cards `convert-grammar-engine-issue160.test.ts` (the real wording, played).
+- Web: `game/amount-text.ts` ("opponents who control fewer creatures than you").
+- What the parser must produce: `Search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle.` reads to `search { max: 1, maxAmount: countOf tapped creatures you control, destinations: [{ zone: battlefield, tapped, count: rest }], shuffle: true }`; `{4}, {T}, Discard your hand: Draw a card for each creature you control.` reads to an activated ability with `discard { count: 0, hand: true }`.
+- Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): Populate, groups of a targeted player's creatures, "those creatures gain ..." (D-627)
+
+- CR: 701.36 (Populate), 707.2 (a copy has the copiable values), 111.2 (the player who creates a token controls it), 608.2c and 611.2c (a group the text named, fixed as the effect resolves), 115.1 (targets), 701.26a (untap), 613.1f (keywords).
+- Gap class: K (the keyword action `populate`) and T (the phrases); no S proposal.
+- Engine: `rules/populate.ts` (`runPopulate`, the choice of a creature token and its copy through `makeSettled`), `rules/effects.ts`, `rules/stack.ts` (the answer), `state/types.ts` (the instruction), `state/decisions.ts` (`purpose: 'populate'`), `ast/features.ts`, `ast/validate-parts.ts`.
+- Parser: `rules/effect/populate.ts` and `lower/populate.ts`; `rules/noun/hylda-g2.ts` (`noun.group-of-target-player`), `rules/effect/pump.ts` (its subject), `rules/effect/artifacts.ts` ("untap them"), `rules/effect/gain.ts` (`effect.gain-keyword-those`), `ir/bind.ts` ("those creatures" after "each creature"), `lower/continuous.ts` (the group of an earlier mention).
+- Tests: engine `scenario-xx-populate.test.ts` (with the SYNTHETIC cards of `synthetic-populate.ts`); cards `convert-grammar-engine-issue160.test.ts`; web `populate-choice.test.ts`.
+- Web: `ui/decisions/permanents-populate.ts` (the words), `PermanentPanel.tsx`, `model.ts`, `permanents-angels.ts`, `ability-label.ts` ("Populate").
+- AI: `casual-agent.ts` chooses the token with the most power for `populate` as for an amass.
+- What the parser must produce: `Populate.` reads to `populate`; `When ~ enters, creatures target player controls get +2/+2 until end of turn. Untap them.` reads to a trigger with `modifyPt` over `each { controlledBy target }` and `untap` of the same group.
+- Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): creatures with less power can't block, an enchanted creature's ability, control back to the owners (D-628)
+
+- CR: 509.1b (what can't block), 208.1 (power as it is now), 613.11 (a rules-modifying effect, read where the rule acts), 613.1f (a granted ability), 303.4e (only the enchanted creature's controller activates it), 613.1b, 613.7b, 611.2a and 611.2c (control-changing effects: layer 2, timestamps, no duration, the set fixed when it begins), 506.4 (leaves combat).
+- Gap class: T (the phrases) and P (`returnControlToOwners`); no S proposal for these three.
+- Engine: `rules/control-effects.ts` (`runReturnControl`), `rules/effects.ts`, `ast/features.ts`, `ast/validate-parts.ts`; the block restriction and the granted ability were already run (`rules/combat-legality.ts`, `rules/derive-statics.ts`).
+- Parser: `rules/static/block-power.ts` and `ir/types.ts` / `lower/nouns.ts` (`powerLessThanSource`), `lower/statics.ts` (a granted activated ability on an enchanted creature), `rules/effect/return-control.ts` and `lower/return-control.ts`.
+- Tests: engine `scenario-xx-block-power.test.ts`, `scenario-xx-return-control.test.ts` (SYNTHETIC cards of `synthetic-block-power.ts` and `synthetic-return-control.ts`); cards `convert-grammar-engine-issue160.test.ts`.
+- Web: `ui/decisions/ability-label.ts` words the effect.
+- What the parser must produce: `Creatures with power less than ~'s power can't block creatures you control.` reads to a static `cantBeBlockedBy { subject: creatures you control, blockers: { types: [creature], powerLessThanSource } }`; `each player gains control of all creatures they own` reads to `returnControlToOwners` of every creature.
+- Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): Auras that enchant players (D-629)
+
+- CR: 303.4, 303.4a to 303.4e, 303.4m (Auras, enchanted player), 702.5a (Enchant), 704.5m (an illegal Aura), 702.16c (protection), 508.1 and 508.1b (attackers declared together, attacking a player or a planeswalker), 603.2 (a trigger once for the declaration), 701.26a (untap).
+- Gap class: S (an Aura attached to a player), built after the owner approved the design (the proposal is on issue 160).
+- Engine: `state/types.ts` (`attachedToPlayer`), `ast/types.ts` (`enchant` with `player`, `attackBatch` with `attackedEnchantedPlayer`), `rules/attach.ts` (`auraTargetSpec`, `enchantsPlayers`, `canEnchantPlayer`, `attachEnteredToPlayer`, `illegalAuras`), `rules/stack.ts` (the Aura enters attached to its player), `rules/triggers.ts` (the trigger matches the declaration), `invariants.ts`, `ast/validate.ts` and `ast/validate-attach.ts`, `view.ts` (`attachedToPlayer`), `state/events.ts` (`attachedToPlayer`).
+- Parser: `rules/keyword/attachments.ts` (`keyword.enchant-player`), `rules/trigger/enchanted-player.ts`, `rules/effect/enchanted-player.ts`, `lower/attachments.ts`, `lower/triggers.ts`, `lower/enchanted-player.ts`.
+- Tests: engine `scenario-xx-enchant-player.test.ts` (SYNTHETIC cards of `synthetic-curse.ts`); cards `convert-grammar-engine-issue160.test.ts`.
+- Web: `game/describe.ts` and `ui/board/PreviewPanel.tsx` word the player the Aura enchants.
+- What the parser must produce: `Enchant player` reads to `keyword enchant { filter: {}, player: true }`; `Whenever enchanted player is attacked, untap all nonland permanents you control. Each opponent attacking that player untaps all nonland permanents they control.` reads to a triggered ability on `attackBatch { who: any, atLeast: 1, attackedEnchantedPlayer: true }` with two `untap` effects (yours; those of `triggerPlayer`).
+- Limits: see `docs/ROADMAP.md`.

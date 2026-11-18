@@ -1,7 +1,7 @@
 /**
  * A step of the start-game flow (issue 53): a dialog that asks for one deck, for you or for the
  * opponent. Two tabs split the choices, "Your decks" (decks saved in this browser) and "Precons"
- * (the shipped precons, edited ones included, D-215); the tab opens on the one most likely wanted.
+ * (the shipped precons, edited ones included, D-215); "Your decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
  * A deck is marked by clicking it, or by one of the three Random buttons; the Select button under
  * the list confirms the step.
  */
@@ -10,7 +10,7 @@ import type { DeckChoice } from '../../precons';
 import { ManaCost } from '../mana';
 import { pickRandomDeck, type RandomScope } from './menu-model';
 
-type DeckTab = 'saved' | 'precon';
+export type DeckTab = 'saved' | 'precon';
 
 const TABS: readonly { readonly id: DeckTab; readonly label: string }[] = [
   { id: 'saved', label: 'Your Decks' },
@@ -35,6 +35,7 @@ export function DeckDialog({
   onBack,
   onCancel,
   onImport,
+  initialTab,
 }: {
   title: string;
   prompt: string;
@@ -54,14 +55,25 @@ export function DeckDialog({
   onCancel: () => void;
   /** Opens the page that imports a deck. */
   onImport: () => void;
+  /** The tab shown first; "Your Decks" when left out. */
+  initialTab?: DeckTab;
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
   const [marked, setMarked] = useState(value);
-  const [tab, setTab] = useState<DeckTab>(
-    decks.find((d) => d.id === value)?.kind === 'saved' ? 'saved' : 'precon',
-  );
-  const shown = decks.filter((deck) => deck.kind === tab);
+  const [tab, setTab] = useState<DeckTab>(initialTab ?? 'saved');
+  const [query, setQuery] = useState('');
+  const needle = query.trim().toLowerCase();
+  const inTab = decks
+    .filter((deck) => deck.kind === tab)
+    .sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+  // The search matches the name, the commander and the blurb, ignoring case.
+  const shown =
+    needle === ''
+      ? inTab
+      : inTab.filter((deck) =>
+          `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle),
+        );
 
   // A random button marks a deck (and shows its tab); Select still confirms it.
   const markRandom = (scope: RandomScope) => {
@@ -108,8 +120,21 @@ export function DeckDialog({
             </button>
           ))}
         </div>
+        <input
+          type="search"
+          className="scr-input scr-deck-search"
+          placeholder="Search decks by name or commander"
+          aria-label="Search decks"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
         <div role="tabpanel" className="scr-decks-list">
-          {shown.length === 0 && tab === 'saved' && (
+          {shown.length === 0 && inTab.length > 0 && (
+            <p className="scr-note" role="note">
+              No deck matches "{query.trim()}".
+            </p>
+          )}
+          {inTab.length === 0 && tab === 'saved' && (
             <p className="scr-note" role="note">
               No deck saved in this browser yet.{' '}
               <button type="button" className="scr-link" onClick={onImport}>
@@ -117,7 +142,7 @@ export function DeckDialog({
               </button>
             </p>
           )}
-          {shown.length === 0 && tab === 'precon' && (
+          {inTab.length === 0 && tab === 'precon' && (
             <p className="scr-note" role="note">
               No precon is installed yet.
             </p>

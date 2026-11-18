@@ -35,7 +35,6 @@ export const KEYWORD_ENCHANT = defineRule<readonly IrKeyword[]>({
   ],
   rejects: [
     'Enchant',
-    'Enchant player',
     'Enchant Forest or Island',
     'Enchant forest',
     'Enchant Dragon',
@@ -58,6 +57,34 @@ export const KEYWORD_ENCHANT = defineRule<readonly IrKeyword[]>({
         ([, what]) => what,
       ),
       (what) => ({ kind: 'keyword', name: 'enchant', params: [what] }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
+/**
+ * `keyword.enchant-player`: "Enchant player" (issue 160, D-629, CR 702.5a, 303.4): the Aura spell targets a player and the Aura enchants that player. The engine's `enchant`
+ * keyword with `player`. Not read: "Enchant opponent", "Enchant players", "Enchant player's", "Enchant player." and other words after it.
+ */
+export const KEYWORD_ENCHANT_PLAYER = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.enchant-player',
+  family: 'keyword',
+  leading: ['enchant'],
+  cites: ['CR 702.5a (Enchant)', 'CR 303.4 (Enchantments)', 'CR 303.4a (Enchantments)'],
+  examples: ['Enchant player', 'enchant player'],
+  rejects: [
+    'Enchant',
+    'Enchant players',
+    'Enchant opponent',
+    'Enchant player.',
+    'Enchant player you control',
+    'Enchant creature',
+  ],
+  parse: map(
+    node<string, IrKeyword>(
+      'keyword.enchant-player',
+      map(pattern(/enchant player(?![\p{L}\p{N}'’.])/iu), (m) => m[0]),
+      () => ({ kind: 'keyword', name: 'enchantPlayer', params: [] }),
     ),
     (keyword): readonly IrKeyword[] => [keyword],
   ),
@@ -238,6 +265,7 @@ export const KEYWORD_EQUIP_COMMANDER = defineRule<readonly IrKeyword[]>({
 
 export const ATTACHMENT_KEYWORD_RULES = [
   KEYWORD_ENCHANT,
+  KEYWORD_ENCHANT_PLAYER,
   KEYWORD_EQUIP,
   KEYWORD_EQUIP_QUALITY,
   KEYWORD_EQUIP_COMMANDER,

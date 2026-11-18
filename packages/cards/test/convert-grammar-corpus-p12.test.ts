@@ -129,10 +129,7 @@ const ATTACHED: readonly Line[] = [
   {
     kind: 'enchantment',
     text: "Creatures with power less than ~'s power can't block creatures you control.",
-    expect: no(
-      "with power less than ~'s power can't block creatures you control.",
-      'static.permanents',
-    ),
+    expect: OK,
     note: 'replay: 1 card',
   },
 ];

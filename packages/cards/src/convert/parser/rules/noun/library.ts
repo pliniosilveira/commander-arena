@@ -243,6 +243,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an Aura or Equipment card',
     'up to two basic land cards',
     'up to three Forest cards',
+    'up to X basic land cards',
     'a snow permanent card',
     'a nonland permanent card',
     'up to two permanent cards',
@@ -317,6 +318,19 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           plural: true,
           other: false,
           count: { kind: 'number', value: count.value, span: count.span },
+        }),
+      ),
+      // Issue 160 (D-626): "up to X basic land cards, where X is ...": the count is the X the search rule reads the definition of.
+      map(
+        sequence(literal('up to X '), libraryPhrase(true)),
+        ([, filter]): Bare => ({
+          kind: 'noun',
+          det: 'a',
+          filter,
+          upTo: true,
+          plural: true,
+          other: false,
+          count: { kind: 'x', span: { start: 0, end: 0 } },
         }),
       ),
       // D-260: "a snow permanent card, a legendary card, or a Saga card": one card of any of several kinds, before the single kind it starts like.

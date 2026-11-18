@@ -116,6 +116,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.attack-tax': asIs,
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
+  'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
@@ -169,6 +170,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
+  'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
   // Stage P51 (D-209): the energy cost is the payment of an "unless you pay" of a spell.
   'cost.energy': spell((e) => `Draw a card. Then discard a card at random unless you pay ${e}.`),
@@ -383,6 +385,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", or the sentence about a creature that deals damage); the nouns are operands.
   'keyword.escalate': asIs,
   'static.cant-attack-block-unless': asIs,
+  'static.creatures-with-less-power-cant-block': asIs,
   'static.attached-becomes': asIs,
   'static.pt-amount': asIs,
   'trigger.attacks-while': whenever,
@@ -629,6 +632,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
+  'trigger.enchanted-player-attacked': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
@@ -758,6 +762,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
+  'noun.group-of-target-player': spell((e) => `${cap(e)} get +1/+1 until end of turn.`),
   'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
   'noun.those-creatures': spell(
     (e) =>

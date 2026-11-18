@@ -14,7 +14,7 @@ import {
   typecyclingFilter,
 } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
-import { lowerEnchant } from './attachments';
+import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
@@ -436,6 +436,7 @@ export function lowerKeyword(
   if (ability.name === 'canBeCommander') return lowerCanBeCommander(ability);
   if (ability.name === 'crew') return lowerCrew(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
+  if (ability.name === 'enchantPlayer') return lowerEnchantPlayer(ability);
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||

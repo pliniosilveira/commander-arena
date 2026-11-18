@@ -243,7 +243,12 @@ export type Amount =
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */
-  | { readonly kind: 'opponentsWithMore'; readonly stat: PlayerStat }
+  | {
+      readonly kind: 'opponentsWithMore';
+      readonly stat: PlayerStat;
+      /** D-626 (issue 160, "for each opponent who controls fewer creatures than you"): the opponents whose `stat` is less than the controller's. */
+      readonly fewer?: true;
+    }
   /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
@@ -1017,6 +1022,11 @@ export type Cost =
        * hand). Only in a cost of an activated ability.
        */
       readonly named?: true;
+      /**
+       * "Discard your hand" (D-626, CR 701.9, issue 160): every card of the hand, none chosen; `count` is 0 and unread, and a player with an empty hand pays it with
+       * nothing to discard. Only in a cost of an activated ability.
+       */
+      readonly hand?: true;
     }
   /**
    * "Behold a Jace" (CR 701.4, D-151): as an additional cost to cast a spell, reveal a matching
@@ -2477,6 +2487,11 @@ export type Effect =
    */
   | { readonly kind: 'amass'; readonly subtype: Subtype; readonly count: Amount }
   /**
+   * "Populate." (CR 701.36, issue 160, D-627): the controller chooses a creature token they control and creates a token that is a copy of it (CR 707.2); with none, nothing
+   * is created (CR 701.36b). With two or more creature tokens the controller is asked which (a `choosePermanent` decision of purpose 'populate'); with one it is chosen.
+   */
+  | { readonly kind: 'populate' }
+  /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
    * triggered this one (`triggerSubject`), that sacrifices it, by its controller, as the next combat ends. Only the effect of an inherent ability
@@ -2542,6 +2557,12 @@ export type Effect =
       readonly player?: PlayerSelector;
       readonly duration: ControlDuration;
     }
+  /**
+   * "Each player gains control of all creatures they own." (issue 160, D-628, CR 613.1b, 613.7b, 611.2a, 611.2c): for each owner, one layer 2 effect with no duration gives that
+   * player control of the permanents `objects` names that they own, as they are named now (CR 611.2c). The effect has a timestamp (CR 613.7b): it decides over an earlier
+   * effect that gave the permanent to another player, and a later one decides over it. A permanent that changed controller leaves combat (CR 506.4).
+   */
+  | { readonly kind: 'returnControlToOwners'; readonly objects: ObjectSelector }
   /**
    * "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b, 613.1b, 611.2a; Galadriel group 3): the two permanents `first` and `second` name
    * (each `this` or a `target`) swap controllers as this resolves. If the entire exchange can't be completed (one of them is no longer a permanent on the battlefield, or one of
@@ -2823,6 +2844,12 @@ export type Effect =
        * condition on the choice as a whole: any one card may be found, two only when some land type is on both. The land cards are of `filter`; `max` is at least 2.
        */
       readonly sharedLandType?: true;
+      /**
+       * "Search your library for up to X basic land cards, where X is the number of tapped creatures you control" (D-626, issue 160): the most cards that may be found is
+       * this amount, worked out as the search begins (CR 608.2c, 107.3c); `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`. A count of 0 or
+       * less finds nothing (the player still searches and shuffles, CR 701.23c).
+       */
+      readonly maxAmount?: Amount;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;
@@ -3352,6 +3379,12 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'any';
       readonly atLeast: number;
       readonly what?: ObjectFilter;
+      /**
+       * "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): only when at least one creature of the declaration was declared as attacking the player this
+       * Aura enchants (as a player: an attack on their planeswalker or battle is not an attack on them). The ability must be an Aura's that enchants a player (`validateCard`);
+       * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
+       */
+      readonly attackedEnchantedPlayer?: true;
     }
   /**
    * "Whenever [this permanent] becomes the target of a spell or ability [an opponent controls]"
@@ -3460,7 +3493,16 @@ export type Keyword =
    * battlefield, relative to the Aura's controller ("Enchant creature you control" sets
    * `controller: 'you'`). Only permanents are supported: `zone` is unset or 'battlefield'.
    */
-  | { readonly kind: 'enchant'; readonly filter: ObjectFilter }
+  | {
+      readonly kind: 'enchant';
+      readonly filter: ObjectFilter;
+      /**
+       * "Enchant player" (CR 702.5a, 303.4, 303.4b; issue 160, D-629): the Aura enchants a player, not a permanent: its spell targets a player, it enters attached to that player
+       * (`GameObject.attachedToPlayer`) and is put into its owner's graveyard when that player has left the game or has protection from it (CR 303.4c, 704.5m, 702.16c).
+       * `filter` is `{}` and unread then.
+       */
+      readonly player?: true;
+    }
   /**
    * CR 702.6a (Equip): "Equip [cost]" means "[Cost]: Attach this permanent to target creature you
    * control. Activate only as a sorcery." The engine expands it when it derives the object's

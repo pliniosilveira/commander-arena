@@ -378,14 +378,17 @@ describe('what a card may say', () => {
     }
   });
 
-  test('a tap cost is not combined with mana (the player could tap the permanents for mana first)', () => {
-    const card = withAbilities(LEDGER, [
-      activated([
-        { kind: 'mana', symbols: ['1'] },
-        { kind: 'tapPermanents', filter: { types: ['artifact'] }, count: 1 },
-      ]),
-    ]);
-    expect(messages(card)).toMatch(/creature-tapping|tap/);
+  test('a tap cost may be combined with mana (D-625), and not with a crew cost or a second tap cost', () => {
+    const tap = { kind: 'tapPermanents', filter: { types: ['artifact'] }, count: 1 } as const;
+    expect(
+      messages(withAbilities(LEDGER, [activated([{ kind: 'mana', symbols: ['1'] }, tap])])),
+    ).toBe('');
+    expect(
+      messages(withAbilities(LEDGER, [activated([tap, { kind: 'tapCreatures', totalPower: 2 }])])),
+    ).toMatch(/creature-tapping|tap/);
+    expect(messages(withAbilities(LEDGER, [activated([tap, tap])]))).toMatch(
+      /creature-tapping|tap/,
+    );
   });
 
   test('a sacrifice count of 2 or more is for an activated ability, not for a spell or a mana ability', () => {

@@ -109,6 +109,11 @@ export interface GameObject {
   readonly copyOf?: CardId;
   /** The object an Aura or Equipment is attached to (CR 303.4, 301.5). */
   readonly attachedTo: ObjectId | null;
+  /**
+   * The player an Aura that enchants a player is attached to ("Enchant player", CR 303.4, 303.4b; issue 160, D-629). Absent for everything else, and for an Aura attached to an
+   * object (`attachedTo`): an Aura is attached to one or the other, never both (CR 303.4d). A new object (a zone change, CR 400.7) never has it.
+   */
+  readonly attachedToPlayer?: SeatId;
   /** For a battle: the player who protects it (CR 310.8). Null for everything else. */
   readonly protector: SeatId | null;
   /** Stack objects only. */
@@ -1017,6 +1022,11 @@ export type Instruction =
       readonly made?: true;
       readonly chosen: readonly ObjectId[] | null;
     }
+  /**
+   * "Populate" (`populate`, CR 701.36, D-627): the controller chooses a creature token they control (a `choosePermanent` decision of purpose 'populate', asked only with
+   * two or more) and creates a token that is a copy of it. `chosen` is the answer, null until then. See rules/populate.ts.
+   */
+  | { readonly kind: 'populate'; readonly chosen: readonly ObjectId[] | null }
   /**
    * Permanents instructed to connive at the same time (`connive`, CR 701.50c, D-223): `pending` are the ones still to connive, each with the player who
    * controls it (or last controlled it, if it is no longer on the battlefield: CR 701.50b). The first player in APNAP order who controls one or more of them

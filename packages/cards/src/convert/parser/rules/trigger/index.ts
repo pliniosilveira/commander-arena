@@ -33,6 +33,7 @@ import { CONTROL_TRIGGER_RULES } from './control';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
+import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
 import { EVENT_TRIGGER_RULES } from './events';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
@@ -1107,6 +1108,8 @@ export const TRIGGER_RULES = [
   ...ANGEL_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
+  // Issue 160 (D-629): "Whenever enchanted player is attacked".
+  ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,

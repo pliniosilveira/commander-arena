@@ -50,6 +50,12 @@ const COUNT = choice(
   ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
+  // Issue 160 (D-626, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
+  // which `validateCard` allows only in a trigger that has damage; the tokens are plural.
+  map(
+    spanned(pattern(/that many(?![\p{L}\p{N}])/iu)),
+    ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+  ),
 );
 
 const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Map', 'Blood'] as const;
@@ -311,6 +317,7 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 3/3 green Beast creature token with trample, reach, and haste',
     'X 1/1 white Soldier creature tokens',
     'X 2/2 black Zombie creature tokens',
+    'that many 1/1 green Insect creature tokens with flying and deathtouch',
     'a tapped 2/2 black Zombie creature token',
     'thirteen tapped 2/2 black Zombie creature tokens',
     'two 2/2 black Zombie Knight creature tokens with menace',
