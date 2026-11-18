@@ -1179,6 +1179,34 @@ export type Instruction =
       readonly pick?: 1 | 2;
     }
   /**
+   * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-647, CR 608.2d): `seat` is the opponent who chooses, `cards` the cards of `moved` the filter
+   * matches (face up in exile), `chosen` is null until the question is answered. The card chosen is left out of `moved` afterwards. See rules/choose-aside.ts.
+   */
+  | {
+      readonly kind: 'opponentChoosesCard';
+      readonly seat: SeatId;
+      readonly cards: readonly ObjectId[];
+      readonly chosen: readonly ObjectId[] | null;
+    }
+  /**
+   * "Exile the top four cards of your library in a face-down pile, then exile the top four cards in a face-up pile. An opponent chooses one of those piles. Put that pile into
+   * your graveyard. Look at the cards in the other pile." (`exilePiles`, D-650, CR 700.3): the cards are exiled as the effect starts (`first` is the face-down pile, `second` the
+   * face-up one, the new objects in exile), `chooser` is the opponent who picks a pile, `pick` the pile chosen (undefined until answered). See rules/exile-piles.ts.
+   */
+  | {
+      readonly kind: 'exilePiles';
+      readonly seat: SeatId;
+      readonly chooser: SeatId;
+      readonly first: readonly ObjectId[];
+      readonly second: readonly ObjectId[];
+      readonly pick?: 1 | 2;
+    }
+  /**
+   * "As many times as you choose, you may exile the top card of your library" (`exileTopAnyNumber`, D-648): `answer` is null while the controller is asked whether to exile
+   * the top card, true once they accepted (the card is exiled and the question comes again). See rules/exile-any-number.ts.
+   */
+  | { readonly kind: 'exileAnyNumber'; readonly answer: boolean | null }
+  /**
    * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest
    * on the bottom of your library in a random order" (`lookAtTop`, D-139), in two stages: `take` looks, asks which matching cards to take
    * (`chosen` is null until answered; no question when none matches) and moves them to the hand; `rest` puts `left` (the cards looked at
@@ -1617,6 +1645,8 @@ export type Instruction =
       readonly kind: 'castFree';
       readonly objects: Extract<Effect, { kind: 'castFree' }>['objects'];
       readonly play: boolean;
+      /** D-646: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
+      readonly remaining?: number | 'any';
       readonly chosen: readonly ObjectId[] | null;
     };
 

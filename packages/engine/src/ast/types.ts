@@ -725,7 +725,15 @@ export type ObjectRef =
    * the very objects (`ids`) the effects before it made as it was created, found now only if each is still the same object on the battlefield (a token that left has ceased to exist,
    * and a card that left and came back is a new object with a new id). Never written in a card (`validateCard`): the engine writes it when it creates the delayed ability.
    */
-  | { readonly kind: 'boundObjects'; readonly ids: readonly ObjectId[] }
+  | {
+      readonly kind: 'boundObjects';
+      readonly ids: readonly ObjectId[];
+      /**
+       * D-649 (CR 603.7c, 400.7): the zone the objects are expected in; left out, the battlefield (D-625). A card that left it is a new object with a new id and is not found.
+       * Surge to Victory's delayed ability is about the card it exiled, `exile`.
+       */
+      readonly zone?: 'exile';
+    }
   /**
    * "That creature", "it" for the permanent an earlier `sacrifice` effect of the same resolution sacrificed (D-177, CR 701.21, 603.12, 608.2h): in
    * the same sequence after the `sacrifice` (or the `may` of one), and in the `reflexive` ability that follows it ("you may sacrifice another
@@ -1441,7 +1449,7 @@ export type Effect =
    */
   | {
       readonly kind: 'copyCardAndCast';
-      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' | 'boundObjects' }>;
     }
   | {
       readonly kind: 'delayedCombatDamage';
@@ -1892,6 +1900,62 @@ export type Effect =
       readonly rest: 'bottomRandom' | 'stayExiled';
     }
   /**
+   * "Each player exiles cards from the top of their library until they exile a nonland card." (CR 701.13, 101.4, D-647, Plargg and Nassari): each player `players` names, the
+   * active player first and then in turn order, exiles cards from the top of their own library one at a time and face up until one that matches `filter` is exiled, or until
+   * their library is empty (a library with no such card is exiled to its end). Every card exiled, by every player, is what `moved` names afterwards ("the other cards exiled this
+   * way", `opponentChoosesCard`, `castFree`, `moveToZone`). A card is exiled from its owner's library. `filter` describes cards in a library: no zone, controller or owner.
+   */
+  | {
+      readonly kind: 'exileUntilFound';
+      readonly players: PlayerSelector;
+      readonly filter: ObjectFilter;
+    }
+  /**
+   * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-647, Plargg and Nassari): an opponent of the controller (the first one in turn order who is still in
+   * the game: with more than two players the controller does not choose which, as for `revealAndSeparate`) chooses one of the cards `moved` names that `filter` matches, among the
+   * cards that are public (face up in exile). The card chosen is set aside: afterwards `moved` names the other cards (the ones not chosen: the cards the filter does not match
+   * stay in it), which "the other cards exiled this way" names. With no card to choose nothing is asked and `moved` is unchanged. The chosen card is not moved and nothing
+   * else is done to it: it simply is not one of the others. Only with `objects` `moved`.
+   */
+  | {
+      readonly kind: 'opponentChoosesCard';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      readonly filter: ObjectFilter;
+    }
+  /**
+   * "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that
+   * pile into your graveyard. Look at the cards in the other pile." (CR 700.3, 406.3, 701.13, D-650, Abstract Performance): the controller exiles the top `count` cards of their
+   * library face down (the first pile), then the top `count` cards face up (the second pile); each pile is `count` cards, or fewer when the library runs out (a pile may have no
+   * card, CR 700.3d). The cards stay in exile while they are grouped (CR 700.3c). An opponent (the first in turn order still in the game) chooses one pile, a `chooseOption`
+   * decision of purpose `pile` in which the face-down pile shows only how many cards it has (the cards of the face-up pile are public). The chosen pile is put into the graveyard
+   * (`chosenTo`; the cards are the controller's own, so it is theirs); the cards of the other pile
+   * are the ones `moved` names afterwards, and the controller may look at those that are face down for as long as they stay in exile (CR 406.3), which `castFree` needs to cast one
+   * of them (CR 406.3b). Only this whole instruction.
+   */
+  | {
+      readonly kind: 'exilePiles';
+      readonly count: Amount;
+      readonly chosenTo: 'graveyard';
+    }
+  /**
+   * "As many times as you choose, you may exile the top card of your library." (CR 701.13, 608.2d, D-648, Dance with Calamity): the controller is asked whether to exile the
+   * top card of their library, and again after each card, until they decline or their library is empty (nothing is asked of an empty library). The cards are exiled face up, one
+   * at a time, and the player sees each before choosing again. Every card exiled is what `moved` names afterwards ("the cards exiled this way"). Only this whole instruction.
+   */
+  | { readonly kind: 'exileTopAnyNumber' }
+  /**
+   * "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card." (CR 603.7, 603.7c, 510.3a, D-649, Surge to Victory): a delayed triggered ability of
+   * the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the controller controls, as it is when the damage is
+   * dealt) deals combat damage to a player until the end of the turn (CR 514.2), once for each such creature and each player it damages (CR 603.2c), however many times that happens.
+   * `effect` runs each time, with the controller of the spell or ability as "you". It names only what the effect creating it had: the card an earlier effect of the same sequence
+   * moved (`moved`) is written into the ability as it is created (`boundObjects`, CR 603.7c: the card is the same object only while it stays in exile), and no target.
+   */
+  | {
+      readonly kind: 'delayedCombatDamageTurn';
+      readonly filter: ObjectFilter;
+      readonly effect: Effect;
+    }
+  /**
    * CR 707.10, 707.10c (D-129): "Copy target instant or sorcery spell. You may choose new targets for the copy." Puts
    * a copy of the spell `spell` names onto the stack under the control of the effect's controller. A copy of a spell
    * is a spell that is not cast (it triggers nothing that watches casting): it copies the characteristics and every
@@ -1927,8 +1991,11 @@ export type Effect =
       /**
        * "That player copies that spell" (D-438, CR 707.10): the copy is put onto the stack under the control of the player the event of the trigger is about
        * (`triggerPlayer`: the player who cast the spell), not the controller of the ability. Without it the controller of the ability copies.
+       * `opponent` (D-652, CR 702.144a, Demonstrate): "choose an opponent. That player copies the spell and may choose new targets for that copy": the first opponent in turn
+       * order who is still in the game (with more than two players the controller does not choose which, as for `revealAndSeparate`), who has the copy put onto the stack under
+       * their control and, with `newTargets` `may`, is the one who chooses its new targets.
        */
-      readonly copier?: 'triggerPlayer';
+      readonly copier?: 'triggerPlayer' | 'opponent';
     }
   /**
    * "Exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step." (CR 614.1a, 608.2n,
@@ -2737,6 +2804,14 @@ export type Effect =
         | Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' }>
         | ChooseSelector;
       readonly play?: true;
+      /**
+       * "You may cast up to two spells from among the other cards exiled this way without paying their mana costs", "You may cast any number of spells from among those
+       * cards without paying their mana costs" (D-646, CR 608.2g, 601.2, 118.9): the most spells the controller may cast as this resolves, a whole number of 2 or more or `'any'`
+       * (every card that can be cast); left out, one. The controller is asked again after each spell is cast, among the cards still there that can be cast now (a card is
+       * offered only while it is in exile, and a spell cast earlier is already on the stack), and may stop at any question. All of them are cast during the resolution (CR 608.2g),
+       * so they go on the stack together and resolve after it, the last one cast first. Only with `objects` a `moved` reference, and not with `play`.
+       */
+      readonly max?: number | 'any';
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -2783,7 +2858,11 @@ export type Effect =
   | {
       readonly kind: 'revealUntil';
       readonly filter: ObjectFilter;
-      readonly put: 'battlefield' | 'hand';
+      /**
+       * `exile` (D-651, CR 701.13, 701.20a, 400.7, Creative Technique: "Exile that card and put the rest on the bottom of your library in a random order"): the card found is
+       * exiled, face up, and is what `moved` names ("the exiled card": `castFree`); the rest of the cards revealed still go on the bottom of the library in a random order.
+       */
+      readonly put: 'battlefield' | 'hand' | 'exile';
       readonly tapped?: true;
     }
   /**
@@ -3763,6 +3842,19 @@ export type Keyword =
    */
   | { readonly kind: 'cascade' }
   /**
+   * CR 702.144a (Demonstrate, D-652): "When you cast this spell, you may copy it and you may choose new targets for the copy. If you copy the spell, choose an opponent. That player
+   * copies the spell and may choose new targets for that copy." A triggered ability of the spell that `derive` expands (`castSpell` with `self`): a `may` of `copySpell` with new
+   * targets, and, if it was done, a `copySpell` with the `opponent` as the copier. Each instance triggers separately, as the keyword abilities of a spell do.
+   */
+  | { readonly kind: 'demonstrate' }
+  /**
+   * CR 702.81a (Retrace, D-653): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it." A static ability that functions while the
+   * card is in its owner's graveyard: the card is cast from there, at the timing of its type, paying its mana cost and discarding a land card from the hand as an additional cost
+   * (CR 601.2b, 601.2f-h). The engine offers it as its own way of casting (`castSpell` with `alternative` `retrace`: it is not an alternative cost, CR 118.9, but a permission
+   * that, like Flashback and Escape, is used by naming it). Not for a land card (a land is played, not cast).
+   */
+  | { readonly kind: 'retrace' }
+  /**
    * CR 702.40a (Storm, D-129): "When you cast this spell, copy it for each other spell that was cast before it this
    * turn. If the spell has any targets, you may choose new targets for any of the copies." A triggered ability of the
    * spell, expanded by `derive` (`rules/derive-keywords.ts`) into `castSpell` with `self` and the `storm` effect. Each
@@ -4115,6 +4207,13 @@ export type Condition =
    * `conditional` effect that follows a `may` in its sequence.
    */
   | { readonly kind: 'didPrevious' }
+  /**
+   * "If the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c, D-648, Dance with Calamity): the mana values of the cards the earlier effects of
+   * this resolution moved (`moved`), added together, compare as `compare` says. The mana value of a card in exile is that of the card (CR 202.3: a split card the two halves'
+   * costs together, CR 202.3d; the front face of a double-faced card, CR 202.3b; an {X} is 0 where the card is not on the stack, CR 202.3e), and a land counts 0. A card of `moved`
+   * that is no longer there counts 0; with no card the total is 0. Only in a `conditional` effect that follows a moving effect in its sequence.
+   */
+  | { readonly kind: 'movedTotalManaValue'; readonly compare: NumberComparison }
   /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).

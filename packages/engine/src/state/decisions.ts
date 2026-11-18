@@ -495,7 +495,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * `min` = `max` other cards from `seat`'s graveyard (`zone: 'graveyard'`) are exiled as the spell is cast; the
  * cards are public, `forCost` is always set, and `cancel` rewinds the cast. `'cast'` (D-145, CR 608.2g) is "You may cast a spell ... from
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
- * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it.
+ * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-646)
+ * the question is asked again after each spell cast. `'opponentChoice'` (D-647, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
+ * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
  */
 export interface ChooseCardsDecision extends DecisionBase {
   readonly kind: 'chooseCards';
@@ -516,7 +518,8 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'split'
     | 'copy'
     | 'pair'
-    | 'separate';
+    | 'separate'
+    | 'opponentChoice';
   readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;
@@ -698,7 +701,13 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'costChoice'
     | 'pairReturn'
     | 'castCard'
-    | 'buyback';
+    | 'buyback'
+    | 'exileMore';
+  /**
+   * For purpose `'exileMore'` (D-648, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
+   * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.
+   */
+  readonly exiled?: readonly ObjectId[];
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
@@ -837,6 +846,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
     readonly faceDownPile?: 1 | 2;
     readonly faceDownCount?: number;
+    /** D-650 (CR 700.3c): the zone the piles are in while they are chosen between; absent for the library. The words of the question say it. */
+    readonly zone?: 'exile';
   };
   readonly source: ObjectId;
   readonly sourceName: string;
