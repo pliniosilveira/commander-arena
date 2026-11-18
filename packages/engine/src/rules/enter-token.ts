@@ -18,6 +18,7 @@ import { type OrderFlow, quietFlow } from './damage-order';
 import { bindEncoreToken } from './encore';
 import {
   entersChoice,
+  entersColorExcept,
   entersCopyOf,
   entersOptions,
   entersPayment,
@@ -169,7 +170,11 @@ export function runEnterToken(
       kind: 'chooseOption',
       seat,
       purpose: what,
-      options: optionsFor(what, entersOptions(definition.abilities)),
+      options: optionsFor(
+        what,
+        entersOptions(definition.abilities),
+        entersColorExcept(definition.abilities),
+      ),
       // Nothing exists yet: the question is about the token that the resolving spell or ability makes.
       source: res.object,
       sourceName: definition.name,

@@ -490,6 +490,7 @@ export type IrAmount =
         | 'destroyedOwnNontoken'
         | 'playersDrew'
         | 'tapped'
+        | 'discarded'
         | 'milledValue'
         | 'discardedMost'
         | 'damageDealt';
@@ -567,6 +568,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'kicked'; readonly who: 'self' | 'it' }
     // "you cast ~ during your main phase" (issue 244, CR 601.2, 505.1)
     | { readonly kind: 'castInOwnMainPhase' }
+    // "X is 5 or more" (issue 233, CR 107.3a): the X announced for the spell
+    | { readonly kind: 'xAtLeast'; readonly atLeast: number }
     // "this is the second time this ability has resolved this turn" (Galadriel deck group 1, CR 608.2c): the resolutions of the triggered ability, this one included
     | { readonly kind: 'abilityResolvedTimes'; readonly times: number }
     // "you chose a creature other than ~ as your Ring-bearer" (Galadriel deck group 1, CR 701.54a): the creature the Ring tempted the controller to choose, not the permanent itself
@@ -801,7 +804,7 @@ export interface IrManaSpec extends IrNode {
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
-    | { readonly kind: 'chosenColor' }
+    | { readonly kind: 'chosenColor'; readonly or?: 'W' | 'U' | 'B' | 'R' | 'G' }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
@@ -1009,6 +1012,8 @@ export interface IrChoiceArg extends IrNode {
   readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
   /** `option` (stage P34, D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons", the names the card gives, as it writes them. */
   readonly options?: readonly string[];
+  /** `color` (issue 184, Thriving Isle): "choose a color other than blue", the color that cannot be chosen, as its letter. */
+  readonly except?: 'W' | 'U' | 'B' | 'R' | 'G';
 }
 
 /**
@@ -1247,6 +1252,8 @@ export type IrRestrictionKind =
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
   | 'mustBlock'
+  // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.
+  | 'goaded'
   // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
   | 'canBlockOnlyFlying';
 

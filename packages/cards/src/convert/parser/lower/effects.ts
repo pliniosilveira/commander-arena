@@ -71,6 +71,7 @@ import { KORVOLD_LOWERINGS } from './korvold';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
+import { MOVE_COUNTERS_LOWERINGS } from './move-counters';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
 import {
@@ -721,7 +722,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
     case 'commanderIdentity':
       return { kind: 'commanderIdentity' };
     case 'chosenColor':
-      return { kind: 'chosenColor' };
+      return spec.what.or === undefined
+        ? { kind: 'chosenColor' }
+        : { kind: 'chosenColor', or: spec.what.or };
     case 'devotionToChosenColor':
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
@@ -1753,6 +1756,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...MOVE_COUNTERS_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,
@@ -1812,7 +1816,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                     test === 'discardedSpellThisWay' ||
                     test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
-                  : test === 'otherAttachedToHost'
+                  : test === 'otherAttachedToHost' || test === 'xAtLeast'
                     ? 'amountIs'
                     : test;
     return failure(

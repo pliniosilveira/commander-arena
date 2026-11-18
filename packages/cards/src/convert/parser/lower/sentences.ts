@@ -1327,7 +1327,9 @@ function countsWhatHappened(
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
     case 'discardedMost':
-      // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": a `discard` before it in the same text.
+    // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": a `discard` before it in the same text.
+    case 'discarded':
+      // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
@@ -2098,6 +2100,45 @@ function lowerDieTable(
   return { ok: true, value: effects, rule: 'body.sentence' };
 }
 
+/**
+ * "Create X 1/1 white Soldier creature tokens. If X is 5 or more, destroy all other creatures." (issue 233, CR 608.2c): in a spell, "other" in "destroy all other creatures" names
+ * nothing of the spell itself (it is no permanent), so it can only mean the tokens an instruction before it created; the engine's `each` with `except` of `moved` says so. A
+ * spell that has no such instruction before it leaves "other" without an antecedent, and the whole text is refused (null), never guessed.
+ */
+function otherThanCreated(effects: readonly Effect[]): Effect[] | null {
+  let created = false;
+  let broken = false;
+  const rewrite = (effect: Effect): Effect => {
+    if (effect.kind === 'createToken') {
+      created = true;
+      return effect;
+    }
+    if (effect.kind === 'conditional') {
+      return {
+        ...effect,
+        effect: rewrite(effect.effect),
+        ...(effect.else === undefined ? {} : { else: rewrite(effect.else) }),
+      };
+    }
+    if (
+      effect.kind === 'destroy' &&
+      'filter' in effect.objects &&
+      effect.objects.filter.other === true
+    ) {
+      if (!created) {
+        broken = true;
+        return effect;
+      }
+      const { other: _other, ...filter } = effect.objects.filter;
+      void _other;
+      return { ...effect, objects: { kind: 'each', filter, except: { kind: 'moved' } } };
+    }
+    return effect;
+  };
+  const out = effects.map(rewrite);
+  return broken ? null : out;
+}
+
 export function lowerSentences(
   sentences: readonly IrSentence[],
   ctx: LowerContext,
@@ -2148,8 +2189,12 @@ export function lowerSentences(
     if (result.last > i && sentences[result.last]?.where !== undefined) return refuse(sentence);
     i = result.last;
   }
-  const effects = steps.flatMap((s) => s.effects);
+  const flat = steps.flatMap((s) => s.effects);
   const last = sentences[sentences.length - 1];
-  if (last !== undefined && !lossReadsAreOrdered(effects)) return refuse(last);
-  return { ok: true, value: effects, rule: 'body.sentence' };
+  // Issue 233 (Martial Coup): "destroy all other creatures" in a spell leaves out the tokens an instruction before it created, not the spell.
+  const effects = ctx.owner === 'spell' ? otherThanCreated(flat) : flat;
+  if (last !== undefined && (effects === null || !lossReadsAreOrdered(effects))) {
+    return refuse(last);
+  }
+  return { ok: true, value: effects ?? [], rule: 'body.sentence' };
 }

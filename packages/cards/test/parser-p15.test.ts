@@ -257,9 +257,10 @@ describe('"another target ...", "each of up to two target creatures", "all other
   });
 
   test('"all other creatures" and "each other creature you control" are every one but the source', () => {
-    expect(spell('Destroy all other creatures.').effect).toEqual({
-      kind: 'destroy',
-      objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], other: true } },
+    // Issue 233 (PR #280): in a spell "other" has no source to leave out (a spell is no permanent); only the tokens an instruction before it created can be meant, so a spell
+    // that says it with nothing before it is refused, not run as "every creature".
+    expect(dropped('Destroy all other creatures.', 'instant')).toMatchObject({
+      reason: 'notRunnable',
     });
     expect(abilities('{T}: Put a +1/+1 counter on each other creature you control.')).toEqual([
       {
@@ -761,15 +762,15 @@ describe('the choice made as a permanent enters and what reads it (D-100; CR 614
   });
 
   test.each([
-    ['As ~ enters, choose a color other than white.', ', choose a color other than white.'],
+    ['As ~ enters, choose a color other than gold.', ', choose a color other than gold.'],
     ['As ~ enters, choose two colors.', ', choose two colors.'],
     ['As ~ enters, choose a basic land type.', ', choose a basic land type.'],
     ['As ~ enters, choose a card name.', ', choose a card name.'],
     // Group 4 of the Vraska deck reads "you may" as the lead of the reveal replacement.
     ['As ~ enters, you may choose a color.', 'choose a color.'],
     [
-      '~ enters tapped. As it enters, choose a color other than white.',
-      'As it enters, choose a color other than white.',
+      '~ enters tapped. As it enters, choose a color other than gold.',
+      'As it enters, choose a color other than gold.',
     ],
     ['~ enters tapped. Draw a card.', 'Draw a card.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {

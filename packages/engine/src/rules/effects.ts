@@ -100,6 +100,7 @@ import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
+import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
@@ -253,6 +254,7 @@ export function runInstruction(
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
   if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
+  if (instruction.kind === 'moveCounters') return runMoveCounters(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -1416,6 +1418,14 @@ function runEffect(
               turn: { ...state.turn, extraLandDrops: state.turn.extraLandDrops + effect.count },
             }
           : state,
+      );
+
+    case 'moveCountersOnto':
+      // CR 122.1 (issue 230): the counters move one at a time, each a choice of the controller, as the instruction runs (rules/move-counters.ts).
+      return done(
+        state,
+        [],
+        [{ kind: 'moveCounters', counter: effect.counter, to: effect.to, chosen: null }],
       );
 
     case 'populate':

@@ -92,6 +92,17 @@ export function chosenIssues(
       ) {
         asked.push(a.replacement.what);
       }
+      // Issue 184: "choose a color other than blue": the excluded color is a color, and only a choice of a color has one.
+      const except = (a.replacement as { except?: unknown }).except;
+      if (
+        except !== undefined &&
+        (a.replacement.what !== 'color' || !['W', 'U', 'B', 'R', 'G'].includes(except as string))
+      ) {
+        out.push({
+          path: `${path}.abilities`,
+          message: 'only a choice of a color has a color it leaves out, and it is one of the five',
+        });
+      }
       // D-151: "choose Khans or Dragons": at least two different names, and only that kind of choice has them.
       const named = a.replacement.options;
       if (a.replacement.what === 'option') {

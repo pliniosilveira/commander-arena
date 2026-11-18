@@ -404,6 +404,12 @@ function effectOf(
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
       if (effect.restriction === 'cantBeCountered' && subject.kind !== 'this') return failure(at);
+      // CR 701.15a (issue 201): "is goaded" is the engine's static `goaded` of the permanent an Aura or Equipment is attached to.
+      if (effect.restriction === 'goaded') {
+        const blocked = missingFeatures(['static:goaded']);
+        if (blocked.length > 0) return failure(at, blocked);
+        return ok({ kind: 'goaded', subject });
+      }
       return ok({ kind: 'restriction', subject, restriction: effect.restriction });
     }
     default:

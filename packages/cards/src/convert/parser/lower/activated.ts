@@ -77,6 +77,7 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   // "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (stage P34, D-152): the abilities of the permanents that
   // are of the kinds the spells are (the engine's `alsoAbilities`), which the text says by naming the same kind.
   const abilities = clause.args.alsoAbilities;
+  // Issue 151 (Secluded Courtyard): "or activate an ability of a creature source of the chosen type": the abilities of the creatures of the chosen type.
   return {
     ...kinds,
     ...(abilities?.kind === 'flag' && abilities.value ? { alsoAbilities: true as const } : {}),
@@ -288,6 +289,8 @@ function lowerManaAbility(
   const manas = costs.value.filter((c) => c.kind === 'mana').length;
   const lives = costs.value.filter((c) => c.kind === 'payLife').length;
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
+  // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
+  const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
   // D-625 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
   const tapsOther = costs.value.filter((c) => c.kind === 'tapPermanents');
@@ -301,12 +304,14 @@ function lowerManaAbility(
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
+    removals <= 1 &&
     sacrifices.length <= 1 &&
     tapsOther.length <= 1 &&
     (tapsOther.length === 0 ||
       (sacrifices.length === 0 && tapsOther.every((c) => c.count === 1))) &&
     selfOnly &&
-    taps + manas + lives + mills + sacrifices.length + tapsOther.length === costs.value.length &&
+    taps + manas + lives + mills + removals + sacrifices.length + tapsOther.length ===
+      costs.value.length &&
     effects.every(isAlso) &&
     rest.every(plainClause);
   if (!shaped) return failure(ability);

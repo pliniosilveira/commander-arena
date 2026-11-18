@@ -80,6 +80,14 @@ export function lowerCondition(
       if (test.who === 'it' && !itIsSelf) return failure(c, []);
       return ok({ kind: 'kicked' });
     }
+    case 'xAtLeast': {
+      // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
+      const blocked = missingFeatures(['condition:xAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.owner !== 'spell') return failure(c, []);
+      ctx.usesX = true;
+      return ok({ kind: 'xAtLeast', value: test.atLeast });
+    }
     case 'castInOwnMainPhase': {
       // CR 601.2, 505.1 (issue 244): the engine reads it from the spell; the lowering of a spell's sentence only.
       const blocked = missingFeatures(['condition:castInOwnMainPhase']);
@@ -665,6 +673,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:opponentPoisonAtLeast',
   'condition:kicked',
   'condition:castInOwnMainPhase',
+  'condition:xAtLeast',
   'condition:controlCommander',
   'condition:lifeTotal',
   'condition:cardsInGraveyard',

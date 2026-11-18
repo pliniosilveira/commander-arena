@@ -60,6 +60,7 @@ import { dieReplacementFor } from './die-replacement';
 import {
   entersAsSaga,
   entersChoice,
+  entersColorExcept,
   entersCopyOf,
   entersOptions,
   entersPayment,
@@ -563,7 +564,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         kind: 'chooseOption',
         seat: enterController,
         purpose: choice,
-        options: optionsFor(choice, entering === null ? [] : entersOptions(entering.abilities)),
+        options: optionsFor(
+          choice,
+          entering === null ? [] : entersOptions(entering.abilities),
+          entering === null ? undefined : entersColorExcept(entering.abilities),
+        ),
         source: old.id,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',

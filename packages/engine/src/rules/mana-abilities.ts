@@ -196,6 +196,15 @@ export function lifeCostOf(ability: ManaAbility): number {
 }
 
 /** The cards the ability's cost mills from its controller's library ("Mill a card", CR 701.17, D-208). */
+/** The counters the ability's cost removes from its own permanent ("Remove a charge counter from this land", issue 245, CR 118.3, 122.1). */
+export function counterCostsOf(
+  ability: ManaAbility,
+): readonly { readonly counter: string; readonly count: number }[] {
+  return ability.cost.flatMap((c) =>
+    c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+  );
+}
+
 export function millCostOf(ability: ManaAbility): number {
   return ability.cost.reduce((n, c) => n + (c.kind === 'mill' ? c.count : 0), 0);
 }
@@ -278,6 +287,11 @@ export function physicalRefusal(
   const mill = millCostOf(ability);
   if (mill > getSeat(state, seat).library.length)
     return `you have fewer than ${mill} cards in your library to mill`;
+  // CR 118.3, 122.1 (issue 245): "Remove a charge counter from this land" cannot be paid by a permanent with fewer of them.
+  for (const { counter, count } of counterCostsOf(ability)) {
+    if ((obj.counters[counter] ?? 0) < count)
+      return `${name} has fewer than ${count} ${counter} counters`;
+  }
   // CR 701.21a, 118.3: "Sacrifice a Spirit" needs a permanent of the kind that the seat controls.
   const kind = sacrificeFilterOf(ability);
   if (kind !== null && sacrificeCandidates(state, seat, obj.id, kind).length === 0) {
@@ -330,6 +344,15 @@ export function payManaAbilityCosts(
       next = patchObject(next, given, { tapped: true });
       events.push({ kind: 'tapped', object: given, by: seat });
     }
+  }
+  // CR 118.3, 122.1 (issue 245): the counters the cost removes from this permanent.
+  for (const { counter, count } of counterCostsOf(ability)) {
+    const obj = next.objects[id];
+    if (obj === undefined) continue;
+    next = patchObject(next, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) - count },
+    });
+    events.push({ kind: 'counterRemoved', object: id, counter, count });
   }
   const life = lifeCostOf(ability);
   if (life > 0) {

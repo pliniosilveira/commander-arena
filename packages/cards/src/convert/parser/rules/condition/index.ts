@@ -55,6 +55,7 @@ import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { CONDITION_UNLESS_PAYS } from './unless';
 import { VRASKA_CONDITION_RULES } from './vraska';
+import { CONDITION_X_AT_LEAST } from './x-at-least';
 
 function amountOf(count: { value: number; span: Span }): IrAmount {
   return { kind: 'number', value: count.value, span: count.span };
@@ -538,6 +539,7 @@ export const CONDITION_RULES = [
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
+  CONDITION_X_AT_LEAST,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

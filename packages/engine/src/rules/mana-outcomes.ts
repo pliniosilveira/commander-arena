@@ -155,6 +155,10 @@ function plainOutcomes(
     case 'chosenColor': {
       // D-149: "Add one mana of the chosen color": the color its permanent chose as it entered (CR 614.12, 607.2d); none chosen, none made.
       const color = obj.chosen?.color;
+      // Issue 184: "Add {U} or one mana of the chosen color": the fixed color, or the chosen one when it differs (a choice of one mana).
+      if (p.or !== undefined) {
+        return color === undefined || color === p.or ? [[p.or]] : [[p.or], [color]];
+      }
       return color === undefined ? [[]] : [[color]];
     }
     case 'fixed':

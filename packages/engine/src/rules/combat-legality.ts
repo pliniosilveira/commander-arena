@@ -86,9 +86,13 @@ function narrowedTargets(
     const wanted = targets.filter((t) => t.kind === 'player' && forced.includes(t.seat));
     if (wanted.length > 0) return wanted;
   }
-  const away = groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
-    r.awayFrom === undefined ? [] : [r.awayFrom],
-  );
+  const away = [
+    ...groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
+      r.awayFrom === undefined ? [] : [r.awayFrom],
+    ),
+    // CR 701.15a (issue 201): a goaded creature attacks a player other than each player that goads it, if able.
+    ...derive(state, getObject(state, attacker)).goadedBy,
+  ];
   if (away.length === 0) return targets;
   const others = targets.filter((t) => t.kind === 'player' && !away.includes(t.seat));
   return others.length > 0 ? others : targets;

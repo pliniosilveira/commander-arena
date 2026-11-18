@@ -521,7 +521,7 @@ function answerChooseOption(
     return ok(played.state, [answered, ...played.events]);
   }
   const chosen = chosenFromOption(d.purpose, option, d.options);
-  if (chosen === null) return fail('That is not one of the options');
+  if (chosen === null || !d.options.includes(option)) return fail('That is not one of the options');
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
