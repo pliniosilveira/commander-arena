@@ -69,8 +69,9 @@
 .scr-deck {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   padding: 9px 12px 9px 38px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -92,6 +93,20 @@
   height: 16px;
   margin: 0;
   accent-color: var(--accent);
+}
+.scr-deck-art {
+  flex: none;
+  width: 96px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.scr-deck-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .scr-deck-name {
   font-weight: 700;

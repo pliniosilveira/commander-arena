@@ -131,13 +131,25 @@ export function DeckDialog({
                 disabled={busy}
                 onChange={() => setMarked(deck.id)}
               />
-              <span className="scr-deck-name">
-                {deck.name}
-                {deck.edited && <span className="scr-deck-tag">edited</span>}
-              </span>
-              <span className="scr-deck-blurb">{deck.blurb}</span>
-              <span className="scr-deck-commander">
-                {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
+              {deck.commanderImage !== undefined && (
+                <img
+                  className="scr-deck-art"
+                  src={deck.commanderImage}
+                  alt=""
+                  loading="lazy"
+                  width={96}
+                  height={70}
+                />
+              )}
+              <span className="scr-deck-text">
+                <span className="scr-deck-name">
+                  {deck.name}
+                  {deck.edited && <span className="scr-deck-tag">edited</span>}
+                </span>
+                <span className="scr-deck-blurb">{deck.blurb}</span>
+                <span className="scr-deck-commander">
+                  {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
+                </span>
               </span>
             </label>
           ))}
