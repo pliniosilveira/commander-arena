@@ -1,5 +1,5 @@
 {
-  "parserVersion": 155,
+  "parserVersion": 156,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -778,6 +778,23 @@
       "reasons": [],
       "ast": "bb55ad41"
     },
+    "17e905ca-c0bd-473d-95a7-e180ba5fea43": {
+      "name": "Mirror Entity",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.lose-hexproof-shroud"
+        }
+      ],
+      "reasons": [],
+      "ast": "fc0da47b"
+    },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
       "group": "acceptance",
@@ -1251,6 +1268,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c4373f51"
+    },
+    "2987c385-011a-4032-a516-a46d1e9dc9e8": {
+      "name": "Crib Swap",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6172b659"
     },
     "2a18b3f0-8a78-46d8-b60f-3cd634062f1b": {
       "name": "Refute Destiny",
@@ -2653,6 +2678,14 @@
       "reasons": [],
       "ast": "b3bf1ab3"
     },
+    "58a2d15f-1b4b-4303-b524-8cc0d1b3e7d2": {
+      "name": "Painful Truths",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9413e7c1"
+    },
     "58b0c737-0a84-4f9a-b3b7-300c5de43874": {
       "name": "Studious First-Year // Rampant Growth",
       "group": "training",
@@ -3253,6 +3286,14 @@
       "reasons": [],
       "ast": "ef7016e3"
     },
+    "69fd4ddf-9ed8-4c56-bef3-9944daf05e4f": {
+      "name": "Coiling Oracle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aba9480f"
+    },
     "6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66": {
       "name": "Kangee, Sky Warden",
       "group": "acceptance",
@@ -3471,6 +3512,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cd6440cd"
+    },
+    "717bbb9d-0a5b-4979-a24b-9d54aac7657a": {
+      "name": "Shriekmaw",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c8ef2d21"
     },
     "717c6beb-81c6-43ed-aab0-aedfc1cbac33": {
       "name": "Lake-town",
@@ -4551,6 +4600,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f41e2416"
+    },
+    "98492d7d-3b9e-4ae1-ac45-1b508d6d2670": {
+      "name": "Coveted Jewel",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever one or more creatures an opponent controls attack you and aren't blocked, that player draws three cards and gains control of ~. Untap it.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "d071894b"
     },
     "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
       "name": "Magma Opus",
@@ -7590,8 +7656,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 593,
-      "total": 623
+      "supported": 597,
+      "total": 629
     }
   }
 }
