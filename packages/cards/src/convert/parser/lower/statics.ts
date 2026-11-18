@@ -392,6 +392,18 @@ function effectOf(
         ...(effect.subtypes.length > 0 ? { subtypes: [...effect.subtypes] } : {}),
       });
     }
+    case 'allCreatureTypes': {
+      // CR 613.1d, 205.3m, 604.3 (issue 104): the creatures you control, with the creature spells and cards of the scope, which the engine's effect names itself (no other subject).
+      const only =
+        subject.kind === 'filter' &&
+        subject.other !== true &&
+        subject.filter.controller === 'you' &&
+        subject.filter.types?.length === 1 &&
+        subject.filter.types[0] === 'creature' &&
+        Object.keys(subject.filter).length === 2;
+      if (!only) return failure(at);
+      return ok({ kind: 'allCreatureTypes', scope: effect.scope });
+    }
     case 'loseTypes': {
       // CR 613.1d, 205.1a (stage P68, D-229): "~ isn't a creature": the permanent itself loses card types, in layer 4.
       if (subject.kind !== 'this') return failure(at);
@@ -482,6 +494,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:setTypes'];
     case 'loseTypes':
       return ['static:loseTypes'];
+    case 'allCreatureTypes':
+      return ['static:allCreatureTypes'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'attackTax':
@@ -1023,6 +1037,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:abilityCostReduction',
   'static:setTypes',
   'static:loseTypes',
+  'static:allCreatureTypes',
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
   'static:setPt',

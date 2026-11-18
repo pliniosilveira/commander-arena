@@ -559,7 +559,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw a card for each time',
     'you draw a card for each creature',
     'its controller creates a token that’s a copy of it',
-    'its controller creates a 2/2 blue Bird creature token with changeling',
+    'its controller creates a 2/2 blue Bird creature token with flash',
     'its controller creates',
     'its controller create a Treasure token',
     'its controller investigate',

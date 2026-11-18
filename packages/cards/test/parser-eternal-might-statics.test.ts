@@ -69,3 +69,88 @@ describe('On Wings of Gold: "Creatures you control that are Zombies and/or token
     'Creatures you control that are Bananas and/or tokens get +1/+1.',
   ])('near miss: %s', (text) => NOT_READ(text, 'enchantment'));
 });
+
+const EVERY_TYPE =
+  "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.";
+
+describe('Maskwood Nexus: "Creatures you control are every creature type. The same is true for ..." (CR 205.3m, 613.1d, 604.3)', () => {
+  test('the real text: one effect for each scope the statement names', () => {
+    const parsed = read(EVERY_TYPE, 'artifact');
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toEqual([
+      { kind: 'static', static: { kind: 'allCreatureTypes', scope: 'youControl' } },
+      { kind: 'static', static: { kind: 'allCreatureTypes', scope: 'youOwn' } },
+    ]);
+  });
+
+  test.each([
+    'Creatures you control are every creature type.',
+    EVERY_TYPE.replace('Creatures you control are', 'Other creatures you control are'),
+    EVERY_TYPE.replace('Creatures you control are', 'Zombies you control are'),
+    EVERY_TYPE.replace('creature spells you control', 'creature spells you cast'),
+    EVERY_TYPE.replace("aren't on", 'are on'),
+    EVERY_TYPE.replace(
+      'every creature type',
+      'every creature type in addition to their other types',
+    ),
+  ])('near miss: %s', (text) => NOT_READ(text, 'artifact'));
+});
+
+describe('Maskwood Nexus: "Create a 2/2 blue Shapeshifter creature token with changeling." (CR 702.73a, 111.3)', () => {
+  const token = (keywords: object[]) => ({
+    kind: 'createToken',
+    token: {
+      kind: 'custom',
+      definition: {
+        name: 'Shapeshifter',
+        manaCost: null,
+        supertypes: [],
+        types: ['creature'],
+        subtypes: ['Shapeshifter'],
+        colors: ['U'],
+        power: 2,
+        toughness: 2,
+        loyalty: null,
+        defense: null,
+        oracleText: '',
+        abilities: keywords.map((keyword) => ({ kind: 'keyword', keyword })),
+      },
+    },
+    count: 1,
+  });
+
+  test('the real text: the token has the keyword changeling as its own ability', () => {
+    const parsed = read(
+      '{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling.',
+      'artifact',
+    );
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['3'] }, { kind: 'tap' }],
+        effect: token([{ kind: 'changeling' }]),
+      },
+    ]);
+  });
+
+  test('with a keyword that can be granted (SYNTHETIC)', () => {
+    const parsed = read(
+      '{3}, {T}: Create a 2/2 blue Shapeshifter creature token with flying and changeling.',
+      'artifact',
+    );
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toEqual([
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['3'] }, { kind: 'tap' }],
+        effect: token([{ kind: 'flying' }, { kind: 'changeling' }]),
+      },
+    ]);
+  });
+
+  test.each([
+    '{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling and changeling.',
+    '{3}, {T}: Create a 2/2 blue Shapeshifter creature token with flash.',
+  ])('near miss: %s', (text) => NOT_READ(text, 'artifact'));
+});
