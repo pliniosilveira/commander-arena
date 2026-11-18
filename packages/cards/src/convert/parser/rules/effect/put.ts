@@ -62,11 +62,11 @@ function zone(
 }
 
 const PUT_LIBRARY: Parser<Put> = choice(
-  // A permanent, or ~, to its owner's library.
+  // A permanent, or ~, or "it" (the card a permanent became when the trigger is about its own death, CR 400.7) to its owner's library.
   map(
     sequence(
       literal('put '),
-      operands(['noun.self', ...PERMANENT_OPERANDS], RULE),
+      operands(['noun.self', 'noun.it', ...PERMANENT_OPERANDS], RULE),
       spanned(sequence(POSITION, OWNERS_LIBRARY)),
     ),
     ([, objects, where]): Put => ({
@@ -108,6 +108,8 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
   examples: [
     "put ~ on top of its owner's library",
     "put ~ on the bottom of its owner's library",
+    "put it on the bottom of its owner's library",
+    "put it on top of its owner's library",
     "put target creature on top of its owner's library",
     'put target creature card from your graveyard on top of your library',
     'put target artifact card from your graveyard on top of your library',
@@ -116,6 +118,8 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
   ],
   rejects: [
     'put ~ on top of your library',
+    'put it on the bottom of your library',
+    "put it on the bottom of its owner's library and draw a card",
     'put target creature on top of your library',
     'put target card from a graveyard on top of your library',
     "put target creature card from an opponent's graveyard on top of your library",
