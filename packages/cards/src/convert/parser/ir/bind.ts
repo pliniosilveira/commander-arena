@@ -117,7 +117,9 @@ type Pronoun =
 
 function classify(raw: string): Pronoun | null {
   const word = raw.trim().toLowerCase();
-  if (word === 'that player' || word === 'they') return { kind: 'player' };
+  if (word === 'that player' || word === 'that opponent' || word === 'they') {
+    return { kind: 'player' };
+  }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
   if (word === 'the other') return { kind: 'other' };
@@ -247,7 +249,7 @@ class Binder {
             !(
               this.playerAsked &&
               a.noun.det === 'you' &&
-              /^that player$/iu.test(noun.filter.raw.trim())
+              /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
             ),
         );
         break;

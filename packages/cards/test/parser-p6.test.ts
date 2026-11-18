@@ -138,8 +138,8 @@ describe('Ward (CR 702.21a): "Ward {2}" and "Ward—Pay 3 life."', () => {
     expect(d.stoppedAt).toContain(part);
   });
 
-  test('"gains ward until end of turn" is not read: ward is not grantable (D-083)', () => {
-    expect(dropped('Target creature gains ward {2} until end of turn.')).toMatchObject({
+  test('"gains ward until end of turn" with no cost is not read (ward with a mana cost is grantable since D-638)', () => {
+    expect(dropped('Target creature gains ward until end of turn.')).toMatchObject({
       reason: 'unrecognised',
     });
   });

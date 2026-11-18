@@ -38,6 +38,9 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         issue(out, `${path}.by`, `unknown player ${String(t.by)}`);
       }
       return true;
+    case 'playerAttacksOpponent':
+      // D-648: no parameters.
+      return true;
     case 'attackBatch':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);

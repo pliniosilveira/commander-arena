@@ -125,6 +125,18 @@ describe('static.attached: what an Aura or Equipment gives (CR 604.4, 613.4c, 61
     );
   });
 
+  test('a granted ability in quotes that the engine cannot run is read and dropped, never run (an activated one is run since D-641)', () => {
+    expect(
+      diagnosticOf('Equipped creature has "{T}: Foretell the top card."', 'Equipment'),
+    ).toMatchObject({
+      reason: 'notRunnable',
+      closestRule: 'static.attached',
+    });
+    expect(
+      diagnosticOf('Equipped creature has "{T}: Foretell the top card."', 'Equipment'),
+    ).not.toHaveProperty('needs');
+  });
+
   test('"can\'t be blocked" is a restriction the engine runs since D-094 (stage P12)', () => {
     expect(abilitiesOf("Enchanted creature can't be blocked.", 'Aura')).toEqual([
       stat({ kind: 'restriction', subject: HOST_CREATURE, restriction: 'cantBeBlocked' }),
@@ -133,7 +145,7 @@ describe('static.attached: what an Aura or Equipment gives (CR 604.4, 613.4c, 61
 
   test.each([
     ["Enchanted creature can't attack or block alone.", 'alone.'],
-    ['Enchanted creature has ward {2}.', 'ward {2}.'],
+    ['Enchanted creature has ward.', 'ward.'],
     ['Enchanted creature has flash.', 'flash.'],
     ['Enchanted creature gets +1/+1 and loses flying.', 'and loses flying.'],
     ['Enchanted creature gets +1/+1 until end of turn.', 'until end of turn.'],

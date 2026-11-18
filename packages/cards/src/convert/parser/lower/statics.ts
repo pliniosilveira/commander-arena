@@ -17,7 +17,13 @@ import {
   type Supertype,
 } from '@commander-arena/engine';
 import type { IrAbility, IrNoun, IrStaticEffect, IrStaticPart } from '../ir/types';
-import { AFFLICT_WORD, grantedKeyword, landwalkOf } from '../rules/keyword/vocabulary';
+import {
+  AFFLICT_WORD,
+  ANNIHILATOR_WORD,
+  grantedKeyword,
+  landwalkOf,
+  WARD_WORD,
+} from '../rules/keyword/vocabulary';
 import { lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
@@ -158,7 +164,10 @@ function lowerGrantedAbility(
     subject.kind !== 'this' &&
     ((subject.kind !== 'filter' &&
       !(
-        ((subject.kind === 'attached' || subject.kind === 'pair') && inner.kind === 'triggered') ||
+        // D-641 (CR 113.6g, 602.2, 613.1f): an activated ability for a creature an Aura or Equipment is attached to is read since D-628 (`attachedLandActivated`, which takes the
+        // creature or land the subject names): the creature has it as its own, so its controller activates it (`scenario-xx-granted-activated.test.ts`).
+        (subject.kind === 'attached' && inner.kind === 'triggered') ||
+        (subject.kind === 'pair' && inner.kind === 'triggered') ||
         attachedLandActivated
       )) ||
       ctx.namedInQuotes)
@@ -228,6 +237,17 @@ function effectOf(
       // CR 702.16, 903.4 (stage P70, D-259): the engine's `grantKeyword` with a protection, from the named colors or from those outside the
       // commander's color identity.
       // CR 702.16a, 607.2d (Hashaton deck group 6, D-376): or from the card type the permanent that gives it chose as it entered.
+      if (effect.chosenColor === true) {
+        return ok({
+          kind: 'grantKeyword',
+          subject,
+          keyword: {
+            kind: 'protection',
+            from: 'chosenColor',
+            ...(effect.exceptSource === true ? { exceptSource: true as const } : {}),
+          },
+        });
+      }
       if (effect.chosenCardType === true) {
         return ok({
           kind: 'grantKeyword',
@@ -286,7 +306,15 @@ function effectOf(
         : failure(at);
     case 'castFromGraveyard':
       // CR 113.6b (stage P29, D-133): the ability of a card in its owner's graveyard, so its subject is `~`.
-      return subject.kind === 'this' ? ok({ kind: 'castFromGraveyard' }) : failure(at);
+      // D-656 (Raffine's Guidance, CR 118.9): "by paying {2}{W} rather than paying its mana cost" is the ability's own alternative cost.
+      return subject.kind === 'this'
+        ? ok({
+            kind: 'castFromGraveyard',
+            ...(effect.cost === undefined
+              ? {}
+              : { cost: [{ kind: 'mana' as const, symbols: [...effect.cost] }] }),
+          })
+        : failure(at);
     case 'chosenType':
       // D-100, CR 205.1b, 613.1d: the permanent itself has the type it chose, in addition to its own
       // (layer 4). Only `~` and only the chosen creature type run; the card must ask the question.
@@ -413,6 +441,10 @@ function effectOf(
       }
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
+    case 'cantAttackYou':
+      // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
+      if (subject.kind !== 'filter' || subject.other === true) return failure(at);
+      return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
     case 'restriction': {
       // CR 113.6g: "can't be countered" is the spell's own ability, so its subject is `~`; `~` says
       // nothing else but restrictions (the grammar reads only those of it).
@@ -444,6 +476,11 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
       // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
       if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
+      // D-640, D-638: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
+      if (ANNIHILATOR_WORD.test(effect.keyword)) {
+        return ['static:grantKeyword', 'keyword:annihilator'];
+      }
+      if (WARD_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:ward'];
       if (landwalkOf(effect.keyword) !== undefined) {
         return ['static:grantKeyword', 'keyword:landwalk'];
       }
@@ -454,6 +491,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'restriction':
       return ['static:restriction'];
+    case 'cantAttackYou':
+      return ['static:cantAttackYou'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':

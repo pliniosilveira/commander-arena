@@ -63,6 +63,15 @@ const BLOCKED_BY: Parser<IrStaticEffect> = map(
 
 export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticEffect> {
   const common = [
+    // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control.", said of a group.
+    ...(subject === 'plural' || subject === 'each'
+      ? [
+          map(
+            pattern(new RegExp(`can['’]t attack you or planeswalkers you control${END}`, 'iu')),
+            (): IrStaticEffect => ({ kind: 'cantAttackYou' }),
+          ),
+        ]
+      : []),
     // D-407 (CR 508.1a): "can't attack", said of the permanent an Aura or Equipment is attached to ("can't attack or block" is `restrictionEffects`).
     ...(subject === 'attached' ? [phrase("can['’]t attack", 'cantAttack')] : []),
     // Issue 201 (Shiny Impetus, CR 701.15): "is goaded", said of the permanent an Aura is attached to.

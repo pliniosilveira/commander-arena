@@ -97,6 +97,20 @@ const AURAS: readonly Line[] = [
   },
   {
     kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature has annihilator X.',
+    expect: no('annihilator X.', 'static.attached'),
+    note: 'SYNTHETIC near miss: annihilator is granted only with a number in digits (D-640)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature has "{T}: Foretell the top card."',
+    expect: no('Enchanted creature has "{T}: Foretell the top card."', 'static.attached', {
+      ...NOT_RUNNABLE,
+    }),
+    note: 'SYNTHETIC; the activated ability is read and not run: no rule for foretelling a card as an effect',
+  },
+  {
+    kind: 'aura',
     text: 'Enchant permanent\nEnchanted permanent has "{T}: Draw a card."',
     expect: no('Enchanted permanent has "{T}: Draw a card."', 'static.attached', {
       ...NOT_RUNNABLE,
@@ -132,6 +146,12 @@ const AURAS: readonly Line[] = [
     text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded.',
     expect: OK,
     note: 'backlog: 7 cards; the engine runs it since PR #280 (issue 201, CR 701.15)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded twice.',
+    expect: no('twice.', 'static.attached'),
+    note: 'SYNTHETIC near miss: "goaded" is read only as the last words of the sentence',
   },
   {
     kind: 'aura',
@@ -296,10 +316,11 @@ const EQUIPMENT: readonly Line[] = [
     kind: 'equipment',
     text: 'Equipped creature gets +1/+1 and has trample and "Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."\nEquip {3}',
     expect: no(
-      '"Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."',
+      'Equipped creature gets +1/+1 and has trample and "Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."',
       'static.attached',
+      { ...NOT_RUNNABLE },
     ),
-    note: 'backlog: 1 card',
+    note: 'backlog: 1 card; the quoted ability is read since D-641 and not run (no rule for "create that many Treasure tokens")',
   },
   {
     kind: 'equipment',

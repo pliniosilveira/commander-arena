@@ -46,6 +46,9 @@ export function playerSubject(
     case 'triggerPlayer':
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };
+    case 'triggerAttackedPlayer':
+      // D-648 (CR 508.6): the player attacked, "that opponent" of "whenever a player attacks one of your opponents".
+      return { text: 'that opponent', base: false };
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6): "each opponent attacking that player".
       return { text: 'each opponent attacking that player', base: false };

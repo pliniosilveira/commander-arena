@@ -3,7 +3,7 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
 import { COUNT_AMOUNT_RULES } from './count';
-import { AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
+import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
@@ -400,6 +400,7 @@ export const AMOUNT_RULES = [
   ...FOR_EACH_VALUE_RULES,
   AMOUNT_TIMES_KICKED,
   AMOUNT_FOR_EACH_STILL_EXILED,
+  AMOUNT_FOR_EACH_AURA_ATTACHED,
   AMOUNT_FOR_EACH_MANA_SPENT,
   // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
   ...LOREHOLD_G2_AMOUNT_RULES,

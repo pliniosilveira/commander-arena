@@ -111,4 +111,60 @@ export const NOUN_ATTACKING_OPPONENTS = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.each-other-attacking-opponent`: "each other creature that's attacking one of your opponents" (CR 508.1b, 611.2c, D-650): the creatures declared as attackers
+ * of an opponent of the controller as a player (one at a planeswalker or a battle is not), but one. In an ability that triggers on a creature, the "other" is that
+ * creature (the lowering says so). Not read: "attacking your opponents", "creatures", "each creature", a controller word, "that are attacking", "one of the opponents".
+ */
+export const NOUN_EACH_OTHER_ATTACKING_OPPONENT = defineRule<IrNoun>({
+  id: 'noun.each-other-attacking-opponent',
+  family: 'noun',
+  leading: ['each'],
+  cites: [
+    'CR 508.1b (Declare Attackers Step)',
+    'CR 506.3 (Combat Phase)',
+    'CR 611.2c (Continuous Effects)',
+  ],
+  examples: ["each other creature that's attacking one of your opponents"],
+  rejects: [
+    "each creature that's attacking one of your opponents",
+    "each other creature that's attacking your opponents",
+    "each other creature that's attacking you",
+    "each other creature that's attacking one of your opponents or planeswalkers they control",
+    "each other creatures that's attacking one of your opponents",
+    "each other creature that's attacking an opponent",
+    "each other creature that's attacking one of you",
+  ],
+  parse: node<IrFilter, IrNoun>(
+    'noun.each-other-attacking-opponent',
+    (ctx, pos) => {
+      const r = pattern(
+        /each other creature that['’]s attacking one of your opponents(?![\p{L}\p{N}'’])/iu,
+      )(ctx, pos);
+      if (!r.ok) return r;
+      return {
+        ok: true,
+        value: {
+          zone: 'battlefield',
+          types: ['creature'],
+          attackingOpponents: 'players',
+          raw: r.value[0],
+        },
+        pos: r.pos,
+      };
+    },
+    (filter) => ({
+      kind: 'noun',
+      det: 'each',
+      filter,
+      upTo: false,
+      plural: true,
+      other: true,
+    }),
+  ),
+});
+
 export const EDHREC_NOUN_RULES = [NOUN_TOKEN_PERMANENTS, NOUN_ATTACKING_OPPONENTS];
+
+/** Before `noun.each-permanent`, which would stop after "each other creature" (D-650). */
+export const EDHREC_EARLY_NOUN_RULES = [NOUN_EACH_OTHER_ATTACKING_OPPONENT];

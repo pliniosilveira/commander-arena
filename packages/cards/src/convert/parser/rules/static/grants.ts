@@ -121,6 +121,21 @@ const BASE_PT: Parser<Effects> = map(
  * one protection a static ability gives, with the colors it names or the colors outside the commander's color identity.
  */
 const PROTECTION: Parser<Effects> = choice(
+  // D-652 (Flickering Ward, CR 702.16a, 607.2d): "protection from the chosen color", and the sentence that follows it on that Aura, "This effect doesn't remove ~."
+  // (the Aura of the chosen color stays attached, CR 702.16d, 704.5m).
+  map(
+    sequence(
+      pattern(/protection from the chosen color(?![\p{L}\p{N}])/iu),
+      optional(pattern(/\. This effect doesn['\u2019]t remove ~(?![\p{L}\p{N}])/iu), null),
+    ),
+    ([, tail]): Effects => [
+      {
+        kind: 'grantProtection',
+        chosenColor: true,
+        ...(tail === null ? {} : { exceptSource: true }),
+      },
+    ],
+  ),
   map(
     PROTECTION_OUTSIDE_COMMANDER_IDENTITY,
     (): Effects => [{ kind: 'grantProtection', commanderIdentity: true }],
@@ -212,8 +227,26 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
       : quiet(
           map(sequence(pattern(/(?: and |, and |, )/iu), areTypes(plural)), ([, what]) => what),
         );
+  // D-639 (CR 701.15b): "..., has deathtouch, and is goaded": the comma list of an Aura that gives keywords and goads, read as the restriction `is goaded` of issue 201.
+  const andGoaded =
+    mode === 'attached'
+      ? map(
+          pattern(/(?:, and |, )is goaded(?![\p{L}\p{N}'’])/iu),
+          (): Effects => [{ kind: 'restriction', restriction: 'goaded' }],
+        )
+      : (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos);
+  // D-641 (CR 613.1f): "has flying and "Sacrifice a creature: ~ gets +2/+1 until end of turn."": an ability in quotes after what the subject has, joined with "and" or a comma.
+  const andQuoted =
+    mode === 'self' || mode === 'selfGrant'
+      ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
+      : quiet(
+          map(
+            sequence(pattern(/(?: and |, and |, )/iu), choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED)),
+            ([, what]) => what,
+          ),
+        );
   const more = map(
-    many(choice(andHas, andRestriction, andAre)),
+    many(choice(andHas, andRestriction, andAre, andGoaded, andQuoted)),
     (groups): Effects => groups.flat(),
   );
   const getsPt = map(
@@ -349,6 +382,13 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
     'Enchanted creature gets +4/+4, has flying and first strike, and is an Angel in addition to its other types.',
     'Enchanted creature gets +2/+2, has flying, and is a Zombie in addition to its other types.',
+    // Issue 89 (D-639, CR 701.15b): the creature is goaded by the controller of the Aura.
+    'Enchanted creature gets +1/+1 and is goaded.',
+    'Enchanted creature has indestructible and is goaded.',
+    'Enchanted creature gets +1/+1, has deathtouch, and is goaded.',
+    // Issue 89 (D-638, CR 702.21a): ward a static ability gives, with a mana cost.
+    'Enchanted creature has ward {2}.',
+    'Enchanted creature gets +1/+0 and has lifelink and ward {2}.',
   ],
   rejects: [
     'Enchanted creature gets +2/+2',
@@ -357,7 +397,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature gets +X/+X.',
     'Enchanted creature gets +1/+1 for each creature you control.',
     'Enchanted creature has flash.',
-    'Enchanted creature has ward {2}.',
+    'Enchanted creature has ward.',
+    'Enchanted creature has ward 2.',
     // Stage P70 (D-259): protection from a quality that is not a color, a list that is not Oracle's, and the identity wording changed.
     'Enchanted creature has protection from everything.',
     'Enchanted creature has protection from each color.',
@@ -497,7 +538,12 @@ export const STATIC_EACH = defineRule<IrStatic>({
     'Each creature gets +1/+1 until end of turn.',
     "Each creatures you control can't be blocked by more than one creature.",
   ],
-  parse: statement('static.each', ['noun.each-permanent'], 'each'),
+  parse: statement(
+    'static.each',
+    // D-647: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
+    ['noun.each-permanent', 'noun.each-creature-enchanted-by-you'],
+    'each',
+  ),
 });
 
 export const GRANT_STATIC_RULES = [STATIC_ATTACHED, STATIC_PERMANENTS, STATIC_EACH];

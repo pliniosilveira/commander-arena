@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "Draw a card for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-654): the Auras `controlledBy` ("you": the controller of the ability) controlled that
+   * were attached to the permanent the trigger is about as it left the battlefield, from its last-known information. Valid only in a triggered ability whose trigger has a permanent
+   * as its subject (`dies`, `leavesBattlefield`).
+   */
+  | { readonly kind: 'aurasAttachedToTriggerSubject'; readonly controlledBy: 'you' }
+  /**
    * "Scry X, where X is the result" (CR 706.2, 706.3b; Galadriel group 3): the natural result of the latest `rollDie` of the same resolution (the engine has no modifier of a
    * roll). Valid only after a `rollDie` earlier in the same sequence (`validateCard` checks it), as the condition `dieResult` is.
    */
@@ -589,9 +595,10 @@ export interface ObjectFilter {
   /**
    * Only creatures attacking an opponent of the controller of this ability as a player, or a planeswalker or battle that opponent controls or protects
    * (CR 508.1b, 506.3, D-218): "creatures attacking your opponents and/or planeswalkers they control". It implies `attacking`. Read where `attacking` is
-   * read, and refused where it is refused.
+   * read, and refused where it is refused. `'players'` (D-650): "creatures attacking one of your opponents", only the attackers whose attack target is an opponent as a player,
+   * not one attacking a planeswalker or battle (CR 508.1b).
    */
-  readonly attackingOpponents?: true;
+  readonly attackingOpponents?: true | 'players';
   /**
    * Only creatures that are attacking or blocking (CR 506.4, 508.1k, 509.1g, D-229): "target attacking or blocking creature". A creature declared as an
    * attacker or as a blocker that is still in combat. Read where `attacking` is read, and refused where it is refused.
@@ -625,6 +632,12 @@ export interface ObjectFilter {
    * attached to it is no Aura (`equipped` is not read). Read from the attachments, which no layer changes (the Aura's subtype through layers 1, 4 and 5).
    */
   readonly enchanted?: boolean;
+  /**
+   * "Each creature that's enchanted by an Aura you control" (CR 303.4e, D-647): the permanent has at least one Aura attached to it that is controlled by the player the filter is read
+   * for ("you": the controller of the source of the ability). An Aura an opponent controls does not count (the same words as the Auras that modify a creature, CR 700.9). Read from
+   * the attachments (the Aura's subtype through layers 1, 4 and 5). Only `true`; with `enchanted: false` it is a contradiction (`validateCard`).
+   */
+  readonly enchantedByYou?: true;
   /**
    * "Enchanted creature", "equipped creature" as the object a filter describes (CR 301.5a, 303.4b, D-422): the object is the permanent the source of the ability (an Aura or an
    * Equipment) is attached to. Used where the object is another one's host ("Aura spells you cast that target enchanted creature": `targetsObject` of it). Matches nothing when the
@@ -846,6 +859,11 @@ export type PlayerSelector =
    * (a step, a death, an entering) has none.
    */
   | { readonly kind: 'triggerPlayer' }
+  /**
+   * "That opponent" in a `playerAttacksOpponent` trigger (CR 508.6, D-648): the player the declaration attacked that made the ability trigger. Valid only in the effect or the
+   * intervening "if" of such a trigger (`validateCard`); nobody once that player has left the game.
+   */
+  | { readonly kind: 'triggerAttackedPlayer' }
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
   | { readonly kind: 'declinedPlayer' }
   /**
@@ -1510,6 +1528,8 @@ export type Effect =
       readonly id: string;
       readonly filter: ObjectFilter;
       readonly count: number;
+      /** "Put two +1/+1 counters on a creature you control" (D-653): the controller must choose `count` permanents (or all there are when fewer), not up to that many. */
+      readonly exactly?: true;
     }
   | { readonly kind: 'chooseCreatureType' }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
@@ -2330,6 +2350,11 @@ export type Effect =
        * For battlefield: tapped.
        */
       readonly position?: 'top' | 'bottom' | number;
+      /**
+       * "Put the rest on the bottom of your library in a random order" (D-655, CR 401.4, 701.20): the cards the effect names (more than one) are put at the bottom in an order
+       * the seeded generator makes, nobody choosing and nobody seeing it. Only with `to` `library` and `position` `bottom`.
+       */
+      readonly random?: true;
       readonly tapped?: boolean;
       /**
        * For battlefield: "under its owner's control" (`owner`) or "under your control" (`you`, the
@@ -2575,6 +2600,16 @@ export type Effect =
       readonly duration: Duration;
     }
   /**
+   * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-649):
+   * each creature `objects` names, fixed when the effect resolves, loses the abilities hexproof and shroud and can't have them again while the effect lasts, whatever
+   * gives them later (an ability a permanent loses is lost at its timestamp, but "can't have" holds for every timestamp). Protection and every other ability stays.
+   */
+  | {
+      readonly kind: 'loseHexproofShroud';
+      readonly objects: ObjectSelector;
+      readonly duration: Duration;
+    }
+  /**
    * "Target creature becomes a Frog" (a subtype), "becomes an artifact" (a card type): layer 4
    * (CR 613.1d). The new card types replace the old ones (CR 205.1a; an instant or sorcery keeps
    * its type); the new subtypes replace the creature types (CR 205.3d keeps the others). Either
@@ -2778,6 +2813,12 @@ export type Effect =
       readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn';
       readonly awayFromYou?: true;
     }
+  /**
+   * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
+   * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
+   * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
+   */
+  | { readonly kind: 'goad'; readonly objects: ObjectRef }
   /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
@@ -2987,6 +3028,11 @@ export type Effect =
         | ChooseSelector;
       readonly play?: true;
       /**
+       * "You may cast an Aura spell from among them without paying its mana cost" (D-655, CR 608.2g): only the cards of `objects` this filter matches are offered, read for the
+       * card as it is in exile (card types, subtypes, mana value, colors). With `objects` a `choose` selector the selector's own filter says it, so this is for `moved` and `linkedExile`.
+       */
+      readonly filter?: ObjectFilter;
+      /**
        * "You may cast up to two spells from among the other cards exiled this way without paying their mana costs", "You may cast any number of spells from among those
        * cards without paying their mana costs" (D-660, CR 608.2g, 601.2, 118.9): the most spells the controller may cast as this resolves, a whole number of 2 or more or `'any'`
        * (every card that can be cast); left out, one. The controller is asked again after each spell is cast, among the cards still there that can be cast now (a card is
@@ -3043,8 +3089,11 @@ export type Effect =
       /**
        * `exile` (D-664, CR 701.13, 701.20a, 400.7, Creative Technique: "Exile that card and put the rest on the bottom of your library in a random order"): the card found is
        * exiled, face up, and is what `moved` names ("the exiled card": `castFree`); the rest of the cards revealed still go on the bottom of the library in a random order.
+       *
+       * `none` (D-659, "You may put that card onto the battlefield. If you don't, put it into your hand."): the card found is not moved by this effect; it stays in the library
+       * (revealed) and is what `moved` names for the effects after it, which put it somewhere or not; the rest go to the bottom as always.
        */
-      readonly put: 'battlefield' | 'hand' | 'exile';
+      readonly put: 'battlefield' | 'hand' | 'exile' | 'none';
       readonly tapped?: true;
     }
   /**
@@ -3146,6 +3195,12 @@ export type Effect =
        * anyway still does.
        */
       readonly tapped?: true;
+      /**
+       * "Create a tapped 2/1 ... creature token that's attacking that opponent" (CR 508.4, 506.3, D-648): each creature token created, while a combat is on, starts attacking the
+       * player `at` names (the first one it names): it was never declared as an attacker, so nothing that triggers on an attack sees it and the turn log does not count it.
+       * Nothing happens outside a combat after attackers were declared. A token that is not a creature is not put in combat.
+       */
+      readonly attacking?: { readonly at: PlayerSelector };
       /**
        * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-652, Furygale Flocking): the controller of the effect creates
        * `count` tokens for each opponent still in the game (in turn order from the next player), and each token is required to attack the player it was made for this turn if able
@@ -3691,6 +3746,12 @@ export type Trigger =
       readonly attackedEnchantedPlayer?: true;
     }
   /**
+   * "Whenever a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c, D-648): once for each player the declaration attacks (an attack on a planeswalker or a battle is not an
+   * attack on its controller or protector, CR 508.6) who is not the controller of this ability, whoever declares the attackers and however many creatures attack that player.
+   * `triggerPlayer` is the attacking player ("that attacking player") and `triggerAttackedPlayer` the player attacked ("that opponent").
+   */
+  | { readonly kind: 'playerAttacksOpponent' }
+  /**
    * "Whenever [this permanent] becomes the target of a spell or ability [an opponent controls]"
    * (CR 603.2, 702.21a Ward): `what` is the permanent targeted, `by` whose spell or ability it is
    * (relative to the controller of this ability). The triggering spell or ability is the trigger's
@@ -3854,7 +3915,15 @@ export type Keyword =
    * abilities (`rules/derive.ts`). `power` is N, a positive integer.
    */
   | { readonly kind: 'crew'; readonly power: number }
-  | { readonly kind: 'protection'; readonly from: 'color'; readonly colors: readonly Color[] }
+  /**
+   * `exceptSource` (D-652): only what `chosenColor` becomes once applied, never written in a card: the object whose attachment this protection does not stop (CR 702.16d).
+   */
+  | {
+      readonly kind: 'protection';
+      readonly from: 'color';
+      readonly colors: readonly Color[];
+      readonly exceptSource?: ObjectId;
+    }
   /**
    * "Protection from each color that's not in your commander's color identity" (CR 702.16h, 702.16i, 903.4, 903.4f; D-259): protection from each of
    * the colors the controller's commanders (all of them, as `commanderIdentity`) do not have in their color identity. "Your" is the controller of the
@@ -3876,6 +3945,13 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
+   * "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (CR 702.16a, 607.2d, D-652; Flickering Ward): protection from the
+   * color the permanent that gives the keyword chose as it entered (needs `asEntersChoose` `color`); it chose none: nothing is given. `exceptSource`: the Aura that gives
+   * it is not stopped by it (an Aura of the chosen color stays attached, CR 702.16d, 704.5m).
+   */
+  | { readonly kind: 'protection'; readonly from: 'chosenColor'; readonly exceptSource?: true }
+
   /** Protection from a creature that currently has the Ring-bearer designation (D-577). */
   | { readonly kind: 'protection'; readonly from: 'ringBearer' }
   /**
@@ -4452,6 +4528,19 @@ export type Condition =
    * `not` of this. Valid only in the effect of an `attackBatch` trigger (`validateCard`).
    */
   | { readonly kind: 'attackersAttackedYou' }
+  /**
+   * "If two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b, 603.4, D-643): at least `count` of the creatures declared as
+   * attackers in the event of an `attackBatch` trigger were declared attacking the controller of this ability as a player or a planeswalker that controller controlled
+   * as they were declared (a battle is not counted). It reads the declaration, so a creature removed from combat since still counts. Only the intervening "if" of an
+   * `attackBatch` trigger (`validateCard`): it is read as the attack is declared and again as the ability resolves, from the declaration.
+   */
+  | { readonly kind: 'attackersAtYouAtLeast'; readonly count: number }
+  /**
+   * "If that opponent has more life than another of your opponents" (CR 603.4, 508.6, D-648): the player a `playerAttacksOpponent` trigger is about has more life than at least one
+   * other opponent of the controller who is still in the game (the controller's own life is not compared). Only the intervening "if" of such a trigger (`validateCard`): it is read
+   * as the attack is declared and again as the ability resolves, from the player the declaration attacked.
+   */
+  | { readonly kind: 'attackedHasMoreLifeThanOtherOpponent' }
   /**
    * "If this is the second time this ability has resolved this turn" (Galadriel group 1, Elrond, Lord of Rivendell; CR 608.2c, 603.4): the triggered ability this
    * effect belongs to, counted with every other time it has begun to resolve this turn for the same permanent (a resolution is counted as it begins, so this one is
@@ -5036,6 +5125,18 @@ export type StaticEffect =
       readonly planeswalkers?: true;
     }
   /**
+   * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): while the permanent has the ability, no creature `creatures` describes can be declared as
+   * attacking its controller (as a player) and, with `planeswalkers`, the planeswalkers that controller controls (a battle is never covered). `creatures` is a filter of
+   * battlefield permanents read for the controller of the permanent ("you" is its controller) and with the permanent as the source; the creatures of its own controller are described
+   * too but never attack that controller. Another player or another player's planeswalker may still be attacked. It is read from the derived abilities of the permanent (CR 604.1:
+   * a permanent that lost its abilities restricts nothing) where attackers are declared, and a creature with no one left to attack is not able to attack (CR 508.1c).
+   */
+  | {
+      readonly kind: 'cantAttackYou';
+      readonly creatures: ObjectFilter;
+      readonly planeswalkers?: true;
+    }
+  /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (CR 509.1b, 509.1d, 118.12a, D-149): while the permanent has the
    * ability, each creature declared as a blocker costs `cost` (mana only, no {X}) to its own controller, paid as the blockers are declared; the
    * total is locked in once the blockers are chosen (CR 509.1d), and a declaration the defending player could not pay for is refused (a
@@ -5083,7 +5184,15 @@ export type StaticEffect =
    * cast like any other, and the spell goes to the graveyard again if it does not resolve onto the battlefield. A card
    * has it once, it is not a land (a land is played, not cast), and a copy that has the ability has it too.
    */
-  | { readonly kind: 'castFromGraveyard' }
+  | {
+      readonly kind: 'castFromGraveyard';
+      /**
+       * "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost." (CR 118.9, 601.2f, D-656): the alternative cost paid when the card is cast from
+       * the graveyard through this ability, instead of its mana cost (mana only, no {X}). Left out, the mana cost is paid. A cast of the card from the graveyard another way (a permission
+       * an effect gave it, flashback) is not changed by it.
+       */
+      readonly cost?: readonly Cost[];
+    }
   /**
    * "+N/+N" to the subject, in layer 7c (CR 613.4c). Negative numbers are allowed. The amounts may
    * count ("Equipped creature gets +1/+1 for each artifact you control", D-115): worked out each time

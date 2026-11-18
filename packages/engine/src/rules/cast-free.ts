@@ -36,7 +36,7 @@ export function isLandCard(state: GameState, id: ObjectId): boolean {
 export function freeCandidates(
   state: GameState,
   res: ResolutionContext,
-  ins: Pick<CastFreeInstruction, 'objects' | 'play'>,
+  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter'>,
 ): ObjectId[] {
   const seat = res.controller;
   const ctx: SelectContext = {
@@ -58,6 +58,13 @@ export function freeCandidates(
   return named.filter((id) => {
     const card = state.objects[id];
     if (card === undefined) return false;
+    // D-655: "an Aura spell from among them": the filter reads the card as it is in exile.
+    if (
+      ins.filter !== undefined &&
+      !matchesFilter(state, card, { ...ins.filter, zone: card.zone }, ctx)
+    ) {
+      return false;
+    }
     if (isLandCard(state, id)) return ins.play === true && canPlayLandByEffect(state, seat, card);
     return canCastDuringResolution(state, seat, card);
   });
