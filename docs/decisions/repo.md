@@ -15,6 +15,7 @@ Entries keep their old numbers (see `README.md`).
 
 - **D-013, D-126, D-132, D-250, D-498, D-637 Test tiers.** `pnpm test` is exhaustive. `pnpm test:pr` defers the long game suites listed in `tools/test/pr-excluded.json` (`run-tier.ts` fails if an exclusion excludes nothing). The `Full` workflow runs everything nightly, only when `main` has a new commit, and opens an issue on failure. `Soak` plays 500 games on demand.
 - **D-090, D-410 Coverage** is checked on every PR by its own workflow (`pnpm coverage:cards --download --check` against `reports/coverage-baseline.json`) and published weekly on GitHub Pages, not committed.
+- **Versions and generated files once per deck PR (PR 291).** A deck build bumps `PARSER_VERSION` and `ENGINE_VERSION` and regenerates the golden snapshot and derive digests once, after the last group and a merge of `main`; per-group bumps made every merge conflict. Those checks stay red until then.
 - **D-035 Rules baseline.** The CR effective 2026-09-25 plus the Mystery Booster Commander Edition bulletin, applied by reference in the docs; rule numbers are cited with titles because the 7xx numbering shifted.
 
 ## Public repository
