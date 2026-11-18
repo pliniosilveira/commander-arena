@@ -187,10 +187,12 @@ describe('"if the total mana value of the cards exiled this way is 13 or less" (
     stop(g);
     g.act(0).chooseCards({ name: 'SYNTHETIC Calamity Discard Draw', zone: 'exile', seat: 0 });
     g.act(0).chooseCards({ name: GAIN2, zone: 'exile', seat: 0 });
+    for (const id of g.state.stack) {
+      expect(g.state.objects[id]?.stack?.manaSpent).toBeUndefined();
+    }
     g.passAll();
     g.expect.life(0, 42);
     g.expect.zone('Plains', 'graveyard', { seat: 0 });
-    expect(g.state.seats[0]?.pool ?? []).toEqual([]);
     g.expect.invariants();
   });
 

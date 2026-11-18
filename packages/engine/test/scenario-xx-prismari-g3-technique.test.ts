@@ -53,10 +53,13 @@ describe('reveal until a nonland card, exile it, the rest on the bottom (CR 701.
   test('casting it: free, from exile, and it resolves', () => {
     const g = game(['Island', GAIN7, 'Island']);
     g.act(0).chooseCards({ name: GAIN7, zone: 'exile', seat: 0 });
+    // No mana was spent on it (CR 118.9), and it was cast by an effect from exile.
+    const spell = g.state.objects[g.state.stack[0] as `o${number}`];
+    expect(spell?.stack?.manaSpent).toBeUndefined();
+    expect(spell?.stack).toMatchObject({ castFrom: 'exile', byEffect: true });
     g.passAll();
     g.expect.life(0, 47);
     g.expect.zone(GAIN7, 'graveyard', { seat: 0 });
-    expect(JSON.stringify(g.state.seats[0]?.pool)).toBe('[]');
   });
 
   test('not casting it leaves it exiled (it does not go to the hand)', () => {

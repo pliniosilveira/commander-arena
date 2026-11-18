@@ -190,10 +190,11 @@ describe('the chosen pile goes to the graveyard, the controller may cast a spell
 
   test('the spell is cast without paying its mana cost (CR 118.9): no mana is spent', () => {
     const g = game(FOUR_DOWN, FOUR_UP, ['Island'], (b) => b.pool('UUUUUUUUUUU'));
-    const before = JSON.stringify(g.state.seats[0]?.pool);
     g.act(1).chooseOption('pile2');
     g.act(0).chooseCards({ name: GAIN7, zone: 'exile', seat: 0 });
-    expect(JSON.stringify(g.state.seats[0]?.pool)).toBe(before);
+    const spell = g.state.objects[g.state.stack[0] as `o${number}`];
+    expect(spell?.stack?.manaSpent).toBeUndefined();
+    expect(spell?.stack).toMatchObject({ castFrom: 'exile', byEffect: true });
   });
 
   test('a face-down card that is cast turns face up as it is cast (CR 406.3a)', () => {
