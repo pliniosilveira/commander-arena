@@ -230,7 +230,7 @@ test('issue 84: the monarch is a small card in a strip over the left of the batt
   await expect(card).toHaveCount(1);
   await expect(card).toContainText('The Monarch');
   await expect(card).toContainText('draws a card');
-  // It is no permanent: no tile, not draggable, and the strip floats over the left side of the rows without moving them (D-608):
+  // It is no permanent: no tile, not draggable, and the strip floats over the left side of the rows without moving them (D-609):
   // the rows start at the left edge of the field and keep its whole width, so the permanents stay centred.
   await expect(card).not.toHaveClass(/board-tile/);
   await expect(card).not.toHaveAttribute('draggable', 'true');

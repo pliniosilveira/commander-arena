@@ -17,6 +17,12 @@ name: Deck support triage
 # before this workflow existed or one whose last check ran under older rules. Only people with write access can start it. The issue is read through the
 # API instead of the event, and what the author wrote still only ever goes into files, never into a script or the environment file.
 
+# The precon snapshot (D-608): a precon issue (the "Precon issues" workflow writes them, label `precon-request`, marker `precon-issues:deck=...`) also gets the
+# card-data snapshot of its deck, made here by `pnpm precon:from-issue` because a runner can reach Scryfall's bulk file and the agent's cloud session cannot.
+# The snapshot, compressed and encoded, goes into one comment of github-actions (marker `<!-- precon-snapshot -->`); the deck-support routine decodes it with
+# `pnpm precon:from-comment` into its pull request once every card is supported (`.claude/skills/deck-support/SKILL.md`). Only an issue of github-actions or of the
+# owner, with the label, gets it: the description is data, and nothing of it reaches a shell.
+
 on:
   issues:
     types: [opened, edited]
@@ -26,6 +32,11 @@ on:
         description: The number of the deck support issue to check again
         required: true
         type: string
+      snapshot_only:
+        description: Only make the snapshot of the precon (a precon issue that needs no support work)
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -37,7 +48,7 @@ concurrency:
 jobs:
   triage:
     name: is the request complete?
-    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.event.issue.title, 'deck support') }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.snapshot_only) || startsWith(github.event.issue.title, 'deck support') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -173,4 +184,93 @@ jobs:
             gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -f body="$body"
           else
             gh issue comment "$NUMBER" --body "$body"
+          fi
+
+  snapshot:
+    name: the snapshot of the precon
+    if: ${{ github.event_name == 'workflow_dispatch' || ((startsWith(github.event.issue.title, 'deck support') || startsWith(github.event.issue.title, 'precon ') || startsWith(github.event.issue.title, 'update precon')) && contains(github.event.issue.body, 'precon-issues:deck=')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      issues: write
+    concurrency:
+      group: precon-snapshot-${{ github.event.issue.number || inputs.issue }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Is this a precon issue of this repository?
+        id: issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_ISSUE: ${{ inputs.issue }}
+          EVENT_NUMBER: ${{ github.event.issue.number }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          number="${INPUT_ISSUE:-$EVENT_NUMBER}"
+          case "$number" in
+            ''|*[!0-9]*) echo "the issue must be a number"; exit 1 ;;
+          esac
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${number}" > "$RUNNER_TEMP/issue-api.json"
+          jq -j '.body // ""' "$RUNNER_TEMP/issue-api.json" > "$RUNNER_TEMP/issue.md"
+          author=$(jq -r '.user.login' "$RUNNER_TEMP/issue-api.json")
+          go=true
+          jq -e '(.pull_request | not) and .state == "open"' "$RUNNER_TEMP/issue-api.json" > /dev/null || go=false
+          jq -e '[.labels[].name] | index("precon-request")' "$RUNNER_TEMP/issue-api.json" > /dev/null || go=false
+          if [ "$author" != "github-actions[bot]" ] && [ "$author" != "$OWNER" ]; then go=false; fi
+          grep -q '<!-- precon-issues:deck=' "$RUNNER_TEMP/issue.md" || go=false
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+          if [ "$go" != "true" ]; then echo "#$number is not a precon issue of the workflow or the owner: no snapshot"; fi
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        if: ${{ steps.issue.outputs.go == 'true' }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: ${{ steps.issue.outputs.go == 'true' }}
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: ${{ steps.issue.outputs.go == 'true' }}
+      - id: day
+        if: ${{ steps.issue.outputs.go == 'true' }}
+        run: echo "day=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        if: ${{ steps.issue.outputs.go == 'true' }}
+        with:
+          path: .cache/corpus
+          key: scryfall-oracle-cards-${{ steps.day.outputs.day }}
+          restore-keys: scryfall-oracle-cards-
+      - name: Make the snapshot
+        id: make
+        if: ${{ steps.issue.outputs.go == 'true' }}
+        run: |
+          code=0
+          mkdir -p "$RUNNER_TEMP/out"
+          node tools/precon/from-issue-cli.ts --body "$RUNNER_TEMP/issue.md" --download --snapshots-dir "$RUNNER_TEMP/out" --decks-dir "$RUNNER_TEMP/out" --comment-out "$RUNNER_TEMP/comment-snapshot.md" > "$RUNNER_TEMP/snapshot.json" || code=$?
+          cat "$RUNNER_TEMP/snapshot.json"
+          # 0 written, 1 the issue or the cards could not give a snapshot; anything else is a failure of the tool itself.
+          test "$code" -le 1
+          echo "ok=$(jq -r .ok "$RUNNER_TEMP/snapshot.json")" >> "$GITHUB_OUTPUT"
+      - name: Post the snapshot in a comment
+        if: ${{ steps.issue.outputs.go == 'true' && steps.make.outcome != 'skipped' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ steps.issue.outputs.number }}
+          OK: ${{ steps.make.outputs.ok }}
+        run: |
+          marker='<!-- precon-snapshot -->'
+          if [ "$OK" = "true" ]; then
+            cp "$RUNNER_TEMP/comment-snapshot.md" "$RUNNER_TEMP/comment.md"
+          else
+            {
+              printf '%s\n' "$marker"
+              printf 'The snapshot of the precon could not be made:\n\n'
+              jq -r '.problems[] | "- " + .' "$RUNNER_TEMP/snapshot.json"
+            } > "$RUNNER_TEMP/comment.md"
+          fi
+          existing=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments" --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- precon-snapshot -->")))][0].id // empty')
+          if [ -n "$existing" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -F body=@"$RUNNER_TEMP/comment.md"
+          else
+            gh issue comment "$NUMBER" --body-file "$RUNNER_TEMP/comment.md"
           fi
