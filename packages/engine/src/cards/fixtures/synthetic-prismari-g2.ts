@@ -532,4 +532,39 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Flying\nWhen this creature enters, create a Treasure token.\nArtifacts you control have \"{T}: Add one mana of any color. Spend this mana only to cast an instant or sorcery spell.\""
+  singleFace({
+    name: 'SYNTHETIC Prism Dragon',
+    manaCost: ['2', 'U', 'R'],
+    supertypes: ['legendary'],
+    types: ['creature'],
+    subtypes: ['Elder', 'Dragon'],
+    colors: ['U', 'R'],
+    colorIdentity: ['U', 'R'],
+    power: 4,
+    toughness: 4,
+    oracleText:
+      'Flying\nWhen this creature enters, create a Treasure token.\nArtifacts you control have "{T}: Add one mana of any color. Spend this mana only to cast an instant or sorcery spell."',
+    abilities: [
+      FLYING,
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Treasure' }, count: 1 },
+      },
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantAbility',
+          subject: { kind: 'filter', filter: { types: ['artifact'], controller: 'you' } },
+          ability: {
+            kind: 'mana',
+            cost: [{ kind: 'tap' }],
+            production: { kind: 'anyColor' },
+            spendOnly: { types: ['instant', 'sorcery'] },
+          },
+        },
+      },
+    ],
+  }),
 ];
