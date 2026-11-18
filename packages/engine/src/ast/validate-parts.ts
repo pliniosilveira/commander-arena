@@ -2361,6 +2361,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'didPrevious':
     case 'thisWayAtLeast':
+    case 'movedTotalManaValue':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -3390,6 +3391,16 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       }
       break;
     }
+    case 'movedTotalManaValue':
+      // D-648 (CR 202.3): the cards an earlier moving effect of the sequence moved, added up, against a whole number.
+      checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      if (!isCount(c.compare?.value)) {
+        issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
+      }
+      break;
     case 'ringBearerChosen':
       issue(
         out,

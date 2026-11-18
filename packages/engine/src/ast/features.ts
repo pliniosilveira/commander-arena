@@ -259,6 +259,15 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'populate',
     // D-640: "copy it. You may cast the copy without paying its mana cost" (CR 707.12).
     'copyCardAndCast',
+    // D-647: "each player exiles cards from the top of their library until they exile a nonland card" and "an opponent chooses a nonland card exiled this way".
+    'exileUntilFound',
+    'opponentChoosesCard',
+    // D-650: "exile the top four cards in a face-down pile, then ... in a face-up pile. An opponent chooses one of those piles" (CR 700.3).
+    'exilePiles',
+    // D-648: "as many times as you choose, you may exile the top card of your library".
+    'exileTopAnyNumber',
+    // D-649: "whenever a creature you control deals combat damage to a player this turn, ..." (CR 603.7).
+    'delayedCombatDamageTurn',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -472,6 +481,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'improvise',
     'delve',
     'cascade',
+    // D-652: Demonstrate (CR 702.144a); D-653: Retrace (CR 702.81a).
+    'demonstrate',
+    'retrace',
     // D-124: Unearth (CR 702.84a).
     'unearth',
     // D-185: Encore (CR 702.141a), Devour (CR 702.82a) and Riot (CR 702.136a).
@@ -811,6 +823,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-135: "if you do" (CR 603.12), "if it's a Zombie card", "if the gift was promised", "if an opponent controls four or
     // more nonbasic lands".
     'didPrevious',
+    // D-648: "if the total mana value of the cards exiled this way is 13 or less" (`movedTotalManaValue`).
+    'movedTotalManaValue',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -1040,6 +1054,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'foretell',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
+    // D-653: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
+    'retrace',
   ],
 };
 
@@ -1427,6 +1443,8 @@ export const CONDITION_KINDS = [
   'opponentControlsAtLeast',
   /** "If you do" (CR 603.12, D-135): the engine's `didPrevious`, after a `may` effect. */
   'didPrevious',
+  /** "If the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c, D-648): the engine's `movedTotalManaValue`. */
+  'movedTotalManaValue',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -1732,6 +1750,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'miracle',
   'foretell',
   'tapPermanents',
+  'retrace',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 
@@ -1890,6 +1909,11 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   prepare: true,
   populate: true,
   copyCardAndCast: true,
+  exileUntilFound: true,
+  opponentChoosesCard: true,
+  exilePiles: true,
+  exileTopAnyNumber: true,
+  delayedCombatDamageTurn: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,
@@ -2041,6 +2065,8 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   improvise: true,
   delve: true,
   cascade: true,
+  demonstrate: true,
+  retrace: true,
   unearth: true,
   encore: true,
   eternalize: true,
