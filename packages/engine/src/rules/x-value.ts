@@ -98,7 +98,8 @@ export function spellXCost(
     };
   }
   const printed = xSymbolCount(face.manaCost ?? []);
-  if (alternative !== undefined && printed > 0) return NO_X;
+  // D-653 (CR 702.81a): a retrace cast pays the mana cost, so an {X} in it is announced as for any cast.
+  if (alternative !== undefined && alternative !== 'retrace' && printed > 0) return NO_X;
   return { mana: printed, life, ...extra };
 }
 
