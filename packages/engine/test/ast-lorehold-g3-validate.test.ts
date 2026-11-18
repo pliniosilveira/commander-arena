@@ -1,4 +1,4 @@
-// Validation of the nodes of group 3 of the Lorehold Spirit deck (D-621 and later): the condition `aPlayerCardsInHand` (as the intervening "if" of a trigger) and the `hand` flag of the
+// Validation of the nodes of group 3 of the Lorehold Spirit deck (D-622 and later): the condition `aPlayerCardsInHand` (as the intervening "if" of a trigger) and the `hand` flag of the
 // `discard` effect ("Each player discards their hand"). A node the engine does not run, or runs in one shape only, is refused with a message, never accepted and half run.
 import { describe, expect, test } from 'vitest';
 import { type CardDefinition, syntheticCard, validateCard } from '../src/index';

@@ -538,7 +538,7 @@ describe('diagnostics point at the clause that did not parse', () => {
       'until your next turn.',
       'effect.pump',
     ],
-    // Lorehold group 3 reads "discards their hand" (D-622); a graveyard is not a hand.
+    // Lorehold group 3 reads "discards their hand" (D-623); a graveyard is not a hand.
     [
       'Target player draws two cards and discards their graveyard.',
       'their graveyard.',
@@ -584,7 +584,7 @@ describe('out of scope stays unparsed', () => {
     'Create a 1/1 white Soldier creature token with changeling.',
     // Lorehold group 1 reads "... and put it onto the battlefield tapped." (one card, a put joined with "and"); two cards put with "and" are still not read.
     'Search your library for two basic land cards and put them onto the battlefield tapped.',
-    // Lorehold group 3 reads "Target player discards their hand." (D-622); two hands are not one.
+    // Lorehold group 3 reads "Target player discards their hand." (D-623); two hands are not one.
     'Target player discards their hands.',
     'Target creature gets +3/+3 until your next turn.',
     'The next time a source of your choice would deal damage to you this turn, prevent that damage.',

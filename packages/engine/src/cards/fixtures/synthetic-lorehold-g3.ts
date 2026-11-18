@@ -1,5 +1,5 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE LOREHOLD SPIRIT DECK (issue 86, D-621 and later). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE LOREHOLD SPIRIT DECK (issue 86, D-622 and later). NOT REAL MAGIC CARDS.
  *
  * Invented for the tests of what the real card of the group needs from the engine, written out by hand (the cards package checks that the grammar lowers the real Oracle text to these same
  * nodes): a preparation card (CR 722) whose creature becomes prepared at the beginning of its controller's upkeep when a player has one or fewer cards in hand, and whose prepare spell makes each

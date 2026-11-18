@@ -473,7 +473,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The cost reduction "during your turn" takes a plain number of generic mana off the first mana cost, never below zero; other turns ("during an opponent's turn") and a reduction of a mana ability are not read.
 - The rulings of the eleven cards on Scryfall were not fetched (blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 
-## The Lorehold Spirit deck, group 1 (issue 86, D-609 to D-616)
+## The Lorehold Spirit deck, group 1 (issue 86, D-610 to D-617)
 
 - "Repeat this process once" repeats the one instruction before it, which may not choose targets; a text that repeats several sentences ("this process" is more than one instruction), "twice", "for each" and a repeat with no instruction before it are not read. The process is done again as it was lowered, so a "you may" search is asked again.
 - `exileFromTriggerCards` is only for a batch `discarded` trigger and exiles one card from the graveyard of the controller (the cards a batch names are the controller's own discards); a batch trigger of another event ("whenever one or more creatures you control die, you may exile one of them") is not built, nor "exile two of them" or a choice among cards of several graveyards.
@@ -484,7 +484,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - Perpetual Timepiece: "any number of target cards" is read only for your own graveyard and into your library (the cards go to their owners' libraries, CR 701.24c, so a card of another graveyard needs another phrase); a commander shuffled in asks its owner where it goes as it moves, as any commander (CR 903.9a, 903.9b).
 - Wave of Reckoning: the damage is dealt by each creature one after the other from powers read first (CR 608.2h); a replacement or prevention effect that asks the player which applies asks once for each creature.
 - The Scryfall rulings of Claim Jumper, Containment Construct, Conspiracy Theorist, Perpetual Timepiece and Wave of Reckoning were not fetched (blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
-## The Lorehold Spirit deck, group 2 (issue 86, D-617 to D-620)
+## The Lorehold Spirit deck, group 2 (issue 86, D-618 to D-621)
 
 - Voting keeps the limits of D-194 and D-195: one vote for each player (CR 701.38d, extra votes, is not built); the vote starts with the controller; a vote for objects or players is not built. Fateful Tempest is read for "past" and "present" as words; a text that counts the votes of a player ("votes for ... more than ...", ties between the options said in words) is not read.
 - "For each <option> vote" reads the votes of the vote before it in the same text (`votesFor`, kept for the resolution); a later spell or ability cannot ask what was voted.
@@ -494,7 +494,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - A permanent spell cast with the permission that resolves is not put into a graveyard, so the rider does nothing to it (CR 614.1a): when that permanent dies later it goes to the graveyard as usual.
 - The Scryfall rulings of Fateful Tempest and Quintorius, Loremaster were not fetched (blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
 
-## The Lorehold Spirit deck, group 3 (issue 86, D-621 to D-623)
+## The Lorehold Spirit deck, group 3 (issue 86, D-622 to D-624)
 
 - `aPlayerCardsInHand` is read for "or fewer" only ("a player has one or fewer cards in hand"); "or more", "no cards" and "an opponent has" / "each player has" are other texts and are not read (the engine node already compares at most, at least and exactly). A player who has left the game is not counted (CR 800.4a), which in a two-player game never happens while the trigger is read.
 - "Each player discards their hand, then draws seven cards" does every discard first and then every draw, each in the order of the players (the active player first), as two instructions of one spell. The wording could be read as one player doing both before the next (a player-by-player wheel); the two readings differ only with an effect that looks at the order (a draw trigger that depends on another player's hand). The Scryfall rulings of Naktamun Lorespinner and Wheel of Fortune were not fetched (blocked in a cloud session): marked unverified.
