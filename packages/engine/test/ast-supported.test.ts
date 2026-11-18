@@ -320,6 +320,7 @@ describe('supported feature gate', () => {
         'lifeGained',
         'noncombatDamageDealt',
         'permanentSacrificed',
+        'playerAttacked',
         'ringTempted',
         // Galadriel group 3: "Whenever you roll a die's highest natural result".
         'rollsHighest',
