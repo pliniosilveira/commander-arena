@@ -199,6 +199,25 @@ export const SYNTHETIC_PRISMARI_G3_LIST: readonly CardDefinition[] = [
       { kind: 'keyword', keyword: { kind: 'retrace' } },
     ],
   }),
+  // "Exile the top three cards of your library. You may cast up to two spells from among them without paying their mana costs."
+  singleFace({
+    name: 'SYNTHETIC Twin Cast',
+    manaCost: ['3', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'Exile the top three cards of your library. You may cast up to two spells from among them without paying their mana costs.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'exileTop', count: 3 },
+          { kind: 'castFree', objects: MOVED, max: 2 },
+        ],
+      },
+    },
+  }),
   // Spells of known mana values to be exiled and cast: a cheap one that gains life, one with a target, one with an additional cost, and a permanent.
   singleFace({
     name: 'SYNTHETIC Calamity Gain Two',
