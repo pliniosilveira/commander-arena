@@ -83,20 +83,18 @@ describe('a token that is a copy of a target (CR 707.2)', () => {
     return { status: imported.support.status, reasons: imported.support.reasons.join('\n') };
   };
 
-  test('the engine accepts a creature or an artifact and says why it refuses the rest', () => {
+  test('the engine accepts a token copy of any permanent: an Aura copy chooses what it enchants (D-655)', () => {
     expect(reasonOf(ECHO)).toEqual({ status: 'supported', reasons: '' });
     expect(reasonOf("Create a token that's a copy of target artifact.").status).toBe('supported');
-    const permanent = reasonOf("Create a token that's a copy of target permanent.");
-    expect(permanent.status).toBe('unsupported');
-    expect(permanent.reasons).toContain('could be an Aura is not implemented by the engine yet');
-    expect(permanent.reasons).not.toContain('could be a land');
-    const nonland = reasonOf("Create a token that's a copy of target nonland permanent.");
-    expect(nonland.reasons).toContain('could be an Aura');
-    expect(nonland.reasons).not.toContain('could be a land');
+    // D-655 (CR 303.4f): a token that is a copy of an Aura chooses what it enchants as it enters.
+    expect(reasonOf("Create a token that's a copy of target permanent.").status).toBe('supported');
+    expect(reasonOf("Create a token that's a copy of target nonland permanent.").status).toBe(
+      'supported',
+    );
     // Stage P52 (D-211): a token copy of a land asks what the land asks as it enters.
     expect(reasonOf("Create a token that's a copy of target land.").status).toBe('supported');
-    expect(reasonOf("Create a token that's a copy of target enchantment.").reasons).toContain(
-      'could be an Aura',
+    expect(reasonOf("Create a token that's a copy of target enchantment.").status).toBe(
+      'supported',
     );
   });
 

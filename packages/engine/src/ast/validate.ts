@@ -1927,9 +1927,12 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported
   // one must carry an effect. A supported instant or sorcery with no effect would do nothing.
-  // D-654 (CR 608.2): "Cascade. Retrace." is a sorcery with no spell text, whose abilities do the work: with an ability of its own it may have no effect to resolve.
+  // D-654 (CR 702.85a, 608.2): "Cascade. Retrace." is a sorcery with no spell text whose cast trigger does the work: cascade alone makes a spell with no effect to resolve valid.
   const isSpellCard = face.types.includes('instant') || face.types.includes('sorcery');
-  if (supported && isSpellCard && !spellHasEffect(face.spell) && face.abilities.length === 0) {
+  const castsOnItsOwn = face.abilities.some(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'cascade',
+  );
+  if (supported && isSpellCard && !spellHasEffect(face.spell) && !castsOnItsOwn) {
     issue(out, `${path}.spell`, 'an instant or sorcery must have spell text with an effect');
   }
 }
