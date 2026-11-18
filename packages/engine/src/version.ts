@@ -29,4 +29,5 @@
 // 127: Replace a command-zone cast's commander tax with its card-defined life payment (D-605).
 // 128: Activate emblem abilities from the command zone (D-606).
 // 129: Lock a player's life total and grant temporary protection from everything (D-607).
-export const ENGINE_VERSION = 129;
+// 130: Lorehold Spirit deck: discard in a payment, batch discard trigger, cast-only and free play permissions from exile, linked exile filter, damage to itself, a search counted for "this way" and the repeat of an offered search, a free cast from exile that ends on the bottom of the library, a hand-size condition over every player, discard of a whole hand (D-609 to D-623, issue 86).
+export const ENGINE_VERSION = 130;

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 141,
+  "parserVersion": 142,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4887,27 +4887,10 @@
     "c78783e5-868d-4a8b-a4f8-95a92853cf0a": {
       "name": "Naktamun Lorespinner // Wheel of Fortune",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, if a player has one or fewer cards in hand, ~ becomes prepared.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        },
-        {
-          "face": 1,
-          "ability": 0,
-          "text": "Each player discards their hand, then draws seven cards.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.discard"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "bfb04a5b"
+      "ast": "be655290"
     },
     "c7aecca5-2f67-4245-ab2d-e723d8b23a67": {
       "name": "Expressive Iteration",
@@ -6456,7 +6439,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 446,
+      "supported": 447,
       "total": 468
     }
   }
