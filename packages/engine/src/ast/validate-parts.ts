@@ -1712,8 +1712,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.token !== undefined && typeof a.token !== 'boolean') {
         issue(out, `${path}.token`, 'history token filter is a boolean');
       }
+      if (a.kind === 'diedThisTurn' && a.modified !== undefined && a.modified !== true) {
+        issue(out, `${path}.modified`, 'history modified filter must be true when present');
+      }
       for (const key of Object.keys(a)) {
-        if (!['kind', 'types', 'controller', 'token'].includes(key)) {
+        if (!['kind', 'types', 'controller', 'token', 'modified'].includes(key)) {
           issue(out, `${path}.${key}`, 'history does not record this property');
         }
       }

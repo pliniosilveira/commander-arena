@@ -473,6 +473,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.others-enter-with-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
+  'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
@@ -925,6 +926,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.creature-died-this-turn': spell(
     (e) =>
       `Target creature gets -1/-1 until end of turn. That creature gets -13/-13 until end of turn instead if ${e}.`,
+  ),
+  'condition.modified-creature-died': permanent(
+    (e) =>
+      `At the beginning of each end step, if ${e}, create a 2/1 white and black Inkling creature token with flying.`,
   ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.

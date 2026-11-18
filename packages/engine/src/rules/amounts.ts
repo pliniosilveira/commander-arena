@@ -61,7 +61,12 @@ export function historyCount(
   amount: Extract<Amount, { kind: 'enteredThisTurn' | 'diedThisTurn' }>,
   controller: SeatId,
 ): number {
-  const entries = amount.kind === 'enteredThisTurn' ? state.turnLog.entered : state.turnLog.died;
+  // CR 700.9, 603.10a: "a modified creature died": the deaths record whether the permanent was modified as it left.
+  const onlyModified = amount.kind === 'diedThisTurn' && amount.modified === true;
+  const entries =
+    amount.kind === 'enteredThisTurn'
+      ? state.turnLog.entered
+      : state.turnLog.died.filter((e) => !onlyModified || e.modified);
   return entries.filter(
     (e) =>
       (amount.controller === 'any' || e.controller === controller) &&

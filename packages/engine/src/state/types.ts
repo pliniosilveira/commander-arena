@@ -2238,6 +2238,8 @@ export interface TurnLog {
     readonly controller: SeatId;
     readonly types: readonly CardType[];
     readonly token: boolean;
+    /** CR 700.9, 603.10a: whether the permanent was modified as it left the battlefield (a counter, an Equipment, or an Aura its controller controlled). */
+    readonly modified: boolean;
   }[];
   /**
    * Each time a card left a graveyard this turn (D-206, CR 400.7), by the seat that owns the card, in order: "if a card left your graveyard this turn".

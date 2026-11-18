@@ -159,6 +159,11 @@ export type Amount =
       readonly types?: readonly CardType[];
       readonly token?: boolean;
       readonly controller: 'you' | 'any';
+      /**
+       * "A modified creature died under your control this turn" (CR 700.9, 700.4, 603.10a): only the permanents that were modified as they left the battlefield (a counter on
+       * it, an Equipment attached, or an Aura its controller controlled attached), read from the game as they left, not from the card in the graveyard.
+       */
+      readonly modified?: true;
     }
   /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
@@ -3847,6 +3852,17 @@ export type Trigger =
    */
   | {
       readonly kind: 'lifeGained';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly firstEachTurn?: true;
+    }
+  /**
+   * "Whenever you lose life", "whenever you lose life for the first time each turn", "whenever an opponent loses life" (CR 119.3, 119.9, CR 603.2): once for each event in which
+   * the player `who` names (relative to the controller of this ability) loses life (damage, a life-loss effect, life paid: every reduction of a life total). A loss of 0 life is no
+   * event. `firstEachTurn` limits it to the first such event of that player in the turn (CR 603.2: the trigger counts the player's losses, not this ability's resolutions).
+   * `triggerPlayer` is the player who lost the life.
+   */
+  | {
+      readonly kind: 'lifeLost';
       readonly who: 'you' | 'opponent' | 'any';
       readonly firstEachTurn?: true;
     }

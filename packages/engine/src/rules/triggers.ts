@@ -32,6 +32,7 @@ import type { Ability, Trigger, TriggerStep, TriggerSubject, Zone } from '../ast
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
+import { getSeat } from '../state/ops';
 import type {
   DelayedTrigger,
   GameObject,
@@ -96,6 +97,8 @@ interface Occurrence {
   readonly targetCount?: number;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
+  /** For `lifeLost`: whether this is the first time the player lost life this turn (CR 119.3, 603.2). */
+  readonly firstLoss?: boolean;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
   readonly counter?: string;
   /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-510). */
@@ -163,12 +166,32 @@ function withTriggerAmount(
   };
 }
 
+/**
+ * Whether the loss of life that `events[index]` (a `lifeChanged` downward) tells of is the first of its player in the turn (CR 603.2: "for the first time each turn"
+ * counts the player's losses). `state` already holds every loss of these events, so the life lost before them is what it records less their total; the losses
+ * of these events that come before this one count as earlier ones.
+ */
+function isFirstLifeLoss(state: GameState, events: readonly GameEvent[], index: number): boolean {
+  const event = events[index];
+  if (event?.kind !== 'lifeChanged') return false;
+  const lostIn = (e: GameEvent): number =>
+    e.kind === 'lifeChanged' && e.seat === event.seat && e.to < e.from ? e.from - e.to : 0;
+  const inBatch = events.reduce((sum, e) => sum + lostIn(e), 0);
+  const earlierInBatch = events.slice(0, index).reduce((sum, e) => sum + lostIn(e), 0);
+  const before = getSeat(state, event.seat).lifeLostThisTurn - inBatch;
+  return before + earlierInBatch <= 0;
+}
+
 /** The trigger occurrences an event contains for a trigger kind. */
 function occurrences(
   state: GameState,
   trigger: Trigger,
   event: GameEvent,
   lore: { readonly before: number; readonly after: number } | null,
+  batch: { readonly events: readonly GameEvent[]; readonly index: number } = {
+    events: [event],
+    index: 0,
+  },
 ): Occurrence[] {
   switch (trigger.kind) {
     case 'entersBattlefield':
@@ -462,6 +485,18 @@ function occurrences(
             },
           ]
         : [];
+    case 'lifeLost':
+      // CR 119.3: one occurrence for each reduction of a life total (`lifeChanged` downward).
+      return event.kind === 'lifeChanged' && event.to < event.from
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              firstLoss: isFirstLifeLoss(state, batch.events, batch.index),
+            },
+          ]
+        : [];
     case 'countersAdded':
       // CR 122.6, 122.6a (D-149): counters put on a permanent, by the player who put them.
       return event.kind === 'counterAdded'
@@ -736,6 +771,10 @@ function matches(
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return trigger.firstEachTurn !== true || occ.gainNth === 1;
+    case 'lifeLost':
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      return trigger.firstEachTurn !== true || occ.firstLoss === true;
     case 'countersAdded':
       if (trigger.counter !== undefined && occ.counter !== trigger.counter) return false;
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
@@ -923,6 +962,8 @@ function isRelevant(event: GameEvent): boolean {
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
     case 'lifeGained':
       return true; // CR 119.9 (D-149)
+    case 'lifeChanged':
+      return true; // CR 119.3: a reduction of a life total is a loss ("whenever you lose life")
     case 'stepBegan':
       return TRIGGER_STEP_IDS.has(event.step); // includes upkeep and end
     default:
@@ -1099,7 +1140,10 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
           ability.trigger.kind === 'discarded' && ability.trigger.batch === true
             ? discardedCards(state, ability.trigger, events, candidate, lore)
             : null;
-        for (const occ of occurrences(state, ability.trigger, event, lore)) {
+        for (const occ of occurrences(state, ability.trigger, event, lore, {
+          events,
+          index: eventIndex,
+        })) {
           if (!matches(state, ability.trigger, occ, candidate)) continue;
           if (
             (ability.trigger.kind === 'discarded' && ability.trigger.batch === true) ||
