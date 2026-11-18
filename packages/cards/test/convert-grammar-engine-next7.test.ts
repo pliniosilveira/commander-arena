@@ -162,6 +162,22 @@ describe('a land with charge counters whose mana costs one (CR 118.3, 122.1)', (
     expect(g.state.objects[g.id(GROVE.name)]?.counters.charge).toBe(2);
   });
 
+  test('with no counter left, an untapped land makes no mana of another color (CR 118.3)', () => {
+    const g = scenario()
+      .seat(0)
+      .define(GROVE)
+      .define(PURPLE_SPELL)
+      .hand(PURPLE_SPELL.name)
+      .battlefield(GROVE.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.expect.tapped(GROVE.name, false);
+    g.expect.illegal(0, { cast: PURPLE_SPELL.name });
+  });
+
   test('each any-color mana removes a counter, and with none left only {G} is made', () => {
     const g = scenario()
       .seat(0)

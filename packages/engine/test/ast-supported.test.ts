@@ -367,6 +367,8 @@ describe('supported feature gate', () => {
       'mill',
       // D-625: "{T}, Tap an untapped creature you control: Add one mana of any color" (Jaspera Sentinel, Holdout Settlement).
       'tapPermanents',
+      // Issue 245 (D-631): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).
+      'removeCounters',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

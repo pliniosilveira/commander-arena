@@ -130,8 +130,14 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded.',
-    expect: no('and is goaded.', 'static.attached'),
-    note: 'backlog: 7 cards',
+    expect: OK,
+    note: 'backlog: 7 cards; the engine runs it since D-631 (issue 201, CR 701.15)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded until end of turn.',
+    expect: no('until end of turn.', 'static.attached'),
+    note: 'SYNTHETIC; goad is built as a static ability only (D-631), not for a length of time',
   },
   {
     kind: 'aura',
