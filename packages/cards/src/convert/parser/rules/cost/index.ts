@@ -174,6 +174,8 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice X creatures',
     'Sacrifice one or more artifacts',
     'Sacrifice one or more other creatures',
+    // Grave Danger (issue 159): the second cost of "Remove three study counters from ~ and sacrifice it": the permanent itself.
+    'Sacrifice it',
   ],
   rejects: [
     'Sacrifice one or more',
@@ -184,27 +186,42 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice X other creatures',
     'Sacrifice X',
     'Sacrifice target creature',
-    'Sacrifice it',
     'Sacrifice all creatures',
     'Sacrifice a creature an opponent controls',
   ],
   parse: node<IrNoun, IrCost>(
     'cost.sacrifice',
-    map(
-      sequence(
-        literal('sacrifice '),
-        // D-488: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
-        family<IrNoun>('noun', {
-          only: [
-            'noun.self',
-            'noun.a-permanent',
-            'noun.x-permanents',
-            // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts", at least one of them.
-            'noun.one-or-more-permanents',
-          ],
+    choice(
+      // "sacrifice it" after "Remove ... counters from ~ and": the permanent with the ability (issue 159).
+      map(
+        spanned(literal('sacrifice it')),
+        ({ span }): IrNoun => ({
+          kind: 'noun',
+          det: 'self',
+          filter: { raw: '~' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span,
+          rule: 'cost.sacrifice',
         }),
       ),
-      ([, what]) => what,
+      map(
+        sequence(
+          literal('sacrifice '),
+          // D-488: "Sacrifice X creatures" (`noun.x-permanents`), the X announced as the ability is activated.
+          family<IrNoun>('noun', {
+            only: [
+              'noun.self',
+              'noun.a-permanent',
+              'noun.x-permanents',
+              // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts", at least one of them.
+              'noun.one-or-more-permanents',
+            ],
+          }),
+        ),
+        ([, what]) => what,
+      ),
     ),
     (what) => ({ kind: 'sacrifice', what }),
   ),

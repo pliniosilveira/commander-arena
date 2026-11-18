@@ -172,7 +172,12 @@ export function lowerAngelStatic(
         if (blocked.length > 0) return failure(ability, blocked);
         abilities.push({
           kind: 'static',
-          static: { kind: 'preventDamageToThis', subject: { kind: 'this' }, scope: effect.scope },
+          static: {
+            kind: 'preventDamageToThis',
+            subject: { kind: 'this' },
+            scope: effect.scope,
+            ...(effect.removeCounter === undefined ? {} : { removeCounter: effect.removeCounter }),
+          },
         });
         break;
       }

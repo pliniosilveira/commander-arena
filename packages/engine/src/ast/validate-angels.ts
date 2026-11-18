@@ -216,6 +216,9 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
       }
+      if (s.removeCounter !== undefined && !isOneOf(s.removeCounter, ['+1/+1', '-1/-1'])) {
+        issue(out, `${path}.removeCounter`, 'removeCounter is a +1/+1 or a -1/-1 counter');
+      }
       return true;
     case 'blockTax':
       checkBlockTax(s, path, out);

@@ -7,11 +7,14 @@ import { allocateTimestamp, setObject } from '../state/ops';
 import type {
   ChosenTarget,
   ContinuousEffect,
+  DelayedTrigger,
   GameState,
   PendingTrigger,
   ResolutionContext,
   TriggeredAbility,
 } from '../state/types';
+import { runContinuous } from './continuous';
+import { derive } from './derive';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -129,12 +132,15 @@ export function runMayCast(
   const fromExile = effect.from === 'exile';
   const cards = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
     const card = state.objects[id];
+    // Issue 159: "a creature card in a graveyard": a card of any player's graveyard; otherwise only the controller's ("from your graveyard").
     return fromExile
       ? card?.zone === 'exile'
-      : card?.zone === 'graveyard' && card.owner === res.controller;
+      : card?.zone === 'graveyard' &&
+          (effect.anyGraveyard === true || card.owner === res.controller);
   });
   let next = state;
   const created: ContinuousEffect[] = [];
+  const delayed: DelayedTrigger[] = [];
   for (const id of cards) {
     const [timestamp, stamped] = allocateTimestamp(next);
     next = stamped;
@@ -164,8 +170,75 @@ export function runMayCast(
         seat: res.controller,
         // D-359 (CR 614.1a): the rider of "If that spell would be put into your graveyard, exile it instead" goes with the permission.
         ...(effect.exileInstead === true ? { exileInstead: true as const } : {}),
+        ...(effect.anyGraveyard === true ? { anyGraveyard: true as const } : {}),
       },
     });
+    // Issue 159 (CR 603.7, 603.7a, 514.2): "When you cast it this turn, ...": a delayed triggered ability of the controller for a cast of this card, created now (the cast that
+    // makes it is after it), triggers once and ends with the turn.
+    const card = state.objects[id]?.card ?? null;
+    if (effect.whenCast !== undefined && card !== null) {
+      delayed.push({
+        source: res.source,
+        controller: res.controller,
+        ability: {
+          kind: 'triggered',
+          trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'you' },
+          effect: effect.whenCast,
+        },
+        untilEndOfTurn: true,
+        watchedCard: card,
+      });
+    }
   }
-  return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });
+  return done({
+    ...next,
+    continuousEffects: [...next.continuousEffects, ...created],
+    delayedTriggers: [...next.delayedTriggers, ...delayed],
+  });
+}
+
+/**
+ * "You may cast Zombie spells from your graveyard this turn" (issue 159): one `castPermission` continuous effect for the controller that covers every card of their graveyard the
+ * filter describes, until the end of the turn (CR 611.2a). No object is named, so a card that enters the graveyard later this turn is covered too (`legality.ts`, `grantsCast`).
+ */
+export function runMayCastSpells(
+  state: GameState,
+  res: ResolutionContext,
+  effect: Extract<Effect, { kind: 'mayCastSpells' }>,
+): StepOutcome {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [],
+    until: 'endOfTurn',
+    change: { kind: 'castPermission', seat: res.controller, spells: effect.spells },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
+ * "This creature gains all activated abilities of that card until end of turn" (issue 159, CR 613.1f, 113.6, 611.2a): every activated and mana ability the card or spell `from`
+ * has as the effect resolves (as it last was when it has left, CR 113.7a) is given to `to` until the end of the turn, in the order they are written. `to` must still be on the
+ * battlefield (CR 608.2b). A copy of an ability keeps the text and the cost; the source is the permanent that has it now.
+ */
+export function runGainActivatedAbilitiesOf(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'gainActivatedAbilitiesOf' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const [fromId] = resolveObjects(state, effect.from, ctx, targets);
+  if (fromId === undefined) return done(state);
+  const object = state.objects[fromId];
+  const abilities =
+    object !== undefined ? derive(state, object).abilities : (state.lki[fromId]?.abilities ?? []);
+  const gained = abilities.filter((a) => a.kind === 'activated' || a.kind === 'mana');
+  if (gained.length === 0) return done(state);
+  return runContinuous(
+    state,
+    { kind: 'grantAbility', objects: effect.to, abilities: gained, duration: effect.duration },
+    ctx,
+    targets,
+  );
 }

@@ -26,6 +26,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   foretell: 'Foretell',
   // D-149: "pay {W} and tap four untapped creatures ... rather than pay this spell's mana cost".
   tapPermanents: 'Tap creatures',
+  // Issue 159: "cast this from your graveyard by paying {B}{B} and sacrificing two creatures".
+  sacrificeFromGraveyard: 'Sacrifice creatures',
 };
 
 /** True for the alternatives whose cost the card's view carries: overload, evoke, dash, spectacle, escape. */
@@ -39,6 +41,7 @@ export function isNamedAlternative(
 export function alternativeLogWords(kind: NamedAlternative): string {
   // D-149 (CR 118.9): the cost taps creatures; it has no keyword to name.
   if (kind === 'tapPermanents') return 'by tapping creatures';
+  if (kind === 'sacrificeFromGraveyard') return 'from the graveyard by sacrificing creatures';
   return `for its ${kind} cost`;
 }
 

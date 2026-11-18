@@ -322,7 +322,7 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - The pair "you may put it onto the battlefield. If you don't put it onto the battlefield, put it into your hand." is the only "if you don't" sentence that reads; "If you don't" alone, with another second instruction, or with a rider is refused (never guessed).
 - Protection from card types is read in the plural, for a static grant (an attached permanent or a group) only: the keyword line of a card ("Protection from artifacts") still reads colors only, and a modifier ("nonblack creatures"), a creature type and "everything" are not read.
 - The cast trigger reads " you control" after the card type of what a spell targets, not "you don't control" or a creature type.
-- The graveyard permission names subtypes of permanents (Aura, Curse, Equipment, Fortification, Saga, Shrine, Vehicle); the creature types ("cast a Human spell from your graveyard") and the rider "that artifact enters tapped" for a spell that is not a pure artifact filter are not read.
+- The graveyard permission names subtypes of permanents (Aura, Curse, Equipment, Fortification, Saga, Shrine, Vehicle) and, since D-633, "a <creature type> creature spell"; the bare creature type ("cast a Human spell from your graveyard") and the rider "that artifact enters tapped" for a spell that is not a pure artifact filter are not read.
 
 ## The Danitha deck, group 5 (issue 26, D-405 to D-409)
 

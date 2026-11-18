@@ -27,7 +27,7 @@ if (tier === 'pr') {
     if (!existsSync(resolve(path)))
       throw new Error(`PR-excluded test file does not exist: ${path}`);
     // Vitest matches --exclude against paths relative to each project's root (`packages/ai`), so
-    // the repository-relative path never matched and every listed suite still ran (D-631).
+    // the repository-relative path never matched and every listed suite still ran (D-637).
     args.push('--exclude', `test/${name}`);
   }
   // Guard: an exclusion that excludes nothing is silent and costs tens of minutes, so list the
