@@ -152,8 +152,16 @@ function attachedToHolds(
   );
 }
 
-/** CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). Fails closed without `describeOther`. */
-function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext): boolean | null {
+/**
+ * CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). With `by`, an Aura that player controls (CR 303.4e, D-597).
+ * Fails closed without `describeOther`.
+ */
+function hasAuraAttached(
+  state: GameState,
+  obj: GameObject,
+  ctx: FilterContext,
+  by?: SeatId,
+): boolean | null {
   const describeOther = ctx.describeOther;
   if (describeOther === undefined) return null;
   return state.battlefield.some((id) => {
@@ -161,7 +169,8 @@ function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext):
     return (
       other !== undefined &&
       other.attachedTo === obj.id &&
-      describeOther(other).subtypes.includes('Aura')
+      describeOther(other).subtypes.includes('Aura') &&
+      (by === undefined || controllerOf(state, other) === by)
     );
   });
 }
@@ -209,6 +218,10 @@ export function matchesFilterWith(
     if (source === undefined || source.attachedTo !== obj.id) return false;
   }
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
+    return false;
+  }
+  // CR 303.4e (D-597): "enchanted by an Aura you control".
+  if (filter.enchantedByYou === true && hasAuraAttached(state, obj, ctx, ctx.controller) !== true) {
     return false;
   }
   // CR 122.1 (D-145): "with a counter on it": a counter of any kind, or of the named kind.

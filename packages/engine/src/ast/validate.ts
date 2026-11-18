@@ -395,6 +395,13 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'attackTax':
       checkAttackTax(s, path, out);
       break;
+    case 'cantAttackYou':
+      // D-597: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
+      checkBattlefieldFilter(s.creatures, `${path}.creatures`, out);
+      if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
+        issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
+      }
+      break;
     case 'additionalLandDrops':
       // CR 305.2 (D-125): a positive whole number of extra land plays.
       if (!Number.isSafeInteger(s.count) || s.count < 1) {

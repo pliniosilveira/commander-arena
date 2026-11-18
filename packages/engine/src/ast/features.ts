@@ -656,6 +656,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
+    // D-597: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
+    'enchantedByYou',
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
@@ -870,6 +872,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookAtTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
+    // D-597: "Inklings can't attack you or planeswalkers you control."
+    'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
     // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
@@ -1234,6 +1238,8 @@ export const SELECTOR_KINDS = [
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
   'enchanted',
+  /** "Enchanted by an Aura you control" (CR 303.4e, D-597): the engine's `ObjectFilter.enchantedByYou`. */
+  'enchantedByYou',
   /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
@@ -1497,6 +1503,8 @@ export const STATIC_KINDS = [
   'lookAtTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
+  /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-597): the engine's `cantAttackYou`. */
+  'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
   /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */

@@ -568,6 +568,12 @@ export interface ObjectFilter {
    */
   readonly enchanted?: boolean;
   /**
+   * "Each creature that's enchanted by an Aura you control" (CR 303.4e, D-597): the permanent has at least one Aura attached to it that is controlled by the player the filter is read
+   * for ("you": the controller of the source of the ability). An Aura an opponent controls does not count (the same words as the Auras that modify a creature, CR 700.9). Read from
+   * the attachments (the Aura's subtype through layers 1, 4 and 5). Only `true`; with `enchanted: false` it is a contradiction (`validateCard`).
+   */
+  readonly enchantedByYou?: true;
+  /**
    * "Enchanted creature", "equipped creature" as the object a filter describes (CR 301.5a, 303.4b, D-422): the object is the permanent the source of the ability (an Aura or an
    * Equipment) is attached to. Used where the object is another one's host ("Aura spells you cast that target enchanted creature": `targetsObject` of it). Matches nothing when the
    * source is attached to nothing.
@@ -4528,6 +4534,18 @@ export type StaticEffect =
   | {
       readonly kind: 'attackTax';
       readonly cost: readonly Cost[];
+      readonly planeswalkers?: true;
+    }
+  /**
+   * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-597): while the permanent has the ability, no creature `creatures` describes can be declared as
+   * attacking its controller (as a player) and, with `planeswalkers`, the planeswalkers that controller controls (a battle is never covered). `creatures` is a filter of
+   * battlefield permanents read for the controller of the permanent ("you" is its controller) and with the permanent as the source; the creatures of its own controller are described
+   * too but never attack that controller. Another player or another player's planeswalker may still be attacked. It is read from the derived abilities of the permanent (CR 604.1:
+   * a permanent that lost its abilities restricts nothing) where attackers are declared, and a creature with no one left to attack is not able to attack (CR 508.1c).
+   */
+  | {
+      readonly kind: 'cantAttackYou';
+      readonly creatures: ObjectFilter;
       readonly planeswalkers?: true;
     }
   /**

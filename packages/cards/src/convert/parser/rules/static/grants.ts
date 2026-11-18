@@ -500,7 +500,12 @@ export const STATIC_EACH = defineRule<IrStatic>({
     'Each creature gets +1/+1 until end of turn.',
     "Each creatures you control can't be blocked by more than one creature.",
   ],
-  parse: statement('static.each', ['noun.each-permanent'], 'each'),
+  parse: statement(
+    'static.each',
+    // D-597: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
+    ['noun.each-permanent', 'noun.each-creature-enchanted-by-you'],
+    'each',
+  ),
 });
 
 export const GRANT_STATIC_RULES = [STATIC_ATTACHED, STATIC_PERMANENTS, STATIC_EACH];

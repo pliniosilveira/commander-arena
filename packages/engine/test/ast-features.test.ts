@@ -169,6 +169,8 @@ describe('the dimensions', () => {
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',
+      // D-597: "Inklings can't attack you or planeswalkers you control."
+      'cantAttackYou',
       'optionalUntap',
       'crewSaddleBonus',
       'untapInOthersUntapStep',

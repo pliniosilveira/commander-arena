@@ -764,6 +764,7 @@ describe('unmatched abilities', () => {
       'noun.target-permanent-of-that-player',
       'noun.target-permanent',
       'noun.all-enchanted',
+      'noun.each-creature-enchanted-by-you',
       'noun.all-permanents-of-target-player',
       'noun.all-permanents',
       'noun.each-permanent-that-is',

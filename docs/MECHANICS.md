@@ -5071,3 +5071,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `static.spells-have-affinity` (`rules/static/cost.ts`), "modified" in `AIMED` (`rules/trigger/index.ts`), `lowerFilterAt` (`lower/nouns.ts`, the filter of what a spell targets reads "modified").
 - Tests: engine `scenario-xx-affinity-for-auras.test.ts`, `scenario-xx-cast-aimed-modified.test.ts`; cards `parser-affinity-for.test.ts`, `parser-cast-aimed-modified.test.ts`.
 - Example cards: Pearl-Ear, Imperial Advisor (issue 89).
+
+## A group that can't attack you and your planeswalkers (issue 89, D-597)
+
+- CR: 508.1a and 508.1c (what may be declared as an attacker), 506.3 (a player, a planeswalker or a battle can be attacked), 604.1 (the ability of a permanent that lost its abilities gives nothing), 303.4e (the Aura's controller is separate from the enchanted permanent's controller).
+- Gap class: P (a static ability that bans attack targets and a filter), T (the sentence and the noun).
+- Engine: `StaticEffect` `cantAttackYou { creatures, planeswalkers? }` (`ast/types.ts`, `ast/features.ts`, `ast/validate.ts`), `rules/attack-bans.ts` (`withoutBannedTargets`), read by `attackCandidates` in `rules/combat-legality.ts`; `ObjectFilter.enchantedByYou` (`ast/types.ts`, `rules/filter-match.ts`, `ast/validate-parts.ts`).
+- Parser: `restrictionPhrase` (`rules/static/restriction-words.ts`), `noun.each-creature-enchanted-by-you` (`rules/noun/enchanted-by-you.ts`), IR `cantAttackYou` and `enchantedByYou`, `lower/statics.ts`, `lower/nouns.ts`.
+- Tests: engine `scenario-xx-cant-attack-you.test.ts` (a Bear cannot attack the controller or the planeswalker, an Elf can, another player may be attacked, the controller's own creatures, the ability lost, an Aura of my own on a creature and an Aura of the opponent's on its own creature; mutation-checked: the player ban, the planeswalker ban and the Aura's controller); cards `parser-cant-attack-you.test.ts`.
+- Example cards: Eriette of the Charmed Apple (issue 89); the restriction of Combat Calligrapher.

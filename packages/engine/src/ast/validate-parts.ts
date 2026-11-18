@@ -314,11 +314,24 @@ export function checkFilter(
       'enchanted must be a boolean (true: has an Aura, false: has none)',
     );
   }
+  if (f.enchantedByYou !== undefined && f.enchantedByYou !== true) {
+    issue(out, `${path}.enchantedByYou`, 'enchantedByYou must be true');
+  }
+  if (f.enchantedByYou === true && f.enchanted === false) {
+    issue(
+      out,
+      `${path}.enchantedByYou`,
+      'a permanent enchanted by an Aura you control is enchanted: enchanted is not false',
+    );
+  }
   if (f.hostOfSource !== undefined && f.hostOfSource !== true) {
     issue(out, `${path}.hostOfSource`, 'hostOfSource must be true');
   }
   if (
-    (f.attachedTo !== undefined || f.enchanted !== undefined || f.hostOfSource === true) &&
+    (f.attachedTo !== undefined ||
+      f.enchanted !== undefined ||
+      f.enchantedByYou === true ||
+      f.hostOfSource === true) &&
     f.zone !== undefined &&
     f.zone !== 'battlefield'
   ) {

@@ -356,6 +356,8 @@ export interface IrFilter {
     | { readonly kind: 'type'; readonly types: readonly string[] };
   /** "that aren't enchanted" (`false`), "that are enchanted" (`true`) (D-426, CR 303.4): the permanent has no Aura attached to it (or has one). */
   readonly enchanted?: boolean;
+  /** "enchanted by an Aura you control" (D-597, CR 303.4e): the engine's `enchantedByYou`. */
+  readonly enchantedByYou?: true;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
   /** D-595 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
@@ -1253,6 +1255,8 @@ export type IrStaticEffect =
    * "can't be countered" (stage P12): the subject has the restriction while the ability applies.
    */
   | { readonly kind: 'restriction'; readonly restriction: IrRestrictionKind }
+  // D-597 (CR 508.1a): "Inklings can't attack you or planeswalkers you control": the creatures the subject names cannot be declared attacking the controller or their planeswalkers
+  | { readonly kind: 'cantAttackYou' }
   | { readonly kind: 'noMaxHandSize' }
   /** "~ is the chosen type in addition to its other types." (stage P15, D-100, CR 205.1b, 613.1d). */
   | { readonly kind: 'chosenType' }

@@ -163,6 +163,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
   'static.spells-have-affinity': asIs,
+  'noun.each-creature-enchanted-by-you': permanent(
+    (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
+  ),
   'static.additional-cost': asIs,
   'static.free-cast': asIs,
   // Stage P20: power and toughness from a count; the statements are lines of their own.

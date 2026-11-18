@@ -14,6 +14,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget } from '../state/combat-types';
 import { getObject } from '../state/ops';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
+import { withoutBannedTargets } from './attack-bans';
 import { attackTargets } from './attack-targets';
 import { payableAttackTax, untaxedTargets } from './attack-tax';
 import { payableBlockTax } from './block-tax';
@@ -52,7 +53,12 @@ export function attackCandidates(
   if (targets.length === 0) return [];
   return state.battlefield
     .filter((id) => canAttack(state, getObject(state, id), seat))
-    .map((attacker) => ({ attacker, targets: narrowedTargets(state, attacker, targets) }));
+    .map((attacker) => ({
+      attacker,
+      // CR 508.1a (D-597): "can't attack you or planeswalkers you control": the targets it may not attack are left out, and a creature with none left is not able to attack (CR 508.1c).
+      targets: narrowedTargets(state, attacker, withoutBannedTargets(state, attacker, targets)),
+    }))
+    .filter((candidate) => candidate.targets.length > 0);
 }
 
 /** The group requirements ("creatures your opponents control attack each combat if able", D-179) that name `obj` as one of their creatures now. */

@@ -33,4 +33,5 @@
 // 128: Read a list of three kinds of spell in a cast trigger (D-594, issue 89).
 // 129: Read "Spells you cast that target a creature cost {N} less to cast" (D-595, issue 89).
 // 130: Read "spells you cast have affinity for Auras" and "that targets a modified permanent you control" in a cast trigger (D-596, issue 89).
-export const PARSER_VERSION = 130;
+// 131: Read "[group] can't attack you or planeswalkers you control" and "each creature that's enchanted by an Aura you control" (D-597, issue 89).
+export const PARSER_VERSION = 131;

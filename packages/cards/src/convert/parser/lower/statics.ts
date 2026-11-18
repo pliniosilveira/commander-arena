@@ -399,6 +399,10 @@ function effectOf(
       }
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
+    case 'cantAttackYou':
+      // CR 508.1a (D-597): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
+      if (subject.kind !== 'filter' || subject.other === true) return failure(at);
+      return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
     case 'goaded':
       // D-589 (CR 701.15b): only the permanent an Aura or Equipment is attached to.
       if (subject.kind !== 'attached') return failure(at);
@@ -445,6 +449,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:restriction'];
     case 'goaded':
       return ['static:goaded'];
+    case 'cantAttackYou':
+      return ['static:cantAttackYou'];
     case 'grantAbility':
       return ['static:grantAbility'];
     case 'noMaxHandSize':

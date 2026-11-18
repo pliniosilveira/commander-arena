@@ -113,6 +113,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
+  'selector:enchantedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
@@ -319,6 +320,11 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
+  // D-597 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
+  if (filter.enchantedByYou === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:enchantedByYou');
+  }
   // D-426 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
   // (a cost reduction), as `targets`: not a member of a choice, and not together with it.
   if (filter.targetsHost === true) {
@@ -415,6 +421,7 @@ function lowerFilterAt(
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
+    ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),

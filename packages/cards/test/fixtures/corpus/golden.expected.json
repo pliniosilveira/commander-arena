@@ -1,5 +1,5 @@
 {
-  "parserVersion": 130,
+  "parserVersion": 131,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -6115,14 +6115,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 1,
-          "text": "Inklings can't attack you or planeswalkers you control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.plain-permanents"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "Whenever a player attacks one of your opponents, that attacking player creates a tapped 2/1 white and black Inkling creature token with flying that's attacking that opponent.",
           "reason": "unrecognised",
@@ -6131,7 +6123,7 @@
         }
       ],
       "reasons": [],
-      "ast": "70646fd2"
+      "ast": "2e7a6c98"
     },
     "eecb3047-a563-441a-9175-200421981ac3": {
       "name": "Ugin, the Spirit Dragon",
@@ -6300,19 +6292,10 @@
     "f43f5855-f297-4433-984b-18263b734cfc": {
       "name": "Eriette of the Charmed Apple",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.each"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "86adb254"
+      "ast": "7915483f"
     },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
@@ -6815,7 +6798,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 433,
+      "supported": 434,
       "total": 480
     }
   }
