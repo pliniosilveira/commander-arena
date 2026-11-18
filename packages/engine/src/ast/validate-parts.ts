@@ -5336,6 +5336,27 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'the players who choose for themselves are each player or each opponent',
           );
         }
+        if (e.own.typesOnly !== undefined && e.own.typesOnly !== true) {
+          issue(out, `${path}.own.typesOnly`, 'typesOnly is true or absent');
+        }
+        if (
+          e.own.counter !== undefined &&
+          (typeof e.own.counter !== 'string' || e.own.counter === '')
+        ) {
+          issue(out, `${path}.own.counter`, 'counter names the kind of counter put on each kept');
+        }
+        if (e.own.cantAttackYou !== undefined) {
+          if (e.own.cantAttackYou !== true) {
+            issue(out, `${path}.own.cantAttackYou`, 'cantAttackYou is true or absent');
+          }
+          if (e.own.counter === undefined) {
+            issue(
+              out,
+              `${path}.own.cantAttackYou`,
+              'cantAttackYou lasts while the counter does: it needs counter',
+            );
+          }
+        }
       }
       break;
     case 'exileOwnGraveyardCard':

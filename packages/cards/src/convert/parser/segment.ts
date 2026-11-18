@@ -357,6 +357,15 @@ const THEN_SACRIFICE_OTHERS =
   /^then each player sacrifices all other nonland permanents they control\.$/i;
 
 /**
+ * "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow
+ * counter on it." (Promise of Loyalty, issue 89, CR 122.1, 508.1a, 611.2b): "those creatures" are the ones that got the counter, so the two sentences are read as one instruction.
+ */
+const EACH_PLAYER_VOW_KEEP =
+  /^each player puts an? [a-z]+ counter on a creature they control and sacrifices the rest\.$/i;
+const THOSE_CREATURES_CANT_ATTACK_YOU =
+  /^each of those creatures can['’]t attack you or planeswalkers you control for as long as it has an? [a-z]+ counter on it\.$/i;
+
+/**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
  * sentence says what happens to the card the first one makes the opponent choose, so the two are read as one instruction.
  */
@@ -587,6 +596,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
+        (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||

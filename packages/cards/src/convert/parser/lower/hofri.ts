@@ -395,6 +395,28 @@ const SPARE_PERMANENTS: Lowering<IrClause, Effects> = {
     }
     // D-484 (Liliana, Dreadhorde General): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": each opponent chooses for themselves.
     const own = arg(clause, 'eachOpponent')?.kind === 'flag';
+    // Promise of Loyalty (CR 122.1, 508.1a, 611.2b): "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you
+    // or planeswalkers you control for as long as it has a vow counter on it": each player keeps one creature with the counter; only creatures are sacrificed.
+    const counter = arg(clause, 'counter');
+    if (arg(clause, 'eachPlayer')?.kind === 'flag') {
+      if (counter === undefined || counter.kind !== 'counterSpec') return failure(clause);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'sparePermanents',
+            types: types.cardTypes as CardType[],
+            own: {
+              players: { kind: 'eachPlayer' as const },
+              typesOnly: true,
+              counter: counter.name,
+              cantAttackYou: true,
+            },
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     return {
       ok: true,
       value: [
