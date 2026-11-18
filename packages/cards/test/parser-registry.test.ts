@@ -975,6 +975,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,
   ),
+  // Issue 89 (Gift of Immortality): the delayed return of the Aura's own card follows the return of the creature.
+  'effect.return-this-card-attached-delayed': permanent(
+    (e) =>
+      `When enchanted creature dies, return that card to the battlefield under its owner's control. ${cap(e)}.`,
+  ),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

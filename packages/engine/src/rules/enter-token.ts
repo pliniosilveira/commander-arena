@@ -384,5 +384,6 @@ export function runEnterToken(
       ...hostEvents,
     ]),
     lastMoved: [...(res.lastMoved ?? []), ...created],
+    performed: created.length,
   };
 }

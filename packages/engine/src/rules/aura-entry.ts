@@ -11,6 +11,8 @@ import type { GameEvent } from '../state/events';
 import { definitionOf, printedCard } from '../state/ops';
 import type { GameObject, GameState, Instruction, ResolutionContext } from '../state/types';
 import { auraTargetSpec } from './attach';
+import { derive } from './derive';
+import { hasProtectionFrom } from './protection';
 import { matchesFilter } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
@@ -124,4 +126,34 @@ export function runAuraEntry(
       ...(instruction.withCounters === undefined ? {} : { withCounters: instruction.withCounters }),
     },
   ]);
+}
+
+/**
+ * CR 303.4f, 303.4g, 303.4i, 301.5 (issue 89): what happens to the card `obj` that an effect puts onto the battlefield "attached to" the permanent `host` under `seat`'s control: an Aura
+ * enters attached when its enchant ability allows `host` (hexproof and shroud do not matter, protection does) and otherwise stays where it is; an Equipment enters attached to a creature and
+ * unattached to anything else (the rules text for that was not available: docs/ROADMAP.md); a card that is neither enters as it would anyway.
+ */
+export function entryAttachment(
+  state: GameState,
+  obj: GameObject,
+  host: GameObject,
+  seat: SeatId,
+): 'attach' | 'unattached' | 'stay' {
+  if (host.zone !== 'battlefield') return 'stay';
+  const enchant = enchantFilterOfCard(state, obj);
+  if (enchant !== null) {
+    if (enchant.filter.kind !== 'object' || host.id === obj.id) return 'stay';
+    const filter = { ...enchant.filter.filter, zone: 'battlefield' as const };
+    return matchesFilter(state, host, filter, { controller: seat, source: obj.id }) &&
+      !hasProtectionFrom(state, host, obj.id)
+      ? 'attach'
+      : 'stay';
+  }
+  const card = printedCard(obj);
+  const face =
+    card === null || obj.token !== null ? null : (definitionOf(state, card).faces[0] ?? null);
+  if (face?.subtypes.includes('Equipment') === true) {
+    return derive(state, host).types.includes('creature') ? 'attach' : 'unattached';
+  }
+  return 'unattached';
 }

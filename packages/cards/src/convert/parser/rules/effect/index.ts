@@ -682,10 +682,20 @@ const RETURN_THIS_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
  */
 const TO_BATTLEFIELD_AHEAD = /^return [^.]*? to the battlefield/i;
 
-const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = (
-  ctx,
-  pos,
-) => {
+/**
+ * " attached to that token" after the battlefield (issue 89, Forum Filibuster, CR 303.4f, 400.7j): an Aura or an Equipment card put onto the battlefield attached to the token the
+ * sentences before it made, which names it, so nothing is asked. Only the token: another host is another statement.
+ */
+const ATTACHED_TO_THAT_TOKEN: Parser<IrNoun> = map(
+  sequence(literal(' attached to '), family<IrNoun>('noun', { only: ['noun.that-token'] })),
+  ([, host]) => host,
+);
+
+const RETURN_FROM_GRAVEYARD: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+  attachTo?: IrNoun;
+}> = (ctx, pos) => {
   const toBattlefield = TO_BATTLEFIELD_AHEAD.test(ctx.text.slice(pos));
   const r = sequence(
     literal('return '),
@@ -700,8 +710,21 @@ const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSp
       toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
     ),
     toBattlefield ? TO_THE_BATTLEFIELD : TO_YOUR_HAND,
+    optional(ATTACHED_TO_THAT_TOKEN, null),
   )(ctx, pos);
-  return r.ok ? { ok: true, value: { objects: r.value[1], to: r.value[2] }, pos: r.pos } : r;
+  // Only a card put onto the battlefield is attached as it enters.
+  if (r.ok && !toBattlefield && r.value[3] !== null) return fail(ctx, pos);
+  return r.ok
+    ? {
+        ok: true,
+        value: {
+          objects: r.value[1],
+          to: r.value[2],
+          ...(r.value[3] === null ? {} : { attachTo: r.value[3] }),
+        },
+        pos: r.pos,
+      }
+    : r;
 };
 
 /**
@@ -749,6 +772,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     // D-362 (Victimize): the cards an earlier sentence chose as targets.
     'return the chosen cards to the battlefield',
     'return the chosen cards to the battlefield tapped',
+    // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
+    'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
+    'return target Aura card from your graveyard to the battlefield attached to that token',
   ],
   rejects: [
     "return that card to its owner's hand",
@@ -782,10 +808,16 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return the chosen cards to their owners' hands",
     'return the chosen card to the battlefield',
     'return the chosen cards to the battlefield under their owners control',
+    'return target creature card from your graveyard to your hand attached to that token',
+    'return target creature card from your graveyard to the battlefield attached to target creature',
+    'return target creature card from your graveyard to the battlefield attached to it',
+    'return target creature card from your graveyard to the battlefield attached to that creature',
+    'return target creature card from your graveyard to the battlefield attached to those tokens',
+    'return target creature card from your graveyard to the battlefield attached to',
   ],
   parse: single(
     'effect.return',
-    choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>(
+    choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec; attachTo?: IrNoun }>(
       RETURN_TO_HAND,
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
@@ -795,7 +827,10 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_THE_CHOSEN_CARDS,
       RETURN_THIS_CARD,
     ),
-    ({ objects, to }) => ({ verb: 'return', args: { objects, to } }),
+    ({ objects, to, attachTo }) => ({
+      verb: 'return',
+      args: { objects, to, ...(attachTo === undefined ? {} : { attachTo }) },
+    }),
   ),
 });
 

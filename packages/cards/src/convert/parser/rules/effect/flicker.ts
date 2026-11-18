@@ -210,6 +210,54 @@ export const EFFECT_RETURN_THIS_CARD_DELAYED = quietly(
 );
 
 /**
+ * `effect.return-this-card-attached-delayed`: "return this card to the battlefield attached to that creature at the beginning of the next end step" (CR 603.7, 603.7c, 400.7, 303.4f;
+ * issue 89, Gift of Immortality): the card of the Aura that has the ability, brought back by a delayed triggered ability the instruction creates after "When enchanted creature dies,
+ * return that card to the battlefield under its owner's control", attached to the creature that returned. The lowering refuses it anywhere but right after that return. Not read:
+ * "it", "that card", "from your graveyard", another host, another step, "tapped", control words.
+ */
+export const EFFECT_RETURN_THIS_CARD_ATTACHED_DELAYED = quietly(
+  defineRule<Clauses>({
+    id: 'effect.return-this-card-attached-delayed',
+    family: 'effect',
+    leading: ['return'],
+    cites: [
+      'CR 603.7 (Handling Triggered Abilities)',
+      'CR 603.7c (Handling Triggered Abilities)',
+      'CR 400.7 (General)',
+      'CR 303.4f (Auras)',
+    ],
+    examples: [
+      'return this card to the battlefield attached to that creature at the beginning of the next end step',
+    ],
+    rejects: [
+      'return this card to the battlefield attached to that creature',
+      'return this card to the battlefield at the beginning of the next end step',
+      'return it to the battlefield attached to that creature at the beginning of the next end step',
+      'return that card to the battlefield attached to that creature at the beginning of the next end step',
+      'return this card from your graveyard to the battlefield attached to that creature at the beginning of the next end step',
+      'return this card to the battlefield attached to target creature at the beginning of the next end step',
+      'return this card to the battlefield attached to that land at the beginning of the next end step',
+      'return this card to the battlefield tapped attached to that creature at the beginning of the next end step',
+      'return this card to the battlefield attached to that creature at the beginning of your next end step',
+      'return this card to the battlefield attached to that creature at the beginning of the next end step and draw a card',
+    ],
+    parse: (ctx, pos) => {
+      const r = pattern(
+        /return this card to the battlefield attached to that creature at the beginning of the next end step(?![\p{L}\p{N}])(?!\s+and(?![\p{L}\p{N}]))/iu,
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const clause = makeClause(
+        'effect.return-this-card-attached-delayed',
+        'delayedReturnThisCardAttached',
+        {},
+        { start: pos, end: r.pos },
+      );
+      return { ok: true, value: [clause], pos: r.pos };
+    },
+  }),
+);
+
+/**
  * `effect.return-at-upkeep`: "return it to the battlefield under its owner's control at the beginning of your next upkeep" (D-284, CR 603.7, 603.7c, 400.7, 110.2): the card
  * a creature became when it died, brought back by a delayed triggered ability the instruction creates. "It" is read here against the one noun the clause names; the lowering
  * reads it as the card of a creature that died (a trigger of `~` dying) and refuses it anywhere else. The control is stated ("under its owner's control" or "under your
@@ -331,6 +379,7 @@ export const FLICKER_RULES = [
   EFFECT_FLICKER,
   EFFECT_RETURN_DELAYED,
   EFFECT_RETURN_THIS_CARD_DELAYED,
+  EFFECT_RETURN_THIS_CARD_ATTACHED_DELAYED,
   EFFECT_RETURN_AT_UPKEEP,
   EFFECT_RETURN_TO_HAND_DELAYED,
 ];
