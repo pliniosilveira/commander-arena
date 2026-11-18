@@ -109,3 +109,41 @@ describe('Vela the Night-Clad: "Whenever Vela or another creature you control le
     g.expect.stack([]);
   });
 });
+
+describe("Liliana's Standard Bearer: \"When this creature enters, draw X cards, where X is the number of creatures that died under your control this turn.\"", () => {
+  const bearer = real("Liliana's Standard Bearer");
+  const start = () =>
+    scenario()
+      .define(bearer)
+      .seat(0)
+      .library('Island', 'Swamp', 'Plains', 'Forest', 'Mountain', 'Island', 'Swamp', 'Plains')
+      .hand(bearer.name, 'Murder')
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(bearer)).toEqual([]);
+  });
+
+  test('no creature died: it draws no card', () => {
+    const g = start();
+    g.act(0).cast(bearer.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.handSize(0, 1);
+  });
+
+  test('one creature of mine died this turn: it draws one card (CR 700.4)', () => {
+    const g = start();
+    g.act(0).cast('Murder', { targets: [BEARS], pay: true });
+    g.passAll();
+    g.act(0).cast(bearer.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.handSize(0, 1);
+    g.expect.invariants();
+  });
+});
