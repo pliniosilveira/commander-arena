@@ -7,6 +7,7 @@
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import type { DeckChoice } from '../../precons';
+import { ManaCost } from '../mana';
 import { pickRandomDeck, type RandomScope } from './menu-model';
 
 type DeckTab = 'saved' | 'precon';
@@ -151,6 +152,11 @@ export function DeckDialog({
                   {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
                 </span>
               </span>
+              {deck.colors !== undefined && (
+                <span className="scr-deck-colors" data-testid="deck-colors">
+                  <ManaCost cost={deck.colors.length === 0 ? ['C'] : deck.colors} />
+                </span>
+              )}
             </label>
           ))}
         </div>

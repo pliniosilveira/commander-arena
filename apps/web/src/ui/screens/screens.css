@@ -102,6 +102,10 @@
   border-radius: 4px;
   border: 1px solid var(--line);
 }
+.scr-deck-colors {
+  flex: none;
+  margin-left: auto;
+}
 .scr-deck-text {
   display: flex;
   flex-direction: column;

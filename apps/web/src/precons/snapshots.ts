@@ -22,6 +22,8 @@ export interface PreconInfo {
   readonly commander: string;
   /** The commander's art (Scryfall art crop) for the deck lists; absent when the card has none. */
   readonly commanderImage?: string;
+  /** The commander's color identity (WUBRG letters; empty is colorless); absent when unknown. */
+  readonly colors?: readonly string[];
   /** The decklist exactly as shipped. */
   readonly decklist: string;
 }
@@ -67,22 +69,24 @@ function commanderOf(snapshot: PreconSnapshot): string {
   return card?.name ?? written;
 }
 
-/** The art crop of the commander's first face, when the snapshot has the card and its image. */
-function commanderImageOf(snapshot: PreconSnapshot): string | undefined {
+/** The commander's stored card, when the snapshot has it. */
+function commanderCardOf(snapshot: PreconSnapshot) {
   const written = canonicalDeck(parseDecklist(snapshot.decklist)).commander[0]?.name;
   if (written === undefined) return undefined;
-  const card = indexByName(snapshot.cards.map(fromSnapshotCard))(normalizeNameKey(written));
-  return card?.faces[0]?.imageUris?.artCrop ?? undefined;
+  return indexByName(snapshot.cards.map(fromSnapshotCard))(normalizeNameKey(written));
 }
 
 export function infoOf(snapshot: PreconSnapshot): PreconInfo {
-  const commanderImage = commanderImageOf(snapshot);
+  const card = commanderCardOf(snapshot);
+  const commanderImage = card?.faces[0]?.imageUris?.artCrop ?? undefined;
+  const colors = card?.colorIdentity;
   return {
     id: snapshot.id,
     name: snapshot.name,
     blurb: snapshot.blurb,
     commander: commanderOf(snapshot),
     ...(commanderImage === undefined ? {} : { commanderImage }),
+    ...(colors === undefined ? {} : { colors }),
     decklist: snapshot.decklist,
   };
 }

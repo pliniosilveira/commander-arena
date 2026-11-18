@@ -8,6 +8,8 @@ test('a shipped precon lists its commander art, and an edit to another commander
   if (withArt === undefined) return;
   const [choice] = deckChoices([withArt], [], []);
   expect(choice?.commanderImage).toBe(withArt.commanderImage);
+  expect(choice?.colors).toEqual(withArt.colors);
+  expect(withArt.colors?.every((c) => 'WUBRG'.includes(c))).toBe(true);
   const edited = deckChoices(
     [withArt],
     [
@@ -21,4 +23,5 @@ test('a shipped precon lists its commander art, and an edit to another commander
     [],
   );
   expect(edited[0]?.commanderImage).toBeUndefined();
+  expect(edited[0]?.colors).toBeUndefined();
 });
