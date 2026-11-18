@@ -73,4 +73,3 @@ Mainboard
 1x Warden of Evos Isle
 1x Windreader Sphinx
 1x Winged Words
-
