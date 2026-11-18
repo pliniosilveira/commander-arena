@@ -123,6 +123,13 @@ function subjectOf(noun: IrNoun, ctx: LowerContext, keywords = false): LowerResu
   if (noun.det === 'self') return { ok: true, value: { kind: 'this' }, rule: noun.rule };
   if (noun.det === 'enchanted' || noun.det === 'equipped') return attachedSubject(noun, ctx);
   if (noun.det === 'each') return groupSubject(noun, keywords);
+  // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent itself and its host, for a "+N/+N" only (`validateCard`).
+  if (noun.det === 'selfAndEnchanted') {
+    const host = attachedSubject({ ...noun, det: 'enchanted' }, ctx);
+    return host.ok && host.value.kind === 'attached'
+      ? { ...host, value: { ...host.value, andThis: true } }
+      : host;
+  }
   // "Each of those creatures" of a soulbond card (D-286, CR 702.95b): this permanent and the creature it is paired with.
   if (noun.det === 'pair') return { ok: true, value: { kind: 'pair' }, rule: noun.rule };
   return failure(noun);

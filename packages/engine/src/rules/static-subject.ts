@@ -45,6 +45,8 @@ export function subjectAffects(
 ): boolean {
   if (subject.kind === 'this') return source.id === target.id;
   if (subject.kind === 'attached') {
+    // "~ and enchanted creature" (`andThis`): the permanent itself too, whether or not it is attached.
+    if (subject.andThis === true && source.id === target.id) return true;
     if (source.attachedTo !== target.id) return false;
     // CR 303.4m, 301.5a: "enchanted creature" is what the permanent is attached to, and only while that is a creature: an
     // `Enchant permanent` Aura on a land grants nothing from such a static ability.

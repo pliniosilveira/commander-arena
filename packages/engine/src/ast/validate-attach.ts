@@ -5,7 +5,7 @@
  */
 import { CARD_TYPES, type CardType, COLORS, SUPERTYPES, type Subtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
-import type { Ability, Keyword, ObjectFilter, StaticSubject } from './types';
+import type { Ability, AlternativeCost, Keyword, ObjectFilter, StaticSubject } from './types';
 import { isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
@@ -62,6 +62,13 @@ export function checkStaticSubject(
       }
       break;
     case 'attached':
+      if (s.andThis !== undefined && (s.andThis !== true || !allowPair)) {
+        issue(
+          out,
+          `${path}.andThis`,
+          "'andThis' is true, and for a static ability that changes power and toughness or grants a keyword or an ability only",
+        );
+      }
       // The host's types ("Enchanted creature"): see StaticSubject. Each list is non-empty when set.
       checkEnumList(out, `${path}.types`, s.types, CARD_TYPES, 'card type');
       checkEnumList(out, `${path}.supertypes`, s.supertypes, SUPERTYPES, 'supertype');
@@ -203,11 +210,17 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
  */
 export function checkAttachmentFace(
   abilities: readonly Ability[],
-  face: { readonly types: readonly CardType[]; readonly subtypes: readonly Subtype[] },
+  face: {
+    readonly types: readonly CardType[];
+    readonly subtypes: readonly Subtype[];
+    readonly alternativeCosts?: readonly AlternativeCost[];
+  },
   path: string,
   out: AstIssue[],
 ): void {
   const isAura = face.subtypes.includes('Aura');
+  // CR 702.103a: a card with bestow is an Aura while it is attached, so its abilities may speak of "enchanted creature".
+  const bestows = face.alternativeCosts?.some((a) => a?.kind === 'bestow') === true;
   const isEquipment = face.subtypes.includes('Equipment');
   const enchants = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'enchant');
   if (isAura && !face.types.includes('enchantment')) {
@@ -237,7 +250,7 @@ export function checkAttachmentFace(
       );
     }
     const subject = a.kind === 'static' && 'subject' in a.static ? a.static.subject : null;
-    if (subject?.kind === 'attached' && !isAura && !isEquipment) {
+    if (subject?.kind === 'attached' && !isAura && !isEquipment && !bestows) {
       issue(
         out,
         `${path}.abilities[${i}].static.subject`,

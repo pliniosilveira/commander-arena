@@ -114,7 +114,8 @@ export function resolveTop(input: GameState): ResolveOutcome {
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 
-  if (specs.length > 0 && chosen.length > 0 && legal.length === 0) {
+  // CR 702.103e (bestow, rules text not checked): a bestow spell whose target is illegal is not countered: it resolves as a creature spell.
+  if (specs.length > 0 && chosen.length > 0 && legal.length === 0 && obj.stack?.alt !== 'bestow') {
     // CR 608.2b: all targets are illegal, so the spell doesn't resolve.
     events.push({ kind: 'fizzled', object: id });
     const moved = moveObject(input, { object: id, to: 'graveyard' });
@@ -358,7 +359,10 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const permanent = types.some((t) => isPermanentType(t));
     // CR 608.3c: an Aura spell enters attached to the object it targeted (it fizzled before this
     // if that target was illegal, CR 608.3b). The spell's own text says what it targeted.
-    const auraHost = auraTargetSpec(faceOf(next, obj)) === null ? null : enchantedHost(res);
+    const auraHost =
+      auraTargetSpec(faceOf(next, obj)) === null && obj.stack?.alt !== 'bestow'
+        ? null
+        : enchantedHost(res);
     // CR 715.3d: a spell cast as an Adventure that resolves is exiled instead of going to the
     // graveyard; a countered or fizzled one never gets here (CR 715.4) and goes to the graveyard.
     const adventure = isAdventureSpell(next, obj);

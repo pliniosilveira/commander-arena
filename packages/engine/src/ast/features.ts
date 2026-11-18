@@ -1168,6 +1168,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'overload',
     'evoke',
     'dash',
+    'bestow',
     'spectacle',
     'escape',
     // CR 702.180: Harmonize.
@@ -1945,6 +1946,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'overload',
   'evoke',
   'dash',
+  'bestow',
   'spectacle',
   'escape',
   'harmonize',

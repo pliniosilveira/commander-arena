@@ -179,6 +179,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'overload',
   'evoke',
   'dash',
+  'bestow',
   'spectacle',
   'escape',
   'harmonize',

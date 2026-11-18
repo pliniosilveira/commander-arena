@@ -10,7 +10,7 @@ import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { alternativeOf, flashbackCostOf, hasAftermath, hasGift, hasModeCosts } from './alt-costs';
-import { auraTargetSpec } from './attach';
+import { auraTargetSpec, BESTOW_TARGET_SPEC } from './attach';
 import {
   type CastAlternative,
   type CastFrom,
@@ -515,6 +515,8 @@ export function targetSpecsOf(
   kicked = obj.stack?.kicked === true,
   /** Whether Gift was promised. Before casting, callers can ask either branch. */
   giftPromised = obj.stack?.giftTo !== undefined,
+  /** CR 702.103b: the spell is cast for its bestow cost: an Aura spell with "enchant creature", whatever its card is. */
+  bestowed = obj.stack?.alt === 'bestow',
 ): readonly TargetSpec[] {
   // CR 702.96b: a spell cast for its overload cost won't require any targets.
   if (overloaded && obj.stack?.ability == null) return [];
@@ -538,7 +540,12 @@ export function targetSpecsOf(
     // Issue 244, CR 601.2c: a slot of the text that applies only to a spell cast during its controller's main phase.
     .filter((spec) => spec.ifCastInOwnMain !== true || castInOwnMainPhase(state, obj));
   // Only a card that is not on the battlefield is being cast (an Aura permanent has no spell text).
-  const aura = obj.zone === 'battlefield' ? null : auraTargetSpec(face);
+  const aura =
+    obj.zone === 'battlefield'
+      ? null
+      : bestowed && obj.stack?.ability == null
+        ? BESTOW_TARGET_SPEC
+        : auraTargetSpec(face);
   return aura === null ? declared : [aura, ...declared];
 }
 
@@ -555,6 +562,8 @@ export function targetsPossible(
   kicked = obj.stack?.kicked === true,
   /** D-408: the spell is cast only by its own conditional flash ("if it targets a commander"): its targets must be objects this filter matches. */
   only: ObjectFilter | null = null,
+  /** CR 702.103b: the spell would be cast for its bestow cost (it needs a creature to target). */
+  bestowed = obj.stack?.alt === 'bestow',
 ): boolean {
   // CR 702.96b: an overloaded spell needs no target (the "each" of its text affects what matches).
   if (overloaded) return true;
@@ -569,7 +578,7 @@ export function targetsPossible(
       ? [false, true]
       : [obj.stack?.giftTo !== undefined];
   return giftBranches.some((giftPromised) => {
-    const specs = targetSpecsOf(state, obj, false, kicked, giftPromised);
+    const specs = targetSpecsOf(state, obj, false, kicked, giftPromised, bestowed);
     // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
     const restricted = only === null ? -1 : flashSlotOf(specs);
     if (only !== null && restricted < 0) return false;
@@ -686,7 +695,15 @@ export function canCast(
   const payments = modePayments(state, seat, spell);
   return kickedWays.some(
     (kicked) =>
-      targetsPossible(state, seat, spell, alternative === 'overload', kicked, timing.onlyTargets) &&
+      targetsPossible(
+        state,
+        seat,
+        spell,
+        alternative === 'overload',
+        kicked,
+        timing.onlyTargets,
+        alternative === 'bestow',
+      ) &&
       payments.some((modes) => {
         const request = {
           seat,

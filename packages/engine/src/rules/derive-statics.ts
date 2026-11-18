@@ -113,7 +113,7 @@ function listEntries(entries: readonly ModifierEntry[]): EntryLists {
     const target =
       subject.kind === 'this'
         ? entry.source.object.id
-        : subject.kind === 'attached'
+        : subject.kind === 'attached' && !('andThis' in subject && subject.andThis === true)
           ? entry.source.object.attachedTo
           : undefined;
     if (target === undefined) common.push(entry);
