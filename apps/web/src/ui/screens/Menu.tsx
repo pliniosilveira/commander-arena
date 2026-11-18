@@ -92,13 +92,22 @@ export function Menu() {
       <section className="scr-card" aria-labelledby="scr-decks-h">
         <h2 id="scr-decks-h">Your decks</h2>
         <p className="scr-help">Manage your saved decks and import a new decklist.</p>
-        <button
-          type="button"
-          className="scr-btn scr-btn-primary"
-          onClick={() => actions.openImport('decks')}
-        >
-          Your Decks
-        </button>
+        <div className="scr-modal-group">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            onClick={() => actions.openImport('import')}
+          >
+            Import deck
+          </button>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            onClick={() => actions.openImport('decks')}
+          >
+            Your Decks
+          </button>
+        </div>
       </section>
 
       <div className="scr-start-row">
@@ -165,6 +174,7 @@ export function Menu() {
           {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
           onCancel={closeFlow}
           onImport={() => actions.openImport('import')}
+          initialTab={step === 'opponent' ? 'precon' : 'saved'}
         />
       )}
     </main>
