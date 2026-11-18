@@ -6,6 +6,7 @@
  * left out, not guessed at.
  */
 import type {
+  Ability,
   ActivatedAbility,
   Amount,
   AttackedBySelector,
@@ -168,7 +169,10 @@ function nounOf(filter: ObjectFilter): string {
         : types.join(' or ');
   const named = subtypes === '' ? noun : `${subtypes} ${noun}`;
   // D-513 (CR 205.2): "target nonland permanent": the card types the object is not.
-  const without = (filter.notTypes ?? []).map((t) => `non${t}`).join(' ');
+  // D-630 (CR 205.4): "target nonlegendary creature": the supertypes the object is not.
+  const without = [...(filter.notTypes ?? []), ...(filter.notSupertypes ?? [])]
+    .map((t) => `non${t}`)
+    .join(' ');
   // D-139: "target nontoken creature" (CR 111.1).
   const typed = without === '' ? named : `${without} ${named}`;
   const core = filter.token === false ? `nontoken ${typed}` : typed;
@@ -228,6 +232,14 @@ export function targetText(spec: TargetSpec | undefined): string {
         (spec.what.filter.commander === 'yours' ? ' you own' : '') +
         // Group 4 of the Vraska deck (CR 400.7): "target commander that entered this turn".
         (spec.what.filter.enteredThisTurn === true ? ' that entered this turn' : '');
+      // D-625 (CR 115.1, 601.2d): "any number of target creatures you control".
+      if (spec.anyNumber === true) {
+        return `any number of ${spec.what.filter.other === true ? 'other ' : ''}target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
+      }
+      // D-630 (CR 115.1): "up to one target nonlegendary creature you control": none may be chosen.
+      if ((spec.min ?? 1) === 0 && spec.max === 1) {
+        return `up to one target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
+      }
       // D-187 (CR 603.12, 115.2): "up to that many target creatures" (the number not fixed yet), "up to two target creatures": several targets, the noun plural.
       // D-513 (CR 603.3d, 701.22): "tap up to X target nonland permanents, where X is the number of cards looked at": the number is the event's.
       if (
@@ -241,7 +253,8 @@ export function targetText(spec: TargetSpec | undefined): string {
             : numberWord(spec.max ?? 1);
         return `up to ${count} target ${pluralNounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
       }
-      return `target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
+      // D-625: "another target creature you control": the source of the ability is left out.
+      return `${spec.what.filter.other === true ? 'another ' : ''}target ${nounOf(spec.what.filter)}${owned}${who}${withText(spec.what.filter)}`;
     }
     case 'player':
       // D-486 (CR 115.1): "any number of target players" (none, one or each).
@@ -298,6 +311,8 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return eachText(what.except === undefined ? what.filter : { ...what.filter, other: true });
     }
     case 'moved':
+    case 'boundObjects':
+      // D-625: the engine's own form of `moved` inside a delayed ability.
       return 'it';
     case 'triggerSubject':
       // The spell of a "whenever you cast" trigger (Storm-like copies) or what targeted the permanent; else the
@@ -437,6 +452,7 @@ function recipientText(
     case 'this':
     case 'thisSpell':
     case 'moved':
+    case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
     case 'sacrificedCost':
@@ -763,7 +779,15 @@ function sequenceText(
           : effectText(effect, ability, self, defs);
     if (effect.kind === 'enterAttacking') {
       const last = out.length - 1;
-      if (last >= 0) out[last] = `${out[last]} and attacking`;
+      // D-625 (CR 508.4): "create a tapped token that's a copy of that token" is "create a tapped and attacking token ...".
+      if (last >= 0) {
+        out[last] = out[last]?.includes('create a tapped token')
+          ? (out[last] ?? '').replace(
+              'create a tapped token',
+              'create a tapped and attacking token',
+            )
+          : `${out[last]} and attacking`;
+      }
       continue;
     }
     if (text !== '') out.push(text);
@@ -794,6 +818,46 @@ function shuffleIntoThenReveal(
   const tail = revealTopTail(reveal, false);
   if (tail === null) return null;
   return `${capital(owner)} shuffles it into their library, then reveals the top card of their library. ${tail}`;
+}
+
+/** The exception "except it has haste" of a copy: the keyword haste as the one ability the copy has besides its own (D-625, CR 707.9b). */
+function onlyHaste(abilities: readonly Ability[] | undefined): boolean {
+  const [only, ...more] = abilities ?? [];
+  return more.length === 0 && only?.kind === 'keyword' && only.keyword.kind === 'haste';
+}
+
+/**
+ * "Each other token you control becomes a copy of that token" and "This creature becomes a copy of up to one target nonlegendary creature you control until end of turn, except it has
+ * myriad" (D-628, D-626, CR 707.2, 707.9b): a `becomeCopy` for good of the other tokens of the controller, and a copy of a target with a keyword. UNSAID for any other shape.
+ */
+function becomeCopyText(
+  effect: Extract<Effect, { kind: 'becomeCopy' }>,
+  ability: WithTargets,
+  self: string,
+): string {
+  const { objects, of } = effect;
+  if (
+    objects.kind === 'each' &&
+    of.kind === 'chosen' &&
+    effect.duration === 'permanent' &&
+    effect.abilities === undefined &&
+    effect.keepName === undefined &&
+    effect.addTypes === undefined &&
+    objects.filter.token === true &&
+    objects.filter.controller === 'you' &&
+    Object.keys(objects.filter).length === 2
+  ) {
+    return 'If you do, each other token you control becomes a copy of that token';
+  }
+  if (effect.duration !== 'untilEndOfTurn' || of.kind !== 'target' || objects.kind !== 'this') {
+    return UNSAID;
+  }
+  const keywords = (effect.abilities ?? []).map((a) =>
+    a.kind === 'keyword' ? grantedKeywordWords(a.keyword) : null,
+  );
+  if (keywords.some((k) => k === null)) return UNSAID;
+  const except = keywords.length === 0 ? '' : `, except it has ${keywords.join(' and ')}`;
+  return `${capital(objectText(objects, ability, self))} becomes a copy of ${objectText(of, ability, self)} until end of turn${except}`;
 }
 
 function effectText(effect: Effect, ability: WithTargets, self: string, defs: Definitions): string {
@@ -1101,9 +1165,29 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return `Remove all counters from ${object(effect.objects)}`;
     case 'removeAllPlayerCounters':
       return `${playerVerb(effect.player, ability, 'lose')} all counters`;
-    case 'createCopies':
+    case 'createCopies': {
       // D-385: "For each token you control of the chosen type that entered this turn, create a token that's a copy of it".
-      return copiesOfTokensText(effect) ?? UNSAID;
+      // D-625: "For each creature token you control that entered this turn, create a tapped token that's a copy of that token".
+      const group = copiesOfTokensText(effect);
+      if (group !== null) return group;
+      // D-625 (CR 707.2, 707.9b): "For each of any number of target creatures you control, create a token that's a copy of that creature, except it has haste".
+      return effect.objects.kind === 'target' && onlyHaste(effect.abilities)
+        ? `For each of ${object(effect.objects)}, create a token that's a copy of that creature, except it has haste`
+        : UNSAID;
+    }
+    case 'populate':
+      // D-625 (CR 701.36a).
+      return 'Populate';
+    case 'chooseObjects':
+      // D-628 (CR 608.2d): "Choose a token you control", the offer of Brudiclad.
+      return effect.count === 1 &&
+        effect.filter.token === true &&
+        effect.filter.controller === 'you' &&
+        Object.keys(effect.filter).length === 2
+        ? 'You may choose a token you control'
+        : UNSAID;
+    case 'becomeCopy':
+      return becomeCopyText(effect, ability, self);
     case 'counter':
       return `Counter ${object(effect.objects)}`;
     case 'addCounters':

@@ -84,8 +84,13 @@ export function copiesOfTokensText(
   effect: Extract<Effect, { kind: 'createCopies' }>,
 ): string | null {
   if (effect.abilities !== undefined || effect.objects.kind !== 'each') return null;
-  const { token, controller, chosenType, enteredThisTurn, ...rest } = effect.objects.filter;
+  const { token, controller, chosenType, enteredThisTurn, types, ...rest } = effect.objects.filter;
   if (token !== true || controller !== 'you' || Object.keys(rest).length > 0) return null;
+  // D-625 (CR 508.4, 707.2): "For each creature token you control that entered this turn, create a tapped token that's a copy of that token" (the attacking is said after it).
+  if (types !== undefined) {
+    if (types.length !== 1 || types[0] !== 'creature' || chosenType === true) return null;
+    return `For each creature token you control${enteredThisTurn === true ? ' that entered this turn' : ''}, create a ${effect.tapped === true ? 'tapped ' : ''}token that's a copy of that token`;
+  }
   const group = `token you control${chosenType === true ? ' of the chosen type' : ''}${enteredThisTurn === true ? ' that entered this turn' : ''}`;
-  return `For each ${group}, create a token that's a copy of it`;
+  return `For each ${group}, create ${effect.tapped === true ? 'a tapped token' : 'a token'} that's a copy of it`;
 }

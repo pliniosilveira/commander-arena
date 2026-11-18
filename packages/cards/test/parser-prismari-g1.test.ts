@@ -273,7 +273,8 @@ describe('Brudiclad: each other token becomes a copy of the token chosen (CR 707
     const parsed = readAll(REAL);
     const [ability] = parsed.abilities;
     expect(ability).toMatchObject({ kind: 'triggered', trigger: COMBAT });
-    const effects = (ability as { effect: { effects: { kind: string }[] } }).effect.effects;
+    const effects = (ability as unknown as { effect: { effects: { kind: string }[] } }).effect
+      .effects;
     expect(effects.map((e) => e.kind)).toEqual(['createToken', 'chooseObjects', 'becomeCopy']);
     expect(effects[1]).toEqual({
       kind: 'chooseObjects',
