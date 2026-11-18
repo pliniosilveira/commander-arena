@@ -1,5 +1,5 @@
 /**
- * The answer of the chooser of the piles (CR 700.3, D-303): the option (`pile1` or `pile2`) is recorded on the `pileSeparate` instruction at the head of the queue and the
+ * The answer of the chooser of the piles (CR 700.3, D-303): the option (`pile1` or `pile2`) is recorded on the `pileSeparate` (or, D-650, the `exilePiles`) instruction at the head of the queue and the
  * resolution goes on. Kept apart from `pile-separate.ts` (which `effects.ts` imports) because it needs `stack.ts`, which imports `effects.ts`.
  */
 import type { GameState, Instruction } from '../state/types';
@@ -10,7 +10,12 @@ export function answerResolutionPile(state: GameState, option: string): ResolveO
   const res = state.resolution;
   const head = res?.queue[0];
   const d = state.pending;
-  if (!res || head?.kind !== 'pileSeparate' || d?.kind !== 'chooseOption' || d.purpose !== 'pile') {
+  if (
+    !res ||
+    (head?.kind !== 'pileSeparate' && head?.kind !== 'exilePiles') ||
+    d?.kind !== 'chooseOption' ||
+    d.purpose !== 'pile'
+  ) {
     return null;
   }
   const pick = option === 'pile1' ? 1 : option === 'pile2' ? 2 : null;

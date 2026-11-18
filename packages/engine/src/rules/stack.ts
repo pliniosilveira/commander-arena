@@ -501,6 +501,7 @@ export function answerResolutionCards(
       head.kind !== 'lookTake' &&
       head.kind !== 'lookSplit' &&
       head.kind !== 'pileSeparate' &&
+      head.kind !== 'opponentChoosesCard' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
@@ -573,7 +574,8 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   if (
     head.kind !== 'confirmOptional' &&
     head.kind !== 'mayEffect' &&
-    head.kind !== 'graveyardPair'
+    head.kind !== 'graveyardPair' &&
+    head.kind !== 'exileAnyNumber'
   ) {
     return null;
   }
@@ -584,7 +586,7 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   // (`mayEffect`, D-111) only drops that effect.
   const queue: readonly Instruction[] = accept
     ? [{ ...head, answer: true }, ...res.queue.slice(1)]
-    : head.kind === 'mayEffect' || head.kind === 'graveyardPair'
+    : head.kind === 'mayEffect' || head.kind === 'graveyardPair' || head.kind === 'exileAnyNumber'
       ? res.queue.slice(1)
       : [];
   // CR 603.2h (D-256): accepting the ability's own "you may" takes the action of "Do this only once each turn".

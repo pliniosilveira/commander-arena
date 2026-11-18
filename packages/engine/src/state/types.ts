@@ -1190,14 +1190,18 @@ export type Instruction =
     }
   /**
    * "Exile the top four cards of your library in a face-down pile, then exile the top four cards in a face-up pile. An opponent chooses one of those piles. Put that pile into
-   * your graveyard. Look at the cards in the other pile." (`exilePiles`, D-650, CR 700.3): the cards are exiled as the effect starts (`first` is the face-down pile, `second` the
-   * face-up one, the new objects in exile), `chooser` is the opponent who picks a pile, `pick` the pile chosen (undefined until answered). See rules/exile-piles.ts.
+   * your graveyard. Look at the cards in the other pile." (`exilePiles`, D-650, CR 700.3): the face-down pile is exiled by the moves that start the effect, the instruction then
+   * exiles the face-up pile, has the first opponent in turn order pick a pile (`pick`, undefined until answered), puts the chosen pile into the graveyard and leaves the other as
+   * `moved`. `first` is the face-down pile, once exiled. See rules/exile-piles.ts.
    */
   | {
       readonly kind: 'exilePiles';
-      readonly seat: SeatId;
-      readonly chooser: SeatId;
+      /** `second` exiles the face-up pile (the face-down one was exiled by the moves before it), `choose` asks the opponent, `finish` leaves the other pile as `moved`. */
+      readonly stage: 'second' | 'choose' | 'finish';
+      readonly count: number;
+      /** The face-down pile: the new objects in exile (known from `choose` on). */
       readonly first: readonly ObjectId[];
+      /** The pile that was not chosen, in the `finish` stage. */
       readonly second: readonly ObjectId[];
       readonly pick?: 1 | 2;
     }
