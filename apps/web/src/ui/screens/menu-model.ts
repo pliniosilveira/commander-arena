@@ -1,6 +1,6 @@
 /** The menu's form logic, pure so it is tested without a DOM. */
 import type { AiKind, NewGameOptions } from '../../game/protocol';
-import type { Precons } from '../../precons';
+import type { DeckChoice, Precons } from '../../precons';
 import { startOptionsFor } from '../../precons/start';
 
 export interface MenuForm {
@@ -78,4 +78,27 @@ export async function startFromForm(
   if (!result.ok) return { started: false, kind: 'refused', reason: result.reason };
   await startGame(result.options);
   return { started: true };
+}
+
+/** Where a random deck comes from: every deck, only the precons or only the decks you saved. */
+export type RandomScope = 'all' | 'precon' | 'saved';
+
+/**
+ * A random deck of the scope, or null when the scope has none. `random` gives a whole number in
+ * `[0, n)`; by default it comes from the browser's crypto source, so call this from an event
+ * handler, never in render.
+ */
+export function pickRandomDeck(
+  decks: readonly DeckChoice[],
+  scope: RandomScope,
+  random: (n: number) => number = randomBelow,
+): DeckChoice | null {
+  const pool = scope === 'all' ? decks : decks.filter((deck) => deck.kind === scope);
+  return pool[random(pool.length)] ?? null;
+}
+
+function randomBelow(n: number): number {
+  const buffer = new Uint32Array(1);
+  crypto.getRandomValues(buffer);
+  return (buffer[0] ?? 0) % Math.max(n, 1);
 }

@@ -1,56 +1,17 @@
-/** The start screen (SPEC 10 "Screens"): real-precon picker, seed, settings, import entry points, a short how-to. */
+/**
+ * The start screen (SPEC 10 "Screens", issue 53): two cards, "Play a game" and "Your decks", the
+ * seed and mulligan settings and a short how-to. Start game opens two dialogs in turn, your deck and
+ * the opponent's deck; choosing the second starts the game. Your Decks opens the page that lists
+ * and imports decks.
+ */
 import { useState } from 'react';
-import type { DeckChoice } from '../../precons';
 import { ThemeToggle } from '../panels/ThemeToggle';
 import { usePrecons } from '../precons-context';
 import { useActions } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
+import { DeckDialog } from './DeckDialog';
 import { defaultDecks, type MenuForm, parseSeed, randomSeed, startFromForm } from './menu-model';
 import './screens.css';
-
-function DeckPicker({
-  legend,
-  name,
-  value,
-  decks,
-  onChange,
-}: {
-  legend: string;
-  name: string;
-  value: string;
-  decks: readonly DeckChoice[];
-  onChange: (id: string) => void;
-}) {
-  const precons = decks.filter((deck) => deck.kind === 'precon');
-  const saved = decks.filter((deck) => deck.kind === 'saved');
-  const option = (deck: DeckChoice) => (
-    <label className="scr-deck" key={deck.id} data-selected={value === deck.id}>
-      <input
-        type="radio"
-        name={name}
-        value={deck.id}
-        checked={value === deck.id}
-        onChange={() => onChange(deck.id)}
-      />
-      <span className="scr-deck-name">
-        {deck.name}
-        {deck.edited && <span className="scr-deck-tag">edited</span>}
-      </span>
-      <span className="scr-deck-blurb">{deck.blurb}</span>
-      <span className="scr-deck-commander">
-        {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
-      </span>
-    </label>
-  );
-  return (
-    <fieldset className="scr-decks">
-      <legend>{legend}</legend>
-      {precons.map(option)}
-      {saved.length > 0 && <p className="scr-decks-group">Saved in this browser</p>}
-      {saved.map(option)}
-    </fieldset>
-  );
-}
 
 export const HOW_TO_PLAY: readonly string[] = [
   'Click a card in your hand to play a land or cast a spell. The game pays for it automatically unless you turn on manual mana payment.',
@@ -71,20 +32,33 @@ export function Menu() {
     seed: '',
     freeMulligan: true,
   });
+  const [step, setStep] = useState<'home' | 'player' | 'opponent'>('home');
   const [refused, setRefused] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const seedValid = parseSeed(form.seed).ok;
   const installed = precons.list.length > 0;
 
-  // A precon that is not a valid, fully supported deck is refused here with the reason (D-137).
-  const start = () => {
+  // A precon that is not a valid, fully supported deck is refused with the reason (D-137).
+  const choose = (id: string) => {
+    if (step === 'player') {
+      setForm({ ...form, humanDeck: id });
+      setStep('opponent');
+      return;
+    }
+    // The opponent's deck ends the flow: the game starts with the two decks chosen.
+    const next = { ...form, aiDeck: id };
+    setForm(next);
     setRefused(null);
     setStarting(true);
-    void startFromForm(actions.startGame, { ...form, ai: 'normal' }, precons)
+    void startFromForm(actions.startGame, { ...next, ai: 'normal' }, precons)
       .then((result) => {
         if (!result.started && result.kind === 'refused') setRefused(result.reason);
       })
       .finally(() => setStarting(false));
+  };
+  const closeFlow = () => {
+    setRefused(null);
+    setStep('home');
   };
 
   return (
@@ -97,38 +71,34 @@ export function Menu() {
         </p>
       </header>
 
-      <section className="scr-quick" aria-labelledby="scr-quick-h">
-        <h2 id="scr-quick-h">Quick start</h2>
-        {installed ? (
-          <>
-            <p className="scr-help">
-              A real precon, checked and ready. Its card data is part of the app, so it starts
-              without a connection; card images load from Scryfall. Decks you saved can be picked
-              for either seat too: they need a connection (their cards are read from Scryfall), and
-              a deck with a card the engine cannot run yet is refused with the reason.
-            </p>
-            <div className="scr-pickers">
-              <DeckPicker
-                legend="Your deck"
-                name="human-deck"
-                value={form.humanDeck}
-                decks={choices}
-                onChange={(humanDeck) => setForm({ ...form, humanDeck })}
-              />
-              <DeckPicker
-                legend="Opponent's deck"
-                name="ai-deck"
-                value={form.aiDeck}
-                decks={choices}
-                onChange={(aiDeck) => setForm({ ...form, aiDeck })}
-              />
-            </div>
-          </>
-        ) : (
+      <section className="scr-card" aria-labelledby="scr-play-h">
+        <h2 id="scr-play-h">Play a game</h2>
+        <p className="scr-help">Choose your deck and an opponent, then start a game.</p>
+        <button
+          type="button"
+          className="scr-btn scr-btn-primary"
+          disabled={!seedValid || !installed}
+          onClick={() => setStep('player')}
+        >
+          Start game
+        </button>
+        {!installed && (
           <p className="scr-note scr-no-precon" role="note">
-            No precon is installed yet. You can still import your own deck below.
+            No precon is installed yet. You can still import your own deck.
           </p>
         )}
+      </section>
+
+      <section className="scr-card" aria-labelledby="scr-decks-h">
+        <h2 id="scr-decks-h">Your decks</h2>
+        <p className="scr-help">Manage your saved decks and import a new decklist.</p>
+        <button
+          type="button"
+          className="scr-btn scr-btn-primary"
+          onClick={() => actions.openImport('decks')}
+        >
+          Your Decks
+        </button>
       </section>
 
       <div className="scr-start-row">
@@ -166,38 +136,7 @@ export function Menu() {
           Free first mulligan
         </label>
         <ThemeToggle />
-        <button
-          type="button"
-          className="scr-btn scr-btn-primary scr-start"
-          disabled={!seedValid || !installed || starting}
-          onClick={start}
-        >
-          Start game
-        </button>
       </div>
-
-      {refused !== null && (
-        <p className="scr-error" role="alert">
-          {refused}
-        </p>
-      )}
-
-      <section className="scr-import" aria-labelledby="scr-import-h">
-        <h2 id="scr-import-h">Your own deck</h2>
-        <p className="scr-help">
-          Paste a decklist and save it, then pick it above as your deck. Card data comes from
-          Scryfall, so this needs a connection; the precon above works offline. A deck must follow
-          the Commander rules and use only cards the engine fully supports.
-        </p>
-        <div className="scr-import-buttons">
-          <button type="button" className="scr-btn" onClick={() => actions.openImport('import')}>
-            Import a deck
-          </button>
-          <button type="button" className="scr-btn" onClick={() => actions.openImport('decks')}>
-            Your decks
-          </button>
-        </div>
-      </section>
 
       <details className="scr-howto">
         <summary>How to play this build</summary>
@@ -207,6 +146,27 @@ export function Menu() {
           ))}
         </ul>
       </details>
+
+      {step !== 'home' && (
+        <DeckDialog
+          key={step}
+          title={step === 'player' ? 'Choose your deck' : "Choose opponent's deck"}
+          prompt={
+            step === 'player'
+              ? "Select the deck you'll play in this game."
+              : 'Select the deck your opponent will play.'
+          }
+          name={step === 'player' ? 'human-deck' : 'ai-deck'}
+          value={step === 'player' ? form.humanDeck : form.aiDeck}
+          decks={choices}
+          error={step === 'opponent' ? refused : null}
+          busy={starting}
+          onChoose={choose}
+          {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
+          onCancel={closeFlow}
+          onImport={() => actions.openImport('import')}
+        />
+      )}
     </main>
   );
 }
