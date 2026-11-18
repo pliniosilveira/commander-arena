@@ -64,6 +64,8 @@ type EventName =
   | 'attacks'
   | 'becomesTapped'
   | 'becomesUntapped'
+  // CR 701.37 (Monstrosity): "becomes monstrous".
+  | 'becomesMonstrous'
   | 'blocks'
   | 'becomesBlocked'
   // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
@@ -91,6 +93,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
   becomesUntapped: map(
     pattern(/ becomes untapped(?![\p{L}\p{N}])/iu),
     (): EventName => 'becomesUntapped',
+  ),
+  // CR 701.37a, 701.37b: "becomes monstrous" (once when the monstrosity action makes the permanent monstrous).
+  becomesMonstrous: map(
+    pattern(/ becomes monstrous(?![\p{L}\p{N}])/iu),
+    (): EventName => 'becomesMonstrous',
   ),
   // Stage P21 (CR 509.3a, 509.3c): "blocks" once for each creature declared as a blocker, "becomes
   // blocked" once for each attacking creature a blocker is declared for. "Blocks a creature" and "becomes
@@ -381,6 +388,26 @@ export const TRIGGER_BECOMES_UNTAPPED = singleEvent('trigger.becomes-untapped', 
   ],
   rejects: ['~ becomes tapped', '~ untaps', '~ becomes untapped or attacks', '~ becomes untap'],
 });
+
+/** `trigger.becomes-monstrous`: "~ becomes monstrous" (CR 701.37a, 701.37b, 603.2: the monstrosity action makes the permanent monstrous; the engine's `becomesMonstrous`). */
+export const TRIGGER_BECOMES_MONSTROUS = singleEvent(
+  'trigger.becomes-monstrous',
+  'becomesMonstrous',
+  {
+    cites: [
+      'CR 701.37a (Monstrosity)',
+      'CR 701.37b (Monstrosity)',
+      'CR 603.2 (Handling Triggered Abilities)',
+    ],
+    examples: ['~ becomes monstrous', 'another creature you control becomes monstrous'],
+    rejects: [
+      '~ becomes monster',
+      '~ becomes monstrous or attacks',
+      '~ becomes tapped',
+      '~ becomes monstrous again',
+    ],
+  },
+);
 
 /**
  * `trigger.blocks`: "~ blocks", "a creature you control blocks", "equipped creature blocks" (CR 509.3a: it
@@ -1166,6 +1193,7 @@ export const TRIGGER_RULES = [
   TRIGGER_ATTACKS,
   TRIGGER_BECOMES_TAPPED,
   TRIGGER_BECOMES_UNTAPPED,
+  TRIGGER_BECOMES_MONSTROUS,
   TRIGGER_BLOCKS,
   TRIGGER_BECOMES_BLOCKED,
   TRIGGER_SACRIFICE,

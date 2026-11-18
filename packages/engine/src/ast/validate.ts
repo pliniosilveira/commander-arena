@@ -667,6 +667,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
@@ -1086,6 +1087,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
     case 'landfall':

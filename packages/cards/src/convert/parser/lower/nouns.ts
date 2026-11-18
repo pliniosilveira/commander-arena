@@ -113,6 +113,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:commander',
   'selector:enteredThisTurn',
   'selector:modified',
+  // CR 701.15b: "a goaded creature".
+  'selector:goaded',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
@@ -287,6 +289,11 @@ function lowerFilterAt(
     if (inner && !aimed) return bad([]);
     parts.push('selector:modified');
   }
+  // CR 701.15b: "goaded", read where the filter is matched against the game (a trigger's subject, a target slot, an `each` selector); never a member of a choice.
+  if (filter.goaded === true) {
+    if (inner) return bad([]);
+    parts.push('selector:goaded');
+  }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
   // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
@@ -443,6 +450,7 @@ function lowerFilterAt(
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
+    ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
     ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),

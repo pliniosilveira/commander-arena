@@ -245,6 +245,9 @@ export function amountOf(
   // D-365: "the life that player lost this turn" is read for each player the `loseLife` effect affects (`lifeAmountFor`), never here: `validateCard` allows it
   // only as the whole amount of that effect, so this is not reached for a card.
   if (amount.kind === 'lifeLostThisTurn') return 0;
+  // CR 402.1: "the number of cards in that player's hand" is read for each player the `dealDamage` effect hurts (`runDealDamage`), never here: `validateCard` allows it only
+  // as the whole amount of that effect.
+  if (amount.kind === 'cardsInHandOfAffected') return 0;
   // D-194: "the number of profit votes": the players who voted for that option in the vote of this resolution (CR 701.38a).
   if (amount.kind === 'votesFor') return ctx.votes?.[amount.option] ?? 0;
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).

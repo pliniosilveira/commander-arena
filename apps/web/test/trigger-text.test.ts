@@ -201,6 +201,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   permanentSacrificed: { kind: 'permanentSacrificed', by: 'you' },
   becomesTapped: { kind: 'becomesTapped', what: { kind: 'this' } },
   becomesUntapped: { kind: 'becomesUntapped', what: { kind: 'this' } },
+  becomesMonstrous: { kind: 'becomesMonstrous', what: { kind: 'this' } },
   discarded: { kind: 'discarded', who: 'you' },
   diesBatch: { kind: 'diesBatch', what: { types: ['creature'], controller: 'you', other: true } },
   entersBatch: { kind: 'entersBatch', what: { token: true, controller: 'you' } },

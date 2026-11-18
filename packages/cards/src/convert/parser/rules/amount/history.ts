@@ -82,9 +82,14 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
   family: 'amount',
   leading: ['for'],
   cites: ['CR 700.4 (General)', 'CR 608.2c (Resolving Spells and Abilities)'],
-  examples: ['for each creature that died under your control this turn'],
+  examples: [
+    'for each creature that died under your control this turn',
+    'for each nontoken creature that died this turn',
+  ],
   rejects: [
     'for each creature that died this turn',
+    'for each token creature that died this turn',
+    'for each nontoken creature that died last turn',
     'for each creature that died under your control last turn',
     'for each creature that died under an opponent’s control this turn',
     'for each creature card that died under your control this turn',
@@ -94,16 +99,34 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
       ctx,
       pos,
     );
-    if (!r.ok) return r;
+    if (r.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'diedThisTurn',
+          controller: 'you',
+          types: ['creature'],
+          span: { start: pos, end: r.pos },
+        },
+        pos: r.pos,
+      };
+    }
+    // CR 700.4: "for each nontoken creature that died this turn" counts the creatures that died under any player's control; a token that died is not counted.
+    const any = pattern(/for each nontoken creature that died this turn(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!any.ok) return any;
     return {
       ok: true,
       value: {
         kind: 'diedThisTurn',
-        controller: 'you',
+        controller: 'any',
         types: ['creature'],
-        span: { start: pos, end: r.pos },
+        token: false,
+        span: { start: pos, end: any.pos },
       },
-      pos: r.pos,
+      pos: any.pos,
     };
   },
 });

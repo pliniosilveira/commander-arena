@@ -584,6 +584,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
     case 'dealsCombatDamage':

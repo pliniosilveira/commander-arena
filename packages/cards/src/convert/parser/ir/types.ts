@@ -297,6 +297,8 @@ export interface IrFilter {
   readonly historic?: true;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls (the engine's `modified`). */
   readonly modified?: true;
+  /** "goaded" (CR 701.15b): a creature some player's goad effect still holds (the engine's `goaded`). */
+  readonly goaded?: true;
   /**
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a): the card has a creature type the creature of the trigger had (the one that died), as it last was
    * (CR 113.7a). Read in the filter of a library search `revealUntil` only; the engine's `sharesCreatureTypeWith`.
@@ -401,6 +403,8 @@ export type IrAmount =
   | { readonly kind: 'lifeLostThisWay'; readonly span: Span }
   // "equal to the life that player lost this turn" (Hashaton deck group 2, D-365, CR 119.3): the life the player the instruction affects lost this turn
   | { readonly kind: 'lifeLostThisTurn'; readonly span: Span }
+  // "equal to the number of cards in that player's hand" (CR 402.1): each player the damage is dealt to is hurt for their own hand size
+  | { readonly kind: 'cardsInHandOfAffected'; readonly span: Span }
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
@@ -1743,6 +1747,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'timesKicked',
   'lifeLostThisWay',
   'lifeLostThisTurn',
+  'cardsInHandOfAffected',
   'lifeGainedThisTurn',
   'enteredThisTurn',
   'diedThisTurn',

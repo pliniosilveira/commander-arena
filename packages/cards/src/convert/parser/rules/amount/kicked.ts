@@ -76,4 +76,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-aura-attached',
   // Lorehold Spirit deck group 2 (issue 86): the votes for one option of the vote the text made.
   'amount.for-each-vote',
+  // CR 700.4: the creatures that died this turn (history, read from the turn log).
+  'amount.for-each-died',
 ] as const;

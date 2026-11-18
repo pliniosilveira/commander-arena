@@ -58,6 +58,7 @@ const TRIGGER_KIND = {
   attacks: 'attacks',
   becomesTapped: 'becomesTapped',
   becomesUntapped: 'becomesUntapped',
+  becomesMonstrous: 'becomesMonstrous',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
   landfall: 'landfall',
@@ -269,7 +270,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
-    case 'becomesUntapped': {
+    case 'becomesUntapped':
+    case 'becomesMonstrous': {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
       return ok({
@@ -1353,6 +1355,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:dealtDamage',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
+  'trigger:becomesMonstrous',
   'trigger:blocks',
   'trigger:becomesBlocked',
   'trigger:landfall',

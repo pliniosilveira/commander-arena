@@ -134,6 +134,12 @@ export type Amount =
    * number: two opponents who lost 3 and 5 lose 3 and 5), so it is not valid inside another amount or in any other effect.
    */
   | { readonly kind: 'lifeLostThisTurn' }
+  /**
+   * "The number of cards in that player's hand" (CR 402.1, 120.3; Stormbreath Dragon: "deals damage to each opponent equal to the number of cards in that player's hand"):
+   * the hand size of the player the effect applies to, read for each of them as the damage is dealt to them. It is the whole `amount` of a `dealDamage` whose recipient
+   * is a player selector and nothing else (as `lifeLostThisTurn` is for a `loseLife`), so it is not valid inside another amount or in any other effect.
+   */
+  | { readonly kind: 'cardsInHandOfAffected' }
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
@@ -569,6 +575,12 @@ export interface ObjectFilter {
    * matches those before the attachments are known.
    */
   readonly modified?: true;
+  /**
+   * "A goaded creature" (CR 701.15a, 701.15b): the permanent is goaded by some player now (the designation an effect of `goad` gave it that has not ended). Read where the
+   * filter is matched against the game (a target slot, an `each` selector, a trigger's subject); refused in a static ability's subject and in a count a static ability reads, as
+   * `modified` is, because `derive` matches those before the designation is known.
+   */
+  readonly goaded?: true;
   /**
    * "Target commander", "your commanders" (D-145, CR 903.3): the object is a card a player designated as their commander (a token or a
    * permanent that copies one is not). Whose commander it is does not matter; `controller` says whose it must be to control. `'yours'`
@@ -3625,6 +3637,11 @@ export type Trigger =
    * stun counter keeps tapped (CR 122.1d) does not untap, so it triggers nothing; a permanent that enters untapped does not "become" untapped.
    */
   | { readonly kind: 'becomesUntapped'; readonly what: TriggerSubject }
+  /**
+   * "When this creature becomes monstrous" (CR 701.37a, 701.37b, 603.2): a permanent that becomes monstrous by the monstrosity action (the event `becameMonstrous`); it triggers
+   * once each time, and a permanent that is monstrous already does nothing when told to become monstrous, so it triggers nothing.
+   */
+  | { readonly kind: 'becomesMonstrous'; readonly what: TriggerSubject }
   /**
    * "Whenever you discard a card" (CR 701.9a, 603.2, D-206): once for each card the player `who` names (relative to the controller of the ability)
    * discards, however it came to be (an effect, a cost, the cleanup step). `triggerSubject` is the card in the graveyard it became (or in exile,

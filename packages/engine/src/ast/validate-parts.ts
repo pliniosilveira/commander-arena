@@ -305,6 +305,7 @@ export function checkFilter(
     'exiledWithSource',
     'singleTarget',
     'modified',
+    'goaded',
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
@@ -404,6 +405,10 @@ export function checkFilter(
   // CR 700.9 (D-416): only a permanent is modified.
   if (f.modified === true && f.zone !== undefined && f.zone !== 'battlefield') {
     issue(out, `${path}.modified`, 'only a permanent on the battlefield can be modified');
+  }
+  // CR 701.15b: only a permanent is goaded.
+  if (f.goaded === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(out, `${path}.goaded`, 'only a permanent on the battlefield can be goaded');
   }
   if (f.putFromBattlefieldThisTurn === true && f.zone !== 'graveyard') {
     issue(
@@ -622,6 +627,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.exiledWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
+  f.goaded !== undefined ||
   f.named !== undefined ||
   f.targetsObject !== undefined;
 
@@ -1845,6 +1851,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           "'triggerTargetCount' needs a cast trigger whose filter requires one or more targets",
         );
       }
+      break;
+    case 'cardsInHandOfAffected':
+      // CR 402.1: only as the whole amount of a `dealDamage` to players (checked with the effect), where it is read for each player hurt.
+      issue(
+        out,
+        path,
+        'cardsInHandOfAffected is the whole amount of a dealDamage to players, not part of another amount',
+      );
       break;
     case 'lifeLostThisTurn':
       // D-365: only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
@@ -3902,7 +3916,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'dealDamage':
-      checkAmount(e.amount, `${path}.amount`, scope, out);
+      // CR 402.1: "the number of cards in that player's hand" is the whole amount of damage dealt to players, read for each of them (`rules/damage-effects.ts`).
+      if (kindOf(e.amount) === 'cardsInHandOfAffected') {
+        if (!PLAYER_ONLY.includes(kindOf(e.to))) {
+          issue(
+            out,
+            `${path}.amount`,
+            'cardsInHandOfAffected is the amount of a dealDamage to players',
+          );
+        }
+      } else {
+        checkAmount(e.amount, `${path}.amount`, scope, out);
+      }
       checkDamageRecipient(e.to, `${path}.to`, scope, out);
       if (e.from !== undefined) checkDamageSource(e.from, `${path}.from`, scope, out);
       // D-145: "if it has trample, excess damage is dealt to that creature's controller instead": a creature deals the damage to creatures.
