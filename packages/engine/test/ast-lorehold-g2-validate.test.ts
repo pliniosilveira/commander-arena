@@ -73,6 +73,13 @@ describe('`mayCast` of a card in exile (CR 601.2, 118.9, 614.1a)', () => {
     ).toContain('exiledWithSource');
   });
 
+  test('the filter itself is refused outside the zone exile (a card is exiled with a permanent only in exile)', () => {
+    const targets = [{ id: 't1', what: { kind: 'object', filter: { exiledWithSource: true } } }];
+    expect(messages(activated({ targets })).join(' | ')).toContain(
+      "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
+    );
+  });
+
   test('free and bottomInstead are for a card in exile only, and are true when they are there', () => {
     const graveyard = [{ id: 't1', what: { kind: 'object', filter: { zone: 'graveyard' } } }];
     const grave = (extra: object) => ({
