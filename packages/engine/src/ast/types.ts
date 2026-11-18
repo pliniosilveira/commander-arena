@@ -4272,7 +4272,9 @@ export type Replacement =
         | number
         | { readonly kind: 'x' }
         | { readonly kind: 'timesKicked' }
-        | CountAmount;
+        | CountAmount
+        /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
+        | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
       /**
        * "This permanent escapes with a +1/+1 counter" (CR 702.138c, D-124): the counters are put on it only if it
        * escaped, i.e. its spell was cast from a graveyard for its escape cost. Only on a face with an escape cost.
@@ -4901,6 +4903,12 @@ export type StaticEffect =
       readonly kind: 'preventDamageToThis';
       readonly subject: { readonly kind: 'this' };
       readonly scope: PreventScope;
+      /**
+       * "If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it." (issue 159, CR 615.1, 122.1): each
+       * damage event this ability prevents also removes one counter of this kind from the permanent, if it has one (the damage is prevented
+       * either way). The counter is a power and toughness counter, `+1/+1` or `-1/-1`.
+       */
+      readonly removeCounter?: string;
     }
   /**
    * "Damage isn't removed from this creature during cleanup steps." (CR 514.2, 113.6, D-192): a static ability of a permanent: at the cleanup

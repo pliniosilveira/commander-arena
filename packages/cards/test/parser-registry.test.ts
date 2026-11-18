@@ -399,6 +399,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
   'static.prevent-damage-to-self': asIs,
+  'static.prevent-damage-to-self-remove-counter': asIs,
   'static.cant-cast-early': asIs,
   // Hashaton deck, group 2 (D-363 to D-365): the static is a line of its own; the amount follows "loses life"; the cost follows "you may" in a life gain trigger.
   'static.opponents-cant-gain-life': asIs,

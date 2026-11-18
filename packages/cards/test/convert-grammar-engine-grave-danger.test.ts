@@ -186,3 +186,50 @@ describe('Deep Analysis: "Target player draws two cards. Flashback—{1}{U}, Pay
     ).toThrow();
   });
 });
+
+describe('Unbreathing Horde: "enters with a +1/+1 counter ... for each other Zombie you control and each Zombie card in your graveyard. If this creature would be dealt damage, prevent that damage and remove a +1/+1 counter from it."', () => {
+  const horde = real('Unbreathing Horde');
+  const ZOMBIE = 'SYNTHETIC Plain Zombie';
+  const start = (opts: { battlefield?: readonly string[]; graveyard?: readonly string[] }) =>
+    scenario()
+      .define(horde)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(horde.name, 'Lightning Bolt')
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Mountain', ...(opts.battlefield ?? []))
+      .graveyard(...(opts.graveyard ?? []))
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(horde)).toEqual([]);
+  });
+
+  test('one other Zombie and two Zombie cards in the graveyard: it enters with three counters (CR 614.12)', () => {
+    const g = start({ battlefield: [ZOMBIE], graveyard: [ZOMBIE, ZOMBIE, 'Plains'] });
+    g.act(0).cast(horde.name, { pay: true });
+    g.passAll();
+    g.expect.counters(horde.name, { '+1/+1': 3 });
+  });
+
+  test('it does not count itself and enters with no counter when nothing counts: it dies as a 0/0', () => {
+    const g = start({});
+    g.act(0).cast(horde.name, { pay: true });
+    g.passAll();
+    g.expect.zone(horde.name, 'graveyard', { seat: 0 });
+  });
+
+  test('damage to it is prevented and one +1/+1 counter is removed for each damage event (CR 615.6)', () => {
+    const g = start({ battlefield: [ZOMBIE], graveyard: [ZOMBIE, ZOMBIE] });
+    g.act(0).cast(horde.name, { pay: true });
+    g.passAll();
+    g.expect.counters(horde.name, { '+1/+1': 3 });
+    g.act(0).cast('Lightning Bolt', { targets: [horde.name], pay: true });
+    g.passAll();
+    g.expect.counters(horde.name, { '+1/+1': 2 });
+    g.expect.zone(horde.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+});

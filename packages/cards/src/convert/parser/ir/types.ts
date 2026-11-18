@@ -1406,7 +1406,12 @@ export type IrStaticEffect =
    * "Prevent all combat damage that would be dealt to ~." (stage P33, D-150, CR 615.1): the damage of the kind named that would be dealt to
    * the permanent is prevented. The subject is `~`.
    */
-  | { readonly kind: 'preventDamageToThis'; readonly scope: 'all' | 'combat' | 'noncombat' }
+  | {
+      readonly kind: 'preventDamageToThis';
+      readonly scope: 'all' | 'combat' | 'noncombat';
+      /** "..., prevent that damage and remove a +1/+1 counter from it." (issue 159): the counter removed for each damage event prevented. */
+      readonly removeCounter?: string;
+    }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (stage P33, D-150, CR 101.2): the card can't be cast during
    * the first `turns` turns the player takes. The subject is `~`.
