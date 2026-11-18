@@ -47,7 +47,7 @@ Rule numbers in this document were checked against the CR effective September 25
 
 `reports/` holds the generated coverage reports (`docs/CORPUS.md`); they are refreshed by the owner's runs.
 
-## Corpus and coverage tooling (REAL tool, M5; D-057, SPEC 7.3 and A21)
+## Corpus and coverage tooling
 
 `tools/corpus/` measures how much of the format the parser supports and ranks what to teach it next. Owner instructions are in `docs/CORPUS.md`.
 
@@ -196,7 +196,7 @@ Meta tests over the registry (`packages/cards/test/parser-registry.test.ts`): ev
 
 Rule families: trigger, condition, static, token, activated-ability, cost, restriction, duration, amount, keyword, modal, noun and effect rules, with their lowerings in `lower/`, and ability-word stripping in `normalize.ts` (CR 207.2c). Not built: the code overrides registry of D-067 (`defineOverride`), `templateOf` refined by slot, the engine-gaps table in `reports/backlog.md`.
 
-## Worker and UI data flow (REAL, M3; D-044)
+## Worker and UI data flow
 
 ```text
   apps/web main thread                          Web Worker
@@ -278,7 +278,7 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 
 
 
-## The game screen: two side columns (REAL, D-144)
+## The game screen: two side columns
 
 ```
 .game (flex row)
@@ -293,7 +293,7 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 - **The preview.** Its height is whatever the column leaves above the log, constant for any content; the card frame (`.board-card-full`) has a minimum height of a card's proportions at the preview's width and grows with the rules text.
 - **Arrows.** `StackArrows` reads the boxes from the DOM; `facingEdge` starts an arrow at the edge of the stack item that faces the target, whichever side the column is on.
 
-## Real precons and the one rule for starting a game (D-137)
+## Real precons and the one rule for starting a game
 
 - **Snapshot format (REAL).** `packages/cards/src/precon/snapshot.ts`: `PreconSnapshot` (id, name, blurb, `source`, the decklist as given, the cards), `parsePreconSnapshot` (zod, strict; says what is wrong in one sentence), `serializePreconSnapshot` (fixed key order, cards sorted by name, no timestamp), `toSnapshotCard` and `fromSnapshotCard` (`fetchedAt` is not stored and reads back as 0).
 - **Tool (REAL).** `tools/precon` (`pnpm precon:snapshot`, `docs/CORPUS.md`): bulk file and decklist in, `apps/web/src/precons/snapshots/<id>.json` out. Names are matched by the code of `tools/corpus/decks.ts`.
@@ -302,13 +302,13 @@ Four mechanisms, all run by CI (`pnpm typecheck`, `pnpm lint`, `pnpm test`):
 - **Worker protocol.** `NewGameOptions.aiCards` (the opponent's prepared deck) next to `humanCards`; a real precon id only labels it.
 - **UI.** The menu "Quick start" lists the installed precons for both seats or says "No precon is installed yet" (Start disabled); the import screen's example is the first precon's real list (no button without one) and its opponent list is the installed precons.
 
-## Meld: object model and data flow (REAL; D-277, D-280)
+## Meld: object model and data flow
 
 - State: a melded permanent is one `GameObject` with `meldedWith` (the second card); every other zone holds two ordinary cards. `rules/melded.ts` is the only place that reads the pair; `test/meld-reads.test.ts` guards it. When the permanent leaves, `moveOne` makes two objects and the event of the second card carries `component`, so a trigger fires once.
 - Cards: a meld card has the layout `meld`; its `CardDefinition` carries the combined face as `faces[1]` and `meld.partner`. The combined face is a card of its own that no deck names, so the data flow carries it with the pair: `resolveNames` fetches it in a second pass (`ResolveResult.related`), `relatedLookup` turns it into the `MeldLookup` that `importCard` takes, the import service reports it as `ImportReport.meldFaces`, the deck-support issue and the golden corpus store it as a `related` record, and the tools of `tools/corpus` and `tools/precon` read it with the pair. A meld card whose result is missing is unsupported with a reason (`layout "meld"`), and its support is never cached. The Scryfall component names it reads (`meld_part`, `meld_result`) are UNVERIFIED.
 - View and web: `ObjectView.meld` carries the two cards' faces and the mana value; the board draws the combined face, the preview lists the two cards, the log has one line for the meld and one for each card that leaves.
 
-## Soulbond and pairing: object model and data flow (REAL; D-285, D-286, D-287)
+## Soulbond and pairing: object model and data flow
 
 - State: a pair is `GameObject.paired { with, by }` on both creatures; `rules/pairing.ts` is the only place that reads it (`test/paired-reads.test.ts` guards it; `rules/pairing-sba.ts`, `invariants.ts` and `testing/assemble.ts` own the field too). `partnerOf` is what derive, conditions and the view read (the pair stands and both are on the battlefield; the view also says `pairedPhasedOut` when the pair stands with a member phased out); `linkedPartnerOf` decides "unpaired" and keeps a pair across phasing. The state-based action `endBrokenPairs` clears a pair that no longer stands and is the one place that reads `derive` for "still a creature".
 - Abilities: `derive-keywords.ts` expands the keyword into the two abilities of `soulbond-abilities.ts`; `soulbond.ts` reads their intervening "if" and runs `pair`, which asks a `choosePermanent` of purpose `soulbond` (answered through `answerResolutionChoice`, no new action kind).
