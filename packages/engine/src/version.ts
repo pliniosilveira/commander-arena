@@ -24,4 +24,5 @@
 // 120: The static ability `cantAttackYou` keeps a group of creatures from attacking its controller and their planeswalkers, and the filter `enchantedByYou` (D-597, issue 89).
 // 121: The trigger `playerAttacksOpponent`, the selector `triggerAttackedPlayer`, the condition `attackedHasMoreLifeThanOtherOpponent` and `createToken.attacking` (D-598, issue 89).
 // 122: The effect `loseHexproofShroud` and its continuous change, read where abilities are derived (D-599, issue 89).
-export const ENGINE_VERSION = 122;
+// 123: The filter `attackingOpponents: 'players'` (creatures attacking an opponent as a player) and `except: triggerSubject` of an `each` selector (D-600, issue 89).
+export const ENGINE_VERSION = 123;

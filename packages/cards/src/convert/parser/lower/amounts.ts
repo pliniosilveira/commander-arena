@@ -490,7 +490,7 @@ function staticCannotRead(f: IrNoun['filter']): boolean {
     f.power !== undefined ||
     f.toughness !== undefined ||
     f.attackingYou === true ||
-    f.attackingOpponents === true ||
+    f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.attacking === true ||
     f.manaValueX === true ||

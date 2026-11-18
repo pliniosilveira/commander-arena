@@ -1,5 +1,5 @@
 {
-  "parserVersion": 133,
+  "parserVersion": 134,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5175,19 +5175,10 @@
     "c8decfdf-1421-4649-acde-5215e7f08bb9": {
       "name": "Martial Impetus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever enchanted creature attacks, each other creature that's attacking one of your opponents gets +1/+1 until end of turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.gain-keyword-each"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2131f6b2"
+      "ast": "a5fc2ea3"
     },
     "c8f08704-7330-4fa9-b456-2e96aa252a2c": {
       "name": "Gideon's Memorial",
@@ -6780,7 +6771,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 436,
+      "supported": 437,
       "total": 480
     }
   }

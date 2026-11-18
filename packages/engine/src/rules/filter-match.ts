@@ -99,6 +99,8 @@ export interface FilterContext {
    * from the combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfOpponents?: readonly ObjectId[];
+  /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-600). */
+  readonly attackersOfOpponentPlayers?: readonly ObjectId[];
   /**
    * The power of this ability's source (`powerLessThanSource`, CR 702.134a, D-120), null when the source
    * has none or is not known; absent fails the comparison closed.
@@ -241,6 +243,13 @@ export function matchesFilterWith(
   if (filter.attackingYou === true && !(ctx.attackersOfYou ?? []).includes(obj.id)) return false;
   // D-218: "attacking your opponents and/or planeswalkers they control".
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
+    return false;
+  }
+  // D-600 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
+  if (
+    filter.attackingOpponents === 'players' &&
+    !(ctx.attackersOfOpponentPlayers ?? []).includes(obj.id)
+  ) {
     return false;
   }
   if (filter.stackKind) {

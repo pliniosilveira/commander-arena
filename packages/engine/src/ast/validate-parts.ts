@@ -293,7 +293,6 @@ export function checkFilter(
   for (const key of [
     'attacking',
     'attackingYou',
-    'attackingOpponents',
     'attackingOrBlocking',
     'powerLessThanSource',
     'powerAboveBase',
@@ -305,6 +304,14 @@ export function checkFilter(
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
+  }
+  // D-218, D-600: "attacking your opponents and/or planeswalkers they control" is a flag; `'players'` is "attacking one of your opponents".
+  if (
+    f.attackingOpponents !== undefined &&
+    f.attackingOpponents !== true &&
+    f.attackingOpponents !== 'players'
+  ) {
+    issue(out, `${path}.attackingOpponents`, "attackingOpponents must be true or 'players'");
   }
   // D-422: attachments: "attached to it", "that isn't enchanted", "enchanted creature" (of the source).
   if (f.attachedTo !== undefined) checkAttachedTo(f.attachedTo, `${path}.attachedTo`, out);
@@ -378,7 +385,7 @@ export function checkFilter(
     (f.attacking === true ||
       f.notAttacking === true ||
       f.attackingYou === true ||
-      f.attackingOpponents === true ||
+      f.attackingOpponents !== undefined ||
       f.attackingOrBlocking === true) &&
     f.zone !== undefined &&
     f.zone !== 'battlefield'
@@ -1097,7 +1104,12 @@ export function checkObjectSelector(
     const each = sel as Extract<ObjectSelector, { kind: 'each' }>;
     checkFilter(each.filter, `${path}.filter`, out, scope);
     // D-151: "each other creature" besides the one an effect names.
-    if (each.except !== undefined) checkRef(each.except, 'object', `${path}.except`, scope, out);
+    // D-600: "each other creature that's attacking ..." of an Aura's attack trigger: besides the creature the trigger is about.
+    if (each.except?.kind === 'triggerSubject') {
+      checkSubjectRef(each.except, 'permanent', `${path}.except`, scope, out);
+    } else if (each.except !== undefined) {
+      checkRef(each.except, 'object', `${path}.except`, scope, out);
+    }
     return;
   }
   checkRef(sel as ObjectRef, expect, path, scope, out);

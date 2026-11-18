@@ -639,6 +639,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
+  // D-600: "each other creature that's attacking one of your opponents".
+  'noun.each-other-attacking-opponent': permanent(
+    (e) => `When ~ enters, ${e} gets +1/+0 until end of turn.`,
+  ),
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
   // Stage P64 (D-217): the nouns, effects and conditions of the Vraska EDHREC deck's second group.
   'noun.token-permanents': permanent((e) => `${cap(e)} have haste.`),

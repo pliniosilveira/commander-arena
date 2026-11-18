@@ -239,6 +239,7 @@ export const EFFECT_PUMP_EACH = defineRule<Clauses>({
     'All creatures your opponents control get -1/-1 until end of turn',
     'Each creature gets +2/+0 until end of turn',
     'each creature you control gets +1/+1 until end of turn',
+    "each other creature that's attacking one of your opponents gets +1/+1 until end of turn",
     'All creatures get -1/-1 until end of turn for each Swamp you control',
     'Each creature gets +1/+1 until end of turn for each artifact you control',
   ],
@@ -259,7 +260,13 @@ export const EFFECT_PUMP_EACH = defineRule<Clauses>({
       quiet(
         choice(
           sequence(family<IrNoun>('noun', { only: ['noun.all-permanents'] }), literal(' get ')),
-          sequence(family<IrNoun>('noun', { only: ['noun.each-permanent'] }), literal(' gets ')),
+          sequence(
+            // D-600: "each other creature that's attacking one of your opponents gets +1/+1" (Martial Impetus).
+            family<IrNoun>('noun', {
+              only: ['noun.each-permanent', 'noun.each-other-attacking-opponent'],
+            }),
+            literal(' gets '),
+          ),
         ),
       ),
       PUMP_TAIL,

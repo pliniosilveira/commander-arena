@@ -231,6 +231,10 @@ export function matchesFilter(
     (filter.anyOf?.some((m) => m.attackingOpponents === true) ?? false)
       ? { attackersOfOpponents: attackersOfOpponents(state, ctx.controller) }
       : {}),
+    ...(filter.attackingOpponents === 'players' ||
+    (filter.anyOf?.some((m) => m.attackingOpponents === 'players') ?? false)
+      ? { attackersOfOpponentPlayers: attackersOfOpponentPlayers(state, ctx.controller) }
+      : {}),
     ...(filter.powerLessThanSource === true && ctx.source !== null
       ? { sourcePower: powerOfObject(state, ctx.source) }
       : {}),
@@ -262,7 +266,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.attacking === true ||
     f.notAttacking === true ||
     f.attackingYou === true ||
-    f.attackingOpponents === true ||
+    f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.manaValueAtMost !== undefined ||
     f.powerLessThanSource === true ||
@@ -368,6 +372,14 @@ function attackersOfOpponents(state: GameState, seat: SeatId): readonly ObjectId
       const attacked = state.objects[a.target.object];
       return attacked !== undefined && a.defender !== undefined && opponents.includes(a.defender);
     })
+    .map((a) => a.object);
+}
+
+/** The creatures attacking an opponent of `seat` as a player (CR 508.1b, D-600): a creature at a planeswalker or battle is not. */
+function attackersOfOpponentPlayers(state: GameState, seat: SeatId): readonly ObjectId[] {
+  const opponents = opponentsOf(state, seat);
+  return (state.combat?.attackers ?? [])
+    .filter((a) => a.target.kind === 'player' && opponents.includes(a.target.seat))
     .map((a) => a.object);
 }
 

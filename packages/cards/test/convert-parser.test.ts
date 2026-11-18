@@ -772,6 +772,7 @@ describe('unmatched abilities', () => {
       'noun.all-permanents',
       'noun.each-permanent-that-is',
       'noun.each-type-union',
+      'noun.each-other-attacking-opponent',
       'noun.each-permanent',
       'noun.token-permanents',
       'noun.attacking-opponents',

@@ -5099,3 +5099,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `effect.lose-hexproof-shroud` (`rules/effect/hexproof-loss.ts`), `lower.lose-hexproof-shroud` (`lower/continuous.ts`).
 - Tests: engine `scenario-xx-lose-hexproof.test.ts` (hexproof and shroud no longer stop the spells of the controller, protection stays, it ends with the turn; mutation-checked: the removal of the two keywords); cards `parser-lose-hexproof.test.ts` (the real line of Arcane Lighthouse, near misses).
 - Example cards: Arcane Lighthouse (issue 89).
+
+## Each other creature that's attacking one of your opponents (issue 89, D-600)
+
+- CR: 508.1b (a creature attacks a player, a planeswalker or a battle), 506.3, 611.2c (the group is fixed as the effect resolves), 603.2.
+- Gap class: P (the filter value and the `except` of a trigger subject) and T (the noun).
+- AST node: `{ kind: 'modifyPt', objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], attackingOpponents: 'players' }, except: { kind: 'triggerSubject' } }, power: 1, toughness: 1, duration: 'untilEndOfTurn' }` in an Aura's `attacks` trigger on `attached`. `attackingOpponents: true` still includes the planeswalkers and battles of the opponents.
+- Parser: `noun.each-other-attacking-opponent` (`rules/noun/edhrec.ts`), `effect.pump-each` (`rules/effect/pump.ts`), `lower/nouns.ts`.
+- Tests: engine `scenario-xx-attacking-opponent-players.test.ts` (a creature at the player gets it, the enchanted creature does not, one at a planeswalker does not; mutation-checked: players read as opponents and their planeswalkers, and the enchanted creature not left out); cards `parser-attacking-opponent.test.ts` (the real line of Martial Impetus, near misses).
+- Example cards: Martial Impetus (issue 89).

@@ -352,7 +352,7 @@ function lowerFilterAt(
     const missing = missingFeatures(['selector:attackingOrBlocking']);
     if (missing.length > 0) return bad(missing);
   }
-  if (filter.attackingOpponents === true) {
+  if (filter.attackingOpponents !== undefined) {
     const missing = missingFeatures(['selector:attackingOpponents']);
     if (missing.length > 0) return bad(missing);
   }
@@ -394,7 +394,9 @@ function lowerFilterAt(
       ? { targetCountAtLeast: filter.targetCountAtLeast }
       : {}),
     ...(filter.attackingYou === true && !inner ? { attackingYou: true as const } : {}),
-    ...(filter.attackingOpponents === true && !inner ? { attackingOpponents: true as const } : {}),
+    ...(filter.attackingOpponents !== undefined && !inner
+      ? { attackingOpponents: filter.attackingOpponents }
+      : {}),
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
@@ -950,6 +952,16 @@ function selectorOf(
       return {
         ok: true,
         value: { kind: 'each', filter: { ...filter.value, owner: owner.value } },
+        rule: noun.rule,
+      };
+    }
+    // D-600 (CR 508.1b): "each other creature that's attacking one of your opponents" in an ability that triggers on a creature: the other is the creature the trigger is
+    // about (the one enchanted, for an Aura), not the source of the ability.
+    if (noun.other && noun.filter.attackingOpponents === 'players' && options.triggerSubject) {
+      const { other: _source, ...rest } = filter.value;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: rest, except: { kind: 'triggerSubject' } },
         rule: noun.rule,
       };
     }
