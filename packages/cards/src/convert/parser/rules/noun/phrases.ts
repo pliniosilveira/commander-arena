@@ -46,6 +46,8 @@ export interface FilterParts {
   readonly attacking: boolean;
   /** "attacking or blocking" (stage P68, D-229, CR 506.4, 509.1g). */
   readonly attackingOrBlocking: boolean;
+  /** "blocking" (CR 509.1g): a creature declared as a blocker that is still in combat. */
+  readonly blocking: boolean;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic: boolean;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
@@ -71,6 +73,7 @@ export const NO_PARTS: FilterParts = {
   notSupertypes: [],
   attacking: false,
   attackingOrBlocking: false,
+  blocking: false,
   historic: false,
   modified: false,
   commander: false,
@@ -127,6 +130,7 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('modified', (p) => ({ ...p, modified: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
   word('attacking', (p) => ({ ...p, attacking: true })),
+  word('blocking', (p) => ({ ...p, blocking: true })),
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
   word('multicolored', (p) => ({ ...p, colorCount: { cmp: 'atLeast', value: 2 } })),
   NON_SUBTYPE,
@@ -224,6 +228,7 @@ export function toFilter(
     ...(p.notSupertypes.length > 0 ? { notSupertypes: p.notSupertypes } : {}),
     ...(p.attacking ? { attacking: true as const } : {}),
     ...(p.attackingOrBlocking ? { attackingOrBlocking: true as const } : {}),
+    ...(p.blocking ? { blocking: true as const } : {}),
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),

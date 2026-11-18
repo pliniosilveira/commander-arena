@@ -589,6 +589,11 @@ export interface ObjectFilter {
   /** "Nonattacking creatures" (D-573): battlefield permanents not in the attackers of the combat in progress. */
   readonly notAttacking?: true;
   /**
+   * Only blocking creatures (CR 509.1g): a creature declared as a blocker that is still in combat ("blocking creatures with flying get +0/+2 until end of turn").
+   * Read where the filter is matched against the game (an `each` selector, a trigger subject).
+   */
+  readonly blocking?: true;
+  /**
    * Only creatures attacking the controller of this ability as a player (CR 508.1b, D-131): "creatures attacking
    * you" counts the attackers whose attack target is that player, not one attacking a planeswalker or battle they
    * control. It implies `attacking`. Read where `attacking` is read, and refused where it is refused.
