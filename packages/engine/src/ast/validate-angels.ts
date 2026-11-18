@@ -22,6 +22,7 @@ import { checkPlainCondition } from './validate-static-condition';
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
   switch (t?.kind) {
     case 'lifeGained':
+    case 'lifeLost':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }

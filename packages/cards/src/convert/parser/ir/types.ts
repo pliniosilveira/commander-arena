@@ -424,6 +424,8 @@ export type IrAmount =
       readonly types?: readonly string[];
       readonly token?: boolean;
       readonly controller: 'you' | 'any';
+      /** "A modified creature died under your control this turn" (CR 700.9): only the permanents that were modified as they died. */
+      readonly modified?: true;
       readonly span: Span;
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
@@ -1246,7 +1248,7 @@ export interface IrTrigger extends IrNode {
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
   /**
-   * 'lifeGained': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
+   * 'lifeGained' and 'lifeLost': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.
    */
   readonly firstEachTurn?: true;

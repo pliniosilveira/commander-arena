@@ -437,6 +437,51 @@ export const CONDITION_CREATURE_DIED_THIS_TURN = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.modified-creature-died`: "a modified creature died under your control this turn" (CR 700.9, 700.4, 603.10a): a creature that was modified (a counter, an Equipment, or an
+ * Aura its controller controlled) as it left the battlefield and died under the controller of the ability. The engine's `diedThisTurn` amount with `modified`, at least one.
+ */
+export const CONDITION_MODIFIED_CREATURE_DIED = defineRule<IrCondition>({
+  id: 'condition.modified-creature-died',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 700.9 (Modified)', 'CR 700.4 (Dies)', 'CR 603.10a (Handling Triggered Abilities)'],
+  examples: ['a modified creature died under your control this turn'],
+  rejects: [
+    'a modified creature died this turn',
+    'a modified creature died under your control last turn',
+    'a modified creature dies under your control this turn',
+    'a modified creature died under an opponent’s control this turn',
+    'a modified creature card died under your control this turn',
+    'a creature died under your control this turn',
+    'a modified creature died under your control this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a modified creature died under your control this turn(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'diedThisTurn',
+      controller: 'you',
+      types: ['creature'],
+      modified: true,
+      span,
+    };
+    return {
+      ok: true,
+      value: condition('condition.modified-creature-died', span, {
+        kind: 'amountIs',
+        amount,
+        compare: { cmp: 'atLeast', value: 1 },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
  * (CR 903.3), and a commander in the command zone is not controlled). The engine's
@@ -491,6 +536,7 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_LAND_TYPE,
   CONDITION_OPPONENT_POISON_AT_LEAST,
   CONDITION_CREATURE_DIED_THIS_TURN,
+  CONDITION_MODIFIED_CREATURE_DIED,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,

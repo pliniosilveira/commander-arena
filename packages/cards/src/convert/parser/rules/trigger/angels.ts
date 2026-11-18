@@ -87,6 +87,71 @@ export const TRIGGER_LIFE_GAINED = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.life-lost`: "you lose life", "you lose life for the first time each turn", "an opponent loses life", "a player loses life" (CR 119.3: every reduction of a life total
+ * is a loss of life: damage, a life-loss effect, life paid; CR 603.2: "for the first time each turn" counts the player's losses). The player is relative to the controller of the
+ * ability; the player who lost the life is "that player" in the body.
+ */
+export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
+  id: 'trigger.life-lost',
+  family: 'trigger',
+  leading: ['you', 'an', 'a'],
+  cites: ['CR 119.3 (Life)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: [
+    'you lose life',
+    'you lose life for the first time each turn',
+    'an opponent loses life',
+    'a player loses life',
+    'an opponent loses life for the first time each turn',
+  ],
+  rejects: [
+    'you lose',
+    'you lose 3 life',
+    'you lose life for the first time',
+    'you lose life for the second time each turn',
+    'you lose life this turn',
+    'you loses life',
+    'an opponent lose life',
+    'each opponent loses life',
+    'a creature loses life',
+    'you lose life or gain life',
+    'you lose life for the first time each turn or',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.life-lost';
+    const who = spanned(
+      choice(
+        map(pattern(/you lose life(?![\p{L}\p{N}])/iu), () => 'you' as const),
+        map(pattern(/an opponent loses life(?![\p{L}\p{N}])/iu), () => 'opponent' as const),
+        map(pattern(/a player loses life(?![\p{L}\p{N}])/iu), () => 'any' as const),
+      ),
+    )(ctx, pos);
+    if (!who.ok) return who;
+    const first = optional(literal(' for the first time each turn'), null)(ctx, who.pos);
+    if (!first.ok) return first;
+    const kind = who.value.value;
+    const actor: IrNoun =
+      kind === 'you'
+        ? makeNoun(id, who.value.span, 'you', { raw: 'you' })
+        : makeNoun(id, who.value.span, kind === 'opponent' ? 'eachOpponent' : 'eachPlayer', {
+            raw: kind === 'opponent' ? 'an opponent' : 'a player',
+          });
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'lifeLost',
+        actor,
+        ...(first.value === null ? {} : { firstEachTurn: true as const }),
+        args: {},
+        span: { start: pos, end: first.pos },
+        rule: id,
+      },
+      pos: first.pos,
+    };
+  },
+});
+
 /** The kind of counter a trigger names: "+1/+1", "page", or none ("one or more counters"). */
 const COUNTER_KIND = choice(
   map(pattern(/([+-]\d+\/[+-]\d+|[a-z]+) counters(?![\p{L}\p{N}])/iu), (m) =>
@@ -364,6 +429,7 @@ export const TRIGGER_PLAYER_ATTACKS_OPPONENT = defineRule<IrTrigger>({
 
 export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
+  TRIGGER_LIFE_LOST,
   TRIGGER_COUNTERS_ADDED,
   TRIGGER_ATTACK_BATCH,
   TRIGGER_OPPONENT_ATTACKS,

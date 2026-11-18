@@ -410,6 +410,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "whenever you gain life [for the first time each turn]", "whenever you put one or more +1/+1 counters on this creature",
     // "whenever you attack with two or more creatures".
     'lifeGained',
+    // CR 119.3, 603.2: "whenever you lose life [for the first time each turn]".
+    'lifeLost',
     'countersAdded',
     'attackBatch',
     // D-648: "Whenever a player attacks one of your opponents" (CR 508.6).
@@ -2184,6 +2186,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tapsForMana: true,
   combatDamageBatch: true,
   lifeGained: true,
+  lifeLost: true,
   countersAdded: true,
   attackBatch: true,
   playerAttacksOpponent: true,
