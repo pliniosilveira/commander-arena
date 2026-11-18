@@ -47,10 +47,16 @@ const COUNTER_OPERANDS = [
   'noun.each-of-them',
 ] as const;
 
+/**
+ * D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control", one permanent the controller chooses as the effect resolves. Only the plain
+ * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
+ */
+const ADD_COUNTERS_OPERANDS = [...COUNTER_OPERANDS, 'noun.a-permanent'] as const;
+
 export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   id: 'effect.add-counters',
   family: 'effect',
-  leading: ['put'],
+  leading: ['put', 'you'],
   cites: ['CR 122.6 (Counters)', 'CR 122.1 (Counters)'],
   examples: [
     'put a +1/+1 counter on ~',
@@ -73,8 +79,11 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put two +1/+1 counters on ~ for each opponent who has more life than you',
     'put that many +1/+1 counters on each creature you control',
     'put that many +1/+1 counters on ~',
+    'you put two +1/+1 counters on a creature you control',
+    'put two +1/+1 counters on a creature you control',
   ],
   rejects: [
+    'you put two +1/+1 counters on target creature and draw a card',
     'put X +1/+1 counters on it for each time it was kicked',
     'put a +1/+1 counter on it for each time',
     'put a +1/+1 counter on it for each creature',
@@ -99,7 +108,8 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     // multiply, which the engine's one amount cannot say.
     satisfy(
       sequence(
-        literal('put '),
+        // D-653 (Breena, the Demagogue): "... and you put two +1/+1 counters on a creature you control": the controller as the subject.
+        map(sequence(optional(literal('you '), null), literal('put ')), () => 'put '),
         family<IrAmount>('amount', { only: COUNT_ONLY }),
         literal(' '),
         map(
@@ -112,7 +122,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
           }),
         ),
         pattern(/ counters? on /i),
-        operands(COUNTER_OPERANDS, 'effect.add-counters'),
+        operands(ADD_COUNTERS_OPERANDS, 'effect.add-counters'),
         optional(FOR_EACH_TAIL, null),
       ),
       ([, count, , , , , each]) => each === null || scaled(count, each) !== null,

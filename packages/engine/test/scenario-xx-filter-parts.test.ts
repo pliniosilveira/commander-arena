@@ -206,7 +206,7 @@ describe('what a card may say', () => {
               ...face.spell.effect,
               objects: {
                 kind: 'each' as const,
-                filter: { types: ['creature' as const], keywords: ['ward' as const] },
+                filter: { types: ['creature' as const], keywords: ['cycling' as const] },
               },
             },
           },

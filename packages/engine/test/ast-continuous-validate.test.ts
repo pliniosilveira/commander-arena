@@ -200,11 +200,7 @@ describe('the continuous-effect nodes that are refused', () => {
 
   test('grantKeyword grants only keywords without parameters', () => {
     const cost = [{ kind: 'mana', symbols: ['1'] }] as const;
-    for (const keyword of [
-      { kind: 'cycling', cost },
-      { kind: 'ward', cost },
-      { kind: 'flash' },
-    ] as const) {
+    for (const keyword of [{ kind: 'cycling', cost }, { kind: 'flash' }] as const) {
       expectIssue(
         structure(on({ kind: 'grantKeyword', objects: T1, keyword, duration: END })),
         'only keywords without parameters can be granted',

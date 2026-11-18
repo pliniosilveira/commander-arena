@@ -27,7 +27,8 @@ import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
 import { DINOSAUR_NOUN_RULES } from './dinosaurs';
 import { DRAGON_NOUN_RULES } from './dragons';
-import { EDHREC_NOUN_RULES } from './edhrec';
+import { EDHREC_EARLY_NOUN_RULES, EDHREC_NOUN_RULES } from './edhrec';
+import { ENCHANTED_BY_YOU_NOUN_RULES } from './enchanted-by-you';
 import { GALADRIEL_G3_NOUN_RULES } from './galadriel-g3';
 import { GISA_G2_NOUN_RULES } from './gisa-g2';
 import { GISA_G3_NOUN_RULES } from './gisa-g3';
@@ -778,6 +779,7 @@ export const NOUN_RULES = [
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
+  ...ENCHANTED_BY_YOU_NOUN_RULES,
   // D-517 (Hylda deck, group 2): "all creatures target player controls", whose first words are those of `noun.all-permanents`.
   ...HYLDA_G2_EARLY_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
@@ -785,6 +787,8 @@ export const NOUN_RULES = [
   ...HOFRI_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
+  // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
+  ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.

@@ -373,6 +373,7 @@ const CAST_HEAD: Parser<{
   readonly notHand?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
+  readonly aimed?: IrFilter;
 }> = choice(
   map(sequence(CHOSEN_SUFFIX, literal(' you cast cost ')), ([chosen]) => ({
     chosen,
@@ -390,6 +391,20 @@ const CAST_HEAD: Parser<{
     compared: undefined,
     targetsHost: true as const,
   })),
+  // D-645 (Killian, Ink Duelist, CR 601.2c, 601.2f, 115.1): "Spells you cast that target a creature cost {2} less to cast": the spell has a target of that kind, chosen before the cost is
+  // determined (the engine assumes the most favourable target while it asks whether the spell may be cast at all, D-424).
+  map(
+    pattern(
+      / you cast that target an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)? cost /iu,
+    ),
+    (m) => {
+      const what = (m[1] ?? '').toLowerCase();
+      const yours = m[2] === undefined ? {} : { controller: 'you' as const };
+      const aimed: IrFilter =
+        what === 'permanent' ? { ...yours, raw: what } : { types: [what], ...yours, raw: what };
+      return { chosen: undefined, compared: undefined, aimed };
+    },
+  ),
   // Stage P75 (D-235, CR 601.2a): "Spells you cast from anywhere other than your hand cost {2} less to cast".
   map(literal(' you cast from anywhere other than your hand cost '), () => ({
     chosen: undefined,
@@ -458,6 +473,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
     'Aura spells you cast that target enchanted creature cost {3} less to cast.',
     'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
+    // D-645 (Killian, Ink Duelist): the spells that target a creature.
+    'Spells you cast that target a creature cost {2} less to cast.',
+    'Aura spells you cast that target a creature you control cost {1} less to cast.',
   ],
   rejects: [
     'Angel spells and Angel spells you cast cost {1} less to cast.',
@@ -488,7 +506,6 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from your graveyard cost {2} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to cast',
     'Aura spells you cast that target equipped creature cost {3} less to cast.',
-    'Aura spells you cast that target a creature cost {3} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to activate.',
     'Aura spells that target enchanted creature cost {3} less to cast.',
     'Aura spells your opponents cast that target enchanted creature cost {3} less to cast.',
@@ -500,7 +517,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost }], amount] = r.value;
+    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost, aimed }], amount] =
+      r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -512,6 +530,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
+          // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
+          ...(aimed === undefined ? {} : { castTargets: aimed }),
         },
         compared,
       ),
@@ -525,6 +545,102 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     return {
       ok: true,
       value: statement('static.spells-cost-reduction', subject, effect, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
+/** What an affinity counts (CR 702.41a): "Auras", "artifacts": the permanents of that kind the controller controls, in the plural. */
+const AFFINITY_KIND: Parser<{ readonly filter: IrFilter; readonly end: number }> = (ctx, pos) => {
+  const aura = pattern(/Auras(?![\p{L}\p{N}'’])/u)(ctx, pos);
+  if (aura.ok) {
+    return {
+      ok: true,
+      value: { filter: { subtypes: ['Aura'], raw: 'Aura' }, end: aura.pos },
+      pos: aura.pos,
+    };
+  }
+  const type = pattern(/(artifact|creature|enchantment|land|planeswalker)s(?![\p{L}\p{N}'’])/iu)(
+    ctx,
+    pos,
+  );
+  if (!type.ok) return type;
+  const word = (type.value[1] ?? '').toLowerCase();
+  return {
+    ok: true,
+    value: { filter: { types: [word], raw: word }, end: type.pos },
+    pos: type.pos,
+  };
+};
+
+/**
+ * `static.spells-have-affinity`: "Enchantment spells you cast have affinity for Auras." (CR 702.41a: "Affinity for [text]" means "This spell costs {1} less to cast for each
+ * [text] you control"; CR 702.41b: each instance applies; D-646). The spells the controller casts that match have it, so it is the reduction of {1} for each permanent of the kind
+ * the controller controls that `static.spells-cost-reduction` reads, and the engine applies it as the cost is determined (CR 601.2f). Not read: a singular kind, the permanents of an
+ * opponent, a kind that is not a card type or Aura, and "have affinity" with nothing to count.
+ */
+export const STATIC_SPELLS_AFFINITY = defineRule<IrStatic>({
+  id: 'static.spells-have-affinity',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 702.41a (Affinity)',
+    'CR 702.41b (Affinity)',
+    'CR 601.2f (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Enchantment spells you cast have affinity for Auras.',
+    'Creature spells you cast have affinity for artifacts.',
+    'Spells you cast have affinity for lands.',
+  ],
+  rejects: [
+    'Enchantment spells you cast have affinity for Aura.',
+    'Enchantment spells you cast have affinity for Auras',
+    'Enchantment spells you cast have affinity.',
+    'Enchantment spells have affinity for Auras.',
+    'Enchantment spells your opponents cast have affinity for Auras.',
+    'Enchantment spells you cast have affinity for Auras you control.',
+    'Enchantment spells you cast have affinity for each Aura.',
+    'Enchantment spells you cast have affinity for Auras and artifacts.',
+    'Enchantment spells you cast have affinity for tokens.',
+    'Enchantment spell you cast has affinity for Auras.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      quiet(sequence(spellSubject(), literal(' you cast have affinity for '))),
+      AFFINITY_KIND,
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [[filter], kind] = r.value;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...filter, controller: 'you' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: pos + filter.raw.length },
+      rule: 'static.spells-have-affinity',
+    };
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { zone: 'battlefield', ...kind.filter, controller: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: r.pos - kind.filter.raw.length - 1, end: kind.end },
+      rule: 'static.spells-have-affinity',
+    };
+    const effect = {
+      kind: 'costReduction' as const,
+      amount: { kind: 'countOf' as const, of, span: of.span },
+    };
+    return {
+      ok: true,
+      value: statement('static.spells-have-affinity', subject, effect, pos, r.pos),
       pos: r.pos,
     };
   },
@@ -806,6 +922,7 @@ export const STATIC_ADDITIONAL_COST_SACRIFICE_COPIES = defineRule<IrStatic>({
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
+  STATIC_SPELLS_AFFINITY,
   // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.
   STATIC_ADDITIONAL_COST_SACRIFICE_COPIES,
   STATIC_ADDITIONAL_COST,

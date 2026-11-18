@@ -407,6 +407,8 @@ export const PLAYER_SUBJECTS = [
   'noun.player',
   'noun.its-controller',
   'noun.that-player',
+  // D-648: "that attacking player draws a card" (the player of a trigger about a player attacking one of your opponents).
+  'noun.that-attacking-player',
   // Stage P33 (D-150): "they draw a card" (the player the text has just named).
   'noun.they',
 ] as const;

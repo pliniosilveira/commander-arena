@@ -284,8 +284,14 @@ const TRIGGERS: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.',
-    expect: no(', Equipment, or Vehicle spell, draw a card.', 'trigger.cast'),
-    note: 'replay: 1 card; the segmenter ends a trigger at its first comma',
+    expect: OK,
+    note: 'replay: 1 card; a comma between the kinds of a list of spells is not the end of the trigger since D-644 (issue 89)',
+  },
+  {
+    kind: 'enchantment',
+    text: 'Whenever you cast an Aura, Equipment, or Vehicle, draw a card.',
+    expect: no(', Equipment, or Vehicle, draw a card.', 'trigger.cast'),
+    note: 'SYNTHETIC near miss: a list of kinds ends with "spell" (D-644)',
   },
   {
     kind: 'enchantment',

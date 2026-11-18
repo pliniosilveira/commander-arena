@@ -577,3 +577,30 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - Retrace (D-667) is printed only and never granted; it does not combine with another way to cast from the graveyard.
 - The Scryfall rulings of the seven cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 - The web shows the piles and the new choices with generic wording; the effect text of the spells is shown from the Oracle text.
+- **The five most requested cards (D-630).** Their rulings were not fetched (the `Scryfall lookup` workflow of D-294 can); "you may exile target ..." is read only as "you may exile up to one other target ..." after a test of how the spell was cast; Explore's extra land is for its own turn only (CR 305.3).
+
+- **Ward in other places (D-638, issue 89).** A ward with a mana cost can be given by a static ability and by a `grantKeyword` effect. Not built: a token "with ward {2}" (the token's keywords have no cost, so the card is reported as not runnable), a condition "it has ward {2}" (a filter cannot compare a cost), and a granted ward whose cost is a sacrifice or a discard read from the text (the engine pays a discard, but the grant words read only mana).
+
+- **Goad (D-639, issue 89).** Built: the effect and the static ability of an attached permanent, in the engine. Not built: the sentence "Goad target creature" and "tap ... and goad it" in the grammar; a visible goaded mark in the web board; satisfying one of two goad requirements when a creature goaded by two players cannot satisfy both (CR 508.1d, as many requirements as possible); "is goaded" of a group or of the card itself; a condition on the static ability.
+
+- **Cost reductions for spells that target (D-424, D-645).** While the engine asks whether a spell may be cast at all, before any target is chosen, it assumes the most favourable target for a reduction that depends on one, also for a spell that has no target to choose: the action to begin casting it is offered and fails when the cost is paid (the reduction is not applied then). Not changed.
+
+- **Breena, the Demagogue (D-648, issue 89).** The trigger, "that attacking player" and "that opponent" and the engine condition "that opponent has more life than another of your opponents" are built and tested. Not built: the grammar of that condition, and an effect that puts counters on "a creature you control" (a choice that is not a target: `addCounters` takes a target, a group or `this`, so a new decision is needed for it, with a handler for the AI and the board).
+
+- Creatures lose hexproof and shroud (D-649): only the sentence of Arcane Lighthouse is read (a group of creatures, until end of turn). A target creature, other keywords and other durations are not. The ruling on creatures that enter later is UNVERIFIED (Scryfall blocked); the engine follows CR 611.2c.
+
+- Attacking one of your opponents (D-650): only "each other creature that's attacking one of your opponents gets +N/+N until end of turn" is read; the plural without "other", other effects and a battle protected by an opponent are not.
+
+- Goad as an effect (D-651): one creature, a target or "it"; "goad each creature" and a group are not read.
+
+- Protection from the chosen color (D-652): the exception sentence is read only with "protection from the chosen color" as a granted keyword; a printed keyword or another quality is not.
+
+- Chosen creature for counters (D-653): only "a creature you control" with a fixed number of counters; "a creature an opponent controls", a choice with no controller word and computed counts are not read. The three-player condition `attackedHasMoreLifeThanOtherOpponent` is tested directly (the scenario DSL has two seats), not through a full game.
+
+- Enchanted creature dies (D-654): "an enchanted creature you control", "another enchanted creature" and "equipped" are not read; the Auras are kept in the last-known information only (no Equipment).
+- Exile from the top and cast among them (D-655): only the sentences of Herald of Amity; "from among them" after another instruction, other orders of the rest and several spells are not read.
+- Cast from the graveyard for another cost (D-656): the alternative cost is charged for every cast from the graveyard of a card that has it, also one a permission of an effect gave; the choice between the two costs of CR 118.9 is not offered (the card has one way). UNVERIFIED against a card with both.
+
+- Aura that returns (D-657): only "this card" of an Aura whose trigger is the dying of its creature. Gift of Immortality is not read: "return that card to the battlefield under its owner's control" after "when enchanted creature dies" lowers to a move of the enchanted creature (`attached`), not the card it became (`triggerCard`): UNVERIFIED at runtime and to be fixed with that card; "attached to that creature" for a delayed return is not built.
+
+- Look at the top and put an Aura or Equipment (D-658), reveal until and may put (D-659), attach to the token (D-660): only the sentences of Armored Skyhunter, Songbirds' Blessing and Ajani's Chosen are read (one kind of card, the places and orders those cards name).

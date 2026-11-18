@@ -73,6 +73,7 @@ import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { runExileUntilFound } from './exile-until-found';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
@@ -200,7 +201,7 @@ export function runInstruction(
         seat: res.controller,
         source: res.object,
         purpose: 'effect',
-        min: 0,
+        min: instruction.exactly === true ? max : 0,
         max,
         legal: candidates,
       },
@@ -628,6 +629,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
+    ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
@@ -657,6 +659,7 @@ function runEffect(
             id: effect.id,
             filter: effect.filter,
             count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
             chosen: null,
           },
         ],
@@ -933,9 +936,16 @@ function runEffect(
           lastMoved: [],
         };
       }
-      const ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
+      let ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
         (id) => state.objects[id] !== undefined,
       );
+      // D-655 (CR 401.4): "put the rest on the bottom of your library in a random order": the order is the seeded generator's, one after the other.
+      let shuffledState = state;
+      if (effect.random === true && ids.length > 1) {
+        const [order, rng] = shuffle(ids, state.rng);
+        ids = order;
+        shuffledState = { ...state, rng };
+      }
       // CR 110.2a: an object an effect puts onto the battlefield enters under the control of the
       // player performing the effect (the controller of the spell or ability) unless the effect
       // states otherwise, so an effect with no control named means 'you', not the owner. Every
@@ -964,7 +974,7 @@ function runEffect(
       }
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
       // D-283 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
-      const together = recordTogether(state, moves);
+      const together = recordTogether(shuffledState, moves);
       return moving(together.state, together.instructions);
     }
 
@@ -1320,7 +1330,7 @@ function runEffect(
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
         const cards =
-          effect.effect.objects.kind === 'triggerCard'
+          effect.effect.objects.kind === 'triggerCard' || effect.effect.objects.kind === 'thisCard'
             ? resolveObjects(state, effect.effect.objects, ctx, targets)
             : (res.lastMoved ?? []);
         return done({
@@ -1969,6 +1979,37 @@ function runEffect(
         const exiled = (ctx.moved ?? []).filter((id) => next.objects[id]?.zone === 'exile');
         for (const id of created) next = patchObject(next, id, { linkedExile: exiled });
       }
+      // CR 508.4 (D-648): "tapped and attacking that opponent": the creature tokens just created start attacking the player the selector names, while a combat is on. They were
+      // never declared as attackers.
+      if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
+        const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
+        const combat = next.combat;
+        if (defender !== undefined) {
+          const entering = created.filter((id) => {
+            const obj = next.objects[id];
+            return (
+              obj !== undefined &&
+              obj.zone === 'battlefield' &&
+              derive(next, obj).types.includes('creature') &&
+              !combat.attackers.some((a) => a.object === id)
+            );
+          });
+          next = {
+            ...next,
+            combat: {
+              ...combat,
+              attackers: [
+                ...combat.attackers,
+                ...entering.map((object) => ({
+                  object,
+                  target: { kind: 'player' as const, seat: defender },
+                  blocked: false,
+                })),
+              ],
+            },
+          };
+        }
+      }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
       return { ...done(next, events, front), lastMoved: created };
@@ -2296,6 +2337,7 @@ function runEffect(
             kind: 'castFree',
             objects: effect.objects,
             play: effect.play === true,
+            ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
             chosen: null,
           },
@@ -2562,6 +2604,10 @@ function runEffect(
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
 
+    case 'goad':
+      // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
+      return runGoad(state, effect, ctx, targets);
+
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':
       return runPlayerLock(state, effect, ctx, targets);
@@ -2614,6 +2660,7 @@ function runEffect(
     case 'modifyPt':
     case 'setPt':
     case 'loseAllAbilities':
+    case 'loseHexproofShroud':
     case 'setTypes':
     case 'setColors':
     case 'grantAbility':

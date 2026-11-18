@@ -402,6 +402,73 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
 });
 
 /**
+ * `effect.look-put-attach`: "look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the
+ * battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, CR 401.2, 303.4f, 301.5,
+ * 701.3, 401.4: Armored Skyhunter). Four sentences that `splitSentences` keeps together; the card is taken without being revealed ("put", not "reveal and put"), an Aura chooses what it
+ * enchants as it enters, an Equipment may be attached to a creature the controller controls. The count is two or more.
+ */
+export const EFFECT_LOOK_PUT_ATTACH = defineRule<Clauses>({
+  id: 'effect.look-put-attach',
+  family: 'effect',
+  leading: ['look'],
+  cites: [
+    'CR 401.2 (Library)',
+    'CR 303.4f (Auras)',
+    'CR 301.5 (Equipment)',
+    'CR 701.3 (Attach)',
+    'CR 401.4 (Library)',
+  ],
+  examples: [
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in any order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them into your hand. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top card of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards into your graveyard',
+  ],
+  parse: single(
+    'effect.look-put-attach',
+    sequence(
+      literal('look at the top '),
+      AT_LEAST(2),
+      literal(' cards of your library. you may put '),
+      TAKEN_CARD,
+      literal(
+        ' from among them onto the battlefield. if an equipment is put onto the battlefield this way, you may attach it to a creature you control. put the rest of those cards on the bottom of your library in a random order',
+      ),
+    ),
+    ([, count, , take]) => ({
+      verb: 'lookTake',
+      args: {
+        count,
+        take,
+        toGraveyard: {
+          kind: 'flag',
+          value: false,
+          span: take.span,
+          rule: 'effect.look-put-attach',
+        },
+        ontoBattlefield: {
+          kind: 'flag',
+          value: true,
+          span: take.span,
+          rule: 'effect.look-put-attach',
+        },
+        attachEquipment: {
+          kind: 'flag',
+          value: true,
+          span: take.span,
+          rule: 'effect.look-put-attach',
+        },
+      },
+    }),
+  ),
+});
+
+/**
  * `effect.look-split`: "look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and
  * exile one of them" (stage P63, D-216, CR 401.2, 608.2c): the cards looked at are sorted into three piles, the player choosing the first two. Two
  * sentences that `splitSentences` keeps together. The numbers are words or digits and must add up to the cards looked at (all are placed).
@@ -567,6 +634,7 @@ export const LIBRARY_RULES = [
   EFFECT_SURVEIL,
   EFFECT_LOOK_REORDER,
   EFFECT_LOOK_TAKE,
+  EFFECT_LOOK_PUT_ATTACH,
   EFFECT_LOOK_TAKE_BOTTOM,
   EFFECT_LOOK_TAKE_ONE_TOP,
   EFFECT_LOOK_TAKE_ONE_BOTTOM,

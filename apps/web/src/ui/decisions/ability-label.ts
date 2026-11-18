@@ -469,6 +469,9 @@ function recipientText(
       return "the player or planeswalker it's attacking";
     case 'triggerPlayer':
       return 'that player';
+    case 'triggerAttackedPlayer':
+      // D-648: the player attacked by the declaration that triggered the ability.
+      return 'that opponent';
     case 'opponentsAttackingTriggerPlayer':
       // Issue 159 (CR 508.6).
       return 'each opponent attacking that player';
@@ -638,6 +641,8 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
       return { who: 'the defending player', third: true };
     case 'triggerPlayer':
       return { who: 'that player', third: true };
+    case 'triggerAttackedPlayer':
+      return { who: 'that opponent', third: true };
     case 'opponentsAttackingTriggerPlayer':
       return { who: 'they', third: false };
     case 'declinedPlayer':

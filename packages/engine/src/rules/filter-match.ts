@@ -99,6 +99,8 @@ export interface FilterContext {
    * from the combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfOpponents?: readonly ObjectId[];
+  /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-650). */
+  readonly attackersOfOpponentPlayers?: readonly ObjectId[];
   /**
    * The power of this ability's source (`powerLessThanSource`, CR 702.134a, D-120), null when the source
    * has none or is not known; absent fails the comparison closed.
@@ -154,8 +156,16 @@ function attachedToHolds(
   );
 }
 
-/** CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). Fails closed without `describeOther`. */
-function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext): boolean | null {
+/**
+ * CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). With `by`, an Aura that player controls (CR 303.4e, D-647).
+ * Fails closed without `describeOther`.
+ */
+function hasAuraAttached(
+  state: GameState,
+  obj: GameObject,
+  ctx: FilterContext,
+  by?: SeatId,
+): boolean | null {
   const describeOther = ctx.describeOther;
   if (describeOther === undefined) return null;
   return state.battlefield.some((id) => {
@@ -163,7 +173,8 @@ function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext):
     return (
       other !== undefined &&
       other.attachedTo === obj.id &&
-      describeOther(other).subtypes.includes('Aura')
+      describeOther(other).subtypes.includes('Aura') &&
+      (by === undefined || controllerOf(state, other) === by)
     );
   });
 }
@@ -213,6 +224,10 @@ export function matchesFilterWith(
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
     return false;
   }
+  // CR 303.4e (D-647): "enchanted by an Aura you control".
+  if (filter.enchantedByYou === true && hasAuraAttached(state, obj, ctx, ctx.controller) !== true) {
+    return false;
+  }
   // CR 122.1 (D-145): "with a counter on it": a counter of any kind, or of the named kind.
   if (filter.hasCounter !== undefined) {
     const has =
@@ -230,6 +245,13 @@ export function matchesFilterWith(
   if (filter.attackingYou === true && !(ctx.attackersOfYou ?? []).includes(obj.id)) return false;
   // D-218: "attacking your opponents and/or planeswalkers they control".
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
+    return false;
+  }
+  // D-650 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
+  if (
+    filter.attackingOpponents === 'players' &&
+    !(ctx.attackersOfOpponentPlayers ?? []).includes(obj.id)
+  ) {
     return false;
   }
   if (filter.stackKind) {

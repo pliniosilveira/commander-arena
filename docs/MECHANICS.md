@@ -5262,3 +5262,192 @@ Seven cards of Prismari Artistry (Secrets of Strixhaven): Abstract Performance, 
 - Web: `ui/decisions/permanents-move-counters.ts` (the words of the counter question), `PermanentPanel.tsx`, `model.ts`, `permanents-angels.ts`, `ability-label.ts`; `game/dinosaurs-text.ts` words "{U} or one mana of the chosen color".
 - What the parser must produce: `As it enters, choose a color other than blue.` is `asEntersChoose { what: 'color', except: 'U' }`; `{T}: Add {U} or one mana of the chosen color.` is a mana ability of `chosenColor { or: 'U' }`; `~ enters tapped with two charge counters on it.` is `entersTapped` and `entersWithCounters`; `{T}, Remove a charge counter from ~: Add one mana of any color.` is a mana ability with the cost `removeCounters`; `If X is 5 or more, destroy all other creatures.` after the tokens is `conditional xAtLeast [destroy each creature except moved]`; `Enchanted creature gets +2/+2 and is goaded.` is `modifyPt` and `goaded`.
 - Limits: rulings unverified; a goad that lasts "until your next turn" is not built; the AI never moves counters; see `docs/ROADMAP.md`.
+## A static ability that gives ward (issue 89, D-638)
+
+- CR: 702.21a (Ward), 702.21b (X in a ward cost: not read by the grant words), 613.1f and 613.7 (a granted keyword is a layer 6 effect with the timestamp of its source), 303.4 ("enchanted creature" is what the Aura is attached to). 113.2c (each instance of an ability functions independently).
+- Gap class: P (a granted keyword that carries a cost), T (the grant words).
+- Engine: `ward` is in `GRANTABLE_KEYWORDS` (`ast/features.ts`) with its cost checked by `checkGrantedParameter` (`ast/validate-attach.ts`: at least one cost, each mana, life or a discard); it is an `INSTANCE_KEYWORDS` member of `rules/derive-layers.ts`, so each grant adds the keyword and the triggered ability `wardAbility` (`rules/derive-keywords.ts`) stands for.
+- Parser: the grant word "ward {2}" of `rules/keyword/list.ts` (`KEYWORD_WORD`, mana symbols in braces only) turned into the keyword by `grantedKeyword` (`rules/keyword/vocabulary.ts`); read by `lower/statics.ts` and `lower/continuous.ts` like the other grant words.
+- Tests: engine `scenario-xx-granted-ward.test.ts` (an Aura that gives ward: the derived abilities, the trigger above the spell, declining and paying, the controller's own targeting, two Auras are two instances); cards `parser-granted-ward.test.ts` (the real lines of Chains of Custody and Sheltered by Ghosts, a colored cost, near misses that are dropped whole).
+- Example cards: Chains of Custody, Sheltered by Ghosts (issue 89).
+- Limits: a ward cost that is not mana (life, a sacrifice, a discard) is not read as a grant word; ward granted by a continuous effect for a duration has no test yet.
+
+## Goad (issue 89, D-639)
+
+- CR: 701.15a-d (Goad), 508.1d (a requirement that can be obeyed is), 500.1 (a turn begins), 611.3a and 613.1f (a static ability applies only while its source does and keeps its abilities), 303.4m ("enchanted creature" is what the Aura is attached to).
+- Gap class: P (a keyword action and a designation made of the requirement D-179 already had), T (the sentence).
+- Engine: `Effect` `goad { objects }` (`rules/goad.ts` `runGoad`, `rules/effects.ts`), `StaticEffect` `goaded { subject: attached }`, `ContinuousEffect` change `goaded { by }`; `rules/goad.ts` `goadersOf` read by `rules/combat-legality.ts` (`requiredAttackers`, `narrowedTargets`); `ast/validate.ts` and `ast/validate-parts.ts`; `ast/features.ts` (`goad`, `goaded`).
+- Parser: "..., and is goaded" after "gets +N/+N" or "has ..." of an attached permanent (`rules/static/grants.ts`, IR `goaded`, `lower/statics.ts`).
+- Tests: engine `scenario-xx-goad.test.ts` (the effect: required attack, ends at the goader's next turn, no second goad by the same player, a third player, a creature that cannot attack; the Aura: required, goaded by the Aura's controller, lasts while it does, ends when it leaves or loses its abilities), `ast-goad-validate.test.ts`; cards `parser-goaded.test.ts` (the real lines of Coercive Impetus, Parasitic Impetus, Redemption Arc and Ghoulish Impetus, near misses).
+- Example cards: Coercive Impetus, Parasitic Impetus, Redemption Arc (issue 89).
+- Limits: see `docs/ROADMAP.md`.
+
+## A static ability that gives annihilator (issue 89, D-640)
+
+- CR: 702.86a-b (Annihilator and its instances), 113.2c (each instance functions independently), 613.1f and 611.3a (a granted keyword is a layer 6 effect that ends with its source).
+- Gap class: P (a granted keyword with a number), T (the grant words).
+- Engine: `annihilator` in `GRANTABLE_KEYWORDS` (`ast/features.ts`), count checked by `checkGrantedParameter` (`ast/validate-attach.ts`), an `INSTANCE_KEYWORDS` member of `rules/derive-layers.ts`; the trigger is `annihilatorAbility` (`rules/derive-keywords.ts`).
+- Parser: the grant word "annihilator N" (`rules/keyword/list.ts`, `rules/keyword/vocabulary.ts`), read by `lower/statics.ts` and `lower/continuous.ts`.
+- Tests: engine `scenario-xx-granted-annihilator.test.ts` (an Aura that gives it, none without the Aura, two Auras are two instances); cards `parser-granted-annihilator.test.ts` (the real line of Eldrazi Conscription, near misses).
+- Example cards: Eldrazi Conscription (issue 89).
+
+## An Aura or Equipment that gives an activated ability (issue 89, D-641)
+
+- CR: 613.1f (a granted ability is a layer 6 effect), 113.6g and 602.2 (the creature has it as its own, so its controller activates it), 602.5a ({T} costs), 611.3a (it ends with the source).
+- Gap class: T (the grammar and the gate of the lowering); the engine already ran it (D-099, D-151).
+- Parser: `rules/static/grants.ts` (`andQuoted`: an ability in quotes after "has ..." or "gets ..."), `lower/statics.ts` (`lowerGrantedAbility`: an activated ability for an attached subject).
+- Tests: engine `scenario-xx-granted-activated.test.ts` (flying and a sacrifice ability, the controller of the creature activates it, a tap cost, it ends with the turn and with the Aura); cards `parser-granted-activated.test.ts` (the real line of Fallen Ideal, near misses).
+- Example cards: Fallen Ideal (issue 89).
+
+## An Aura that remakes its creature and gives it a keyword (issue 89, D-642)
+
+- CR: 613.1d (layer 4: card types and creature types replaced), 613.1f (layer 6: abilities lost, then the keyword given, in order), 613.4b (layer 7b: base power and toughness), 205.1a and 205.3d (types replaced), 611.3a (it ends with the Aura).
+- Gap class: T (the tail of a sentence); the engine already ran each piece (D-145).
+- Parser: `static.attached-becomes` (`rules/static/dinosaurs.ts`): ", and has [keywords], and it loses all other abilities, card types, and creature types".
+- Tests: engine `scenario-xx-aura-remakes-creature.test.ts` (types, base power and toughness, the one keyword left, the Aura gone; mutation: the lose after the grant); cards `parser-aura-remakes.test.ts` (the real line of Darksteel Mutation, near misses).
+- Example cards: Darksteel Mutation (issue 89).
+
+## An opponent attacks you and your planeswalkers (issue 89, D-643)
+
+- CR: 508.1b (a creature is declared attacking a player, a planeswalker or a battle), 603.2 and 603.2c (the ability triggers once for the declaration), 603.4 (an intervening "if": checked as it triggers and as it resolves).
+- Gap class: P (a condition that counts whom the declared creatures attack, as an intervening "if"), T (the sentences).
+- Engine: `Condition` `attackersAtYouAtLeast { count }`, valid only as the intervening "if" of an `attackBatch` trigger (`ast/validate.ts`); `rules/triggers.ts` (`attackedAt` of an attack batch), `rules/trigger-stack.ts`, `rules/ability-object.ts`, `rules/stack.ts`, `rules/effects.ts`, `rules/conditions.ts`, `state/types.ts` (`triggerAttackedAt`).
+- Parser: `trigger.opponent-attacks`, `condition.those-attacking-you`, and "that opponent" as the pronoun "that player" (`rules/noun/players.ts`).
+- Tests: engine `scenario-xx-attack-at-you.test.ts` (both at me, one at me and one at my planeswalker, both at my planeswalker, one attacker only: nothing is put on the stack, once for the declaration, my own attack, the opponent loses 3 life); cards `parser-attack-at-you.test.ts` (the real lines of Mangara and Tomik, near misses). Mutation-checked: a planeswalker not counted, and no check as the ability triggers.
+- Example cards: Mangara, the Diplomat; Tomik, Wielder of Law (issue 89).
+
+## A list of kinds of spell in a cast trigger, and a cost reduction for spells that target (issue 89, D-644, D-645)
+
+- CR: 601.2i and 603.2 (a cast trigger), 205.3 (subtypes), 601.2c and 601.2f (the targets are chosen before the cost is determined), 118.7a (a reduction is generic mana only), 115.1.
+- Gap class: T (the grammar of two sentences); the engine ran both.
+- Parser: `insideSpellTypeList` (`segment.ts`: the commas of "an Aura, Equipment, or Vehicle spell" are not the end of the trigger), `rules/static/cost.ts` (`that target a creature` after "you cast", IR `castTargets`), `lower/nouns.ts` (`castTargets` to `targetsObject`).
+- Tests: engine `scenario-xx-cast-three-subtypes.test.ts`, `scenario-xx-cost-reduction-targets.test.ts`; cards `parser-cast-three-types.test.ts`, `parser-cost-reduction-targets.test.ts`.
+- Example cards: Sram, Senior Edificer; Killian, Ink Duelist (issue 89).
+
+## Affinity for Auras and a modified target of a cast trigger (issue 89, D-646)
+
+- CR: 702.41a-b (Affinity and its instances), 601.2f (the cost is determined as the spell is cast), 118.7a (generic mana only), 700.9 (modified), 601.2i and 603.2 (a cast trigger), 115.1.
+- Gap class: T (the grammar of two sentences); the engine ran both.
+- Parser: `static.spells-have-affinity` (`rules/static/cost.ts`), "modified" in `AIMED` (`rules/trigger/index.ts`), `lowerFilterAt` (`lower/nouns.ts`, the filter of what a spell targets reads "modified").
+- Tests: engine `scenario-xx-affinity-for-auras.test.ts`, `scenario-xx-cast-aimed-modified.test.ts`; cards `parser-affinity-for.test.ts`, `parser-cast-aimed-modified.test.ts`.
+- Example cards: Pearl-Ear, Imperial Advisor (issue 89).
+
+## A group that can't attack you and your planeswalkers (issue 89, D-647)
+
+- CR: 508.1a and 508.1c (what may be declared as an attacker), 506.3 (a player, a planeswalker or a battle can be attacked), 604.1 (the ability of a permanent that lost its abilities gives nothing), 303.4e (the Aura's controller is separate from the enchanted permanent's controller).
+- Gap class: P (a static ability that bans attack targets and a filter), T (the sentence and the noun).
+- Engine: `StaticEffect` `cantAttackYou { creatures, planeswalkers? }` (`ast/types.ts`, `ast/features.ts`, `ast/validate.ts`), `rules/attack-bans.ts` (`withoutBannedTargets`), read by `attackCandidates` in `rules/combat-legality.ts`; `ObjectFilter.enchantedByYou` (`ast/types.ts`, `rules/filter-match.ts`, `ast/validate-parts.ts`).
+- Parser: `restrictionPhrase` (`rules/static/restriction-words.ts`), `noun.each-creature-enchanted-by-you` (`rules/noun/enchanted-by-you.ts`), IR `cantAttackYou` and `enchantedByYou`, `lower/statics.ts`, `lower/nouns.ts`.
+- Tests: engine `scenario-xx-cant-attack-you.test.ts` (a Bear cannot attack the controller or the planeswalker, an Elf can, another player may be attacked, the controller's own creatures, the ability lost, an Aura of my own on a creature and an Aura of the opponent's on its own creature; mutation-checked: the player ban, the planeswalker ban and the Aura's controller); cards `parser-cant-attack-you.test.ts`.
+- Example cards: Eriette of the Charmed Apple (issue 89); the restriction of Combat Calligrapher.
+
+## A player attacks one of your opponents (issue 89, D-648)
+
+- CR: 508.1 (attackers are declared together), 508.4 (a creature put onto the battlefield attacking was never declared as an attacker), 508.6 (an attack on a planeswalker or a battle is no attack on its controller), 603.2c and 603.4 (a trigger once for each such player, an intervening "if").
+- Gap class: P (a trigger per player attacked, a selector, a condition and a token flag), T (the sentences and two nouns).
+- Engine: `Trigger` `playerAttacksOpponent` (`ast/types.ts`, `rules/triggers.ts`), `PlayerSelector` `triggerAttackedPlayer` (`rules/select.ts`), `Condition` `attackedHasMoreLifeThanOtherOpponent` (`rules/conditions.ts`), `createToken.attacking` (`rules/effects.ts`), validation in `ast/validate*.ts`, feature lists in `ast/features.ts`.
+- Parser: `trigger.player-attacks-opponent` (`rules/trigger/angels.ts`), `noun.that-attacking-player` (`rules/noun/players.ts`), "that opponent" and `LowerContext.attackedPlayer` (`lower/nouns.ts`, `lower/triggers.ts`), the token suffix (`rules/token/index.ts`, `lower/effects.ts`).
+- Tests: engine `scenario-xx-player-attacks-opponent.test.ts` (once for each player attacked, a planeswalker is not a player, the controller is not its own opponent, the token tapped and attacking with its damage; mutation-checked: the controller counted as an opponent and a planeswalker counted as a player), `scenario-xx-attacked-more-life.test.ts` (the condition over three seats); cards `parser-player-attacks-opponent.test.ts` (the real line of Combat Calligrapher, near misses).
+- Example cards: Combat Calligrapher (issue 89); the trigger and the engine condition of Breena, the Demagogue.
+
+## Creatures lose hexproof and shroud (issue 89, D-649)
+
+- CR: 702.11b (Hexproof), 702.18a (Shroud), 611.2c (the set of creatures is fixed as the effect resolves), 613.1f (layer 6), 514.2 (it ends in the cleanup step), 702.16b (protection stays).
+- Gap class: P (the effect and the continuous change) and T (the sentence).
+- AST node: `{ kind: 'loseHexproofShroud', objects: { kind: 'each', filter: { types: ['creature'], controller: 'opponent', zone: 'battlefield' } }, duration: 'untilEndOfTurn' }`; the creatures it names lose both abilities and can't have them again until end of turn, whatever gives them later.
+- Engine: `rules/continuous.ts` (the effect), `rules/derive-layers.ts` (`applyAbilityLayer`, applied after all the grants), `state/types.ts` (the change).
+- Parser: `effect.lose-hexproof-shroud` (`rules/effect/hexproof-loss.ts`), `lower.lose-hexproof-shroud` (`lower/continuous.ts`).
+- Tests: engine `scenario-xx-lose-hexproof.test.ts` (hexproof and shroud no longer stop the spells of the controller, protection stays, it ends with the turn; mutation-checked: the removal of the two keywords); cards `parser-lose-hexproof.test.ts` (the real line of Arcane Lighthouse, near misses).
+- Example cards: Arcane Lighthouse (issue 89).
+
+## Each other creature that's attacking one of your opponents (issue 89, D-650)
+
+- CR: 508.1b (a creature attacks a player, a planeswalker or a battle), 506.3, 611.2c (the group is fixed as the effect resolves), 603.2.
+- Gap class: P (the filter value and the `except` of a trigger subject) and T (the noun).
+- AST node: `{ kind: 'modifyPt', objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], attackingOpponents: 'players' }, except: { kind: 'triggerSubject' } }, power: 1, toughness: 1, duration: 'untilEndOfTurn' }` in an Aura's `attacks` trigger on `attached`. `attackingOpponents: true` still includes the planeswalkers and battles of the opponents.
+- Parser: `noun.each-other-attacking-opponent` (`rules/noun/edhrec.ts`), `effect.pump-each` (`rules/effect/pump.ts`), `lower/nouns.ts`.
+- Tests: engine `scenario-xx-attacking-opponent-players.test.ts` (a creature at the player gets it, the enchanted creature does not, one at a planeswalker does not; mutation-checked: players read as opponents and their planeswalkers, and the enchanted creature not left out); cards `parser-attacking-opponent.test.ts` (the real line of Martial Impetus, near misses).
+- Example cards: Martial Impetus (issue 89).
+
+## Goad as an effect and attackers enchanted by your Auras (issue 89, D-651)
+
+- CR: 701.15a (goad), 508.1 and 603.2c (an attack batch), 303.4e (an Aura's controller is separate from the enchanted creature's).
+- Gap class: T (the sentences); the engine ran both already (D-639, D-647).
+- AST nodes: `{ kind: 'goad', objects: { kind: 'target', id: 't1' } }` (after a `tap` of the same target in a `sequence`); `{ kind: 'attackBatch', who: 'any', atLeast: 1, what: { types: ['creature'], enchantedByYou: true } }`.
+- Parser: `effect.goad` (`rules/effect/goad.ts`), `lower.goad`, `trigger.enchanted-by-you-attack` (`rules/trigger/edhrec.ts`).
+- Tests: engine `scenario-xx-tap-and-goad.test.ts`, `scenario-xx-enchanted-attack-batch.test.ts`; cards `parser-goaded.test.ts`, `parser-enchanted-attack.test.ts`.
+- Example cards: Killian, Decisive Mentor (issue 89).
+
+## Protection from the chosen color (issue 89, D-652)
+
+- CR: 702.16a, 702.16d (an Aura of that color can't enchant it), 607.2d (the choice linked to the ability), 704.5m (an Aura attached to an illegal object).
+- Gap class: P (the keyword quality and the exception) and T (the sentences).
+- AST node: `{ kind: 'static', static: { kind: 'grantKeyword', subject: { kind: 'attached', types: ['creature'] }, keyword: { kind: 'protection', from: 'chosenColor', exceptSource: true } } }` with the replacement `asEntersChoose` `color`.
+- Engine: `rules/derive-statics.ts` (the resolved keyword), `rules/protection.ts` (`protectedColors` takes the source, `hasProtectionFrom`).
+- Parser: `rules/static/grants.ts` (`PROTECTION`), `lower/statics.ts`.
+- Tests: engine `scenario-xx-protection-chosen-color.test.ts` (protection from the chosen color, the Aura stays attached, another red Aura can't be attached, no choice no protection; mutation-checked: the exception); cards `parser-protection-chosen-color.test.ts` (the real lines of Flickering Ward, near misses).
+- Example cards: Flickering Ward (issue 89).
+
+## A creature the controller chooses gets counters (issue 89, D-653)
+
+- CR: 122.6 (counters put on a permanent), 608.2d (the choice is made as the effect resolves), 115.1 (it is not a target), 603.4 and 508.6 (the intervening "if" of the attack trigger).
+- Gap class: P (`chooseObjects.exactly`) and T (the sentences).
+- AST node: `{ kind: 'chooseObjects', id: 'm1', filter: { types: ['creature'], controller: 'you' }, count: 1, exactly: true }` followed by `{ kind: 'addCounters', objects: { kind: 'chosen', id: 'm1' }, counter: '+1/+1', count: 2 }`; the choice is a `choosePermanent` decision with `min` equal to its `max`.
+- Parser: `effect.add-counters` (`rules/effect/counters.ts`), `lower.add-counters` (`lower/effects.ts`), `condition.attacked-has-more-life` (`rules/condition/angels.ts`, `lower/conditions.ts`, `lower/triggers.ts`).
+- Tests: engine `scenario-xx-attacks-choose-counters.test.ts` (the choice, the counters, choosing none refused; mutation-checked: the minimum); cards `parser-breena.test.ts` (the real line of Breena, near misses).
+- Example cards: Breena, the Demagogue (issue 89).
+
+## Enchanted creature dies, and the Auras it had (issue 89, D-654)
+
+- CR: 603.10a (leaves-the-battlefield abilities look back), 113.7a (last-known information), 303.4e (Aura controller), 700.4 (dies).
+- Gap class: P (the last-known Auras and the amount) and T (the sentences).
+- AST node: `{ kind: 'triggered', trigger: { kind: 'dies', what: { types: ['creature'], enchanted: true } }, effect: { kind: 'draw', player: { kind: 'you' }, count: { kind: 'aurasAttachedToTriggerSubject', controlledBy: 'you' } } }`.
+- Engine: `rules/zones.ts` (`recordLki`), `rules/amounts.ts`, `rules/trigger-subject.ts`, `state/types.ts` (`LastKnownInfo.auras`).
+- Parser: `trigger.enchanted-creature-dies`, `amount.for-each-aura-attached`, `lower/triggers.ts`.
+- Tests: engine `scenario-xx-enchanted-dies.test.ts` (Auras of mine and theirs, none; mutation-checked: the controller of the Auras); cards `parser-enchanted-dies.test.ts`.
+- Example cards: Hateful Eidolon (issue 89).
+
+## Exile from the top, cast an Aura among them, the rest to the bottom (issue 89, D-655)
+
+- CR: 701.13, 608.2g, 118.9, 303.4, 401.4.
+- Gap class: P (`castFree.filter`, `moveToZone.random`) and T.
+- AST nodes: `{ kind: 'castFree', objects: { kind: 'moved' }, filter: { subtypes: ['Aura'] } }` and `{ kind: 'moveToZone', objects: { kind: 'moved' }, to: 'library', position: 'bottom', random: true }` after an `exileTop`.
+- Engine: `rules/cast-free.ts`, `rules/effects.ts`. Parser: `effect.cast-from-among`, `effect.put-rest-bottom-random`, `CAST_MOVED_FREE`, `PUT_REST_BOTTOM`.
+- Tests: engine `scenario-xx-exile-cast-aura.test.ts` (only the Aura is offered, it is cast and enchants, declining, the generator advances; mutation-checked: the filter and the shuffle); cards `parser-exile-cast-aura.test.ts` (the real line of Herald of Amity).
+- Example cards: Herald of Amity (issue 89).
+
+## Cast from the graveyard for another cost (issue 89, D-656)
+
+- CR: 118.9, 601.2f, 113.6b.
+- Gap class: P (`castFromGraveyard.cost`) and T.
+- AST node: `{ kind: 'static', static: { kind: 'castFromGraveyard', cost: [{ kind: 'mana', symbols: ['2', 'W'] }] } }`.
+- Engine: `rules/cast-cost.ts` (`spellCost`), `rules/alt-costs.ts` (`graveyardCostOf`). Parser: `rules/static/conditional.ts`, `lower/statics.ts`.
+- Tests: engine `scenario-xx-cast-graveyard-cost.test.ts` (the cost from the graveyard and from the hand, too little mana); cards `parser-cast-graveyard-cost.test.ts`.
+- Example cards: Raffine's Guidance (issue 89).
+
+## An Aura that comes back when its creature dies (issue 89, D-657)
+
+- CR: 603.10a, 603.7, 603.7c, 400.7, 303.4f (the Aura chooses what it enchants as it enters), 303.4g.
+- Gap class: T (the sentences) and P (a delayed move of `thisCard`).
+- AST nodes: `{ kind: 'triggered', trigger: { kind: 'dies', what: { kind: 'attached' } }, effect: { kind: 'moveToZone', objects: { kind: 'thisCard' }, to: 'battlefield', controller: 'owner' } }`; the delayed form is `{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: { kind: 'moveToZone', objects: { kind: 'thisCard' }, to: 'battlefield', controller: 'you' } }`.
+- Engine: `rules/effects.ts` (the delayed trigger for `thisCard`), `ast/validate-later.ts`. Parser: `lowerReturnSelf` (`lower/effects.ts`), `effect.return-this-card-delayed`, `DELAYED_RETURN_THIS_CARD`.
+- Tests: engine `scenario-xx-aura-returns.test.ts` (the Aura returns and enchants a creature, stays when there is none, comes back at the end step); cards `parser-aura-returns.test.ts` (the real lines of both cards, near misses).
+- Example cards: Screams from Within, Ghoulish Impetus (issue 89).
+
+## Look at the top, put an Aura or Equipment, attach it (issue 89, D-658)
+
+- CR: 401.2, 303.4f, 701.3, 301.5, 401.4.
+- AST: a `lookAtTop` with `take: { filter: { anyOf: [{ subtypes: ['Aura'] }, { subtypes: ['Equipment'] }] }, max: 1, to: 'battlefield' }` and `rest: 'bottomRandom'`, then `conditional { objectMatches moved Equipment }` of a `chooseObjects` (one creature you control) and `attach { object: moved, to: chosen }`.
+- Parser: `effect.look-put-attach`, `splitSentences` (`segment.ts`), `lower.look-take`. Tests: engine `scenario-xx-look-put-attach.test.ts`; cards `parser-look-put-attach.test.ts`. Example card: Armored Skyhunter (issue 89).
+
+## Reveal until, may put onto the battlefield, else into the hand (issue 89, D-659)
+
+- CR: 701.20, 303.4f, 608.2c, 401.4.
+- AST: `revealUntil { filter, put: 'none' }`, `may { moveToZone moved to battlefield }`, `conditional { not didPrevious } moveToZone moved to hand`.
+- Parser: `effect.reveal-until-may-put`, `splitSentences`, `lower.reveal-until-may-put`. Tests: engine `scenario-xx-reveal-until-may-put.test.ts` (mutation-checked: `moved` after the reveal); cards `parser-reveal-until-may-put.test.ts`. Example card: Songbirds' Blessing (issue 89).
+
+## An Aura attached to the token (issue 89, D-660)
+
+- CR: 701.3, 303.4, 608.2c.
+- AST: `conditional { objectMatches triggerSubject Aura }` of `may { attach { object: triggerSubject, to: moved } }` after a `createToken`.
+- Parser: `effect.attach` ("the token"), `lower.attach` (`takesObjectTest`, `acceptsOptional`), `lower/triggers.ts`. Tests: engine `scenario-xx-attach-entering-aura.test.ts`; cards `parser-attach-entering-aura.test.ts`. Example card: Ajani's Chosen (issue 89).
