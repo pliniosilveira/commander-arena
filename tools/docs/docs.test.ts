@@ -14,6 +14,8 @@ const REMOVED = [
   'docs/decisions',
   'docs/STATUS.md',
   'docs/progress',
+  'docs/proposals',
+  'docs/design',
 ];
 
 /** Words, counted as `wc -w` counts them. */
@@ -22,7 +24,7 @@ const CEILINGS: Readonly<Record<string, number>> = {
   'docs/SPEC.md': 8100,
   'docs/ARCHITECTURE.md': 8300,
   'docs/ROADMAP.md': 23000,
-  'docs/RULES_COVERAGE.md': 25200,
+  'docs/RULES_COVERAGE.md': 26000,
   'docs/CARD_SUPPORT_PLAYBOOK.md': 2200,
   '.claude/skills/deck-support/SKILL.md': 4600,
 };

@@ -25,3 +25,12 @@ test('a shipped precon lists its commander art, and an edit to another commander
   expect(edited[0]?.commanderImage).toBeUndefined();
   expect(edited[0]?.colors).toBeUndefined();
 });
+
+test('a saved deck gets the art and colors of its commander from the looked-up cards', () => {
+  const saved = [{ id: 's1', name: 'Mine', text: 'Commander\n1 Some Commander\n', savedAt: '' }];
+  const looks = new Map([['Some Commander', { image: 'https://x/art.jpg', colors: ['U', 'R'] }]]);
+  const [choice] = deckChoices([], [], saved, looks);
+  expect(choice?.commanderImage).toBe('https://x/art.jpg');
+  expect(choice?.colors).toEqual(['U', 'R']);
+  expect(deckChoices([], [], saved)[0]?.colors).toBeUndefined();
+});
