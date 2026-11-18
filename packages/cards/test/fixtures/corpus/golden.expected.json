@@ -2503,19 +2503,10 @@
     "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
       "name": "Rakdos Charm",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its controller.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.gain-keyword-each"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "01d11ce7"
+      "ast": "e4b2006b"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -6740,7 +6731,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 474,
+      "supported": 475,
       "total": 500
     }
   }

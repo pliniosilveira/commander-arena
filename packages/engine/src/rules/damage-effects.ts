@@ -12,6 +12,7 @@ import type { Effect, ObjectSelector, PlayerSelector } from '../ast/types';
 import type { DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
 import type { ChosenTarget, GameObject, GameState, ResolutionContext } from '../state/types';
+import { controllerOf } from './control';
 import { dealDamageAsking, dealDamageWithExcess } from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget } from './defending';
@@ -133,6 +134,35 @@ export function runDealDamageToSelf(
   const events: GameEvent[] = [];
   for (const { id, power } of sources) {
     const r = dealDamageAsking(next, id, { kind: 'object', id }, power, false, flow);
+    if (r.kind === 'asked') return asking(state, r);
+    next = r.state;
+    events.push(...r.events);
+  }
+  return done(next, events);
+}
+
+/**
+ * "Each creature deals 1 damage to its controller" (CR 120.3, 109.4, 608.2h; issue 279, Rakdos Charm): every object the selector names on the battlefield is the source of one
+ * damage event of its own to the player who controls it, the controllers read from the state the instruction began with (so a change of control in the middle of the list changes
+ * nothing). Like every damage instruction it returns the question of a replacement effect (CR 616.1) with nothing dealt, and runs again with the answer.
+ */
+export function runDealDamageToController(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'dealDamageToController' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const amount = amountOf(state, effect.amount, ctx, targets);
+  if (amount <= 0) return done(state);
+  const sources = resolveObjects(state, effect.objects, ctx, targets).flatMap((id) => {
+    const obj = state.objects[id];
+    return obj?.zone === 'battlefield' ? [{ id, seat: controllerOf(state, obj) }] : [];
+  });
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const { id, seat } of sources) {
+    const r = dealDamageAsking(next, id, { kind: 'player', seat }, amount, false, flow);
     if (r.kind === 'asked') return asking(state, r);
     next = r.state;
     events.push(...r.events);

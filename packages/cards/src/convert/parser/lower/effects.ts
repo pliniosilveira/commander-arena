@@ -39,6 +39,7 @@ import {
   SET_PT,
 } from './continuous';
 import { GAIN_CONTROL } from './control';
+import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
@@ -1635,6 +1636,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HYLDA_G3_LOWERINGS,
   // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
   ...LOREHOLD_G1_LOWERINGS,
+  // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
+  ...CONTROLLER_DAMAGE_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,

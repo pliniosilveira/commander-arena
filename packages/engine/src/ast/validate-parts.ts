@@ -3630,6 +3630,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       }
       break;
+    case 'dealDamageToController':
+      // CR 120.3 (issue 279): each object the selector names deals the damage to its controller: a group or a reference, never a choice.
+      if (kindOf(e.objects) === 'choose') {
+        issue(
+          out,
+          `${path}.objects`,
+          'dealDamageToController names the objects: each or a reference',
+        );
+      } else {
+        checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      }
+      checkAmount(e.amount, `${path}.amount`, scope, out);
+      break;
     case 'exileFromTriggerCards':
       // CR 603.2c (Lorehold group 1): the cards a batch `discarded` trigger saw discarded, one of which is exiled.
       if (scope.triggerCards !== true) {

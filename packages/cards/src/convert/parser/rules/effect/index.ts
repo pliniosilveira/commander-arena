@@ -33,6 +33,7 @@ import { BRUNA_EFFECT_RULES } from './bruna';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
+import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -926,6 +927,8 @@ export const EFFECT_RULES = [
   // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
   // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
   ...LOREHOLD_G1_EFFECT_RULES,
+  // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller" starts like the plain "each" rules, and is tried first.
+  ...CONTROLLER_DAMAGE_EFFECT_RULES,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
   ...LOREHOLD_G2_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental

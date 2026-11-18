@@ -319,3 +319,51 @@ describe('"draws cards equal to the greatest number of cards a player discarded 
     expect(g.view(1).seats[1]?.handCount).toBe(0);
   });
 });
+
+// ---- Rakdos Charm: "Each creature deals 1 damage to its controller." (CR 120.3, 109.4, 608.2h).
+
+const CHARM_B = parsed(
+  'SYNTHETIC Parsed Rakdos Charm',
+  'Instant',
+  "Choose one \u2014\n\u2022 Exile target player's graveyard.\n\u2022 Destroy target artifact.\n\u2022 Each creature deals 1 damage to its controller.",
+  { manaCost: '{B}{R}', colors: ['B', 'R'] },
+);
+
+describe('"Each creature deals 1 damage to its controller." (CR 120.3)', () => {
+  const start = () =>
+    main(
+      (b) =>
+        b
+          .define(CHARM_B)
+          .hand(CHARM_B.name)
+          .battlefield('Swamp', 'Mountain')
+          .battlefield('Grizzly Bears', 'Giant Spider'),
+      (b) => b.battlefield('Serra Angel'),
+    );
+
+  test('each creature damages the player who controls it, one point each', () => {
+    const g = start();
+    g.act(0).cast(CHARM_B.name, { modes: [2], pay: true });
+    g.passAll();
+    // Two creatures of the caster, one of the opponent.
+    g.expect.life(0, 18);
+    g.expect.life(1, 19);
+    g.expect.invariants();
+  });
+
+  test('the creatures themselves are not damaged', () => {
+    const g = start();
+    g.act(0).cast(CHARM_B.name, { modes: [2], pay: true });
+    g.passAll();
+    g.expect.damage('Grizzly Bears', 0);
+    g.expect.damage('Serra Angel', 0);
+  });
+
+  test('with no creature nobody is damaged', () => {
+    const g = main((b) => b.define(CHARM_B).hand(CHARM_B.name).battlefield('Swamp', 'Mountain'));
+    g.act(0).cast(CHARM_B.name, { modes: [2], pay: true });
+    g.passAll();
+    g.expect.life(0, 20);
+    g.expect.life(1, 20);
+  });
+});

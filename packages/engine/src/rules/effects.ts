@@ -35,7 +35,13 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
-import { asking, runDealDamage, runDealDamageToSelf, runDealDividedDamage } from './damage-effects';
+import {
+  asking,
+  runDealDamage,
+  runDealDamageToController,
+  runDealDamageToSelf,
+  runDealDividedDamage,
+} from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
@@ -652,6 +658,10 @@ function runEffect(
     case 'dealDamageToSelf':
       // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."
       return runDealDamageToSelf(state, effect, ctx, targets, flow);
+
+    case 'dealDamageToController':
+      // CR 120.3, 109.4 (issue 279): "Each creature deals 1 damage to its controller."
+      return runDealDamageToController(state, effect, ctx, targets, flow);
 
     case 'destroy': {
       // CR 701.8 (Destroy): indestructible permanents are not destroyed (CR 702.12b).

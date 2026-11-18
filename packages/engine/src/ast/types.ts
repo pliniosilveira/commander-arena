@@ -1501,6 +1501,17 @@ export type Effect =
       readonly objects: ObjectSelector;
     }
   /**
+   * "Each creature deals 1 damage to its controller" (CR 120.3, 120.8, 608.2h; issue 279, Rakdos Charm): every object `objects` names on the battlefield is a source and deals `amount`
+   * damage to the player who controls it, the controller read as the effect begins (CR 109.4, 608.2h). Each is a source of its own damage event, so lifelink and a prevention effect for
+   * that source apply as for any damage (CR 120.3), and the damage is not combat damage. An object that is not on the battlefield deals none; `amount` is read once, and 0 or less deals
+   * none (CR 120.8). `objects` is `each` or a reference (not a `choose`).
+   */
+  | {
+      readonly kind: 'dealDamageToController';
+      readonly objects: ObjectSelector;
+      readonly amount: Amount;
+    }
+  /**
    * CR 701.17 (Mill): each player `player` names puts the top `count` cards of their library into their graveyard (all of
    * them when they have fewer, and nobody loses for it: milling is not drawing, CR 121.4). `count` 0 does nothing. The
    * cards go one after another from the top; a commander milled goes to the graveyard like any card (its owner may

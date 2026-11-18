@@ -36,5 +36,5 @@
 // 134: Give every creature back to its owner as layer 2 effects (D-628, issue 160).
 // 135: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-629, issue 160).
 // 136: Additional land plays for a turn, a target slot and a condition about the phase a spell was cast in, mana spent on the chosen creature type, and counters on a commander cast with marked mana (D-630, issues 199, 208, 241, 244).
-// 137: The turn log remembers who declared each attacker, for "if you attacked with three or more creatures this turn", and a resolution keeps the most cards one player discarded (D-631, issue 279).
+// 137: The turn log remembers who declared each attacker, for "if you attacked with three or more creatures this turn", a resolution keeps the most cards one player discarded and "each creature deals 1 damage to its controller" (D-631, issue 279).
 export const ENGINE_VERSION = 137;
