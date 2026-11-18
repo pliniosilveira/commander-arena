@@ -93,6 +93,15 @@ function narrowedTargets(
     const wanted = targets.filter((t) => t.kind === 'player' && forced.includes(t.seat));
     if (wanted.length > 0) return wanted;
   }
+  // CR 508.1d (Gideon Jura): "creatures that player controls attack this planeswalker if able": a creature that can attack that permanent attacks it (with several
+  // such permanents it attacks one of them: a creature obeys as many requirements as it can, and attacks one thing).
+  const wantedPermanents = permanentsToAttack(state, attacker);
+  if (wantedPermanents.length > 0) {
+    const wanted = targets.filter(
+      (t) => t.kind === 'permanent' && wantedPermanents.includes(t.object),
+    );
+    if (wanted.length > 0) return wanted;
+  }
   const away = [
     ...groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
       r.awayFrom === undefined ? [] : [r.awayFrom],
@@ -116,6 +125,18 @@ function playersToAttack(state: GameState, id: ObjectId): SeatId[] {
   return seats;
 }
 
+/** The permanents `id` is required to attack if able (`mustAttackPermanent`: "creatures that player controls attack this planeswalker if able"). */
+function permanentsToAttack(state: GameState, id: ObjectId): ObjectId[] {
+  const seat = controllerOf(state, getObject(state, id));
+  const found: ObjectId[] = [];
+  for (const e of state.continuousEffects) {
+    if (e.change.kind === 'mustAttackPermanent' && e.change.seat === seat) {
+      found.push(e.change.permanent);
+    }
+  }
+  return found;
+}
+
 function sameTarget(a: AttackTarget, b: AttackTarget): boolean {
   return a.kind === 'player'
     ? b.kind === 'player' && a.seat === b.seat
@@ -137,6 +158,10 @@ export function requiredAttackers(
       (c) =>
         hasRestriction(state, getObject(state, c.attacker), 'attacksEachCombat') ||
         playersToAttack(state, c.attacker).length > 0 ||
+        // CR 508.1d: a creature that can attack the permanent it is required to attack must; one that cannot is not required.
+        permanentsToAttack(state, c.attacker).some((p) =>
+          c.targets.some((t) => t.kind === 'permanent' && t.object === p),
+        ) ||
         // CR 701.15b (D-639): a goaded creature attacks each combat if able.
         goadersOf(state, c.attacker).length > 0 ||
         groupRequirements(state, getObject(state, c.attacker)).length > 0,

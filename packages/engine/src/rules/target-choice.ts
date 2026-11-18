@@ -91,6 +91,15 @@ export function maxTargetCountX(
 }
 
 /**
+ * What a slot may offer, or null for "all of its legal targets": the objects (by id) after which the cost can be paid and whether a player may be chosen (a player is neither reduced
+ * nor taxed by what a spell targets, so the cost with a player as the target is the cost with none, D-149).
+ */
+export type PayableOnly = {
+  readonly objects: readonly ObjectId[];
+  readonly players: boolean;
+} | null;
+
+/**
  * The slots of a `targets` decision for these specs: bounds and every legal target (CR 115, 601.2c).
  * `modeOf` (D-114, D-344) says which mode of a modal spell or ability each slot belongs to, and which instance of it.
  */
@@ -104,7 +113,7 @@ export function targetChoiceSpecs(
   /** D-408: the spell is cast with its own conditional flash ("if it targets a commander"): its first mandatory slot offers only the objects this filter matches. */
   only: ObjectFilter | null = null,
   /** D-424, D-425: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
-  payable: readonly ObjectId[] | null = null,
+  payable: PayableOnly = null,
   /** D-641: Strive: the slot of any number of targets offers at most this many (the targets after which the cost can be paid). Null leaves it alone. */
   cap: number | null = null,
 ): TargetChoiceSpec[] {
@@ -129,7 +138,9 @@ export function targetChoiceSpecs(
     );
     const legal =
       index === restricted && payable !== null
-        ? flashLegal.filter((t) => t.kind === 'object' && payable.includes(t.id))
+        ? flashLegal.filter((t) =>
+            t.kind === 'object' ? payable.objects.includes(t.id) : payable.players,
+          )
         : flashLegal;
     // D-386: "X target creature cards": exactly X (the announcement offered no X larger than the legal targets, `maxTargetCountX`).
     if (spec.countX === true) {

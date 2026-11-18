@@ -1,5 +1,5 @@
 {
-  "parserVersion": 154,
+  "parserVersion": 155,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -148,6 +148,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9542f313"
+    },
+    "0411aead-9f77-435d-a343-635f23221cf7": {
+      "name": "Gravitational Shift",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6c3533dd"
     },
     "046add85-952f-46ac-974a-463d2a7d3fd4": {
       "name": "The Book of Exalted Deeds",
@@ -373,6 +381,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3942760a"
+    },
+    "09071f5f-c9cb-43a9-b41d-faf6caf3beff": {
+      "name": "Staggering Insight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7d1d2a0c"
     },
     "097992a9-7b88-4c3f-8191-1ff10a4a735d": {
       "name": "Strong Back",
@@ -665,6 +681,14 @@
       "reasons": [],
       "ast": "6bc6222f"
     },
+    "15276d3b-a117-44bf-87c3-c17e032e4a26": {
+      "name": "Thunderclap Wyvern",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d577f816"
+    },
     "153376c9-dffd-458c-8ce3-a4c8269bc4e9": {
       "name": "Smothering Tithe",
       "group": "training",
@@ -914,6 +938,14 @@
       "reasons": [],
       "ast": "34102e76"
     },
+    "1e7bddbd-e448-4aea-9d18-b44bd45837c5": {
+      "name": "Vow of Duty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "db1d116e"
+    },
     "1f91297a-ec2b-4ea8-9198-aa1daac20ff8": {
       "name": "Metallic Mimic",
       "group": "training",
@@ -1044,6 +1076,14 @@
       "reasons": [],
       "ast": "07cdeecd"
     },
+    "2361ca87-6352-4ba3-8d91-b3d71242914d": {
+      "name": "Favorable Winds",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "71a8f159"
+    },
     "240e85d3-e495-4877-8609-4b4056c402f7": {
       "name": "Victimize",
       "group": "acceptance",
@@ -1147,6 +1187,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cd2f17e3"
+    },
+    "270d14b2-07bc-46bc-918f-658102265ccf": {
+      "name": "Empyrean Eagle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "43b5f436"
     },
     "27400927-9aba-4fb3-90c4-490d01969e60": {
       "name": "Valkyrie's Call",
@@ -1454,6 +1502,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8ceba38d"
+    },
+    "30aa362b-7ab1-486e-9802-1171e0dc2416": {
+      "name": "Storm Herd",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "894083a2"
     },
     "30ac68e6-160a-41f9-9f0f-0e0eef383150": {
       "name": "Arcane Lighthouse",
@@ -2397,6 +2453,14 @@
       "reasons": [],
       "ast": "bc857b26"
     },
+    "52bd4331-67b6-4eb8-9566-e00359889fc6": {
+      "name": "Soul Snare",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88c95d6b"
+    },
     "52be3da7-1e55-44c4-88bc-fb578a635ec0": {
       "name": "Monstrous Onslaught",
       "group": "training",
@@ -2631,6 +2695,14 @@
         "faces[1].types: layout transform with a planeswalker or battle back face is not implemented by the engine yet"
       ],
       "ast": "63848c2b"
+    },
+    "5a040363-dba5-49d2-9756-e14af61cf818": {
+      "name": "Kangee's Lieutenant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b1b544c9"
     },
     "5a57fba3-01e3-4852-8c45-7c910502bd03": {
       "name": "Bitterthorn, Nissa's Animus",
@@ -2873,6 +2945,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8cf15ac"
+    },
+    "61cceb14-9568-4a5e-9b56-07afa6407df2": {
+      "name": "Inspired Sphinx",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dd505212"
     },
     "626a979f-bed7-4cb1-9ab7-c3f2bbe37781": {
       "name": "Lost Monarch of Ifnir",
@@ -3173,6 +3253,14 @@
       "reasons": [],
       "ast": "ef7016e3"
     },
+    "6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66": {
+      "name": "Kangee, Sky Warden",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "226b04c1"
+    },
     "6a6c5e17-6465-4a1f-9d63-8a3ce2edc522": {
       "name": "Sulfur Falls",
       "group": "training",
@@ -3459,19 +3547,10 @@
     "7340dbcb-4b26-4038-be8c-a89e76294221": {
       "name": "Gideon Jura",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "+2: During target opponent's next turn, creatures that player controls attack ~ if able.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c171878d"
+      "ast": "b8627468"
     },
     "736892cb-a34b-4bb9-b56c-e26e3db207a2": {
       "name": "Mana Vault",
@@ -4015,6 +4094,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9eaa310a"
+    },
+    "84adce5c-39c7-425e-b163-4a1a3977364b": {
+      "name": "Skycat Sovereign",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e9626e3b"
     },
     "84dc18f0-8225-4b40-a165-b10321e41769": {
       "name": "Nykthos, Shrine to Nyx",
@@ -5010,6 +5097,14 @@
       "reasons": [],
       "ast": "2cd6f756"
     },
+    "aab55af7-8084-47b6-910f-75a75a6313a4": {
+      "name": "Jubilant Skybonder",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "968827c1"
+    },
     "aae76e5c-f5e0-4d18-b465-e6a829be908a": {
       "name": "Shiny Impetus",
       "group": "acceptance",
@@ -5113,6 +5208,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2c84a002"
+    },
+    "ac8cf699-f67b-44da-bb79-eb95cfc0026d": {
+      "name": "Cartographer's Hawk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8e39838d"
     },
     "acc9c16a-5e72-43bd-87e1-56a16aa892f5": {
       "name": "Haven of the Spirit Dragon",
@@ -5776,6 +5879,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e53d1d54"
+    },
+    "c6639b52-b51d-46e7-a83c-c4621b1cecaa": {
+      "name": "Ever-Watching Threshold",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a019bb51"
     },
     "c736935a-e006-4a67-b942-e8ccf1cd9abb": {
       "name": "Sharae of Numbing Depths",
@@ -7007,6 +7118,14 @@
       "reasons": [],
       "ast": "8f21f172"
     },
+    "f21ce158-2925-4658-ab7b-b73718d31965": {
+      "name": "Diluvian Primordial",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9c2254f5"
+    },
     "f22665cd-4710-48df-83c1-3c9081097cb5": {
       "name": "Hedge Shredder",
       "group": "training",
@@ -7089,6 +7208,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b8bc1bbf"
+    },
+    "f424b5e9-8f02-4491-a7d8-c7e088611c6a": {
+      "name": "Warden of Evos Isle",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0c5cd4c0"
     },
     "f426aa1a-e1dc-4563-b450-2e23d6bd980b": {
       "name": "Manaform Hellkite",
@@ -7463,8 +7590,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 575,
-      "total": 606
+      "supported": 593,
+      "total": 623
     }
   }
 }

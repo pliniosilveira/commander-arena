@@ -47,6 +47,7 @@ import {
 import { beholdCandidates } from './behold';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
+import { costIncreaseFor } from './cost-increase';
 import { derive } from './derive';
 import { expandKeywords } from './derive-keywords';
 import { costReductionSources } from './derive-statics';
@@ -366,6 +367,12 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const targets = request.targets ?? spell.stack?.chosenTargets.length ?? 0;
     for (let i = 1; i < targets; i += 1) symbols.push(...manaSymbolsOf(perTarget));
   }
+  // CR 601.2f (D-149): "Spells your opponents cast that target this creature cost {2} more to cast": an increase of the total cost, from the targets chosen at CR 601.2c (before any reduction).
+  const taxed = costIncreaseFor(state, spell, {
+    ...(request.excluded === undefined ? {} : { excluded: request.excluded }),
+    ...{ castFrom: zone },
+  });
+  for (let i = 0; i < taxed; i += 1) symbols.push('1');
   // CR 700.2h, 702.183a (D-433): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
   symbols.push(
     ...manaSymbolsOf(modeCostsOf(face, request.modeSet ?? spell.stack?.chosenModes ?? [])),

@@ -20,6 +20,7 @@ import { defineRule, family, node, spanned } from '../registry';
 import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
+import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER } from './controller';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
@@ -797,6 +798,8 @@ export const NOUN_RULES = [
   NOUN_ALL_GRAVEYARDS,
   // D-521 (Hylda deck, group 2): "target creature that player controls", whose first words are those of `noun.target-permanent`.
   ...HYLDA_G2_TARGET_NOUN_RULES,
+  // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.
+  ...ATTACKING_YOU_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,

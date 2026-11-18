@@ -58,6 +58,7 @@ import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
+import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
@@ -1859,6 +1860,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...GIDEON_LOWERINGS,
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,

@@ -38,7 +38,8 @@ export function checkBattlefieldFilter(f: ObjectFilter, path: string, out: AstIs
 
 /**
  * A static ability's subject. `keywords` (D-149) allows a filter that names a keyword ("creatures you control with flying"): only
- * a `grantKeyword` may, because `derive` reads the keywords after the effects that give them (CR 613.8a) for that one alone.
+ * a `grantKeyword` or a `modifyPt` may. `derive` reads the keywords after the effects that give them (CR 613.8a) for the first, and
+ * applies the second (layer 7c) after layer 6 is done (CR 613.1f, 613.4c).
  */
 export function checkStaticSubject(
   s: StaticSubject,
@@ -95,7 +96,7 @@ export function checkStaticSubject(
         issue(
           out,
           `${path}.filter`,
-          'only a static ability that grants a keyword can name a keyword in its subject (CR 613.8)',
+          'only a static ability that grants a keyword or changes power and toughness can name a keyword in its subject (CR 613.8)',
         );
       }
       if (s.other !== undefined && typeof s.other !== 'boolean') {

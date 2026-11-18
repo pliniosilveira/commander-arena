@@ -45,7 +45,15 @@ export function runCastCard(
   // start: the target is still the card it was chosen as, in a graveyard (`canCastDuringResolution` asks for the graveyard).
   const card = state.objects[ins.card];
   if (card === undefined) return done(state);
-  if (canCastDuringResolution(state, res.controller, card, 'normal', ins.anyManaType)) {
+  if (
+    canCastDuringResolution(
+      state,
+      res.controller,
+      card,
+      ins.free === true ? 'freeGraveyard' : 'normal',
+      ins.anyManaType,
+    )
+  ) {
     return done(state, [], [{ ...ins, stage: 'ask' }]);
   }
   return done(state);
