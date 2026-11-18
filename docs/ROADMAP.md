@@ -1,6 +1,6 @@
 # Roadmap: deferred work and known limitations
 
-What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the design is in `docs/ARCHITECTURE.md`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
+What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the design is in `docs/ARCHITECTURE.md`, what exists is read from the code. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
 
 Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
 
@@ -604,3 +604,19 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - Aura that returns (D-657): only "this card" of an Aura whose trigger is the dying of its creature. Gift of Immortality is not read: "return that card to the battlefield under its owner's control" after "when enchanted creature dies" lowers to a move of the enchanted creature (`attached`), not the card it became (`triggerCard`): UNVERIFIED at runtime and to be fixed with that card; "attached to that creature" for a delayed return is not built.
 
 - Look at the top and put an Aura or Equipment (D-658), reveal until and may put (D-659), attach to the token (D-660): only the sentences of Armored Skyhunter, Songbirds' Blessing and Ajani's Chosen are read (one kind of card, the places and orders those cards name).
+
+## Limits carried over from the removed mechanics file
+
+- Behold cost, granted loyalty ability, graveyard self-exile cost: built without the Comprehensive Rules text at hand; their rule references are unverified.
+- Split cards: Flashback on a split card is refused, so such a card stays unsupported.
+- Vehicles: a Vehicle whose printed power or toughness is `*` is not supported.
+- Modal double-faced commander: its land face cannot be played from the command zone; only casting either face is offered.
+- Sagas: a permanent that becomes a Saga after it entered gets no lore counter from the turn-based action.
+- "Unless [player] pays": a payer who chooses among costs ("pays {1} or discards a card") is not read.
+- Evoke: there is no "if it was evoked" condition, so a card that asks it stays unsupported.
+- Can't be countered: "can't be countered by [quality] spells" and abilities that can't be countered are not built.
+- Copy a spell: "Copy target instant or sorcery spell, then return it to its owner's hand" is not read.
+- Equip commander: a token that copies a commander cannot be the target; a granted list mixing a keyword and protection is not read.
+- AI, pay any amount: the agent always pays the most it can for a "pay any amount" question.
+- Look and take: a filtered take ("two creature cards from among them"), a number that is not fixed, X and another player's library are not read.
+- Look at the top cards and take one: only the Diabolic Vision and Sleight of Hand wordings are read.
