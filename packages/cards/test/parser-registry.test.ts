@@ -637,6 +637,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // "Then if" in a spell; the static is a line of its own.
   'keyword.job-select': asIs,
   'trigger.becomes-untapped': whenever,
+  // Issue 103: "becomes monstrous" follows "Whenever"; the amount follows the damage to each opponent.
+  'trigger.becomes-monstrous': whenever,
+  'amount.cards-in-hand-of-that-player': permanent(
+    (e) => `At the beginning of each end step, ~ deals damage to each opponent ${e}.`,
+  ),
   'trigger.dies-batch': whenever,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,

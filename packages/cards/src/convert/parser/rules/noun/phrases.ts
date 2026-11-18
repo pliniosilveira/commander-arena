@@ -50,6 +50,8 @@ export interface FilterParts {
   readonly historic: boolean;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
   readonly modified: boolean;
+  /** "goaded" (CR 701.15b): a creature some player's goad effect still holds. */
+  readonly goaded: boolean;
   /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
   readonly commander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
@@ -73,6 +75,7 @@ export const NO_PARTS: FilterParts = {
   attackingOrBlocking: false,
   historic: false,
   modified: false,
+  goaded: false,
   commander: false,
   colorCount: undefined,
 };
@@ -125,6 +128,8 @@ export const MODIFIER: Parser<Modifier> = choice(
   word('historic', (p) => ({ ...p, historic: true })),
   // D-416 (Danitha deck, CR 700.9): "modified creature".
   word('modified', (p) => ({ ...p, modified: true })),
+  // CR 701.15b (Goad): "goaded creature".
+  word('goaded', (p) => ({ ...p, goaded: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
   word('attacking', (p) => ({ ...p, attacking: true })),
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
@@ -226,6 +231,7 @@ export function toFilter(
     ...(p.attackingOrBlocking ? { attackingOrBlocking: true as const } : {}),
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
+    ...(p.goaded ? { goaded: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
@@ -833,7 +839,8 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.tapped === undefined &&
           parts.token === undefined &&
           !parts.attacking &&
-          !parts.modified,
+          !parts.modified &&
+          !parts.goaded,
       ),
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
@@ -878,7 +885,8 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.tapped !== undefined ||
           parts.token !== undefined ||
           parts.attacking ||
-          parts.modified
+          parts.modified ||
+          parts.goaded
         )
           return fail(c, at);
         const types = optional(typeWords(CARD_TYPES, false), [] as string[])(c, modifiers.pos);
@@ -1053,6 +1061,7 @@ export function graveyardPhrase(
       !parts.attacking &&
       !parts.historic &&
       !parts.modified &&
+      !parts.goaded &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
     if (!plain || left.length === 0) return fail(ctx, pos);

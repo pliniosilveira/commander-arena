@@ -303,6 +303,7 @@ describe('supported feature gate', () => {
         'attackBatch',
         'attacks',
         'becomesBlocked',
+        'becomesMonstrous',
         'becomesTapped',
         'becomesUntapped',
         'becomesTarget',

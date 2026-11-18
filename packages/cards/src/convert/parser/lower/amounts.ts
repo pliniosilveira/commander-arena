@@ -247,6 +247,13 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
     }
+    case 'cardsInHandOfAffected': {
+      // CR 402.1: the engine reads each player's own hand as the damage is dealt to them; the damage lowering refuses it where the recipients are not players, and
+      // `validateCard` refuses it in any other amount.
+      const blocked = needs('cardsInHandOfAffected');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
+    }
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -591,6 +598,7 @@ function staticCannotRead(f: IrNoun['filter']): boolean {
     f.manaValueX === true ||
     f.controllerDamagedBySource === true ||
     f.modified === true ||
+    f.goaded === true ||
     f.keywords !== undefined ||
     f.notKeywords !== undefined ||
     opponentsObjects ||

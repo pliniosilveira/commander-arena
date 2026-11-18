@@ -332,7 +332,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - `exileOnResolve` is for an instant or sorcery card cast as a spell; an Adventure, a flashback spell and a spell with "exile it instead" get no return. It names the end step and the hand only.
 - Rebound (CR 702.88) is not built.
 - "Commander" is read before a type in the permanent phrases only ("commander creatures you control"); "target commander creature", "commander" in spell, cost and condition phrases, and a count in a static ability are not read.
-- Monstrosity: "Monstrosity X" (CR 701.37c), the trigger "When ~ becomes monstrous", the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read.
+- Monstrosity: "Monstrosity X" (CR 701.37c), the condition "if ~ is monstrous" and the filter "monstrous creatures" are not read.
 - Spells cast this turn by kind: only card types; "noncreature", a color, a subtype ("a Dragon spell"), a count with a kind ("two or more creature spells"), an opponent's spells and the order ("your second spell") are not read.
 - "Another target creature" is read for a bite whose source is a target (the slot before it); for the creature of a trigger or for a list of two such nouns it is refused.
 - "Target creature or Vehicle": one card type and one subtype only; a list of three ("creature, Vehicle, or Elf") and "or" between a subtype and a modifier ("nonartifact creature or Vehicle") are not read.

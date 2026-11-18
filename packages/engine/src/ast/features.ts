@@ -367,6 +367,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'permanentSacrificed',
     'becomesTapped',
     'becomesUntapped',
+    // CR 701.37: "When this creature becomes monstrous".
+    'becomesMonstrous',
     'discarded',
     'diesBatch',
     'entersBatch',
@@ -834,6 +836,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'commander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
+    // CR 701.15b: "a goaded creature" (`ObjectFilter.goaded`).
+    'goaded',
   ],
   // Conditions of `entersTapped.unless` (CR 614.12), of the `conditional` effect (CR 608.2c) and of
   // the intervening "if" (CR 603.4): counts of permanents and opponents, "was kicked" (CR 702.33d),
@@ -1072,6 +1076,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLostThisWay',
     // D-365: "the life that player lost this turn" (CR 119.3), read for each player a `loseLife` affects.
     'lifeLostThisTurn',
+    // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
+    'cardsInHandOfAffected',
     'lifeGainedThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
@@ -1505,6 +1511,8 @@ export const SELECTOR_KINDS = [
   'commander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
   'modified',
+  /** "A goaded creature" (CR 701.15b): the engine's `ObjectFilter.goaded`. */
+  'goaded',
 ] as const;
 export type SelectorKind = (typeof SELECTOR_KINDS)[number];
 
@@ -1793,6 +1801,8 @@ export const AMOUNT_KINDS = [
   'lifeLostThisWay',
   /** "The life that player lost this turn" (CR 119.3, D-365): the engine's `lifeLostThisTurn`, the whole amount of a `loseLife`. */
   'lifeLostThisTurn',
+  /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
+  'cardsInHandOfAffected',
   'lifeGainedThisTurn',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
@@ -2113,6 +2123,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   permanentSacrificed: true,
   becomesTapped: true,
   becomesUntapped: true,
+  becomesMonstrous: true,
   discarded: true,
   diesBatch: true,
   entersBatch: true,

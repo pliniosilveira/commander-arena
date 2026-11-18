@@ -374,6 +374,9 @@ function occurrences(
       return event.kind === 'dieRolled' && event.result === event.sides
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
+    case 'becomesMonstrous':
+      // CR 701.37a, 701.37b: the permanent that became monstrous.
+      return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -707,6 +710,7 @@ function matches(
       return true;
     case 'dealtDamage':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
       return matchesWhat(state, trigger.what, subject, candidate);
@@ -896,6 +900,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'discarded':
     case 'tapped':
     case 'untapped':
+    case 'becameMonstrous': // CR 701.37: "When this creature becomes monstrous"
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':

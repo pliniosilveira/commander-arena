@@ -148,6 +148,15 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     get modified() {
       return isModified(state, obj);
     },
+    // CR 701.15b: only a filter that says "goaded" reads it.
+    get goaded() {
+      // The effects of a `goad` (`rules/goad.ts` reads the same ones; select.ts cannot import it, it imports this file) and the static "is goaded" of an Aura (D-639, issue 201).
+      return (
+        state.continuousEffects.some(
+          (e) => e.change.kind === 'goaded' && e.objects.includes(obj.id),
+        ) || d.goadedBy.length > 0
+      );
+    },
     // Only a filter that compares mana value reads it.
     get manaValue() {
       return manaValueOfCost(d.manaCost, obj);

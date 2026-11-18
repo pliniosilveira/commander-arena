@@ -457,6 +457,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes untapped`;
     }
+    case 'becomesMonstrous': {
+      // CR 701.37a, 701.37b: "Whenever this creature becomes monstrous".
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} becomes monstrous`;
+    }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =

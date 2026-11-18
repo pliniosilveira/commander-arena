@@ -45,6 +45,8 @@ export interface FilterSubject {
   readonly commander?: boolean;
   /** Whether the permanent is modified (`modified`, D-416, CR 700.9); left out where the caller does not know, which fails the test closed. */
   readonly modified?: boolean;
+  /** Whether the permanent is goaded (`goaded`, CR 701.15b); left out where the caller does not know, which fails the test closed. */
+  readonly goaded?: boolean;
 }
 
 /** D-111: whether `value` satisfies the comparison; an object with no such value satisfies none. */
@@ -289,6 +291,8 @@ export function matchesFilterWith(
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.
   if (filter.modified === true && d.modified !== true) return false;
+  // CR 701.15b: "goaded": a creature some player's goad effect still holds.
+  if (filter.goaded === true && d.goaded !== true) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
     return false;
   }
