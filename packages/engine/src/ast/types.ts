@@ -2854,6 +2854,13 @@ export type Effect =
        * anyway still does.
        */
       readonly tapped?: true;
+      /**
+       * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-638, Furygale Flocking): the controller of the effect creates
+       * `count` tokens for each opponent still in the game (in turn order from the next player), and each token is required to attack the player it was made for this turn if able
+       * (the requirement of `mustAttackPlayer`, as Encore's tokens have it; it does not give haste, and a token that cannot attack that player, or is not able to attack, is not
+       * required to). `moved` names all of the tokens afterwards. The token is a custom token whose abilities are keywords, so it asks nothing as it enters; no `controller`.
+       */
+      readonly forEachOpponent?: { readonly mustAttack: true };
     }
   /**
    * CR 701.3 (Attach): `object` (an Aura or Equipment) becomes attached to `to`. If it cannot be

@@ -345,4 +345,85 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "~ deals 4 damage divided as you choose among any number of targets. Tap two target permanents. Create a 4/4 blue and red Elemental creature token. Draw two cards.
+  //  {U/R}{U/R}, Discard this card: Create a Treasure token."
+  singleFace({
+    name: 'SYNTHETIC Opus Burst',
+    manaCost: ['6', 'U', 'R'],
+    types: ['instant'],
+    colors: ['U', 'R'],
+    colorIdentity: ['U', 'R'],
+    oracleText:
+      'This spell deals 4 damage divided as you choose among any number of targets. Tap two target permanents. Create a 4/4 blue and red Elemental creature token. Draw two cards.\n{U/R}{U/R}, Discard this card: Create a Treasure token.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['U/R', 'U/R'] }, { kind: 'discardThis' }],
+        effect: { kind: 'createToken', token: { kind: 'preset', preset: 'Treasure' }, count: 1 },
+        functionsIn: 'hand',
+      },
+    ],
+    spell: {
+      targets: [
+        { id: 't1', what: { kind: 'anyTarget' }, divide: { total: 4 } },
+        { id: 't2', what: { kind: 'object', filter: { zone: 'battlefield' } }, min: 2, max: 2 },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'dealDividedDamage', to: { kind: 'target', id: 't1' } },
+          { kind: 'tap', objects: { kind: 'target', id: 't2' } },
+          {
+            kind: 'createToken',
+            token: { kind: 'custom', definition: elemental(4, 4) },
+            count: 1,
+          },
+          { kind: 'draw', player: { kind: 'you' }, count: 2 },
+        ],
+      },
+    },
+  }),
+  // "This spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nFor each opponent, create two 3/3 blue and red Elemental creature tokens with flying
+  //  that attack that opponent this turn if able. They gain haste until end of turn."
+  singleFace({
+    name: 'SYNTHETIC Flocking Gale',
+    manaCost: ['8', 'R', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'This spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nFor each opponent, create two 3/3 blue and red Elemental creature tokens with flying that attack that opponent this turn if able. They gain haste until end of turn.',
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'costReduction',
+          spells: { kind: 'this' },
+          amount: {
+            kind: 'countOf',
+            filter: { zone: 'graveyard', controller: 'you', anyOf: INSTANT_OR_SORCERY },
+          },
+        },
+      },
+    ],
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          {
+            kind: 'createToken',
+            token: { kind: 'custom', definition: elemental(3, 3, [FLYING]) },
+            count: 2,
+            forEachOpponent: { mustAttack: true },
+          },
+          {
+            kind: 'grantKeyword',
+            objects: MOVED,
+            keyword: { kind: 'haste' },
+            duration: 'untilEndOfTurn',
+          },
+        ],
+      },
+    },
+  }),
 ];

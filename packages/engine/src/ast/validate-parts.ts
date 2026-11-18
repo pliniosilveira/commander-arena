@@ -3705,6 +3705,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
+      // D-638 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
+      // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
+      if (e.forEachOpponent !== undefined) {
+        if (e.forEachOpponent?.mustAttack !== true) {
+          issue(out, `${path}.forEachOpponent`, 'forEachOpponent is { mustAttack: true }');
+        }
+        if (e.controller !== undefined) {
+          issue(
+            out,
+            `${path}.controller`,
+            'the tokens made for each opponent are the controller’s own',
+          );
+        }
+        if (
+          e.token?.kind !== 'custom' ||
+          !(e.token.definition?.abilities ?? []).every((a) => a?.kind === 'keyword')
+        ) {
+          issue(
+            out,
+            `${path}.token`,
+            'tokens made for each opponent are a custom token with keyword abilities only',
+          );
+        }
+      }
       break;
     case 'counterUnlessPays':
       // CR 702.21a, 701.6: "counter that spell or ability" of a trigger about a spell or ability,

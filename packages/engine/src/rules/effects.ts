@@ -54,6 +54,7 @@ import {
 } from './effect-support';
 import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
+import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
 import { runEnterToken } from './enter-token';
 import { markExileOnResolve } from './exile-on-resolve';
@@ -1812,6 +1813,26 @@ function runEffect(
       // the resolution stopping for each answer.
       const front: Instruction[] = [];
       let created: ObjectId[] = [];
+      // CR 111.2, 508.1d, 101.4 (D-638): "For each opponent, create two 3/3 tokens that attack that opponent this turn if able": the controller makes them for each opponent, in
+      // turn order, the replacement effects of each creation settled for that opponent's tokens, each of which is required to attack the player it was made for.
+      if (effect.forEachOpponent !== undefined) {
+        for (const opponent of resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets)) {
+          const made = makeSettled(
+            next,
+            res,
+            res.controller,
+            [{ definition, count, original: true }],
+            effect.tapped === true,
+            flow,
+          );
+          if (made.kind === 'asked') return asking(state, made);
+          next = requireAttackingPlayer(made.state, made.created, opponent);
+          events.push(...made.events);
+          front.push(...made.front);
+          created = [...created, ...made.created];
+        }
+        return { ...done(next, events, front), lastMoved: created };
+      }
       for (const seat of creators) {
         // D-221 (CR 616.1): the replacement effects of the creation are settled with the creator's answers; then the tokens are made, those that ask (D-185:
         // a choice, riot, devour, a land copy's question) one instruction each.
