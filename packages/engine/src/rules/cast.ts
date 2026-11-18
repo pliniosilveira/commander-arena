@@ -423,9 +423,11 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
   if (kickerCost !== null && hasKickedTargets(faceOf(before, spell))) {
     const overloaded = alternative === 'overload';
     const only = casting.flashTargets ?? null;
-    const kickedOk = asksKicker && targetsPossible(before, seat, spell, overloaded, true, only);
+    const kickedOk =
+      asksKicker &&
+      targetsPossible(before, seat, spell, overloaded, true, only, alternative === 'bestow');
     const unkickedOk =
-      targetsPossible(before, seat, spell, overloaded, false, only) &&
+      targetsPossible(before, seat, spell, overloaded, false, only, alternative === 'bestow') &&
       canPayRequest(before, seat, spell, { ...request, kicked: false });
     if (kickedOk && !unkickedOk) {
       return toReplicate(

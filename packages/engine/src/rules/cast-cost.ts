@@ -118,6 +118,7 @@ export function isNamedAlternative(
     alternative === 'overload' ||
     alternative === 'evoke' ||
     alternative === 'dash' ||
+    alternative === 'bestow' ||
     alternative === 'spectacle' ||
     alternative === 'escape' ||
     alternative === 'harmonize' ||

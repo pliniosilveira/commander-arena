@@ -4,9 +4,10 @@
 // cannot be paid and the card has an enters ability worth the mana; Dash when the ordinary cast cannot be
 // paid, or in the first main phase when nothing untapped can block the creature. Every cast it makes is one
 // the engine lists (the agent never sends an option the engine did not offer).
-import type { Action } from '@commander-arena/engine';
+import type { Action, NamedAlternativeKind } from '@commander-arena/engine';
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
+import { chooseNamedAlternative } from '../src/casual-alt-costs';
 import { CasualAgent } from '../src/index';
 import { CTX } from './helpers';
 
@@ -165,6 +166,47 @@ describe('Dash', () => {
       .at('postcombatMain', { active: 0 })
       .build();
     expect(await answer(g)).toEqual({ kind: 'castSpell', object: g.id(RAIDER) });
+  });
+});
+
+describe('Bestow', () => {
+  const SPIRIT = 'SYNTHETIC Bestow Spirit'; // {1}{W}{W}, bestow {3}{W}
+
+  test('the ordinary cast is on offer: the creature is cast', async () => {
+    const g = scenario()
+      .seat(0)
+      .hand(SPIRIT)
+      .battlefield('Plains', { count: 5 })
+      .battlefield('Grizzly Bears')
+      .seat(1)
+      .build();
+    expect(await answer(g)).toEqual({ kind: 'castSpell', object: g.id(SPIRIT) });
+  });
+
+  test('the ordinary cast not worth making and a creature of its own: bestowed; with only an opposing creature: not', () => {
+    const own = scenario()
+      .seat(0)
+      .hand(SPIRIT)
+      .battlefield('Plains', { count: 5 })
+      .battlefield('Grizzly Bears')
+      .seat(1)
+      .build();
+    const theirs = scenario()
+      .seat(0)
+      .hand(SPIRIT)
+      .battlefield('Plains', { count: 5 })
+      .seat(1)
+      .battlefield('Grizzly Bears')
+      .build();
+    const offered = new Set<NamedAlternativeKind>(['bestow']);
+    const viewOwn = own.view(0);
+    const viewTheirs = theirs.view(0);
+    const cardOwn = viewOwn.seats[0]?.hand?.find((c) => c.name === SPIRIT);
+    const cardTheirs = viewTheirs.seats[0]?.hand?.find((c) => c.name === SPIRIT);
+    if (cardOwn === undefined || cardTheirs === undefined) throw new Error('no card');
+    expect(chooseNamedAlternative(viewOwn, cardOwn, offered, false)).toBe('bestow');
+    expect(chooseNamedAlternative(viewOwn, cardOwn, offered, true)).toBeUndefined();
+    expect(chooseNamedAlternative(viewTheirs, cardTheirs, offered, false)).toBeUndefined();
   });
 });
 

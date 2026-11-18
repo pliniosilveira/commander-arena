@@ -23,6 +23,7 @@ import { allocateTimestamp, patchObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { isBestowedAura } from './derive-alt';
 import { typeViewOf } from './derive-view';
 import { playerHasProtectionFrom } from './player-protection';
 import { hasProtectionFrom } from './protection';
@@ -57,6 +58,15 @@ export function auraTargetSpec(face: CardFace | null): TargetSpec | null {
     what: { kind: 'object', filter: { ...enchant.filter, zone: 'battlefield' } },
   };
 }
+
+/**
+ * The target slot of a spell cast for its bestow cost (CR 702.103b, rules text not checked): "enchant creature", like any Aura spell's. Its other target slots, if its card
+ * had any, are not changed.
+ */
+export const BESTOW_TARGET_SPEC: TargetSpec = {
+  id: ENCHANT_TARGET_ID,
+  what: { kind: 'object', filter: { types: ['creature'], zone: 'battlefield' } },
+};
 
 /** The enchant filter of a permanent that is an Aura now, or null (also null for an Aura that enchants a player). */
 function enchantFilterOf(state: GameState, aura: GameObject): ObjectFilter | null {
@@ -190,6 +200,8 @@ export function illegalAuras(state: GameState): GameObject[] {
     const obj = state.objects[id];
     // The subtypes are the ones layers 1, 4 and 5 leave, which `derive` copies as they are: no later layer changes them.
     if (obj === undefined || !typeViewOf(state, obj).subtypes.includes('Aura')) continue;
+    // CR 702.103f: a bestowed Aura whose host is gone or illegal becomes unattached and a creature instead (`illegalAttachments`).
+    if (isBestowedAura(obj)) continue;
     // CR 303.4c, 704.5m (D-629): an Aura that enchants a player is legal while that player is in the game and has no protection from it; attached to an object, or
     // to no one, it is illegal. An Aura that enchants objects and is attached to a player is illegal too.
     if (enchantsPlayers(state, obj)) {
@@ -221,9 +233,16 @@ export function illegalAttachments(
     const obj = state.objects[id];
     if (obj === undefined || obj.attachedTo === null) continue;
     const d = typeViewOf(state, obj);
-    if (d.subtypes.includes('Aura')) continue; // CR 704.5m: it goes to the graveyard instead
     const host = state.objects[obj.attachedTo];
     const hostIsThere = host?.zone === 'battlefield';
+    if (isBestowedAura(obj)) {
+      // CR 702.103f (bestow, rules text not checked): attached to something it may not enchant, it becomes unattached and stops being an Aura; it is not put into the graveyard.
+      if (host === undefined || !canAttach(state, obj, host)) {
+        out.push({ object: obj, from: obj.attachedTo, reason: hostIsThere ? 'illegal' : 'left' });
+      }
+      continue;
+    }
+    if (d.subtypes.includes('Aura')) continue; // CR 704.5m: it goes to the graveyard instead
     if (!d.subtypes.includes('Equipment') || d.types.includes('creature')) {
       out.push({ object: obj, from: obj.attachedTo, reason: hostIsThere ? 'illegal' : 'left' });
     } else if (host === undefined || !canAttach(state, obj, host)) {

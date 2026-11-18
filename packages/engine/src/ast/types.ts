@@ -1240,6 +1240,7 @@ export type NamedAlternativeKind =
   | 'overload'
   | 'evoke'
   | 'dash'
+  | 'bestow'
   | 'spectacle'
   | 'escape'
   | 'harmonize'
@@ -1255,7 +1256,7 @@ export type NamedAlternativeKind =
  * cast). Each is the new object's own: any zone change makes a new object without it (CR 400.7).
  */
 export type PermanentAlternativeKind =
-  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape'>
+  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow'>
   | 'unearth'
   | 'suspend';
 
@@ -1277,6 +1278,10 @@ export type PermanentAlternativeKind =
  *   permanent has haste as long as its dash cost was paid, and a delayed triggered ability created as
  *   the spell resolves returns it to its owner's hand at the beginning of the next end step (the engine
  *   adds both: `GameObject.alt`, `GameState.delayedTriggers`, `rules/derive-alt.ts`).
+ * - `bestow` (CR 702.103, not checked against the rules text): the `cost` is paid instead of the mana cost of a creature spell; the spell is an Aura enchantment
+ *   spell, not a creature spell, with "enchant creature" (it targets a creature), and if that target is illegal as it resolves it resolves as a creature instead (CR 702.103e). The
+ *   permanent is an Aura enchantment, not a creature, only while it is attached, and a bestow permanent that becomes unattached stays as a creature (CR 702.103f). The engine reads
+ *   all of it from `GameObject.alt` and `attachedTo` (`rules/derive-alt.ts`, `rules/attach.ts`), so the card lists only the cost.
  * - `spectacle` (D-124, CR 702.137a): the `cost` is paid instead of the mana cost of a spell, but only if an
  *   opponent lost life this turn. The engine reads that condition itself (`GameState` seats'
  *   `lifeLostThisTurn`, at the first casting step), so the card lists only the cost; a `condition` of the
@@ -5235,6 +5240,11 @@ export type StaticSubject =
       readonly types?: readonly CardType[];
       /** The host must have every one of these supertypes ("Enchanted legendary creature"). */
       readonly supertypes?: readonly Supertype[];
+      /**
+       * "~ and enchanted creature each get +1/+1" (a bestow card, CR 702.103): the permanent the ability belongs to as well as the one it is attached to, whatever it is
+       * (it is a creature when it is not attached). Only for a modification of power and toughness (`validateCard` refuses the rest).
+       */
+      readonly andThis?: true;
     }
   | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean }
   /**

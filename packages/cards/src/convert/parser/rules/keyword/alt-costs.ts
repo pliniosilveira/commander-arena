@@ -120,6 +120,32 @@ export const KEYWORD_DASH = defineRule<readonly IrKeyword[]>({
 });
 
 /**
+ * `keyword.bestow`: "Bestow {2}{W}{W}" (CR 702.103a, rules text not available to check: "You may cast this card by paying [cost] rather than its mana cost. If you do, it's an Aura
+ * enchantment spell with enchant creature"; it is a creature again when it is not attached). The engine owns all of it: the Aura spell and its target, the creature it
+ * becomes when the target is illegal or the permanent is unattached (`rules/derive-alt.ts`, `rules/attach.ts`). Only a plain mana cost, on a creature card
+ * (`validateCard`).
+ */
+export const KEYWORD_BESTOW = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.bestow',
+  family: 'keyword',
+  leading: ['bestow'],
+  cites: ['CR 702.103a (Bestow)', 'CR 118.9 (Alternative Costs)', 'CR 601.2b (Casting Spells)'],
+  examples: ['Bestow {2}{W}{W}', 'Bestow {3}{W}', 'Bestow {5}{G}', 'bestow {4}{B}'],
+  rejects: [
+    'Bestow',
+    'Bestow {X}{W}',
+    'Bestow {W/U}',
+    'Bestow {2}{W}.',
+    'Bestow—Pay 3 life.',
+    'Bestow {2}{W}, bestow {3}',
+    'Bestow {2}{W}, flying',
+    'Bestowed {2}{W}',
+    'Dash {2}{W}',
+  ],
+  parse: altCostKeyword('keyword.bestow', 'bestow'),
+});
+
+/**
  * `keyword.spectacle`: "Spectacle {R}" (CR 702.137a: "You may cast this spell by paying [cost] rather than its
  * mana cost if an opponent lost life this turn"). The engine reads the condition, at the first casting step, so
  * the line is the cost and nothing else. 11 cards of the owner's run.
@@ -326,6 +352,7 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_OVERLOAD,
   KEYWORD_EVOKE,
   KEYWORD_DASH,
+  KEYWORD_BESTOW,
   KEYWORD_SPECTACLE,
   KEYWORD_UNEARTH,
   KEYWORD_ENCORE,

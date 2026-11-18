@@ -129,6 +129,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.overload': asIs,
   'keyword.evoke': asIs,
   'keyword.dash': asIs,
+  'keyword.bestow': asIs,
   // Stage P23: Spectacle, Unearth and Escape are lines of their own.
   'keyword.spectacle': asIs,
   'keyword.unearth': asIs,
@@ -185,6 +186,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P20: power and toughness from a count; the statements are lines of their own.
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
+  'static.self-and-enchanted-pt-count': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),

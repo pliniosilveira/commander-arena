@@ -79,6 +79,11 @@ export function parseFaceText(
       ? joinDieTableLines(joinUntapLines(joinReferenceLines(joinInsteadLines(split))))
       : split;
   const ruleSet = buildRuleSet(rules);
+  // CR 702.103a: a card with bestow is an Aura while it is attached, so its abilities may speak of "enchanted creature".
+  const hostSubtypes =
+    faceSubtypes.includes('Aura') || !lines.some((l) => /^bestow \{/iu.test(l))
+      ? faceSubtypes
+      : [...faceSubtypes, 'Aura'];
   const namedInQuotes = namesItselfInQuotes(oracleText, options);
   const selfName = tokenSelfName(oracleText, options);
   const scope = { targetCount: 0 };
@@ -105,7 +110,7 @@ export function parseFaceText(
       rules: ruleSet,
       face,
       faceTypes,
-      faceSubtypes,
+      faceSubtypes: hostSubtypes,
       scope,
       name: options.name,
       namedInQuotes,
