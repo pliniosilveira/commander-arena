@@ -89,7 +89,7 @@ export const EFFECT_EXILE_TWO_PILES = defineRule<Clauses>({
 export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   id: 'effect.cast-from-among',
   family: 'effect',
-  leading: ['you'],
+  leading: ['you', 'cast'],
   cites: [
     'CR 608.2g (Resolving Spells and Abilities)',
     'CR 118.9 (Alternative Costs)',
@@ -100,6 +100,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast up to two spells from among the other cards exiled this way without paying their mana costs',
     'you may cast any number of spells from among those cards without paying their mana costs',
     'You may cast a spell from among them without paying its mana cost',
+    'cast up to two spells from among the other cards exiled this way without paying their mana costs',
   ],
   rejects: [
     'you may cast up to three spells from among them without paying their mana costs',
@@ -110,7 +111,6 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast a spell from among them this turn without paying its mana cost',
     'you may cast a spell from among cards in your hand without paying its mana cost',
     'you may cast a spell from your graveyard without paying its mana cost',
-    'cast a spell from among them without paying its mana cost',
     'you may cast a spell from among them by paying its mana cost',
     'you may cast a spell from among them without paying its mana cost and draw a card',
     'you may cast one spell from among them without paying its mana cost',
@@ -118,16 +118,18 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const id = 'effect.cast-from-among';
     const head = pattern(
-      /you may cast (a spell|up to two spells|any number of spells) from among (them|those cards|the other cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
+      /(you may )?cast (a spell|up to two spells|any number of spells) from among (them|those cards|the other cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!head.ok) return head;
-    const [, count = '', from = '', cost = ''] = head.value;
+    const [, may = '', count = '', from = '', cost = ''] = head.value;
     const single = count.toLowerCase() === 'a spell';
     // "a spell" goes with "its mana cost", the plural spells with "their mana costs".
     if (single !== (cost.toLowerCase() === 'its mana cost')) return fail(ctx, pos);
     const span = { start: pos, end: head.pos };
     const args: Record<string, IrAmount | ReturnType<typeof flag>> = {
       other: flag(id, from.toLowerCase() === 'the other cards exiled this way', span),
+      // "you may" said inside the rule, or by the sentence before the rule (a trigger's "you may ..." is read as the sentence's own).
+      may: flag(id, may !== '', span),
     };
     const lower = count.toLowerCase();
     if (lower === 'up to two spells') args.max = number(2, span);

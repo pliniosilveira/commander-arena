@@ -38,9 +38,13 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
   head: 'castFromAmong',
   id: 'lower.cast-from-among',
   needs: ['effect:castFree', 'selector:moved'],
+  acceptsOptional: true,
   lower(clause, ctx) {
     const other = arg(clause, 'other');
-    if (other?.kind !== 'flag') return failure(clause);
+    const may = arg(clause, 'may');
+    if (other?.kind !== 'flag' || may?.kind !== 'flag') return failure(clause);
+    // The engine asks the controller which spells to cast and lets them stop, which is a "may": a cast with no "you may" would be a duty, and is not lowered.
+    if (!may.value && !clause.optional) return failure(clause);
     // "The other cards exiled this way" are the cards the opponent did not choose; "them" and "those cards" are the cards an instruction exiled.
     const before = ctx.lastEffectKind;
     if (other.value ? before !== 'opponentChoosesCard' : before === null || !EXILES_CARDS.includes(before)) {
