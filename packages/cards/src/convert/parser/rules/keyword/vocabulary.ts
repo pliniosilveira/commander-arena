@@ -45,6 +45,8 @@ export type SimpleKeyword = Extract<
   | 'improvise'
   | 'delve'
   | 'cascade'
+  | 'demonstrate'
+  | 'retrace'
   | 'readAhead'
   | 'dethrone'
   | 'myriad'
@@ -116,6 +118,9 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['improvise', 'improvise'],
   ['delve', 'delve'],
   ['cascade', 'cascade'],
+  // Prismari deck, group 3 (issue 87, D-652, D-653; CR 702.144a, 702.81a): printed abilities with no parameter, never granted (the engine's GRANTABLE_KEYWORDS has neither).
+  ['demonstrate', 'demonstrate'],
+  ['retrace', 'retrace'],
   // Keyword batch 4 (D-151; stage P34): printed abilities, never granted (the engine's `GRANTABLE_KEYWORDS` has none of them).
   ['read ahead', 'readAhead'],
   ['dethrone', 'dethrone'],
