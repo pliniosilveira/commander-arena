@@ -797,19 +797,10 @@
     "17e905ca-c0bd-473d-95a7-e180ba5fea43": {
       "name": "Mirror Entity",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lose-hexproof-shroud"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fc0da47b"
+      "ast": "48dd03ac"
     },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
@@ -7857,7 +7848,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 620,
+      "supported": 621,
       "total": 653
     }
   }

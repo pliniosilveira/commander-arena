@@ -2692,6 +2692,12 @@ export type Effect =
       readonly subtypes?: readonly Subtype[];
       readonly additive?: true;
       /**
+       * "Creatures you control gain all creature types" (CR 205.3m, 613.1d, 702.73a): every creature type is added to the objects, in addition to the ones they have
+       * (so it is `additive` by nature, the flag is not set with it) and with no `types` or `subtypes` of its own. The same layer 4 effect a changeling is, for the
+       * objects the selector named as the effect began (CR 611.2c).
+       */
+      readonly allCreatureTypes?: true;
+      /**
        * "Each noncreature artifact you control becomes a 4/4 artifact creature until end of turn" (D-217, CR 613.4b, 611.2c): the same permanents also have
        * these base power and toughness (a `setPt` of the objects the selector named as the effect began: the selector is not read again, so "noncreature" does
        * not stop matching once they are creatures). Applies in the same duration.

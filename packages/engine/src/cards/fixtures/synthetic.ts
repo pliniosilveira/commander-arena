@@ -12,6 +12,7 @@ import { SYNTHETIC_ABILITY_LIST } from './synthetic-abilities';
 import { SYNTHETIC_ABILITY_COSTS_LIST } from './synthetic-ability-costs';
 import { SYNTHETIC_ACTIVATES_ABILITY_LIST } from './synthetic-activates-ability';
 import { SYNTHETIC_ADAMANTOISE_LIST } from './synthetic-adamantoise';
+import { SYNTHETIC_ALL_TYPES_XX_LIST } from './synthetic-all-types-xx';
 import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
 import { SYNTHETIC_ANGELS_SHAPES_LIST } from './synthetic-angels-shapes';
@@ -468,6 +469,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,
+  ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
   ...SYNTHETIC_POWER_ABOVE_TARGET_LIST,
   ...SYNTHETIC_RETURN_CONTROL_LIST,

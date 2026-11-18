@@ -14,6 +14,7 @@
  * - CR 514.2: the cleanup step removes the ones that last until end of turn.
  */
 import type { Ability, Effect, PtAmount } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { allocateTimestamp } from '../state/ops';
@@ -75,6 +76,10 @@ function changeOf(
     case 'loseHexproofShroud':
       return { kind: 'loseHexproofShroud' };
     case 'setTypes':
+      // CR 205.3m, 613.1d: "gain all creature types" adds every creature type to what the objects have.
+      if (node.allCreatureTypes === true) {
+        return { kind: 'setTypes', subtypes: CREATURE_TYPES, additive: true };
+      }
       return {
         kind: 'setTypes',
         ...(node.types === undefined ? {} : { types: node.types }),

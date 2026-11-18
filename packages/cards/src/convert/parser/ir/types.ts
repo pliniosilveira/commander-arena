@@ -960,6 +960,8 @@ export interface IrBasePt extends IrNode {
   readonly kind: 'basePt';
   readonly power: number;
   readonly toughness: number;
+  /** "base power and toughness X/X" (CR 107.3, 613.4b): the X of the ability; `power` and `toughness` are 0 and are not read. */
+  readonly x?: true;
 }
 
 /**
