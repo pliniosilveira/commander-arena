@@ -121,6 +121,20 @@ export const SYNTHETIC_PRISMARI_G3_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Demonstrate. ~ deals 2 damage to any target." (copies with targets, to test the new targets of each copy)
+  singleFace({
+    name: 'SYNTHETIC Demo Bolt',
+    manaCost: ['1', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Demonstrate. SYNTHETIC Demo Bolt deals 2 damage to any target.',
+    abilities: [DEMONSTRATE],
+    spell: {
+      targets: [{ id: 't1', what: { kind: 'anyTarget' } }],
+      effect: { kind: 'dealDamage', amount: 2, to: { kind: 'target', id: 't1' } },
+    },
+  }),
   // "Demonstrate. Create a token that's a copy of target permanent you control."
   singleFace({
     name: 'SYNTHETIC Copy Technique',
