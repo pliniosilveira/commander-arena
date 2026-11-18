@@ -65,6 +65,8 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
   const common = [
     // D-407 (CR 508.1a): "can't attack", said of the permanent an Aura or Equipment is attached to ("can't attack or block" is `restrictionEffects`).
     ...(subject === 'attached' ? [phrase("can['’]t attack", 'cantAttack')] : []),
+    // Issue 201 (Shiny Impetus, CR 701.15): "is goaded", said of the permanent an Aura is attached to.
+    ...(subject === 'attached' ? [phrase('is goaded', 'goaded')] : []),
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
     BLOCKED_BY,
@@ -113,4 +115,4 @@ export function restrictionEffects(subject: RestrictionSubject): Parser<readonly
 }
 
 /** What can follow " and " to start another restriction: a lookahead, so a failure stays at " and". */
-export const AND_RESTRICTION = /\sand (?=can['’]t |attacks? |doesn['’]t )/i;
+export const AND_RESTRICTION = /\sand (?=can['’]t |attacks? |doesn['’]t |is goaded)/i;

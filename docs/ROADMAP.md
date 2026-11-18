@@ -542,7 +542,8 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - The condition `sacrificedAsCost` of an activated ability is read from its resolution; an intervening "if" of a triggered ability cannot read what an activated ability sacrificed.
 - The casual agent never activates such an ability (a sacrifice outlet it cannot judge); the random and heuristic agents may, and the soak style `sacrificeMana` plays it legally.
 - The Scryfall rulings of Radiant Lotus were not fetched (the host is blocked in a cloud session): the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. The Oracle text is the card of `golden.jsonl` taken from issue 258.
-- **The five most requested cards (D-630).** Their rulings were not fetched (the `Scryfall lookup` workflow of D-294 can); "you may exile target ..." is read only as "you may exile up to one other target ..." after a test of how the spell was cast; Explore's extra land is for its own turn only (CR 305.3).
+- **The five most requested cards (PR #277).** Their rulings were not fetched (the `Scryfall lookup` workflow can); "you may exile target ..." is read only as "you may exile up to one other target ..." after a test of how the spell was cast; Explore's extra land is for its own turn only (CR 305.3).
+- **Seven more requested cards (PR #280).** Their rulings were not fetched (the `Scryfall lookup` workflow can). Goad is built only as a static ability of an Aura or an Equipment (CR 701.15): "goad target creature" (until your next turn) needs a duration of its own. The AI never moves counters with Forgotten Ancient (it keeps them), and the question is asked after the trigger's own "you may". The test DSL has two seats, so goad with three or more players is not tested.
 
 
 ## The Prismari deck, group 1 (issue 87, D-638 to D-645)

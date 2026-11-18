@@ -477,6 +477,10 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'goaded':
+      // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
+      checkStaticSubject(s.subject, `${path}.subject`, out);
+      break;
     case 'costReduction':
       checkCostReduction(s, path, out);
       break;

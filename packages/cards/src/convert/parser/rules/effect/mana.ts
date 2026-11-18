@@ -115,6 +115,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'CR 903.4 (Commander)',
   ],
   examples: [
+    // Issue 184 (Thriving Isle): a fixed color, or the one the permanent chose.
+    'add {U} or one mana of the chosen color',
     'add {G}',
     'add {C}{C}',
     'add {W}{U}{B}{R}{G}',
@@ -148,6 +150,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add one mana of the chosen type',
     'add one mana of the chosen colors',
     'add {G} or {G}',
+    'add {U} or one mana of the chosen colors',
+    'add {U} or two mana of the chosen color',
+    'add {U}{B} or one mana of the chosen color',
     'add two mana of any color',
     'add four mana of any one color',
     'add two mana of one color',
@@ -185,6 +190,14 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
         literal('add '),
         spanned(
           choice<IrManaSpec['what']>(
+            // Issue 184 (Thriving Isle, CR 106.1, 607.2d): "{U} or one mana of the chosen color", before "{U} or {B}" and the fixed symbols that start the same way.
+            map(
+              pattern(/\{([WUBRG])\} or one mana of the chosen color(?![\p{L}\p{N}])/iu),
+              (m) => ({
+                kind: 'chosenColor' as const,
+                or: (m[1] ?? 'W').toUpperCase() as 'W' | 'U' | 'B' | 'R' | 'G',
+              }),
+            ),
             // The choice first: "{U} or {B}" starts like the fixed symbols "{U}".
             map(MANA_CHOICE, (colors) => ({ kind: 'oneOf' as const, colors })),
             // Before the symbols: "{R}{R}, {R}{W}, or {W}{W}" starts like "{R}{R}".

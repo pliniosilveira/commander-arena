@@ -372,9 +372,9 @@ const CHOSEN: readonly Line[] = [
   },
   {
     kind: 'enchantment',
-    text: 'As ~ enters, choose a color other than white.',
-    expect: no(', choose a color other than white.', 'replacement.as-enters-choose'),
-    note: 'replay: part of the Thriving lands; only the plain question is built',
+    text: 'As ~ enters, choose a color other than gold.',
+    expect: no(', choose a color other than gold.', 'replacement.as-enters-choose'),
+    note: 'SYNTHETIC; "other than" a color is built since PR #280 (the Thriving lands), but gold is not a color',
   },
   {
     kind: 'enchantment',

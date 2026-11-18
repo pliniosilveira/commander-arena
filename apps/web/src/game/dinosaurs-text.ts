@@ -70,7 +70,9 @@ export function productionWords(production: ManaProduction): string | null {
       return "one mana of any color in your commander's color identity";
     case 'chosenColor':
       // D-149 (CR 106.1, 614.12): "Add one mana of the chosen color".
-      return 'one mana of the chosen color';
+      return production.or === undefined
+        ? 'one mana of the chosen color'
+        : `{${production.or}} or one mana of the chosen color`;
     case 'anyCombination':
       // D-151 (CR 106.1b): "Add two mana in any combination of colors".
       return anyCombinationWords(production.count, production.distinct === true);

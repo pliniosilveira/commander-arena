@@ -612,7 +612,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         ? failure(ability)
         : built({ kind: 'asEntersChoose', what: 'option', options: [...what.options] });
     }
-    return built({ kind: 'asEntersChoose', what: what.what });
+    return built({
+      kind: 'asEntersChoose',
+      what: what.what,
+      ...(what.except === undefined ? {} : { except: what.except }),
+    });
   }
   if (event.verb === 'entersAsCopy') {
     // CR 614.12, 707.2, 707.9b (stage P34, D-152): the permanent enters as a copy of one the controller chooses, with the keywords the exception
@@ -739,6 +743,30 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       instead: 'exile',
       alsoCreate: { token: only.token, count: only.count },
     });
+  }
+  // Issue 245 (Vivid Grove): "~ enters tapped with two charge counters on it." is the replacement that makes it enter tapped and the one that gives it counters.
+  if (event.verb === 'entersTappedWithCounters') {
+    if (event.condition !== undefined) return failure(ability);
+    const count = event.args.count;
+    const counter = event.args.counter;
+    if (counter?.kind !== 'counterSpec' || count?.kind !== 'number') return failure(ability);
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:entersTapped',
+      'replacement:entersWithCounters',
+    ]);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [
+        { kind: 'replacement', replacement: { kind: 'entersTapped' } },
+        {
+          kind: 'replacement',
+          replacement: { kind: 'entersWithCounters', counter: counter.name, count: count.value },
+        },
+      ],
+      rule: ability.rule,
+    };
   }
   if (event.verb === 'entersWithCounters') {
     // The engine's replacement has no condition ("If ~ was kicked, it enters with ..."): read, not run.

@@ -31,7 +31,7 @@
  */
 import type { Ability, Restriction } from '../ast/types';
 import type { CardType, Color, PtValue, Subtype, Supertype } from '../characteristics';
-import type { ObjectId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
@@ -67,6 +67,8 @@ export interface Derived extends DerivedBase {
    * other permanents' static abilities and from `restrict` effects. Read where the rule acts.
    */
   readonly restrictions: readonly Restriction[];
+  /** The players that goad it (issue 201, CR 701.15), from static abilities. Read where attackers are declared. */
+  readonly goadedBy: readonly SeatId[];
   /** The creatures this one can't be blocked by, from static abilities (CR 509.1b, D-139). Read where blockers are declared. */
   readonly blockLimits: readonly BlockLimit[];
   /**
@@ -255,6 +257,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     colors,
     abilities,
     restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
+    goadedBy: fx.goadedBy,
     blockLimits: fx.blockLimits,
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,

@@ -101,6 +101,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.line': asIs,
   'replacement.enters-tapped': asIs,
   'replacement.enters-with-counters': asIs,
+  // Issue 245 (Vivid Grove).
+  'replacement.enters-tapped-with-counters': asIs,
   'replacement.enters-tapped-unless': asIs,
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
@@ -692,6 +694,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Issue 233 (Martial Coup).
+  'condition.x-at-least': spell(
+    (e) => `Create X 1/1 white Soldier creature tokens. If ${e}, draw a card.`,
+  ),
   // Issue 244 (Return to Dust).
   'condition.cast-in-own-main-phase': spell(
     (e) => `Exile target artifact. If ${e}, exile target enchantment.`,
@@ -766,6 +772,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `As an additional cost to cast ~, you may ${e}. Draw a card.`,
   ),
   'effect.mana-rider-scry-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  // Issue 230 (Forgotten Ancient).
+  'effect.move-counters-onto-others': permanent(
+    (e) => `At the beginning of your upkeep, you may ${e}.`,
+  ),
   // Issue 241 (Opal Palace).
   'effect.mana-rider-counters-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),

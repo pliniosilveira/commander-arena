@@ -413,6 +413,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'empowerJace'
     | 'amass'
     | 'populate'
+    | 'moveCounters'
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
@@ -433,6 +434,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
    * For `'populate'` (D-627, CR 701.36a: "Choose a creature token you control"): `seat`, the player who populates, chooses which creature token of `legal` (all they control)
    * is copied; exactly one. Asked only with two or more.
+   * For `'moveCounters'` (issue 230, CR 122.1: "Move any number of +1/+1 counters from this creature onto other creatures"): `seat`, the controller of the ability, chooses the
+   * permanent of `legal` that one more counter moves onto, or none (`min` 0, `max` 1) to stop; asked again after each move while the source has a counter left. `source` is the ability.
    * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
    * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
    * spell or ability.
