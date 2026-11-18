@@ -18,10 +18,10 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrFilter, IrFlag, IrNoun, IrNounList, IrZoneSpec } from '../../ir/types';
+import type { IrAmount, IrFilter, IrFlag, IrNoun, IrNounList, IrZoneSpec } from '../../ir/types';
 import { PERMANENT_CARD_TYPES, PERMANENT_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
-import { defineRule, spanned } from '../registry';
+import { defineRule, family, spanned } from '../registry';
 import {
   type Clauses,
   GRAVEYARD_OPERANDS,
@@ -235,6 +235,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     // D-544: a card of the hand or of the graveyard.
     'you may put a land card from your hand or graveyard onto the battlefield',
     'put a creature card from your hand or graveyard onto the battlefield tapped',
+    // Issue 103 (Selvala's Stampede, CR 701.38b): up to one card for each vote for an option.
+    'you may put a permanent card from your hand onto the battlefield for each free vote',
   ],
   rejects: [
     'you may put an artifact card from your hand onto the battlefield under your control',
@@ -253,6 +255,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a land card from your hand or graveyard onto the battlefield and draw a card',
     'you may put a permanent card with mana value less than or equal to that much from your hand onto the battlefield',
     'you may put a permanent card with mana value less than or equal to that damage from your library onto the battlefield',
+    'you may put a permanent card from your hand onto the battlefield for each vote',
+    'you may put a permanent card from your hand onto the battlefield for each free votes',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -301,9 +305,17 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
           ),
         ),
         spanned(optional(choice(literal(' tapped and attacking'), literal(' tapped')), null)),
+        // Issue 103 (CR 701.38b, 608.2c): "... onto the battlefield for each free vote", up to that many cards (Selvala's Stampede).
+        optional(
+          map(
+            sequence(literal(' '), family<IrAmount>('amount', { only: ['amount.for-each-vote'] })),
+            ([, votes]) => votes,
+          ),
+          null,
+        ),
       )(ctx, pos);
       if (!r.ok) return r;
-      const [[may, , card, onto], tapped] = r.value;
+      const [[may, , card, onto], tapped, votes] = r.value;
       const where = {
         value: [null, tapped.value] as const,
         span: { start: onto.span.start, end: tapped.span.end },
@@ -364,11 +376,17 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: FROM_HAND_RULE,
       };
-      return { ok: true, value: { objects, to, may: flag, both }, pos: r.pos };
+      return { ok: true, value: { objects, to, may: flag, both, votes }, pos: r.pos };
     },
-    ({ objects, to, may, both }) => ({
+    ({ objects, to, may, both, votes }) => ({
       verb: 'putFromZone',
-      args: { objects, to, may, ...(both.value ? { alsoGraveyard: both } : {}) },
+      args: {
+        objects,
+        to,
+        may,
+        ...(both.value ? { alsoGraveyard: both } : {}),
+        ...(votes === null ? {} : { count: votes }),
+      },
     }),
   ),
 });

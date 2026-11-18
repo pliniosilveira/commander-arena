@@ -6,6 +6,7 @@
 import type { Amount } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { withoutZone } from '../rules/noun/phrases';
+import { lowerAmount } from './amounts';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
 import { declareDividedTarget, lowerFilter, objectRefOf, objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
@@ -142,6 +143,46 @@ export const REVEAL_UNTIL: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Reveal cards from the top of your library until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your
+ * library." (issue 103, CR 701.20, 701.38b, 701.24): the engine's `revealUntil` with a `count` (the votes) and the rest left in the library, then a `shuffle` of the controller's
+ * library. The second sentence must name the kind of the first in the plural.
+ */
+export const REVEAL_UNTIL_VOTES: Lowering<IrClause, Effects> = {
+  head: 'revealUntilVotes',
+  id: 'lower.reveal-until-votes',
+  needs: ['effect:revealUntil', 'effect:shuffle', 'ability:revealUntilCount', 'amount:votesFor'],
+  lower(clause, ctx) {
+    const card = arg(clause, 'card');
+    const votes = arg(clause, 'count');
+    const kind = arg(clause, 'kind');
+    if (card?.kind !== 'noun' || votes?.kind !== 'votesFor' || kind?.kind !== 'name') {
+      return failure(clause);
+    }
+    // "a creature card ... those creature cards": the same single type, nothing else asked of the card.
+    const types = card.filter.types ?? [];
+    if (types.length !== 1 || types[0] !== kind.name) return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    const count = lowerAmount(votes, ctx, clause.rule);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'revealUntil',
+          filter: filter.value,
+          count: count.value,
+          put: 'battlefield',
+          rest: 'stay',
+        },
+        { kind: 'shuffle', player: { kind: 'you' } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
  * bottom of your library in a random order." (D-659, CR 701.20, 303.4f, 608.2c): the engine's `revealUntil` that moves nothing (`put: 'none'`; the rest go to the bottom), then a `may`
  * move of the card found onto the battlefield (an Aura chooses what it enchants as it enters) and, when the player did not, a move of it into the hand.
@@ -269,6 +310,7 @@ export const DINOSAUR_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   FIGHT,
   FIGHT_PAIRS,
   REVEAL_UNTIL,
+  REVEAL_UNTIL_VOTES,
   REVEAL_UNTIL_MAY_PUT,
   CAST_FREE,
   DEAL_DIVIDED_DAMAGE,

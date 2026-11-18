@@ -85,4 +85,51 @@ export const SYNTHETIC_VOTE_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // The wording of the real Selvala's Stampede (its cost and types too); SYNTHETIC: the definition of the real card is what the parser reads from its Oracle text.
+  singleFace({
+    name: 'SYNTHETIC Stampede Rite',
+    manaCost: ['4', 'G', 'G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText:
+      'Starting with you, each player votes for wild or free. Reveal cards from the top of your library until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library. You may put a permanent card from your hand onto the battlefield for each free vote.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'vote', options: ['wild', 'free'], startingWith: 'you' },
+          {
+            kind: 'revealUntil',
+            filter: { types: ['creature'] },
+            count: { kind: 'votesFor', option: 'wild' },
+            put: 'battlefield',
+            rest: 'stay',
+          },
+          { kind: 'shuffle', player: YOU },
+          {
+            kind: 'moveToZone',
+            objects: {
+              kind: 'choose',
+              filter: {
+                zone: 'hand',
+                controller: 'you',
+                anyOf: [
+                  { types: ['artifact'] },
+                  { types: ['creature'] },
+                  { types: ['enchantment'] },
+                  { types: ['land'] },
+                  { types: ['planeswalker'] },
+                  { types: ['battle'] },
+                ],
+              },
+              count: { kind: 'votesFor', option: 'free' },
+              optional: true,
+            },
+            to: 'battlefield',
+          },
+        ],
+      },
+    },
+  }),
 ];

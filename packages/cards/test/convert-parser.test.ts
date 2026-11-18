@@ -589,6 +589,7 @@ describe('unmatched abilities', () => {
       'effect.damage',
       'effect.damage-count',
       'effect.bite',
+      'effect.reveal-until-votes',
       'effect.double-pt',
       'effect.fight',
       'effect.fight-each',
