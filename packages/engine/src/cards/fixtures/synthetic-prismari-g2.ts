@@ -426,4 +426,55 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Whenever this creature deals combat damage to a player, draw a card.\nWhenever you cast an instant or sorcery spell with mana value 5 or greater, create a token that's a
+  //  copy of this creature.\n{2}{U}: Creatures named ~ can't be blocked this turn." (the name written as the card's own)
+  singleFace({
+    name: 'SYNTHETIC Name Composer',
+    manaCost: ['2', 'U'],
+    types: ['creature'],
+    subtypes: ['Human', 'Bard'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 1,
+    toughness: 3,
+    oracleText:
+      "Whenever this creature deals combat damage to a player, draw a card.\nWhenever you cast an instant or sorcery spell with mana value 5 or greater, create a token that's a copy of this creature.\n{2}{U}: Creatures named SYNTHETIC Name Composer can't be blocked this turn.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'castSpell',
+          filter: {
+            stackKind: 'spell',
+            manaValue: { cmp: 'atLeast', value: 5 },
+            anyOf: INSTANT_OR_SORCERY,
+          },
+          by: 'you',
+        },
+        effect: {
+          kind: 'createToken',
+          token: { kind: 'copyOf', object: { kind: 'this' } },
+          count: 1,
+        },
+      },
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['2', 'U'] }],
+        effect: {
+          kind: 'restrict',
+          objects: {
+            kind: 'each',
+            filter: { types: ['creature'], named: 'SYNTHETIC Name Composer' },
+          },
+          restriction: 'cantBeBlocked',
+          duration: 'untilEndOfTurn',
+        },
+      },
+    ],
+  }),
 ];
