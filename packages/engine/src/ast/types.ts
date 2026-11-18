@@ -1343,6 +1343,11 @@ export type TokenSpec =
        * reads them with `linkedExile` ("return the exiled card"). The link is the token's own and is read from last-known information when it has left the battlefield.
        */
       readonly linkExiled?: true;
+      /**
+       * The token is "embalmed" (CR 702.128b, Embalm): it is created by a resolving embalm ability. Only the token the effect creates is embalmed, not a copy of it; a replacement
+       * effect of the token that reads it (`entersAsCopy.ifEmbalmed`) asks as it enters.
+       */
+      readonly embalmed?: true;
     };
 
 // ---- Effects
@@ -4082,6 +4087,13 @@ export type Keyword =
    */
   | { readonly kind: 'eternalize'; readonly cost: readonly Cost[] }
   /**
+   * CR 702.128a (Embalm): "Embalm [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's white, it has no mana cost,
+   * and it's a Zombie in addition to its other types. Activate only as a sorcery." An activated ability that functions from the graveyard; the engine expands the keyword
+   * (`rules/derive-keywords.ts`) into that ability: the `exileThis` cost and a `createToken` of a `copyOf` `this` with `setColors`, `noManaCost`, `addSubtypes` and `embalmed`
+   * (CR 702.128b: the token is "embalmed"). Mana only, no X; one embalm ability on a permanent card.
+   */
+  | { readonly kind: 'embalm'; readonly cost: readonly Cost[] }
+  /**
    * CR 702.82a (Devour, D-185): "Devour N" means "As this object enters, you may sacrifice any number of creatures. This permanent enters with N
    * +1/+1 counters on it for each creature sacrificed this way." A static ability, applied as the permanent enters (CR 614.12): its controller
    * is asked which creatures they control to sacrifice (`choosePermanent` of purpose `devour`, none is a legal answer), before it is on the
@@ -4763,6 +4775,16 @@ export type Replacement =
       readonly optional?: true;
       readonly duration: Duration;
       readonly gains?: readonly Keyword[];
+      /**
+       * "..., except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types" (CR 707.9b, 702.128b): the
+       * exceptions that apply only when the permanent that enters is an embalmed token (they are part of its copiable values). A card cast from the hand, or a token that is not
+       * embalmed, is not changed by them.
+       */
+      readonly ifEmbalmed?: {
+        readonly setColors?: readonly Color[];
+        readonly noManaCost?: true;
+        readonly addSubtypes?: readonly Subtype[];
+      };
     }
   /**
    * "If you would gain life, you gain that much life plus 1 instead." (D-149, CR 119.10, 614.1a): a replacement effect of a permanent on the

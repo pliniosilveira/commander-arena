@@ -135,6 +135,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.encore': asIs,
   // Hashaton deck group 5 (D-384): Eternalize is a line of its own, like Encore.
   'keyword.eternalize': asIs,
+  // Issue 104: Embalm is a line of its own, like Eternalize.
+  'keyword.embalm': asIs,
   'keyword.escape': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
@@ -460,6 +462,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P34 (D-151, D-152): the Dragons slice. The statements and the replacement are lines of their own; the trigger follows "Whenever"; the
   // conditions follow "if" (an intervening "if", the trailing "if" of an activated ability) or "As long as"; the nouns are operands of damage.
   'replacement.enters-as-copy': asIs,
+  'replacement.enters-as-copy-embalmed': asIs,
   'replacement.redirect-damage': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,

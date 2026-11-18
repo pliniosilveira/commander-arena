@@ -1440,6 +1440,8 @@ export type Instruction =
       readonly host?: ObjectId;
       /** The token is a copy made by Encore for this opponent (CR 702.141a, D-185): it is required to attack them, has haste and is sacrificed at the next end step. */
       readonly encoreFor?: SeatId;
+      /** The token is embalmed (CR 702.128b): created by a resolving embalm ability; the exceptions `entersAsCopy.ifEmbalmed` of its replacement effect apply to it. */
+      readonly embalmed?: true;
     }
   /**
    * "Counter it unless its controller pays [cost]" (CR 702.21a, 701.6) for the spell or ability

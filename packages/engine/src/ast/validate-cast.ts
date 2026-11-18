@@ -243,6 +243,14 @@ export function checkCastFace(
   if (eternalizes.length > 1) {
     issue(out, `${path}.abilities`, 'more than one eternalize ability on a face is not supported');
   }
+  // CR 702.128a: embalm makes a token copy of "this card" from the graveyard, so it is on a permanent card; a face has at most one.
+  const embalms = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'embalm');
+  if (embalms.length > 0 && !permanent) {
+    issue(out, `${path}.abilities`, 'embalm is on a permanent card (CR 702.128a)');
+  }
+  if (embalms.length > 1) {
+    issue(out, `${path}.abilities`, 'more than one embalm ability on a face is not supported');
+  }
   // CR 702.82a (D-185): devour is applied as a permanent enters, and only a permanent card enters; one instance (CR 702.82c's variant is not supported).
   const devours = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'devour');
   if (devours.length > 0 && (!permanent || face.types.includes('land'))) {

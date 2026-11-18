@@ -328,7 +328,14 @@ export function runEnterToken(
   const copiedFrom = res.entersCopy ?? null;
   const [token] = created;
   if (copyRule !== null && copiedFrom !== null && token !== undefined) {
-    const became = becomeCopyAsItEnters(copied, token, copyRule, copiedFrom, seat);
+    const became = becomeCopyAsItEnters(
+      copied,
+      token,
+      copyRule,
+      copiedFrom,
+      seat,
+      instruction.embalmed === true,
+    );
     copied = became.state;
     copyEvents.push(...became.events, ...became.counterEvents);
   }

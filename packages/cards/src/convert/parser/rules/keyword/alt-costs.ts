@@ -226,6 +226,37 @@ export const KEYWORD_ETERNALIZE = defineRule<readonly IrKeyword[]>({
   parse: altCostKeyword('keyword.eternalize', 'eternalize'),
 });
 
+/**
+ * `keyword.embalm`: "Embalm {5}{W}" (CR 702.128a: "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's white, it has no mana cost, and it's a
+ * Zombie in addition to its other types. Activate only as a sorcery"). Like Eternalize it lowers to the keyword of the engine, which expands it into the activated ability that works from
+ * the graveyard; the token it makes is "embalmed" (CR 702.128b). The cost is a plain mana cost; a line is read on its own, never in a keyword list. The reminder text of the real cards is
+ * dropped before the line is read. The cards of issue 104: Angel of Sanctions, Vizier of Many Faces.
+ */
+export const KEYWORD_EMBALM = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.embalm',
+  family: 'keyword',
+  leading: ['embalm'],
+  cites: [
+    'CR 702.128a (Embalm)',
+    'CR 702.128b (Embalm)',
+    'CR 602.2 (Activating Activated Abilities)',
+  ],
+  examples: ['Embalm {5}{W}', 'Embalm {3}{U}{U}', 'Embalm {B}', 'embalm {1}{G}'],
+  rejects: [
+    'Embalm',
+    'Embalm {X}',
+    'Embalm {W/U}',
+    'Embalm—Pay 2 life.',
+    'Embalm {5}{W}.',
+    'Embalm {5}{W}, haste',
+    'Embalm {5}{W} {1}',
+    'Embalmed {5}{W}',
+    'Flying, embalm {5}{W}',
+    'Eternalize {5}{W}',
+  ],
+  parse: altCostKeyword('keyword.embalm', 'embalm'),
+});
+
 const ESCAPE_COUNTS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
 /** "one other card" or "three other cards": the cards of the graveyard an escape cost exiles (one to nine). */
@@ -299,5 +330,6 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_UNEARTH,
   KEYWORD_ENCORE,
   KEYWORD_ETERNALIZE,
+  KEYWORD_EMBALM,
   KEYWORD_ESCAPE,
 ];
