@@ -90,5 +90,3 @@ Mainboard
 4x Island
 5x Plains
 5x Swamp
-
----
