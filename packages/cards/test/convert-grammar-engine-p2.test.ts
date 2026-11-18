@@ -558,21 +558,21 @@ describe('what the grammar reads but the engine cannot run is not lowered as som
 
   // This test pinned "{T}, Pay 1 life: Add {W} or {B}." as a cost the engine cannot pay for mana,
   // until the engine learned to (D-099, `manaCost:payLife`); that line is supported now (see
-  // convert-grammar-engine-p14.test.ts). Removing a counter is still a cost the engine pays only for
+  // convert-grammar-engine-p14.test.ts). Removing a counter is paid for mana since issue 245 (D-631, `manaCost:removeCounters`); a discard is still a cost the engine pays only for
   // an ordinary activation.
-  test('"Remove a charge counter from ~: Add {G}." names the cost the engine cannot pay for mana', () => {
+  test('"Discard a card: Add {G}." names the cost the engine cannot pay for mana', () => {
     const imported = parseOnly(
       syntheticCard({
         name: 'SYNTHETIC Parsed Battery',
         manaCost: '{2}',
         typeLine: 'Artifact',
-        oracleText: 'Remove a charge counter from ~: Add {G}.',
+        oracleText: 'Discard a card: Add {G}.',
       }),
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed[0]).toMatchObject({
       reason: 'notRunnable',
-      needs: ['manaCost:removeCounters'],
+      needs: ['manaCost:discard'],
     });
   });
 });
