@@ -166,7 +166,7 @@ function withStaticSets(
 }
 
 /**
- * D-640 (CR 604.1, 109.5, 613.1b): a keyword an effect gives only "during your turn" (`duringYourTurn`) is given while it is its controller's turn, the controller the object has now.
+ * D-645 (CR 604.1, 109.5, 613.1b): a keyword an effect gives only "during your turn" (`duringYourTurn`) is given while it is its controller's turn, the controller the object has now.
  * The effects are left as they are when none says so (the usual case).
  */
 function turnLimited(

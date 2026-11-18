@@ -365,7 +365,7 @@ export interface CastOptions {
   readonly face?: number;
   /**
    * Cast with an alternative cost (CR 118.9): `'flashback'` casts the card from the graveyard
-   * (CR 702.34a), looked up in the graveyard, not the hand; `'retrace'` (D-654, CR 702.81a) casts it from the graveyard too; `'free'` casts it without paying its mana
+   * (CR 702.34a), looked up in the graveyard, not the hand; `'retrace'` (D-659, CR 702.81a) casts it from the graveyard too; `'free'` casts it without paying its mana
    * cost (D-095), from the hand or the command zone.
    */
   readonly alternative?: CastAlternativeKind;

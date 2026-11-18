@@ -299,7 +299,7 @@ describe('"That token gains haste until end of turn" and "then attach ~ to it": 
     });
   });
 
-  test('"that token" after two tokens and with no token before it is not read (after a copy it is the token the copy made, D-630)', () => {
+  test('"that token" after two tokens and with no token before it is not read (after a copy it is the token the copy made, D-635)', () => {
     expect(
       dropped(
         'Create two 2/2 red Dwarf creature tokens. That token gains haste until end of turn.',

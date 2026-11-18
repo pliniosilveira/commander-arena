@@ -218,7 +218,7 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'lookSplit') return chooseSplitPile(view, d);
   // D-303: the cards of pile 1 when the agent separates revealed cards into two piles (Fact or Fiction).
   if (d.purpose === 'separate') return chooseSeparation(view, d);
-  // CR 608.2d (D-648): the card an opponent sets aside among the cards exiled (Plargg and Nassari).
+  // CR 608.2d (D-653): the card an opponent sets aside among the cards exiled (Plargg and Nassari).
   if (d.purpose === 'opponentChoice') return chooseCardToSetAside(view, d);
   // CR 701.4 (D-151): behold a Dragon; "discard any number of cards" (a discard with no minimum that is no cost).
   if (d.purpose === 'behold') return chooseBehold(view, d);

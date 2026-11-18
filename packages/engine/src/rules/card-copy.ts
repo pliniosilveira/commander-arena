@@ -1,5 +1,5 @@
 /**
- * "Copy it. You may cast the copy without paying its mana cost" (CR 707.12, 707.2, 704.5e, D-641): the copy of a card that an effect makes in exile so that its controller may cast it
+ * "Copy it. You may cast the copy without paying its mana cost" (CR 707.12, 707.2, 704.5e, D-646): the copy of a card that an effect makes in exile so that its controller may cast it
  * while the effect resolves. It is an object with no card of its own (`card` null) whose characteristics are those of the card it copies (`copyOf`, as a copy of a spell has), marked
  * `cardCopy`. Casting it is the ordinary cast of CR 608.2g (`rules/cast-free.ts`): it moves to the stack as a copy of a spell (`rules/zones.ts`). One that is not cast ceases to exist at
  * the next state-based check (`rules/sba.ts`, CR 704.5e).

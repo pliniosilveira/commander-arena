@@ -259,7 +259,7 @@ describe('static.self-cost-reduction: "~ costs {1} less to cast for each ..." (C
     });
   });
 
-  test('stays unread: This spell costs {W} less to cast. (the strive rule of D-628 reads the cost and stops at "less", one word before the others)', () => {
+  test('stays unread: This spell costs {W} less to cast. (the strive rule of D-633 reads the cost and stops at "less", one word before the others)', () => {
     expect(dropped('This spell costs {W} less to cast.', 'creature')).toMatchObject({
       reason: 'unrecognised',
       closestRule: 'static.cost-per-extra-target',

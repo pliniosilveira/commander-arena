@@ -154,7 +154,7 @@ export const EFFECT_RESTRICT_ALL = defineRule<Clauses>({
     "creatures you control can't be blocked this turn",
     'creatures your opponents control can’t block this turn',
     'creatures you control attack this turn if able',
-    // Prismari deck, group 2 (D-643, CR 201.2): every creature with the card's own name.
+    // Prismari deck, group 2 (D-648, CR 201.2): every creature with the card's own name.
     "creatures named ~ can't be blocked this turn",
     'creatures named ~ attack this turn if able',
   ],

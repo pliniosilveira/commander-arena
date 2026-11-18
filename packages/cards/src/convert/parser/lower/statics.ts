@@ -874,7 +874,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
-  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-628, CR 601.2f).
+  // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-633, CR 601.2f).
   if (first.kind === 'costPerExtraTarget') {
     if (
       more.length > 0 ||

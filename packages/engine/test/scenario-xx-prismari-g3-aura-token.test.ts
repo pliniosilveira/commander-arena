@@ -1,5 +1,5 @@
 // The Prismari deck (issue 87), group 3: Replication Technique, "Create a token that's a copy of target permanent you control" (SYNTHETIC Copy Technique,
-// src/cards/fixtures/synthetic-prismari-g3.ts), aimed at an Aura (D-655). Pins: CR 303.4f (an Aura that enters other than by resolving as an Aura spell, with no object named, is put
+// src/cards/fixtures/synthetic-prismari-g3.ts), aimed at an Aura (D-660). Pins: CR 303.4f (an Aura that enters other than by resolving as an Aura spell, with no object named, is put
 // on what its controller chooses as it enters), CR 303.4g (with nothing it can enchant it does not enter: a token never was in another zone), CR 707.2 and 111.10 (the token has the
 // copiable values of the Aura), CR 704.5m (an Aura attached to an illegal object goes to the graveyard).
 import { describe, expect, test } from 'vitest';

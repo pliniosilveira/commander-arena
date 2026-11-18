@@ -1,11 +1,11 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE PRISMARI DECK (ISSUE 87, D-647 AND LATER). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE PRISMARI DECK (ISSUE 87, D-652 AND LATER). NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of what the group added to the engine: spells cast without paying their mana costs from among cards exiled by the effect (`castFree` with `max`, D-647:
- * "up to two", "any number"), the cards each player exiles until a nonland card and the opponent's choice among them (`exileUntilFound`, `opponentChoosesCard`, D-647), exiling the top
- * card as many times as the player chooses and the total mana value of what was exiled (`exileTopAnyNumber`, `movedTotalManaValue`, D-648), a delayed ability for the turn about a card
- * exiled earlier (`delayedCombatDamageTurn`, D-649), two piles of exiled cards, one face down, and an opponent's choice between them (`exilePiles`, D-650), `revealUntil` into exile
- * (D-651), Demonstrate (D-652) and Retrace (D-654). Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the
+ * Invented for the tests of what the group added to the engine: spells cast without paying their mana costs from among cards exiled by the effect (`castFree` with `max`, D-652:
+ * "up to two", "any number"), the cards each player exiles until a nonland card and the opponent's choice among them (`exileUntilFound`, `opponentChoosesCard`, D-652), exiling the top
+ * card as many times as the player chooses and the total mana value of what was exiled (`exileTopAnyNumber`, `movedTotalManaValue`, D-653), a delayed ability for the turn about a card
+ * exiled earlier (`delayedCombatDamageTurn`, D-654), two piles of exiled cards, one face down, and an opponent's choice between them (`exilePiles`, D-655), `revealUntil` into exile
+ * (D-656), Demonstrate (D-657) and Retrace (D-659). Names start with "SYNTHETIC "; oracleId is null. The text describes what the AST does; it is not Oracle text, and none of these is the
  * definition of a real card (the real ones are read from the golden corpus by the grammar, and have the same abilities).
  */
 import type { Ability, Effect, TargetSpec } from '../../ast/types';

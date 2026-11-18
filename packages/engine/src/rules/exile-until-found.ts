@@ -1,5 +1,5 @@
 /**
- * "Each player exiles cards from the top of their library until they exile a nonland card." (CR 701.13, 101.4, D-647): the `exileUntilFound` effect. Each player the selector names,
+ * "Each player exiles cards from the top of their library until they exile a nonland card." (CR 701.13, 101.4, D-652): the `exileUntilFound` effect. Each player the selector names,
  * the active player first and then in turn order (CR 101.4), exiles cards from the top of their own library one at a time, face up, until one that the filter matches has been exiled
  * or their library is empty (a library with no such card is exiled to its end, and the player exiles nothing more: the effect does not make them lose, CR 121.4 is about drawing).
  * Every card exiled, by every player, is what `moved` names afterwards. Each move is an ordinary zone change (CR 400.7), so each card is a new object in exile and triggers what it

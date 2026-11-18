@@ -64,7 +64,7 @@ const QUOTED_MANA: Parser<Effects> = (ctx, pos) => {
     literal(': '),
     family<readonly IrClause[]>('effect', { only: ['effect.add-mana'] }),
     literal('.'),
-    // Prismari deck, group 2 (D-645, CR 106.6, 613.1f): "Spend this mana only to cast an instant or sorcery spell." is the second sentence of the granted mana ability, which the engine's
+    // Prismari deck, group 2 (D-650, CR 106.6, 613.1f): "Spend this mana only to cast an instant or sorcery spell." is the second sentence of the granted mana ability, which the engine's
     // `spendOnly` of the mana ability says (the lowering of a mana ability reads it as it does for the ability of a card).
     optional(
       sequence(

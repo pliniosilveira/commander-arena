@@ -190,7 +190,7 @@ describe('token copies (CR 707.2)', () => {
     }
   });
 
-  test('a copy of something that could be an Aura is executable since D-655 (CR 303.4f); so is a land (D-211, CR 614.12)', () => {
+  test('a copy of something that could be an Aura is executable since D-660 (CR 303.4f); so is a land (D-211, CR 614.12)', () => {
     const copying = (filter: ObjectFilter): Ability => ({
       kind: 'activated',
       cost: TWO,
@@ -202,7 +202,7 @@ describe('token copies (CR 707.2)', () => {
     expect(issues(creature(copying({ notTypes: ['land', 'enchantment'] })))).toEqual([]);
     // D-211: a token copy of a land asks what the land asks as it enters (`rules/enter-token.ts`).
     expect(issues(creature(copying({ types: ['land'] })))).toEqual([]);
-    // D-655: a token copy of an Aura chooses what it enchants as it enters (`rules/enter-token.ts`).
+    // D-660: a token copy of an Aura chooses what it enchants as it enters (`rules/enter-token.ts`).
     for (const filter of [
       {},
       { types: ['enchantment'] },
@@ -215,7 +215,7 @@ describe('token copies (CR 707.2)', () => {
   test('the triggering permanent of a landfall or a sacrifice trigger is judged the same way', () => {
     // A land that entered is a land (D-211): a copy of it asks what it asks.
     expect(issues(creature(trig({ kind: 'landfall' }, copyToken(SUBJECT))))).toEqual([]);
-    // D-655: the sacrificed permanent could be an Aura; its token copy chooses what it enchants.
+    // D-660: the sacrificed permanent could be an Aura; its token copy chooses what it enchants.
     expect(
       issues(creature(trig({ kind: 'permanentSacrificed', by: 'you' }, copyToken(SUBJECT)))),
     ).toEqual([]);
@@ -259,7 +259,7 @@ describe('becomes a copy (CR 707.2, 613.2a)', () => {
     expect(structural(becomes('untilEndOfTurn'))).toEqual([]);
   });
 
-  test('no end at all is executable (D-629), and an unknown duration is malformed', () => {
+  test('no end at all is executable (D-634), and an unknown duration is malformed', () => {
     expect(issues(creature(becomes('permanent')))).toEqual([]);
     expect(structural(becomes('permanent'))).toEqual([]);
     expect(structural(becomes('forever'))).toEqual([expect.stringContaining('duration')]);

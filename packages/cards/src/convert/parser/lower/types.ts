@@ -70,16 +70,16 @@ export interface LowerContext {
    */
   madeAToken: boolean;
   /**
-   * True right after an instruction that made the tokens the engine's `moved` names (D-630, Prismari group 1: `createToken`, `createCopies`, `populate`): "They gain haste.",
+   * True right after an instruction that made the tokens the engine's `moved` names (D-635, Prismari group 1: `createToken`, `createCopies`, `populate`): "They gain haste.",
    * "The token created this way gains haste.", "Exile them at the beginning of the next end step." and "Sacrifice those tokens." are about exactly those tokens, and are lowered only
    * then. Any later instruction that moves, destroys, exiles or sacrifices something else makes it false again. Filled by `lowerSentences` as each clause is lowered.
    */
   tokensMade: boolean;
   /**
-   * The last `createToken` effect of a token that is a copy this text lowered (D-630): "create five of those tokens instead" makes that many tokens of the same kind, which this
+   * The last `createToken` effect of a token that is a copy this text lowered (D-635): "create five of those tokens instead" makes that many tokens of the same kind, which this
    * effect (with its target and its exceptions) says. Null before one. Filled by `lowerSentences` as each clause is lowered.
    */
-  /** The `createToken` the instruction before made, of any kind of token (D-630, D-633): what "create five of those tokens instead" makes more of. */
+  /** The `createToken` the instruction before made, of any kind of token (D-635, D-638): what "create five of those tokens instead" makes more of. */
   lastToken: Effect | null;
   /**
    * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
@@ -226,7 +226,7 @@ export interface LowerContext {
    */
   exiledRef: string | null;
   /**
-   * The kind of the last instruction lowered (Prismari deck group 3, D-651): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
+   * The kind of the last instruction lowered (Prismari deck group 3, D-656): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
    * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
    */
   lastEffectKind: string | null;

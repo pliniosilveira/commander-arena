@@ -12,7 +12,7 @@
  *
  * A card that could not be cast or played is not offered; with none the effect does nothing. Choosing no card does nothing.
  *
- * D-647 (CR 608.2g, 601.2): with `remaining` ("up to two spells", "any number of spells") the question comes again after each spell is cast, among the cards still there that
+ * D-652 (CR 608.2g, 601.2): with `remaining` ("up to two spells", "any number of spells") the question comes again after each spell is cast, among the cards still there that
  * can be cast now (the card cast is on the stack, a new object, so it is not offered again), until the controller chooses no card, the number is reached or nothing can be cast.
  * Every spell is cast during this resolution (CR 608.2g: "which may include casting other spells this way"), so they are all on the stack when it ends.
  */
@@ -111,7 +111,7 @@ export function runCastFree(
           ? `You may ${ins.play ? 'play' : 'cast'} ${
               ins.objects.kind === 'choose' ? 'a card from your hand' : 'the exiled card'
             } without paying its mana cost`
-          : // D-647: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
+          : // D-652: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${
               ins.remaining === 'any'
                 ? 'any number of spells'

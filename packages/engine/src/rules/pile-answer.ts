@@ -1,5 +1,5 @@
 /**
- * The answer of the chooser of the piles (CR 700.3, D-303): the option (`pile1` or `pile2`) is recorded on the `pileSeparate` (or, D-650, the `exilePiles`) instruction at the head of the queue and the
+ * The answer of the chooser of the piles (CR 700.3, D-303): the option (`pile1` or `pile2`) is recorded on the `pileSeparate` (or, D-655, the `exilePiles`) instruction at the head of the queue and the
  * resolution goes on. Kept apart from `pile-separate.ts` (which `effects.ts` imports) because it needs `stack.ts`, which imports `effects.ts`.
  */
 import type { GameState, Instruction } from '../state/types';

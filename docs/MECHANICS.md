@@ -5147,7 +5147,7 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Tests: engine `scenario-xx-sacrifice-mana.test.ts`, `ast-sacrifice-mana-validate.test.ts`; cards `parser-sacrifice-mana.test.ts`, `convert-grammar-engine-sacrifice-mana.test.ts`; web `sacrifice-mana-text.test.ts`; AI soak `sacrifice-mana-games.test.ts` (100 games clean).
 - Limits: see `docs/ROADMAP.md`.
 
-## The Prismari deck, group 1 (issue 87, D-625 to D-632)
+## The Prismari deck, group 1 (issue 87, D-630 to D-637)
 
 Nine cards of Prismari Artistry (Secrets of Strixhaven): Brudiclad, Telchor Engineer; Determined Iteration; Redoubled Stormsinger; Rionya, Fire Dancer; Rite of Replication; Twinflame; Muddle, the Ever-Changing; Inspired Skypainter // Maestro's Gift; Dirgur Focusmage // Braingeyser. Each reads, in the golden corpus, to the same AST as its SYNTHETIC sibling in `synthetic-prismari-g1.ts`.
 
@@ -5160,9 +5160,9 @@ Nine cards of Prismari Artistry (Secrets of Strixhaven): Brudiclad, Telchor Engi
 - Tests: engine `scenario-xx-prismari-g1-populate.test.ts`, `scenario-xx-prismari-g1-copies.test.ts`, `scenario-xx-prismari-g1-prepared.test.ts`; cards `parser-prismari-g1.test.ts` (examples and rejects per rule), `convert-grammar-engine-prismari-g1.test.ts` (the real text, played); web `prismari-g1-text.test.ts`; AI `prismari-g1-agents.test.ts` and the soak `prismari-g1-games.test.ts` (style `prismariG1`, 100 games clean).
 - Limits: see `docs/ROADMAP.md`.
 
-## The Prismari deck, group 2 (issue 87, D-633 to D-646)
+## The Prismari deck, group 2 (issue 87, D-638 to D-651)
 
-Twelve cards of Prismari Artistry (Secrets of Strixhaven): Prismari Pianist; Rootha, Mastering the Moment; Renegade Bull; Manaform Hellkite; Magma Opus; Furygale Flocking; Leitmotif Composer; Restless Spire; Galazeth Prismari; Brazen Borrower // Petty Theft; Deep Analysis; Rousing Refrain. Each reads, in the golden corpus, to the same AST as its SYNTHETIC sibling in `synthetic-prismari-g2.ts`. Jeska's Will (a hold-out card) also reads now (D-636).
+Twelve cards of Prismari Artistry (Secrets of Strixhaven): Prismari Pianist; Rootha, Mastering the Moment; Renegade Bull; Manaform Hellkite; Magma Opus; Furygale Flocking; Leitmotif Composer; Restless Spire; Galazeth Prismari; Brazen Borrower // Petty Theft; Deep Analysis; Rousing Refrain. Each reads, in the golden corpus, to the same AST as its SYNTHETIC sibling in `synthetic-prismari-g2.ts`. Jeska's Will (a hold-out card) also reads now (D-641).
 
 - CR: 202.3 and 202.3e (the mana value of a spell on the stack counts the X announced, and no reduction changes it), 601.2h (the mana spent to cast a spell, after reductions), 601.2i and 707.10 (a spell is cast once it is on the stack; a copy is not cast), 113.7a and 608.2h (a spell that left the stack is read from last-known information), 603.4 (an intervening "if"), 702.34a, 118.9 and 119.4 (flashback with life), 509.1b and 702.9b (what a creature can block), 108.3 and 400.1 (the cards a player owns in a hand), 500.5, 106.4, 514.2 and 611.2a (mana that stays until end of turn), 608.2n, 122.1 and 702.62b (a spell exiled with time counters is suspended), 508.1d, 101.4 and 111.2 (tokens for each opponent that must attack), 604.1, 109.5 and 205.1b (a keyword during its controller's turn; it is still a land), 707.12, 707.2, 608.2g and 704.5e (a copy of a card, cast), 201.2 (creatures named like the card), 115.4 and 601.2d (divided damage among any number of targets), 106.6 (spend-only mana).
 - Gap class: P (the amount `greatestManaValueCast`, the scope `stack` of the cast trigger's subject, `manaSpent.of`, flashback life, `canBlockOnlyFlying`, `countOf` of a target's hand, `staysUntilEndOfTurn`, `exileSpellWithTimeCounters`, `copyCardAndCast`, `createToken.forEachOpponent`, `grantKeyword.duringYourTurn`) and T (the grammar). No S proposal: the cast of a copy reuses the prepared-copy machinery.
@@ -5173,7 +5173,7 @@ Twelve cards of Prismari Artistry (Secrets of Strixhaven): Prismari Pianist; Roo
 - Tests: engine `scenario-xx-prismari-g2-{cast,flashback-life,block-only,refrain,divided-any,flocking,named,manland,granted-mana,copy-cast}.test.ts`; cards `parser-prismari-g2.test.ts` (readings, near misses and needed features), `convert-grammar-engine-prismari-g2.test.ts` (the real text, played); web `prismari-g2-text.test.ts`; AI the soak `prismari-g2-games.test.ts` (style `prismariG2`, 100 games clean).
 - Limits: see `docs/ROADMAP.md`.
 
-## The Prismari deck, group 3 (issue 87, D-647 to D-656)
+## The Prismari deck, group 3 (issue 87, D-652 to D-661)
 
 Seven cards of Prismari Artistry (Secrets of Strixhaven): Abstract Performance, Creative Technique, Replication Technique, Dance with Calamity, Plargg and Nassari, Surge to Victory, Throes of Chaos. Each reads, in the golden corpus, to the same AST as its SYNTHETIC sibling in `synthetic-prismari-g3.ts`.
 

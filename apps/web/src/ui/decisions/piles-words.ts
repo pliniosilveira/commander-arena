@@ -19,7 +19,7 @@ export function pileTitle(d: Pick<ChooseOptionDecision, 'seat'> & { piles: Piles
 
 /** The line under the title: where the other pile goes, and that the cards are still in the library. */
 export function pilePrompt(d: Pick<ChooseOptionDecision, 'seat'> & { piles: Piles }): string {
-  // D-651 (CR 700.3c): piles of exiled cards stay in exile while they are chosen between; the controller may then cast a spell from the other pile.
+  // D-656 (CR 700.3c): piles of exiled cards stay in exile while they are chosen between; the controller may then cast a spell from the other pile.
   if (d.piles.zone === 'exile') {
     return 'The cards are exiled. The pile you choose goes into the graveyard; its owner looks at the other pile, may cast a spell from it for free and puts the rest into their hand.';
   }

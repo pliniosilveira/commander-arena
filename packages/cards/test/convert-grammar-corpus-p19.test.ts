@@ -11,7 +11,7 @@ const REPLAY: readonly Line[] = [
     kind: 'instant',
     text: "Choose one. If you control a commander as you cast ~, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
     expect: OK,
-    note: 'replay: 1 card; the widening and both modes are read ("Add {R} for each card in target opponent\'s hand" since D-633: a count of the cards in a target player\'s hand)',
+    note: 'replay: 1 card; the widening and both modes are read ("Add {R} for each card in target opponent\'s hand" since D-638: a count of the cards in a target player\'s hand)',
   },
   {
     kind: 'creature',

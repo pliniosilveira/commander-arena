@@ -98,7 +98,7 @@ export function spellXCost(
     };
   }
   const printed = xSymbolCount(face.manaCost ?? []);
-  // D-654 (CR 702.81a): a retrace cast pays the mana cost, so an {X} in it is announced as for any cast.
+  // D-659 (CR 702.81a): a retrace cast pays the mana cost, so an {X} in it is announced as for any cast.
   if (alternative !== undefined && alternative !== 'retrace' && printed > 0) return NO_X;
   return { mana: printed, life, ...extra };
 }

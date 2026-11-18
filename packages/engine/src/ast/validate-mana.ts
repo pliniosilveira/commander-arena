@@ -33,7 +33,7 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
           }
         });
       }
-      // D-637 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn: true or absent.
+      // D-642 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn: true or absent.
       if (mp.staysUntilEndOfTurn !== undefined && mp.staysUntilEndOfTurn !== true) {
         issue(out, `${path}.staysUntilEndOfTurn`, 'staysUntilEndOfTurn is true or absent');
       }

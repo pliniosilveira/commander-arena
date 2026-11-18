@@ -1,5 +1,5 @@
 /**
- * "Populate" (CR 701.36a, 701.36b, D-626): "To populate means to choose a creature token you control and create a token that's a copy of that creature token. If you control no
+ * "Populate" (CR 701.36a, 701.36b, D-631): "To populate means to choose a creature token you control and create a token that's a copy of that creature token. If you control no
  * creature tokens when instructed to populate, you won't create a token."
  *
  * The creature tokens the controller controls are the battlefield permanents that are tokens and creatures as `derive` types them now (a token that became a creature counts,

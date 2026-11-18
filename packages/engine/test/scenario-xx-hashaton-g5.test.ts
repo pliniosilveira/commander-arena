@@ -403,7 +403,7 @@ describe('the discard trigger names the kind of card (CR 701.9a)', () => {
     expect(validateCard(trigger({ owner: 'you' })).length).toBeGreaterThan(0);
   });
 
-  test('a copy of "that card" with no filter on a card that could be an Aura is valid since D-655', () => {
+  test('a copy of "that card" with no filter on a card that could be an Aura is valid since D-660', () => {
     // "Whenever you discard a card": that card could be an Aura card; its token copy chooses what it enchants as it enters (CR 303.4f, `rules/enter-token.ts`).
     expect(validateCard(trigger(undefined))).toEqual([]);
     expect(validateCard(trigger({ types: ['creature'] }))).toEqual([]);

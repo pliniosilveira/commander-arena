@@ -63,7 +63,7 @@ export function tokenAsks(state: GameState, seat: SeatId, definition: TokenDefin
   );
 }
 
-/** CR 303.4a, 702.5a (D-655): the enchant filter of a token that is an Aura (a copy of one), or null. */
+/** CR 303.4a, 702.5a (D-660): the enchant filter of a token that is an Aura (a copy of one), or null. */
 function auraEnchantFilter(definition: TokenDefinition) {
   if (!definition.subtypes.includes('Aura')) return null;
   for (const a of definition.abilities) {
@@ -262,7 +262,7 @@ export function runEnterToken(
       riotDecision(seat, res.object, definition.name, definition.oracleText, riotAnswers),
     );
   }
-  // CR 303.4f, 303.4g (D-655): a token that is an Aura enters under no spell, so its controller chooses what it enchants as it enters, among the permanents its enchant ability
+  // CR 303.4f, 303.4g (D-660): a token that is an Aura enters under no spell, so its controller chooses what it enchants as it enters, among the permanents its enchant ability
   // allows; with none it does not enter (a token cannot stay in a zone it was never in). The one chosen is attached once the token exists.
   const enchant = auraEnchantFilter(definition);
   let host = instruction.host ?? null;
@@ -327,7 +327,7 @@ export function runEnterToken(
     copied = became.state;
     copyEvents.push(...became.events, ...became.counterEvents);
   }
-  // CR 303.4f (D-655): the Aura token enters attached to the permanent chosen.
+  // CR 303.4f (D-660): the Aura token enters attached to the permanent chosen.
   let hostEvents: GameEvent[] = [];
   if (host !== null && token !== undefined) {
     const attached = attachEntered(copied, token, host);

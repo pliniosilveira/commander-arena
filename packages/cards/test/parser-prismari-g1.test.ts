@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 1 (D-625 to D-632): the lines of Brudiclad, Determined Iteration, Redoubled Stormsinger, Rionya, Rite of Replication, Twinflame, Muddle, Inspired
+// The Prismari deck (issue 87), group 1 (D-630 to D-637): the lines of Brudiclad, Determined Iteration, Redoubled Stormsinger, Rionya, Rite of Replication, Twinflame, Muddle, Inspired
 // Skypainter // Maestro's Gift and Dirgur Focusmage // Braingeyser. The first line of each block is the real Oracle text of the acceptance card read through the whole pipeline; the other
 // lines are SYNTHETIC siblings and the near misses the grammar must not read (an instruction about "those tokens" with no tokens made before it, a duration or exception it does not
 // know, another zone). The engine runs what is lowered in convert-grammar-engine-prismari-g1.test.ts.
@@ -95,7 +95,7 @@ describe('Rite of Replication: kicker, a copy of target creature, five of those 
     });
   });
 
-  test('"of those tokens" after a token that is not a copy is the same token (D-633: the token last made, copy or not)', () => {
+  test('"of those tokens" after a token that is not a copy is the same token (D-638: the token last made, copy or not)', () => {
     const parsed = readAll(
       'Create a 1/1 white Soldier creature token. If ~ was kicked, create five of those tokens instead.',
       'sorcery',

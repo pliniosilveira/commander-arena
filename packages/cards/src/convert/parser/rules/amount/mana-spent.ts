@@ -24,7 +24,7 @@ export const MANA_SPENT_AMOUNT = (ctx: Parameters<ReturnType<typeof pattern>>[0]
   if (!r.ok) return r;
   const value: IrAmount = {
     kind: 'manaSpent',
-    // D-633 (CR 601.2h, 113.7a): "that spell" is the spell that caused a cast trigger (the lowering reads it there only).
+    // D-638 (CR 601.2h, 113.7a): "that spell" is the spell that caused a cast trigger (the lowering reads it there only).
     who: r.value[1] === '~' ? 'self' : r.value[1] === 'that spell' ? 'thatSpell' : 'it',
     span: { start: pos, end: r.pos },
   };

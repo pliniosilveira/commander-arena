@@ -74,7 +74,7 @@ export interface ManaObject {
    */
   readonly sourceTypes?: readonly string[];
   /**
-   * D-637 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end": it does not empty as a step or a phase ends, but it does when the cleanup step
+   * D-642 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end": it does not empty as a step or a phase ends, but it does when the cleanup step
    * of the turn ends (the effect that kept it ends with the turn). Absent for most mana.
    */
   readonly stays?: true;

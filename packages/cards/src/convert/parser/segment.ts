@@ -244,7 +244,7 @@ const PUT_HAND_OTHER_BOTTOM =
   /^put one of them into your hand and the other on the bottom of your library\.$/i;
 
 /**
- * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-637, CR 500.5): the second sentence
+ * "Add {R} for each card in target opponent's hand. Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-642, CR 500.5): the second sentence
  * says what happens to the mana the first adds, so the two are read as one instruction (`effect.add-mana-stays`).
  */
 const ADD_MANA_SENTENCE = /^add [^.]*\.$/i;
@@ -252,7 +252,7 @@ const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
 
 /**
- * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-641, CR 707.12): the
+ * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-646, CR 707.12): the
  * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
@@ -331,7 +331,7 @@ const MAY_RETURN_THOSE_CARDS =
 
 /**
  * "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that pile into
- * your graveyard. Look at the cards in the other pile." (Prismari deck group 3, D-650, CR 700.3, 406.3): four sentences that are one instruction, kept together for `effect.exile-two-piles`.
+ * your graveyard. Look at the cards in the other pile." (Prismari deck group 3, D-655, CR 700.3, 406.3): four sentences that are one instruction, kept together for `effect.exile-two-piles`.
  */
 const EXILE_TWO_PILES_FIRST =
   /^exile the top [^.]* cards of your library in a face-down pile, then exile the top [^.]* cards of your library in a face-up pile\.$/i;
@@ -340,7 +340,7 @@ const PUT_THAT_PILE_GRAVEYARD = /^put that pile into your graveyard\.$/i;
 const LOOK_AT_OTHER_PILE = /^look at the cards in the other pile\.$/i;
 /**
  * "Shuffle your library, then reveal cards from the top of it until you reveal a nonland card. Exile that card and put the rest on the bottom of your library in a random order."
- * (Creative Technique, D-651, CR 701.24, 701.20, 701.13): the second sentence says what is done with the card the first one reveals, so the two are read as one instruction
+ * (Creative Technique, D-656, CR 701.24, 701.20, 701.13): the second sentence says what is done with the card the first one reveals, so the two are read as one instruction
  * (`effect.shuffle-reveal-until-exile`).
  */
 const SHUFFLE_THEN_REVEAL_UNTIL =
@@ -348,7 +348,7 @@ const SHUFFLE_THEN_REVEAL_UNTIL =
 const EXILE_THAT_CARD_REST_BOTTOM =
   /^exile that card and put the rest on the bottom of your library in a random order\.$/i;
 /**
- * "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost." (Surge to Victory, D-649,
+ * "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost." (Surge to Victory, D-654,
  * CR 603.7, 707.12): the second sentence is what is done with the copy of the first, so the two are read as one delayed ability (`effect.delayed-combat-damage-copy-exiled`).
  */
 const WHENEVER_COPY_EXILED_CARD = /^whenever a [^.]*, copy the exiled card\.$/i;

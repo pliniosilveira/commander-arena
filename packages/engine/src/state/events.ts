@@ -551,7 +551,7 @@ export type GameEvent =
       readonly faceDown?: true;
     }
   /**
-   * CR 608.2d (D-647, "An opponent chooses a nonland card exiled this way"): `seat` chose the cards `objects` (public, face up in exile) as `source`, a spell or ability, resolved.
+   * CR 608.2d (D-652, "An opponent chooses a nonland card exiled this way"): `seat` chose the cards `objects` (public, face up in exile) as `source`, a spell or ability, resolved.
    * `automatic` is true when there was one card to choose. Nothing is done to them: they are set aside.
    */
   | {

@@ -120,7 +120,7 @@ export const STATIC_RULES = [
   ...DANITHA_G3_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
-  // Prismari deck, group 1 (D-628): "~ costs {2}{R} more to cast for each target beyond the first.".
+  // Prismari deck, group 1 (D-633): "~ costs {2}{R} more to cast for each target beyond the first.".
   ...PRISMARI_G1_STATIC_RULES,
   // Galadriel deck, group 3 (issue 43): "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
   ...GALADRIEL_G3_STATIC_RULES,

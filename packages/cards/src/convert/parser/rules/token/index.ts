@@ -622,7 +622,7 @@ export const TOKEN_RULES = [
   TOKEN_COPY_EXCEPT,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
   ...GALADRIEL_G3_TOKEN_RULES,
-  // Prismari deck, group 1 (D-625): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
+  // Prismari deck, group 1 (D-630): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
   TOKEN_COPIES_X,
   TOKEN_COPY,
 ];

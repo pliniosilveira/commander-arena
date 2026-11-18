@@ -69,7 +69,7 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'controllerDealtDamageBySource',
   // D-431: said by `withText`.
   'powerAboveBase',
-  // D-625: said by `withText` ("from your hand").
+  // D-630: said by `withText` ("from your hand").
   'castFromHand',
   // D-145: "commanders you control", "creatures you control with a counter on it"; `withText` says the counter.
   'commander',

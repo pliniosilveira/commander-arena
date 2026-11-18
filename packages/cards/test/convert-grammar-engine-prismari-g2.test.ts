@@ -1,4 +1,4 @@
-// The Prismari deck (issue 87), group 2 (D-633 and later): the REAL Oracle text of Prismari Pianist, Rootha, Mastering the Moment, Renegade Bull, Manaform Hellkite, Magma Opus, Furygale
+// The Prismari deck (issue 87), group 2 (D-638 and later): the REAL Oracle text of Prismari Pianist, Rootha, Mastering the Moment, Renegade Bull, Manaform Hellkite, Magma Opus, Furygale
 // Flocking, Leitmotif Composer, Restless Spire, Galazeth Prismari, Brazen Borrower // Petty Theft, Deep Analysis and Rousing Refrain (the corpus's golden.jsonl, taken from the issue)
 // goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the
 // engine runs. The abilities of each real card are also the ones of its SYNTHETIC sibling of the engine fixtures (`synthetic-prismari-g2.ts`), which the engine tests and the AI soak play.

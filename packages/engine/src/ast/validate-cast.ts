@@ -25,7 +25,7 @@ export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIss
 }
 
 /**
- * CR 702.34a: the flashback cost is mana, or mana and life (D-634, CR 119.4: "Flashback—{1}{U}, Pay 3 life."); any other cost of a flashback is not supported.
+ * CR 702.34a: the flashback cost is mana, or mana and life (D-639, CR 119.4: "Flashback—{1}{U}, Pay 3 life."); any other cost of a flashback is not supported.
  */
 export function checkFlashbackCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
   checkCosts(cost, path, out);
@@ -229,7 +229,7 @@ export function checkCastFace(
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
   }
-  // D-654 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
+  // D-659 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
   if (has('retrace') && face.types.includes('land')) {
     issue(out, `${path}.abilities`, 'retrace is on a card that is cast, not a land (CR 702.81a)');
   }

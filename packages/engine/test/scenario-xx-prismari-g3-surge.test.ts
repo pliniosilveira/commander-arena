@@ -1,6 +1,6 @@
 // The Prismari deck (issue 87), group 3: Surge to Victory, "Exile target instant or sorcery card from your graveyard. Creatures you control get +X/+0 until end of turn, where X is that card's
 // mana value. Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost." (SYNTHETIC Surge Victory,
-// src/cards/fixtures/synthetic-prismari-g3.ts: `exile`, `modifyPt`, then `delayedCombatDamageTurn` of `copyCardAndCast` of the card exiled, D-649.) Pins: CR 603.7 and 603.7c-d (a delayed
+// src/cards/fixtures/synthetic-prismari-g3.ts: `exile`, `modifyPt`, then `delayedCombatDamageTurn` of `copyCardAndCast` of the card exiled, D-654.) Pins: CR 603.7 and 603.7c-d (a delayed
 // triggered ability of the controller, about the card the spell exiled), CR 510.3a and 603.2c (it triggers once for each creature and each player damaged), CR 514.2 (until end of turn),
 // CR 611.2c (the pump is set when the spell resolves), CR 707.12 (a copy of a card is cast from the zone the card is in), CR 608.2g (cast during resolution, free), CR 400.7 (a card
 // that left exile is a new object: nothing to copy), CR 202.3 (the mana value of the exiled card).

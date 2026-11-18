@@ -261,7 +261,7 @@ function cards(plural: boolean): Parser<IrFilter> {
       controller: 'opponent' as const,
     })),
     itsControllerGraveyard,
-    // Prismari deck, group 2 (D-636, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
+    // Prismari deck, group 2 (D-641, CR 108.3): "for each card in target opponent's hand": the cards a player the text targets owns, in their hand.
     inTargetPlayersHand,
   );
   // Creature types before the card types ("Zombie creature card"), each in the singular.
@@ -286,7 +286,7 @@ function cards(plural: boolean): Parser<IrFilter> {
   // D-518 (Hylda deck, group 2): "two or more instant and/or sorcery cards in your graveyard": one card is any of the card types, joined by "or" or "and/or".
   const union: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(
-      // Prismari deck, group 2 (D-642): "instant and sorcery card in your graveyard", the card types joined by "and", the singular noun of a "for each".
+      // Prismari deck, group 2 (D-647): "instant and sorcery card in your graveyard", the card types joined by "and", the singular noun of a "for each".
       choice(
         typeChoice(CARD_TYPES, false, 'and/or'),
         typeChoice(CARD_TYPES),
@@ -421,7 +421,7 @@ export const AMOUNT_FOR_EACH = defineRule<IrAmount>({
     'for each creature card in your opponents’ graveyards',
     'for each tapped creature target opponent controls',
     'for each creature target player controls',
-    // Prismari deck, group 2 (D-636, CR 108.3): the cards in the hand of a player the text targets.
+    // Prismari deck, group 2 (D-641, CR 108.3): the cards in the hand of a player the text targets.
     'for each card in target opponent’s hand',
     'for each card in target player’s hand',
     'for each instant and sorcery card in your graveyard',
@@ -487,7 +487,7 @@ export const AMOUNT_NUMBER_OF = defineRule<IrAmount>({
     'equal to the number of Zombies you control',
     'equal to the number of nontoken creatures you control',
     'equal to the number of tapped creatures target opponent controls',
-    // Prismari deck, group 2 (D-636, CR 108.3): the cards in the hand of a player the text targets.
+    // Prismari deck, group 2 (D-641, CR 108.3): the cards in the hand of a player the text targets.
     'equal to the number of cards in target opponent’s hand',
   ],
   rejects: [

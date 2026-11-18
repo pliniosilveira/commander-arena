@@ -1,5 +1,5 @@
 /**
- * Conditions of group 3 of the Prismari deck (issue 87, D-648): "the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c), the test that begins the sentence
+ * Conditions of group 3 of the Prismari deck (issue 87, D-653): "the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c), the test that begins the sentence
  * "If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells from among those cards without paying their mana costs." It reads the cards the
  * instructions before it exiled (the engine's `moved`); the lowering reads it only after an instruction that exiled cards.
  */

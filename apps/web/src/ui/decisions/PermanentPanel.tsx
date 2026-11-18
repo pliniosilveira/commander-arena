@@ -81,7 +81,7 @@ export function PermanentPanel({
   const amass = isAmass(decision);
   // D-407 (CR 701.68a): the creature a blight cost puts -1/-1 counters on.
   const blight = isBlight(decision);
-  // D-626 (CR 701.36a): the creature token a populate copies.
+  // D-631 (CR 701.36a): the creature token a populate copies.
   const populate = isPopulate(decision);
   const title = ring
     ? RING_BEARER_TITLE

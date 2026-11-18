@@ -379,7 +379,7 @@ export function castZone(
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
     return null;
-  // CR 702.81a (Retrace, D-654): a card with retrace in its owner's graveyard is cast from there, paying its mana cost and discarding a land card.
+  // CR 702.81a (Retrace, D-659): a card with retrace in its owner's graveyard is cast from there, paying its mana cost and discarding a land card.
   if (alternative === 'retrace') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const retrace = faceOf(state, obj)?.abilities.some(
@@ -684,7 +684,7 @@ export function canCastDuringResolution(
   /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
   anyManaType = false,
 ): boolean {
-  // D-641 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
+  // D-646 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
   if (obj.card === null && obj.cardCopy !== true) return false;
   if (alternative === 'normal') {
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
@@ -835,7 +835,7 @@ export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
   );
 }
 
-/** The cards in the seat's graveyard it could cast now with retrace (CR 702.81a, D-654): the card is castable and a land card can be discarded for it. */
+/** The cards in the seat's graveyard it could cast now with retrace (CR 702.81a, D-659): the card is castable and a land card can be discarded for it. */
 export function retraceObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'retrace'),

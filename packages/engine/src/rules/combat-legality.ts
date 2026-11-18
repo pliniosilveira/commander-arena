@@ -247,7 +247,7 @@ export function canBlockAttacker(
   if (!isLiveCreature(state, blocker) || blocker.tapped) return false;
   if (derive(state, blocker).types.includes('battle')) return false;
   if (hasRestriction(state, blocker, 'cantBlock')) return false;
-  // CR 509.1b (D-635): "can block only creatures with flying": an attacker that does not have flying (reach is not flying) is not one it can block.
+  // CR 509.1b (D-640): "can block only creatures with flying": an attacker that does not have flying (reach is not flying) is not one it can block.
   if (
     hasRestriction(state, blocker, 'canBlockOnlyFlying') &&
     !hasKeyword(state, attacker, 'flying')

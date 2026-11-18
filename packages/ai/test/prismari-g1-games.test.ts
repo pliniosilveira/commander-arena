@@ -1,4 +1,4 @@
-// Slice soak (issue 87, D-625 to D-632): whole games with the 'prismariG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-prismari-g1.ts`: the creature that makes a Myr
+// Slice soak (issue 87, D-630 to D-637): whole games with the 'prismariG1' deck style (SYNTHETIC cards of the engine fixtures `synthetic-prismari-g1.ts`: the creature that makes a Myr
 // token and has the other tokens become copies of one it chooses, the creature that populates and sacrifices the token at the end step, the creature that makes tapped and attacking copies
 // of its tokens, the creature that makes X copies of a creature and exiles them at the end step, the kicker spell, the strive spell with any number of targets, the creature that becomes a
 // copy with myriad, the two prepared creatures and the spells and token makers that feed them) between random agents, with CasualAgent and HeuristicAgent in some seats. Every game

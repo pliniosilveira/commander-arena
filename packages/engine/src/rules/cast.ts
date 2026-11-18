@@ -217,7 +217,7 @@ export function beginCast(
       castFrom: zone,
       kicked: false,
       flashback: alternative === 'flashback',
-      // D-654 (CR 702.81a): cast from the graveyard by its retrace ability.
+      // D-659 (CR 702.81a): cast from the graveyard by its retrace ability.
       ...(alternative === 'retrace' ? { retrace: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
@@ -822,7 +822,7 @@ function toTargets(state: GameState, events: GameEvent[]): Result {
           casting.flashTargets ?? null,
           // D-424: a cost that is cheaper for some targets is payable only with them: only those are offered.
           payableSpellTargets(state, casting, specs, ctx),
-          // D-628: "costs {2}{R} more to cast for each target beyond the first": no more targets than the cost can be paid for.
+          // D-633: "costs {2}{R} more to cast for each target beyond the first": no more targets than the cost can be paid for.
           striveTargetCap(state, casting, specs, ctx),
         ),
       },
@@ -1436,7 +1436,7 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
           {
             seat: casting.seat,
             types: derive(next, getObject(next, casting.object)).types,
-            // D-633 (CR 202.3e): the mana value the spell has on the stack, with the X announced.
+            // D-638 (CR 202.3e): the mana value the spell has on the stack, with the X announced.
             manaValue: manaValueOfCost(
               derive(next, getObject(next, casting.object)).manaCost,
               getObject(next, casting.object),

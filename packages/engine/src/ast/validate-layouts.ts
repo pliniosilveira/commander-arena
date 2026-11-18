@@ -367,7 +367,7 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
         message: `flashback on this face of layout ${def.layout} is not implemented by the engine yet`,
       });
     }
-    // D-654 (CR 702.81a): retrace is read from the front face of a card that is not split, as the flashback cost is.
+    // D-659 (CR 702.81a): retrace is read from the front face of a card that is not split, as the flashback cost is.
     const retrace = face.abilities.some(
       (a) => a.kind === 'keyword' && a.keyword.kind === 'retrace',
     );

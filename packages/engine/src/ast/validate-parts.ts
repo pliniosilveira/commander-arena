@@ -1541,8 +1541,8 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'greatestManaValueCast':
     case 'spellsCastThisTurn':
-      // D-625 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).
-      // D-633 (CR 202.3): and the greatest mana value among them, read the same way.
+      // D-630 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).
+      // D-638 (CR 202.3): and the greatest mana value among them, read the same way.
       checkEnumList(out, `${path}.ofTypes`, a.ofTypes, CARD_TYPES, 'card type');
       for (const key of Object.keys(a)) {
         if (key !== 'kind' && key !== 'ofTypes') {
@@ -1617,7 +1617,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-183: the spell that is the source of "When you cast this spell" paid for itself; nothing else has mana spent to cast it to read.
       if (a.of !== undefined) {
         // D-217 (CR 113.7a): the mana spent on a spell this ability targets ("that spell", Mana Sculpt).
-        // D-633 (CR 601.2h): or the spell that caused a "whenever you cast" trigger.
+        // D-638 (CR 601.2h): or the spell that caused a "whenever you cast" trigger.
         if (a.of.kind === 'triggerSubject') {
           if (scope.triggerSubject !== 'stack') {
             issue(
@@ -1729,7 +1729,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         a.filter.zone !== undefined &&
         a.filter.zone !== 'battlefield'
       ) {
-        // D-636 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
+        // D-641 (CR 108.3, 400.1, 608.2c): "for each card in target opponent's hand": the cards of a zone outside the battlefield that a player the effect targets owns, counted as
         // the amount is read, with the targets.
         const { owner, ...rest } = a.filter;
         checkPlayerSelector(owner, `${path}.filter.owner`, scope, out);
@@ -2684,7 +2684,7 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
     e?.kind === 'createToken' ||
-    // D-626: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
+    // D-631: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
     e?.kind === 'populate' ||
     // D-145: the card found by a `revealUntil` is "it".
@@ -2696,7 +2696,7 @@ function movesObjects(e: Effect): boolean {
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
-    // D-647, D-648, D-650: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
+    // D-652, D-653, D-655: the cards exiled by `exileUntilFound`, `exileTopAnyNumber` and `exilePiles` are "the cards exiled this way" (`opponentChoosesCard` keeps the others).
     e?.kind === 'exileUntilFound' ||
     e?.kind === 'opponentChoosesCard' ||
     e?.kind === 'exileTopAnyNumber' ||
@@ -3106,7 +3106,7 @@ function checkCopySource(ref: ObjectRef, path: string, scope: Scope, out: Out): 
       checkRef(ref, 'object', path, scope, out);
       break;
     case 'chosen':
-      // D-629 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
+      // D-634 (CR 608.2d): "each other token you control becomes a copy of that token": the one an earlier `chooseObjects` of the same sequence chose.
       checkRef(ref, 'object', path, scope, out);
       break;
     default:
@@ -3339,7 +3339,7 @@ function checkSearch(
 }
 
 /**
- * D-647: the filter of an effect that picks cards among those in a library or in exile ("a nonland card"): it describes the card (types, supertypes, subtypes, colors, mana
+ * D-652: the filter of an effect that picks cards among those in a library or in exile ("a nonland card"): it describes the card (types, supertypes, subtypes, colors, mana
  * value), and says no zone, controller, owner or stackKind, nor anything read from the game.
  */
 function checkLibraryFilter(f: ObjectFilter, path: string, out: Out, scope: Scope): void {
@@ -3406,7 +3406,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         );
       } else if (ofKind === 'triggerSubject') {
         // D-149: "If that land is a Plains": the permanent whose event caused the trigger.
-        // D-633 (CR 202.3, 608.2h): or the spell that was cast ("If that spell's mana value is 5 or greater"), read from the spell on the stack or from its last-known information.
+        // D-638 (CR 202.3, 608.2h): or the spell that was cast ("If that spell's mana value is 5 or greater"), read from the spell on the stack or from its last-known information.
         if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {
           issue(
             out,
@@ -3441,7 +3441,7 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     }
     case 'movedTotalManaValue':
-      // D-648 (CR 202.3): the cards an earlier moving effect of the sequence moved, added up, against a whole number.
+      // D-653 (CR 202.3): the cards an earlier moving effect of the sequence moved, added up, against a whole number.
       checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
       if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
         issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
@@ -3751,7 +3751,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'createCopies': {
       // D-213: a group of permanents named by an `each` selector, and the abilities the copies have besides their own.
-      // D-626 (CR 601.2c, 608.2c): "Choose any number of target creatures you control. For each of them, create a token that's a copy of that creature": the permanents a target slot named.
+      // D-631 (CR 601.2c, 608.2c): "Choose any number of target creatures you control. For each of them, create a token that's a copy of that creature": the permanents a target slot named.
       if (kindOf(e.objects) !== 'each' && kindOf(e.objects) !== 'target') {
         issue(
           out,
@@ -3785,7 +3785,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
-      // D-639 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
+      // D-644 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
       // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
       if (e.forEachOpponent !== undefined) {
         if (e.forEachOpponent?.mustAttack !== true) {
@@ -3968,7 +3968,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkEnumList(out, `${path}.addTypes`, e.addTypes, CARD_TYPES, 'card type');
         }
       }
-      // D-627 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
+      // D-632 (CR 707.9b): "..., except it has myriad": the abilities the copy has besides the ones it copies.
       if (e.abilities !== undefined) {
         if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
           issue(out, `${path}.abilities`, 'abilities is a non-empty list when present');
@@ -4048,19 +4048,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'populate':
-      // D-626 (CR 701.36): no operand; the controller chooses a creature token they control.
+      // D-631 (CR 701.36): no operand; the controller chooses a creature token they control.
       break;
     case 'forEachPlayer':
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     case 'exileUntilFound':
-      // D-647 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
+      // D-652 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
       break;
     case 'opponentChoosesCard':
-      // D-647 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
+      // D-652 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
       if (kindOf(e.objects) !== 'moved') {
         issue(
           out,
@@ -4073,17 +4073,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
       break;
     case 'exilePiles':
-      // D-650 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
+      // D-655 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
       checkAmount(e.count, `${path}.count`, scope, out);
       if (e.chosenTo !== 'graveyard') {
         issue(out, `${path}.chosenTo`, 'the chosen pile is put into the graveyard');
       }
       break;
     case 'exileTopAnyNumber':
-      // D-648 (CR 701.13, 608.2d): no parameter; the player decides how many times.
+      // D-653 (CR 701.13, 608.2d): no parameter; the player decides how many times.
       break;
     case 'delayedCombatDamageTurn': {
-      // D-649 (CR 603.7, 510.3a): a delayed ability that triggers on combat damage to a player by a source the filter names, until end of turn; what it does is about the card an
+      // D-654 (CR 603.7, 510.3a): a delayed ability that triggers on combat damage to a player by a source the filter names, until end of turn; what it does is about the card an
       // earlier effect of the same sequence exiled, the only thing it can name (CR 603.7c).
       checkFilter(e.filter, `${path}.filter`, out);
       if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
@@ -4245,7 +4245,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.copier !== undefined && e.copier !== 'triggerPlayer' && e.copier !== 'opponent') {
         issue(out, `${path}.copier`, 'copier is "triggerPlayer" or "opponent"');
       } else if (e.copier === 'opponent') {
-        // D-652 (CR 702.144a): "choose an opponent. That player copies the spell": one copy of the spell of the trigger, with no group of copies.
+        // D-657 (CR 702.144a): "choose an opponent. That player copies the spell": one copy of the spell of the trigger, with no group of copies.
         if (e.forEach !== undefined || kindOf(e.spell) !== 'triggerSubject') {
           issue(
             out,
@@ -4274,7 +4274,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'exileSpellWithTimeCounters':
-      // D-638 (CR 608.2n, 122.1): the spell's own text; a whole number of counters of 1 or more.
+      // D-643 (CR 608.2n, 122.1): the spell's own text; a whole number of counters of 1 or more.
       if (scope.owner !== 'spell') {
         issue(
           out,
@@ -4637,7 +4637,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'copyCardAndCast':
-      // D-641 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
+      // D-646 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
       if (kindOf(e.objects) !== 'moved') {
         issue(
           out,
@@ -4652,7 +4652,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2g (D-145): a card chosen from the hand, or the card an earlier effect or a linked exile names; `play` also allows a land.
       if (e.play !== undefined && e.play !== true)
         issue(out, `${path}.play`, 'play must be true when present');
-      // D-647 (CR 608.2g): "up to two spells", "any number of spells": the cards an earlier effect moved, spells only (a land is played, one at a time).
+      // D-652 (CR 608.2g): "up to two spells", "any number of spells": the cards an earlier effect moved, spells only (a land is played, one at a time).
       if (e.max !== undefined) {
         if (e.max !== 'any' && !(Number.isSafeInteger(e.max) && e.max >= 2)) {
           issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");

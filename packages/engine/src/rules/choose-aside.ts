@@ -1,5 +1,5 @@
 /**
- * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-647): the `opponentChoosesCard` effect, run as one instruction that asks at most once.
+ * "An opponent chooses a nonland card exiled this way." (CR 608.2d, 101.4, D-652): the `opponentChoosesCard` effect, run as one instruction that asks at most once.
  *
  * The cards are the ones the earlier effects of the resolution moved (`moved`) that the filter matches and that are face up in exile (a card nobody may look at is not a card an
  * opponent can choose by what it is). An opponent of the controller chooses one of them: the first opponent in turn order who is still in the game, because with more than two

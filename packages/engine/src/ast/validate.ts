@@ -1801,7 +1801,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       'a land is played, not cast: it has no castFromGraveyard to give it permission for',
     );
   }
-  // D-628 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
+  // D-633 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
   const strive = face.abilities.filter(
     (a) => a?.kind === 'static' && a.static?.kind === 'costPerExtraTarget',
   ).length;
@@ -1927,7 +1927,7 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
 
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported
   // one must carry an effect. A supported instant or sorcery with no effect would do nothing.
-  // D-654 (CR 702.85a, 608.2): "Cascade. Retrace." is a sorcery with no spell text whose cast trigger does the work: cascade alone makes a spell with no effect to resolve valid.
+  // D-659 (CR 702.85a, 608.2): "Cascade. Retrace." is a sorcery with no spell text whose cast trigger does the work: cascade alone makes a spell with no effect to resolve valid.
   const isSpellCard = face.types.includes('instant') || face.types.includes('sorcery');
   const castsOnItsOwn = face.abilities.some(
     (a) => a.kind === 'keyword' && a.keyword.kind === 'cascade',

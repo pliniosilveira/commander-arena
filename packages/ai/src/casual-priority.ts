@@ -360,7 +360,7 @@ export function choosePriorityAction(
     }
   }
 
-  // 2b'. Retrace (CR 702.81a, D-654): a card in the graveyard cast by discarding a land card, only while the hand has a land card the agent cannot play this turn
+  // 2b'. Retrace (CR 702.81a, D-659): a card in the graveyard cast by discarding a land card, only while the hand has a land card the agent cannot play this turn
   // (it has played its land, or it holds two or more); the most valuable card by mana value, ties by PRNG. Which land goes is answered as any discard cost is.
   const mine = view.seats.find((x) => x.id === view.viewer);
   const landsInHand = (mine?.hand ?? []).filter((o) => isLand(o)).length;

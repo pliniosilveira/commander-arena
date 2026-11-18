@@ -1,6 +1,6 @@
 /**
  * "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of those piles. Put that pile
- * into your graveyard. Look at the cards in the other pile." (CR 700.3, 406.3, 701.13, D-650): the `exilePiles` effect.
+ * into your graveyard. Look at the cards in the other pile." (CR 700.3, 406.3, 701.13, D-655): the `exilePiles` effect.
  *
  *  1. The effect itself queues the exile of the first pile, face down (CR 406.3: nobody may look at a card exiled face down unless an instruction allows it), and the instruction.
  *  2. `second`: the cards exiled so far are the first pile (the new objects in exile: the moves add what they made to `moved`). The instruction exiles the top cards again, face up.

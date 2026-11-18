@@ -1097,7 +1097,7 @@ function runEffect(
           performed: spells.length,
         };
       }
-      // D-652 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
+      // D-657 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
       const opponent =
         effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
       if (effect.copier === 'opponent' && opponent === undefined) return done(state);
@@ -1118,7 +1118,7 @@ function runEffect(
     }
 
     case 'exileSpellWithTimeCounters': {
-      // CR 608.2n, 122.1 (D-638): the resolving spell carries the exile until it finishes resolving (`rules/stack.ts`, `finish`).
+      // CR 608.2n, 122.1 (D-643): the resolving spell carries the exile until it finishes resolving (`rules/stack.ts`, `finish`).
       const spell = state.objects[res.object];
       if (spell?.zone !== 'stack' || spell.stack?.kind !== 'spell') return done(state);
       return done(
@@ -1181,7 +1181,7 @@ function runEffect(
         })),
       );
     case 'copyCardAndCast': {
-      // CR 707.12 (D-641): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
+      // CR 707.12 (D-646): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
       // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
       const [id] = resolveObjects(state, effect.objects, ctx, targets);
       const card = id === undefined ? undefined : state.objects[id];
@@ -1197,7 +1197,7 @@ function runEffect(
       };
     }
     case 'populate':
-      // CR 701.36a (D-626): the token to copy is chosen, and the copy made, as the instruction runs (rules/populate.ts).
+      // CR 701.36a (D-631): the token to copy is chosen, and the copy made, as the instruction runs (rules/populate.ts).
       return done(state, [], [{ kind: 'populate', chosen: null }]);
     case 'prepare': {
       let next = state;
@@ -1229,7 +1229,7 @@ function runEffect(
         ],
       });
     case 'delayedCombatDamageTurn': {
-      // CR 603.7, 603.7c, 603.7d, 510.3a, 514.2 (D-649): "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card": a delayed ability of the
+      // CR 603.7, 603.7c, 603.7d, 510.3a, 514.2 (D-654): "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card": a delayed ability of the
       // controller that triggers each time such a creature damages a player until the end of the turn. The card an earlier effect of this sequence exiled is written into it as
       // it is made (CR 603.7c: nothing of the spell is left to name later); a card that left exile since is a new object and is not found (CR 400.7).
       const exiled = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
@@ -1285,7 +1285,7 @@ function runEffect(
       // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
       // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
       // CR 603.7c, 400.7), as Unearth's is.
-      // D-630 (CR 603.7, 603.7c, 603.7e, 701.21a): "Sacrifice it / those tokens" or "Exile them at the beginning of the next end step", about the permanents the effects before it
+      // D-635 (CR 603.7, 603.7c, 603.7e, 701.21a): "Sacrifice it / those tokens" or "Exile them at the beginning of the next end step", about the permanents the effects before it
       // made or put onto the battlefield (`moved`, only those): ONE delayed ability for the whole group, as the text says, so a player never has to order the permanents of one effect
       // (this replaces D-459's one ability for each: the ability is now the source's, CR 603.7e, not the permanent's). Its objects are bound as they are now (`boundObjects`); one that has
       // left since is a new object and nothing happens to it (CR 603.7c, 400.7). A permanent whose control changed is not sacrificed by the controller of the ability (CR 701.21a).
@@ -1808,7 +1808,7 @@ function runEffect(
           source: res.source,
           restriction: null,
           ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
-          // D-637 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
+          // D-642 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
           ...(production.staysUntilEndOfTurn === true ? { stays: true as const } : {}),
         })),
       ).flat();
@@ -1862,7 +1862,7 @@ function runEffect(
           original: true,
         });
       }
-      // D-626 (CR 110.5b): "create a tapped and attacking token that's a copy of that token": the tokens enter tapped.
+      // D-631 (CR 110.5b): "create a tapped and attacking token that's a copy of that token": the tokens enter tapped.
       const made = makeSettled(state, res, res.controller, wanted, effect.tapped === true, flow);
       if (made.kind === 'asked') return asking(state, made);
       return { ...done(made.state, made.events, made.front), lastMoved: made.created };
@@ -1892,7 +1892,7 @@ function runEffect(
       // the resolution stopping for each answer.
       const front: Instruction[] = [];
       let created: ObjectId[] = [];
-      // CR 111.2, 508.1d, 101.4 (D-639): "For each opponent, create two 3/3 tokens that attack that opponent this turn if able": the controller makes them for each opponent, in
+      // CR 111.2, 508.1d, 101.4 (D-644): "For each opponent, create two 3/3 tokens that attack that opponent this turn if able": the controller makes them for each opponent, in
       // turn order, the replacement effects of each creation settled for that opponent's tokens, each of which is required to attack the player it was made for.
       if (effect.forEachOpponent !== undefined) {
         for (const opponent of resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets)) {
@@ -2294,19 +2294,19 @@ function runEffect(
       return runRevealUntil(state, res, effect);
 
     case 'exileUntilFound':
-      // CR 701.13, 101.4 (D-647): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).
+      // CR 701.13, 101.4 (D-652): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).
       return runExileUntilFound(state, res, effect, ctx, targets);
 
     case 'opponentChoosesCard':
-      // CR 608.2d (D-647): an opponent chooses one of the cards moved; the others are `moved` afterwards (rules/choose-aside.ts).
+      // CR 608.2d (D-652): an opponent chooses one of the cards moved; the others are `moved` afterwards (rules/choose-aside.ts).
       return startOpponentChoosesCard(state, res, effect, ctx);
 
     case 'exilePiles':
-      // CR 700.3, 406.3 (D-650): a face-down pile and a face-up pile of exiled cards; an opponent chooses one (rules/exile-piles.ts).
+      // CR 700.3, 406.3 (D-655): a face-down pile and a face-up pile of exiled cards; an opponent chooses one (rules/exile-piles.ts).
       return startExilePiles(state, res, effect, ctx);
 
     case 'exileTopAnyNumber':
-      // CR 701.13, 608.2d (D-648): "As many times as you choose, you may exile the top card of your library" (rules/exile-any-number.ts).
+      // CR 701.13, 608.2d (D-653): "As many times as you choose, you may exile the top card of your library" (rules/exile-any-number.ts).
       return moving(state, [{ kind: 'exileAnyNumber', answer: null }]);
 
     case 'lookAndReorder': {

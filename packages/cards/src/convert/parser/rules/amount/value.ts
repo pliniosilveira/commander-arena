@@ -327,7 +327,7 @@ const MULTIPLE = (rule: string): Parser<IrAmount> => {
 const SUM_OR_ATOM = (rule: string): Parser<IrAmount> => {
   const atom = ATOM(rule);
   return (ctx, pos) => {
-    // D-625 (Prismari deck group 1): "one plus the number of instant and sorcery spells you've cast this turn": a plain 1 more than the amount that follows.
+    // D-630 (Prismari deck group 1): "one plus the number of instant and sorcery spells you've cast this turn": a plain 1 more than the amount that follows.
     const one = literal('one plus ')(ctx, pos);
     const first = atom(ctx, one.ok ? one.pos : pos);
     if (!first.ok) return first;
@@ -503,7 +503,7 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     'where X is that card’s mana value',
-    // Prismari deck, group 2 (D-633, CR 202.3): the spell that caused a cast trigger.
+    // Prismari deck, group 2 (D-638, CR 202.3): the spell that caused a cast trigger.
     "where X is that spell's mana value",
     'where X is the amount of mana spent to cast that spell',
     "where X is the greatest mana value among instant and sorcery spells you've cast this turn",

@@ -1,5 +1,5 @@
 /**
- * Targets the cost can be paid for (CR 601.2c, 601.2f, D-628): "Strive — ~ costs {2}{R} more to cast for each target beyond the first." The targets are chosen before the total cost
+ * Targets the cost can be paid for (CR 601.2c, 601.2f, D-633): "Strive — ~ costs {2}{R} more to cast for each target beyond the first." The targets are chosen before the total cost
  * is determined, and a spell whose total cost cannot be paid cannot be cast, so a slot of "any number of target creatures" offers no more targets than the caster could pay for. The
  * cost grows with each target, so the most is found by trying 1, 2, 3 ... of the slot's legal targets. Read at CR 601.2c, before the targets are chosen, with the spell on the stack
  * (CR 601.2a). The question "may this be cast at all?" assumes no target, where the cost is the printed one.

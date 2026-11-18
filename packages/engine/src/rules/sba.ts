@@ -145,7 +145,7 @@ export function checkStateBasedActions(input: GameState): SbaResult {
   for (const obj of Object.values(state.objects)) {
     // CR 704.5d: a token in a zone other than the battlefield; an emblem is not one of those tokens, it stays in the command zone (CR 114.5, D-201).
     if (obj.token && obj.zone !== 'battlefield' && obj.emblem !== true) cease.push(obj);
-    // CR 704.5e (D-641): a copy of a card is in a zone other than the stack or the battlefield (the copy an effect made in exile and that was not cast).
+    // CR 704.5e (D-646): a copy of a card is in a zone other than the stack or the battlefield (the copy an effect made in exile and that was not cast).
     if (obj.cardCopy === true && obj.zone !== 'stack' && obj.zone !== 'battlefield')
       cease.push(obj);
     if (obj.zone !== 'battlefield') continue;

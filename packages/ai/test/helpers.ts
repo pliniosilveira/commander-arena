@@ -3147,7 +3147,7 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
- * The SYNTHETIC cards of group 1 of the Prismari deck (issue 87, D-625 to D-632): a creature that makes a Myr token each combat and has the other tokens become copies of a token it
+ * The SYNTHETIC cards of group 1 of the Prismari deck (issue 87, D-630 to D-637): a creature that makes a Myr token each combat and has the other tokens become copies of a token it
  * chooses, a creature that populates and gives the token haste until the end step, a creature that makes tapped and attacking copies of its tokens, one that makes X copies of a
  * creature, a kicker spell that copies a creature, a strive spell with any number of targets, a creature that becomes a copy of another creature with myriad, the two prepared
  * creatures (prepared when a creature token deals combat damage, when a spell of mana value 5 or more is cast from the hand) and the spells and token makers that feed them. They ask
@@ -3207,7 +3207,7 @@ export const PRISMARI_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
 ];
 
 /**
- * The SYNTHETIC cards of group 2 of the Prismari deck (issue 87, D-633 and later): creatures whose triggers read the spell that was cast (its mana value, the mana spent on it, the
+ * The SYNTHETIC cards of group 2 of the Prismari deck (issue 87, D-638 and later): creatures whose triggers read the spell that was cast (its mana value, the mana spent on it, the
  * greatest mana value this turn), one that exiles a card from the graveyard to cast a copy of it, a spell that deals divided damage among any number of targets (and can be discarded for a
  * Treasure), a spell that makes tokens that must attack each opponent and costs less for the instants and sorceries in the graveyard, a creature that copies itself and has creatures with its
  * name unblockable, a land that becomes a creature, a dragon that gives artifacts a mana ability to spend on instants and sorceries, a creature that can block only creatures with flying, a
@@ -3272,7 +3272,7 @@ export const PRISMARI_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])
 ];
 
 /**
- * The SYNTHETIC cards of group 3 of the Prismari deck (issue 87, D-647 and later): sorceries and a creature that exile cards and cast spells from among them without paying their mana
+ * The SYNTHETIC cards of group 3 of the Prismari deck (issue 87, D-652 and later): sorceries and a creature that exile cards and cast spells from among them without paying their mana
  * costs (up to two, any number, one, the card revealed until a nonland card), two piles of exiled cards one of them face down with an opponent's choice, the cards each player exiles until
  * a nonland card and the opponent's choice among them, Demonstrate, a sorcery that copies an exiled card whenever a creature deals combat damage, Retrace, and the cheap and dear spells,
  * the one with an additional cost and the permanents that these cast. They ask the cards to cast one at a time, the opponent's pile and card, the cards to discard for retrace and whether to

@@ -1,5 +1,5 @@
 /**
- * "As many times as you choose, you may exile the top card of your library." (CR 701.13, 608.2d, 401.2, D-648): the `exileTopAnyNumber` effect, run as one instruction that asks again
+ * "As many times as you choose, you may exile the top card of your library." (CR 701.13, 608.2d, 401.2, D-653): the `exileTopAnyNumber` effect, run as one instruction that asks again
  * after each card.
  *
  * The controller is asked whether to exile the top card of their library (a `confirmOptional` decision of purpose `exileMore`, which lists the cards exiled so far: they are face up, so

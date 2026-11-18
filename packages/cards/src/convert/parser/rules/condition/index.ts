@@ -503,9 +503,9 @@ export const CONDITION_RULES = [
   ...VRASKA_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
-  // Prismari deck, group 2 (issue 87, D-633): "that spell's mana value is 5 or greater".
+  // Prismari deck, group 2 (issue 87, D-638): "that spell's mana value is 5 or greater".
   ...PRISMARI_G2_CONDITION_RULES,
-  // Prismari deck, group 3 (issue 87, D-648): "the total mana value of the cards exiled this way is 13 or less".
+  // Prismari deck, group 3 (issue 87, D-653): "the total mana value of the cards exiled this way is 13 or less".
   ...PRISMARI_G3_CONDITION_RULES,
   // Issue 25 (D-318): "you've cast three or more spells this turn".
   ...SPELLS_CAST_CONDITION_RULES,

@@ -156,7 +156,7 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
     if (objects?.kind !== 'noun' || play?.kind !== 'flag') return failure(clause);
     const playing = play.value ? { play: true as const } : {};
     if (objects.det === 'linkedExile') {
-      // D-651 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
+      // D-656 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
       // ability to belong to: "Reveal cards from the top of your library until you reveal a nonland card. Exile that card ... You may cast the exiled card without paying its mana cost."
       if (ctx.owner === 'spell' && ctx.lastEffectKind === 'revealUntil' && !play.value) {
         return {

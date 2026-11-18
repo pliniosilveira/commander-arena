@@ -107,7 +107,7 @@ export function createCasualHandlers(
           : d.purpose === 'amass'
             ? chooseAmassArmy(view, d) // CR 701.47a, D-367: the Army with the most power gets the counters
             : d.purpose === 'populate'
-              ? choosePopulateToken(view, d) // CR 701.36a, D-626: the creature token that makes the best copy
+              ? choosePopulateToken(view, d) // CR 701.36a, D-631: the creature token that makes the best copy
               : d.purpose === 'untap'
                 ? { kind: 'choosePermanents', objects: [...d.legal] } // CR 502.3, D-125: untap everything
                 : d.purpose === 'legendRule'

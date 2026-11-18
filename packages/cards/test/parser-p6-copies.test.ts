@@ -83,10 +83,10 @@ describe('a token that is a copy of a target (CR 707.2)', () => {
     return { status: imported.support.status, reasons: imported.support.reasons.join('\n') };
   };
 
-  test('the engine accepts a token copy of any permanent: an Aura copy chooses what it enchants (D-655)', () => {
+  test('the engine accepts a token copy of any permanent: an Aura copy chooses what it enchants (D-660)', () => {
     expect(reasonOf(ECHO)).toEqual({ status: 'supported', reasons: '' });
     expect(reasonOf("Create a token that's a copy of target artifact.").status).toBe('supported');
-    // D-655 (CR 303.4f): a token that is a copy of an Aura chooses what it enchants as it enters.
+    // D-660 (CR 303.4f): a token that is a copy of an Aura chooses what it enchants as it enters.
     expect(reasonOf("Create a token that's a copy of target permanent.").status).toBe('supported');
     expect(reasonOf("Create a token that's a copy of target nonland permanent.").status).toBe(
       'supported',
@@ -109,7 +109,7 @@ describe('a token that is a copy of a target (CR 707.2)', () => {
     );
   });
 
-  test('"Create X tokens that are copies of ..." is read (D-625, D-630): X is the X of the spell, so a card whose cost has no {X} is not supported', () => {
+  test('"Create X tokens that are copies of ..." is read (D-630, D-635): X is the X of the spell, so a card whose cost has no {X} is not supported', () => {
     const text = 'Create X tokens that are copies of target creature.';
     expect(readAll(text, 'sorcery').spell?.effect).toMatchObject({
       kind: 'createToken',
@@ -274,7 +274,7 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     expect(d.stoppedAt).toContain(part);
   });
 
-  test('"That token" after a copy is the token the copy made (Prismari group 1, D-630): the engine\'s `moved`, which `createToken` of a copy names', () => {
+  test('"That token" after a copy is the token the copy made (Prismari group 1, D-635): the engine\'s `moved`, which `createToken` of a copy names', () => {
     expect(
       readAll(
         "Create a token that's a copy of target creature. That token gains haste until end of turn.",

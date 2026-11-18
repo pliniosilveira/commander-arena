@@ -319,7 +319,7 @@ export function checkCostReduction(
 }
 
 /**
- * D-628, CR 601.2f: "~ costs {2}{R} more to cast for each target beyond the first": the cost is mana only, with no X (it is paid once for each such target, as the spell is cast).
+ * D-633, CR 601.2f: "~ costs {2}{R} more to cast for each target beyond the first": the cost is mana only, with no X (it is paid once for each such target, as the spell is cast).
  */
 export function checkCostPerExtraTarget(
   s: Extract<StaticEffect, { kind: 'costPerExtraTarget' }>,

@@ -105,7 +105,7 @@ export function targetChoiceSpecs(
   only: ObjectFilter | null = null,
   /** D-424, D-425: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
   payable: readonly ObjectId[] | null = null,
-  /** D-628: Strive: the slot of any number of targets offers at most this many (the targets after which the cost can be paid). Null leaves it alone. */
+  /** D-633: Strive: the slot of any number of targets offers at most this many (the targets after which the cost can be paid). Null leaves it alone. */
   cap: number | null = null,
 ): TargetChoiceSpec[] {
   const restricted = only === null && payable === null ? -1 : flashSlotOf(specs);

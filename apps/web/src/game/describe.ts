@@ -1592,7 +1592,7 @@ export function describeEvent(
         'CR 701.42c',
       );
     case 'cardsChosen':
-      // CR 608.2d (D-647): an opponent chose one of the cards exiled; the cards are public.
+      // CR 608.2d (D-652): an opponent chose one of the cards exiled; the cards are public.
       return line(
         'major',
         `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${event.objects.length === 1 ? 'a card' : 'cards'} among the exiled cards.`,
