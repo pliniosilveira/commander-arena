@@ -3315,6 +3315,32 @@ function checkSearch(
   }
 }
 
+/**
+ * D-647: the filter of an effect that picks cards among those in a library or in exile ("a nonland card"): it describes the card (types, supertypes, subtypes, colors, mana
+ * value), and says no zone, controller, owner or stackKind, nor anything read from the game.
+ */
+function checkLibraryFilter(f: ObjectFilter, path: string, out: Out, scope: Scope): void {
+  checkFilter(f, path, out, undefined, scope.diesTrigger === true);
+  if (
+    filterSome(
+      f,
+      (g) =>
+        g.zone !== undefined ||
+        g.controller !== undefined ||
+        g.owner !== undefined ||
+        g.stackKind !== undefined ||
+        g.other !== undefined ||
+        readsCombatOrSource(g),
+    )
+  ) {
+    issue(
+      out,
+      path,
+      'the cards are in a library or in exile: no zone, controller, owner, stackKind, other, or anything read from the game',
+    );
+  }
+}
+
 /** The effects a `may` effect wraps: each one tells the engine whether it did something (`StepOutcome.performed`, D-135). */
 export const MAY_EFFECT_KINDS = [
   // D-206 (CR 701.3): "you may attach it to target creature you control. If you do, ...".
@@ -3985,6 +4011,52 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
+    case 'exileUntilFound':
+      // D-647 (CR 701.13, 101.4): each player the selector names exiles from their own library until a card the filter describes (a card in a library).
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      break;
+    case 'opponentChoosesCard':
+      // D-647 (CR 608.2d): an opponent chooses among the cards an earlier effect moved, which a filter describes (cards in exile: no zone, controller or owner).
+      if (kindOf(e.objects) !== 'moved') {
+        issue(out, `${path}.objects`, "an opponent chooses among the cards an effect before moved ('moved')");
+      } else {
+        checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+      }
+      checkLibraryFilter(e.filter, `${path}.filter`, out, scope);
+      break;
+    case 'exilePiles':
+      // D-650 (CR 700.3, 406.3): the number of cards of each pile; the chosen pile goes to the graveyard.
+      checkAmount(e.count, `${path}.count`, scope, out);
+      if (e.chosenTo !== 'graveyard') {
+        issue(out, `${path}.chosenTo`, 'the chosen pile is put into the graveyard');
+      }
+      break;
+    case 'exileTopAnyNumber':
+      // D-648 (CR 701.13, 608.2d): no parameter; the player decides how many times.
+      break;
+    case 'delayedCombatDamageTurn': {
+      // D-649 (CR 603.7, 510.3a): a delayed ability that triggers on combat damage to a player by a source the filter names, until end of turn; what it does is about the card an
+      // earlier effect of the same sequence exiled, the only thing it can name (CR 603.7c).
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          "the sources are creatures the controller controls (controller 'you'), as they are on the battlefield",
+        );
+      }
+      if (e.effect?.kind !== 'copyCardAndCast' || kindOf(e.effect.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.effect`,
+          "a delayed combat damage trigger copies the card an earlier effect moved (copyCardAndCast of 'moved')",
+        );
+        break;
+      }
+      checkEffect(e.effect, `${path}.effect`, scope, out);
+      break;
+    }
     case 'delayedCombatDamage':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
@@ -4123,8 +4195,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
-      if (e.copier !== undefined && e.copier !== 'triggerPlayer') {
-        issue(out, `${path}.copier`, 'copier is "triggerPlayer"');
+      if (e.copier !== undefined && e.copier !== 'triggerPlayer' && e.copier !== 'opponent') {
+        issue(out, `${path}.copier`, 'copier is "triggerPlayer" or "opponent"');
+      } else if (e.copier === 'opponent') {
+        // D-652 (CR 702.144a): "choose an opponent. That player copies the spell": one copy of the spell of the trigger, with no group of copies.
+        if (e.forEach !== undefined || kindOf(e.spell) !== 'triggerSubject') {
+          issue(
+            out,
+            `${path}.copier`,
+            'an opponent copies the spell of the trigger (triggerSubject), one copy, with no forEach',
+          );
+        }
       } else if (e.copier !== undefined && kindOf(e.spell) !== 'triggerSubject') {
         issue(
           out,
@@ -4524,6 +4605,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2g (D-145): a card chosen from the hand, or the card an earlier effect or a linked exile names; `play` also allows a land.
       if (e.play !== undefined && e.play !== true)
         issue(out, `${path}.play`, 'play must be true when present');
+      // D-646 (CR 608.2g): "up to two spells", "any number of spells": the cards an earlier effect moved, spells only (a land is played, one at a time).
+      if (e.max !== undefined) {
+        if (e.max !== 'any' && !(Number.isSafeInteger(e.max) && e.max >= 2)) {
+          issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");
+        }
+        if (kindOf(e.objects) !== 'moved') {
+          issue(out, `${path}.max`, "several spells are cast from the cards an effect before moved ('moved')");
+        }
+        if (e.play === true) {
+          issue(out, `${path}.max`, 'several cards are cast, not played (no play)');
+        }
+      }
       const objects = e.objects as ChooseSelector | ObjectRef;
       if (kindOf(objects) === 'choose') {
         const choose = objects as ChooseSelector;
@@ -4627,11 +4720,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield or into the hand, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand or into exile, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {
