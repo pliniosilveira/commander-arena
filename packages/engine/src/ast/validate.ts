@@ -1591,11 +1591,15 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore is read as an intervening "if"',
           );
         }
-        if (conditionHas(a.triggerCondition, 'triggerPlayerHasMore')) {
+        // CR 603.2: "deals combat damage to a player who controls more lands than you" is part of the event, read once as it happens.
+        if (
+          conditionHas(a.triggerCondition, 'triggerPlayerHasMore') &&
+          !triggerHasPlayer(a.trigger)
+        ) {
           issue(
             out,
             `${path}.triggerCondition`,
-            'triggerPlayerHasMore is read as an intervening "if"',
+            'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
         if (conditionHas(a.triggerCondition, 'subjectGreaterPt')) {

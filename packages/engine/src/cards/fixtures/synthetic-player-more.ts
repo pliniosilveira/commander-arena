@@ -106,4 +106,61 @@ export const SYNTHETIC_PLAYER_MORE_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Flying
+  //  Whenever this creature deals combat damage to a player who controls more lands than you, return it to its owner's hand. If you do, you may search your
+  //  library for a Plains card, put it onto the battlefield tapped, then shuffle." (the trigger's own condition `triggerCondition`, read once as the damage is dealt)
+  singleFace({
+    name: 'SYNTHETIC Map Hawk',
+    manaCost: ['1', 'W'],
+    types: ['creature'],
+    subtypes: ['Bird'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 2,
+    toughness: 1,
+    oracleText:
+      "Flying\nWhenever this creature deals combat damage to a player who controls more lands than you, return it to its owner's hand. If you do, you may search your library for a Plains card, put it onto the battlefield tapped, then shuffle.",
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'flying' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+        triggerCondition: { kind: 'triggerPlayerHasMore', stat: 'lands' },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'moveToZone', objects: { kind: 'this' }, to: 'hand' },
+            {
+              kind: 'conditional',
+              condition: { kind: 'didPrevious' },
+              effect: {
+                kind: 'search',
+                player: { kind: 'you' },
+                filter: { subtypes: ['Plains'] },
+                max: 1,
+                destinations: [{ zone: 'battlefield', tapped: true, count: 1 }],
+                reveal: false,
+                shuffle: true,
+                optional: true,
+              },
+            },
+          ],
+        },
+      },
+    ],
+  }),
+  // A land that is not basic and has the land type Plains (CR 205.3i): "({T}: Add {W} or {G}.)"
+  singleFace({
+    name: 'SYNTHETIC Plains Forest Dual',
+    manaCost: null,
+    types: ['land'],
+    subtypes: ['Plains', 'Forest'],
+    colors: [],
+    colorIdentity: ['W', 'G'],
+    oracleText: '({T}: Add {W} or {G}.)',
+    abilities: [
+      { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['W'] } },
+      { kind: 'mana', cost: [{ kind: 'tap' }], production: { kind: 'fixed', mana: ['G'] } },
+    ],
+  }),
 ];
