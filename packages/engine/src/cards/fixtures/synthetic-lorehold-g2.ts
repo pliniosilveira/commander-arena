@@ -115,8 +115,8 @@ export const SYNTHETIC_LOREHOLD_G2_LIST: readonly CardDefinition[] = [
     manaCost: ['3', 'R', 'W'],
     types: ['creature'],
     subtypes: ['Elephant', 'Cleric'],
-    colors: ['R', 'W'],
-    colorIdentity: ['R', 'W'],
+    colors: ['W', 'R'],
+    colorIdentity: ['W', 'R'],
     power: 3,
     toughness: 5,
     oracleText:
