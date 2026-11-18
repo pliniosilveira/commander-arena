@@ -116,7 +116,10 @@ export function choosePermanentToTap(view: GameView, d: ChoosePermanentDecision)
       };
     })
     .sort((a, b) => a.ready - b.ready || a.value - b.value || a.index - b.index);
-  const chosen = ranked.slice(0, d.min).map((r) => r.id);
+  // CR 702.180a (Harmonize): "up to one" creature (`min` 0, `max` 1) is tapped to reduce the cost. The cast may be payable only with it, and the decision does not
+  // say, so the agent taps one (the one it can spare best) rather than risk a cast it cannot pay for.
+  const count = d.min === 0 && d.max === 1 ? 1 : d.min;
+  const chosen = ranked.slice(0, count).map((r) => r.id);
   return { kind: 'choosePermanents', objects: d.legal.filter((id) => chosen.includes(id)) };
 }
 

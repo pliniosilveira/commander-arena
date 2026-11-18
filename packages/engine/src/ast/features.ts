@@ -1141,6 +1141,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dash',
     'spectacle',
     'escape',
+    // CR 702.180: Harmonize.
+    'harmonize',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -1894,6 +1896,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'dash',
   'spectacle',
   'escape',
+  'harmonize',
   'madness',
   'miracle',
   'foretell',

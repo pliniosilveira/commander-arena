@@ -226,7 +226,8 @@ export function spellPlays(
       o.kind !== 'castSpell' ||
       o.alternative === 'flashback' ||
       o.alternative === 'escape' ||
-      o.alternative === 'retrace'
+      o.alternative === 'retrace' ||
+      o.alternative === 'harmonize'
     )
       continue;
     const base = findObject(view, o.object);
@@ -396,6 +397,25 @@ export function choosePriorityAction(
     const chosen = top[draw(top.length)];
     if (chosen !== undefined)
       return { kind: 'castSpell', object: chosen.id, alternative: 'escape' };
+  }
+
+  // 2c'. Harmonize (CR 702.180a): the same, a card of the graveyard once no worthwhile spell is left to cast from the hand. The engine lists the
+  // option only when the cost can be paid, with a creature tapped if that is what it takes; the tap is answered by `choosePermanentToTap`.
+  const harmonized = d.options.flatMap((o) => {
+    const obj =
+      o.kind === 'castSpell' && o.alternative === 'harmonize'
+        ? findObject(view, o.object)
+        : undefined;
+    return obj !== undefined && allowed(view, obj, activations) ? [obj] : [];
+  });
+  if (harmonized.length > 0) {
+    const best = Math.max(...harmonized.map(manaValueOf));
+    const top = harmonized.filter((s) => manaValueOf(s) === best);
+    const chosen = top[draw(top.length)];
+    if (chosen !== undefined) {
+      if (isPreventionSpell(chosen)) activations.add(preventionKey(view));
+      return { kind: 'castSpell', object: chosen.id, alternative: 'harmonize' };
+    }
   }
 
   // 2d. The special actions of Suspend and Foretell (D-128, `casual-later.ts`): once nothing worth casting is left.

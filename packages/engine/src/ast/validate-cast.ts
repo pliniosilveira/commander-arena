@@ -161,6 +161,28 @@ export function checkCastFace(
     // CR 702.138b: without an escape cost nothing can have escaped; the condition would never hold.
     issue(out, path, 'the escaped condition and "escapes with" need an escape cost (CR 702.138b)');
   }
+  // CR 702.180a: harmonize casts the card from the graveyard and exiles it as it leaves the stack, so it is on an instant or a sorcery (a permanent
+  // spell would be exiled instead of entering); the engine does not combine it with the other ways of paying part of the cost.
+  if (alternatives.some((a) => a?.kind === 'harmonize')) {
+    if (!face.types.includes('instant') && !face.types.includes('sorcery')) {
+      issue(out, `${path}.alternativeCosts`, 'harmonize is on an instant or a sorcery (CR 702.180a)');
+    }
+    const combined = abilities.some(
+      (a) =>
+        a.kind === 'keyword' &&
+        (a.keyword.kind === 'convoke' ||
+          a.keyword.kind === 'improvise' ||
+          a.keyword.kind === 'delve' ||
+          a.keyword.kind === 'flashback'),
+    );
+    if (combined || alternatives.some((a) => a?.kind === 'escape')) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'harmonize with convoke, improvise, delve, flashback or escape is not supported',
+      );
+    }
+  }
   // CR 118.9, 601.2h (D-149): "pay {W} and tap four untapped creatures" is a way to cast a spell, so it is on a card that is not a
   // land; the creatures Convoke, Improvise or Delve use are tapped or exiled for the same cost, which the engine does not combine.
   if (alternatives.some((a) => a?.kind === 'tapPermanents')) {

@@ -55,7 +55,9 @@ import {
   hasAftermath,
   hasModeCosts,
   kickerCostOf,
+  manaSymbolsOf,
   multikickerCostOf,
+  namedAlternativeCostOf,
   replicateCostOf,
 } from './alt-costs';
 import { becameTargetEvents } from './becomes-target';
@@ -86,6 +88,7 @@ import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
 import { derive } from './derive';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
+import { harmonizeWays } from './harmonize';
 import {
   canCast,
   canCastDuringResolution,
@@ -648,7 +651,7 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
     );
   }
   const choice = face?.additionalCostChoice;
-  if (choice === undefined) return toX(state, events);
+  if (choice === undefined) return toHarmonize(state, events);
   const card = getObject(casting.snapshot, casting.from);
   const request = {
     seat: casting.seat,
@@ -672,7 +675,7 @@ function toCostChoice(state: GameState, events: GameEvent[]): Result {
   );
   if (payable.length !== 2) {
     const only = payable[0] ?? 0;
-    return toX(
+    return toHarmonize(
       patchObject(state, casting.object, { stack: { ...stack, costOption: only } }),
       events,
     );
@@ -725,7 +728,7 @@ export function answerCostChoice(state: GameState, first: boolean): Result {
   const next = patchObject({ ...state, pending: null }, casting.object, {
     stack: { ...stack, costOption: first ? 0 : 1 },
   });
-  return toX(next, []);
+  return toHarmonize(next, []);
 }
 
 /**
@@ -1139,9 +1142,99 @@ export function answerCastSacrifice(state: GameState, chosen: readonly ObjectId[
   return answerSacrifice(state, chosen, finishCast);
 }
 
-/** The answer to the question of which permanents a `tapPermanents` alternative cost taps (D-149). */
+/**
+ * The answer to the question of which permanents a `tapPermanents` alternative cost taps (D-149), or of which creature a harmonize cost taps (CR 702.180b).
+ */
 export function answerCastTap(state: GameState, chosen: readonly ObjectId[]): Result {
+  if (state.casting?.stage === 'harmonize') return answerHarmonize(state, chosen);
   return answerTap(state, chosen, finishCast);
+}
+
+/**
+ * CR 702.180a, 702.180b, 601.2b (Harmonize): a spell cast for its harmonize cost asks which untapped creature, if any, the caster taps to reduce the cost by its
+ * power, after the choices of additional costs and before X, so the X offered counts the reduction. Nothing is asked when the cost has no generic mana to
+ * reduce (no {X}, no numeric symbol: the reduction would change nothing) or no creature qualifies. A creature is offered only if the cast can still
+ * be paid with it tapped. The question can be answered with none (`min` 0) and the cast taken back with `cancel` (CR 733).
+ */
+function toHarmonize(state: GameState, events: GameEvent[]): Result {
+  const casting = state.casting;
+  if (!casting) return fail('No cast in progress');
+  const spell = getObject(state, casting.object);
+  const stack = spell.stack;
+  if (!stack) return fail('The spell is not on the stack');
+  if (alternativeOfStack(stack) !== 'harmonize') return toX(state, events);
+  const face = faceOf(state, spell);
+  const cost = namedAlternativeCostOf(face, 'harmonize') ?? [];
+  const hasGeneric = manaSymbolsOf(cost).some((s) => s === 'X' || /^[1-9][0-9]*$/.test(s));
+  const request = {
+    seat: casting.seat,
+    zone: casting.fromZone as CastFrom,
+    alternative: 'harmonize',
+    kicked: stack.kicked,
+    modes: stack.chosenModes.length,
+    modeSet: stack.chosenModes,
+    ...(stack.kicks === undefined ? {} : { kicks: stack.kicks }),
+    ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
+    ...(stack.costOption === undefined ? {} : { costOption: stack.costOption }),
+  } as const;
+  // Tapped, a creature can no longer pay mana: the rest of the cost must still be payable.
+  const legal = hasGeneric
+    ? harmonizeWays(state, casting.seat).flatMap((way) =>
+        way.tap !== null &&
+        canPayRequest(way.state, casting.seat, spell, { ...request, spell, harmonizeTap: way.tap })
+          ? [way.tap]
+          : [],
+      )
+    : [];
+  if (legal.length === 0) {
+    return toX(
+      patchObject(state, casting.object, { stack: { ...stack, harmonizeTap: null } }),
+      events,
+    );
+  }
+  return ok(
+    setPending(
+      { ...state, casting: { ...casting, stage: 'harmonize' } },
+      {
+        kind: 'choosePermanent',
+        seat: casting.seat,
+        source: casting.object,
+        purpose: 'tap',
+        min: 0,
+        max: 1,
+        legal,
+        forCost: true,
+      },
+    ),
+    events,
+  );
+}
+
+/** The answer to the harmonize question (CR 702.180b): the creature is tapped as part of the cost and its power is kept on the spell; none taps nothing. */
+function answerHarmonize(state: GameState, chosen: readonly ObjectId[]): Result {
+  const casting = state.casting;
+  if (casting?.stage !== 'harmonize') return fail('No creature is being tapped for harmonize');
+  const stack = getObject(state, casting.object).stack;
+  if (!stack) return fail('The spell is not on the stack');
+  const creature = chosen[0] ?? null;
+  const events: GameEvent[] = [];
+  let next: GameState = { ...state, pending: null };
+  if (creature !== null) {
+    events.push({
+      kind: 'permanentsChosen',
+      seat: casting.seat,
+      source: casting.object,
+      objects: [creature],
+      purpose: 'tap',
+      automatic: false,
+    });
+    next = patchObject(next, creature, { tapped: true });
+    events.push({ kind: 'tapped', object: creature, by: casting.seat });
+  }
+  return toX(
+    patchObject(next, casting.object, { stack: { ...stack, harmonizeTap: creature } }),
+    events,
+  );
 }
 
 export function answerCastDiscard(state: GameState, chosen: readonly ObjectId[]): Result {

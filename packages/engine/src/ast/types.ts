@@ -1224,6 +1224,7 @@ export type NamedAlternativeKind =
   | 'dash'
   | 'spectacle'
   | 'escape'
+  | 'harmonize'
   | 'madness'
   | 'miracle'
   | 'foretell'
@@ -1268,6 +1269,9 @@ export type PermanentAlternativeKind =
  *   'exile'). The spell is an ordinary spell otherwise: it goes to the graveyard when it leaves the stack, and
  *   the permanent remembers that it escaped (`GameObject.alt`), which the `escaped` condition and the
  *   `ifEscaped` flag of `entersWithCounters` read ("escapes with a +1/+1 counter", CR 702.138c).
+ * - `harmonize`: CR 702.180a, the card is cast from its owner's graveyard by paying `cost` (mana, an {X} allowed, CR 107.3a) instead of its mana cost,
+ *   and the caster may tap one untapped creature they control to reduce the total cost by that creature's power in generic mana (chosen as the cost is
+ *   announced, `StackData.harmonizeTap`); the spell is exiled instead of going anywhere else as it leaves the stack. Only on an instant or a sorcery.
  * - `madness` (D-128, CR 702.35): the `cost` (mana only, no X) is paid instead of the mana cost, but only when the
  *   card is cast as its madness trigger resolves: a card with it that would be discarded is exiled instead (a
  *   replacement the engine applies to every discard), and its owner may then cast it from exile for this cost

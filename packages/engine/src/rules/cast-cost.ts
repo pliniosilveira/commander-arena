@@ -52,6 +52,7 @@ import { expandKeywords } from './derive-keywords';
 import { costReductionSources } from './derive-statics';
 import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
+import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
@@ -118,6 +119,7 @@ export function isNamedAlternative(
     alternative === 'dash' ||
     alternative === 'spectacle' ||
     alternative === 'escape' ||
+    alternative === 'harmonize' ||
     alternative === 'madness' ||
     alternative === 'miracle' ||
     alternative === 'foretell' ||
@@ -267,6 +269,11 @@ export interface CostRequest {
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
   readonly costOption?: 0 | 1;
+  /**
+   * The creature a harmonize cost taps (CR 702.180a), or null for none: left out, what the spell on the stack says (`StackData.harmonizeTap`) and, while nothing is
+   * chosen yet, the most any creature could take off when `optimistic`.
+   */
+  readonly harmonizeTap?: ObjectId | null;
   /** Whether a reduction that depends on the spell's targets is counted although none is chosen yet (D-207): the check that a spell may be cast at all. */
   readonly optimistic?: boolean;
   /**
@@ -416,7 +423,16 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       request.excluded,
       request.optimistic === true,
       request.zone,
-    ),
+    ) +
+      // CR 702.180a (Harmonize): the tapped creature's power in generic mana off the total cost.
+      (alternative === 'harmonize'
+        ? harmonizeReduction(
+            state,
+            seat,
+            request.harmonizeTap === undefined ? spell.stack?.harmonizeTap : request.harmonizeTap,
+            request.optimistic === true,
+          )
+        : 0),
   );
   // CR 702.138a: an escape cost also exiles that many other cards from the caster's graveyard.
   const exile = alternative === 'escape' ? (alternativeOf(face, 'escape')?.exile ?? 0) : 0;
@@ -695,7 +711,9 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
     if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.
     const home =
-      alt.kind === 'escape' || alt.kind === 'sacrificeFromGraveyard'
+      alt.kind === 'escape' ||
+      alt.kind === 'harmonize' ||
+      alt.kind === 'sacrificeFromGraveyard'
         ? 'graveyard'
         : alt.kind === 'foretell'
           ? 'exile'

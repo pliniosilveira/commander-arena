@@ -253,6 +253,10 @@ export function tapPrompt(
   decision: Pick<ChoosePermanentDecision, 'min' | 'max' | 'source'>,
   index: Index,
 ): string {
+  // CR 702.180a (Harmonize): "tap up to one untapped creature you control" to take its power off the generic mana of the cost.
+  if (index.get(decision.source)?.alternative === 'harmonize') {
+    return `Harmonize: choose an untapped creature to tap, reducing the cost by its power in generic mana, or none for ${nameOf(index, decision.source)}.`;
+  }
   const ability = index.get(decision.source)?.ability;
   const cost =
     ability?.kind === 'activated'

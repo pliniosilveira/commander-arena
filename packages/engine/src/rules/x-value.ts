@@ -97,6 +97,14 @@ export function spellXCost(
       ...extra,
     };
   }
+  // CR 702.180a, 107.3a: the {X} of a harmonize cost is the X announced, as for a miracle cost.
+  if (alternative === 'harmonize') {
+    return {
+      mana: xSymbolCount(manaSymbolsOf(namedAlternativeCostOf(face, 'harmonize') ?? [])),
+      life,
+      ...extra,
+    };
+  }
   const printed = xSymbolCount(face.manaCost ?? []);
   // D-667 (CR 702.81a): a retrace cast pays the mana cost, so an {X} in it is announced as for any cast.
   if (alternative !== undefined && alternative !== 'retrace' && printed > 0) return NO_X;
