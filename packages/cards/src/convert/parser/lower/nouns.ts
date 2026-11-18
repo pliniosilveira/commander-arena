@@ -324,6 +324,14 @@ function lowerFilterAt(
     parts.push('selector:hostOfSource');
     targetsObject = { hostOfSource: true };
   }
+  // D-595 (CR 601.2c, 601.2f, 115.1): what the spell a cost reduction is about targets: the filter of the spells names no zone, so it is not asked to be on the stack.
+  if (filter.castTargets !== undefined) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:targetsObject');
+    const aimed = lowerFilterAt(filter.castTargets, noun, true);
+    if (!aimed.ok) return aimed;
+    targetsObject = aimed.value;
+  }
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
   // D-131: "creatures attacking you" (CR 508.1b): the attackers whose attack target is the controller as a player.

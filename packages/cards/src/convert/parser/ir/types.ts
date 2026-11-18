@@ -358,6 +358,8 @@ export interface IrFilter {
   readonly enchanted?: boolean;
   /** "that target enchanted creature" (D-426, CR 601.2c, 303.4): of a spell, that it targets the permanent the source is attached to. Read in the filter of a cost reduction only. */
   readonly targetsHost?: true;
+  /** D-595 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
+  readonly castTargets?: IrFilter;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */

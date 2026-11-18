@@ -1,5 +1,5 @@
 {
-  "parserVersion": 127,
+  "parserVersion": 129,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3383,19 +3383,10 @@
     "7e00b0cd-d212-4604-ba07-da21f4fe00b0": {
       "name": "Sram, Senior Edificer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "86635a68"
+      "ast": "d6003dc8"
     },
     "7e3fe8e4-e56a-4109-a314-96c44bbe7d22": {
       "name": "Fall of the Hammer",
@@ -5896,18 +5887,10 @@
     "e233cb5b-7237-4271-8157-9179cc897b6c": {
       "name": "Killian, Ink Duelist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Spells you cast that target a creature cost {2} less to cast.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "301fb810"
+      "ast": "a42cb03f"
     },
     "e286d1aa-bb74-4568-98b5-a693ac7a369d": {
       "name": "Venerable Warsinger",
@@ -6848,7 +6831,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 430,
+      "supported": 432,
       "total": 480
     }
   }

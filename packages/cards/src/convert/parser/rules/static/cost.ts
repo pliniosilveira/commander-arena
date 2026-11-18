@@ -373,6 +373,7 @@ const CAST_HEAD: Parser<{
   readonly notHand?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
+  readonly aimed?: IrFilter;
 }> = choice(
   map(sequence(CHOSEN_SUFFIX, literal(' you cast cost ')), ([chosen]) => ({
     chosen,
@@ -390,6 +391,20 @@ const CAST_HEAD: Parser<{
     compared: undefined,
     targetsHost: true as const,
   })),
+  // D-595 (Killian, Ink Duelist, CR 601.2c, 601.2f, 115.1): "Spells you cast that target a creature cost {2} less to cast": the spell has a target of that kind, chosen before the cost is
+  // determined (the engine assumes the most favourable target while it asks whether the spell may be cast at all, D-424).
+  map(
+    pattern(
+      / you cast that target an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)? cost /iu,
+    ),
+    (m) => {
+      const what = (m[1] ?? '').toLowerCase();
+      const yours = m[2] === undefined ? {} : { controller: 'you' as const };
+      const aimed: IrFilter =
+        what === 'permanent' ? { ...yours, raw: what } : { types: [what], ...yours, raw: what };
+      return { chosen: undefined, compared: undefined, aimed };
+    },
+  ),
   // Stage P75 (D-235, CR 601.2a): "Spells you cast from anywhere other than your hand cost {2} less to cast".
   map(literal(' you cast from anywhere other than your hand cost '), () => ({
     chosen: undefined,
@@ -458,6 +473,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
     'Aura spells you cast that target enchanted creature cost {3} less to cast.',
     'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
+    // D-595 (Killian, Ink Duelist): the spells that target a creature.
+    'Spells you cast that target a creature cost {2} less to cast.',
+    'Aura spells you cast that target a creature you control cost {1} less to cast.',
   ],
   rejects: [
     'Angel spells and Angel spells you cast cost {1} less to cast.',
@@ -488,7 +506,6 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from your graveyard cost {2} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to cast',
     'Aura spells you cast that target equipped creature cost {3} less to cast.',
-    'Aura spells you cast that target a creature cost {3} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to activate.',
     'Aura spells that target enchanted creature cost {3} less to cast.',
     'Aura spells your opponents cast that target enchanted creature cost {3} less to cast.',
@@ -500,7 +517,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost }], amount] = r.value;
+    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost, aimed }], amount] =
+      r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -512,6 +530,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
+          // D-595: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
+          ...(aimed === undefined ? {} : { castTargets: aimed }),
         },
         compared,
       ),

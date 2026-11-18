@@ -5055,3 +5055,11 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `trigger.opponent-attacks`, `condition.those-attacking-you`, and "that opponent" as the pronoun "that player" (`rules/noun/players.ts`).
 - Tests: engine `scenario-xx-attack-at-you.test.ts` (both at me, one at me and one at my planeswalker, both at my planeswalker, one attacker only: nothing is put on the stack, once for the declaration, my own attack, the opponent loses 3 life); cards `parser-attack-at-you.test.ts` (the real lines of Mangara and Tomik, near misses). Mutation-checked: a planeswalker not counted, and no check as the ability triggers.
 - Example cards: Mangara, the Diplomat; Tomik, Wielder of Law (issue 89).
+
+## A list of kinds of spell in a cast trigger, and a cost reduction for spells that target (issue 89, D-594, D-595)
+
+- CR: 601.2i and 603.2 (a cast trigger), 205.3 (subtypes), 601.2c and 601.2f (the targets are chosen before the cost is determined), 118.7a (a reduction is generic mana only), 115.1.
+- Gap class: T (the grammar of two sentences); the engine ran both.
+- Parser: `insideSpellTypeList` (`segment.ts`: the commas of "an Aura, Equipment, or Vehicle spell" are not the end of the trigger), `rules/static/cost.ts` (`that target a creature` after "you cast", IR `castTargets`), `lower/nouns.ts` (`castTargets` to `targetsObject`).
+- Tests: engine `scenario-xx-cast-three-subtypes.test.ts`, `scenario-xx-cost-reduction-targets.test.ts`; cards `parser-cast-three-types.test.ts`, `parser-cost-reduction-targets.test.ts`.
+- Example cards: Sram, Senior Edificer; Killian, Ink Duelist (issue 89).

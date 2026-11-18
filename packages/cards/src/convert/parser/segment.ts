@@ -124,6 +124,17 @@ function insideEventList(text: string, at: number): boolean {
   );
 }
 
+/**
+ * Whether the comma at `at` separates two types of a list of spells in the trigger ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card"; D-594): the words before it are
+ * the start of the list after "cast" or "casts", and the words after it end the list with "spell". The comma after "spell" is the one that ends the trigger.
+ */
+function insideSpellTypeList(text: string, at: number): boolean {
+  return (
+    /(?:cast|casts) an? [A-Za-z-]+(?:, [A-Za-z-]+)*$/u.test(text.slice(Math.max(0, at - 70), at)) &&
+    /^, (?:[A-Za-z-]+, )*(?:or )?[A-Za-z-]+ spells?(?![\p{L}\p{N}])/u.test(text.slice(at, at + 80))
+  );
+}
+
 /** Offsets of `, ` (comma and space) that are outside quotes and braces. */
 function topLevelCommas(text: string, start: number, end: number): number[] {
   const out: number[] = [];
@@ -145,6 +156,8 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       ) &&
       // D-448 (CR 603.2c): "Whenever ~ attacks, blocks, or becomes the target of a spell, ...": a comma between the events of a list is not the end of the trigger condition.
       !insideEventList(text, i) &&
+      // D-594: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
+      !insideSpellTypeList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
     ) {

@@ -614,6 +614,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast an instant or sorcery spell',
     'you cast an artifact spell',
     'you cast an Aura or Equipment spell',
+    // D-594 (Sram, Senior Edificer): a list of three kinds of spell.
+    'you cast an Aura, Equipment, or Vehicle spell',
     'you cast a creature spell of the chosen type',
     'a player casts a spell',
     'a player casts a creature spell',
