@@ -108,8 +108,12 @@ export type Amount =
       /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
+       * D-632 (CR 601.2h, 113.7a, Manaform Hellkite): or `{ kind: 'triggerSubject' }`, the spell that was cast, in a `castSpell` trigger ("Whenever you cast a noncreature spell, create an
+       * X/X token, where X is the amount of mana spent to cast that spell"), read from the spell on the stack or from its last-known information.
        */
-      readonly of?: { readonly kind: 'target'; readonly id: string };
+      readonly of?:
+        | { readonly kind: 'target'; readonly id: string }
+        | { readonly kind: 'triggerSubject' };
     }
   /**
    * "The total life lost this way" (CR 702.101a, Extort, D-120): the sum of the life that the `loseLife`
@@ -273,6 +277,14 @@ export type Amount =
    * every spell counts. Not valid in a static ability: nothing refreshes a layer effect when a spell is cast.
    */
   | { readonly kind: 'spellsCastThisTurn'; readonly ofTypes?: readonly CardType[] }
+  /**
+   * "The greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck, group 2, D-632, CR 202.3, 202.3e, 601.2i, 707.10): the largest mana value
+   * of the spells the controller of the spell or ability has cast this turn, each as it was cast (`TurnLog.castSpells`: an {X} counts as the number announced, as it does for a
+   * spell on the stack, CR 202.3e; a copy is not cast, CR 707.10, and an opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that
+   * have at least one of those card types, as they were cast; left out, every spell counts. 0 when none was cast. Not valid in a static ability: nothing refreshes a layer
+   * effect when a spell is cast.
+   */
+  | { readonly kind: 'greatestManaValueCast'; readonly ofTypes?: readonly CardType[] }
   /**
    * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-491, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
@@ -4012,7 +4024,8 @@ export type Condition =
    * was when it left, so "return target creature card from your graveyard to your hand. If it's a Zombie card, draw a card"
    * reads the card whatever zone it is in now. Only in a `conditional` effect (`validateCard`), with a `target` or `moved`
    * reference, or (D-149, "If that land is a Plains") the `triggerSubject` of a trigger whose subject is a permanent; the filter names no zone,
-   * controller or owner (it describes the object).
+   * controller or owner (it describes the object). D-632 (CR 202.3, 608.2h, "If that spell's mana value is 5 or greater"): also the `triggerSubject` of a `castSpell` trigger, the spell
+   * that was cast, as it is on the stack or as it last was once it has left (its `manaValue` filter counts the X announced).
    * `inZone` (D-412, "If you put a Town card into your hand this way", CR 608.2c, 400.7j): the object must also be in that zone as it is now (or was, once it has
    * left): the card an earlier instruction put into the hand or exiled, not one that went anywhere else. Only in a `conditional` effect (a static ability does not read it).
    */

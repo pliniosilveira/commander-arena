@@ -1526,8 +1526,10 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
+    case 'greatestManaValueCast':
     case 'spellsCastThisTurn':
       // D-624 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).
+      // D-632 (CR 202.3): and the greatest mana value among them, read the same way.
       checkEnumList(out, `${path}.ofTypes`, a.ofTypes, CARD_TYPES, 'card type');
       for (const key of Object.keys(a)) {
         if (key !== 'kind' && key !== 'ofTypes') {
@@ -1602,9 +1604,22 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-183: the spell that is the source of "When you cast this spell" paid for itself; nothing else has mana spent to cast it to read.
       if (a.of !== undefined) {
         // D-217 (CR 113.7a): the mana spent on a spell this ability targets ("that spell", Mana Sculpt).
-        if (a.of.kind !== 'target')
-          issue(out, `${path}.of`, 'the spell is a target of the ability');
-        else checkRef(a.of, 'object', `${path}.of`, scope, out);
+        // D-632 (CR 601.2h): or the spell that caused a "whenever you cast" trigger.
+        if (a.of.kind === 'triggerSubject') {
+          if (scope.triggerSubject !== 'stack') {
+            issue(
+              out,
+              `${path}.of`,
+              'the spell that was cast is read only in a trigger about a spell being cast',
+            );
+          }
+        } else if (a.of.kind !== 'target') {
+          issue(
+            out,
+            `${path}.of`,
+            'the spell is a target of the ability or the spell that was cast',
+          );
+        } else checkRef(a.of, 'object', `${path}.of`, scope, out);
       } else if (scope.selfCast !== true && scope.owner !== 'spell') {
         // D-260: the effect of the spell itself reads what was spent to cast it ("You gain 1 life for each {S} spent to cast this spell").
         issue(
@@ -3323,11 +3338,12 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         );
       } else if (ofKind === 'triggerSubject') {
         // D-149: "If that land is a Plains": the permanent whose event caused the trigger.
-        if (scope.triggerSubject !== 'permanent') {
+        // D-632 (CR 202.3, 608.2h): or the spell that was cast ("If that spell's mana value is 5 or greater"), read from the spell on the stack or from its last-known information.
+        if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {
           issue(
             out,
             `${path}.of`,
-            'triggerSubject is only read where the trigger names a permanent (enters, dies, attacks, ...)',
+            'triggerSubject is only read where the trigger names a permanent (enters, dies, attacks, ...) or a spell that was cast',
           );
         }
       } else {

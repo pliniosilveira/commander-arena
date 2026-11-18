@@ -1001,6 +1001,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardsDrawnThisTurn',
     // D-624: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
     'spellsCastThisTurn',
+    // D-632: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
+    'greatestManaValueCast',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
     // D-575: "for each card exiled this way" for a spell's additional cost.
@@ -1675,6 +1677,8 @@ export const AMOUNT_KINDS = [
   'cardsDrawnThisTurn',
   /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-624): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
+  /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-632): the engine's `greatestManaValueCast`. */
+  'greatestManaValueCast',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */

@@ -99,6 +99,7 @@ import {
   targetsPossible,
 } from './legality';
 import { applyPaymentPlan, payableSources } from './mana-engine';
+import { manaValueOfCost } from './mana-value';
 import { legalModeSets, modalOfSpellText, modesDecision, printedOrder, specModes } from './modes';
 import { payByTapping } from './pay-manual';
 import {
@@ -1413,7 +1414,15 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
         ...next.turnLog,
         castSpells: [
           ...next.turnLog.castSpells,
-          { seat: casting.seat, types: derive(next, getObject(next, casting.object)).types },
+          {
+            seat: casting.seat,
+            types: derive(next, getObject(next, casting.object)).types,
+            // D-632 (CR 202.3e): the mana value the spell has on the stack, with the X announced.
+            manaValue: manaValueOfCost(
+              derive(next, getObject(next, casting.object)).manaCost,
+              getObject(next, casting.object),
+            ),
+          },
         ],
       },
     };

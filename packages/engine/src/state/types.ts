@@ -2051,9 +2051,14 @@ export interface TurnLog {
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**
    * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
-   * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
+   * "Activate only if you've cast an instant or sorcery spell this turn" reads it. D-632 (CR 202.3, 202.3e): also its mana value as it was cast (an {X} counts as the number
+   * announced, as it does for a spell on the stack), for "the greatest mana value among instant and sorcery spells you've cast this turn".
    */
-  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
+  readonly castSpells: readonly {
+    readonly seat: SeatId;
+    readonly types: readonly CardType[];
+    readonly manaValue: number;
+  }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {
