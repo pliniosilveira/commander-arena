@@ -966,6 +966,10 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       }
       return `${playerVerb(effect.player, ability, 'draw')} ${quantity(effect.count, defs, CARD)}${effect.reveal === true ? ' and reveal it' : ''}`;
     case 'discard': {
+      // Lorehold group 3 (CR 701.9a): "Each player discards their hand".
+      if (effect.hand === true) {
+        return `${playerVerb(effect.player, ability, 'discard')} ${effect.player.kind === 'you' ? 'your' : 'their'} hand`;
+      }
       // D-151 (CR 701.9): "You discard any number of cards".
       if (effect.anyNumber === true) {
         return `${playerVerb(effect.player, ability, 'discard')} ${ANY_NUMBER_OF_CARDS}`;

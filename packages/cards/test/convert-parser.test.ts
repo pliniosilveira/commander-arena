@@ -493,6 +493,7 @@ describe('unmatched abilities', () => {
       'condition.card-types-among',
       'condition.host-is-tapped',
       'condition.searched-this-way',
+      'condition.a-player-cards-in-hand',
       'condition.resolved-times',
       'condition.chose-ring-bearer',
       'condition.kicked',

@@ -195,6 +195,13 @@ export function lowerCondition(
       const { cmp, value } = test.compare;
       return ok({ kind: 'cardsInLibrary', compare: { cmp, value } });
     }
+    case 'aPlayerCardsInHand': {
+      // CR 402.1, 603.4 (Lorehold group 3): "if a player has one or fewer cards in hand", any player in the game.
+      const blocked = missingFeatures(['condition:aPlayerCardsInHand']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const { cmp, value } = test.compare;
+      return ok({ kind: 'aPlayerCardsInHand', compare: { cmp, value } });
+    }
     case 'paired': {
       // "~ is paired with another creature" (D-286, CR 702.95b): the permanent the ability belongs to is paired now; "it" is the source only in an
       // ability about the source itself (as for "it was kicked").
@@ -600,6 +607,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:lifeTotal',
   'condition:cardsInGraveyard',
   'condition:cardsInLibrary',
+  'condition:aPlayerCardsInHand',
   'condition:subjectControllerHasMore',
   'condition:triggerPlayerHasMore',
   'condition:thisMatches',

@@ -396,6 +396,17 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
             : `there are exactly ${value} cards in your library`;
       return negate ? `it's not true that ${text}` : text;
     }
+    case 'aPlayerCardsInHand': {
+      // Lorehold group 3 (CR 402.1, 603.4): "a player has one or fewer cards in hand".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atMost'
+          ? `a player has ${value} or fewer cards in hand`
+          : cmp === 'atLeast'
+            ? `a player has ${value} or more cards in hand`
+            : `a player has exactly ${value} cards in hand`;
+      return negate ? `it's not true that ${text}` : text;
+    }
     case 'yourTurn':
       // D-206 (CR 611.3a): "during your turn".
       return negate ? "it's not your turn" : "it's your turn";

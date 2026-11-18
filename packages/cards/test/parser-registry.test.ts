@@ -783,6 +783,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When ~ enters, you may search your library for a Plains card and put it onto the battlefield tapped. If ${e}, shuffle.`,
   ),
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand" in the intervening "if" of an upkeep trigger.
+  'condition.a-player-cards-in-hand': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, ~ becomes prepared.`,
+  ),
   'noun.any-number-target-graveyard-cards': permanent(
     (e) => `{2}, Exile ~: Shuffle ${e} into your library.`,
   ),

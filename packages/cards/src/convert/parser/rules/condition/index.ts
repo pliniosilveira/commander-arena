@@ -44,6 +44,7 @@ import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
 import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
+import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
 import { RECURSION_CONDITION_RULES } from './recursion';
@@ -524,6 +525,8 @@ export const CONDITION_RULES = [
   ...HYLDA_G2_CONDITION_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
   ...LOREHOLD_G1_CONDITION_RULES,
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
+  ...LOREHOLD_G3_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,

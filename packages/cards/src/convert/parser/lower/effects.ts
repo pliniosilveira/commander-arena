@@ -792,6 +792,14 @@ function playerVerb(
       }
       // "Discard their hand" (stage P52, D-210, CR 701.9): as many cards as the hand holds, counted as the instruction comes up.
       if (verb === 'discard' && arg(clause, 'hand') !== undefined) {
+        // "Each player discards their hand" (Lorehold group 3, CR 701.9a): each player discards the hand they have as their instruction comes up, so the count is not the controller's.
+        if (player.value.kind !== 'you') {
+          return {
+            ok: true,
+            value: [{ kind: 'discard', player: player.value, count: 0, hand: true }],
+            rule: clause.rule,
+          };
+        }
         const blocked = missingFeatures(['amount:countOf']);
         if (blocked.length > 0) return failure(clause, blocked);
         return {
