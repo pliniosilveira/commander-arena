@@ -196,6 +196,8 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
     'target creature you control gets +X/+X and gains hexproof and indestructible until end of turn',
     '~ gets +1/+1 and gains flying and lifelink until end of turn',
     'target creature gains skulk until end of turn',
+    // Issue 89 (D-638, CR 702.21a): a ward with a mana cost.
+    'target creature gains ward {2} until end of turn',
     // Stage P35 (D-176, CR 303.4b): the permanent an Aura is attached to.
     'enchanted creature gains trample and indestructible until end of turn',
     'equipped creature gains flying until end of turn',
@@ -214,7 +216,7 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
     'target creature gains cascade until end of turn',
     'target creature gains battle cry until end of turn',
     'target creature gains protection from red until end of turn',
-    'target creature gains ward {2} until end of turn',
+    'target creature gains ward until end of turn',
     'target creature gets +1/+1 and gains until end of turn',
     'target creature gets +Y/+Y and gains flying until end of turn',
     'target creature gets +X/+Y and gains flying until end of turn',

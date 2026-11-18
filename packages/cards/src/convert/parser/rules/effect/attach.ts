@@ -16,7 +16,8 @@ import { type Clauses, single } from './operands';
 
 /** "it" as the token the sentence made: an anaphor the binding pass resolves to the token as it does "that token". */
 const IT_AS_TOKEN = map(
-  spanned(pattern(new RegExp(`it${BOUNDARY}`, 'iu'))),
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": "the token" is the one the sentence before made, as "it" is.
+  spanned(pattern(new RegExp(`(?:it|the token)${BOUNDARY}`, 'iu'))),
   ({ span }): IrNoun => ({
     kind: 'noun',
     det: 'anaphor',

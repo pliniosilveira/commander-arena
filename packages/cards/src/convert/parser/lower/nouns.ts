@@ -88,6 +88,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:colorless',
   'selector:keywords',
   'selector:triggerPlayer',
+  'selector:triggerAttackedPlayer',
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
@@ -113,6 +114,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
+  'selector:enchantedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
@@ -144,6 +146,8 @@ function lowerFilterAt(
   inner: boolean,
   /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
   stackMember = false,
+  /** D-646: the filter of what a spell targets: matched against the permanent that is the target, so "modified" may be read in it although it is not the filter of the noun itself. */
+  aimed = false,
 ): LowerResult<ObjectFilter> {
   const rule = noun.rule;
   const bad = (needs: readonly FeatureRef[]): LowerResult<ObjectFilter> => ({
@@ -277,7 +281,7 @@ function lowerFilterAt(
   }
   // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
   if (filter.modified === true) {
-    if (inner) return bad([]);
+    if (inner && !aimed) return bad([]);
     parts.push('selector:modified');
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
@@ -298,7 +302,7 @@ function lowerFilterAt(
   if (filter.targets !== undefined) {
     if (!onStack) return bad([]);
     parts.push('selector:targetsObject');
-    const aimed = lowerFilterAt(filter.targets, noun, true);
+    const aimed = lowerFilterAt(filter.targets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
@@ -334,12 +338,25 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
+  // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
+  if (filter.enchantedByYou === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:enchantedByYou');
+  }
   // D-426 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
   // (a cost reduction), as `targets`: not a member of a choice, and not together with it.
   if (filter.targetsHost === true) {
     if (inner || targetsObject !== undefined) return bad([]);
     parts.push('selector:hostOfSource');
     targetsObject = { hostOfSource: true };
+  }
+  // D-645 (CR 601.2c, 601.2f, 115.1): what the spell a cost reduction is about targets: the filter of the spells names no zone, so it is not asked to be on the stack.
+  if (filter.castTargets !== undefined) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:targetsObject');
+    const aimed = lowerFilterAt(filter.castTargets, noun, true, false, true);
+    if (!aimed.ok) return aimed;
+    targetsObject = aimed.value;
   }
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
@@ -352,7 +369,7 @@ function lowerFilterAt(
     const missing = missingFeatures(['selector:attackingOrBlocking']);
     if (missing.length > 0) return bad(missing);
   }
-  if (filter.attackingOpponents === true) {
+  if (filter.attackingOpponents !== undefined) {
     const missing = missingFeatures(['selector:attackingOpponents']);
     if (missing.length > 0) return bad(missing);
   }
@@ -394,7 +411,9 @@ function lowerFilterAt(
       ? { targetCountAtLeast: filter.targetCountAtLeast }
       : {}),
     ...(filter.attackingYou === true && !inner ? { attackingYou: true as const } : {}),
-    ...(filter.attackingOpponents === true && !inner ? { attackingOpponents: true as const } : {}),
+    ...(filter.attackingOpponents !== undefined && !inner
+      ? { attackingOpponents: filter.attackingOpponents }
+      : {}),
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
@@ -425,6 +444,7 @@ function lowerFilterAt(
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
+    ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),
@@ -979,6 +999,16 @@ function selectorOf(
         rule: noun.rule,
       };
     }
+    // D-650 (CR 508.1b): "each other creature that's attacking one of your opponents" in an ability that triggers on a creature: the other is the creature the trigger is
+    // about (the one enchanted, for an Aura), not the source of the ability.
+    if (noun.other && noun.filter.attackingOpponents === 'players' && options.triggerSubject) {
+      const { other: _source, ...rest } = filter.value;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: rest, except: { kind: 'triggerSubject' } },
+        rule: noun.rule,
+      };
+    }
     return { ok: true, value: { kind: 'each', filter: filter.value }, rule: noun.rule };
   }
   return objectRefOf(noun, ctx, options);
@@ -1071,6 +1101,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'anaphor':
     case 'triggerActor': {
+      // D-648: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
+      if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
+        return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);
+      }
       // "That player" in a trigger about a player's action (stage P18): the player the trigger names.
       if (noun.det === 'triggerActor' || noun.ref === 'trigActor') {
         if (ctx.thatPlayer === null)
@@ -1107,7 +1141,7 @@ export function recipientOf(
     noun.det === 'eachOpponent' ||
     noun.det === 'triggerActor' ||
     noun.det === 'controllerOf' ||
-    (noun.det === 'anaphor' && noun.filter.raw.toLowerCase() === 'that player') ||
+    (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);
   return objectSelectorOf(noun, ctx);

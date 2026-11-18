@@ -256,6 +256,16 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           keywords: [] as string[],
           abilities: [] as IrQuotedAbility[],
         }),
+        // D-648 (CR 508.4): "that's attacking that opponent", said of one token.
+        optional(
+          quiet(
+            map(
+              pattern(/ that['’]s attacking that opponent(?![\p{L}\p{N}])/iu),
+              () => true as const,
+            ),
+          ),
+          null,
+        ),
       ),
       ([amount, , , pt, , , , , plural]) =>
         ((amount.kind !== 'x' && !pluralOnly) || plural) &&
@@ -273,8 +283,10 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       ,
       named,
       { keywords, abilities },
+      attackingThatOpponent,
     ]): Bare => ({
       kind: 'token',
+      ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
       ...(tapped === null ? {} : { tapped }),
       ...(named === null ? {} : { named }),
       ...(pt[1] === 'X'

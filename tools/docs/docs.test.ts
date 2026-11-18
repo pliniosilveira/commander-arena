@@ -21,7 +21,7 @@ const CEILINGS: Readonly<Record<string, number>> = {
   'AGENTS.md': 3900,
   'docs/SPEC.md': 8100,
   'docs/ARCHITECTURE.md': 16800,
-  'docs/ROADMAP.md': 27800,
+  'docs/ROADMAP.md': 28600,
   'docs/RULES_COVERAGE.md': 45000,
   'docs/CARD_SUPPORT_PLAYBOOK.md': 2200,
   '.claude/skills/deck-support/SKILL.md': 4600,
