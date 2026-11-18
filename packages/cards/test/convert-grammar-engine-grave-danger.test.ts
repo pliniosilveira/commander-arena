@@ -265,3 +265,39 @@ describe('Enter the God-Eternals: "deals 4 damage to target creature and you gai
     g.expect.invariants();
   });
 });
+
+describe('Gisa and Geralf: "When this creature enters, mill four cards. Once during each of your turns, you may cast a Zombie creature spell from your graveyard."', () => {
+  const gisa = real('Gisa and Geralf');
+  const ZOMBIE = 'SYNTHETIC Plain Zombie';
+  const OTHER_ZOMBIE = 'SYNTHETIC Zombie Mourner';
+  const start = () =>
+    scenario()
+      .define(gisa)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(gisa.name, 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .graveyard(ZOMBIE, OTHER_ZOMBIE, BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(gisa)).toEqual([]);
+  });
+
+  test('a Zombie creature spell is cast from the graveyard, once each turn (CR 601.2a, 113.6)', () => {
+    const g = start();
+    g.act(0).cast(ZOMBIE, { pay: true });
+    g.passAll();
+    expect(g.find({ name: ZOMBIE, zone: 'battlefield' })).toHaveLength(1);
+    // The one permission is used: the other Zombie of the graveyard is not offered this turn.
+    expect(g.act(0).try.cast(OTHER_ZOMBIE).ok).toBe(false);
+    g.expect.invariants();
+  });
+
+  test('a creature that is not a Zombie cannot be cast from the graveyard', () => {
+    const g = start();
+    expect(g.act(0).try.cast(BEARS).ok).toBe(false);
+  });
+});
