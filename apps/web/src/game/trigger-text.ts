@@ -89,6 +89,7 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'token',
   'notSubtypes',
   'colorless',
+  'notColors',
   'keywords',
   'notKeywords',
   // D-139: "with two or more colors", "with mana value X", "whose controller was dealt combat damage by this creature this turn".
@@ -132,6 +133,7 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
     filter.colorless === true ? 'colorless' : '',
+    (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),
     (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' and '),
     (filter.supertypes ?? []).join(' '),
     (bare ? subtypes.slice(0, -1) : subtypes).join(' '),

@@ -32,6 +32,7 @@ describe('planPayment: basic costs', () => {
       leftover: [],
       spentTypes: [],
       spentSnow: 0,
+      spentColors: [],
     });
     expect(planPayment(request(['0']))).toEqual({
       fromPool: [],
@@ -40,6 +41,7 @@ describe('planPayment: basic costs', () => {
       leftover: [],
       spentTypes: [],
       spentSnow: 0,
+      spentColors: [],
     });
   });
 
@@ -295,6 +297,7 @@ describe('planPayment: hybrid and Phyrexian mana', () => {
       leftover: [],
       spentTypes: [],
       spentSnow: 0,
+      spentColors: [],
     });
   });
 

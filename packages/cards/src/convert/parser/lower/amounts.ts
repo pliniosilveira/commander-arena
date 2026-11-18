@@ -214,7 +214,10 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       // D-646 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell": the spell that caused a "whenever you cast" trigger, read from the spell as it is or as it last was.
       if (amount.who === 'thatSpell') {
-        if (!ctx.castTrigger) return { ok: false, needs: [], at: amount.span, rule };
+        // The colors of the mana spent on "that spell" are not read (the engine reads them of the spell itself).
+        if (!ctx.castTrigger || amount.colors === true) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
         return { ok: true, value: { kind: 'manaSpent', of: { kind: 'triggerSubject' } }, rule };
       }
       // D-260: the effect of a spell reads it too, of the spell itself ("... for each {S} spent to cast ~", the card's own name): the engine reads the stack data of
@@ -229,6 +232,8 @@ export function lowerAmount(
           kind: 'manaSpent',
           ...(amount.fromType === undefined ? {} : { fromType: amount.fromType }),
           ...(amount.snow === true ? { snow: true as const } : {}),
+          // "the number of colors of mana spent to cast ~" (Converge, issue 310, CR 105.1).
+          ...(amount.colors === true ? { colors: true as const } : {}),
         },
         rule,
       };

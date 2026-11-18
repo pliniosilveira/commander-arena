@@ -23,6 +23,7 @@ const REVEAL_TOP_THEN: Lowering<IrClause, Effects> = {
     const draw = arg(clause, 'draw');
     const hand = arg(clause, 'hand');
     const tapped = arg(clause, 'tapped');
+    const otherwise = arg(clause, 'otherwise');
     if (what?.kind !== 'noun' || draw?.kind !== 'flag') return failure(clause);
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
@@ -40,6 +41,10 @@ const REVEAL_TOP_THEN: Lowering<IrClause, Effects> = {
           ifMatches: filter.value,
           to: hand?.kind === 'flag' && hand.value ? 'hand' : 'battlefield',
           ...(tapped?.kind === 'flag' && tapped.value ? { tapped: true as const } : {}),
+          // "Otherwise, put that card into your hand" (issue 310, CR 608.2c).
+          ...(otherwise?.kind === 'flag' && otherwise.value
+            ? { otherwiseTo: 'hand' as const }
+            : {}),
         };
     return {
       ok: true,

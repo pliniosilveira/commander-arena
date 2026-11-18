@@ -2,7 +2,7 @@
  * "The owner of target permanent shuffles it into their library, then reveals the top card of their library. If it's a permanent card, they put it onto
  * the battlefield." (D-151, CR 701.20 Reveal): the `revealTop` effect. Each player the selector names reveals the top card of their own library (a
  * `cardsRevealed` event, public); when the filter matches it, it goes onto the battlefield under that player's control or into their hand, and
- * otherwise it stays on top.
+ * otherwise it stays on top, or (`otherwiseTo`) goes into their hand.
  */
 import type { Effect } from '../ast/types';
 import type { SeatId } from '../ids';
@@ -60,6 +60,9 @@ export function runRevealTop(
           ),
         );
       }
+    } else if (effect.otherwiseTo !== undefined) {
+      // "Otherwise, put that card into your hand" (issue 310): the card revealed is not of the kind, so it leaves the top of the library for the hand of the player who revealed it.
+      moves.push(...moveInstructions([top], effect.otherwiseTo, 'top', false, undefined));
     }
   }
   return done(state, events, moves);

@@ -86,6 +86,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:notSubtypes',
   'selector:notSupertypes',
   'selector:colorless',
+  'selector:notColors',
   'selector:keywords',
   'selector:triggerPlayer',
   'selector:triggerAttackedPlayer',
@@ -177,6 +178,12 @@ function lowerFilterAt(
     if (letter === undefined) return bad([]);
     colors.push(letter);
   }
+  const notColors: Color[] = [];
+  for (const word of filter.notColors ?? []) {
+    const letter = COLOR_LETTERS[word];
+    if (letter === undefined) return bad([]);
+    notColors.push(letter);
+  }
   let anyOf: ObjectFilter[] | undefined;
   if (filter.anyOf !== undefined) {
     const missing = missingFeatures(['selector:anyOf']);
@@ -225,6 +232,8 @@ function lowerFilterAt(
   // D-135 (stage P30): "nonbasic land" (CR 205.4), the engine's `notSupertypes`.
   if (filter.notSupertypes !== undefined) parts.push('selector:notSupertypes');
   if (filter.colorless === true) parts.push('selector:colorless');
+  // CR 105.2: "nonblack", the engine's `notColors`.
+  if (notColors.length > 0) parts.push('selector:notColors');
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
@@ -408,6 +417,7 @@ function lowerFilterAt(
       ? { subtypes: [...filter.subtypes] }
       : {}),
     ...(colors.length > 0 ? { colors } : {}),
+    ...(notColors.length > 0 ? { notColors } : {}),
     ...(filter.notSubtypes !== undefined && filter.notSubtypes.length > 0
       ? { notSubtypes: [...filter.notSubtypes] }
       : {}),

@@ -30,6 +30,12 @@ import { type Clauses, makeClause } from './operands';
  */
 const MORE_AFTER = /^(?:,| and\b| then\b)/iu;
 
+/** ". Otherwise, put that card into your hand": the second place of a card that is not of the kind (the two sentences are kept together by the segmenter). */
+const OTHERWISE_INTO_HAND = new RegExp(
+  `\\.\\s+otherwise, put that card into your hand${BOUNDARY}`,
+  'iu',
+);
+
 /** What is done when the card revealed is of the kind: the effects of `effect.reveal-top-then`. */
 type Then = 'draw' | 'battlefield' | 'battlefieldTapped' | 'hand';
 
@@ -64,6 +70,8 @@ export const EFFECT_REVEAL_TOP_THEN = defineRule<Clauses>({
   ],
   examples: [
     "reveal the top card of your library. If it's a creature or land card, draw a card",
+    // Issue 310 (Coiling Oracle, CR 608.2c): the card that is not of the kind goes into the hand.
+    "reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand",
     'reveal the top card of your library. If a land card is revealed this way, put it onto the battlefield tapped',
     'reveal the top card of your library. If a creature card is revealed this way, draw a card',
     'reveal the top card of your library. If a land card is revealed this way, put it onto the battlefield',
@@ -86,6 +94,10 @@ export const EFFECT_REVEAL_TOP_THEN = defineRule<Clauses>({
     'reveal the top card of your library. If a land card is revealed, draw a card',
     'you may reveal the top card of your library',
     'you reveal the top card of your library. If a land card is revealed this way, draw a card',
+    "reveal the top card of your library. If it's a land card, draw a card. Otherwise, put that card into your hand",
+    "reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your graveyard",
+    "reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand and draw a card",
+    "reveal the top card of your library. If it's a land card, put it into your hand. Otherwise, put that card into your hand",
   ],
   parse: (ctx, pos) => {
     const id = 'effect.reveal-top-then';
@@ -103,19 +115,26 @@ export const EFFECT_REVEAL_TOP_THEN = defineRule<Clauses>({
     if (!middle.ok) return middle;
     const then = THEN(ctx, middle.pos);
     if (!then.ok) return then;
-    if (MORE_AFTER.test(ctx.text.slice(then.pos))) return fail(ctx, pos);
-    const span = { start: pos, end: then.pos };
+    // "... put it onto the battlefield. Otherwise, put that card into your hand." (CR 608.2c): the card that is not of the kind goes into the hand. Only after a card put onto the battlefield.
+    const otherwise =
+      then.value === 'battlefield' || then.value === 'battlefieldTapped'
+        ? pattern(OTHERWISE_INTO_HAND)(ctx, then.pos)
+        : null;
+    const end = otherwise?.ok === true ? otherwise.pos : then.pos;
+    if (MORE_AFTER.test(ctx.text.slice(end))) return fail(ctx, pos);
+    const span = { start: pos, end };
     const args: Record<string, IrArg> = {
       what: card.value,
       draw: flag(id, then.value === 'draw', span),
       ...(then.value === 'draw' ? {} : { hand: flag(id, then.value === 'hand', span) }),
       ...(then.value === 'battlefieldTapped' ? { tapped: flag(id, true, span) } : {}),
+      ...(otherwise?.ok === true ? { otherwise: flag(id, true, span) } : {}),
     };
     const clause = makeClause(id, 'revealTopThen', args, span);
     return {
       ok: true,
       value: [offered ? { ...clause, optional: true } : clause],
-      pos: then.pos,
+      pos: end,
     };
   },
 });

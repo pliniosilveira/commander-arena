@@ -225,6 +225,7 @@ export function checkFilter(
   checkEnumList(out, `${path}.supertypes`, f.supertypes, SUPERTYPES, 'supertype');
   checkEnumList(out, `${path}.notSupertypes`, f.notSupertypes, SUPERTYPES, 'supertype');
   checkEnumList(out, `${path}.colors`, f.colors, COLORS, 'color');
+  checkEnumList(out, `${path}.notColors`, f.notColors, COLORS, 'color');
   if (f.subtypes !== undefined) {
     if (!Array.isArray(f.subtypes) || f.subtypes.length === 0) {
       issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list when present');
@@ -570,6 +571,7 @@ const HOST_FILTER_KEYS: readonly string[] = [
   'subtypes',
   'notSubtypes',
   'colors',
+  'notColors',
   'colorless',
   'controller',
 ];
@@ -1793,6 +1795,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       checkManaSpentType(a.fromType, `${path}.fromType`, out, a.snow);
+      if (a.colors !== undefined) {
+        if (a.colors !== true) issue(out, `${path}.colors`, 'colors must be true');
+        if (a.fromType !== undefined || a.snow !== undefined) {
+          issue(
+            out,
+            `${path}.colors`,
+            'the colors of the mana spent are not read with fromType or snow',
+          );
+        }
+      }
       break;
     case 'exiledStillThere':
       // D-151: only the effect of a delayed trigger created after an effect that exiled cards (`checkDelayedTrigger`).

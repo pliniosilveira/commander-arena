@@ -42,6 +42,7 @@ export function payByTapping(
       riders: ManaRider[];
       spent: readonly (readonly string[])[];
       spentSnow: number;
+      spentColors: readonly ManaColor[];
     }
   | { error: string } {
   let working = state;
@@ -79,5 +80,6 @@ export function payByTapping(
     riders: applied.riders,
     spent: applied.spent,
     spentSnow: applied.spentSnow,
+    spentColors: applied.spentColors,
   };
 }

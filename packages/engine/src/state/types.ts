@@ -315,6 +315,8 @@ export interface ManaSpent {
   readonly fromTypes: Readonly<Record<string, number>>;
   /** How many of them came from a snow source (CR 107.4h, 106.3: "for each {S} spent to cast this spell"); left out when none did. */
   readonly snow?: number;
+  /** Issue 310 (Converge, CR 105.1): the colors of the mana spent, of the five (colorless mana is no color), in the order W, U, B, R, G. */
+  readonly colors?: readonly Color[];
 }
 
 export interface StackData {

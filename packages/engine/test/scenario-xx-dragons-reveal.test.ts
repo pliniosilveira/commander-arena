@@ -10,6 +10,7 @@ import { scenario } from '../src/testing/index';
 
 const WARP = 'SYNTHETIC Warp Bolt';
 const PROBE = 'SYNTHETIC Reveal Probe';
+const SCOUT = 'SYNTHETIC Top Card Scout';
 const HOARD = 'SYNTHETIC Breaching Hoard';
 const RITE = 'SYNTHETIC Discovery Rite';
 const TRUMPET = 'SYNTHETIC Herald Trumpet';
@@ -21,7 +22,7 @@ const BOLT = 'Lightning Bolt';
 const RED5 = ['Mountain', 'Mountain', 'Mountain', 'Mountain', 'Mountain'] as const;
 
 describe('the cards are valid', () => {
-  test.each([WARP, PROBE, HOARD, RITE, TRUMPET])('%s', (name) => {
+  test.each([WARP, PROBE, SCOUT, HOARD, RITE, TRUMPET])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 
@@ -439,5 +440,82 @@ describe('"you may behold a Dragon. If you do, create a Treasure token"', () => 
     g.expect.derived(SCOUT, { subtypes: ['Human', 'Druid', 'Dragon'], keywords: ['flying'] });
     g.advanceTo('upkeep', { turn: 'next' });
     g.expect.derived(SCOUT, { subtypes: ['Human', 'Druid'], keywords: [] });
+  });
+});
+
+describe('"reveal the top card of your library. If it\'s a land card, put it onto the battlefield. Otherwise, put that card into your hand." (CR 701.20, 401.5)', () => {
+  const scoutGame = (...library: string[]) =>
+    scenario()
+      .seat(0)
+      .library(...library)
+      .hand(SCOUT)
+      .battlefield('Forest', 'Forest')
+      .seat(1)
+      .library(BOLT)
+      .build();
+
+  test('a land card goes onto the battlefield and not into the hand', () => {
+    const g = scoutGame('Mountain', BOLT);
+    g.act(0).cast(SCOUT, { pay: true });
+    g.passAll();
+    g.expect.zone('Mountain', 'battlefield', { seat: 0 });
+    g.expect.librarySize(0, 1);
+    g.expect.handSize(0, 0);
+    g.expect.invariants();
+  });
+
+  test('a card that is not a land goes into the hand instead of staying on top', () => {
+    const g = scoutGame(BEARS, BOLT);
+    g.act(0).cast(SCOUT, { pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'hand', { seat: 0 });
+    g.expect.librarySize(0, 1);
+    g.expect.noObject(BEARS, { zone: 'battlefield' });
+    g.expect.invariants();
+  });
+
+  test('the card is revealed first: the event names it', () => {
+    const g = scoutGame(BEARS, BOLT);
+    g.act(0).cast(SCOUT, { pay: true });
+    g.passAll();
+    const revealed = g.events.find((e) => e.kind === 'cardsRevealed');
+    expect(revealed?.kind === 'cardsRevealed' ? revealed.names : []).toEqual([BEARS]);
+  });
+
+  test('an empty library reveals nothing and puts nothing anywhere', () => {
+    const g = scoutGame();
+    g.act(0).cast(SCOUT, { pay: true });
+    g.passAll();
+    g.expect.handSize(0, 0);
+    g.expect.librarySize(0, 0);
+  });
+
+  test('the shapes that are refused: a second place needs a first one, and only the hand', () => {
+    const card = syntheticCard(PROBE);
+    const face = card.faces[0];
+    if (face === undefined || face.spell === null) throw new Error('no spell');
+    const spellWith = (effect: unknown) =>
+      ({ ...card, faces: [{ ...face, spell: { ...face.spell, effect } }] }) as never;
+    const reveal = (extra: Record<string, unknown>) => ({
+      kind: 'revealTop',
+      player: { kind: 'you' },
+      ifMatches: { types: ['land'] },
+      to: 'battlefield',
+      ...extra,
+    });
+    expect(validateCard(spellWith(reveal({ otherwiseTo: 'hand' })))).toEqual([]);
+    expect(validateCard(spellWith(reveal({ otherwiseTo: 'graveyard' }))).length).toBeGreaterThan(0);
+    // no `to`: the card stays on top when it matches, so there is no "otherwise" to say
+    const noTo = { ...reveal({ otherwiseTo: 'hand' }), to: undefined };
+    expect(validateCard(spellWith(noTo)).length).toBeGreaterThan(0);
+    // `onMatch` reads the card as a kind and leaves it on top: no second place either
+    const onMatch = {
+      ...reveal({
+        otherwiseTo: 'hand',
+        onMatch: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      }),
+      to: undefined,
+    };
+    expect(validateCard(spellWith(onMatch)).length).toBeGreaterThan(0);
   });
 });
