@@ -3144,6 +3144,64 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Prismari deck (issue 87, D-624 to D-631): a creature that makes a Myr token each combat and has the other tokens become copies of a token it
+ * chooses, a creature that populates and gives the token haste until the end step, a creature that makes tapped and attacking copies of its tokens, one that makes X copies of a
+ * creature, a kicker spell that copies a creature, a strive spell with any number of targets, a creature that becomes a copy of another creature with myriad, the two prepared
+ * creatures (prepared when a creature token deals combat damage, when a spell of mana value 5 or more is cast from the hand) and the spells and token makers that feed them. They ask
+ * `choosePermanent` (populate and the token of a copy), `chooseObjects`, the kicker, any number of targets, the strive cost and the "you may" of a choice, which the generic pools are
+ * not built to follow: a style of their own.
+ */
+export const PRISMARI_G1_NAMES = [
+  'SYNTHETIC Myr Tinker',
+  'SYNTHETIC Iteration Engine',
+  'SYNTHETIC Storm Singer',
+  'SYNTHETIC Flame Dancer',
+  'SYNTHETIC Replication Rite',
+  'SYNTHETIC Twin Blaze',
+  'SYNTHETIC Mud Morph',
+  'SYNTHETIC Sky Painter // Gift Spell',
+  'SYNTHETIC Focus Mage // Brain Surge',
+  'SYNTHETIC Soldier Call',
+  'SYNTHETIC Beast Call',
+  'SYNTHETIC Prismari Legend',
+  'SYNTHETIC Prismari Cantrip',
+  'SYNTHETIC Prismari Grand Study',
+  'SYNTHETIC Prismari Grand Flash',
+] as const;
+
+/** The prismariG1 style: every card of the group twice, the token makers three times, and bodies for the copies. */
+export const PRISMARI_G1_SPELLS = [
+  ...supported(PRISMARI_G1_NAMES),
+  ...supported(PRISMARI_G1_NAMES),
+  ...supported(['SYNTHETIC Soldier Call', 'SYNTHETIC Beast Call', 'SYNTHETIC Iteration Engine']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red for the creatures and the strive cost, white and green for the token makers. */
+export const PRISMARI_G1_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+]);
+
+/** Style pairs of the Prismari group 1 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG1', 'prismariG1'],
+  ['prismariG1', 'spells'],
+  ['spells', 'prismariG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-528 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
  * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
  * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
@@ -4184,6 +4242,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Prismari group 1 cards (issue 87) populate, copy tokens, ask for any number of targets, a kicker, a strive cost and a token to choose: a style of their own.
+  .filter((card) => !(PRISMARI_G1_NAMES as readonly string[]).includes(card.name))
   // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
   .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
@@ -4410,6 +4470,7 @@ export type DeckStyle =
   | 'featherG1'
   | 'gisaG4'
   | 'hyldaG1'
+  | 'prismariG1'
   | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
@@ -4501,6 +4562,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'sacrificeMana' && SACRIFICE_MANA_SPELLS.length > 0) return SACRIFICE_MANA_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
+  if (style === 'prismariG1' && PRISMARI_G1_SPELLS.length > 0) return PRISMARI_G1_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
@@ -4704,6 +4766,7 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'sacrificeMana' && BASIC_LANDS.length > 0) return SACRIFICE_MANA_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
+  if (style === 'prismariG1' && BASIC_LANDS.length > 0) return PRISMARI_G1_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;

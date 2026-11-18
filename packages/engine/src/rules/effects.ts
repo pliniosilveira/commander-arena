@@ -1194,9 +1194,10 @@ function runEffect(
       // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
       // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
       // CR 603.7c, 400.7), as Unearth's is.
-      // D-625 (CR 603.7c, 701.21a): "Sacrifice it / those tokens at the beginning of the next end step", about the permanents the effects before it made (`moved`: the tokens
-      // `createToken`, `createCopies` or `populate` created, only those): one delayed ability for each, sacrificed by the controller of the ability that created it, so a token whose control
-      // changed since is not sacrificed (CR 701.21a: only a permanent its controller controls can be sacrificed). A token that has left is gone and nothing happens (CR 603.7c).
+      // D-629 (CR 603.7, 603.7c, 603.7e, 701.21a): "Sacrifice it / those tokens" or "Exile them at the beginning of the next end step", about the permanents the effects before it
+      // made or put onto the battlefield (`moved`, only those): ONE delayed ability for the whole group, as the text says, so a player never has to order the permanents of one effect
+      // (this replaces D-459's one ability for each: the ability is now the source's, CR 603.7e, not the permanent's). Its objects are bound as they are now (`boundObjects`); one that has
+      // left since is a new object and nothing happens to it (CR 603.7c, 400.7). A permanent whose control changed is not sacrificed by the controller of the ability (CR 701.21a).
       if (
         (effect.effect.kind === 'exile' || effect.effect.kind === 'sacrifice') &&
         effect.effect.objects.kind === 'moved'

@@ -7,6 +7,8 @@
 import {
   type Ability,
   type CardDefinition,
+  type ChoosePermanentDecision,
+  type ObjectView,
   type StackAbility,
   syntheticCard,
 } from '@commander-arena/engine';
@@ -14,6 +16,14 @@ import { expect, test } from 'vitest';
 import { lordWordings } from '../src/game/static-text';
 import { triggerWording } from '../src/game/trigger-text';
 import { triggerGist } from '../src/ui/decisions/ability-label';
+import { angelsBadge, angelsPermanentPrompt } from '../src/ui/decisions/permanents-angels';
+import {
+  isPopulate,
+  POPULATE_BADGE,
+  POPULATE_TITLE,
+  populateDetail,
+  populatePrompt,
+} from '../src/ui/decisions/permanents-populate';
 
 const faceOf = (card: CardDefinition) => {
   const face = card.faces[0];
@@ -88,4 +98,59 @@ test('Strive: the cost of each target beyond the first (CR 601.2f, 207.2c)', () 
   expect(lines).toEqual([
     'Strive — This spell costs {2}{R} more to cast for each target beyond the first.',
   ]);
+});
+
+// The question of populate (CR 701.36a, D-625): a `choosePermanent` of purpose 'populate', worded and badged as its own question, and not as another choice of permanents.
+const POPULATE_QUESTION = {
+  id: 'd1',
+  kind: 'choosePermanent',
+  seat: 0,
+  purpose: 'populate',
+  source: 'o9',
+  min: 1,
+  max: 1,
+  legal: ['o1', 'o2'],
+} as unknown as ChoosePermanentDecision;
+
+const tokenView = (id: string, name: string, extra: Record<string, unknown> = {}) =>
+  ({
+    id,
+    name,
+    types: ['creature'],
+    subtypes: [],
+    supertypes: [],
+    oracleText: '',
+    controller: 0,
+    owner: 0,
+    zone: 'battlefield',
+    isToken: true,
+    ...extra,
+  }) as unknown as ObjectView;
+
+const tokens = new Map<`o${number}`, ObjectView>([
+  ['o1', tokenView('o1', 'Soldier')],
+  ['o2', tokenView('o2', 'Beast')],
+  ['o9', tokenView('o9', 'Iteration Engine', { zone: 'battlefield', isToken: false })],
+]);
+
+test('populate: the question names the source and asks for a creature token; the badge and the bar say what a click does', () => {
+  expect(isPopulate(POPULATE_QUESTION)).toBe(true);
+  expect(populatePrompt(POPULATE_QUESTION, tokens)).toBe(
+    'Populate: choose a creature token you control to copy (Iteration Engine).',
+  );
+  expect(angelsPermanentPrompt(POPULATE_QUESTION, tokens)).toBe(
+    populatePrompt(POPULATE_QUESTION, tokens),
+  );
+  expect(angelsBadge(POPULATE_QUESTION, tokens)).toBe(POPULATE_BADGE);
+  expect(populateDetail([], tokens)).toMatch(/^Click a creature token/);
+  expect(populateDetail(['o2'], tokens)).toBe(
+    'A token that is a copy of Beast will be created. Click it again to take it back.',
+  );
+  expect([POPULATE_TITLE, populateDetail([], tokens)].join(' ')).not.toMatch(/[Ss]acrifice/);
+});
+
+test('populate: another choice of permanents is not worded as populate', () => {
+  const amass = { purpose: 'amass', min: 1, max: 1, legal: ['o1'], source: 'o9' } as never;
+  expect(isPopulate(amass)).toBe(false);
+  expect(angelsBadge(amass, tokens)).not.toBe(POPULATE_BADGE);
 });

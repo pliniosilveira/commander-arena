@@ -18,6 +18,7 @@ import { AMASS_BADGE, amassPrompt, isAmass } from './permanents-amass';
 import { BLIGHT_BADGE, blightPrompt, isBlight } from './permanents-blight';
 import { conniveOrderPrompt, isConniveOrder } from './permanents-connive';
 import { entersCopyPrompt, isEntersCopy } from './permanents-dragons';
+import { isPopulate, POPULATE_BADGE, populatePrompt } from './permanents-populate';
 import { isRingBearer, RING_BEARER_BADGE, ringBearerPrompt } from './permanents-ring';
 import { isSoulbond, SOULBOND_BADGE, soulbondPrompt } from './permanents-soulbond';
 import { isUntapChoice, UNTAP_CHOICE_BADGE, untapChoicePrompt } from './permanents-untap';
@@ -196,6 +197,8 @@ export function angelsPermanentPrompt(
   if (isRingBearer(decision)) return ringBearerPrompt(decision, index);
   // D-370 (CR 701.47a): "Choose an Army creature you control".
   if (isAmass(decision)) return amassPrompt(decision, index);
+  // D-625 (CR 701.36a): "Choose a creature token you control" to copy.
+  if (isPopulate(decision)) return populatePrompt(decision, index);
   // D-407 (CR 701.68a): "Blight 1", a cost that puts -1/-1 counters on a creature you control.
   if (isBlight(decision)) return blightPrompt(decision, index);
   // D-286 (CR 702.95a): "you may pair this creature with another unpaired creature you control".
@@ -217,6 +220,7 @@ export function angelsBadge(
   if (isEntersCopy(decision)) return 'Copy';
   if (isRingBearer(decision)) return RING_BEARER_BADGE;
   if (isAmass(decision)) return AMASS_BADGE;
+  if (isPopulate(decision)) return POPULATE_BADGE;
   if (isBlight(decision)) return BLIGHT_BADGE;
   if (isSoulbond(decision)) return SOULBOND_BADGE;
   if (isUntapChoice(decision)) return UNTAP_CHOICE_BADGE;
