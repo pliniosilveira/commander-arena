@@ -63,3 +63,49 @@ describe('Lotleth Giant: "When this creature enters, it deals 1 damage to target
     g.expect.life(1, 20);
   });
 });
+
+describe('Vela the Night-Clad: "Whenever Vela or another creature you control leaves the battlefield, each opponent loses 1 life."', () => {
+  const vela = real('Vela the Night-Clad');
+  const start = (mine: readonly string[], theirs: readonly string[] = []) =>
+    scenario()
+      .define(vela)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand('Murder')
+      .battlefield(vela.name, 'Swamp', 'Swamp', 'Swamp', ...mine)
+      .seat(1)
+      .life(20)
+      .library(...LIBRARY)
+      .battlefield(...theirs)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(vela)).toEqual([]);
+  });
+
+  test('another creature of yours leaves: each opponent loses 1 life', () => {
+    const g = start([BEARS]);
+    g.act(0).cast('Murder', { targets: [BEARS], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.life(1, 19);
+    g.expect.invariants();
+  });
+
+  test('Vela itself leaves: each opponent loses 1 life (CR 603.6c, it sees itself leave)', () => {
+    const g = start([]);
+    g.act(0).cast('Murder', { targets: [vela.name], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.life(1, 19);
+  });
+
+  test('a creature an opponent controls leaves: nothing happens', () => {
+    const g = start([], [BEARS]);
+    g.act(0).cast('Murder', { targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.life(1, 20);
+    g.expect.stack([]);
+  });
+});
