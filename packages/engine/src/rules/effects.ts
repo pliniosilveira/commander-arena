@@ -24,6 +24,7 @@ import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
 import { runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
+import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runChooseOne } from './choose-one';
 import { evaluateCondition } from './conditions';
@@ -1154,6 +1155,22 @@ function runEffect(
           effect: effect.effect,
         })),
       );
+    case 'copyCardAndCast': {
+      // CR 707.12 (D-640): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
+      // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
+      const [id] = resolveObjects(state, effect.objects, ctx, targets);
+      const card = id === undefined ? undefined : state.objects[id];
+      if (card === undefined || card.zone !== 'exile' || card.card === null) return done(state);
+      const made = makeCardCopy(state, card.card, res.controller);
+      return {
+        ...done(
+          made.state,
+          [],
+          [{ kind: 'castFree', objects: { kind: 'moved' }, play: false, chosen: null }],
+        ),
+        lastMoved: [made.copy],
+      };
+    }
     case 'populate':
       // CR 701.36a (D-625): the token to copy is chosen, and the copy made, as the instruction runs (rules/populate.ts).
       return done(state, [], [{ kind: 'populate', chosen: null }]);

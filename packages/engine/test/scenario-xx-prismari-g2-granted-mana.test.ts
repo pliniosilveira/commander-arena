@@ -54,7 +54,7 @@ describe('artifacts you control have "{T}: Add one mana of any color. Spend this
     const g = build((b) => b.hand(APPRENTICE).battlefield('Mountain'));
     g.act(0).tapForMana('trinket', { color: 'R' });
     // One restricted mana and one Mountain: {1}{R} cannot be paid with the artifact's mana.
-    expect(g.act(0).try.cast(APPRENTICE, { pay: true }).ok).toBe(false);
+    g.expect.illegal(0, { cast: APPRENTICE });
   });
 
   test('a creature spell is paid with other mana while the restricted mana stays unused in the pool', () => {

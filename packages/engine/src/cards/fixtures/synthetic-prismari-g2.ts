@@ -132,7 +132,7 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
     power: 4,
     toughness: 4,
     oracleText:
-      "Trample\nWhenever you cast an instant or sorcery spell, this creature gets +X/+0 until end of turn, where X is that spell's mana value.",
+      "Trample\nWhenever you cast an instant or sorcery spell, this creature gets +X/+0 until end of turn, where X is that spell's mana value.\nWhenever this creature attacks, exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost.",
     abilities: [
       { kind: 'keyword', keyword: { kind: 'trample' } },
       {
@@ -148,6 +148,28 @@ export const SYNTHETIC_PRISMARI_G2_LIST: readonly CardDefinition[] = [
           power: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
           toughness: 0,
           duration: 'untilEndOfTurn',
+        },
+      },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        targets: [
+          {
+            id: 't1',
+            what: {
+              kind: 'object',
+              filter: { zone: 'graveyard', controller: 'you', anyOf: INSTANT_OR_SORCERY },
+            },
+            min: 0,
+            max: 1,
+          },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'exile', objects: { kind: 'target', id: 't1' } },
+            { kind: 'copyCardAndCast', objects: MOVED },
+          ],
         },
       },
     ],

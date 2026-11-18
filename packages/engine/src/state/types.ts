@@ -240,6 +240,13 @@ export interface GameObject {
    */
   readonly prepareOf?: ObjectId;
   /**
+   * D-640 (CR 707.12, 704.5e, "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost."): on the
+   * copy of a card that an effect made in exile, `copyOf` is the card it copies. It exists to be cast during the resolution of that effect (CR 707.12: it is created in the zone the
+   * card is in and cast while the effect resolves): once cast it is a copy of a spell on the stack; a copy that is not cast ceases to exist as the next state-based check
+   * finds it in a zone that is not the stack or the battlefield (CR 704.5e).
+   */
+  readonly cardCopy?: true;
+  /**
    * Present on a card in exile that resolved as an Adventure its controller did not own (D-187: a card taken from another player's library and
    * cast from exile): that controller, who may cast the card from exile (CR 715.3d: "its controller exiles it. For as long as that card remains
    * exiled, that player may play it"). Absent when the controller owns it, and then its owner may.

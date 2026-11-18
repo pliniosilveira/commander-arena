@@ -257,6 +257,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'prepare',
     // D-625: "populate" (CR 701.36).
     'populate',
+    // D-640: "copy it. You may cast the copy without paying its mana cost" (CR 707.12).
+    'copyCardAndCast',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -1879,6 +1881,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   delayedTrigger: true,
   prepare: true,
   populate: true,
+  copyCardAndCast: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,

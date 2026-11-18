@@ -4497,6 +4497,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       break;
+    case 'copyCardAndCast':
+      // D-640 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "copyCardAndCast copies the card an effect before it exiled (objects: 'moved')",
+        );
+      } else {
+        checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
+      }
+      break;
     case 'castFree': {
       // CR 608.2g (D-145): a card chosen from the hand, or the card an earlier effect or a linked exile names; `play` also allows a land.
       if (e.play !== undefined && e.play !== true)

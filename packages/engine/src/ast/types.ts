@@ -1431,6 +1431,18 @@ export type Effect =
    * this effect ("The token created this way gains haste", "Sacrifice it at the beginning of the next end step").
    */
   | { readonly kind: 'populate' }
+  /**
+   * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (CR 707.12, 707.2, 608.2g, 704.5e, D-640,
+   * Renegade Bull): the copy of the card `objects` names (`moved`: the card the effect before it exiled, read as it is in exile) is created in exile, with its copiable values (CR 707.2); the
+   * controller of the effect may cast it without paying its mana cost, following the steps of CR 601.2a-i as CR 608.2g says, with no player receiving priority (a copy
+   * that cannot be cast, for lack of a legal target, is not offered). Once cast it is a copy of a spell on the stack: it resolves (and ceases to exist as it leaves the stack, CR 707.10a)
+   * or is countered, and it counts as a spell cast. A copy that is not cast ceases to exist (CR 704.5e); the card it copied stays where it is. Nothing happens when `objects` names no
+   * card in exile.
+   */
+  | {
+      readonly kind: 'copyCardAndCast';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+    }
   | {
       readonly kind: 'delayedCombatDamage';
       readonly objects: ObjectSelector;
