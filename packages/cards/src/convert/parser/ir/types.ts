@@ -1035,6 +1035,8 @@ export interface IrToken extends IrNode {
   readonly copyStartingLoyalty?: number;
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
+  /** "The token has enchant creature" (issue 89, CR 702.5a): an Aura token that enchants a creature. */
+  readonly enchantsCreature?: true;
   readonly count: IrAmount;
   /**
    * Set by bind() on a token made one at a time ("create a 2/2 red Dwarf creature token"; stage P48, D-205): the name later words use for it ("that token",

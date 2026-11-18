@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- An Aura token an effect creates attached to a target is read only as one "white Aura enchantment token" with "enchant creature"; other enchant restrictions, several tokens and a replacement-made extra Aura (which still asks its host) are not.
 - A land that may reveal a Dragon card "or you control a Dragon" is not asked to reveal when it controls one (`orIf`): nothing but what the opponent learns would change.
 - A "+N/+N" that names a keyword is applied after layer 6, so a grant or a power-comparing subject does not see it; a keyword count skips layer 7c (a grant named by power may miscount).
 - A static `costIncrease` taxes spells by what they target, generic mana only; a keyword-named group may be given one, but no other quoted static ability, and an ability that targets the creature is not taxed.

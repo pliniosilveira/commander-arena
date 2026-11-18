@@ -24,6 +24,7 @@ import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
 import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY_OR_CREW_BONUS } from '../static/quoted';
+import { AURA_TOKEN_RULES } from './aura';
 import { TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
 import { TOKEN_COPIES_X } from './prismari-g1';
@@ -660,6 +661,7 @@ export const TOKEN_RULES = [
   TOKEN_COPY_EXCEPT_ADDITIVE,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
   ...GALADRIEL_G3_TOKEN_RULES,
+  ...AURA_TOKEN_RULES,
   // Prismari deck, group 1 (D-638): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
   TOKEN_COPIES_X,
   TOKEN_COPY,

@@ -23,6 +23,7 @@ import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
+import { lowerAuraToken } from './aura-token';
 import { CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -1678,6 +1679,11 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     colors.push(letter);
   }
   const types = (token.types ?? []) as CardType[];
+  // CR 303.4f, 111.4 (issue 89): "a white Aura enchantment token named Contract attached to target creature ... The token has enchant creature": an Aura token, created attached to the
+  // target the text names; it is not a creature and has no power or toughness.
+  if (token.subtypes?.includes('Aura') === true || token.enchantsCreature === true) {
+    return lowerAuraToken(clause, token, count.value, entersTapped, by, colors, types, ctx);
+  }
   const creature = types.includes('creature');
   // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
   // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).

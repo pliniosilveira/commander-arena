@@ -19,10 +19,11 @@ import {
   type Parser,
   pattern,
   quiet,
+  refuseAt,
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrToken } from '../../ir/types';
+import type { IrNoun, IrQuotedAbility, IrToken } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family } from '../registry';
 import { TOKEN_QUOTED_ABILITY } from '../static/quoted';
@@ -65,11 +66,62 @@ const OR_ANOTHER_TOKEN: Parser<IrToken> = satisfy(
   (token) => token.count.kind === 'number' && token.count.value === 1,
 );
 
+/**
+ * " attached to target creature an opponent controls. The token has enchant creature and \"...\"" (issue 89, CR 303.4f, 111.4, 702.5a): what an Aura token is created attached to
+ * (one target) and what it has, the words that follow `token.aura`. The ability in quotes is the token's own and optional ("The token has enchant creature.").
+ */
+const AURA_TOKEN_TAIL: Parser<{
+  attachTo: IrNoun;
+  enchants: true;
+  quoted: IrQuotedAbility | null;
+}> = (ctx, pos) => {
+  const head = sequence(
+    literal(' attached to '),
+    refuseAt(
+      family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+      (n) => !n.plural,
+      (_n, _ctx, start) => start,
+    ),
+    literal('. The token has enchant creature'),
+    optional(sequence(literal(' and '), TOKEN_QUOTED_ABILITY), null),
+  )(ctx, pos);
+  if (!head.ok) return head;
+  const [, attachTo, , rider] = head.value;
+  return {
+    ok: true,
+    value: { attachTo, enchants: true, quoted: rider === null ? null : rider[1] },
+    pos: head.pos,
+  };
+};
+
 /** "create a Food token or a Treasure token": the first token must be one predefined token of one for the other to be offered with it. */
-const createdTokens: Parser<{ token: IrToken; alternative: IrToken | null }> = (ctx, pos) => {
+const createdTokens: Parser<{
+  token: IrToken;
+  alternative: IrToken | null;
+  attachTo?: IrNoun;
+}> = (ctx, pos) => {
   const head = sequence(literal('create '), tokenWithEach())(ctx, pos);
   if (!head.ok) return head;
   const [, token] = head.value;
+  // Issue 89: an Aura token is created attached to a target and has "enchant creature" (the engine creates one only attached, CR 303.4f).
+  if (token.rule === 'token.aura') {
+    const tail = AURA_TOKEN_TAIL(ctx, head.pos);
+    if (!tail.ok) return tail;
+    const { attachTo, quoted } = tail.value;
+    return {
+      ok: true,
+      value: {
+        token: {
+          ...token,
+          enchantsCreature: true,
+          ...(quoted === null ? {} : { abilities: [quoted] }),
+        },
+        alternative: null,
+        attachTo,
+      },
+      pos: tail.pos,
+    };
+  }
   const rider = sequence(literal('. They have '), TOKEN_QUOTED_ABILITY)(ctx, head.pos);
   if (rider.ok) {
     return {
@@ -118,6 +170,9 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     // Stage P35 (D-176, CR 608.2d): one of two predefined tokens, chosen as the instruction resolves.
     'create a Food token or a Treasure token',
     'create a Clue token or a Treasure token',
+    // Issue 89 (CR 303.4f): an Aura token is created attached to a target.
+    'create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and "Whenever enchanted creature attacks, you gain 1 life."',
+    'create a white Aura enchantment token named Contract attached to target creature. The token has enchant creature',
     'create a number of 1/1 black and green Pest creature tokens equal to the number of +1/+1 counters on ~. They have "When ~ dies, you gain 1 life."',
   ],
   rejects: [
@@ -138,15 +193,24 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     'create a Food token or a Treasure token or a Clue token',
     'create a Food token or Treasure token',
     'create a Food token for each land or a Treasure token',
+    'create a white Aura enchantment token named Contract',
+    'create a white Aura enchantment token named Contract attached to target creature',
+    'create a white Aura enchantment token named Contract attached to target creature. The token has enchant land',
+    'create a white Aura enchantment token named Contract attached to up to one target creature. The token has enchant creature',
+    'create a white Aura enchantment token named Contract attached to target creatures. The token has enchant creature',
   ],
   parse: single(
     'effect.create-token',
     // The count of "for each" replaces the "a" (a quantity above one multiplies it, stage P28): the engine's amount is
     // counted once for the instruction.
     createdTokens,
-    ({ token, alternative }) => ({
+    ({ token, alternative, attachTo }) => ({
       verb: 'createToken',
-      args: alternative === null ? { token } : { token, alternative },
+      args: {
+        token,
+        ...(alternative === null ? {} : { alternative }),
+        ...(attachTo === undefined ? {} : { attachTo }),
+      },
     }),
   ),
 });
