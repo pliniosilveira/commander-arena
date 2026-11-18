@@ -41,4 +41,5 @@
 // 136: Parse the commander-tax life replacement sentence (D-605).
 // 140: Parse activated abilities carried by emblems (D-606).
 // 141: Parse player locks, protection from everything, and phasing of a target player's nonlands (D-607).
-export const PARSER_VERSION = 141;
+// 142: Grave Danger deck: "for each" after "it deals N damage", "leaves the battlefield" after "~ or another creature", "the number of creatures that died under your control this turn", flashback with life (D-609).
+export const PARSER_VERSION = 142;

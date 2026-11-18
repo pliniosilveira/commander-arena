@@ -110,7 +110,7 @@ describe('Vela the Night-Clad: "Whenever Vela or another creature you control le
   });
 });
 
-describe("Liliana's Standard Bearer: \"When this creature enters, draw X cards, where X is the number of creatures that died under your control this turn.\"", () => {
+describe('Liliana\'s Standard Bearer: "When this creature enters, draw X cards, where X is the number of creatures that died under your control this turn."', () => {
   const bearer = real("Liliana's Standard Bearer");
   const start = () =>
     scenario()
@@ -180,7 +180,9 @@ describe('Deep Analysis: "Target player draws two cards. Flashback—{1}{U}, Pay
   test('with 2 life it cannot be paid (CR 119.4): the flashback is not offered', () => {
     const g = start(2);
     expect(() =>
-      g.act(0).cast(analysis.name, { alternative: 'flashback', targets: [{ player: 0 }], pay: true }),
+      g
+        .act(0)
+        .cast(analysis.name, { alternative: 'flashback', targets: [{ player: 0 }], pay: true }),
     ).toThrow();
   });
 });

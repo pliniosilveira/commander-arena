@@ -1,5 +1,5 @@
 {
-  "parserVersion": 141,
+  "parserVersion": 142,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -694,19 +694,10 @@
     "185e34f0-60ae-4b07-94ac-96cef11b1604": {
       "name": "Vela the Night-Clad",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever ~ or another creature you control leaves the battlefield, each opponent loses 1 life.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or-subjects"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "feb16c7f"
+      "ast": "f301d892"
     },
     "186b4def-4fff-4a2b-bcbf-5318b0ac5fa9": {
       "name": "Garruk Wildspeaker",
@@ -2267,18 +2258,10 @@
     "579cbd92-797f-4cdf-91ed-fca7a523eae5": {
       "name": "Deep Analysis",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Flashback—{1}{U}, Pay 3 life.",
-          "reason": "notRunnable",
-          "closestRule": "keyword.flashback"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7e60292d"
+      "ast": "110187e4"
     },
     "580996d4-db9a-4b57-a0e1-a2dbb524121a": {
       "name": "Razorlash Transmogrant",
@@ -2456,19 +2439,10 @@
     "5e0bd136-e7e9-49f0-910b-a9fb0b9c481a": {
       "name": "Lotleth Giant",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "When ~ enters, it deals 1 damage to target opponent for each creature card in your graveyard.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "cd4bbed5"
+      "ast": "48dd05c9"
     },
     "5e958212-6a5b-4288-8d31-f1572619d7dc": {
       "name": "Liliana, Dreadhorde General",
@@ -3248,19 +3222,10 @@
     "7b600c0e-5ad2-48a2-a147-346ca78c8629": {
       "name": "Liliana's Standard Bearer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, draw X cards, where X is the number of creatures that died under your control this turn.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.draw"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e6c36834"
+      "ast": "11943bc2"
     },
     "7c3a8766-e440-48c5-a561-197490efdba5": {
       "name": "Heirloom Blade",
@@ -6649,7 +6614,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 441,
+      "supported": 445,
       "total": 476
     }
   }
