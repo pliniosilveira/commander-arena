@@ -290,6 +290,13 @@ const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
 
 /**
+ * "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying." (CR 615.5):
+ * the second sentence is the additional effect of the prevention the first makes, so the two are read as one instruction (`effect.prevent-all-create-tokens`).
+ */
+const PREVENT_ALL_SENTENCE = /^prevent all [^.]*\.$/i;
+const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, create [^.]*\.$/i;
+
+/**
  * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-654, CR 707.12): the
  * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
  */
@@ -626,6 +633,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
+        (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||

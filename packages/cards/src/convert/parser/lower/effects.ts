@@ -853,6 +853,51 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
 
 const MANA_ORDER = ['W', 'U', 'B', 'R', 'G', 'C'];
 
+/**
+ * "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying." (CR 615.5,
+ * 615.6, 111.2): the shield `lower.prevent-damage` makes, and the token the engine makes for each 1 damage it prevents (`preventDamage.perPrevented`), one token of a predefined or a
+ * described kind with no entry condition of its own.
+ */
+const PREVENT_DAMAGE_PER_PREVENTED: Lowering<IrClause, Effects> = {
+  head: 'preventDamagePerPrevented',
+  id: 'lower.prevent-damage-per-prevented',
+  needs: ['effect:preventDamage', 'duration:untilEndOfTurn', 'selector:tokensPerPrevented'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const { token, ...rest } = clause.args;
+    if (token?.kind !== 'token') return failure(clause);
+    const shield = PREVENT_DAMAGE.lower({ ...clause, verb: 'preventDamage', args: rest }, ctx);
+    if (!shield.ok) return shield;
+    const [prevented, ...others] = shield.value;
+    if (prevented?.kind !== 'preventDamage' || others.length > 0) return failure(clause);
+    const { duration: _duration, ...tokenClause } = clause;
+    void _duration;
+    const made = lowerCreateToken({ ...tokenClause, verb: 'createToken', args: { token } }, ctx);
+    if (!made.ok) return made;
+    const [created, ...more] = made.value;
+    if (
+      created?.kind !== 'createToken' ||
+      more.length > 0 ||
+      created.count !== 1 ||
+      created.controller !== undefined ||
+      created.tapped !== undefined ||
+      created.attacking !== undefined ||
+      created.forEachOpponent !== undefined ||
+      (created.token.kind !== 'custom' && created.token.kind !== 'preset') ||
+      (created.token.kind === 'custom' && created.token.ptAmount !== undefined)
+    ) {
+      return failure(clause);
+    }
+    const blocked = missingFeatures(['effect:createToken']);
+    if (blocked.length > 0) return failure(clause, blocked);
+    return {
+      ok: true,
+      value: [{ ...prevented, perPrevented: { token: created.token } }],
+      rule: clause.rule,
+    };
+  },
+};
+
 function sortedMana(symbols: readonly string[]): ManaColor[] {
   return [...symbols].sort((a, b) => MANA_ORDER.indexOf(a) - MANA_ORDER.indexOf(b)) as ManaColor[];
 }
@@ -1880,6 +1925,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DELAYED_RETURN_THIS_CARD,
   SEARCH,
   PREVENT_DAMAGE,
+  PREVENT_DAMAGE_PER_PREVENTED,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   ...ANGEL_LOWERINGS,
