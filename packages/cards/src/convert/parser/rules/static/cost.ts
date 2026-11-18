@@ -31,6 +31,7 @@ import {
   type Comparison,
   comparisonSuffix,
   type FilterParts,
+  KEYWORD_SUFFIX,
   MODIFIER,
   NO_PARTS,
   SUBTYPE_WORD,
@@ -296,11 +297,18 @@ export function spellSubject(): Parser<IrFilter> {
         [] as string[],
       ),
       SPELLS,
+      // CR 702, 601.2f: "Creature spells with flying you cast": the keyword the spell has as it is cast.
+      optional(KEYWORD_SUFFIX, undefined),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [parts, types] = r.value;
+    const [parts, types, , keyword] = r.value;
     const filter: IrFilter = {
       ...(types.length > 0 ? { types } : {}),
+      ...(keyword === undefined
+        ? {}
+        : keyword.has
+          ? { keywords: [keyword.keyword] }
+          : { notKeywords: [keyword.keyword] }),
       ...(parts.notTypes.length > 0 ? { notTypes: parts.notTypes } : {}),
       ...(parts.colors.length > 0 ? { colors: parts.colors } : {}),
       raw: ctx.text.slice(pos, r.pos),
@@ -467,6 +475,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Angel spells and Human spells you cast cost {1} less to cast for each +1/+1 counter on ~.',
     'Artifact spells and Dragon spells you cast cost {1} less to cast.',
     'Creature spells you cast with power 4 or greater cost {2} less to cast.',
+    // The keyword a spell has as it is cast (Warden of Evos Isle).
+    'Creature spells with flying you cast cost {1} less to cast.',
+    'Spells without flying you cast cost {1} less to cast.',
     // Stage P75 (D-235): spells cast from anywhere other than the hand.
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
     'Spells you cast with mana value 5 or greater cost {1} less to cast.',
@@ -495,6 +506,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Creature spells you cast of the chosen player cost {1} less to cast.',
     'Creature spells you cast with power 4 cost {2} less to cast for each creature you control.',
     'Creature spells you cast with flying cost {2} less to cast.',
+    'Creature spells with flying or reach you cast cost {1} less to cast.',
+    'Creature spells with flying cost {1} less to cast.',
     'Each spell you cast that’s red or green costs {1} less to cast.',
     'Instant or sorcery spells you cast cost {1} less to cast.',
     'Instant and sorcery spells you cast cost {2} less to cast for each creature you control.',
