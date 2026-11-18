@@ -3443,7 +3443,7 @@ export type Keyword =
   /**
    * CR 702.34a (Flashback), on an instant or sorcery: it may be cast from its owner's graveyard by
    * paying `cost` rather than its mana cost (an alternative cost, CR 118.9), and a spell cast that
-   * way is exiled instead of going anywhere else when it leaves the stack. Only `mana` costs.
+   * way is exiled instead of going anywhere else when it leaves the stack. `mana` and `payLife` costs.
    */
   | { readonly kind: 'flashback'; readonly cost: readonly Cost[] }
   | { readonly kind: 'ward'; readonly cost: readonly Cost[] }

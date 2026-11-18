@@ -147,3 +147,40 @@ describe("Liliana's Standard Bearer: \"When this creature enters, draw X cards, 
     g.expect.invariants();
   });
 });
+
+describe('Deep Analysis: "Target player draws two cards. Flashback—{1}{U}, Pay 3 life."', () => {
+  const analysis = real('Deep Analysis');
+  const start = (life: number) =>
+    scenario()
+      .define(analysis)
+      .seat(0)
+      .life(life)
+      .library('Island', 'Swamp', 'Plains', 'Forest', 'Mountain', 'Island', 'Swamp', 'Plains')
+      .graveyard(analysis.name)
+      .battlefield('Island', 'Island')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(analysis)).toEqual([]);
+  });
+
+  test('flashback pays {1}{U} and 3 life, draws two cards and exiles the card (CR 702.34a)', () => {
+    const g = start(20);
+    g.act(0).cast(analysis.name, { alternative: 'flashback', targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.expect.life(0, 17);
+    g.expect.handSize(0, 2);
+    g.expect.zone(analysis.name, 'exile', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with 2 life it cannot be paid (CR 119.4): the flashback is not offered', () => {
+    const g = start(2);
+    expect(() =>
+      g.act(0).cast(analysis.name, { alternative: 'flashback', targets: [{ player: 0 }], pay: true }),
+    ).toThrow();
+  });
+});

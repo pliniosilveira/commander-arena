@@ -188,10 +188,6 @@ describe('keyword.flashback: "Flashback {M}" (CR 702.34a)', () => {
       closestRule: 'keyword.flashback',
       recognised: expect.arrayContaining(['keyword.flashback', 'cost.pay-life']),
     });
-    expect(dropped('Flashback—{1}{U}, Pay 3 life.', 'sorcery')).toMatchObject({
-      reason: 'notRunnable',
-      closestRule: 'keyword.flashback',
-    });
     // The backlog's real text: the dash form ends with a period.
     expect(dropped('Flashback—Sacrifice three creatures.', 'sorcery')).toMatchObject({
       reason: 'notRunnable',
