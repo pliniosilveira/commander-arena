@@ -1317,6 +1317,21 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'exileSpellWithTimeCounters':
       // D-638 (CR 608.2n, 122.1, 702.62b): "Exile this spell with three time counters on it".
       return `Exile this spell with ${effect.count} time counters on it`;
+    case 'exileUntilFound':
+      // CR 701.13, 101.4 (D-648): each player exiles from their own library until a nonland card.
+      return 'Each player exiles cards from the top of their library until they exile a nonland card';
+    case 'opponentChoosesCard':
+      // CR 608.2d (D-648): the others are the cards exiled this way that were not chosen.
+      return 'An opponent chooses a nonland card exiled this way';
+    case 'exilePiles':
+      // CR 700.3, 406.3 (D-651).
+      return `Exile the top ${effect.count} cards of your library in a face-down pile, then exile the top ${effect.count} cards of your library in a face-up pile. An opponent chooses one of those piles. Put that pile into your graveyard. Look at the cards in the other pile`;
+    case 'exileTopAnyNumber':
+      // CR 701.13, 608.2d (D-649).
+      return 'As many times as you choose, you may exile the top card of your library';
+    case 'delayedCombatDamageTurn':
+      // CR 603.7, 510.3a (D-650): a delayed ability for the turn.
+      return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
     case 'copyCardAndCast':
       // D-641 (CR 707.12, 608.2g): the card the instruction before exiled, copied, and the copy cast for free.
       return 'Copy the exiled card. You may cast the copy without paying its mana cost';

@@ -222,7 +222,12 @@ export function spellPlays(
   const byCard = new Map<string, Play[]>();
   for (const o of d.options) {
     // A card in the graveyard (flashback, escape) is a play of its own, considered after the hand (below).
-    if (o.kind !== 'castSpell' || o.alternative === 'flashback' || o.alternative === 'escape')
+    if (
+      o.kind !== 'castSpell' ||
+      o.alternative === 'flashback' ||
+      o.alternative === 'escape' ||
+      o.alternative === 'retrace'
+    )
       continue;
     const base = findObject(view, o.object);
     if (base === undefined) continue;
@@ -353,6 +358,27 @@ export function choosePriorityAction(
       if (isPreventionSpell(chosen)) activations.add(preventionKey(view));
       return { kind: 'castSpell', object: chosen.id, alternative: 'flashback' };
     }
+  }
+
+  // 2b'. Retrace (CR 702.81a, D-654): a card in the graveyard cast by discarding a land card, only while the hand has a land card the agent cannot play this turn
+  // (it has played its land, or it holds two or more); the most valuable card by mana value, ties by PRNG. Which land goes is answered as any discard cost is.
+  const mine = view.seats.find((x) => x.id === view.viewer);
+  const landsInHand = (mine?.hand ?? []).filter((o) => isLand(o)).length;
+  const spareLand = landsInHand >= 2 || (landsInHand === 1 && (mine?.landsPlayedThisTurn ?? 0) > 0);
+  const retraces = spareLand
+    ? d.options.flatMap((o) => {
+        const obj =
+          o.kind === 'castSpell' && o.alternative === 'retrace'
+            ? findObject(view, o.object)
+            : undefined;
+        return obj !== undefined && allowed(view, obj, activations) ? [obj] : [];
+      })
+    : [];
+  if (retraces.length > 0) {
+    const best = Math.max(...retraces.map(manaValueOf));
+    const top = retraces.filter((s) => manaValueOf(s) === best);
+    const chosen = top[draw(top.length)];
+    if (chosen !== undefined) return { kind: 'castSpell', object: chosen.id, alternative: 'retrace' };
   }
 
   // 2c. Escape (CR 702.138a, D-124): like flashback, only once no worthwhile spell is left to cast from the hand.

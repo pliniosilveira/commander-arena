@@ -1409,6 +1409,8 @@ export type Instruction =
       readonly riot?: readonly string[];
       /** The card of the hand revealed for the "reveal a card" of a land this token is a copy of (CR 701.20a, D-225), once the player chose among several. */
       readonly revealed?: ObjectId;
+      /** D-655 (CR 303.4f): the permanent a token that is an Aura enters enchanting, once its controller chose among several. */
+      readonly host?: ObjectId;
       /** The token is a copy made by Encore for this opponent (CR 702.141a, D-185): it is required to attack them, has haste and is sacrificed at the next end step. */
       readonly encoreFor?: SeatId;
     }

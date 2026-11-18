@@ -616,6 +616,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever you cast an instant or sorcery spell, you gain 1 life. If ${e}, you gain 3 life instead.`,
   ),
+  // Prismari deck, group 3 (D-648): the condition leads the sentence that casts the spells, after the exile.
+  'condition.total-mana-value-exiled-this-way': spell(
+    (e) =>
+      `As many times as you choose, you may exile the top card of your library. If ${e}, you may cast any number of spells from among those cards without paying their mana costs.`,
+  ),
+  // Prismari deck, group 3 (D-649): a delayed ability for the turn, after the exile of a card.
+  'effect.delayed-combat-damage-copy-exiled': permanent(
+    (e) =>
+      `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
+  ),
   'condition.card-left-graveyard': permanent(
     (e) => `At the beginning of each end step, if ${e}, you gain 1 life.`,
   ),

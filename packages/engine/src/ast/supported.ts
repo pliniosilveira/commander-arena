@@ -76,13 +76,7 @@ function copySourceIssues(filter: ObjectFilter | null, path: string, out: AstIss
     });
     return;
   }
-  if (mightMatchAura(filter)) {
-    out.push({
-      path,
-      message:
-        'a token copy of a permanent that could be an Aura is not implemented by the engine yet (CR 303.4f)',
-    });
-  }
+  // D-655 (CR 303.4f): a token copy of an Aura asks what it enchants as it enters (`rules/enter-token.ts`), so a source that could be an Aura is run.
   // D-211 (CR 614.12): a token that is a copy of a land asks the questions of a shock land and of a land that reveals a card as a permanent does
   // (`rules/enter-token.ts`), so a copy whose source could be a land is run.
 }

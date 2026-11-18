@@ -187,7 +187,7 @@ export const SYNTHETIC_PRISMARI_G3_LIST: readonly CardDefinition[] = [
               kind: 'each',
               filter: { zone: 'battlefield', types: ['creature'], controller: 'you' },
             },
-            power: { kind: 'manaValueOf', of: MOVED },
+            power: { kind: 'manaValueOf', of: { kind: 'target', id: 't1' } },
             toughness: 0,
             duration: 'untilEndOfTurn',
           },

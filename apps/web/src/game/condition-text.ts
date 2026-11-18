@@ -285,6 +285,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
       return opponentControlsWords(condition, negate);
     case 'objectMatches':
       return matchesWords(condition, negate, ctx);
+    case 'movedTotalManaValue':
+      // CR 202.3, 608.2c (D-649): "the total mana value of the cards exiled this way is 13 or less".
+      return `the total mana value of the cards exiled this way is ${condition.compare.value} or ${condition.compare.cmp === 'atMost' ? 'less' : 'more'}`;
     case 'didPrevious':
       // CR 608.2c (D-135): "you may discard a card. If you do, draw a card."
       return negate ? "you don't" : 'you do';

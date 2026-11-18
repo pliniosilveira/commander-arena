@@ -64,6 +64,9 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],
   cascade: ['Csc', 'Cascade'],
+  // Prismari group 3 (D-653, D-654): Demonstrate and Retrace.
+  demonstrate: ['Dem', 'Demonstrate'],
+  retrace: ['Rtr', 'Retrace'],
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],
   soulbond: ['Sbd', 'Soulbond'],
