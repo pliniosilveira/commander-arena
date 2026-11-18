@@ -3831,3 +3831,9 @@ Planar deck (the owner's decision, 2026-11-16): the Doctor Who precons come with
 - Alternatives: A card-specific route for each card (rejected: no card-name special cases); counting the damage the effect would have dealt instead of what was dealt (rejected: a prevented hit gains no life).
 - Consequences: Unbreathing Horde and Enter the God-Eternals are supported; each real card is played through `applyAction` in `convert-grammar-engine-grave-danger.test.ts`, and the counter removal and the damage count were mutation-checked (each mutation fails a test). `ENGINE_VERSION` and `PARSER_VERSION` change. The web text of an amount reads the new kind (`apps/web/src/game/amount-text.ts`).
 
+## D-611: A creature type in the once-each-turn graveyard permission (2026-11-18, issue 159)
+- Context: Gisa and Geralf: "Once during each of your turns, you may cast a Zombie creature spell from your graveyard." The engine already has `playFromGraveyardOnceEachTurn` (D-232) with a spell filter that may name a creature type; the parser read only card types and permanent subtypes (`docs/ROADMAP.md`: "the creature types ... are not read").
+- Decision: `static.graveyard-play-once-each-turn` also reads "a <creature type> creature spell" as a creature spell with that subtype. A permanent subtype word (Aura, Equipment, ...) before "creature" is refused.
+- Alternatives: A new permission kind for creature types (rejected: the existing filter already says it).
+- Consequences: Gisa and Geralf is supported; a scenario plays the real card (a Zombie is cast from the graveyard, the second one is not offered the same turn, a non-Zombie is never offered). `PARSER_VERSION` changes; the engine is unchanged.
+

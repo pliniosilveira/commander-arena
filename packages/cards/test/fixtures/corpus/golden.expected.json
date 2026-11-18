@@ -1,5 +1,5 @@
 {
-  "parserVersion": 143,
+  "parserVersion": 144,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -872,18 +872,10 @@
     "20e94d0f-6887-45f8-a137-877011d786c6": {
       "name": "Gisa and Geralf",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Once during each of your turns, you may cast a Zombie creature spell from your graveyard.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "367e354d"
+      "ast": "01389bc9"
     },
     "212d058b-69c6-4dc2-8c93-bdfe26dc2ffe": {
       "name": "Hammer of Purphoros",
@@ -6589,7 +6581,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 447,
+      "supported": 448,
       "total": 476
     }
   }
