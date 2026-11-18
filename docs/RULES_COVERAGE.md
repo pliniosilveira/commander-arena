@@ -791,6 +791,14 @@ Rule numbers and titles were read with `pnpm rule` from the CR copy of the owner
 | 601.2, 118.9, 118.9d, 107.3b | "You may cast that card this turn without paying its mana cost." | Implemented (D-618): the card in exile is cast at the timing of its type, for no mana cost (X is 0), with the additional costs paid; the plain cast is not offered; the permission ends with the turn. | `Effect` `mayCast` `from: 'exile'`, `free`, `playPermission.free`, `alternative: 'free'`. `test/scenario-xx-lorehold-g2-elephant.test.ts`. |
 | 614.1a, 614.6 | "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead." | Implemented (D-618): resolved, countered or fizzled, the spell goes to the bottom of its owner's library; a permanent spell that resolves enters the battlefield. Not: the player's choice among several replacement effects (616.1). | `Effect` `mayCast` `bottomInstead`, `StackData.bottomInstead`, `moveObject`. `test/scenario-xx-lorehold-g2-elephant.test.ts`. |
 
+## Added by the Lorehold Spirit deck, group 3 (D-620 to D-622)
+
+| CR | Text | Status | Where |
+| --- | --- | --- | --- |
+| 603.4, 402.1 | "At the beginning of your upkeep, if a player has one or fewer cards in hand, ..." | Implemented (D-620): any player still in the game, the controller or an opponent, with a hand of that size; read as the trigger would trigger (no trigger on the stack otherwise) and again as it resolves (removed, with `fizzled` of reason `interveningIf`, when every hand has grown). | `Condition` `aPlayerCardsInHand`, `condition.a-player-cards-in-hand`. `test/scenario-xx-lorehold-g3-wheel.test.ts`, `test/convert-grammar-engine-lorehold-g3.test.ts` |
+| 722.3a, 722.3b, 722.3c, 601.2i | "..., this creature becomes prepared." and the copy of its prepare spell | Implemented (D-214, tested for this card in D-620): the designation and the copy once; a trigger for a permanent that is prepared already, or that has left the battlefield, does nothing; casting the copy removes the designation and the copy ceases to exist as it resolves. | `rules/prepare.ts`. `test/scenario-xx-lorehold-g3-wheel.test.ts` |
+| 701.9a, 121.1, 704.5b | "Each player discards their hand, then draws seven cards." | Implemented (D-621): each player discards the whole hand they have, nobody chooses and nothing is asked, then each player draws seven; an empty hand discards nothing and still draws; a library with fewer than seven cards loses the player at the next state-based check. | `Effect` `discard.hand`, `rules/search.ts` `runDiscard`. `test/scenario-xx-lorehold-g3-wheel.test.ts` |
+
 ## Added by the Galadriel deck, group 1 (D-528 to D-537)
 
 | CR | Text | Status | Where |

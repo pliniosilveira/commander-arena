@@ -7,6 +7,7 @@
 // Cards are SYNTHETIC (src/cards/fixtures/synthetic-lorehold-g3.ts); the real card is played in packages/cards/test/convert-grammar-engine-lorehold-g3.test.ts.
 import { describe, expect, test } from 'vitest';
 import { getLegalActions, getView, syntheticCard, validateCard } from '../src/index';
+import { aPlayerCardsInHandHolds } from '../src/rules/condition-reads';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
 const CARD = 'SYNTHETIC Lore Jackal // Spin of Fate';
@@ -161,6 +162,24 @@ describe('the upkeep trigger and its intervening "if" (CR 603.4)', () => {
       .build();
     g.advanceTo('upkeep', { turn: 'next' });
     expect(g.state.stack).toHaveLength(0);
+  });
+});
+
+describe('the condition reads the players still in the game (CR 800.4a)', () => {
+  test('a player who has left the game has no hand to count', () => {
+    const g = toUpkeep(3, 0);
+    const compare = { cmp: 'atMost', value: 1 } as const;
+    expect(aPlayerCardsInHandHolds(g.state, compare)).toBe(true);
+    const seats = g.state.seats.map((seat, i) => (i === 1 ? { ...seat, hasLost: true } : seat));
+    expect(aPlayerCardsInHandHolds({ ...g.state, seats }, compare)).toBe(false);
+  });
+
+  test('at least and exactly compare the same hands', () => {
+    const g = toUpkeep(3, 5);
+    expect(aPlayerCardsInHandHolds(g.state, { cmp: 'atLeast', value: 5 })).toBe(true);
+    expect(aPlayerCardsInHandHolds(g.state, { cmp: 'atLeast', value: 7 })).toBe(false);
+    expect(aPlayerCardsInHandHolds(g.state, { cmp: 'equal', value: 5 })).toBe(true);
+    expect(aPlayerCardsInHandHolds(g.state, { cmp: 'equal', value: 4 })).toBe(false);
   });
 });
 

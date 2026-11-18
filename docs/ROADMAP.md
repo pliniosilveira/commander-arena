@@ -494,6 +494,13 @@ D-117 holds designs for the alternative costs not yet built (Bestow, Plot, Rebou
 - A permanent spell cast with the permission that resolves is not put into a graveyard, so the rider does nothing to it (CR 614.1a): when that permanent dies later it goes to the graveyard as usual.
 - The Scryfall rulings of Fateful Tempest and Quintorius, Loremaster were not fetched (blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`. Marked unverified.
 
+## The Lorehold Spirit deck, group 3 (issue 86, D-620 to D-622)
+
+- `aPlayerCardsInHand` is read for "or fewer" only ("a player has one or fewer cards in hand"); "or more", "no cards" and "an opponent has" / "each player has" are other texts and are not read (the engine node already compares at most, at least and exactly). A player who has left the game is not counted (CR 800.4a), which in a two-player game never happens while the trigger is read.
+- "Each player discards their hand, then draws seven cards" does every discard first and then every draw, each in the order of the players (the active player first), as two instructions of one spell. The wording could be read as one player doing both before the next (a player-by-player wheel); the two readings differ only with an effect that looks at the order (a draw trigger that depends on another player's hand). The Scryfall rulings of Naktamun Lorespinner and Wheel of Fortune were not fetched (blocked in a cloud session): marked unverified.
+- "Discards their hand" is read for a subject that is not plain "you" ("each player", "target opponent", "that player"); "you discard your hand" with a subject is not read (the bare "discard your hand" is, as before, `effect.discard-hand`). Only the hand: "discards their hand and graveyard" and the like are other texts.
+- A card with the prepare spell that "becomes prepared" by a trigger while it is already prepared does nothing (CR 722.3a) and the trigger is still put on the stack; nothing asks the player.
+
 ## The Galadriel deck, group 1 (issue 43, D-528 to D-537)
 
 - The Ring (CR 701.54) was already built (D-196, D-197); nothing of it is missing for this group. The Ring still tempts only "you" (no card of the engine's list says another player).

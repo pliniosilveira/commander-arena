@@ -55,12 +55,13 @@ const JACKAL = 'SYNTHETIC Lore Jackal // Spin of Fate';
 /**
  * Lorehold group 3, restated from CR 603.4, 402.1, 722.3a, 701.9a, 121.1 and the card's text (not from the engine's code), for the events of one step: the upkeep trigger of a Jackal
  * that resolves made it prepared only when some player still in the game had one or fewer cards in hand as it resolved, and was removed (the "if" no longer held) only when every player
- * had two or more; a Spin of Fate that resolves made every player discard the whole hand they had and draw seven cards, or as many as their library held (and lose for each missing one).
+ * had two or more; a Spin of Fate that resolves made every player discard the whole hand they had and draw seven cards, or as many as their library held (an attempted draw from an empty library for each card missing).
  */
 function checkJackal(before: GameState, events: readonly GameEvent[], total: Tally): void {
   const small = before.seats.some((s) => !s.hasLost && s.hand.length <= 1);
   for (const e of events) {
-    const obj = before.objects[e.kind === 'fizzled' || e.kind === 'resolved' ? e.object : ''];
+    const obj =
+      e.kind === 'fizzled' || e.kind === 'resolved' ? before.objects[e.object] : undefined;
     if (e.kind === 'prepared' && tokenOrCopyNameOf(before, e.object) === JACKAL) {
       total.jackalPrepared += 1;
       if (!small)
