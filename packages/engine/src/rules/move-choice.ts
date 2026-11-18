@@ -10,6 +10,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { withAuraEntries } from './aura-entry';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
 import { matchesFilter } from './select';
@@ -20,7 +21,13 @@ type ChooseMoveInstruction = Extract<Instruction, { kind: 'chooseMove' }>;
 
 /** A choice among the cards the player owns in their hand or graveyard (D-139), not among their permanents. */
 export function isCardZoneChoice(filter: ObjectFilter): boolean {
-  return filter.zone === 'hand' || filter.zone === 'graveyard' || filter.zone === 'exile';
+  return (
+    filter.zone === 'hand' ||
+    filter.zone === 'graveyard' ||
+    filter.zone === 'exile' ||
+    // Issue 103 (Hellkite Courser): "a commander you own from the command zone".
+    filter.zone === 'command'
+  );
 }
 
 /** The cards `seat` owns in the zone the filter names that match it (`source` is what "another" excludes). */
@@ -30,7 +37,14 @@ function cardCandidates(
   source: ObjectId | null,
   filter: ObjectFilter,
   alsoGraveyard = false,
+  triggerDamage?: number,
 ): ObjectId[] {
+  // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
+  const ctx = {
+    controller: seat,
+    source,
+    ...(triggerDamage === undefined ? {} : { triggerDamage }),
+  };
   // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
   if (filter.zone === 'exile') {
     const { controller: _you, ...described } = filter;
@@ -38,24 +52,21 @@ function cardCandidates(
     return linked.filter((id) => {
       const obj = state.objects[id];
       return (
-        obj?.zone === 'exile' &&
-        matchesFilter(state, obj, { ...described, zone: 'exile' }, { controller: seat, source })
+        obj?.zone === 'exile' && matchesFilter(state, obj, { ...described, zone: 'exile' }, ctx)
       );
     });
   }
-  const zone = filter.zone === 'graveyard' ? 'graveyard' : 'hand';
+  const zone =
+    filter.zone === 'graveyard' ? 'graveyard' : filter.zone === 'command' ? 'command' : 'hand';
   // The zone belongs to the player ("your hand"), so whose the card is does not need saying again.
   const { controller: _you, ...described } = filter;
   // D-544: "from your hand or graveyard": the hand first, then the graveyard (the order of the words).
-  const zones: readonly ('hand' | 'graveyard')[] =
+  const zones: readonly ('hand' | 'graveyard' | 'command')[] =
     alsoGraveyard && zone === 'hand' ? ['hand', 'graveyard'] : [zone];
   return zones.flatMap((z) =>
     zoneList(state, z, seat).filter((id) => {
       const obj = state.objects[id];
-      return (
-        obj !== undefined &&
-        matchesFilter(state, obj, { ...described, zone: z }, { controller: seat, source })
-      );
+      return obj !== undefined && matchesFilter(state, obj, { ...described, zone: z }, ctx);
     }),
   );
 }
@@ -66,6 +77,7 @@ const WHERE: Readonly<Record<ChooseMoveInstruction['to'], string>> = {
   graveyard: 'into your graveyard',
   library: 'into your library',
   battlefield: 'onto the battlefield',
+  command: 'into the command zone',
 };
 
 /**
@@ -97,6 +109,7 @@ export function runChooseMove(
       automatic,
     };
     // D-283 (CR 603.10a): permanents put into a graveyard (or elsewhere) together keep the last-known information recorded before the first leaves.
+    // CR 303.4f (issue 103): an Aura card put onto the battlefield this way chooses what it enchants as it enters.
     const together = recordTogether(
       state,
       moveInstructions(
@@ -112,7 +125,11 @@ export function runChooseMove(
           : i,
       ),
     );
-    return { ...done(together.state, [event], together.instructions), lastMoved: [], ...restart };
+    const entries =
+      instruction.to === 'battlefield'
+        ? withAuraEntries(together.state, together.instructions)
+        : together.instructions;
+    return { ...done(together.state, [event], entries), lastMoved: [], ...restart };
   };
   if (instruction.chosen !== null) return run(instruction.chosen, false);
   const fromCards = isCardZoneChoice(instruction.filter);
@@ -143,6 +160,7 @@ export function runChooseMove(
             res.source,
             instruction.filter,
             instruction.alsoGraveyard === true,
+            res.triggerDamage,
           ).filter(
             // D-411: only the cards the effect before it moved.
             (id) => instruction.among === undefined || instruction.among.includes(id),
@@ -159,7 +177,9 @@ export function runChooseMove(
         ? 'graveyard'
         : instruction.filter.zone === 'exile'
           ? 'exile'
-          : 'hand';
+          : instruction.filter.zone === 'command'
+            ? 'command'
+            : 'hand';
     return {
       state,
       events: [],
@@ -182,7 +202,9 @@ export function runChooseMove(
               ? 'exiled with this permanent'
               : instruction.alsoGraveyard === true
                 ? 'from your hand or graveyard'
-                : `from your ${zone}`
+                : zone === 'command'
+                  ? 'from your command zone'
+                  : `from your ${zone}`
         } to put ${WHERE[instruction.to]}`.replace(
           'from among the cards put into your graveyard',
           instruction.anyOwner === true

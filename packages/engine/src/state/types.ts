@@ -1166,7 +1166,7 @@ export type Instruction =
       readonly kind: 'chooseMove';
       readonly filter: ObjectFilter;
       readonly count: number;
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */
@@ -1667,7 +1667,7 @@ export type Instruction =
   | {
       readonly kind: 'move';
       readonly object: ObjectId;
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       readonly position: 'top' | 'bottom' | number;
       readonly tapped: boolean;
       readonly commanderChoice: boolean | null;

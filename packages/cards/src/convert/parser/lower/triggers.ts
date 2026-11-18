@@ -1216,6 +1216,8 @@ function lowerTriggeredAbility(
       // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
       c.verb === 'castFromAmong' ||
       c.verb === 'putMovedOntoBattlefield' ||
+      // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
+      c.verb === 'putCommanderFromCommandZone' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong');
   // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own

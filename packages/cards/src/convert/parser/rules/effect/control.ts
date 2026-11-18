@@ -2,10 +2,10 @@
  * Effect rules of stage P42 (D-190): the control-change slice of the Korvold deck. "Gain control of that artifact until the end of your next turn"
  * (CR 613.1b, 611.2).
  */
-import { choice, literal, map, optional, refuseAt, sequence } from '../../combinators';
-import type { IrDuration, IrNoun } from '../../ir/types';
+import { choice, literal, map, optional, pattern, refuseAt, sequence } from '../../combinators';
+import type { IrArg, IrClause, IrDuration, IrNoun } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
-import { type Clauses, single } from './operands';
+import { type Clauses, makeClause, single } from './operands';
 
 const RULE = 'effect.gain-control';
 
@@ -152,4 +152,105 @@ export const EFFECT_GAIN_CONTROL_FOR_PLAYER = defineRule<Clauses>({
   ),
 });
 
-export const CONTROL_EFFECT_RULES = [EFFECT_GAIN_CONTROL, EFFECT_GAIN_CONTROL_FOR_PLAYER];
+/**
+ * `effect.control-while-remains`: "For as long as ~ remains on the battlefield, gain control of that permanent, it loses all abilities, and it can't attack or
+ * block." (issue 103, CR 611.2b, 613.1b, 613.1f, 613.11): the permanent an earlier sentence chose is controlled by the controller of the ability, loses its
+ * abilities and can't attack or block, all of it for as long as the permanent with the ability remains on the battlefield. Three effects with the one duration:
+ * the engine's `gainControl`, `loseAllAbilities` and a `restrict` of each of the two restrictions. Not read: another duration, another list of effects, another
+ * order, a target in place of the permanent the text named.
+ */
+export const EFFECT_CONTROL_WHILE_REMAINS = defineRule<Clauses>({
+  id: 'effect.control-while-remains',
+  family: 'effect',
+  leading: ['for'],
+  cites: [
+    'CR 611.2b (Continuous Effects)',
+    'CR 613.1b (Interaction of Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 613.11 (Interaction of Continuous Effects)',
+  ],
+  examples: [
+    "for as long as ~ remains on the battlefield, gain control of that permanent, it loses all abilities, and it can't attack or block",
+    'For as long as ~ remains on the battlefield, gain control of that creature, it loses all abilities, and it can’t attack or block',
+  ],
+  rejects: [
+    "for as long as you control ~, gain control of that permanent, it loses all abilities, and it can't attack or block",
+    "for as long as ~ remains on the battlefield, gain control of that permanent, it loses all abilities, and it can't attack",
+    "for as long as ~ remains on the battlefield, gain control of that permanent and it loses all abilities and it can't attack or block",
+    "for as long as ~ remains on the battlefield, gain control of that permanent, it loses all abilities, and it can't block or attack",
+    "for as long as ~ remains on the battlefield, gain control of target permanent, it loses all abilities, and it can't attack or block",
+    "for as long as ~ remains on the battlefield, gain control of those permanents, it loses all abilities, and it can't attack or block",
+    "gain control of that permanent, it loses all abilities, and it can't attack or block",
+    "for as long as ~ remains on the battlefield, gain control of that permanent, it loses all abilities, and it can't attack or block and draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const rule = 'effect.control-while-remains';
+    const lead = spanned(literal('for as long as ~ remains on the battlefield, gain control of '))(
+      ctx,
+      pos,
+    );
+    if (!lead.ok) return lead;
+    const object = refuseAt(
+      family<IrNoun>('noun', { only: ['noun.that-object'] }),
+      (n) => !n.plural,
+      (_n, _ctx, start) => start,
+    )(ctx, lead.pos);
+    if (!object.ok) return object;
+    const middle = literal(', ')(ctx, object.pos);
+    if (!middle.ok) return middle;
+    const it = family<IrNoun>('noun', { only: ['noun.it'] })(ctx, middle.pos);
+    if (!it.ok) return it;
+    const loses = spanned(literal(' loses all abilities, and '))(ctx, it.pos);
+    if (!loses.ok) return loses;
+    const again = family<IrNoun>('noun', { only: ['noun.it'] })(ctx, loses.pos);
+    if (!again.ok) return again;
+    const cant = spanned(pattern(/ can['’]t attack or block(?![\p{L}\p{N}])/iu))(ctx, again.pos);
+    if (!cant.ok) return cant;
+    const span = { start: pos, end: cant.pos };
+    const duration: IrDuration = { kind: 'duration', scope: 'whileSelfRemains', span, rule };
+    const restriction = (kind: 'cantAttack' | 'cantBlock'): IrArg => ({
+      kind: 'restrictionKind',
+      restriction: kind,
+      span: cant.value.span,
+      rule,
+    });
+    const clauses: IrClause[] = [
+      {
+        ...makeClause(rule, 'gainControl', { objects: object.value }, lead.value.span),
+        duration,
+        connector: 'and',
+      },
+      {
+        ...makeClause(rule, 'loseAllAbilities', { objects: it.value }, loses.value.span),
+        duration,
+        connector: 'and',
+      },
+      {
+        ...makeClause(
+          rule,
+          'restrict',
+          { objects: again.value, restriction: restriction('cantAttack') },
+          cant.value.span,
+        ),
+        duration,
+        connector: 'and',
+      },
+      {
+        ...makeClause(
+          rule,
+          'restrict',
+          { objects: again.value, restriction: restriction('cantBlock') },
+          cant.value.span,
+        ),
+        duration,
+      },
+    ];
+    return { ok: true, value: clauses, pos: cant.pos };
+  },
+});
+
+export const CONTROL_EFFECT_RULES = [
+  EFFECT_GAIN_CONTROL,
+  EFFECT_GAIN_CONTROL_FOR_PLAYER,
+  EFFECT_CONTROL_WHILE_REMAINS,
+];

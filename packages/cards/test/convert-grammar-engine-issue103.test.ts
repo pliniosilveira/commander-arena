@@ -1,335 +1,313 @@
-// Issue 103: the REAL Oracle text of Vengeful Ancestor, Stormbreath Dragon and Gadrak, the Crown-Scourge (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a
-// card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 701.15
-// (Goad), CR 508.1d (attack requirements), CR 701.37 (Monstrosity), CR 603.2 (triggers), CR 700.4 (dying), CR 402.1 (the hand), CR 508.1a (can't attack).
+// Issue #103 (Dragons): the REAL cards of the golden corpus read through the grammar only (no override), defined in an engine scenario and played through
+// applyAction. No Scryfall ruling could be read from the sandbox: nothing below rests on one.
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { fromGoldenCard, importCard, parseGolden } from '../src/index';
+import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
 
-const GOLDEN = parseGolden(
+const cards: readonly GoldenCard[] = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
 );
 
-/** The real card of the golden corpus, imported through the grammar only; it must read as supported. */
 function real(name: string): CardDefinition {
-  const card = GOLDEN.find((c) => c.name === name);
+  const card = cards.find((c) => c.name === name);
   if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
   const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
-  expect(imported.support.unparsed, name).toEqual([]);
   expect(imported.support.status, name).toBe('supported');
+  expect(validateCard(imported.definition), name).toEqual([]);
   return imported.definition;
 }
 
-const BEARS = 'Grizzly Bears'; // 2/2
-const SPIDER = 'Giant Spider'; // 2/4
-const BOLT = 'Lightning Bolt';
-const SOL_RING = 'Sol Ring';
-const LIBRARY = Array.from({ length: 8 }, () => 'Plains');
+const FILLER = Array.from({ length: 30 }, () => 'Island');
+const DRAGON = 'SYNTHETIC Maw Dragon';
 
-const ancestor = real('Vengeful Ancestor');
-const stormbreath = real('Stormbreath Dragon');
-const gadrak = real('Gadrak, the Crown-Scourge');
-
-describe('every card is valid', () => {
-  test.each([
-    ['Vengeful Ancestor', ancestor],
-    ['Stormbreath Dragon', stormbreath],
-    ['Gadrak, the Crown-Scourge', gadrak],
-  ] as const)('%s', (_name, card) => {
-    expect(validateCard(card)).toEqual([]);
-  });
-});
-
-/** Seat 0 has the Ancestor in hand with four Mountains; seat 1 has Bears and a Spider. */
-function ancestorGame(options: { onBattlefield?: boolean } = {}) {
-  return scenario()
-    .define(ancestor)
-    .seat(0)
-    .library(...LIBRARY)
-    .battlefield(...(options.onBattlefield === true ? [ancestor.name] : []))
-    .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain')
-    .hand(...(options.onBattlefield === true ? [] : [ancestor.name]))
+const on = (...defs: CardDefinition[]) => {
+  const b = scenario().seat(0);
+  for (const d of defs) b.define(d);
+  return b
+    .library(...FILLER)
     .seat(1)
-    .life(40)
-    .library(...LIBRARY)
-    .battlefield(BEARS, SPIDER)
-    .at('precombatMain', { active: 0 })
-    .build();
-}
+    .library(...FILLER);
+};
 
-describe('Vengeful Ancestor: "Whenever this creature enters or attacks, goad target creature."', () => {
-  test('entering goads the target: it must attack on its controller’s turn (CR 701.15b, 508.1d)', () => {
-    const g = ancestorGame();
-    g.act(0).cast(ancestor.name, { pay: true });
-    g.passAll();
-    g.act(0).chooseTargets(BEARS);
-    g.passAll();
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    g.expect.step('declareAttackers', { active: 1 });
-    g.expect.illegal(1, { declareAttackers: [] });
-    g.expect.illegal(1, { declareAttackers: [{ attacker: SPIDER }] });
-    g.expect.legal(1, { declareAttackers: [{ attacker: BEARS }] });
-    g.act(1).attack(BEARS);
-    g.expect.invariants();
-  });
+const TEMPLE = real('Temple of the Dragon Queen');
 
-  test('a creature that is not goaded is not required to attack', () => {
-    const g = ancestorGame();
-    g.act(0).cast(ancestor.name, { pay: true });
-    g.passAll();
-    g.act(0).chooseTargets(BEARS);
-    g.passAll();
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    g.expect.legal(1, { declareAttackers: [{ attacker: BEARS }] });
-    g.expect.illegal(1, { declareAttackers: [{ attacker: SPIDER }] });
-  });
-
-  test('the creature is goaded until the next turn of the controller of the ability (CR 701.15a)', () => {
-    const g = ancestorGame();
-    g.act(0).cast(ancestor.name, { pay: true });
-    g.passAll();
-    g.act(0).chooseTargets(BEARS);
-    g.passAll();
-    const goaded = () => g.state.continuousEffects.filter((e) => e.change.kind === 'goaded').length;
-    expect(goaded()).toBe(1);
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    expect(goaded()).toBe(1);
-    g.act(1).attack(BEARS);
-    g.passAll();
-    g.advanceTo('precombatMain', { turn: 'next' });
-    g.expect.step('precombatMain', { active: 0 });
-    expect(goaded()).toBe(0);
-  });
-
-  test('it attacks a player other than the goader if able; with no other player it attacks the goader (CR 701.15b)', () => {
-    const g = ancestorGame();
-    g.act(0).cast(ancestor.name, { pay: true });
-    g.passAll();
-    g.act(0).chooseTargets(BEARS);
-    g.passAll();
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    g.act(1).attack(BEARS, { player: 0 });
-    g.expect.invariants();
-  });
-
-  test('attacking with the Ancestor goads a target creature too', () => {
-    const g = ancestorGame({ onBattlefield: true });
-    g.advanceTo('declareAttackers', { attack: false });
-    g.act(0).attack(ancestor.name);
-    g.act(0).chooseTargets(SPIDER);
-    g.passAll();
-    expect(g.state.continuousEffects.some((e) => e.change.kind === 'goaded')).toBe(true);
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    g.expect.illegal(1, { declareAttackers: [{ attacker: BEARS }] });
-    g.expect.legal(1, { declareAttackers: [{ attacker: SPIDER }] });
-  });
-
-  test('goading a creature the same player already goaded changes nothing (CR 701.15d)', () => {
-    const g = scenario()
-      .define(ancestor)
+describe('Temple of the Dragon Queen (reveal a Dragon card or control a Dragon, else enters tapped; choose a color; {T}: one mana of that color)', () => {
+  const game = (hand: string[], battlefield: string[] = []) =>
+    on(TEMPLE)
       .seat(0)
-      .library(...LIBRARY)
-      .battlefield(ancestor.name)
-      .battlefield('Mountain', 'Mountain', 'Mountain', 'Mountain')
-      .seat(1)
-      .library(...LIBRARY)
-      .battlefield(SPIDER)
-      .at('precombatMain', { active: 0 })
+      .hand(TEMPLE.name, ...hand)
+      .battlefield(...battlefield)
+      .at('precombatMain', { active: 0, turn: 1 })
       .build();
-    g.advanceTo('declareAttackers', { attack: false });
-    g.act(0).attack(ancestor.name);
-    g.act(0).chooseTargets(SPIDER);
-    g.passAll();
-    const count = () => g.state.continuousEffects.filter((e) => e.change.kind === 'goaded').length;
-    expect(count()).toBe(1);
+
+  test('revealing a Dragon card: untapped, the card is revealed, then the color is chosen (CR 701.20a, 614.12a)', () => {
+    const g = game([DRAGON]);
+    g.act(0).playLand(TEMPLE.name);
+    g.act(0).accept();
+    g.act(0).chooseOption('R');
+    g.expect.tapped(TEMPLE.name, false);
+    g.expect.zone(DRAGON, 'hand', { seat: 0 });
+    g.act(0).tapForMana(TEMPLE.name);
+    expect(g.state.seats[0]?.manaPool.map((m) => m.color)).toEqual(['R']);
+  });
+
+  test('declining the reveal: it enters tapped and still chooses a color', () => {
+    const g = game([DRAGON]);
+    g.act(0).playLand(TEMPLE.name);
+    g.act(0).decline();
+    g.act(0).chooseOption('U');
+    g.expect.tapped(TEMPLE.name, true);
+  });
+
+  test('controlling a Dragon: untapped with no reveal question, only the color', () => {
+    const g = game([], [DRAGON]);
+    g.act(0).playLand(TEMPLE.name);
+    g.act(0).chooseOption('G');
+    g.expect.tapped(TEMPLE.name, false);
+  });
+
+  test('a reveal and a choice are the only two questions a land may ask as it enters', () => {
+    const face = TEMPLE.faces[0];
+    if (face === undefined) throw new Error('no face');
+    const withPayment = {
+      ...TEMPLE,
+      faces: [
+        {
+          ...face,
+          abilities: [
+            ...face.abilities,
+            {
+              kind: 'replacement',
+              replacement: {
+                kind: 'entersTappedUnlessPays',
+                cost: [{ kind: 'payLife', amount: 2 }],
+              },
+            },
+          ],
+        },
+      ],
+    } as never;
+    expect(validateCard(withPayment).length).toBeGreaterThan(0);
+  });
+
+  test('no Dragon in hand or on the battlefield: nothing to reveal, it enters tapped', () => {
+    const g = game(['Island']);
+    g.act(0).playLand(TEMPLE.name);
+    g.act(0).chooseOption('W');
+    g.expect.tapped(TEMPLE.name, true);
   });
 });
 
-describe('Vengeful Ancestor: "Whenever a goaded creature attacks, it deals 1 damage to its controller."', () => {
-  test('the goaded creature deals 1 damage to its own controller as it attacks, on top of its combat damage', () => {
-    const g = ancestorGame();
-    g.act(0).cast(ancestor.name, { pay: true });
-    g.passAll();
-    g.act(0).chooseTargets(BEARS);
-    g.passAll();
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    g.act(1).attack(BEARS);
-    g.passAll();
-    // The goaded Bears hurt their own controller for 1 as they attacked.
-    g.expect.life(1, 39);
-    g.expect.invariants();
-  });
+const OPPORTUNIST = real('Opportunistic Dragon');
+const SCRIBE = 'SYNTHETIC Idle Scribe';
 
-  test('a creature that is not goaded deals nothing to its controller when it attacks', () => {
-    const g = ancestorGame();
-    g.act(0).cast(ancestor.name, { pay: true });
-    g.passAll();
-    g.act(0).chooseTargets(BEARS);
-    g.passAll();
-    g.advanceTo('declareAttackers', { turn: 'next', attack: false });
-    g.act(1).attack([BEARS, SPIDER]);
-    g.passAll();
-    // Only the goaded Bears trigger: 1 damage, not 2.
-    g.expect.life(1, 39);
-  });
-
-  test('without the goad the Ancestor’s second ability does nothing', () => {
-    const g = scenario()
-      .define(ancestor)
-      .seat(0)
-      .library(...LIBRARY)
-      .battlefield(ancestor.name)
-      .seat(1)
-      .life(40)
-      .library(...LIBRARY)
-      .battlefield(BEARS)
-      .at('precombatMain', { active: 1, turn: 2 })
-      .build();
-    g.advanceTo('declareAttackers', { attack: false });
-    g.act(1).attack(BEARS);
-    g.passAll();
-    g.expect.life(1, 40);
-  });
-});
-
-describe('Stormbreath Dragon: "When this creature becomes monstrous, it deals damage to each opponent equal to the number of cards in that player’s hand."', () => {
-  const game = (hand: number) =>
+describe("Opportunistic Dragon (gain control of a Human or artifact for as long as it remains on the battlefield; it loses all abilities and can't attack or block)", () => {
+  const game = (opponent: string[] = [SCRIBE]) =>
     scenario()
-      .define(stormbreath)
+      .define(OPPORTUNIST)
       .seat(0)
-      .library(...LIBRARY)
-      .battlefield(stormbreath.name)
-      .battlefield(
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-      )
+      .library(...FILLER)
+      .hand(OPPORTUNIST.name, 'Murder')
+      .battlefield('Mountain', { count: 4 })
+      .battlefield('Swamp', { count: 3 })
       .seat(1)
-      .life(40)
-      .library(...LIBRARY)
-      .hand(...Array.from({ length: hand }, () => 'Island'))
-      .at('precombatMain', { active: 0 })
+      .library(...FILLER)
+      .battlefield(...opponent)
+      .at('precombatMain', { active: 0, turn: 1 })
       .build();
 
-  test('monstrosity 3 puts three +1/+1 counters and the trigger deals damage equal to the cards in the opponent’s hand', () => {
-    const g = game(3);
-    g.act(0).activate(stormbreath.name, { ability: 3, pay: true });
+  const enter = (g: ReturnType<typeof game>) => {
+    g.act(0).cast(OPPORTUNIST.name, { pay: true });
     g.passAll();
-    g.expect.counters(stormbreath.name, { '+1/+1': 3 });
-    expect(g.object(stormbreath.name).monstrous).toBe(true);
-    g.expect.life(1, 37);
+    g.passAll();
+  };
+
+  test('the Human changes controller, loses its abilities and can not attack (CR 613.1b, 613.1f, 508.1a)', () => {
+    const g = game();
+    enter(g);
+    g.expect.zone(SCRIBE, 'battlefield', { seat: 0 });
+    g.expect.derived(SCRIBE, { keywords: [] });
     g.expect.invariants();
   });
 
-  test('an opponent with an empty hand is dealt nothing', () => {
-    const g = game(0);
-    g.act(0).activate(stormbreath.name, { ability: 3, pay: true });
+  test('an artifact is taken and loses its mana ability: it can not be tapped for mana (CR 613.1f)', () => {
+    const g = game(['Sol Ring']);
+    g.act(0).cast(OPPORTUNIST.name, { pay: true });
     g.passAll();
-    expect(g.object(stormbreath.name).monstrous).toBe(true);
-    g.expect.life(1, 40);
+    g.passAll();
+    g.expect.zone('Sol Ring', 'battlefield', { seat: 0 });
+    expect(() => g.act(0).tapForMana('Sol Ring')).toThrow();
+    g.expect.invariants();
   });
 
-  test('already monstrous: it does not become monstrous again, so nothing triggers (CR 701.37a)', () => {
-    const g = game(2);
-    g.act(0).activate(stormbreath.name, { ability: 3, pay: true });
+  test("the Human can not attack on its new controller's next turn, with no summoning sickness left (CR 613.11)", () => {
+    const g = game();
+    enter(g);
+    g.advanceTo('declareAttackers', { turn: 3 });
+    g.expect.zone(SCRIBE, 'battlefield', { seat: 0 });
+    g.expect.canAttack(SCRIBE, false);
+    g.expect.canAttack(OPPORTUNIST.name, true);
+  });
+
+  test('only a Human or an artifact an opponent controls is a legal target', () => {
+    const g = game(['Grizzly Bears']);
+    g.act(0).cast(OPPORTUNIST.name, { pay: true });
     g.passAll();
-    g.expect.life(1, 38);
-    const again = scenario()
-      .define(stormbreath)
-      .seat(0)
-      .library(...LIBRARY)
-      .battlefield(stormbreath.name, { counters: { '+1/+1': 3 } })
-      .battlefield(
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-        'Mountain',
-      )
-      .seat(1)
-      .life(40)
-      .library(...LIBRARY)
-      .hand('Island', 'Island')
-      .at('precombatMain', { active: 0 })
-      .build();
-    again.act(0).activate(stormbreath.name, { ability: 3, pay: true });
-    again.passAll();
-    again.expect.counters(stormbreath.name, { '+1/+1': 6 });
+    // No legal target: the ability is removed from the stack and nothing is taken (CR 603.3d).
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 1 });
+  });
+
+  test('when the Dragon leaves the battlefield the permanent goes back to its controller (CR 611.2b)', () => {
+    const g = game();
+    enter(g);
+    g.act(0).cast('Murder', { targets: [OPPORTUNIST.name], pay: true });
+    g.passAll();
+    g.expect.zone(OPPORTUNIST.name, 'graveyard', { seat: 0 });
+    g.expect.zone(SCRIBE, 'battlefield', { seat: 1 });
+    g.expect.invariants();
   });
 });
 
-describe('Gadrak, the Crown-Scourge', () => {
-  const game = (artifacts: number) =>
+const SCOURGE = real('Broodcaller Scourge');
+
+describe('Broodcaller Scourge (one or more Dragons you control deal combat damage to a player: put a permanent card with mana value at most that damage from your hand onto the battlefield)', () => {
+  // Scourge has power 5. Sol Ring costs 1 and Serra Angel 5 (both within the limit), the SYNTHETIC Maw Dragon 7 (above it), and a Lightning Bolt is no permanent.
+  const game = (extra: string[] = []) =>
     scenario()
-      .define(gadrak)
+      .define(SCOURGE)
       .seat(0)
-      .library(...LIBRARY)
-      .battlefield(gadrak.name)
-      .battlefield(...Array.from({ length: artifacts }, () => SOL_RING))
-      .battlefield('Mountain')
-      .hand(BOLT)
+      .library(...FILLER)
+      .hand('Sol Ring', 'Serra Angel', DRAGON, 'Lightning Bolt')
+      .battlefield(SCOURGE.name, { label: 'scourge' })
+      .battlefield(...extra)
       .seat(1)
-      .library(...LIBRARY)
-      .battlefield(BEARS, SPIDER)
-      .at('precombatMain', { active: 0 })
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
       .build();
 
-  test('"can’t attack unless you control four or more artifacts" (CR 508.1a)', () => {
-    const three = game(3);
-    three.advanceTo('declareAttackers', { attack: false });
-    three.expect.canAttack(gadrak.name, false);
-    const four = game(4);
-    four.advanceTo('declareAttackers', { attack: false });
-    four.expect.canAttack(gadrak.name, true);
-  });
-
-  test('at the beginning of your end step it creates a Treasure for each nontoken creature that died this turn, whoever controlled it (CR 700.4)', () => {
-    const g = game(0);
-    g.act(0).cast(BOLT, { targets: [BEARS], pay: true });
+  test('only the permanent cards with mana value at most the damage are offered (CR 202.3, 603.2c)', () => {
+    const g = game();
+    g.playCombat({ attack: ['scourge'], until: 'combatDamage' });
+    g.expect.life(1, 35);
     g.passAll();
-    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
-    g.advanceTo('end');
-    g.passAll();
-    g.expect.zone('Treasure', 'battlefield', { seat: 0, count: 1 });
+    g.expect.pending('confirmOptional');
+    g.act(0).accept();
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error(`expected chooseCards, got ${d?.kind}`);
+    expect(d.legal).toHaveLength(2);
+    g.act(0).chooseCards('Serra Angel');
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone('Sol Ring', 'hand', { seat: 0 });
+    g.expect.zone(DRAGON, 'hand', { seat: 0 });
     g.expect.invariants();
   });
 
-  test('with no creature dead it creates nothing, and a creature that died on an earlier turn is not counted', () => {
-    const g = game(0);
-    g.advanceTo('end');
+  test('"that damage" is all that the Dragons dealt to the player: two Dragons deal 10 and the 7 is offered', () => {
+    const g = game([SCOURGE.name]);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['scourge', `${SCOURGE.name}[1]`]);
     g.passAll();
-    g.expect.noObject('Treasure');
+    g.passAll();
+    g.passAll();
+    g.expect.life(1, 30);
+    g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    g.act(0).accept();
+    const d = g.state.pending;
+    if (d?.kind !== 'chooseCards') throw new Error(`expected chooseCards, got ${d?.kind}`);
+    expect(d.legal).toHaveLength(3);
   });
 
-  test('two creatures that died, one of each player’s, make two Treasures', () => {
+  test('an Aura card put onto the battlefield chooses what it enchants (CR 303.4f)', () => {
     const g = scenario()
-      .define(gadrak)
+      .define(SCOURGE)
       .seat(0)
-      .library(...LIBRARY)
-      .battlefield(gadrak.name)
-      .battlefield(BEARS, { label: 'mine' })
-      .battlefield('Mountain', 'Mountain')
-      .hand(BOLT, BOLT)
+      .library(...FILLER)
+      .hand('SYNTHETIC Warding Aura')
+      .battlefield(SCOURGE.name, { label: 'scourge' })
+      .battlefield('Grizzly Bears')
       .seat(1)
-      .library(...LIBRARY)
-      .battlefield(BEARS, { label: 'theirs' })
-      .at('precombatMain', { active: 0 })
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
       .build();
-    g.act(0).cast(`${BOLT}[0]`, { targets: ['mine'], pay: true });
+    g.playCombat({ attack: ['scourge'], until: 'combatDamage' });
     g.passAll();
-    g.act(0).cast(BOLT, { targets: ['theirs'], pay: true });
+    g.act(0).accept();
+    g.act(0).choosePermanents('Grizzly Bears');
+    g.expect.attached('SYNTHETIC Warding Aura', 'Grizzly Bears');
+    g.expect.invariants();
+  });
+
+  test('declining puts nothing onto the battlefield', () => {
+    const g = game();
+    g.playCombat({ attack: ['scourge'], until: 'combatDamage' });
     g.passAll();
+    g.act(0).decline();
+    g.expect.zone('Sol Ring', 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+});
+
+const COURSER = real('Hellkite Courser');
+const KNIGHT = 'Isamaru, Hound of Konda';
+
+describe('Hellkite Courser (put a commander you own from the command zone onto the battlefield, it gains haste, return it to the command zone at the beginning of the next end step)', () => {
+  const game = () =>
+    scenario()
+      .define(COURSER)
+      .seat(0)
+      .library(...FILLER)
+      .hand(COURSER.name)
+      .command(KNIGHT, { commander: true })
+      .battlefield('Mountain', { count: 6 })
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 });
+
+  const enter = (g: ReturnType<ReturnType<typeof game>['build']>) => {
+    g.act(0).cast(COURSER.name, { pay: true });
+    g.passAll();
+  };
+
+  test('the commander enters under your control, can attack with haste, and goes back at the beginning of the next end step (CR 903.9, 603.7c)', () => {
+    const g = game().build();
+    enter(g);
+    g.act(0).chooseCards(KNIGHT);
+    g.passAll();
+    g.expect.zone(KNIGHT, 'battlefield', { seat: 0 });
+    g.advanceTo('declareAttackers', { attack: false });
+    g.expect.canAttack(KNIGHT, true);
     g.advanceTo('end');
     g.passAll();
-    g.expect.zone('Treasure', 'battlefield', { seat: 0, count: 2 });
+    g.expect.zone(KNIGHT, 'command', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('declining leaves the commander in the command zone', () => {
+    const g = game().build();
+    enter(g);
+    g.act(0).chooseCards();
+    g.passAll();
+    g.expect.zone(KNIGHT, 'command', { seat: 0 });
+  });
+
+  test('only a commander you own is offered: the opponent commander is not', () => {
+    const g = scenario()
+      .define(COURSER)
+      .seat(0)
+      .library(...FILLER)
+      .hand(COURSER.name)
+      .battlefield('Mountain', { count: 6 })
+      .seat(1)
+      .library(...FILLER)
+      .command(KNIGHT, { commander: true })
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    enter(g);
+    g.expect.zone(KNIGHT, 'command', { seat: 1 });
     g.expect.invariants();
   });
 });

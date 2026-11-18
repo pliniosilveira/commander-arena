@@ -540,7 +540,7 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'pair'
     | 'separate'
     | 'opponentChoice';
-  readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
+  readonly zone: 'library' | 'hand' | 'graveyard' | 'exile' | 'command';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;
   readonly legal: readonly ObjectId[];
@@ -842,6 +842,12 @@ export interface ChooseOptionDecision extends DecisionBase {
    * `riotSoFar` holds the answers already given, so the question for the second instance carries the answer to the first. Absent for the other purposes.
    */
   readonly riotSoFar?: readonly string[];
+  /**
+   * For the choice a land asks as it enters from the hand after another question (CR 614.12a; "you may reveal a Dragon card from your hand", then "choose a
+   * color"): the answers already given, so playing the land again with the choice does not ask the first question twice. `paid` is the answer to the reveal and
+   * `revealed` the card the player chose to reveal among several. Absent when nothing was asked before.
+   */
+  readonly entersSoFar?: { readonly paid: boolean; readonly revealed?: ObjectId };
   /**
    * For purpose `'effect'` (D-175, CR 608.2d, "create a Food token or a Treasure token"): `options` are the words of the instructions the
    * effect offers, in the order the text gives them, and `source` is the spell or ability that resolves. Nothing is entering.

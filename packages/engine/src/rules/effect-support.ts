@@ -165,7 +165,7 @@ export interface StepOutcomeLike {
 
 export function moveInstructions(
   ids: readonly ObjectId[],
-  to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile',
+  to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command',
   position: 'top' | 'bottom' | number = 'top',
   tapped = false,
   controller?: 'owner' | 'you',

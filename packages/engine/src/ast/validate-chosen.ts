@@ -80,12 +80,16 @@ export function chosenIssues(
   if (!Array.isArray(abilities)) return;
   const asked: Choice[] = [];
   let questions = 0;
+  // D-208: "you may reveal a Dragon card" and "choose a color" are two questions a land asks one after the other (the reveal first); any other pair is refused.
+  let reveals = 0;
+  let choices = 0;
   for (const a of abilities) {
     // CR 702.155b (D-151): a Saga with read ahead chooses its first chapter as it enters: one more question.
     if (a?.kind === 'keyword' && a.keyword?.kind === 'readAhead') questions += 1;
     if (a?.kind !== 'replacement') continue;
     if (a.replacement?.kind === 'asEntersChoose') {
       questions += 1;
+      choices += 1;
       if (
         a.replacement.what === 'creatureType' ||
         a.replacement.what === 'color' ||
@@ -125,15 +129,18 @@ export function chosenIssues(
           message: 'only a choice among options (what: "option") lists options',
         });
       }
+    } else if (a.replacement?.kind === 'entersTappedUnlessReveals') {
+      questions += 1;
+      reveals += 1;
     } else if (
       a.replacement?.kind === 'entersTappedUnlessPays' ||
-      a.replacement?.kind === 'entersTappedUnlessReveals' ||
       a.replacement?.kind === 'entersAsCopy'
     ) {
       questions += 1;
     }
   }
-  if (questions > 1) {
+  const revealWithChoice = questions === 2 && reveals === 1 && choices === 1;
+  if (questions > 1 && !revealWithChoice) {
     out.push({
       path: `${path}.abilities`,
       message:

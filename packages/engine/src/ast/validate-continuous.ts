@@ -226,7 +226,9 @@ export function checkContinuousEffect(
       );
     }
   } else if (
-    e.kind === 'grantKeyword' &&
+    (e.kind === 'grantKeyword' ||
+      e.kind === 'loseAllAbilities' ||
+      (e.kind === 'restrict' && e.duration === 'forAsLongAsThisRemains')) &&
     (e.duration === 'forAsLongAsThisRemains' || e.duration === 'forAsLongAsYouControlThis')
   ) {
     // D-207, CR 611.2b: "for as long as this Saga remains on the battlefield" is a duration of an ability of a permanent.

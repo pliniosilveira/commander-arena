@@ -4,7 +4,15 @@
  * checked against SUPPORTED_FEATURES before anything is built, so an ability the engine cannot run
  * is reported with what is missing.
  */
-import type { Ability, Amount, Color, Cost, Keyword, ObjectFilter } from '@commander-arena/engine';
+import type {
+  Ability,
+  Amount,
+  Color,
+  Condition,
+  Cost,
+  Keyword,
+  ObjectFilter,
+} from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
 import {
   isGrantable,
@@ -596,11 +604,20 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       spec.types.length === 1 && only !== undefined
         ? { subtypes: [only] }
         : { anyOf: spec.types.map((t) => ({ subtypes: [t] })) };
+    // "... or you control a Dragon": the IR says "applies when X is false"; the engine's `orIf` is X itself.
+    let orIf: Condition | undefined;
+    if (event.condition !== undefined) {
+      if (event.condition.test.kind !== 'not' || spec.behold) return failure(ability);
+      const lowered = lowerCondition(event.condition.test.term, true);
+      if (!lowered.ok) return lowered;
+      orIf = lowered.value;
+    }
     return built({
       kind: 'entersTappedUnlessReveals',
       filter,
       words: spec.words,
       ...(spec.behold ? { fromBattlefield: true as const } : {}),
+      ...(orIf === undefined ? {} : { orIf }),
     });
   }
   if (event.verb === 'entersChoose') {

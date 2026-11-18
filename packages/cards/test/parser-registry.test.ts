@@ -106,6 +106,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.enters-tapped-unless': asIs,
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
+  'replacement.enters-tapped-unless-reveals-or': asIs,
   'replacement.enters-prepared': asIs,
   // Danitha deck, group 4 (D-417): the keyword line of an Aura.
   'replacement.umbra-armor': asIs,

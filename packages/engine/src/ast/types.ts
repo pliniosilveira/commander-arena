@@ -1425,6 +1425,8 @@ export type ControlDuration =
   | 'untilEndOfTurn'
   | 'untilEndOfYourNextTurn'
   | 'forAsLongAsYouControlThis'
+  /** "For as long as this creature remains on the battlefield" (CR 611.2b, issue 103): ends, for good, as the permanent with the ability leaves, whoever controls it. */
+  | 'forAsLongAsThisRemains'
   | 'permanent';
 
 /**
@@ -2381,8 +2383,10 @@ export type Effect =
       /**
        * `exile` (CR 406.1, 608.2d): only for a `choose` of cards in the hand or the graveyard ("you may exile a creature card from your graveyard"): the player chooses
        * and the cards are exiled; what was exiled is what `moved` names afterwards ("If you do, create a token that's a copy of that card"). Any other exile is the `exile` effect.
+       * `command` (issue 103, CR 903.9, Hellkite Courser): "Return it to the command zone at the beginning of the next end step", only in the effect of a `delayedTrigger` about the
+       * commander an earlier effect put onto the battlefield (`moved`); the card goes to the command zone of its owner.
        */
-      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile';
+      readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /**
        * For library: `top`, `bottom`, or a number N of 2 or more, "Nth from the top" ("third from the top" is 3): the card
        * goes below the first N - 1 cards, or on the bottom when the library has fewer than N cards (CR 401.7, D-135).
@@ -2636,7 +2640,8 @@ export type Effect =
   | {
       readonly kind: 'loseAllAbilities';
       readonly objects: ObjectSelector;
-      readonly duration: Duration;
+      /** `forAsLongAsThisRemains` (issue 103, CR 611.2b): "for as long as this creature remains on the battlefield", in the ability of a permanent. */
+      readonly duration: Duration | 'forAsLongAsThisRemains';
     }
   /**
    * "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud." (CR 702.11b, 702.18a, 613.1f, 611.2c, D-649):
@@ -2736,7 +2741,11 @@ export type Effect =
       readonly kind: 'restrict';
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
-      readonly duration: Duration | 'forAsLongAsYouControlThis' | 'untilNextUntapStep';
+      readonly duration:
+        | Duration
+        | 'forAsLongAsYouControlThis'
+        | 'forAsLongAsThisRemains'
+        | 'untilNextUntapStep';
     }
   /**
    * "You gain hexproof until end of turn" (CR 702.11b, 611.2, 514.2; Hylda group 3): each player the selector names has hexproof until end of turn: spells and abilities their
@@ -3715,7 +3724,8 @@ export type Trigger =
    * combat damage in a step is dealt at once, and the ability triggers once for each player damaged in it, however many of the sources
    * `what` names damaged that player (`atLeast` is the fewest sources: "two or more creatures ..."; one when left out). The sources are
    * read as they are as the damage is dealt, the controller of this ability being "you" in the filter; damage that is entirely
-   * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged. The
+   * prevented does not count (CR 603.2g). `to` is `player` (any player) or `opponent`; `triggerPlayer` is the player damaged and `triggerDamage` (issue 103, "that damage")
+   * all the combat damage those sources dealt to that player in the event. The
    * damage of a first strike step and of the regular step are different events: each can trigger it.
    */
   | {
@@ -4868,6 +4878,11 @@ export type Replacement =
       readonly filter: ObjectFilter;
       readonly words: string;
       readonly fromBattlefield?: true;
+      /**
+       * "... enters tapped unless you revealed a Dragon card this way or you control a Dragon" (CR 614.1c, 614.12): a second way to enter untapped. Checked as it
+       * enters, without the permanent on the battlefield; when it holds nothing is asked (the reveal could change only what the opponent learns).
+       */
+      readonly orIf?: Condition;
     }
   /**
    * "This permanent enters with N <counter> counters on it." `count` is `{ kind: 'x' }` for "enters

@@ -236,8 +236,125 @@ export const EFFECT_PUT_EXILED_WITH_BATTLEFIELD = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.return-to-command-zone-at-end-step`: "Return it to the command zone at the beginning of the next end step." (issue 103, Hellkite Courser; CR 603.7, 603.7c, 400.7j, 903.9: a
+ * delayed triggered ability about the commander the instruction before it put onto the battlefield; once that object has changed zones it is a new object and the ability does nothing).
+ * The engine's `delayedTrigger` at the end step of each turn, whose effect moves the `moved` objects to the command zone. Not read: "your next end step", another object than "it",
+ * another zone, another step.
+ */
+export const EFFECT_RETURN_TO_COMMAND_AT_END_STEP = defineRule<Clauses>({
+  id: 'effect.return-to-command-zone-at-end-step',
+  family: 'effect',
+  leading: ['return'],
+  cites: [
+    'CR 603.7 (Delayed Triggered Abilities)',
+    'CR 603.7c (Delayed Triggered Abilities)',
+    'CR 400.7j (General)',
+    'CR 903.9 (Commander)',
+  ],
+  examples: [
+    'return it to the command zone at the beginning of the next end step',
+    'Return it to the command zone at the beginning of the next end step',
+  ],
+  rejects: [
+    'return it to the command zone at the beginning of your next end step',
+    'return it to the command zone at the beginning of the next end step and draw a card',
+    'return it to the command zone',
+    'return it to the command zone at the beginning of the next end',
+    'return them to the command zone at the beginning of the next end step',
+    "return it to its owner's hand at the beginning of the next end step",
+    'return target creature to the command zone at the beginning of the next end step',
+    'return ~ to the command zone at the beginning of the next end step',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.return-to-command-zone-at-end-step';
+    const r = sequence(
+      literal('return '),
+      IT(),
+      pattern(/ to the command zone at the beginning of the next end step(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause(id, 'returnToCommandAtEndStep', { objects: r.value[1] }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `effect.put-commander-from-command-zone`: "You may put a commander you own from the command zone onto the battlefield." (issue 103, Hellkite Courser; CR 903.3, 400.7, 110.2a:
+ * the card enters under the control of the player who puts it; CR 608.2d: the player chooses it as the instruction runs). A commander its owner designated, among the cards in the
+ * command zone of that player; with "you may" the player may choose none. Not read: another zone, "target", a number, "under its owner's control", tapped, "a commander" of any owner.
+ */
+export const EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE = defineRule<Clauses>({
+  id: 'effect.put-commander-from-command-zone',
+  family: 'effect',
+  leading: ['you', 'put'],
+  cites: [
+    'CR 903.3 (Commander)',
+    'CR 400.7 (General)',
+    'CR 110.2a (Permanents)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'you may put a commander you own from the command zone onto the battlefield',
+    'put a commander you own from the command zone onto the battlefield',
+  ],
+  rejects: [
+    'you may put a commander you own from the command zone onto the battlefield tapped',
+    'you may put a commander you own from the command zone onto the battlefield and draw a card',
+    'you may put a commander from the command zone onto the battlefield',
+    'you may put a commander you own from your graveyard onto the battlefield',
+    'you may put target commander you own from the command zone onto the battlefield',
+    'you may put two commanders you own from the command zone onto the battlefield',
+    'you may put a commander you own from the command zone into your hand',
+    'you may put a creature you own from the command zone onto the battlefield',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.put-commander-from-command-zone';
+    const r = spanned(
+      pattern(
+        /(you may )?put a commander you own from the command zone onto the battlefield(?![\p{L}\p{N}])(?!\s+(?:and|tapped|under))/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = r.value.span;
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { raw: 'a commander you own', commander: 'yours', card: true },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: id,
+    };
+    const may: IrArg = {
+      kind: 'flag',
+      value: r.value.value[1] !== undefined,
+      span: { start: pos, end: pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(id, 'putCommanderFromCommandZone', { objects, may }, span),
+          optional: may.value,
+        },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
 /** Quiet: a line these rules do not read stops where it always did. */
 export const GISA_G4_EFFECT_RULES = [
+  quietly(EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE),
+  quietly(EFFECT_RETURN_TO_COMMAND_AT_END_STEP),
   quietly(EFFECT_GAIN_KEYWORD_FOR_GOOD),
   quietly(EFFECT_EXILE_AT_END_STEP),
   quietly(EFFECT_EXILE_INSTEAD_WHEN_LEAVING),

@@ -1316,7 +1316,10 @@ function runEffect(
       // (this replaces D-459's one ability for each: the ability is now the source's, CR 603.7e, not the permanent's). Its objects are bound as they are now (`boundObjects`); one that has
       // left since is a new object and nothing happens to it (CR 603.7c, 400.7). A permanent whose control changed is not sacrificed by the controller of the ability (CR 701.21a).
       if (
-        (effect.effect.kind === 'exile' || effect.effect.kind === 'sacrifice') &&
+        (effect.effect.kind === 'exile' ||
+          effect.effect.kind === 'sacrifice' ||
+          // Issue 103 (CR 903.9, 603.7c): "Return it to the command zone at the beginning of the next end step", bound to the permanent as it is now.
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command')) &&
         effect.effect.objects.kind === 'moved'
       ) {
         const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
@@ -1326,7 +1329,10 @@ function runEffect(
         const ability: TriggeredAbility = {
           kind: 'triggered',
           trigger,
-          effect: { kind: effect.effect.kind, objects: { kind: 'boundObjects', ids } },
+          effect:
+            effect.effect.kind === 'moveToZone'
+              ? { ...effect.effect, objects: { kind: 'boundObjects', ids } }
+              : { kind: effect.effect.kind, objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
