@@ -14,6 +14,7 @@ const SERGEANT = 'SYNTHETIC Muster Sergeant'; // other nontoken creatures you co
 const HERALD = 'SYNTHETIC Token Herald'; // creature tokens you control get +1/+1
 const RAISE = 'SYNTHETIC Raise Zombie'; // create a 2/2 Zombie token
 const DECAY = 'SYNTHETIC Mass Decay'; // all non-Zombie creatures get -1/-1 until end of turn
+const FADE = 'SYNTHETIC Nonblack Fade'; // nonblack creatures get -1/-1 until end of turn
 const GOLEM = 'SYNTHETIC Plain Golem'; // colorless 2/2 artifact creature
 const BANNER = 'SYNTHETIC Colorless Banner'; // colorless creatures you control get +1/+1
 const CLIP = 'SYNTHETIC Clip Wings'; // creatures with flying get -2/-0 until end of turn
@@ -99,6 +100,34 @@ describe('"non-Zombie": a subtype the object must not have (CR 205.3d)', () => {
     g.expect.pt({ name: BEARS, seat: 1 }, 1, 1);
     // The 1/1 Skeleton is a 0/0 and dies (CR 704.5f).
     g.expect.zone(SKELETON, 'graveyard', { seat: 0 });
+  });
+});
+
+describe('nonblack (CR 105.2, 205.4: a color the object must not have)', () => {
+  test('"nonblack creatures get -1/-1" reaches a green and a colorless creature, not a black one', () => {
+    const g = twoSeatGame(
+      (b) =>
+        b
+          .hand(FADE)
+          .battlefield('Swamp', { count: 2 })
+          .battlefield(ZOMBIE)
+          .battlefield(BEARS)
+          .battlefield(GOLEM),
+      (b) => b.battlefield(BEARS).battlefield(ZOMBIE),
+    );
+    g.act(0).cast(FADE, { pay: true });
+    g.passAll();
+    g.expect.pt({ name: ZOMBIE, seat: 0 }, 2, 2);
+    g.expect.pt({ name: ZOMBIE, seat: 1 }, 2, 2);
+    g.expect.pt({ name: BEARS, seat: 0 }, 1, 1);
+    g.expect.pt({ name: BEARS, seat: 1 }, 1, 1);
+    // Colorless is not black (CR 105.2c): the Golem is nonblack too.
+    g.expect.pt(GOLEM, 1, 1);
+  });
+
+  test('validateCard accepts a filter with notColors', () => {
+    const card = syntheticCard(FADE);
+    expect(validateCard(card)).toEqual([]);
   });
 });
 

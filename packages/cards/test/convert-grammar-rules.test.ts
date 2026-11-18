@@ -511,7 +511,6 @@ describe('diagnostics point at the clause that did not parse', () => {
       'noun.each-permanent',
     ],
     ['Destroy target creature with flying or reach.', 'or reach.', 'noun.target-permanent'],
-    ['Destroy target nonblack creature.', 'nonblack creature.', 'noun.target-permanent'],
     // D-447 read "creature or Dragon"; a choice of three words joined by "or" is still unread.
     ['Destroy target creature or Dragon or Elf.', 'or Elf.', 'noun.target-permanent'],
     ['Destroy target artifact and enchantment.', 'enchantment.', 'spell.effect'],

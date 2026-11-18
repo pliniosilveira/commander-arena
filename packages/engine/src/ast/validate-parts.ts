@@ -225,6 +225,7 @@ export function checkFilter(
   checkEnumList(out, `${path}.supertypes`, f.supertypes, SUPERTYPES, 'supertype');
   checkEnumList(out, `${path}.notSupertypes`, f.notSupertypes, SUPERTYPES, 'supertype');
   checkEnumList(out, `${path}.colors`, f.colors, COLORS, 'color');
+  checkEnumList(out, `${path}.notColors`, f.notColors, COLORS, 'color');
   if (f.subtypes !== undefined) {
     if (!Array.isArray(f.subtypes) || f.subtypes.length === 0) {
       issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list when present');
@@ -561,6 +562,7 @@ const HOST_FILTER_KEYS: readonly string[] = [
   'subtypes',
   'notSubtypes',
   'colors',
+  'notColors',
   'colorless',
   'controller',
 ];

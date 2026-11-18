@@ -249,6 +249,7 @@ const SUBJECT_MODIFIERS = satisfy(
     parts.notSupertypes.length === 0 &&
     parts.token === undefined &&
     !parts.colorless &&
+    parts.notColors.length === 0 &&
     !parts.attacking &&
     !parts.attackingOrBlocking &&
     !parts.historic &&

@@ -70,8 +70,8 @@ const SPELLS: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Destroy target nonblack creature.',
-    expect: no('nonblack creature.', 'noun.target-permanent'),
-    note: 'there is no "not this color" in the filter',
+    expect: OK,
+    note: 'read since issue 310 (Shriekmaw): "nonblack" is the engine\'s notColors (CR 105.2)',
   },
   {
     kind: 'instant',

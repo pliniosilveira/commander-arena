@@ -278,6 +278,8 @@ export function matchesFilterWith(
   if (filter.subtypes && !filter.subtypes.every((t) => d.subtypes.includes(t))) return false;
   if (filter.notSubtypes?.some((t) => d.subtypes.includes(t))) return false;
   if (filter.colorless === true && d.colors.length > 0) return false;
+  // CR 105.2c: a colorless object has no color, so it is "nonblack" like any object that lacks black.
+  if (filter.notColors?.some((c) => d.colors.includes(c))) return false;
   // CR 105.2 (D-139): "two or more colors", "monocolored": how many colors the object has now.
   if (!compares(filter.colorCount, d.colors.length)) return false;
   // CR 111.1 (D-133): a token is a permanent that is not represented by a card.

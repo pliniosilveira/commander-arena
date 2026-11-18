@@ -555,6 +555,9 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'target nonland permanent with mana value 2 or less',
     'target creature you control with toughness 5 or greater',
     'target nonattacking creature',
+    // CR 105.2, 205.4: a color the object must not have, alone or after another "non" word.
+    'target nonblack creature',
+    'target nonartifact, nonblack creature',
   ],
   rejects: [
     'up to one target creatures',
@@ -572,7 +575,6 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'up to that many creatures',
     'up to that many target',
     'that many target creatures',
-    'target nonblack creature',
     'target tapped creature or planeswalker',
     'target artifact, creature',
     'target artifact or',

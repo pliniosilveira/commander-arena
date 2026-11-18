@@ -415,6 +415,14 @@ export const SYNTHETIC_SUBJECT_LIST: readonly CardDefinition[] = [
       duration: END,
     },
   ),
+  // "Nonblack creatures get -1/-1 until end of turn."
+  spell('SYNTHETIC Nonblack Fade', ['1', 'B'], 'Nonblack creatures get -1/-1 until end of turn.', {
+    kind: 'modifyPt',
+    objects: { kind: 'each', filter: { types: ['creature'], notColors: ['B'] } },
+    power: -1,
+    toughness: -1,
+    duration: END,
+  }),
   singleFace({
     name: 'SYNTHETIC Plain Golem',
     manaCost: ['2'],

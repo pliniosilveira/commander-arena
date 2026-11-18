@@ -794,6 +794,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'nontoken',
     'notSubtypes',
     'colorless',
+    'notColors',
     'keywords',
     // D-133: "that player", "that creature's controller" (the player the trigger's event is about).
     'triggerPlayer',
@@ -1459,6 +1460,8 @@ export const SELECTOR_KINDS = [
   'notSubtypes',
   /** "Colorless creature" (CR 105.2c, D-133): the engine's `ObjectFilter.colorless`. */
   'colorless',
+  /** "Nonblack creature" (CR 105.2): the engine's `ObjectFilter.notColors`. */
+  'notColors',
   /** "Creature with flying", "creature without flying" (CR 702, D-133): the engine's `ObjectFilter.keywords` and `notKeywords`. */
   'keywords',
   /** "That player", "that creature's controller" in a trigger's effect (D-133): the engine's `PlayerSelector` `triggerPlayer`. */

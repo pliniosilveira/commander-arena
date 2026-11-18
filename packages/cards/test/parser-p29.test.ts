@@ -1249,6 +1249,15 @@ describe('filter parts: nontoken, non-<type>, colorless, with and without a keyw
       'Destroy target non-Zombie creature.',
       { zone: 'battlefield', types: ['creature'], notSubtypes: ['Zombie'] },
     ],
+    // CR 105.2, 205.4: "nonblack" leaves a color out, "nonartifact" a card type; a comma may join the two.
+    [
+      'Destroy target nonblack creature.',
+      { zone: 'battlefield', types: ['creature'], notColors: ['B'] },
+    ],
+    [
+      'Destroy target nonartifact, nonblack creature.',
+      { zone: 'battlefield', types: ['creature'], notTypes: ['artifact'], notColors: ['B'] },
+    ],
   ])('%s is a target with the part in its filter', (text, filter) => {
     expect(readAll(text, 'sorcery').spell?.targets).toEqual([
       { id: 't1', what: { kind: 'object', filter } },

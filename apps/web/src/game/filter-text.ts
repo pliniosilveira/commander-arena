@@ -58,6 +58,7 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'token',
   'notSubtypes',
   'colorless',
+  'notColors',
   'keywords',
   // D-422: "Aura attached to it", "creatures that aren't enchanted".
   'attachedTo',
@@ -216,6 +217,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
     filter.colorless === true ? 'colorless' : '',
+    // CR 105.2: "nonblack creatures".
+    (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),
     (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' and '),
     (filter.supertypes ?? []).join(' '),
     subtypes,

@@ -458,6 +458,8 @@ export interface ObjectFilter {
   /** "Non-Zombie creature" (D-133, CR 205.3d): none of these creature types (or other subtypes). */
   readonly notSubtypes?: readonly Subtype[];
   readonly colors?: readonly Color[];
+  /** "Nonblack creature", "nonartifact, nonblack creature" (CR 105.2, 205.4): the object has none of these colors (a colorless object has none, CR 105.2c). */
+  readonly notColors?: readonly Color[];
   /** "Colorless creature" (D-133, CR 105.2c): the object has no color. */
   readonly colorless?: true;
   /**
