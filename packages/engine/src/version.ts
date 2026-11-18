@@ -30,4 +30,5 @@
 // 128: Activate emblem abilities from the command zone (D-606).
 // 129: Lock a player's life total and grant temporary protection from everything (D-607).
 // 130: Pay the life of a flashback cost (D-609).
-export const ENGINE_VERSION = 130;
+// 131: Enter with a sum of counts, prevent damage to a permanent and remove a counter, count the damage a resolution dealt (D-610).
+export const ENGINE_VERSION = 131;

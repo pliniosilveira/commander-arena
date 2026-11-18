@@ -1,5 +1,5 @@
 {
-  "parserVersion": 142,
+  "parserVersion": 143,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -2729,19 +2729,10 @@
     "67ee7c8b-afcc-4f09-a184-3db01f2ab175": {
       "name": "Enter the God-Eternals",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~ deals 4 damage to target creature and you gain life equal to the damage dealt this way. Target player mills four cards. Amass Zombies 4.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3d047f24"
+      "ast": "64a9cf50"
     },
     "6812e4d3-0034-4fc8-9ee9-520f76a0ea94": {
       "name": "Innovative Commons",
@@ -5761,26 +5752,10 @@
     "e6cd9203-e4d3-4d9f-b59f-4e454fc5a477": {
       "name": "Unbreathing Horde",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "~ enters with a +1/+1 counter on it for each other Zombie you control and each Zombie card in your graveyard.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "replacement.enters-with-counters"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "If ~ would be dealt damage, prevent that damage and remove a +1/+1 counter from it.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "378051b9"
+      "ast": "ca4d6498"
     },
     "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7": {
       "name": "Crippling Fear",
@@ -6614,7 +6589,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 445,
+      "supported": 447,
       "total": 476
     }
   }
