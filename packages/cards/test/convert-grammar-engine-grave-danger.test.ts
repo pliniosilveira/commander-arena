@@ -505,3 +505,92 @@ describe('Liliana, Untouched by Death: "+1: Mill three cards. If at least one Zo
     expect(g.act(0).try.cast(ZOMBIE).ok).toBe(false);
   });
 });
+
+describe('Laboratory Drudge: "At the beginning of each end step, draw a card if you\'ve cast a spell from a graveyard or activated an ability of a card in a graveyard this turn."', () => {
+  const drudge = real('Laboratory Drudge');
+  const analysis = real('Deep Analysis');
+  const handOf = (g: { state: { objects: Record<string, { zone: string; owner: number }> } }) =>
+    Object.values(g.state.objects).filter((o) => o.zone === 'hand' && o.owner === 0).length;
+  const ZOMBIE = 'SYNTHETIC Plain Zombie';
+  const start = (graveyard: readonly string[], active = 0) =>
+    scenario()
+      .define(drudge)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand('Lightning Bolt')
+      .battlefield(drudge.name, 'Swamp', 'Swamp', 'Swamp', 'Mountain')
+      .graveyard(...graveyard)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active, turn: 3 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(drudge)).toEqual([]);
+  });
+
+  test('a spell cast from the graveyard this turn (flashback): it draws at the end step, mine and the next (CR 601.2, 603.4)', () => {
+    const g = scenario()
+      .define(drudge)
+      .define(analysis)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(drudge.name, 'Island', 'Island')
+      .graveyard(analysis.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.act(0).cast(analysis.name, {
+      alternative: 'flashback',
+      targets: [{ player: 0 }],
+      pay: true,
+    });
+    g.passAll();
+    const before = handOf(g);
+    g.advanceTo('end');
+    g.passAll();
+    expect(handOf(g)).toBe(before + 1);
+    g.expect.invariants();
+  });
+
+  test('an ability of a card in the graveyard activated this turn (unearth) counts too (CR 602.2, 702.84a)', () => {
+    const UNEARTH = 'SYNTHETIC Unearth Gnoll'; // 3/1, unearth {R}
+    const g = scenario()
+      .define(drudge)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(drudge.name, 'Mountain')
+      .graveyard(UNEARTH)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    const before = handOf(g);
+    g.act(0).activate(UNEARTH, { pay: true });
+    g.passAll();
+    g.advanceTo('end');
+    // Two triggers begin the end step (the Drudge's draw and the unearth exile): their controller orders them.
+    g.act(0).orderTriggers('Laboratory Drudge', 'SYNTHETIC Unearth Gnoll');
+    g.passAll();
+    expect(handOf(g)).toBe(before + 1);
+  });
+
+  test('a spell cast from the hand does not count: no card at the end step', () => {
+    const g = start([]);
+    g.act(0).cast('Lightning Bolt', { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    const before = handOf(g);
+    g.advanceTo('end');
+    g.passAll();
+    expect(handOf(g)).toBe(before);
+  });
+
+  test('nothing cast or activated from a graveyard: no card', () => {
+    const g = start([ZOMBIE]);
+    const before = handOf(g);
+    g.advanceTo('end');
+    g.passAll();
+    expect(handOf(g)).toBe(before);
+  });
+});

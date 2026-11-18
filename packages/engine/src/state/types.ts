@@ -1969,6 +1969,11 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly abilityIndex: number;
     readonly loyalty?: true;
+    /**
+     * The player who activated an ability of a card that was in a graveyard as it was activated (issue 159, "activated an ability of a card in a graveyard this turn").
+     * The card may have left since (unearth puts it onto the battlefield: a new object, CR 400.7), so the player is kept, not read from the card.
+     */
+    readonly fromGraveyard?: SeatId;
   }[];
   /**
    * Each combat damage event to a player this turn: the source that dealt it and the player dealt it (damage prevented entirely is not here). D-475
@@ -2054,7 +2059,12 @@ export interface TurnLog {
    * Each spell cast this turn (D-444, CR 601.2i), in order: who cast it and its card types as it was cast. A copy is not cast (CR 707.10) and is not here.
    * "Activate only if you've cast an instant or sorcery spell this turn" reads it.
    */
-  readonly castSpells: readonly { readonly seat: SeatId; readonly types: readonly CardType[] }[];
+  readonly castSpells: readonly {
+    readonly seat: SeatId;
+    readonly types: readonly CardType[];
+    /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
+    readonly fromGraveyard?: true;
+  }[];
 }
 
 export const EMPTY_TURN_LOG: TurnLog = {

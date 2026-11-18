@@ -432,6 +432,7 @@ describe('unmatched abilities', () => {
       'condition.life-gained-this-turn',
       'condition.life-above-starting',
       'condition.unless-return',
+      'condition.cast-from-graveyard-this-turn',
       'condition.own-and-control-named',
       'condition.die-result',
       'condition.this-in-your-graveyard',

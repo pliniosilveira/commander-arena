@@ -456,6 +456,13 @@ export function evaluateCondition(
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
       );
+    case 'castFromGraveyardThisTurn':
+      // Issue 159 (CR 601.2a, 602.2): a spell the controller cast from a graveyard this turn, or an ability of a card in a graveyard they activated this turn.
+      return (
+        state.turnLog.castSpells.some(
+          (s) => s.seat === ctx.controller && s.fromGraveyard === true,
+        ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
+      );
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;

@@ -1410,7 +1410,12 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
         ...next.turnLog,
         castSpells: [
           ...next.turnLog.castSpells,
-          { seat: casting.seat, types: derive(next, getObject(next, casting.object)).types },
+          {
+            seat: casting.seat,
+            types: derive(next, getObject(next, casting.object)).types,
+            // Issue 159: "if you've cast a spell from a graveyard this turn".
+            ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
+          },
         ],
       },
     };

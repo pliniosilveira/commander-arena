@@ -90,6 +90,8 @@ const TURN_CONDITIONS = [
   // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
   'condition.life-gained-this-turn',
   'condition.life-above-starting',
+  // Issue 159 (Laboratory Drudge): "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+  'condition.cast-from-graveyard-this-turn',
 ] as const;
 
 /**

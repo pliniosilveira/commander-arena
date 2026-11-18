@@ -118,6 +118,11 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'lifeGainedThisTurn', atLeast: test.atLeast });
     }
+    case 'castFromGraveyardThisTurn': {
+      // Issue 159 (CR 601.2a, 602.2): the turn log of the controller of the condition.
+      const blocked = missingFeatures(['condition:castFromGraveyardThisTurn']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'castFromGraveyardThisTurn' });
+    }
     case 'lifeGainedAndLostThisTurn': {
       const blocked = missingFeatures(['condition:lifeGainedAndLostThisTurn']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'lifeGainedAndLostThisTurn' });

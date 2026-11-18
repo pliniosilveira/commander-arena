@@ -527,6 +527,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.milled-this-way': spell(
     (e) => `Mill three cards. If ${e}, each opponent loses 2 life.`,
   ),
+  'condition.cast-from-graveyard-this-turn': permanent(
+    (e) => `At the beginning of your end step, draw a card if ${e}.`,
+  ),
   'condition.put-this-way': spell(
     (e) => `You may put a land card from your hand onto the battlefield. If ${e}, you gain 4 life.`,
   ),

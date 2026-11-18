@@ -2511,6 +2511,11 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'castFromGraveyardThisTurn':
+      if (Object.keys(c).some((key) => key !== 'kind')) {
+        issue(out, path, 'the cast-from-a-graveyard condition has no extra fields');
+      }
+      break;
     case 'lifeGainedAndLostThisTurn':
       if (Object.keys(c).some((key) => key !== 'kind')) {
         issue(out, path, 'the gained-and-lost-life condition has no extra fields');
