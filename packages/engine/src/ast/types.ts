@@ -112,6 +112,11 @@ export type Amount =
        */
       readonly snow?: true;
       /**
+       * "the number of colors of mana spent to cast this spell" (Converge, issue 310, CR 105.1, 601.2h): how many of the five colors the mana spent had, whatever the
+       * amount of it (colorless mana is no color). Not with `fromType` or `snow`; read where the spell is the source, as the rest of `manaSpent`.
+       */
+      readonly colors?: true;
+      /**
        * "the amount of mana spent to cast that spell" (D-217, CR 601.2h, 113.7a): the spell a target slot of the ability named, as it is or as it last was
        * (a countered spell is gone). Only the target of the same spell or ability.
        * D-646 (CR 601.2h, 113.7a, Manaform Hellkite): or `{ kind: 'triggerSubject' }`, the spell that was cast, in a `castSpell` trigger ("Whenever you cast a noncreature spell, create an

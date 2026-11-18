@@ -226,6 +226,8 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'manaSpent':
       // D-183 (CR 601.2h): the mana spent to cast the spell, in all or from sources of a card type.
       // D-646 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell", the spell a cast trigger names.
+      // Issue 310 (Converge, CR 105.1): "the number of colors of mana spent to cast it".
+      if (amount.colors === true) return 'the number of colors of mana spent to cast it';
       return `the amount of ${manaSpentWords(amount.fromType, amount.of?.kind === 'triggerSubject' ? 'that spell' : 'it')}`;
     case 'greatestManaValueCast':
       // D-646 (CR 202.3, 601.2i): "the greatest mana value among instant and sorcery spells you've cast this turn".

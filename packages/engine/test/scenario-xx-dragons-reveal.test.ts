@@ -10,7 +10,7 @@ import { scenario } from '../src/testing/index';
 
 const WARP = 'SYNTHETIC Warp Bolt';
 const PROBE = 'SYNTHETIC Reveal Probe';
-const SCOUT = 'SYNTHETIC Land Scout';
+const SCOUT = 'SYNTHETIC Top Card Scout';
 const HOARD = 'SYNTHETIC Breaching Hoard';
 const RITE = 'SYNTHETIC Discovery Rite';
 const TRUMPET = 'SYNTHETIC Herald Trumpet';

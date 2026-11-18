@@ -11,6 +11,7 @@ import { type ScenarioGame, scenario } from '../src/testing/index';
 const DRAGON = 'SYNTHETIC Kobold Dragon'; // {3}{B}{R}{G}, 5/5 flying; the trigger makes X 0/1 Kobolds, X the mana spent
 const KOBOLD = 'Kobolds of Kher Keep';
 const COIN = 'SYNTHETIC Coin Press'; // creatures enter with +1/+1 for each mana from an artifact source spent; {T}: create a Treasure
+const CONVERGE = 'SYNTHETIC Converge Pact'; // {2}{B}: draw X cards and lose X life, X the number of colors of mana spent
 const PRESS = 'SYNTHETIC Mana Press'; // creatures enter with +1/+1 for each mana spent to cast them
 const BEARS = 'Grizzly Bears'; // {1}{G}
 const SPIDER = 'Giant Spider'; // {3}{G}
@@ -19,7 +20,7 @@ const COUNTER = 'Counterspell'; // {U}{U}
 const LIBRARY = Array.from({ length: 12 }, () => 'Plains');
 
 describe('the cards are valid', () => {
-  test.each([DRAGON, COIN, PRESS])('%s', (name) => {
+  test.each([DRAGON, COIN, PRESS, CONVERGE])('%s', (name) => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 });
@@ -306,6 +307,8 @@ describe('the record on the spell (CR 601.2h)', () => {
     expect(g.object({ name: DRAGON, zone: 'stack' }).stack?.manaSpent).toEqual({
       total: 6,
       fromTypes: { land: 6 },
+      // Issue 310 (Converge): the colors of the mana spent, of the five, in the order W, U, B, R, G.
+      colors: ['W', 'B', 'R', 'G'],
     });
   });
 
@@ -334,6 +337,7 @@ describe('the record on the spell (CR 601.2h)', () => {
     expect(g.object({ name: DRAGON, zone: 'stack' }).stack?.manaSpent).toEqual({
       total: 6,
       fromTypes: { artifact: 1, land: 6 },
+      colors: ['W', 'B', 'R', 'G'],
     });
   });
 
@@ -377,5 +381,49 @@ describe('the record on the spell (CR 601.2h)', () => {
     const copies = onStack.filter((o) => o.copyOf !== undefined);
     expect(copies.length).toBeGreaterThan(0);
     for (const copy of copies) expect(copy.stack?.manaSpent).toBeUndefined();
+  });
+});
+
+describe('"Converge: X is the number of colors of mana spent to cast this spell" (CR 105.1, 601.2h, 107.4)', () => {
+  const pactGame = (...lands: string[]) =>
+    scenario()
+      .seat(0)
+      .hand(CONVERGE)
+      .battlefield(...lands)
+      .library(...LIBRARY)
+      .seat(1)
+      .library(...LIBRARY)
+      .build();
+
+  test('mana of one color: X is 1', () => {
+    const g = pactGame('Swamp', 'Swamp', 'Swamp');
+    g.act(0).cast(CONVERGE, { pay: true });
+    g.passAll();
+    g.expect.handSize(0, 1);
+    g.expect.life(0, 39);
+  });
+
+  test('three colors of mana: X is 3', () => {
+    const g = pactGame('Swamp', 'Island', 'Mountain');
+    g.act(0).cast(CONVERGE, { pay: true });
+    g.passAll();
+    g.expect.handSize(0, 3);
+    g.expect.life(0, 37);
+  });
+
+  test('two colors: black twice and blue once is two colors, not three mana (CR 105.1)', () => {
+    const g = pactGame('Swamp', 'Swamp', 'Island');
+    g.act(0).cast(CONVERGE, { pay: true });
+    g.passAll();
+    g.expect.handSize(0, 2);
+    g.expect.life(0, 38);
+  });
+
+  test('colorless mana is no color (CR 105.1, 106.1): a Swamp and Sol Ring spend one color', () => {
+    const g = pactGame('Swamp', SOL_RING);
+    g.act(0).cast(CONVERGE, { pay: true });
+    g.passAll();
+    g.expect.handSize(0, 1);
+    g.expect.life(0, 39);
   });
 });

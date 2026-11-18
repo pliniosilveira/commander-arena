@@ -32,6 +32,7 @@
  * The whole pre-cast state is kept in the CastingContext. Cancelling restores it, which is also how
  * an illegal cast is rewound (CR 733, Handling Illegal Actions).
  */
+import { COLORS } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { ManaColor, ManaRider } from '../mana/types';
 import type { ChosenTarget } from '../state/chosen';
@@ -1248,6 +1249,7 @@ export function answerPayment(
         casting,
         applied.spent,
         applied.spentSnow,
+        applied.spentColors,
       ),
       applied.events,
     );
@@ -1262,6 +1264,7 @@ export function answerPayment(
       casting,
       paid.spent,
       paid.spentSnow,
+      paid.spentColors,
     ),
     paid.events,
   );
@@ -1406,6 +1409,7 @@ function withManaSpent(
   casting: NonNullable<GameState['casting']>,
   spent: readonly (readonly string[])[],
   spentSnow: number,
+  spentColors: readonly ManaColor[],
 ): GameState {
   const stack = state.objects[casting.object]?.stack;
   if (casting.activation !== null || spent.length === 0 || stack === null || stack === undefined) {
@@ -1423,6 +1427,8 @@ function withManaSpent(
         fromTypes,
         // D-260: the mana from a snow source (CR 107.4h); left out when there was none, so a spell that was paid without snow keeps its shape.
         ...(spentSnow > 0 ? { snow: spentSnow } : {}),
+        // Issue 310 (Converge, CR 105.1): the colors of the five that the mana spent had; colorless is no color.
+        colors: COLORS.filter((color) => spentColors.includes(color)),
       },
     },
   });

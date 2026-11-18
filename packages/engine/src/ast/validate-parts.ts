@@ -1785,6 +1785,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       checkManaSpentType(a.fromType, `${path}.fromType`, out, a.snow);
+      if (a.colors !== undefined) {
+        if (a.colors !== true) issue(out, `${path}.colors`, 'colors must be true');
+        if (a.fromType !== undefined || a.snow !== undefined) {
+          issue(
+            out,
+            `${path}.colors`,
+            'the colors of the mana spent are not read with fromType or snow',
+          );
+        }
+      }
       break;
     case 'exiledStillThere':
       // D-151: only the effect of a delayed trigger created after an effect that exiled cards (`checkDelayedTrigger`).

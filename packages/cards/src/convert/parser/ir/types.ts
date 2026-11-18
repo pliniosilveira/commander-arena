@@ -532,6 +532,8 @@ export type IrAmount =
       readonly fromType?: string;
       /** "for each {S} spent to cast ~" (D-260, CR 107.4h): only the mana of snow sources. */
       readonly snow?: true;
+      /** "the number of colors of mana spent to cast ~" (Converge, issue 310, CR 105.1): how many of the five colors the mana spent had. */
+      readonly colors?: true;
       readonly who: 'self' | 'it' | 'thatSpell';
       readonly span: Span;
     }

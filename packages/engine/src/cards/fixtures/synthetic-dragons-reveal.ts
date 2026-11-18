@@ -54,7 +54,7 @@ export const SYNTHETIC_DRAGONS_REVEAL_LIST: readonly CardDefinition[] = [
   }),
   // "Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand." (issue 310)
   singleFace({
-    name: 'SYNTHETIC Land Scout',
+    name: 'SYNTHETIC Top Card Scout',
     manaCost: ['1', 'G'],
     types: ['instant'],
     colors: ['G'],
