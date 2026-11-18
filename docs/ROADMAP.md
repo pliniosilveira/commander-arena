@@ -7,7 +7,7 @@ Every limit under "Deferred engine features" and "Deferred grammar" is refused o
 ## Lord of the Nazgûl deck work and parser limits (issue 57, D-563 to D-579)
 
 - `Lazotep Plating` was already supported on current `main`; groups through `Sauron's Ransom` now run through the app's default import path. All 21 issue cards are supported by the app's default import path.
-- The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-576), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-577), Maskwood Nexus's all-creature-types scopes (D-578), and Sauron's Ransom's hidden-pile clause (D-579). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-575); the Phasing keyword is still not built or needed. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-569).
+- The cards with hand-written fixtures remain unsupported by grammar-only import: Fandaniel's full may-sacrifice clause (D-576), Lord of the Nazgûl's Ring-bearer protection and group base-power clause (D-577), and Sauron's Ransom's hidden-pile clause (D-579). Their engine scenarios and default-import acceptance tests pass. `March of Swirling Mist` parses and runs (D-575); the Phasing keyword is still not built or needed. `Into the Flood Maw` uses the generic tapped Fish Gift path (D-569).
 - The whole deck was not measured by `pnpm corpus:decks`: the Scryfall bulk file is not in this workspace. The card data is from the issue author's description; no rulings were independently checked.
 
 ## Owner-run work and tooling
@@ -577,3 +577,4 @@ The designs for the alternative costs not yet built (Bestow, Plot, Rebound and o
 - Retrace (D-667) is printed only and never granted; it does not combine with another way to cast from the graveyard.
 - The Scryfall rulings of the seven cards were not fetched (the host is blocked in a cloud session); the behaviour follows the Comprehensive Rules lines cited in `docs/MECHANICS.md`.
 - The web shows the piles and the new choices with generic wording; the effect text of the spells is shown from the Oracle text.
+- A static ability that gives the cards of a hand a keyword gives Cycling only (`grantKeywordToHandCards`, issue 104): not typecycling or another keyword, not the hand of another player, not the cards of a graveyard or a library.

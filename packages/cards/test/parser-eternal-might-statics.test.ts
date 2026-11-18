@@ -9,10 +9,13 @@ vi.mock('@commander-arena/engine', async (importOriginal) =>
   ),
 );
 
-import { read as readFace } from './parser-p5-helpers';
+import { readAll as readAllFace, read as readFace } from './parser-p5-helpers';
 
 const read = (text: string, type: Parameters<typeof readFace>[1] = 'creature') =>
   readFace(text, type);
+
+const readAll = (text: string, type: Parameters<typeof readAllFace>[1] = 'creature') =>
+  readAllFace(text, type);
 
 const NOT_READ = (text: string, type: Parameters<typeof read>[1] = 'creature') => {
   const parsed = read(text, type);
@@ -94,6 +97,53 @@ describe('Maskwood Nexus: "Creatures you control are every creature type. The sa
       'every creature type in addition to their other types',
     ),
   ])('near miss: %s', (text) => NOT_READ(text, 'artifact'));
+});
+
+describe('Rhet-Tomb Mystic: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, 613.1f, 611.3a)', () => {
+  const given = (types: string[], symbols: string[]) => ({
+    kind: 'static',
+    static: {
+      kind: 'grantKeywordToHandCards',
+      what: { types },
+      keyword: { kind: 'cycling', cost: [{ kind: 'mana', symbols }] },
+    },
+  });
+
+  test('the real text: the creature cards of the hand have cycling with the cost', () => {
+    const parsed = read('Each creature card in your hand has cycling {1}{U}.');
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toEqual([given(['creature'], ['1', 'U'])]);
+  });
+
+  test('flying first, as the card prints them', () => {
+    const parsed = readAll('Flying\nEach creature card in your hand has cycling {1}{U}.');
+    expect(parsed.unparsed).toEqual([]);
+    expect(parsed.abilities).toEqual([
+      { kind: 'keyword', keyword: { kind: 'flying' } },
+      given(['creature'], ['1', 'U']),
+    ]);
+  });
+
+  test('other card types and costs (SYNTHETIC)', () => {
+    expect(read('Each artifact creature card in your hand has cycling {2}.').abilities).toEqual([
+      given(['artifact', 'creature'], ['2']),
+    ]);
+    expect(read('Each land card in your hand has cycling {W}.', 'enchantment').abilities).toEqual([
+      given(['land'], ['W']),
+    ]);
+  });
+
+  test.each([
+    'Each creature card in your hand has cycling {1}{U}',
+    'Each creature card in a hand has cycling {1}{U}.',
+    'Each creature card in your graveyard has cycling {1}{U}.',
+    'Each creature card in your hand has flying.',
+    'Each creature card in your hand has cycling {X}.',
+    'Each creature card in your hand has cycling {W/U}.',
+    'Each creature card in your hand has cycling—Pay 2 life.',
+    'Each creature card in your hand has cycling {1}{U} and flying.',
+    'Each card in your hand has cycling {1}{U}.',
+  ])('near miss: %s', (text) => NOT_READ(text));
 });
 
 describe('Maskwood Nexus: "Create a 2/2 blue Shapeshifter creature token with changeling." (CR 702.73a, 111.3)', () => {

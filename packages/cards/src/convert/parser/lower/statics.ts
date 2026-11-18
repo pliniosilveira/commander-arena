@@ -26,6 +26,7 @@ import { withoutZone } from './attachments';
 import { lowerCondition } from './conditions';
 import { bindAttachedIt, lowerAbilityCostReduction } from './danitha-g3';
 import { isDragonStatic, lowerDragonStatic } from './dragons';
+import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
@@ -496,6 +497,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:loseTypes'];
     case 'allCreatureTypes':
       return ['static:allCreatureTypes'];
+    case 'handCycling':
+      return ['static:grantKeywordToHandCards'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'attackTax':
@@ -770,6 +773,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isKorvoldStatic(first)) return lowerKorvoldStatic(ability, ctx);
   // Stage P43 (D-193): damage that stays through cleanup steps.
   if (isKeepsDamage(first)) return lowerKeepsDamage(ability);
+  // Issue 104 (CR 702.29a, 613.1f): "Each creature card in your hand has cycling {1}{U}."
+  if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
     ...(statement.also ?? []),
@@ -1038,6 +1043,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:setTypes',
   'static:loseTypes',
   'static:allCreatureTypes',
+  'static:grantKeywordToHandCards',
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
   'static:setPt',

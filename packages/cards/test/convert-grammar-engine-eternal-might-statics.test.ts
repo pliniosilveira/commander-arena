@@ -123,6 +123,47 @@ describe('On Wings of Gold', () => {
   });
 });
 
+describe('Rhet-Tomb Mystic', () => {
+  const MYSTIC = real('Rhet-Tomb Mystic');
+  const BOLT = parsed('SYNTHETIC Bolt', 'Instant', '~ deals 3 damage to any target.', {
+    manaCost: '{R}',
+  });
+
+  const board = () =>
+    scenario()
+      .define(MYSTIC)
+      .define(BEAR)
+      .define(BOLT)
+      .seat(0)
+      .battlefield(MYSTIC.name)
+      .battlefield('Island', 'Island')
+      .hand(BEAR.name, BOLT.name)
+      .library('Forest', ...FILLER)
+      .seat(1)
+      .hand(BEAR.name)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('the creature card of your hand has cycling {1}{U}: pay, discard, draw (CR 702.29a); the instant has none', () => {
+    const g = board();
+    const legal = g.legalActions(0).filter((a) => a.kind === 'activate');
+    expect(legal).toHaveLength(1);
+    g.act(0).activate({ name: BEAR.name, seat: 0 }, { pay: true });
+    g.expect.zone(BEAR.name, 'graveyard', { seat: 0 });
+    g.passAll();
+    g.expect.zone('Forest', 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('the opponent’s creature card has no cycling, and the Mystic is a 2/1 with flying', () => {
+    const g = board();
+    expect(g.legalActions(1).filter((a) => a.kind === 'activate')).toEqual([]);
+    g.expect.pt(MYSTIC.name, 2, 1);
+    g.expect.derived(MYSTIC.name, { keywords: ['flying'] });
+  });
+});
+
 describe('Maskwood Nexus', () => {
   const NEXUS = real('Maskwood Nexus');
   const WINGS = real('On Wings of Gold');

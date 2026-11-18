@@ -35,7 +35,7 @@ import { characteristicPtOf, staticAmountOf } from './derive-count';
 import { linkedCardOf } from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
-import type { FilterContext, FilterSubject } from './filter-match';
+import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
 import { staticConditionHolds } from './static-conditions';
 import { subjectAffects, subjectContextOf } from './static-subject';
@@ -177,6 +177,18 @@ export interface GraveyardPlaySource {
   readonly gains: Ability | undefined;
 }
 
+/**
+ * A static ability of a permanent that gives the cards in its controller's hand a keyword (`grantKeywordToHandCards`, issue 104, CR 702.29a, 613.1f): read by `staticEffectsOn` for a
+ * card in a hand. A permanent that lost all its abilities has none (CR 613.1f).
+ */
+interface HandGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
+  readonly condition?: Condition;
+  readonly conditionKey?: string;
+}
+
 interface BoardIndex {
   readonly battlefield: readonly ObjectId[];
   readonly definitions: GameState['definitions'];
@@ -195,6 +207,8 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
+  /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
+  readonly handGrants: readonly HandGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -325,6 +339,28 @@ function graveyardPlaysOf(
   return out;
 }
 
+function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGrantSource[] {
+  const out: HandGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantKeywordToHandCards' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        keyword: a.static.keyword,
+        ...(a.condition === undefined
+          ? {}
+          : { condition: a.condition, conditionKey: JSON.stringify(a.condition) }),
+      });
+    }
+  }
+  return out;
+}
+
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
@@ -332,6 +368,7 @@ function buildIndex(state: GameState): BoardIndex {
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
+  const handGrants: HandGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
   for (const id of state.battlefield) {
     const object = state.objects[id];
@@ -346,6 +383,7 @@ function buildIndex(state: GameState): BoardIndex {
     flashes.push(...flashesOf(object, printed));
     libraryCasts.push(...libraryCastsOf(object, printed));
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
+    handGrants.push(...handGrantsOf(object, printed));
     if (object.attachedTo !== null) {
       const list = attachments.get(object.attachedTo);
       if (list === undefined) attachments.set(object.attachedTo, [id]);
@@ -397,6 +435,7 @@ function buildIndex(state: GameState): BoardIndex {
     flashes,
     libraryCasts,
     graveyardPlays,
+    handGrants,
     attachments,
   };
 }
@@ -552,29 +591,62 @@ function conditionHolds(
   return holds;
 }
 
+/** What the static abilities do to an object that is not a permanent: nothing but the keywords given to a card in a hand (`handGrantsOn`). */
+function otherZoneEffects(grants: readonly StaticGrant[]): StaticEffects {
+  return {
+    grants,
+    power: 0,
+    toughness: 0,
+    sets: [],
+    blockLimits: [],
+    restrictions: [],
+    goadedBy: [],
+    attachments: NONE,
+    attachedTo: null,
+  };
+}
+
+/**
+ * The keywords the static abilities of the permanents on the battlefield give to `target`, a card in a hand (issue 104, `grantKeywordToHandCards`, CR 702.29a, 613.1f): "Each creature
+ * card in your hand has cycling {1}{U}." The hand is the one of the permanent's controller, and `what` is read against the card as it is after layers 4 and 5 (`base`).
+ */
+function handGrantsOn(state: GameState, target: GameObject, base: StaticBase): StaticGrant[] {
+  const grants: StaticGrant[] = [];
+  for (const source of indexOf(state).handGrants) {
+    if (target.owner !== controllerOf(state, source.object)) continue;
+    if (
+      source.condition !== undefined &&
+      !conditionHolds(state, source.condition, source.conditionKey ?? '', source.object)
+    ) {
+      continue;
+    }
+    const filter: ObjectFilter = { ...source.what, zone: 'hand' };
+    if (
+      !matchesFilterWith(state, target, () => base, filter, subjectContextOf(state, source.object))
+    ) {
+      continue;
+    }
+    grants.push({
+      ability: { kind: 'keyword', keyword: source.keyword },
+      timestamp: source.object.timestamp,
+    });
+  }
+  return grants;
+}
+
 /**
  * The static effects on `target`, whose characteristics after layers 4 and 5 are `base`. Only a permanent
  * on the battlefield is affected (CR 611.3b: a static ability of a permanent works there); for any
- * other object the result is empty.
+ * other object the result is empty, but for the keywords a permanent gives to the cards of its controller's hand
+ * (issue 104, CR 702.29a).
  */
 export function staticEffectsOn(
   state: GameState,
   target: GameObject,
   base: StaticBase,
 ): StaticEffects {
-  if (target.zone !== 'battlefield') {
-    return {
-      grants: [],
-      power: 0,
-      toughness: 0,
-      sets: [],
-      blockLimits: [],
-      restrictions: [],
-      goadedBy: [],
-      attachments: NONE,
-      attachedTo: null,
-    };
-  }
+  if (target.zone === 'hand') return otherZoneEffects(handGrantsOn(state, target, base));
+  if (target.zone !== 'battlefield') return otherZoneEffects([]);
   const index = indexOf(state);
   const grants: StaticGrant[] = [];
   let power = 0;

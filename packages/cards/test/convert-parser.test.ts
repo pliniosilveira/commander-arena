@@ -899,6 +899,7 @@ describe('unmatched abilities', () => {
       'amount.for-each-vote',
       'static.no-maximum-hand-size',
       'static.every-creature-type',
+      'static.hand-cards-have-cycling',
       'static.attached',
       'static.permanents',
       'static.each',

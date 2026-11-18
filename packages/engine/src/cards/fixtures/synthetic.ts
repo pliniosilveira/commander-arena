@@ -57,6 +57,7 @@ import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
+import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -448,6 +449,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_UNTIL_LEAVES_LIST,
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
+  ...SYNTHETIC_ETERNAL_MIGHT_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,
