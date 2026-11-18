@@ -1,5 +1,5 @@
 {
-  "parserVersion": 131,
+  "parserVersion": 132,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -5410,8 +5410,8 @@
           "ability": 1,
           "text": "Whenever a player attacks one of your opponents, if that opponent has more life than another of your opponents, that attacking player draws a card and you put two +1/+1 counters on a creature you control.",
           "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
+          "slot": "condition",
+          "closestRule": "ability.triggered"
         }
       ],
       "reasons": [],
@@ -6111,19 +6111,10 @@
     "ee7ebbc1-2f9e-4867-a522-424869b6d772": {
       "name": "Combat Calligrapher",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever a player attacks one of your opponents, that attacking player creates a tapped 2/1 white and black Inkling creature token with flying that's attacking that opponent.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "2e7a6c98"
+      "ast": "f911d921"
     },
     "eecb3047-a563-441a-9175-200421981ac3": {
       "name": "Ugin, the Spirit Dragon",
@@ -6798,7 +6789,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 434,
+      "supported": 435,
       "total": 480
     }
   }

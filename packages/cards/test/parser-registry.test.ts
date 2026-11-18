@@ -326,6 +326,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attacks-you': whenever,
   'trigger.dealt-damage': whenever,
   'noun.that-player': permanent((e) => `Whenever an opponent draws a card, ${e} loses 1 life.`),
+  'noun.that-attacking-player': permanent(
+    (e) => `Whenever a player attacks one of your opponents, ${e} draws a card.`,
+  ),
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
@@ -420,6 +423,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.counters-added': whenever,
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
+  'trigger.player-attacks-opponent': whenever,
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,

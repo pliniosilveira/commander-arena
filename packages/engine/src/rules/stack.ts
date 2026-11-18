@@ -79,6 +79,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.triggerAttackedAt === undefined
         ? {}
         : { triggerAttackedAt: obj.stack.triggerAttackedAt }),
+      ...(obj.stack?.triggerAttacked === undefined
+        ? {}
+        : { triggerAttacked: obj.stack.triggerAttacked }),
     })
   ) {
     events.push({ kind: 'fizzled', object: id, reason: 'interveningIf' });

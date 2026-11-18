@@ -316,9 +316,56 @@ export const TRIGGER_OPPONENT_ATTACKS = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.player-attacks-opponent`: "a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c; D-598: the ability triggers once for each opponent of its controller that the
+ * declaration attacks, whoever declares the attackers). "That attacking player" is the player who declares them, "that opponent" the one attacked.
+ */
+export const TRIGGER_PLAYER_ATTACKS_OPPONENT = defineRule<IrTrigger>({
+  id: 'trigger.player-attacks-opponent',
+  family: 'trigger',
+  leading: ['a'],
+  cites: [
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 508.6 (Declare Attackers Step)',
+    'CR 603.2c (Handling Triggered Abilities)',
+  ],
+  examples: ['a player attacks one of your opponents'],
+  rejects: [
+    'a player attacks one of their opponents',
+    'a player attacks your opponents',
+    'a player attacks one of your opponent',
+    'a player attacks you',
+    'a player attacks one of your opponents with creatures',
+    'an opponent attacks one of your opponents',
+    'you attack one of your opponents',
+    'a player attack one of your opponents',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.player-attacks-opponent';
+    const r = pattern(/a player attacks one of your opponents(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'playerAttacksOpponent',
+        actor: makeNoun(id, { start: pos, end: pos + 'a player'.length }, 'eachPlayer', {
+          raw: 'a player',
+        }),
+        args: {},
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
   TRIGGER_COUNTERS_ADDED,
   TRIGGER_ATTACK_BATCH,
   TRIGGER_OPPONENT_ATTACKS,
+  TRIGGER_PLAYER_ATTACKS_OPPONENT,
 ].map(quietly);

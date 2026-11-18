@@ -471,6 +471,11 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         by: t.by,
       });
     }
+    case 'playerAttacksOpponent': {
+      // "Whenever a player attacks one of your opponents" (D-598, CR 508.1, 508.6): once for each opponent the declaration attacks.
+      if (t.actor?.det !== 'eachPlayer') return failure(t);
+      return ok({ kind: 'playerAttacksOpponent' });
+    }
     case 'attackBatch': {
       // "Whenever you attack with two or more creatures" (stage P33, D-150, CR 508.1): once for the declaration; "another player" is
       // an opponent of the controller.
@@ -589,6 +594,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'becomesTarget',
       'lifeGained',
       'attackBatch',
+      // D-598: the attacking player ("that attacking player").
+      'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
       'tokenCreated',
@@ -916,6 +923,14 @@ export function lowerTriggered(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  // D-598: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
+  ctx.attackedPlayer =
+    events.length === 1 && events[0]?.event === 'playerAttacksOpponent'
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
@@ -1304,6 +1319,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',
+  'trigger:playerAttacksOpponent',
   'trigger:entersBatch',
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',

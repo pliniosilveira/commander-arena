@@ -1345,7 +1345,18 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const missing = missingFeatures(['token:tapped']);
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
   }
-  const entersTapped = token.tapped === true ? { tapped: true as const } : {};
+  // D-598 (CR 508.4): "that's attacking that opponent": only in a trigger about a player attacking one of your opponents, which names the player attacked.
+  let entersAttacking: { attacking?: { at: PlayerSelector } } = {};
+  if (token.attackingThatOpponent === true) {
+    if (ctx.attackedPlayer === null) return { ok: false, needs: [], ...at };
+    const missing = missingFeatures([...ctx.attackedPlayer.needs, 'token:attacking']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    entersAttacking = { attacking: { at: ctx.attackedPlayer.selector } };
+  }
+  const entersTapped = {
+    ...(token.tapped === true ? { tapped: true as const } : {}),
+    ...entersAttacking,
+  };
   // "Its controller creates ...": the token is created under that player's control (CR 111.2).
   const who = arg(clause, 'player');
   let by: { controller?: PlayerSelector } = {};

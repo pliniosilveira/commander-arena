@@ -1292,7 +1292,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
-        ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
+        ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
+          ? { triggerAttacked: true }
+          : {}),
         triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
@@ -1401,6 +1403,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'subjectControllerHasMore reads the controller of a permanent the event is about',
+          );
+        }
+        // D-598: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
+        if (
+          conditionHas(a.interveningIf, 'attackedHasMoreLifeThanOtherOpponent') &&
+          a.trigger?.kind !== 'playerAttacksOpponent'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackedHasMoreLifeThanOtherOpponent reads the player a playerAttacksOpponent trigger is about: it is only valid in the intervening "if" of one',
           );
         }
         // D-593: the attack declaration is what `attackersAtYouAtLeast` reads, so only the intervening "if" of an attackBatch trigger has it.

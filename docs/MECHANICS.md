@@ -5080,3 +5080,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Parser: `restrictionPhrase` (`rules/static/restriction-words.ts`), `noun.each-creature-enchanted-by-you` (`rules/noun/enchanted-by-you.ts`), IR `cantAttackYou` and `enchantedByYou`, `lower/statics.ts`, `lower/nouns.ts`.
 - Tests: engine `scenario-xx-cant-attack-you.test.ts` (a Bear cannot attack the controller or the planeswalker, an Elf can, another player may be attacked, the controller's own creatures, the ability lost, an Aura of my own on a creature and an Aura of the opponent's on its own creature; mutation-checked: the player ban, the planeswalker ban and the Aura's controller); cards `parser-cant-attack-you.test.ts`.
 - Example cards: Eriette of the Charmed Apple (issue 89); the restriction of Combat Calligrapher.
+
+## A player attacks one of your opponents (issue 89, D-598)
+
+- CR: 508.1 (attackers are declared together), 508.4 (a creature put onto the battlefield attacking was never declared as an attacker), 508.6 (an attack on a planeswalker or a battle is no attack on its controller), 603.2c and 603.4 (a trigger once for each such player, an intervening "if").
+- Gap class: P (a trigger per player attacked, a selector, a condition and a token flag), T (the sentences and two nouns).
+- Engine: `Trigger` `playerAttacksOpponent` (`ast/types.ts`, `rules/triggers.ts`), `PlayerSelector` `triggerAttackedPlayer` (`rules/select.ts`), `Condition` `attackedHasMoreLifeThanOtherOpponent` (`rules/conditions.ts`), `createToken.attacking` (`rules/effects.ts`), validation in `ast/validate*.ts`, feature lists in `ast/features.ts`.
+- Parser: `trigger.player-attacks-opponent` (`rules/trigger/angels.ts`), `noun.that-attacking-player` (`rules/noun/players.ts`), "that opponent" and `LowerContext.attackedPlayer` (`lower/nouns.ts`, `lower/triggers.ts`), the token suffix (`rules/token/index.ts`, `lower/effects.ts`).
+- Tests: engine `scenario-xx-player-attacks-opponent.test.ts` (once for each player attacked, a planeswalker is not a player, the controller is not its own opponent, the token tapped and attacking with its damage; mutation-checked: the controller counted as an opponent and a planeswalker counted as a player), `scenario-xx-attacked-more-life.test.ts` (the condition over three seats); cards `parser-player-attacks-opponent.test.ts` (the real line of Combat Calligrapher, near misses).
+- Example cards: Combat Calligrapher (issue 89); the trigger and the engine condition of Breena, the Demagogue.

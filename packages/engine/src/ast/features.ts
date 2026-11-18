@@ -359,6 +359,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGained',
     'countersAdded',
     'attackBatch',
+    // D-598: "Whenever a player attacks one of your opponents" (CR 508.6).
+    'playerAttacksOpponent',
     // D-179: "When you cycle this card" (CR 702.29c).
     'cycled',
     // D-196: "Whenever the Ring tempts you" (CR 701.54d).
@@ -641,6 +643,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachOtherOpponent',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
+    // D-598: "that opponent" of a `playerAttacksOpponent` trigger.
+    'triggerAttackedPlayer',
     'controllerOf',
     'ownerOf',
     'anyOf',
@@ -813,6 +817,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackersAttackedYou',
     // D-593: "if two or more of those creatures are attacking you and/or planeswalkers you control".
     'attackersAtYouAtLeast',
+    // D-598: "if that opponent has more life than another of your opponents".
+    'attackedHasMoreLifeThanOtherOpponent',
     // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
     'abilityResolvedTimes',
     'ringBearerChosen',
@@ -940,7 +946,17 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
-  tokenKinds: ['Treasure', 'Food', 'Clue', 'custom', 'copyOf', 'tapped', 'copyExceptions'],
+  // D-598: `attacking`, "that's attacking that opponent" (`createToken.attacking`).
+  tokenKinds: [
+    'Treasure',
+    'Food',
+    'Clue',
+    'custom',
+    'copyOf',
+    'tapped',
+    'copyExceptions',
+    'attacking',
+  ],
   amountKinds: [
     'number',
     'x',
@@ -1213,6 +1229,8 @@ export const SELECTOR_KINDS = [
   'eachOtherOpponent',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
+  /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-598): the engine's `triggerAttackedPlayer`. */
+  'triggerAttackedPlayer',
   'controllerOf',
   'ownerOf',
   'anyOf',
@@ -1418,6 +1436,8 @@ export const CONDITION_KINDS = [
   'attackersAttackedYou',
   /** "If two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b, 603.4, D-593): the engine's `attackersAtYouAtLeast`. */
   'attackersAtYouAtLeast',
+  /** "If that opponent has more life than another of your opponents" (CR 603.4, D-598): the engine's `attackedHasMoreLifeThanOtherOpponent`. */
+  'attackedHasMoreLifeThanOtherOpponent',
   /** "If this is the second time this ability has resolved this turn" (CR 608.2c, Galadriel group 1): the engine's `abilityResolvedTimes`. */
   'abilityResolvedTimes',
   /** "If you chose a creature other than ~ as your Ring-bearer" (CR 701.54a, Galadriel group 1): the engine's `ringBearerChosen`. */
@@ -1595,6 +1615,8 @@ export const TOKEN_KINDS = [
   'tapped',
   /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `noManaCost`. */
   'copyExceptions',
+  /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-598): the engine's `createToken.attacking`. */
+  'attacking',
 ] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
@@ -1919,6 +1941,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeGained: true,
   countersAdded: true,
   attackBatch: true,
+  playerAttacksOpponent: true,
   cycled: true,
   ringTempted: true,
   crimeCommitted: true,

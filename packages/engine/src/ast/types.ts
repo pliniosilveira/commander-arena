@@ -780,6 +780,11 @@ export type PlayerSelector =
    * (a step, a death, an entering) has none.
    */
   | { readonly kind: 'triggerPlayer' }
+  /**
+   * "That opponent" in a `playerAttacksOpponent` trigger (CR 508.6, D-598): the player the declaration attacked that made the ability trigger. Valid only in the effect or the
+   * intervening "if" of such a trigger (`validateCard`); nobody once that player has left the game.
+   */
+  | { readonly kind: 'triggerAttackedPlayer' }
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
   | { readonly kind: 'declinedPlayer' }
   /**
@@ -2795,6 +2800,12 @@ export type Effect =
        * anyway still does.
        */
       readonly tapped?: true;
+      /**
+       * "Create a tapped 2/1 ... creature token that's attacking that opponent" (CR 508.4, 506.3, D-598): each creature token created, while a combat is on, starts attacking the
+       * player `at` names (the first one it names): it was never declared as an attacker, so nothing that triggers on an attack sees it and the turn log does not count it.
+       * Nothing happens outside a combat after attackers were declared. A token that is not a creature is not put in combat.
+       */
+      readonly attacking?: { readonly at: PlayerSelector };
     }
   /**
    * CR 701.3 (Attach): `object` (an Aura or Equipment) becomes attached to `to`. If it cannot be
@@ -3297,6 +3308,12 @@ export type Trigger =
       readonly atLeast: number;
       readonly what?: ObjectFilter;
     }
+  /**
+   * "Whenever a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c, D-598): once for each player the declaration attacks (an attack on a planeswalker or a battle is not an
+   * attack on its controller or protector, CR 508.6) who is not the controller of this ability, whoever declares the attackers and however many creatures attack that player.
+   * `triggerPlayer` is the attacking player ("that attacking player") and `triggerAttackedPlayer` the player attacked ("that opponent").
+   */
+  | { readonly kind: 'playerAttacksOpponent' }
   /**
    * "Whenever [this permanent] becomes the target of a spell or ability [an opponent controls]"
    * (CR 603.2, 702.21a Ward): `what` is the permanent targeted, `by` whose spell or ability it is
@@ -4004,6 +4021,12 @@ export type Condition =
    * `attackBatch` trigger (`validateCard`): it is read as the attack is declared and again as the ability resolves, from the declaration.
    */
   | { readonly kind: 'attackersAtYouAtLeast'; readonly count: number }
+  /**
+   * "If that opponent has more life than another of your opponents" (CR 603.4, 508.6, D-598): the player a `playerAttacksOpponent` trigger is about has more life than at least one
+   * other opponent of the controller who is still in the game (the controller's own life is not compared). Only the intervening "if" of such a trigger (`validateCard`): it is read
+   * as the attack is declared and again as the ability resolves, from the player the declaration attacked.
+   */
+  | { readonly kind: 'attackedHasMoreLifeThanOtherOpponent' }
   /**
    * "If this is the second time this ability has resolved this turn" (Galadriel group 1, Elrond, Lord of Rivendell; CR 608.2c, 603.4): the triggered ability this
    * effect belongs to, counted with every other time it has begun to resolve this turn for the same permanent (a resolution is counted as it begins, so this one is

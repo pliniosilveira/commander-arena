@@ -717,6 +717,11 @@ export function resolvePlayers(
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
         ? []
         : [ctx.triggerPlayer];
+    case 'triggerAttackedPlayer': {
+      // CR 508.6 (D-598): "that opponent": the player the declaration attacked that made the trigger, if still in the game.
+      const attacked = ctx.triggerAttacked?.[0];
+      return attacked === undefined || getSeat(state, attacked).hasLost ? [] : [attacked];
+    }
     case 'declinedPlayer':
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []

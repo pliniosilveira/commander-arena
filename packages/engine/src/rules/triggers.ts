@@ -435,6 +435,21 @@ function occurrences(
             },
           ]
         : [];
+    case 'playerAttacksOpponent': {
+      // CR 508.1, 508.6, 603.2c (D-598): once for each player the declaration attacks (a planeswalker or a battle attacked is no player), however many creatures attack them.
+      if (event.kind !== 'attackersDeclared') return [];
+      const seats = [
+        ...new Set(
+          event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+        ),
+      ];
+      return seats.map((seat) => ({
+        subject: null,
+        seat: event.seat,
+        player: event.seat,
+        attacked: [seat],
+      }));
+    }
     case 'attackBatch':
       // CR 508.1, 603.2 (D-149): once for the whole declaration, whoever the creatures attack.
       return event.kind === 'attackersDeclared'
@@ -674,6 +689,11 @@ function matches(
       if (trigger.counter !== undefined && occ.counter !== trigger.counter) return false;
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'playerAttacksOpponent': {
+      // "One of your opponents": a player other than the controller of the ability (D-598).
+      const attacked = occ.attacked?.[0];
+      return attacked !== undefined && attacked !== candidate.controller;
+    }
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -1019,6 +1039,7 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
               ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
               ...(occ.attackedAt === undefined ? {} : { triggerAttackedAt: occ.attackedAt }),
+              ...(occ.attacked === undefined ? {} : { triggerAttacked: occ.attacked }),
             })
           ) {
             continue;

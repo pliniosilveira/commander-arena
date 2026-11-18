@@ -357,6 +357,15 @@ export function evaluateCondition(
       }
       return [...byName.values()].some((n) => n >= condition.count);
     }
+    case 'attackedHasMoreLifeThanOtherOpponent': {
+      // CR 603.4, 508.6 (D-598): the opponent the declaration attacked against the other opponents of the controller still in the game.
+      const attacked = ctx.triggerAttacked?.[0];
+      if (attacked === undefined) return false;
+      const life = getSeat(state, attacked).life;
+      return opponentsOf(state, ctx.controller).some(
+        (other) => other !== attacked && getSeat(state, other).life < life,
+      );
+    }
     case 'attackersAtYouAtLeast':
       // CR 508.1b, 603.4 (D-593): the creatures declared at me or at a planeswalker I control, read from the declaration.
       return (

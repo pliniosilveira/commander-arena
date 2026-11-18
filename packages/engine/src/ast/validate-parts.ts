@@ -1129,6 +1129,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'triggerAttackedPlayer':
+      // D-598: "that opponent": the player a `playerAttacksOpponent` trigger is about.
+      if (scope.triggerAttacked !== true) {
+        issue(
+          out,
+          path,
+          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents",
+        );
+      }
+      break;
     case 'declinedPlayer':
       if (scope.declinedPlayer !== true) {
         issue(out, path, "'declinedPlayer' is only valid in a playersMay 'otherwise' effect");
@@ -2297,6 +2307,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
           "the permanents compared are everyone's: the filter sets no controller",
         );
       }
+      break;
+    case 'attackedHasMoreLifeThanOtherOpponent':
+      // D-598: no parameters; where it may stand (the intervening "if" of a playerAttacksOpponent trigger) is checked with the trigger (validate.ts).
       break;
     case 'attackersAtYouAtLeast':
       // D-593: read from the declaration of the attack event; where it may stand (the intervening "if" of an attackBatch trigger) is checked with the trigger (validate.ts).
@@ -3632,6 +3645,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-131: "tapped" is a flag.
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
+      }
+      // D-598 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
+      if (e.attacking !== undefined) {
+        checkPlayerSelector(e.attacking.at, `${path}.attacking.at`, scope, out);
       }
       break;
     case 'counterUnlessPays':

@@ -88,6 +88,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:colorless',
   'selector:keywords',
   'selector:triggerPlayer',
+  'selector:triggerAttackedPlayer',
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
@@ -1044,6 +1045,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'anaphor':
     case 'triggerActor': {
+      // D-598: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
+      if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
+        return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);
+      }
       // "That player" in a trigger about a player's action (stage P18): the player the trigger names.
       if (noun.det === 'triggerActor' || noun.ref === 'trigActor') {
         if (ctx.thatPlayer === null)
@@ -1080,7 +1085,7 @@ export function recipientOf(
     noun.det === 'eachOpponent' ||
     noun.det === 'triggerActor' ||
     noun.det === 'controllerOf' ||
-    (noun.det === 'anaphor' && noun.filter.raw.toLowerCase() === 'that player') ||
+    (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);
   return objectSelectorOf(noun, ctx);

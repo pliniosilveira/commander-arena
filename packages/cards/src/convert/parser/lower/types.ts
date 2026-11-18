@@ -82,6 +82,11 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
+  /** D-598: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
+  attackedPlayer: {
+    readonly selector: PlayerSelector;
+    readonly needs: readonly FeatureRef[];
+  } | null;
   /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
    * sentence are lowered, an X in them is this amount, written into each slot that says X. `used` is set when a slot
@@ -252,6 +257,7 @@ export function newContext(
     madeAToken: false,
     lowered: 0,
     thatPlayer: null,
+    attackedPlayer: null,
     xIs: null,
     xDefined: false,
     exiled: null,

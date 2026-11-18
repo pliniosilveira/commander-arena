@@ -1787,6 +1787,37 @@ function runEffect(
         const exiled = (ctx.moved ?? []).filter((id) => next.objects[id]?.zone === 'exile');
         for (const id of created) next = patchObject(next, id, { linkedExile: exiled });
       }
+      // CR 508.4 (D-598): "tapped and attacking that opponent": the creature tokens just created start attacking the player the selector names, while a combat is on. They were
+      // never declared as attackers.
+      if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
+        const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
+        const combat = next.combat;
+        if (defender !== undefined) {
+          const entering = created.filter((id) => {
+            const obj = next.objects[id];
+            return (
+              obj !== undefined &&
+              obj.zone === 'battlefield' &&
+              derive(next, obj).types.includes('creature') &&
+              !combat.attackers.some((a) => a.object === id)
+            );
+          });
+          next = {
+            ...next,
+            combat: {
+              ...combat,
+              attackers: [
+                ...combat.attackers,
+                ...entering.map((object) => ({
+                  object,
+                  target: { kind: 'player' as const, seat: defender },
+                  blocked: false,
+                })),
+              ],
+            },
+          };
+        }
+      }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
       return { ...done(next, events, front), lastMoved: created };

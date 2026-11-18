@@ -164,6 +164,8 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     'token:copyOf',
     'token:copyExceptions',
     'token:tapped',
+    // D-598: "that's attacking that opponent" (`createToken` `attacking`).
+    'token:attacking',
     ...NOUN_EXTRA_NEEDS,
     'selector:colorChoice',
   ]),

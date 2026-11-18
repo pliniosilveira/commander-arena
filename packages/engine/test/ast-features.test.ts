@@ -132,6 +132,8 @@ describe('the dimensions', () => {
       'attackersAttackedYou',
       // D-593: "if two or more of those creatures are attacking you and/or planeswalkers you control".
       'attackersAtYouAtLeast',
+      // D-598: "if that opponent has more life than another of your opponents".
+      'attackedHasMoreLifeThanOtherOpponent',
       // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
       'abilityResolvedTimes',
       'ringBearerChosen',
