@@ -84,6 +84,7 @@ import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
+import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -1656,6 +1657,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GISA_G4_LOWERINGS,
   ...PRISMARI_G1_LOWERINGS,
   ...PRISMARI_G2_LOWERINGS,
+  // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
+  ...PRISMARI_G3_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."

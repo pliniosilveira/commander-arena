@@ -221,6 +221,11 @@ export interface LowerContext {
    */
   exiledRef: string | null;
   /**
+   * The kind of the last instruction lowered (Prismari deck group 3, D-646): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
+   * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
+   */
+  lastEffectKind: string | null;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -281,6 +286,7 @@ export function newContext(
     milled: false,
     movedToHand: false,
     exiledRef: null,
+    lastEffectKind: null,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

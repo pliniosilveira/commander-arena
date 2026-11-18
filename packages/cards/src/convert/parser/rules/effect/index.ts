@@ -106,6 +106,7 @@ import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
 import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
+import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
@@ -904,6 +905,11 @@ export const EFFECT_RULES = [
   // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
   // rules, and are tried first.
   ...PRISMARI_G2_EFFECT_RULES,
+  // Prismari deck, group 3 (issue 87, D-646 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into
+  // your hand", "shuffle your library, then reveal cards ... exile that card ...", "as many times as you choose, you may exile ...", "each player exiles cards ... until they exile a nonland card",
+  // "an opponent chooses a nonland card exiled this way" and "whenever a creature you control deals combat damage ... copy the exiled card" start like the plain exile, cast, put, shuffle,
+  // each and whenever rules, and are tried first.
+  ...PRISMARI_G3_EFFECT_RULES,
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
