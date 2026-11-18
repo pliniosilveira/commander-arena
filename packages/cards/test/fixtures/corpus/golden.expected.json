@@ -1,5 +1,5 @@
 {
-  "parserVersion": 144,
+  "parserVersion": 145,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -3864,19 +3864,10 @@
     "9a2fdc0e-e0de-47fc-95e4-04e725ddf060": {
       "name": "Trostani Discordant",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "At the beginning of your end step, each player gains control of all creatures they own.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.player.life"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f266192c"
+      "ast": "219ac0cd"
     },
     "9aace0d3-89e6-4254-b96f-ee3a878f2f91": {
       "name": "Conqueror's Flail",
@@ -4355,18 +4346,10 @@
     "ab42398c-f0a1-4b94-ac5f-b8768e1b4e05": {
       "name": "Presence of Gond",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature has \"{T}: Create a 1/1 green Elf Warrior creature token.\"",
-          "reason": "notRunnable",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d7a4a64d"
+      "ast": "e18eb353"
     },
     "ab655810-f67e-4576-9174-35b16f5e3235": {
       "name": "Saheeli, Sublime Artificer",
@@ -4945,19 +4928,10 @@
     "c549b0fd-1e08-4873-952e-a14dc45a0fd2": {
       "name": "Champion of Lambholt",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Creatures with power less than ~'s power can't block creatures you control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.permanents"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "556c9032"
+      "ast": "672ddfb8"
     },
     "c5acf2a5-40f4-433d-a74d-1cb56c521464": {
       "name": "Arid Mesa",
@@ -6554,7 +6528,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 452,
+      "supported": 455,
       "total": 477
     }
   }

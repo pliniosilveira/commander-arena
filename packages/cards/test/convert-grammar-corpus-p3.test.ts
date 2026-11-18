@@ -92,10 +92,16 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature has "{T}: Draw a card."',
-    expect: no('Enchanted creature has "{T}: Draw a card."', 'static.attached', {
+    expect: OK,
+    note: 'SYNTHETIC; run since D-612: an enchanted creature is given an activated ability, as an enchanted land is (D-603)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant permanent\nEnchanted permanent has "{T}: Draw a card."',
+    expect: no('Enchanted permanent has "{T}: Draw a card."', 'static.attached', {
       ...NOT_RUNNABLE,
     }),
-    note: 'SYNTHETIC; still not run: an attached permanent is given a triggered ability (stage P49, D-206) and a mana ability, no activated one',
+    note: 'SYNTHETIC; still not run: an untyped attached permanent is given an activated ability (only an enchanted creature or land is, D-603, D-612)',
   },
   {
     kind: 'aura',

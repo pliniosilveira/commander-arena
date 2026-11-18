@@ -2513,6 +2513,12 @@ export type Effect =
       readonly duration: ControlDuration;
     }
   /**
+   * "Each player gains control of all creatures they own." (issue 160, D-612, CR 613.1b, 613.7b, 611.2a, 611.2c): for each owner, one layer 2 effect with no duration gives that
+   * player control of the permanents `objects` names that they own, as they are named now (CR 611.2c). The effect has a timestamp (CR 613.7b): it decides over an earlier
+   * effect that gave the permanent to another player, and a later one decides over it. A permanent that changed controller leaves combat (CR 506.4).
+   */
+  | { readonly kind: 'returnControlToOwners'; readonly objects: ObjectSelector }
+  /**
    * "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b, 613.1b, 611.2a; Galadriel group 3): the two permanents `first` and `second` name
    * (each `this` or a `target`) swap controllers as this resolves. If the entire exchange can't be completed (one of them is no longer a permanent on the battlefield, or one of
    * the two selectors names nothing) no part of it happens; if the same player controls both, it does nothing (CR 701.12b). Otherwise each of the two players gains control

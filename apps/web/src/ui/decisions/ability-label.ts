@@ -1133,6 +1133,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'gainControl':
       // D-189 (CR 613.1b, 611.2): "Gain control of target creature until end of turn".
       return `Gain control of ${object(effect.objects)}${controlDurationText(effect.duration, self)}`;
+    case 'returnControlToOwners':
+      // D-612 (CR 613.1b): "Each player gains control of all creatures they own".
+      return `Each player gains control of ${object(effect.objects)} they own`;
     case 'exchangeControl':
       // Galadriel group 3 (CR 701.12): "Exchange control of this enchantment and target nonland permanent".
       return `Exchange control of ${object(effect.first)} and ${object(effect.second)}`;

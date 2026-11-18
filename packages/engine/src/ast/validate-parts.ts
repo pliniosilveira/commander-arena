@@ -3767,6 +3767,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'returnControlToOwners':
+      // CR 613.1b (D-612): a group, a target or the permanent with the ability.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'exchangeControl': {
       // CR 701.12a (Galadriel group 3): two permanents, each the permanent with the ability or a target; never the same one twice.
       const sides = [

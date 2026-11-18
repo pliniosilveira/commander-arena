@@ -30,7 +30,7 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl } from './control-effects';
+import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
@@ -2372,6 +2372,10 @@ function runEffect(
     case 'gainControl':
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).
       return runGainControl(state, effect, ctx, targets);
+
+    case 'returnControlToOwners':
+      // CR 613.1b, 611.2a (D-612): one layer 2 effect for each owner (`rules/control-effects.ts`).
+      return runReturnControl(state, effect, ctx, targets);
 
     case 'exchangeControl':
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).

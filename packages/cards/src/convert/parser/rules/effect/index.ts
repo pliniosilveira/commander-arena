@@ -110,6 +110,7 @@ import { PUT_RULES } from './put';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
+import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
@@ -928,6 +929,8 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-611): "Populate".
   ...POPULATE_EFFECT_RULES,
+  // Issue 160 (D-612): "Each player gains control of all creatures they own."
+  ...RETURN_CONTROL_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,

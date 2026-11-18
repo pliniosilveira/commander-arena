@@ -1,6 +1,7 @@
 // The cards of issue 160 (the Token Triumph precon), run as written (D-609 and the following entries). Each group imports SYNTHETIC cards through the grammar (never through a
 // fixture), defines them in an engine scenario and plays them through applyAction. Every card name starts with "SYNTHETIC"; the wording of each text is that of the real card
 // the issue names, taken from the card data of the issue's comment. No real card's text is claimed beyond that.
+import { getView } from '@commander-arena/engine';
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { parsed } from './convert-grammar-helpers';
@@ -395,5 +396,93 @@ describe('Felidar Retreat, Great Oak Guardian and Rootborn Defenses as written (
     g.passAll();
     expect(tokens(g, 'Cat')).toHaveLength(2);
     g.expect.invariants();
+  });
+});
+
+// ---- Group 5: creatures with less power can't block (D-612).
+
+const CHAMPION = parsed(
+  'SYNTHETIC Parsed Champion',
+  'Creature — Human Soldier',
+  "Creatures with power less than ~'s power can't block creatures you control.\nWhenever another creature you control enters, put a +1/+1 counter on this creature.",
+  { manaCost: '{2}{G}', colors: ['G'], power: '3', toughness: '3' },
+);
+
+describe('"Creatures with power less than ~\'s power can\'t block creatures you control" (D-612, CR 509.1b)', () => {
+  test('a creature with less power cannot block mine, one with as much power can', () => {
+    const g = scenario()
+      .seat(0)
+      .library('Island', { count: 4 })
+      .define(CHAMPION)
+      .battlefield(CHAMPION.name)
+      .battlefield(BEARS)
+      .seat(1)
+      .library('Island', { count: 4 })
+      .battlefield('Raging Goblin')
+      .battlefield('SYNTHETIC Elf 3/3')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([CHAMPION.name, BEARS]);
+    g.advanceTo('declareBlockers');
+    const d = g.state.pending;
+    if (d?.kind !== 'declareBlockers') throw new Error('expected the blockers decision');
+    const can = (blocker: string, attacker: string) =>
+      d.candidates.some((c) => c.blocker === g.id(blocker) && c.canBlock.includes(g.id(attacker)));
+    expect(can('Raging Goblin', BEARS)).toBe(false);
+    expect(can('Raging Goblin', CHAMPION.name)).toBe(false);
+    expect(can('SYNTHETIC Elf 3/3', BEARS)).toBe(true);
+  });
+});
+
+const PRESENCE = parsed(
+  'SYNTHETIC Parsed Presence',
+  'Enchantment — Aura',
+  'Enchant creature\nEnchanted creature has "{T}: Create a 1/1 green Elf Warrior creature token."',
+  { manaCost: '{2}{G}', colors: ['G'] },
+);
+
+describe('an Aura that gives an enchanted creature an activated ability (D-612, CR 613.1f, 303.4e)', () => {
+  test('the enchanted creature taps for an Elf Warrior token; a creature without the Aura has no such ability', () => {
+    const g = main((b) =>
+      b
+        .define(PRESENCE)
+        .hand(PRESENCE.name)
+        .battlefield('Forest', { count: 3 })
+        .battlefield(BEARS)
+        .battlefield('Llanowar Elves'),
+    );
+    g.act(0).cast(PRESENCE.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    g.act(0).activate(BEARS);
+    g.passAll();
+    expect(tokens(g, 'Elf Warrior')).toHaveLength(1);
+    g.expect.tapped(BEARS, true);
+    g.expect.invariants();
+  });
+});
+
+const DISCORD = parsed(
+  'SYNTHETIC Parsed Discord',
+  'Creature — Angel',
+  'At the beginning of your end step, each player gains control of all creatures they own.',
+  { manaCost: '{3}{G}{W}', colors: ['G', 'W'], power: '4', toughness: '4' },
+);
+
+describe('"each player gains control of all creatures they own" (D-612, CR 613.1b)', () => {
+  test('a stolen creature goes back to its owner at my end step', () => {
+    const g = main(
+      (b) => b.define(DISCORD).battlefield(DISCORD.name),
+      (b) => b.battlefield(BEARS, { controller: 0, label: 'stolen' }),
+    );
+    const controller = (): number => {
+      const obj = g.state.objects[g.id('stolen')];
+      if (obj === undefined) throw new Error('gone');
+      return getView(g.state, 0).battlefield.find((o) => o.id === obj.id)?.controller ?? -1;
+    };
+    expect(controller()).toBe(0);
+    g.advanceTo('end');
+    g.passAll();
+    expect(controller()).toBe(1);
   });
 });

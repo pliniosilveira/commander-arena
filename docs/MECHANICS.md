@@ -5140,3 +5140,14 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - AI: `casual-agent.ts` chooses the token with the most power for `populate` as for an amass.
 - What the parser must produce: `Populate.` reads to `populate`; `When ~ enters, creatures target player controls get +2/+2 until end of turn. Untap them.` reads to a trigger with `modifyPt` over `each { controlledBy target }` and `untap` of the same group.
 - Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): creatures with less power can't block, an enchanted creature's ability, control back to the owners (D-612)
+
+- CR: 509.1b (what can't block), 208.1 (power as it is now), 613.11 (a rules-modifying effect, read where the rule acts), 613.1f (a granted ability), 303.4e (only the enchanted creature's controller activates it), 613.1b, 613.7b, 611.2a and 611.2c (control-changing effects: layer 2, timestamps, no duration, the set fixed when it begins), 506.4 (leaves combat).
+- Gap class: T (the phrases) and P (`returnControlToOwners`); no S proposal for these three.
+- Engine: `rules/control-effects.ts` (`runReturnControl`), `rules/effects.ts`, `ast/features.ts`, `ast/validate-parts.ts`; the block restriction and the granted ability were already run (`rules/combat-legality.ts`, `rules/derive-statics.ts`).
+- Parser: `rules/static/block-power.ts` and `ir/types.ts` / `lower/nouns.ts` (`powerLessThanSource`), `lower/statics.ts` (a granted activated ability on an enchanted creature), `rules/effect/return-control.ts` and `lower/return-control.ts`.
+- Tests: engine `scenario-xx-block-power.test.ts`, `scenario-xx-return-control.test.ts` (SYNTHETIC cards of `synthetic-block-power.ts` and `synthetic-return-control.ts`); cards `convert-grammar-engine-issue160.test.ts`.
+- Web: `ui/decisions/ability-label.ts` words the effect.
+- What the parser must produce: `Creatures with power less than ~'s power can't block creatures you control.` reads to a static `cantBeBlockedBy { subject: creatures you control, blockers: { types: [creature], powerLessThanSource } }`; `each player gains control of all creatures they own` reads to `returnControlToOwners` of every creature.
+- Limits: see `docs/ROADMAP.md`.

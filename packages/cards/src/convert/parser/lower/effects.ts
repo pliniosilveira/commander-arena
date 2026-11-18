@@ -83,6 +83,7 @@ import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
+import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -1623,6 +1624,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,
   ...MELD_LOWERINGS,

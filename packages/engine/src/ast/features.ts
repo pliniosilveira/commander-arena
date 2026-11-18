@@ -205,6 +205,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
     'exchangeControl',
+    // D-612: "each player gains control of all creatures they own" (CR 613.1b).
+    'returnControlToOwners',
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
@@ -1822,6 +1824,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   permanentsEnterTapped: true,
   gainControl: true,
   exchangeControl: true,
+  returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
   scry: true,

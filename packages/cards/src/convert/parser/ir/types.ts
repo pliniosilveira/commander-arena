@@ -360,6 +360,8 @@ export interface IrFilter {
   readonly targetsHost?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
+  /** "with power less than ~'s power" (issue 160, D-612, CR 208.1): the engine's `powerLessThanSource`. */
+  readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
   readonly anyTarget?: boolean;
   /** The words the filter was read from, for diagnostics and templateOf. */

@@ -384,6 +384,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", or the sentence about a creature that deals damage); the nouns are operands.
   'keyword.escalate': asIs,
   'static.cant-attack-block-unless': asIs,
+  'static.creatures-with-less-power-cant-block': asIs,
   'static.attached-becomes': asIs,
   'static.pt-amount': asIs,
   'trigger.attacks-while': whenever,

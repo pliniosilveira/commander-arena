@@ -148,9 +148,10 @@ function lowerGrantedAbility(
   // the creature that has the ability, the same as for a group).
   // D-286 (CR 702.95b): the pair, for a triggered ability ("each of those creatures has a quoted ability"): `~` in the quotation is the creature that has it.
   // D-603: a typed attached permanent can receive an activated ability; Underworld Connections grants one to an enchanted land.
+  // Issue 160 (D-612): and an enchanted creature ("Enchanted creature has \"{T}: Create a 1/1 green Elf Warrior creature token.\"": the creature that has the ability).
   const attachedLandActivated =
     subject.kind === 'attached' &&
-    subject.types?.includes('land') === true &&
+    (subject.types?.includes('land') === true || subject.types?.includes('creature') === true) &&
     inner.kind === 'activated';
   if (
     subject.kind !== 'this' &&

@@ -44,4 +44,5 @@
 // 142: Read "Tap an untapped creature you control" next to a mana cost and {T}, and in a mana ability (D-609, issue 160).
 // 143: Read "where X is your life total", the mana value of a destroyed enchantment, "that many" tokens after damage, "for each opponent who controls fewer creatures", "Discard your hand", "up to X" library searches and a spell shuffling itself into its library (D-610, issue 160).
 // 144: Read "creatures target player controls get ...", "untap them", "those creatures gain ..." after an each group and "Populate" (D-611, issue 160).
-export const PARSER_VERSION = 144;
+// 145: Read "creatures with power less than ~'s power can't block creatures you control", an enchanted creature with a granted activated ability and "each player gains control of all creatures they own" (D-612, issue 160).
+export const PARSER_VERSION = 145;

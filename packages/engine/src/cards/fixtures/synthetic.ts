@@ -22,6 +22,7 @@ import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
+import { SYNTHETIC_BLOCK_POWER_LIST } from './synthetic-block-power';
 import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
 import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
@@ -136,6 +137,7 @@ import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
 import { SYNTHETIC_REPEATABLE_LIST } from './synthetic-repeatable';
 import { SYNTHETIC_RESELECT_LIST } from './synthetic-reselect';
 import { SYNTHETIC_RESTRICTION_LIST } from './synthetic-restrictions';
+import { SYNTHETIC_RETURN_CONTROL_LIST } from './synthetic-return-control';
 import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
@@ -439,6 +441,8 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,
+  ...SYNTHETIC_BLOCK_POWER_LIST,
+  ...SYNTHETIC_RETURN_CONTROL_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,
   ...SYNTHETIC_PLAY_RULE_LIST,
   ...SYNTHETIC_UPKEEP_LIST,
