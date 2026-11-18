@@ -183,11 +183,13 @@ describe('token copies (CR 707.2)', () => {
   });
 
   test('only this, a target or the triggering permanent can be copied', () => {
-    for (const object of [{ kind: 'thisSpell' }, { kind: 'moved' }]) {
-      expect(structural(trig(ENTERS, copyToken(object))), JSON.stringify(object)).toEqual([
-        expect.stringContaining('a copy is made from'),
-      ]);
-    }
+    expect(structural(trig(ENTERS, copyToken({ kind: 'thisSpell' })))).toEqual([
+      expect.stringContaining('a copy is made from'),
+    ]);
+    // 'moved' names what an earlier effect of the sequence moved, so a copy of it with no such effect is refused for that.
+    expect(structural(trig(ENTERS, copyToken({ kind: 'moved' })))).toEqual([
+      expect.stringContaining("'moved' needs an exile, destroy or moveToZone effect"),
+    ]);
   });
 
   test('a copy of something that could be an Aura is executable since D-668 (CR 303.4f); so is a land (D-211, CR 614.12)', () => {

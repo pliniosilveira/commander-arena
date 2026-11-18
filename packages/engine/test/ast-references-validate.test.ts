@@ -77,6 +77,8 @@ describe('amounts that read an object', () => {
       'times',
       'lifeLostThisWay',
       'lifeLostThisTurn',
+      // CR 402.1: the cards in that player's hand, read for each player a dealDamage hurts.
+      'cardsInHandOfAffected',
       'lifeGainedThisTurn',
       'enteredThisTurn',
       'diedThisTurn',
@@ -99,6 +101,8 @@ describe('amounts that read an object', () => {
       'multiple',
       'minus',
       'sum',
+      'extreme',
+      'opponentCount',
       'opponentsWithMore',
       'thisWay',
       // D-133.

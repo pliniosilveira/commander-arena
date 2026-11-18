@@ -325,6 +325,8 @@ describe('supported feature gate', () => {
         'endStep',
         'entersBatch',
         'entersBattlefield',
+        // Glorybringer: "When you do" after exerting.
+        'exerted',
         'exiledFromLibraryOrGraveyard',
         'landfall',
         'leavesBattlefield',
