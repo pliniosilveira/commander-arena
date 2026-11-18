@@ -283,6 +283,15 @@ export function lowerAmount(
       }
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
+      // Issue 279 (CR 608.2c, 611.2c): "Draw a card for each creature you control with a +1/+1 counter on it. Those creatures gain indestructible until end of turn.":
+      // "those creatures" are the ones the count counted, the group the filter names as the later instruction resolves (nothing in between changes who is in it). Only the
+      // `each` of a plural group counted by `for each`/`the number of`; a player or a group that names another object is not recorded.
+      if (amount.of.ref !== undefined && amount.of.det === 'each') {
+        const selecting = missingFeatures(['selector:each']);
+        if (selecting.length === 0) {
+          ctx.eachMentions.set(amount.of.ref, { kind: 'each', filter: filter.value });
+        }
+      }
       return { ok: true, value: { kind: 'countOf', filter: filter.value }, rule };
     }
     case 'cardTypesAmong': {

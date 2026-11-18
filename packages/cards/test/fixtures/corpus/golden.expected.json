@@ -4102,19 +4102,10 @@
     "9b9a10ff-5a5d-4df8-88aa-18d84ff9117c": {
       "name": "Inspiring Call",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Draw a card for each creature you control with a +1/+1 counter on it. Those creatures gain indestructible until end of turn.",
-          "reason": "notRunnable",
-          "closestRule": "noun.those-creatures",
-          "needs": ["selector:bound"]
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "951027d8"
+      "ast": "7262f39b"
     },
     "9c36760b-57c5-488b-afc9-ef141942c6ab": {
       "name": "Archfiend of Despair",
@@ -6758,7 +6749,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 472,
+      "supported": 473,
       "total": 500
     }
   }

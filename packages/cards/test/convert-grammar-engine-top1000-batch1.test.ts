@@ -223,3 +223,49 @@ describe('"... if you attacked with three or more creatures this turn" (CR 508.1
     g.expect.zone('Giant Spider', 'exile', { seat: 0 });
   });
 });
+
+// ---- Inspiring Call: "Draw a card for each creature you control with a +1/+1 counter on it. Those creatures gain indestructible until end of turn." (CR 608.2c, 611.2c, 702.12).
+
+const CALL = parsed(
+  'SYNTHETIC Parsed Call',
+  'Instant',
+  'Draw a card for each creature you control with a +1/+1 counter on it. Those creatures gain indestructible until end of turn. (Damage and effects that say "destroy" don\'t destroy them.)',
+  { manaCost: '{2}{G}', colors: ['G'] },
+);
+
+describe('"Those creatures gain indestructible" after a count of creatures (CR 608.2c)', () => {
+  test('a card for each creature with a counter, and only those creatures are indestructible', () => {
+    const g = main((b) =>
+      b
+        .define(CALL)
+        .hand(CALL.name)
+        .battlefield('Forest', 'Forest', 'Forest')
+        .battlefield('Grizzly Bears', { counters: { '+1/+1': 1 } })
+        .battlefield('Giant Spider', { counters: { '+1/+1': 2 } })
+        .battlefield('Serra Angel'),
+    );
+    const before = g.view(0).seats[0]?.handCount ?? 0;
+    g.act(0).cast(CALL.name, { pay: true });
+    g.passAll();
+    // The spell left the hand and two cards were drawn.
+    expect(g.view(0).seats[0]?.handCount).toBe(before - 1 + 2);
+    g.expect.derived('Grizzly Bears', { keywords: ['indestructible'] });
+    g.expect.derived('Giant Spider', { keywords: ['reach', 'indestructible'] });
+    g.expect.derived('Serra Angel', { keywords: ['flying', 'vigilance'] });
+    g.expect.invariants();
+  });
+
+  test('with no creature that has a counter nothing is drawn and nothing is granted', () => {
+    const g = main((b) =>
+      b
+        .define(CALL)
+        .hand(CALL.name)
+        .battlefield('Forest', 'Forest', 'Forest')
+        .battlefield('Grizzly Bears'),
+    );
+    g.act(0).cast(CALL.name, { pay: true });
+    g.passAll();
+    expect(g.view(0).seats[0]?.handCount).toBe(0);
+    g.expect.derived('Grizzly Bears', { keywords: [] });
+  });
+});

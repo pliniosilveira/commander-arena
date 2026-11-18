@@ -478,6 +478,7 @@ describe('unmatched abilities', () => {
       'condition.cast-from-graveyard',
       'condition.mana-spent-or-more',
       'condition.spells-cast-this-turn',
+      'condition.attacked-with-creatures',
       'condition.cards-in-library',
       'condition.player-declines',
       'condition.discarded-this-way',
