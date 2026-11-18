@@ -16,7 +16,7 @@ import type { GameEvent } from '../state/events';
 import { getObject, getSeat } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
 import { recordActionTaken, recordResolution } from './action-taken';
-import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
+import { attachEntered, attachEnteredToPlayer, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
 import { runCastCard } from './cast-card';
 import { runCastExiled } from './cast-exiled';
@@ -311,10 +311,14 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
   throw new Error('Resolution did not finish');
 }
 
-/** The object an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
-function enchantedHost(res: ResolutionContext): ObjectId | null {
+/** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
+function enchantedHost(
+  res: ResolutionContext,
+): { readonly object: ObjectId } | { readonly seat: SeatId } | null {
   for (const t of res.legalTargets) {
-    if (t.kind === 'object' && t.specId === ENCHANT_TARGET_ID) return t.id;
+    if (t.specId !== ENCHANT_TARGET_ID) continue;
+    if (t.kind === 'object') return { object: t.id };
+    return { seat: t.seat };
   }
   return null;
 }
@@ -370,7 +374,10 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       next = moved.state;
       events.push(...moved.events);
       if (auraHost !== null && moved.newObject !== null) {
-        const attached = attachEntered(next, moved.newObject, auraHost);
+        const attached =
+          'seat' in auraHost
+            ? attachEnteredToPlayer(next, moved.newObject, auraHost.seat)
+            : attachEntered(next, moved.newObject, auraHost.object);
         next = attached.state;
         events.push(...attached.events);
       }

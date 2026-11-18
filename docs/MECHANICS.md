@@ -5151,3 +5151,14 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Web: `ui/decisions/ability-label.ts` words the effect.
 - What the parser must produce: `Creatures with power less than ~'s power can't block creatures you control.` reads to a static `cantBeBlockedBy { subject: creatures you control, blockers: { types: [creature], powerLessThanSource } }`; `each player gains control of all creatures they own` reads to `returnControlToOwners` of every creature.
 - Limits: see `docs/ROADMAP.md`.
+
+## The Token Triumph deck (issue 160): Auras that enchant players (D-613)
+
+- CR: 303.4, 303.4a to 303.4e, 303.4m (Auras, enchanted player), 702.5a (Enchant), 704.5m (an illegal Aura), 702.16c (protection), 508.1 and 508.1b (attackers declared together, attacking a player or a planeswalker), 603.2 (a trigger once for the declaration), 701.26a (untap).
+- Gap class: S (an Aura attached to a player), built after the owner approved the design (the proposal is on issue 160).
+- Engine: `state/types.ts` (`attachedToPlayer`), `ast/types.ts` (`enchant` with `player`, `attackBatch` with `attackedEnchantedPlayer`), `rules/attach.ts` (`auraTargetSpec`, `enchantsPlayers`, `canEnchantPlayer`, `attachEnteredToPlayer`, `illegalAuras`), `rules/stack.ts` (the Aura enters attached to its player), `rules/triggers.ts` (the trigger matches the declaration), `invariants.ts`, `ast/validate.ts` and `ast/validate-attach.ts`, `view.ts` (`attachedToPlayer`), `state/events.ts` (`attachedToPlayer`).
+- Parser: `rules/keyword/attachments.ts` (`keyword.enchant-player`), `rules/trigger/enchanted-player.ts`, `rules/effect/enchanted-player.ts`, `lower/attachments.ts`, `lower/triggers.ts`, `lower/enchanted-player.ts`.
+- Tests: engine `scenario-xx-enchant-player.test.ts` (SYNTHETIC cards of `synthetic-curse.ts`); cards `convert-grammar-engine-issue160.test.ts`.
+- Web: `game/describe.ts` and `ui/board/PreviewPanel.tsx` word the player the Aura enchants.
+- What the parser must produce: `Enchant player` reads to `keyword enchant { filter: {}, player: true }`; `Whenever enchanted player is attacked, untap all nonland permanents you control. Each opponent attacking that player untaps all nonland permanents they control.` reads to a triggered ability on `attackBatch { who: any, atLeast: 1, attackedEnchantedPlayer: true }` with two `untap` effects (yours; those of `triggerPlayer`).
+- Limits: see `docs/ROADMAP.md`.

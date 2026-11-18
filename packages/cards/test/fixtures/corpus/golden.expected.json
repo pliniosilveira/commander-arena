@@ -1,5 +1,5 @@
 {
-  "parserVersion": 145,
+  "parserVersion": 146,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -4590,27 +4590,10 @@
     "b6689782-08d8-48e1-a05d-cd040dfe85bc": {
       "name": "Curse of Bounty",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Enchant player",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "keyword.enchant"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever enchanted player is attacked, untap all nonland permanents you control. Each opponent attacking that player untaps all nonland permanents they control.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1c2cd1e6"
+      "ast": "6dca7e5c"
     },
     "b6ec5a5c-144d-4ac3-bd05-2dc360c670fd": {
       "name": "Tempest Caller",
@@ -6528,7 +6511,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 455,
+      "supported": 456,
       "total": 477
     }
   }

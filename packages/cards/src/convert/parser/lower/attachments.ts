@@ -38,5 +38,18 @@ export function lowerEnchant(ability: IrKeyword): LowerResult<readonly Ability[]
   };
 }
 
+/** "Enchant player" (issue 160, D-613, CR 702.5a): the engine's `enchant` keyword of a player, whose filter of permanents is empty. */
+export function lowerEnchantPlayer(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  const missing = missingFeatures(['ability:keyword', 'keyword:enchant']);
+  if (missing.length > 0) {
+    return { ok: false, needs: missing, at: ability.span, rule: ability.rule };
+  }
+  return {
+    ok: true,
+    value: [{ kind: 'keyword', keyword: { kind: 'enchant', filter: {}, player: true } }],
+    rule: 'keyword.enchant-player',
+  };
+}
+
 /** Features the attachment lowerings can name, for the dimension test. */
 export const ATTACHMENT_NEEDS: readonly FeatureRef[] = ['ability:keyword', 'keyword:enchant'];

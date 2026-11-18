@@ -33,4 +33,5 @@
 // 131: Count the opponents with fewer of a stat, discard the whole hand as a cost and search for up to an amount of cards (D-610, issue 160).
 // 132: Populate, the choice of a creature token to copy (D-611, issue 160).
 // 133: Give every creature back to its owner as layer 2 effects (D-612, issue 160).
-export const ENGINE_VERSION = 133;
+// 134: An Aura that enchants a player: its spell targets a player, it enters attached to them and goes to the graveyard when they can no longer be enchanted (D-613, issue 160).
+export const ENGINE_VERSION = 134;

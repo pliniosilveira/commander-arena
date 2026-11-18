@@ -116,6 +116,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.attack-tax': asIs,
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
+  'keyword.enchant-player': asIs,
   'keyword.equip': asIs,
   'keyword.kicker': asIs,
   'keyword.kicker-and-or': asIs,
@@ -631,6 +632,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Stage P65 (D-218): the batch triggers, magecraft and the attackers of the opponents.
   'trigger.attack-one-or-more': whenever,
+  'trigger.enchanted-player-attacked': whenever,
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,

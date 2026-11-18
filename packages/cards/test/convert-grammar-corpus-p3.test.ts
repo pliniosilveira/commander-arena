@@ -68,8 +68,8 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant player',
-    expect: no('player', 'keyword.enchant'),
-    note: 'backlog: 46 cards; a permanent phrase does not name a player',
+    expect: OK,
+    note: 'backlog: 46 cards; read since D-613 (`keyword.enchant-player`)',
   },
   {
     kind: 'aura',
@@ -507,7 +507,7 @@ test('the P3 corpus has unique lines, and supported, unparsed and not-runnable e
   expect(CORPUS.filter((l) => 'supported' in l.expect).length).toBeGreaterThanOrEqual(35);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === undefined).length,
-  ).toBeGreaterThanOrEqual(15);
+  ).toBeGreaterThanOrEqual(14); // 15 before "Enchant player" was read (D-613)
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === 'notRunnable')
       .length,

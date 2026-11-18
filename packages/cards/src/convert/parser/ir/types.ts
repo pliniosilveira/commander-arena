@@ -1145,6 +1145,8 @@ export interface IrTrigger extends IrNode {
    * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
    */
   readonly atLeast?: number;
+  /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-613, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
+  readonly attackedEnchantedPlayer?: true;
   /**
    * 'lifeGained': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.

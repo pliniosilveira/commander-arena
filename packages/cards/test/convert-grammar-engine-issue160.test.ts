@@ -486,3 +486,53 @@ describe('"each player gains control of all creatures they own" (D-612, CR 613.1
     expect(controller()).toBe(1);
   });
 });
+
+// ---- Group 6: an Aura that enchants a player (D-613).
+
+const BOUNTY = parsed(
+  'SYNTHETIC Parsed Bounty',
+  'Enchantment — Aura Curse',
+  'Enchant player\nWhenever enchanted player is attacked, untap all nonland permanents you control. Each opponent attacking that player untaps all nonland permanents they control.',
+  { manaCost: '{2}{G}', colors: ['G'] },
+);
+
+describe('"Enchant player" and "Whenever enchanted player is attacked" as written (D-613, CR 303.4, 508.1)', () => {
+  const game = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .library(...FILLER)
+      .define(BOUNTY)
+      .hand(BOUNTY.name)
+      .battlefield('Forest', { count: 3 })
+      .battlefield(BEARS, { label: 'mine' })
+      .seat(1)
+      .life(20)
+      .library(...FILLER)
+      .battlefield(BEARS, { label: 'theirs' })
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('cast on the opponent, then attacking them untaps the attackers (a vigilance-like trigger, once for the declaration)', () => {
+    const g = game();
+    g.act(0).cast(BOUNTY.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    expect(g.state.objects[g.id(BOUNTY.name)]?.attachedToPlayer).toBe(1);
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['mine']);
+    g.expect.tapped('mine', true);
+    g.passAll();
+    g.expect.tapped('mine', false);
+    g.expect.invariants();
+  });
+
+  test('without the Curse on the attacked player nothing untaps', () => {
+    const g = game();
+    g.act(0).cast(BOUNTY.name, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).attack(['mine']);
+    g.passAll();
+    g.expect.tapped('mine', true);
+  });
+});

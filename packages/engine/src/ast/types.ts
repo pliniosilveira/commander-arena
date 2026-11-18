@@ -3328,6 +3328,12 @@ export type Trigger =
       readonly who: 'you' | 'opponent' | 'any';
       readonly atLeast: number;
       readonly what?: ObjectFilter;
+      /**
+       * "Whenever enchanted player is attacked" (issue 160, D-613, CR 303.4m, 508.1b): only when at least one creature of the declaration was declared as attacking the player this
+       * Aura enchants (as a player: an attack on their planeswalker or battle is not an attack on them). The ability must be an Aura's that enchants a player (`validateCard`);
+       * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
+       */
+      readonly attackedEnchantedPlayer?: true;
     }
   /**
    * "Whenever [this permanent] becomes the target of a spell or ability [an opponent controls]"
@@ -3436,7 +3442,16 @@ export type Keyword =
    * battlefield, relative to the Aura's controller ("Enchant creature you control" sets
    * `controller: 'you'`). Only permanents are supported: `zone` is unset or 'battlefield'.
    */
-  | { readonly kind: 'enchant'; readonly filter: ObjectFilter }
+  | {
+      readonly kind: 'enchant';
+      readonly filter: ObjectFilter;
+      /**
+       * "Enchant player" (CR 702.5a, 303.4, 303.4b; issue 160, D-613): the Aura enchants a player, not a permanent: its spell targets a player, it enters attached to that player
+       * (`GameObject.attachedToPlayer`) and is put into its owner's graveyard when that player has left the game or has protection from it (CR 303.4c, 704.5m, 702.16c).
+       * `filter` is `{}` and unread then.
+       */
+      readonly player?: true;
+    }
   /**
    * CR 702.6a (Equip): "Equip [cost]" means "[Cost]: Attach this permanent to target creature you
    * control. Activate only as a sorcery." The engine expands it when it derives the object's

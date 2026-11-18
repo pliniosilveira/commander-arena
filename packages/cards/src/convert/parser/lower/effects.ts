@@ -49,6 +49,7 @@ import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
+import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
@@ -1624,6 +1625,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,
   ...PLANESWALKER_LOWERINGS,
   ...DESTINY_LOWERINGS,

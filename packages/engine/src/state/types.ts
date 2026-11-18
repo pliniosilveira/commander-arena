@@ -109,6 +109,11 @@ export interface GameObject {
   readonly copyOf?: CardId;
   /** The object an Aura or Equipment is attached to (CR 303.4, 301.5). */
   readonly attachedTo: ObjectId | null;
+  /**
+   * The player an Aura that enchants a player is attached to ("Enchant player", CR 303.4, 303.4b; issue 160, D-613). Absent for everything else, and for an Aura attached to an
+   * object (`attachedTo`): an Aura is attached to one or the other, never both (CR 303.4d). A new object (a zone change, CR 400.7) never has it.
+   */
+  readonly attachedToPlayer?: SeatId;
   /** For a battle: the player who protects it (CR 310.8). Null for everything else. */
   readonly protector: SeatId | null;
   /** Stack objects only. */

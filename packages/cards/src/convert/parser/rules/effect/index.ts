@@ -43,6 +43,7 @@ import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
+import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -929,6 +930,7 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-611): "Populate".
   ...POPULATE_EFFECT_RULES,
+  ...ENCHANTED_PLAYER_EFFECT_RULES,
   // Issue 160 (D-612): "Each player gains control of all creatures they own."
   ...RETURN_CONTROL_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,

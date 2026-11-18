@@ -35,6 +35,7 @@ import { SYNTHETIC_CONTROL_LIST } from './synthetic-control';
 import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
+import { SYNTHETIC_CURSE_LIST } from './synthetic-curse';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DANITHA_G1A_LIST } from './synthetic-danitha-g1a';
 import { SYNTHETIC_DANITHA_G1B_LIST } from './synthetic-danitha-g1b';
@@ -443,6 +444,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
   ...SYNTHETIC_RETURN_CONTROL_LIST,
+  ...SYNTHETIC_CURSE_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,
   ...SYNTHETIC_PLAY_RULE_LIST,
   ...SYNTHETIC_UPKEEP_LIST,
