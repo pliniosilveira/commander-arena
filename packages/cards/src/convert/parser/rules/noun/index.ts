@@ -730,7 +730,7 @@ export const NOUN_RULES = [
   ...HOFRI_NOUN_RULES,
   // D-268: "each artifact and creature your opponents control", which `noun.each-permanent` would stop in the middle of.
   ...AJANI_NOUN_RULES,
-  // D-600: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
+  // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
   ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are

@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 4 (D-591): an Aura that gives its creature an activated ability ("Enchanted creature has flying and "Sacrifice a creature: ~ gets +2/+1
+// Issue 89 (Silverquill Influence), group 4 (D-641): an Aura that gives its creature an activated ability ("Enchanted creature has flying and "Sacrifice a creature: ~ gets +2/+1
 // until end of turn."", Fallen Ideal).
 // Pins: CR 613.1f (a granted ability is a layer 6 effect that ends with its source, CR 611.3a), CR 113.6g and 602.2 (the creature has the ability as its own, so its controller
 // activates it and "~" is the creature), CR 118.3 (a cost is paid as the ability is activated: a creature sacrificed as a cost is not a legal one to sacrifice twice).

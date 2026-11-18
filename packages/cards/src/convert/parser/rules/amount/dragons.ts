@@ -42,7 +42,7 @@ export const AMOUNT_FOR_EACH_STILL_EXILED = defineRule<IrAmount>({
 });
 
 /**
- * `amount.for-each-aura-attached`: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-604; Hateful Eidolon): the Auras the controller of the
+ * `amount.for-each-aura-attached`: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-654; Hateful Eidolon): the Auras the controller of the
  * ability controlled that were attached to the permanent the trigger is about, as it left the battlefield. Only the controller's own Auras ("you controlled", the past tense of
  * a creature that is gone) and only "it". The lowering and `validateCard` refuse it where no trigger has a permanent as its subject.
  */

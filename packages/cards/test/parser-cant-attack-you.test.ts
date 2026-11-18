@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 10 (D-597): "[Group] can't attack you or planeswalkers you control." (Combat Calligrapher: "Inklings can't attack you or planeswalkers you
+// Issue 89 (Silverquill Influence), group 10 (D-647): "[Group] can't attack you or planeswalkers you control." (Combat Calligrapher: "Inklings can't attack you or planeswalkers you
 // control."; Eriette of the Charmed Apple: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."): the real Oracle lines read through the
 // whole pipeline, the nodes they lower to, SYNTHETIC variants and the near misses. The engine runs what is lowered in packages/engine/test/scenario-xx-cant-attack-you.test.ts.
 import { describe, expect, test } from 'vitest';

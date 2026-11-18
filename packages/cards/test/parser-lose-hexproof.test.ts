@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-599): the activated ability of Arcane
+// Issue 89 (Silverquill Influence), "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-649): the activated ability of Arcane
 // Lighthouse read through the whole pipeline, the node it lowers to, SYNTHETIC variants and the near misses the grammar must not read.
 // The engine runs what is lowered in packages/engine/test/scenario-xx-lose-hexproof.test.ts.
 import { describe, expect, test } from 'vitest';

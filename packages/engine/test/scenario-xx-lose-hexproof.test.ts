@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-599): an effect that takes the two
+// Issue 89 (Silverquill Influence), "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-649): an effect that takes the two
 // protections from a group of creatures until end of turn.
 // Pins: CR 702.11b (Hexproof), CR 702.18a (Shroud), CR 611.2c (the set of creatures is fixed when the effect begins), CR 514.2 (it ends at the cleanup step),
 // CR 613.1f (an ability-removing effect is a layer 6 effect), CR 702.16b (protection is another ability and stays).

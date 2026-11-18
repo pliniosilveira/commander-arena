@@ -115,7 +115,7 @@ describe('static.attached: what an Aura or Equipment gives (CR 604.4, 613.4c, 61
   // engine learned to give a mana ability (D-099, `static:grantAbility`); that line is read and run
   // now (parser-p14.test.ts). The engine gives no other kind of ability, so any other quoted text is
   // read as a grant and dropped whole, naming no engine feature (it is the kind that is refused).
-  test('a granted ability in quotes that the engine cannot run is read and dropped, never run (an activated one is run since D-591)', () => {
+  test('a granted ability in quotes that the engine cannot run is read and dropped, never run (an activated one is run since D-641)', () => {
     expect(
       diagnosticOf('Equipped creature has "{T}: Foretell the top card."', 'Equipment'),
     ).toMatchObject({

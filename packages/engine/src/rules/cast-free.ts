@@ -54,7 +54,7 @@ export function freeCandidates(
   return named.filter((id) => {
     const card = state.objects[id];
     if (card === undefined) return false;
-    // D-605: "an Aura spell from among them": the filter reads the card as it is in exile.
+    // D-655: "an Aura spell from among them": the filter reads the card as it is in exile.
     if (
       ins.filter !== undefined &&
       !matchesFilter(state, card, { ...ins.filter, zone: card.zone }, ctx)

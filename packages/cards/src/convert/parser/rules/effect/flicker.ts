@@ -166,7 +166,7 @@ export const EFFECT_RETURN_DELAYED = quietly(
 );
 
 /**
- * `effect.return-this-card-delayed`: "return this card to the battlefield at the beginning of the next end step" (CR 603.7, 603.7c, 400.7, 303.4f; D-607, Ghoulish Impetus): the card
+ * `effect.return-this-card-delayed`: "return this card to the battlefield at the beginning of the next end step" (CR 603.7, 603.7c, 400.7, 303.4f; D-657, Ghoulish Impetus): the card
  * of the Aura that has the ability, brought back by a delayed triggered ability the instruction creates after "When enchanted creature dies". The lowering refuses it anywhere
  * but there (the Aura has gone to the graveyard with the creature). Not read: "it", "that card", "from your graveyard", another step, "tapped", control words.
  */

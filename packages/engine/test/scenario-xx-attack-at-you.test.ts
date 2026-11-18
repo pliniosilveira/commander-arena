@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 6 (D-593): "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you
+// Issue 89 (Silverquill Influence), group 6 (D-643): "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you
 // control, draw a card" (Mangara, the Diplomat; Tomik, Wielder of Law).
 // Pins: CR 508.1b (a creature attacks a player, a planeswalker or a battle; those at a planeswalker are not at its controller as a player, but "you and/or planeswalkers you
 // control" counts both), CR 603.2 (the ability triggers once for the declaration), CR 603.4 (an intervening "if": the ability triggers only if the condition is true as the

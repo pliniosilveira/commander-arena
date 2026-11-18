@@ -184,7 +184,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modifyPt',
     'setPt',
     'loseAllAbilities',
-    // D-599: "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a).
+    // D-649: "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a).
     'loseHexproofShroud',
     // `setTypes` runs both the replacing form and `additive: true` (CR 205.1b, Crew's "becomes an
     // artifact creature"); `additive` is an option of the node, not a kind, so it has no `FeatureRef`.
@@ -197,7 +197,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'restrict',
     // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
     'grantPlayerHexproof',
-    // D-589: "Goad target creature" (CR 701.15).
+    // D-639: "Goad target creature" (CR 701.15).
     'goad',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
@@ -361,7 +361,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeGained',
     'countersAdded',
     'attackBatch',
-    // D-598: "Whenever a player attacks one of your opponents" (CR 508.6).
+    // D-648: "Whenever a player attacks one of your opponents" (CR 508.6).
     'playerAttacksOpponent',
     // D-179: "When you cycle this card" (CR 702.29c).
     'cycled',
@@ -645,7 +645,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachOtherOpponent',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
-    // D-598: "that opponent" of a `playerAttacksOpponent` trigger.
+    // D-648: "that opponent" of a `playerAttacksOpponent` trigger.
     'triggerAttackedPlayer',
     'controllerOf',
     'ownerOf',
@@ -662,7 +662,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
-    // D-597: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
+    // D-647: "each creature that's enchanted by an Aura you control" (`ObjectFilter.enchantedByYou`).
     'enchantedByYou',
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
@@ -817,9 +817,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
     'attackersAttackedYou',
-    // D-593: "if two or more of those creatures are attacking you and/or planeswalkers you control".
+    // D-643: "if two or more of those creatures are attacking you and/or planeswalkers you control".
     'attackersAtYouAtLeast',
-    // D-598: "if that opponent has more life than another of your opponents".
+    // D-648: "if that opponent has more life than another of your opponents".
     'attackedHasMoreLifeThanOtherOpponent',
     // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
     'abilityResolvedTimes',
@@ -880,7 +880,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookAtTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
-    // D-597: "Inklings can't attack you or planeswalkers you control."
+    // D-647: "Inklings can't attack you or planeswalkers you control."
     'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
@@ -893,7 +893,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantKeyword',
     'grantAbility',
     'restriction',
-    // D-589: "Enchanted creature ... is goaded" (CR 701.15b).
+    // D-639: "Enchanted creature ... is goaded" (CR 701.15b).
     'goaded',
     'costReduction',
     // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
@@ -948,7 +948,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
-  // D-598: `attacking`, "that's attacking that opponent" (`createToken.attacking`).
+  // D-648: `attacking`, "that's attacking that opponent" (`createToken.attacking`).
   tokenKinds: [
     'Treasure',
     'Food',
@@ -1015,7 +1015,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exiledAsCost',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
-    // D-604: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
+    // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
     'aurasAttachedToTriggerSubject',
     // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
     'dieResult',
@@ -1079,9 +1079,9 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'riot',
   // D-472: Afflict N (CR 702.130): each instance granted is a triggered ability of its own (CR 702.130b), like exalted's.
   'afflict',
-  // D-588: ward (CR 702.21): "Enchanted creature has ward {2}"; each instance granted is a triggered ability of its own, like afflict's.
+  // D-638: ward (CR 702.21): "Enchanted creature has ward {2}"; each instance granted is a triggered ability of its own, like afflict's.
   'ward',
-  // D-590: annihilator (CR 702.86): "Enchanted creature has annihilator 2"; each instance granted triggers separately (CR 702.86b), like afflict's.
+  // D-640: annihilator (CR 702.86): "Enchanted creature has annihilator 2"; each instance granted triggers separately (CR 702.86b), like afflict's.
   'annihilator',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
@@ -1233,7 +1233,7 @@ export const SELECTOR_KINDS = [
   'eachOtherOpponent',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
-  /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-598): the engine's `triggerAttackedPlayer`. */
+  /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-648): the engine's `triggerAttackedPlayer`. */
   'triggerAttackedPlayer',
   'controllerOf',
   'ownerOf',
@@ -1260,7 +1260,7 @@ export const SELECTOR_KINDS = [
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
   'enchanted',
-  /** "Enchanted by an Aura you control" (CR 303.4e, D-597): the engine's `ObjectFilter.enchantedByYou`. */
+  /** "Enchanted by an Aura you control" (CR 303.4e, D-647): the engine's `ObjectFilter.enchantedByYou`. */
   'enchantedByYou',
   /** "Enchanted creature" as the object another filter describes (CR 303.4b, D-422): the engine's `ObjectFilter.hostOfSource`. */
   'hostOfSource',
@@ -1438,9 +1438,9 @@ export const CONDITION_KINDS = [
   'duringStep',
   /** "None of those creatures attacked you" (CR 508.1b, D-149): the engine's `attackersAttackedYou`. */
   'attackersAttackedYou',
-  /** "If two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b, 603.4, D-593): the engine's `attackersAtYouAtLeast`. */
+  /** "If two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b, 603.4, D-643): the engine's `attackersAtYouAtLeast`. */
   'attackersAtYouAtLeast',
-  /** "If that opponent has more life than another of your opponents" (CR 603.4, D-598): the engine's `attackedHasMoreLifeThanOtherOpponent`. */
+  /** "If that opponent has more life than another of your opponents" (CR 603.4, D-648): the engine's `attackedHasMoreLifeThanOtherOpponent`. */
   'attackedHasMoreLifeThanOtherOpponent',
   /** "If this is the second time this ability has resolved this turn" (CR 608.2c, Galadriel group 1): the engine's `abilityResolvedTimes`. */
   'abilityResolvedTimes',
@@ -1516,7 +1516,7 @@ export const STATIC_KINDS = [
   'cantBeBlocked',
   /** "~ can't block", "can't be blocked", "attacks each combat if able", "doesn't untap", "can't be countered" (D-094): the engine's `restriction`. */
   'restriction',
-  /** "Enchanted creature is goaded" (D-589, CR 701.15b): the creature is goaded by the controller of the source while the ability applies. */
+  /** "Enchanted creature is goaded" (D-639, CR 701.15b): the creature is goaded by the controller of the source while the ability applies. */
   'goaded',
   'noMaximumHandSize',
   /** A permanent gives creature objects every creature subtype in its stated scope (D-578). */
@@ -1527,7 +1527,7 @@ export const STATIC_KINDS = [
   'lookAtTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
-  /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-597): the engine's `cantAttackYou`. */
+  /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): the engine's `cantAttackYou`. */
   'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
@@ -1619,7 +1619,7 @@ export const TOKEN_KINDS = [
   'tapped',
   /** "A token that's a copy of that card, except it's a 4/4 black Zombie" (CR 707.9b, D-382): the engine's `copyOf` with `setPt`, `setColors`, `setCreatureTypes`, `noManaCost`. */
   'copyExceptions',
-  /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-598): the engine's `createToken.attacking`. */
+  /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-648): the engine's `createToken.attacking`. */
   'attacking',
 ] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
@@ -1693,7 +1693,7 @@ export const AMOUNT_KINDS = [
   'exiledAsCost',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
-  /** "For each Aura you controlled that was attached to it" (D-604, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
+  /** "For each Aura you controlled that was attached to it" (D-654, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
   'aurasAttachedToTriggerSubject',
   /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
   'dieResult',

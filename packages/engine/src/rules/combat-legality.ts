@@ -55,7 +55,7 @@ export function attackCandidates(
     .filter((id) => canAttack(state, getObject(state, id), seat))
     .map((attacker) => ({
       attacker,
-      // CR 508.1a (D-597): "can't attack you or planeswalkers you control": the targets it may not attack are left out, and a creature with none left is not able to attack (CR 508.1c).
+      // CR 508.1a (D-647): "can't attack you or planeswalkers you control": the targets it may not attack are left out, and a creature with none left is not able to attack (CR 508.1c).
       targets: narrowedTargets(state, attacker, withoutBannedTargets(state, attacker, targets)),
     }))
     .filter((candidate) => candidate.targets.length > 0);
@@ -97,7 +97,7 @@ function narrowedTargets(
     ...groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
       r.awayFrom === undefined ? [] : [r.awayFrom],
     ),
-    // CR 701.15b (D-589): a goaded creature attacks a player other than each player that goaded it if able.
+    // CR 701.15b (D-639): a goaded creature attacks a player other than each player that goaded it if able.
     ...goadersOf(state, attacker),
   ];
   if (away.length === 0) return targets;
@@ -135,7 +135,7 @@ export function requiredAttackers(
       (c) =>
         hasRestriction(state, getObject(state, c.attacker), 'attacksEachCombat') ||
         playersToAttack(state, c.attacker).length > 0 ||
-        // CR 701.15b (D-589): a goaded creature attacks each combat if able.
+        // CR 701.15b (D-639): a goaded creature attacks each combat if able.
         goadersOf(state, c.attacker).length > 0 ||
         groupRequirements(state, getObject(state, c.attacker)).length > 0,
     )

@@ -173,7 +173,7 @@ export const TRIGGER_DIES_OWN_GRAVEYARD = defineRule<IrTrigger>({
 
 /**
  * `trigger.enchanted-creature-dies`: "an enchanted creature dies" (CR 700.4, 603.10a, 303.4: a creature with at least one Aura attached to it, whoever controls the creature or
- * the Aura; D-604, Hateful Eidolon): the creature as it was as it died. The engine's `dies` of a creature filter with `enchanted`. Not read: "enchanted creature dies" (the
+ * the Aura; D-654, Hateful Eidolon): the creature as it was as it died. The engine's `dies` of a creature filter with `enchanted`. Not read: "enchanted creature dies" (the
  * creature an Aura is attached to), "another enchanted creature", "an enchanted creature you control", "enchanted creatures", another verb.
  */
 export const TRIGGER_ENCHANTED_CREATURE_DIES = defineRule<IrTrigger>({

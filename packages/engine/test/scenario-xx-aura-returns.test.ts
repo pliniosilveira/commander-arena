@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "When enchanted creature dies, return this card from your graveyard to the battlefield." (D-607; Screams from Within).
+// Issue 89 (Silverquill Influence), "When enchanted creature dies, return this card from your graveyard to the battlefield." (D-657; Screams from Within).
 // Pins: CR 603.10a (a dies ability looks back), CR 303.4f (an Aura put onto the battlefield other than by resolving as an Aura spell: its controller chooses what it enchants as it enters),
 // CR 303.4g (an Aura that can't enchant anything stays where it is), CR 704.5m (the Aura went to the graveyard as its creature died).
 // Cards: the SYNTHETIC Aura of this file, the real Grizzly Bears, Lightning Bolt and Plains.

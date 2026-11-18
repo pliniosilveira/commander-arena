@@ -125,7 +125,7 @@ function insideEventList(text: string, at: number): boolean {
 }
 
 /**
- * Whether the comma at `at` separates two types of a list of spells in the trigger ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card"; D-594): the words before it are
+ * Whether the comma at `at` separates two types of a list of spells in the trigger ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card"; D-644): the words before it are
  * the start of the list after "cast" or "casts", and the words after it end the list with "spell". The comma after "spell" is the one that ends the trigger.
  */
 function insideSpellTypeList(text: string, at: number): boolean {
@@ -156,7 +156,7 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       ) &&
       // D-448 (CR 603.2c): "Whenever ~ attacks, blocks, or becomes the target of a spell, ...": a comma between the events of a list is not the end of the trigger condition.
       !insideEventList(text, i) &&
-      // D-594: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
+      // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
       !insideSpellTypeList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.
       !insideNamedCard(text, i, start)
@@ -228,7 +228,7 @@ const TAKE_FROM_AMONG =
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
- * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-608, Armored Skyhunter): four sentences that are one
+ * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
  * instruction, kept together for `effect.look-put-attach`.
  */
 const PUT_FROM_AMONG_ONTO = /^you may put [^.]* from among them onto the battlefield\.$/i;
@@ -267,7 +267,7 @@ const REVEAL_UNTIL =
 const PUT_THAT_CARD = /^put that card [^.]*\.$/i;
 /**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
- * bottom of your library in a random order." (D-609, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
+ * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
  */
 const MAY_PUT_THAT_CARD_ONTO = /^you may put that card onto the battlefield\.$/i;
 const IF_YOU_DONT_HAND = /^if you don['’]t, put it into your hand\.$/i;

@@ -59,7 +59,7 @@ export function checkDelayedTrigger(
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
-    // D-607 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
+    // D-657 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
     // that has the ability became in the graveyard (`thisCard`).
     const dyingObject =
       diesTrigger &&

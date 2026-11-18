@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 3 (D-590): a static ability that gives annihilator ("Enchanted creature gets +10/+10 and has trample and annihilator 2."): the real Oracle
+// Issue 89 (Silverquill Influence), group 3 (D-640): a static ability that gives annihilator ("Enchanted creature gets +10/+10 and has trample and annihilator 2."): the real Oracle
 // line of Eldrazi Conscription read through the whole pipeline, the nodes it lowers to, SYNTHETIC variants and the near misses the grammar must not read. The engine runs what is
 // lowered in packages/engine/test/scenario-xx-granted-annihilator.test.ts.
 import { describe, expect, test } from 'vitest';

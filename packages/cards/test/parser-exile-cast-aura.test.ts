@@ -1,5 +1,5 @@
 // Issue 89 (Silverquill Influence), "When ~ enters, exile the top eight cards of your library. You may cast an Aura spell from among them without paying its mana cost. Then put the
-// rest on the bottom of your library in a random order." (D-605; Herald of Amity) read through the whole pipeline: the real line, the nodes it lowers to and the near misses.
+// rest on the bottom of your library in a random order." (D-655; Herald of Amity) read through the whole pipeline: the real line, the nodes it lowers to and the near misses.
 // The engine runs what is lowered in packages/engine/test/scenario-xx-exile-cast-aura.test.ts.
 import { describe, expect, test } from 'vitest';
 import { dropped, readAll } from './parser-p5-helpers';

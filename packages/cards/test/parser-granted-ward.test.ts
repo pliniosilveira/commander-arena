@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 1 (D-588): a static ability that gives ward ("Enchanted creature has ward {2}"): the real Oracle lines of Chains of Custody and Sheltered
+// Issue 89 (Silverquill Influence), group 1 (D-638): a static ability that gives ward ("Enchanted creature has ward {2}"): the real Oracle lines of Chains of Custody and Sheltered
 // by Ghosts read through the whole pipeline, the nodes they lower to, SYNTHETIC variants and the near misses the grammar must not read. The engine runs what is lowered in
 // packages/engine/test/scenario-xx-granted-ward.test.ts.
 import { describe, expect, test } from 'vitest';

@@ -258,7 +258,7 @@ describe('trigger.cast: "Whenever you cast ... spell" (CR 601.2i)', () => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });
 
-  test('a list of three kinds of spell is read whole since D-594: its commas are not the end of the trigger', () => {
+  test('a list of three kinds of spell is read whole since D-644: its commas are not the end of the trigger', () => {
     const text = 'Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.';
     expect(segment(text, 'permanent').trigger).toBeDefined();
     expect(

@@ -318,7 +318,7 @@ describe('supported feature gate', () => {
         'lifeGained',
         'noncombatDamageDealt',
         'permanentSacrificed',
-        // D-598: "Whenever a player attacks one of your opponents".
+        // D-648: "Whenever a player attacks one of your opponents".
         'playerAttacksOpponent',
         'ringTempted',
         // Galadriel group 3: "Whenever you roll a die's highest natural result".

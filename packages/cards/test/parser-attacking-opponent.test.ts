@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-600; Martial Impetus) read through the whole
+// Issue 89 (Silverquill Influence), "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-650; Martial Impetus) read through the whole
 // pipeline: the real line, the node it lowers to, SYNTHETIC variants and the near misses the grammar must not read.
 // The engine runs what is lowered in packages/engine/test/scenario-xx-attacking-opponent-players.test.ts.
 import { describe, expect, test } from 'vitest';

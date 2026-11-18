@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 11 (D-598): the intervening "if" of Breena, the Demagogue: "if that opponent has more life than another of your opponents" (CR 603.4), read from a
+// Issue 89 (Silverquill Influence), group 11 (D-648): the intervening "if" of Breena, the Demagogue: "if that opponent has more life than another of your opponents" (CR 603.4), read from a
 // `playerAttacksOpponent` trigger: the opponent the declaration attacked, against the other opponents of the controller who are still in the game.
 // Pins: CR 603.4 (an intervening "if": the condition is read as the ability triggers and as it resolves), CR 104.3 (a player who has lost is no opponent to compare with), "another of your
 // opponents" (a different opponent than the one attacked), and "more": strictly more life.

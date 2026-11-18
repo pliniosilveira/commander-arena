@@ -70,7 +70,7 @@ export function kickerLikeCostOf(face: CardFace | null): readonly Cost[] | null 
 }
 
 /**
- * The alternative cost of the card's own "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost" (CR 118.9, D-606), or null when the face has
+ * The alternative cost of the card's own "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost" (CR 118.9, D-656), or null when the face has
  * no such ability (or its ability has no cost of its own).
  */
 export function graveyardCostOf(face: CardFace | null): readonly Cost[] | null {

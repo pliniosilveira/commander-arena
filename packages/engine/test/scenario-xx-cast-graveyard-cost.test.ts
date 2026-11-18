@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost." (D-606; Raffine's Guidance).
+// Issue 89 (Silverquill Influence), "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost." (D-656; Raffine's Guidance).
 // Pins: CR 113.6b (a static ability that works from the graveyard), CR 118.9 (an alternative cost is paid instead of the mana cost), CR 601.2f (the total cost), CR 303.4 and 601.2c
 // (an Aura spell targets a creature as it is cast), CR 400.7 (the card on the stack is a new object).
 // Cards: the SYNTHETIC Aura of this file, the real Grizzly Bears and Plains.

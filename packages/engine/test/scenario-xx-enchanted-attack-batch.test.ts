@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Whenever one or more creatures that are enchanted by an Aura you control attack, draw a card." (D-601; Killian, Decisive Mentor).
+// Issue 89 (Silverquill Influence), "Whenever one or more creatures that are enchanted by an Aura you control attack, draw a card." (D-651; Killian, Decisive Mentor).
 // Pins: CR 603.2c (the ability triggers once for the declaration however many creatures match), CR 508.1 (attackers are declared together, whoever declares them),
 // CR 303.4e (an Aura's controller is separate from the enchanted creature's: only an Aura I control counts).
 // Cards: the SYNTHETIC Mentor and Aura of this file, the real Grizzly Bears, Healer's Hawk and Llanowar Elves.

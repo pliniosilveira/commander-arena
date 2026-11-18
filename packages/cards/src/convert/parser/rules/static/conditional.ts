@@ -117,7 +117,7 @@ function hostWordOf(condition: IrCondition | undefined): 'enchanted' | 'equipped
 const CAST_FROM_GRAVEYARD_UNIT: Parser<StaticUnit> = (ctx, pos) => {
   const r = pattern(/you may cast this card from your graveyard(?![\p{L}\p{N}])/iu)(ctx, pos);
   if (!r.ok) return r;
-  // D-606 (Raffine's Guidance, CR 118.9): "... by paying {2}{W} rather than paying its mana cost": an alternative cost of the ability, mana only.
+  // D-656 (Raffine's Guidance, CR 118.9): "... by paying {2}{W} rather than paying its mana cost": an alternative cost of the ability, mana only.
   const paying = pattern(
     /\s+by paying ((?:\{[^{}\s]+\})+) rather than paying its mana cost(?![\p{L}\p{N}])/iu,
   )(ctx, r.pos);

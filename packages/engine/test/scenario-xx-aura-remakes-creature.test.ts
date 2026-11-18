@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 5 (D-592): an Aura that remakes its creature and gives it one keyword ("Enchanted creature is an Insect artifact creature with base power and
+// Issue 89 (Silverquill Influence), group 5 (D-642): an Aura that remakes its creature and gives it one keyword ("Enchanted creature is an Insect artifact creature with base power and
 // toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types.", Darksteel Mutation).
 // Pins: CR 613.1d (layer 4: the card types and the creature types are replaced), CR 613.1f (layer 6: it loses what it had and keeps what this effect gives, in timestamp order, and a
 // static ability's grants keep the order they are written in), CR 613.4b (layer 7b: base power and toughness), CR 205.1a and 205.3d (card types and creature types replaced),

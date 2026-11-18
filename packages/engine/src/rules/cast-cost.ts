@@ -303,7 +303,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const named = isNamedAlternative(alternative) ? namedAlternativeCostOf(face, alternative) : null;
   const perX = spellXCost(face, alternative);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
-  // CR 118.9 (D-606): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
+  // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
   const fromGraveyard =
     zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
   const symbols: string[] =

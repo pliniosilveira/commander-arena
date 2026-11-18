@@ -593,7 +593,7 @@ const AIMED_ANY: Parser<Aimed> = map(
 function aimedFilter(aimed: Aimed): IrFilter {
   if (aimed.kind === 'any') return { targetCountAtLeast: 1, raw: 'with one or more targets' };
   if (aimed.kind !== 'object') throw new Error('aimedFilter: an object');
-  // D-596 (CR 700.9): "a modified permanent you control" (Pearl-Ear, Imperial Advisor): a permanent with a counter, an Equipment or an Aura its controller controls.
+  // D-646 (CR 700.9): "a modified permanent you control" (Pearl-Ear, Imperial Advisor): a permanent with a counter, an Equipment or an Aura its controller controls.
   const yours = {
     ...(aimed.yours ? { controller: 'you' as const } : {}),
     ...(aimed.modified === true ? { modified: true as const } : {}),
@@ -628,7 +628,7 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast an instant or sorcery spell',
     'you cast an artifact spell',
     'you cast an Aura or Equipment spell',
-    // D-594 (Sram, Senior Edificer): a list of three kinds of spell.
+    // D-644 (Sram, Senior Edificer): a list of three kinds of spell.
     'you cast an Aura, Equipment, or Vehicle spell',
     'you cast a creature spell of the chosen type',
     'a player casts a spell',

@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost." (D-606; Raffine's Guidance) read through the
+// Issue 89 (Silverquill Influence), "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost." (D-656; Raffine's Guidance) read through the
 // whole pipeline: the real lines, the node they lower to and the near misses the grammar must not read.
 // The engine runs the node in packages/engine/test/scenario-xx-cast-graveyard-cost.test.ts.
 import { describe, expect, test } from 'vitest';

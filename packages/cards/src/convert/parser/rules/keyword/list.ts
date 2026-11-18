@@ -16,12 +16,12 @@ export const KEYWORD_WORD: Parser<string> = choice(
   ...LANDWALKS.map(([word]) =>
     map(pattern(new RegExp(`${word.replace(' ', '\\s+')}${BOUNDARY}`, 'iu')), () => word as string),
   ),
-  // D-590 (CR 702.86a): "annihilator 2", the number in digits, the word kept with its number ("annihilator 2").
+  // D-640 (CR 702.86a): "annihilator 2", the number in digits, the word kept with its number ("annihilator 2").
   map(
     pattern(new RegExp(`annihilator\\s+([1-9]\\d*)${BOUNDARY}`, 'iu')),
     (m) => `annihilator ${m[1]}` as string,
   ),
-  // D-588 (CR 702.21a): "ward {2}", the mana cost in braces, the word kept with its cost ("ward {2}").
+  // D-638 (CR 702.21a): "ward {2}", the mana cost in braces, the word kept with its cost ("ward {2}").
   map(
     pattern(new RegExp(`ward\\s+((?:\\{[0-9WUBRGC]\\})+)${BOUNDARY}`, 'iu')),
     (m) => `ward ${m[1]}` as string,

@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Whenever an enchantment you control enters, tap up to one target creature and goad it." (D-601; Killian, Decisive Mentor).
+// Issue 89 (Silverquill Influence), "Whenever an enchantment you control enters, tap up to one target creature and goad it." (D-651; Killian, Decisive Mentor).
 // Pins: CR 701.26a (tap), CR 701.15a-b (goad: the creature attacks each combat if able, until the goader's next turn), CR 115.1 and 601.2c (up to one target may be none).
 // Cards: the SYNTHETIC Mentor and Enchantment of this file, the real Grizzly Bears and Healer's Hawk.
 import { describe, expect, test } from 'vitest';

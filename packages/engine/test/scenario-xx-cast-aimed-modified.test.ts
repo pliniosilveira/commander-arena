@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 9 (D-596): "Whenever you cast an Aura spell that targets a modified permanent you control, draw a card." (Pearl-Ear, Imperial Advisor).
+// Issue 89 (Silverquill Influence), group 9 (D-646): "Whenever you cast an Aura spell that targets a modified permanent you control, draw a card." (Pearl-Ear, Imperial Advisor).
 // Pins: CR 601.2i and 603.2 (a cast trigger), CR 115.1 and 601.2c (a spell that targets: its chosen targets, as it is cast), CR 700.9 (modified: a counter, an Equipment, or an Aura its
 // controller controls), "you control" (the target is the controller's own permanent) and "an Aura spell" (another kind of spell does not trigger it).
 // Cards: the SYNTHETIC "Pearl Watcher" of this file, SYNTHETIC Might Aura and the real Grizzly Bears, Giant Spider and the basic lands.

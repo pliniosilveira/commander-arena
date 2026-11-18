@@ -132,7 +132,7 @@ export const EFFECT_CAST_IT_FREE = defineRule<Clauses>({
 });
 
 /**
- * `effect.cast-from-among`: "cast an Aura spell from among them without paying its mana cost" (CR 608.2g, 118.9, 601.2; D-605, Herald of Amity): the engine's `castFree` of the cards
+ * `effect.cast-from-among`: "cast an Aura spell from among them without paying its mana cost" (CR 608.2g, 118.9, 601.2; D-655, Herald of Amity): the engine's `castFree` of the cards
  * an instruction before it exiled (`moved`), only those a kind of spell describes ("an Aura spell"); the "you may" before it is the controller's question, as for `effect.cast-it-free`.
  * Not read: "it", "one of them", a number of spells, "from your hand", "this turn", another cost.
  */
@@ -191,7 +191,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
 });
 
 /**
- * `effect.put-rest-bottom-random`: "put the rest on the bottom of your library in a random order" (CR 401.4, 701.20; D-605, Herald of Amity): the cards an instruction before it
+ * `effect.put-rest-bottom-random`: "put the rest on the bottom of your library in a random order" (CR 401.4, 701.20; D-655, Herald of Amity): the cards an instruction before it
  * exiled from the top of the library and that are still in exile, put under the library in an order the game's random generator makes. Not read: "in any order", "on top",
  * "into your graveyard", another library ("their", "that player's"), "the rest" with another number of cards.
  */

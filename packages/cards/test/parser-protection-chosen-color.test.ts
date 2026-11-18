@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-602; Flickering Ward) read
+// Issue 89 (Silverquill Influence), "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-652; Flickering Ward) read
 // through the whole pipeline: the real lines of the card, the nodes they lower to and the near misses the grammar must not read.
 // The engine runs what is lowered in packages/engine/test/scenario-xx-protection-chosen-color.test.ts.
 import { describe, expect, test } from 'vitest';

@@ -251,7 +251,7 @@ export const TRIGGER_CAST_OR_COPY = defineRule<IrTrigger>({
 });
 
 /**
- * `trigger.enchanted-by-you-attack`: "one or more creatures that are enchanted by an Aura you control attack" (CR 508.1, 603.2c, 303.4e, D-601): once for the declaration
+ * `trigger.enchanted-by-you-attack`: "one or more creatures that are enchanted by an Aura you control attack" (CR 508.1, 603.2c, 303.4e, D-651): once for the declaration
  * of any player, when at least one of the creatures declared has an Aura attached that the controller of the ability controls. The engine's `attackBatch` with `who` "any"
  * and the filter `enchantedByYou`. Not read: "attacks", "an Aura", Auras of another controller, "creature", a number, "attack you".
  */

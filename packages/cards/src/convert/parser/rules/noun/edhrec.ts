@@ -112,7 +112,7 @@ export const NOUN_ATTACKING_OPPONENTS = defineRule<IrNoun>({
 });
 
 /**
- * `noun.each-other-attacking-opponent`: "each other creature that's attacking one of your opponents" (CR 508.1b, 611.2c, D-600): the creatures declared as attackers
+ * `noun.each-other-attacking-opponent`: "each other creature that's attacking one of your opponents" (CR 508.1b, 611.2c, D-650): the creatures declared as attackers
  * of an opponent of the controller as a player (one at a planeswalker or a battle is not), but one. In an ability that triggers on a creature, the "other" is that
  * creature (the lowering says so). Not read: "attacking your opponents", "creatures", "each creature", a controller word, "that are attacking", "one of the opponents".
  */
@@ -166,5 +166,5 @@ export const NOUN_EACH_OTHER_ATTACKING_OPPONENT = defineRule<IrNoun>({
 
 export const EDHREC_NOUN_RULES = [NOUN_TOKEN_PERMANENTS, NOUN_ATTACKING_OPPONENTS];
 
-/** Before `noun.each-permanent`, which would stop after "each other creature" (D-600). */
+/** Before `noun.each-permanent`, which would stop after "each other creature" (D-650). */
 export const EDHREC_EARLY_NOUN_RULES = [NOUN_EACH_OTHER_ATTACKING_OPPONENT];

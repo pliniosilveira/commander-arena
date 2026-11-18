@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 11 (D-598): "Whenever a player attacks one of your opponents, that attacking player draws a card and that opponent loses 1 life."
+// Issue 89 (Silverquill Influence), group 11 (D-648): "Whenever a player attacks one of your opponents, that attacking player draws a card and that opponent loses 1 life."
 // (the trigger of Breena, the Demagogue and Combat Calligrapher).
 // Pins: CR 508.1 (the attackers are declared together), CR 603.2 and 603.2c (the ability triggers once for each player attacked by the declaration, however many creatures attack it),
 // CR 506.3 and 508.6 (an attack on a planeswalker is not an attack on the player who controls it), CR 603.7c is not involved, and "one of your opponents": the controller of the ability is

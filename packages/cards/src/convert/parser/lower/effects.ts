@@ -120,7 +120,7 @@ function goneRefusal(clause: IrClause, ctx: LowerContext, verb: string): LowerFa
     : null;
 }
 
-/** "Goad target creature", "goad it" (CR 701.15a, D-589, D-601): the engine's `goad` on the one creature the operand names. */
+/** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
   id: 'lower.goad',
@@ -345,7 +345,7 @@ function lowerReturnSelf(
   ctx: LowerContext,
 ): LowerResult<Effects> {
   const what = operand(clause, 'objects');
-  // D-607 (Screams from Within, CR 603.10a, 303.4f): "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard
+  // D-657 (Screams from Within, CR 603.10a, 303.4f): "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard
   // with the creature and comes back as the card it is now (`thisCard`); it chooses what it enchants as it enters (`rules/aura-entry.ts`).
   if (
     what?.kind === 'noun' &&
@@ -1089,7 +1089,7 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
       rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
     };
-    // D-608 (Armored Skyhunter, CR 301.5, 701.3): "If an Equipment is put onto the battlefield this way, you may attach it to a creature you control": the creature is chosen as
+    // D-658 (Armored Skyhunter, CR 301.5, 701.3): "If an Equipment is put onto the battlefield this way, you may attach it to a creature you control": the creature is chosen as
     // the effect resolves (none: the Equipment stays unattached), and only for an Equipment.
     const attach = arg(clause, 'attachEquipment');
     if (attach?.kind === 'flag' && attach.value) {
@@ -1283,9 +1283,9 @@ const ATTACH: Lowering<IrClause, Effects> = {
   head: 'attach',
   id: 'lower.attach',
   needs: ['effect:attach'],
-  // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the test of the clause is read when the instruction comes up.
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the test of the clause is read when the instruction comes up.
   takesObjectTest: true,
-  // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the engine's `may` of the attach, asked as it comes up.
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the engine's `may` of the attach, asked as it comes up.
   acceptsOptional: true,
   lower(clause, ctx) {
     if (clause.optional) {
@@ -1306,7 +1306,7 @@ const ATTACH: Lowering<IrClause, Effects> = {
     if (to.plural || to.upTo || (to.count?.kind === 'number' && to.count.value !== 1)) {
       return failure(clause);
     }
-    // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura the trigger is about, read for a trigger of an enchantment entering.
+    // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura the trigger is about, read for a trigger of an enchantment entering.
     const what = objectRefOf(object, ctx, { triggerSubject: true });
     if (!what.ok) return what;
     if (what.value.kind !== 'this' && what.value.kind !== 'triggerSubject') return failure(clause);
@@ -1334,7 +1334,7 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&
       objectsArg.ref !== undefined &&
-      // D-603 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control" is one the controller must choose, as "up to one" is one they may.
+      // D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control" is one the controller must choose, as "up to one" is one they may.
       (objectsArg.upTo === true ||
         (objectsArg.filter.controller === 'you' &&
           !objectsArg.plural &&
@@ -1443,7 +1443,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const missing = missingFeatures(['token:tapped']);
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
   }
-  // D-598 (CR 508.4): "that's attacking that opponent": only in a trigger about a player attacking one of your opponents, which names the player attacked.
+  // D-648 (CR 508.4): "that's attacking that opponent": only in a trigger about a player attacking one of your opponents, which names the player attacked.
   let entersAttacking: { attacking?: { at: PlayerSelector } } = {};
   if (token.attackingThatOpponent === true) {
     if (ctx.attackedPlayer === null) return { ok: false, needs: [], ...at };

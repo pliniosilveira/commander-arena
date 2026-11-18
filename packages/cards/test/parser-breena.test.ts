@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), Breena, the Demagogue (D-603): "Whenever a player attacks one of your opponents, if that opponent has more life than another of your
+// Issue 89 (Silverquill Influence), Breena, the Demagogue (D-653): "Whenever a player attacks one of your opponents, if that opponent has more life than another of your
 // opponents, that attacking player draws a card and you put two +1/+1 counters on a creature you control." read through the whole pipeline: the real line, the nodes it lowers
 // to and the near misses the grammar must not read. The engine runs the nodes in packages/engine/test/scenario-xx-attacks-choose-counters.test.ts and
 // scenario-xx-attacked-more-life.test.ts.

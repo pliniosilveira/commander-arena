@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 9 (D-596): "Enchantment spells you cast have affinity for Auras." (Pearl-Ear, Imperial Advisor), as the reduction of {1} for each Aura the
+// Issue 89 (Silverquill Influence), group 9 (D-646): "Enchantment spells you cast have affinity for Auras." (Pearl-Ear, Imperial Advisor), as the reduction of {1} for each Aura the
 // controller controls that CR 702.41a says affinity is.
 // Pins: CR 702.41a ("affinity for [text]" means "costs {1} less to cast for each [text] you control"), CR 601.2f (the cost is determined as the spell is cast: the Auras that are on the
 // battlefield then), CR 118.7a (a reduction takes only generic mana, never below zero), "you cast" (an opponent's spells are not reduced).

@@ -59,7 +59,7 @@ export interface SelectContext {
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
-  /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-593). */
+  /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-643). */
   readonly triggerAttackedAt?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
   readonly owners?: readonly SeatId[];
@@ -375,7 +375,7 @@ function attackersOfOpponents(state: GameState, seat: SeatId): readonly ObjectId
     .map((a) => a.object);
 }
 
-/** The creatures attacking an opponent of `seat` as a player (CR 508.1b, D-600): a creature at a planeswalker or battle is not. */
+/** The creatures attacking an opponent of `seat` as a player (CR 508.1b, D-650): a creature at a planeswalker or battle is not. */
 function attackersOfOpponentPlayers(state: GameState, seat: SeatId): readonly ObjectId[] {
   const opponents = opponentsOf(state, seat);
   return (state.combat?.attackers ?? [])
@@ -730,7 +730,7 @@ export function resolvePlayers(
         ? []
         : [ctx.triggerPlayer];
     case 'triggerAttackedPlayer': {
-      // CR 508.6 (D-598): "that opponent": the player the declaration attacked that made the trigger, if still in the game.
+      // CR 508.6 (D-648): "that opponent": the player the declaration attacked that made the trigger, if still in the game.
       const attacked = ctx.triggerAttacked?.[0];
       return attacked === undefined || getSeat(state, attacked).hasLost ? [] : [attacked];
     }

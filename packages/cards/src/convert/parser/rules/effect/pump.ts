@@ -261,7 +261,7 @@ export const EFFECT_PUMP_EACH = defineRule<Clauses>({
         choice(
           sequence(family<IrNoun>('noun', { only: ['noun.all-permanents'] }), literal(' get ')),
           sequence(
-            // D-600: "each other creature that's attacking one of your opponents gets +1/+1" (Martial Impetus).
+            // D-650: "each other creature that's attacking one of your opponents gets +1/+1" (Martial Impetus).
             family<IrNoun>('noun', {
               only: ['noun.each-permanent', 'noun.each-other-attacking-opponent'],
             }),

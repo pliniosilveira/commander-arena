@@ -217,7 +217,7 @@ export function amountOf(
   if (amount.kind === 'enteredThisTurn' || amount.kind === 'diedThisTurn') {
     return historyCount(state, amount, ctx.controller);
   }
-  // CR 603.10a, 113.7a (D-604): the Auras the controller controlled that were attached to the permanent the trigger is about, as it left.
+  // CR 603.10a, 113.7a (D-654): the Auras the controller controlled that were attached to the permanent the trigger is about, as it left.
   if (amount.kind === 'aurasAttachedToTriggerSubject') {
     const left = ctx.triggerSubject === undefined ? undefined : state.lki[ctx.triggerSubject];
     return (left?.auras ?? []).filter((a) => a.controller === ctx.controller).length;

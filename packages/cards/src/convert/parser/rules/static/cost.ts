@@ -391,7 +391,7 @@ const CAST_HEAD: Parser<{
     compared: undefined,
     targetsHost: true as const,
   })),
-  // D-595 (Killian, Ink Duelist, CR 601.2c, 601.2f, 115.1): "Spells you cast that target a creature cost {2} less to cast": the spell has a target of that kind, chosen before the cost is
+  // D-645 (Killian, Ink Duelist, CR 601.2c, 601.2f, 115.1): "Spells you cast that target a creature cost {2} less to cast": the spell has a target of that kind, chosen before the cost is
   // determined (the engine assumes the most favourable target while it asks whether the spell may be cast at all, D-424).
   map(
     pattern(
@@ -473,7 +473,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
     'Aura spells you cast that target enchanted creature cost {3} less to cast.',
     'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
-    // D-595 (Killian, Ink Duelist): the spells that target a creature.
+    // D-645 (Killian, Ink Duelist): the spells that target a creature.
     'Spells you cast that target a creature cost {2} less to cast.',
     'Aura spells you cast that target a creature you control cost {1} less to cast.',
   ],
@@ -530,7 +530,7 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
-          // D-595: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
+          // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
           ...(aimed === undefined ? {} : { castTargets: aimed }),
         },
         compared,
@@ -575,7 +575,7 @@ const AFFINITY_KIND: Parser<{ readonly filter: IrFilter; readonly end: number }>
 
 /**
  * `static.spells-have-affinity`: "Enchantment spells you cast have affinity for Auras." (CR 702.41a: "Affinity for [text]" means "This spell costs {1} less to cast for each
- * [text] you control"; CR 702.41b: each instance applies; D-596). The spells the controller casts that match have it, so it is the reduction of {1} for each permanent of the kind
+ * [text] you control"; CR 702.41b: each instance applies; D-646). The spells the controller casts that match have it, so it is the reduction of {1} for each permanent of the kind
  * the controller controls that `static.spells-cost-reduction` reads, and the engine applies it as the cost is determined (CR 601.2f). Not read: a singular kind, the permanents of an
  * opponent, a kind that is not a card type or Aura, and "have affinity" with nothing to count.
  */

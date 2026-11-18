@@ -38,7 +38,7 @@ export function sourceTypes(state: GameState, source: ObjectId | null): readonly
 export function protectedColors(
   state: GameState,
   obj: GameObject,
-  /** The source whose own exception (`exceptSource`, D-602: "This effect doesn't remove this Aura") leaves a protection out. */
+  /** The source whose own exception (`exceptSource`, D-652: "This effect doesn't remove this Aura") leaves a protection out. */
   source: ObjectId | null = null,
 ): readonly Color[] {
   if (obj.zone !== 'battlefield') return [];

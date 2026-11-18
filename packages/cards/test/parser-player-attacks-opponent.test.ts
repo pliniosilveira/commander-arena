@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 11 (D-598): "Whenever a player attacks one of your opponents, ..." with "that attacking player" and "that opponent" (Combat Calligrapher,
+// Issue 89 (Silverquill Influence), group 11 (D-648): "Whenever a player attacks one of your opponents, ..." with "that attacking player" and "that opponent" (Combat Calligrapher,
 // Breena, the Demagogue): the real Oracle line of the Calligrapher read through the whole pipeline, the nodes the pieces lower to, SYNTHETIC variants and the near misses. The engine runs
 // what is lowered in packages/engine/test/scenario-xx-player-attacks-opponent.test.ts.
 import { describe, expect, test } from 'vitest';

@@ -138,7 +138,7 @@ export const NOUN_THAT_PLAYER = defineRule<IrNoun>({
   family: 'noun',
   leading: ['that'],
   cites: ['CR 102.1 (Players)', 'CR 603.2 (Handling Triggered Abilities)'],
-  // D-593 (Tomik, Wielder of Law): "that opponent" is the same pronoun for a player the text has named an opponent.
+  // D-643 (Tomik, Wielder of Law): "that opponent" is the same pronoun for a player the text has named an opponent.
   examples: ['that player', 'That player', 'that opponent'],
   rejects: [
     'that opponents',
@@ -149,7 +149,7 @@ export const NOUN_THAT_PLAYER = defineRule<IrNoun>({
     "that player's",
     'the player',
   ],
-  // The words are kept as written: the binding pass and the lowering know the pronoun by them ("that opponent" of an attack trigger is the player attacked, D-598).
+  // The words are kept as written: the binding pass and the lowering know the pronoun by them ("that opponent" of an attack trigger is the player attacked, D-648).
   parse: phrase(
     'noun.that-player',
     new RegExp(`that (?:player|opponent)${END}(?!['’])`, 'iu'),
@@ -173,7 +173,7 @@ export const NOUN_THEY = defineRule<IrNoun>({
 });
 
 /**
- * `noun.that-attacking-player`: "that attacking player" (CR 508.1, 603.2c, D-598): the player who declared the attackers of a trigger about a player attacking one of your opponents. It names
+ * `noun.that-attacking-player`: "that attacking player" (CR 508.1, 603.2c, D-648): the player who declared the attackers of a trigger about a player attacking one of your opponents. It names
  * the player the event is about, as "that player" does, so it is bound to the player of the trigger and lowered to it; a text with no such trigger has no player to point at.
  */
 export const NOUN_THAT_ATTACKING_PLAYER = defineRule<IrNoun>({

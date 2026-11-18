@@ -271,7 +271,7 @@ export const TRIGGER_ATTACK_BATCH = defineRule<IrTrigger>({
 
 /**
  * `trigger.opponent-attacks`: "an opponent attacks with creatures" (CR 508.1, 603.2, 603.2c: the attackers are declared together and the ability triggers once for the declaration,
- * however many creatures it holds; D-593). One or more creatures, so `atLeast` 1 and every creature declared counts; "an opponent" is a player who is not the controller of the
+ * however many creatures it holds; D-643). One or more creatures, so `atLeast` 1 and every creature declared counts; "an opponent" is a player who is not the controller of the
  * ability, who is "that opponent" in the body.
  */
 export const TRIGGER_OPPONENT_ATTACKS = defineRule<IrTrigger>({
@@ -317,7 +317,7 @@ export const TRIGGER_OPPONENT_ATTACKS = defineRule<IrTrigger>({
 });
 
 /**
- * `trigger.player-attacks-opponent`: "a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c; D-598: the ability triggers once for each opponent of its controller that the
+ * `trigger.player-attacks-opponent`: "a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c; D-648: the ability triggers once for each opponent of its controller that the
  * declaration attacks, whoever declares the attackers). "That attacking player" is the player who declares them, "that opponent" the one attacked.
  */
 export const TRIGGER_PLAYER_ATTACKS_OPPONENT = defineRule<IrTrigger>({

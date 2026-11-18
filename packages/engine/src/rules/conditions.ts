@@ -83,7 +83,7 @@ export interface ConditionContext {
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
   readonly triggerAttacked?: readonly SeatId[];
-  /** For `attackersAtYouAtLeast` (D-593): who each creature of the trigger's attack event was declared attacking (a player, or the controller of a planeswalker). */
+  /** For `attackersAtYouAtLeast` (D-643): who each creature of the trigger's attack event was declared attacking (a player, or the controller of a planeswalker). */
   readonly triggerAttackedAt?: readonly SeatId[];
   /**
    * Whether to assume a target the spell has not chosen yet could satisfy `spellTargets` (D-207): the question "may this spell be cast at all?" asks it before any
@@ -358,7 +358,7 @@ export function evaluateCondition(
       return [...byName.values()].some((n) => n >= condition.count);
     }
     case 'attackedHasMoreLifeThanOtherOpponent': {
-      // CR 603.4, 508.6 (D-598): the opponent the declaration attacked against the other opponents of the controller still in the game.
+      // CR 603.4, 508.6 (D-648): the opponent the declaration attacked against the other opponents of the controller still in the game.
       const attacked = ctx.triggerAttacked?.[0];
       if (attacked === undefined) return false;
       const life = getSeat(state, attacked).life;
@@ -367,7 +367,7 @@ export function evaluateCondition(
       );
     }
     case 'attackersAtYouAtLeast':
-      // CR 508.1b, 603.4 (D-593): the creatures declared at me or at a planeswalker I control, read from the declaration.
+      // CR 508.1b, 603.4 (D-643): the creatures declared at me or at a planeswalker I control, read from the declaration.
       return (
         (ctx.triggerAttackedAt ?? []).filter((seat) => seat === ctx.controller).length >=
         condition.count

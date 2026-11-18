@@ -466,7 +466,7 @@ describe('token.custom: a token with the keywords of the engine (CR 111.4, 702)'
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });
 
-  test("a token with ward {2} is read but not run: the token's keywords go through keywordKind, which has no cost (D-588)", () => {
+  test("a token with ward {2} is read but not run: the token's keywords go through keywordKind, which has no cost (D-638)", () => {
     expect(
       dropped('Create a 1/1 white Soldier creature token with ward {2}.', 'sorcery'),
     ).toMatchObject({

@@ -146,7 +146,7 @@ function lowerFilterAt(
   inner: boolean,
   /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
   stackMember = false,
-  /** D-596: the filter of what a spell targets: matched against the permanent that is the target, so "modified" may be read in it although it is not the filter of the noun itself. */
+  /** D-646: the filter of what a spell targets: matched against the permanent that is the target, so "modified" may be read in it although it is not the filter of the noun itself. */
   aimed = false,
 ): LowerResult<ObjectFilter> {
   const rule = noun.rule;
@@ -321,7 +321,7 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
-  // D-597 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
+  // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
   if (filter.enchantedByYou === true) {
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchantedByYou');
@@ -333,7 +333,7 @@ function lowerFilterAt(
     parts.push('selector:hostOfSource');
     targetsObject = { hostOfSource: true };
   }
-  // D-595 (CR 601.2c, 601.2f, 115.1): what the spell a cost reduction is about targets: the filter of the spells names no zone, so it is not asked to be on the stack.
+  // D-645 (CR 601.2c, 601.2f, 115.1): what the spell a cost reduction is about targets: the filter of the spells names no zone, so it is not asked to be on the stack.
   if (filter.castTargets !== undefined) {
     if (inner || targetsObject !== undefined) return bad([]);
     parts.push('selector:targetsObject');
@@ -955,7 +955,7 @@ function selectorOf(
         rule: noun.rule,
       };
     }
-    // D-600 (CR 508.1b): "each other creature that's attacking one of your opponents" in an ability that triggers on a creature: the other is the creature the trigger is
+    // D-650 (CR 508.1b): "each other creature that's attacking one of your opponents" in an ability that triggers on a creature: the other is the creature the trigger is
     // about (the one enchanted, for an Aura), not the source of the ability.
     if (noun.other && noun.filter.attackingOpponents === 'players' && options.triggerSubject) {
       const { other: _source, ...rest } = filter.value;
@@ -1057,7 +1057,7 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'anaphor':
     case 'triggerActor': {
-      // D-598: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
+      // D-648: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
       if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
         return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);
       }

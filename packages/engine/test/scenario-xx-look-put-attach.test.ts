@@ -1,6 +1,6 @@
 // Issue 89 (Silverquill Influence), "Whenever this creature attacks, look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the
 // battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random
-// order." (D-608; Armored Skyhunter).
+// order." (D-658; Armored Skyhunter).
 // Pins: CR 401.2 (look at the top cards), CR 303.4f (an Aura put onto the battlefield chooses what it enchants), CR 701.3 and 301.5 (an Equipment is attached to a creature, "you may"),
 // CR 401.4 (the rest go to the bottom in a random order).
 // Cards: the SYNTHETIC creature, Aura and Equipment of this file, the real Grizzly Bears and Plains.

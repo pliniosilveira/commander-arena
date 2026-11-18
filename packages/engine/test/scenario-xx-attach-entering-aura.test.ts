@@ -1,5 +1,5 @@
 // Issue 89 (Silverquill Influence), "Whenever an enchantment you control enters, create a 2/2 white Cat creature token. If that enchantment is an Aura, you may attach it to the
-// token." (D-610; Ajani's Chosen).
+// token." (D-660; Ajani's Chosen).
 // Pins: CR 603.2 (the trigger), CR 111.2 (the token is made by its controller), CR 701.3b and 303.4a (an Aura is attached only to what it could enchant), CR 303.4 (an Aura that
 // entered enchanting something else moves to the token), CR 608.2c ("if that enchantment is an Aura" reads the enchantment that entered).
 // Cards: the SYNTHETIC Chosen, Aura and Enchantment of this file, the real Grizzly Bears and Plains.

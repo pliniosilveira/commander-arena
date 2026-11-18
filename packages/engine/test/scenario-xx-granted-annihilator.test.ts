@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 3 (D-590): a static ability that gives annihilator ("Enchanted creature has trample and annihilator 2", Eldrazi Conscription).
+// Issue 89 (Silverquill Influence), group 3 (D-640): a static ability that gives annihilator ("Enchanted creature has trample and annihilator 2", Eldrazi Conscription).
 // Pins: CR 702.86a (Annihilator N: whenever this creature attacks, defending player sacrifices N permanents), CR 702.86b (each instance triggers separately), CR 113.2c (an
 // object with several instances of an ability: each functions independently), CR 613.1f (a granted keyword is a layer 6 effect that ends with its source, CR 611.3a).
 // Cards: the SYNTHETIC "Annihilation Aura" of this file, the real Grizzly Bears, Llanowar Elves and the basic lands.

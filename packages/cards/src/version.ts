@@ -24,23 +24,23 @@
 // 119: Read "with one or more targets" and "draw that many" for a cast trigger (D-574).
 // 120: Read optional exile-from-hand costs and reductions based on cards exiled that way (D-575).
 // 121: Read "Sacrifice one or more artifacts" and "Choose a color. Target player adds N mana of the chosen color for each artifact sacrificed this way" (D-585, D-586, issue 258).
-// 122: Read "has ward {N}" as a granted keyword (D-588, issue 89).
-// 123: Read "..., and is goaded" of an Aura as the static ability `goaded` (D-589, issue 89).
-// 124: Read "has annihilator N" as a granted keyword (D-590, issue 89).
-// 125: Read an ability in quotes after what an attached permanent has, and an activated one given to it (D-591, issue 89).
-// 126: Read "..., and has [keywords], and it loses all other abilities, card types, and creature types" of an Aura (D-592, issue 89).
-// 127: Read "an opponent attacks with creatures", "if two or more of those creatures are attacking you and/or planeswalkers you control" and "that opponent" (D-593, issue 89).
-// 128: Read a list of three kinds of spell in a cast trigger (D-594, issue 89).
-// 129: Read "Spells you cast that target a creature cost {N} less to cast" (D-595, issue 89).
-// 130: Read "spells you cast have affinity for Auras" and "that targets a modified permanent you control" in a cast trigger (D-596, issue 89).
-// 131: Read "[group] can't attack you or planeswalkers you control" and "each creature that's enchanted by an Aura you control" (D-597, issue 89).
-// 132: Read "a player attacks one of your opponents", "that attacking player", "that opponent" of that trigger and a token "that's attacking that opponent" (D-598, issue 89).
-// 133: Read "until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-599, issue 89).
-// 134: Read "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-600, issue 89).
-// 135: Read "goad target creature" and "goad it", and "one or more creatures that are enchanted by an Aura you control attack" (D-601, issue 89).
-// 136: Read "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-602, issue 89).
-// 137: Read "... you put two +1/+1 counters on a creature you control" and "if that opponent has more life than another of your opponents" (D-603, issue 89).
-// 138: Read "an enchanted creature dies" and "for each Aura you controlled that was attached to it" (D-604), "cast an Aura spell from among them" and "put the rest on the bottom ... in a random order" (D-605), "by paying {2}{W} rather than paying its mana cost" from the graveyard (D-606), issue 89.
-// 139: Read "When enchanted creature dies, return this card [from your graveyard] to the battlefield [at the beginning of the next end step]" (D-607, issue 89).
-// 140: Read Armored Skyhunter's look-and-put (D-608), Songbirds' Blessing's reveal until (D-609) and Ajani's Chosen's "you may attach it to the token" (D-610), issue 89.
+// 122: Read "has ward {N}" as a granted keyword (D-638, issue 89).
+// 123: Read "..., and is goaded" of an Aura as the static ability `goaded` (D-639, issue 89).
+// 124: Read "has annihilator N" as a granted keyword (D-640, issue 89).
+// 125: Read an ability in quotes after what an attached permanent has, and an activated one given to it (D-641, issue 89).
+// 126: Read "..., and has [keywords], and it loses all other abilities, card types, and creature types" of an Aura (D-642, issue 89).
+// 127: Read "an opponent attacks with creatures", "if two or more of those creatures are attacking you and/or planeswalkers you control" and "that opponent" (D-643, issue 89).
+// 128: Read a list of three kinds of spell in a cast trigger (D-644, issue 89).
+// 129: Read "Spells you cast that target a creature cost {N} less to cast" (D-645, issue 89).
+// 130: Read "spells you cast have affinity for Auras" and "that targets a modified permanent you control" in a cast trigger (D-646, issue 89).
+// 131: Read "[group] can't attack you or planeswalkers you control" and "each creature that's enchanted by an Aura you control" (D-647, issue 89).
+// 132: Read "a player attacks one of your opponents", "that attacking player", "that opponent" of that trigger and a token "that's attacking that opponent" (D-648, issue 89).
+// 133: Read "until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (D-649, issue 89).
+// 134: Read "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-650, issue 89).
+// 135: Read "goad target creature" and "goad it", and "one or more creatures that are enchanted by an Aura you control attack" (D-651, issue 89).
+// 136: Read "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-652, issue 89).
+// 137: Read "... you put two +1/+1 counters on a creature you control" and "if that opponent has more life than another of your opponents" (D-653, issue 89).
+// 138: Read "an enchanted creature dies" and "for each Aura you controlled that was attached to it" (D-654), "cast an Aura spell from among them" and "put the rest on the bottom ... in a random order" (D-655), "by paying {2}{W} rather than paying its mana cost" from the graveyard (D-656), issue 89.
+// 139: Read "When enchanted creature dies, return this card [from your graveyard] to the battlefield [at the beginning of the next end step]" (D-657, issue 89).
+// 140: Read Armored Skyhunter's look-and-put (D-658), Songbirds' Blessing's reveal until (D-659) and Ajani's Chosen's "you may attach it to the token" (D-660), issue 89.
 export const PARSER_VERSION = 140;

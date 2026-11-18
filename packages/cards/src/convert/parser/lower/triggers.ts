@@ -472,7 +472,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       });
     }
     case 'playerAttacksOpponent': {
-      // "Whenever a player attacks one of your opponents" (D-598, CR 508.1, 508.6): once for each opponent the declaration attacks.
+      // "Whenever a player attacks one of your opponents" (D-648, CR 508.1, 508.6): once for each opponent the declaration attacks.
       if (t.actor?.det !== 'eachPlayer') return failure(t);
       return ok({ kind: 'playerAttacksOpponent' });
     }
@@ -594,7 +594,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'becomesTarget',
       'lifeGained',
       'attackBatch',
-      // D-598: the attacking player ("that attacking player").
+      // D-648: the attacking player ("that attacking player").
       'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
@@ -923,7 +923,7 @@ export function lowerTriggered(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
-  // D-598: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
+  // D-648: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
   ctx.attackedPlayer =
     events.length === 1 && events[0]?.event === 'playerAttacksOpponent'
       ? {
@@ -1058,7 +1058,7 @@ export function lowerTriggered(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
-  // D-607: "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard as well.
+  // D-657: "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard as well.
   ctx.auraDies = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'attached',
   );
@@ -1154,7 +1154,7 @@ export function lowerTriggered(
       c.verb === 'putMovedOntoBattlefield' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
       c.verb === 'putFromAmong');
-  // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
   // `optional` could not). Without a condition the "you may" of an attach stays the ability's.
   const conditionalAttach = (s: Sentence) =>
     s.condition !== undefined && s.clauses.every((c) => c.verb === 'attach' && c.optional);
@@ -1221,21 +1221,21 @@ export function lowerTriggered(
   ) {
     return failure(ability);
   }
-  // D-593 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control" is about the attackers of the declaration that triggered the ability.
+  // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control" is about the attackers of the declaration that triggered the ability.
   if (
     JSON.stringify(interveningIf ?? null).includes('"attackersAtYouAtLeast"') &&
     !triggers.every((t) => t.kind === 'attackBatch')
   ) {
     return failure(ability);
   }
-  // D-604 (CR 603.10a): "for each Aura you controlled that was attached to it" is about the permanent that left the battlefield, which only a `dies` or `leavesBattlefield` trigger has.
+  // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" is about the permanent that left the battlefield, which only a `dies` or `leavesBattlefield` trigger has.
   if (
     JSON.stringify(effect).includes('"aurasAttachedToTriggerSubject"') &&
     !triggers.every((t) => t.kind === 'dies' || t.kind === 'leavesBattlefield')
   ) {
     return failure(ability);
   }
-  // D-603 (CR 508.6): "if that opponent has more life than another of your opponents" is about the player a "whenever a player attacks one of your opponents" trigger is about.
+  // D-653 (CR 508.6): "if that opponent has more life than another of your opponents" is about the player a "whenever a player attacks one of your opponents" trigger is about.
   if (
     JSON.stringify(interveningIf ?? null).includes('"attackedHasMoreLifeThanOtherOpponent"') &&
     !triggers.every((t) => t.kind === 'playerAttacksOpponent')

@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 7 (D-594): a cast trigger whose spell is one of three kinds ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.", Sram, Senior
+// Issue 89 (Silverquill Influence), group 7 (D-644): a cast trigger whose spell is one of three kinds ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.", Sram, Senior
 // Edificer): the real Oracle line read through the whole pipeline (the comma between the kinds is not the end of the trigger), the nodes it lowers to and the near misses. The engine runs
 // what is lowered in packages/engine/test/scenario-xx-cast-three-subtypes.test.ts.
 import { describe, expect, test } from 'vitest';

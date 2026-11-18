@@ -904,7 +904,7 @@ function runEffect(
       let ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
         (id) => state.objects[id] !== undefined,
       );
-      // D-605 (CR 401.4): "put the rest on the bottom of your library in a random order": the order is the seeded generator's, one after the other.
+      // D-655 (CR 401.4): "put the rest on the bottom of your library in a random order": the order is the seeded generator's, one after the other.
       let shuffledState = state;
       if (effect.random === true && ids.length > 1) {
         const [order, rng] = shuffle(ids, state.rng);
@@ -1795,7 +1795,7 @@ function runEffect(
         const exiled = (ctx.moved ?? []).filter((id) => next.objects[id]?.zone === 'exile');
         for (const id of created) next = patchObject(next, id, { linkedExile: exiled });
       }
-      // CR 508.4 (D-598): "tapped and attacking that opponent": the creature tokens just created start attacking the player the selector names, while a combat is on. They were
+      // CR 508.4 (D-648): "tapped and attacking that opponent": the creature tokens just created start attacking the player the selector names, while a combat is on. They were
       // never declared as attackers.
       if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
         const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
@@ -2368,7 +2368,7 @@ function runEffect(
       return runGrantPlayerHexproof(state, effect, ctx, targets);
 
     case 'goad':
-      // CR 701.15a-d (D-589): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
+      // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
       return runGoad(state, effect, ctx, targets);
 
     case 'requireAttack':

@@ -17,17 +17,17 @@
 // 113: Keep Sauron's Ransom's face-down pile identities private through resolution (D-579).
 // 114: A cost of no life is payable at a negative life total (D-581, issue 254); a targets decision slot carries the card's own target words (D-582).
 // 115: Pay a sacrifice cost of one or more permanents and read the count sacrificed as a cost from the resolving ability (D-583, D-584, issue 258).
-// 116: A static ability may give ward; each instance granted is a triggered ability of its own (D-588, issue 89).
-// 117: Goad: the effect `goad`, the static ability "is goaded" of an attached permanent and the continuous change `goaded`, read where attackers are declared (D-589, issue 89).
-// 118: A static ability may give annihilator; each instance granted is a triggered ability of its own (D-590, issue 89).
-// 119: A trigger of an attack batch keeps, for each creature declared, whom it attacked (a player or the controller of a planeswalker), read by the intervening "if" `attackersAtYouAtLeast` (D-593, issue 89).
-// 120: The static ability `cantAttackYou` keeps a group of creatures from attacking its controller and their planeswalkers, and the filter `enchantedByYou` (D-597, issue 89).
-// 121: The trigger `playerAttacksOpponent`, the selector `triggerAttackedPlayer`, the condition `attackedHasMoreLifeThanOtherOpponent` and `createToken.attacking` (D-598, issue 89).
-// 122: The effect `loseHexproofShroud` and its continuous change, read where abilities are derived (D-599, issue 89).
-// 123: The filter `attackingOpponents: 'players'` (creatures attacking an opponent as a player) and `except: triggerSubject` of an `each` selector (D-600, issue 89).
-// 124: Protection from the chosen color of the permanent that gives it, with the exception that keeps its own Aura attached (D-602, issue 89).
-// 125: chooseObjects may require the choice (`exactly`), "put counters on a creature you control" (D-603, issue 89).
-// 126: The amount `aurasAttachedToTriggerSubject` and the last-known Auras (D-604), `castFree.filter` and `moveToZone.random` (D-605), the alternative cost of `castFromGraveyard` (D-606), issue 89.
-// 127: A delayed return of the Aura card that has the ability (`thisCard`) after "when enchanted creature dies" (D-607, issue 89).
-// 128: `revealUntil` may put nothing (D-609), `attach` of the permanent a trigger is about (D-610), the card a `lookAtTop` put onto the battlefield is `moved` (D-608), issue 89.
+// 116: A static ability may give ward; each instance granted is a triggered ability of its own (D-638, issue 89).
+// 117: Goad: the effect `goad`, the static ability "is goaded" of an attached permanent and the continuous change `goaded`, read where attackers are declared (D-639, issue 89).
+// 118: A static ability may give annihilator; each instance granted is a triggered ability of its own (D-640, issue 89).
+// 119: A trigger of an attack batch keeps, for each creature declared, whom it attacked (a player or the controller of a planeswalker), read by the intervening "if" `attackersAtYouAtLeast` (D-643, issue 89).
+// 120: The static ability `cantAttackYou` keeps a group of creatures from attacking its controller and their planeswalkers, and the filter `enchantedByYou` (D-647, issue 89).
+// 121: The trigger `playerAttacksOpponent`, the selector `triggerAttackedPlayer`, the condition `attackedHasMoreLifeThanOtherOpponent` and `createToken.attacking` (D-648, issue 89).
+// 122: The effect `loseHexproofShroud` and its continuous change, read where abilities are derived (D-649, issue 89).
+// 123: The filter `attackingOpponents: 'players'` (creatures attacking an opponent as a player) and `except: triggerSubject` of an `each` selector (D-650, issue 89).
+// 124: Protection from the chosen color of the permanent that gives it, with the exception that keeps its own Aura attached (D-652, issue 89).
+// 125: chooseObjects may require the choice (`exactly`), "put counters on a creature you control" (D-653, issue 89).
+// 126: The amount `aurasAttachedToTriggerSubject` and the last-known Auras (D-654), `castFree.filter` and `moveToZone.random` (D-655), the alternative cost of `castFromGraveyard` (D-656), issue 89.
+// 127: A delayed return of the Aura card that has the ability (`thisCard`) after "when enchanted creature dies" (D-657, issue 89).
+// 128: `revealUntil` may put nothing (D-659), `attach` of the permanent a trigger is about (D-660), the card a `lookAtTop` put onto the battlefield is `moved` (D-658), issue 89.
 export const ENGINE_VERSION = 128;

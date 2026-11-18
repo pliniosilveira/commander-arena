@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "... that attacking player draws a card and you put two +1/+1 counters on a creature you control." (D-603; Breena, the Demagogue).
+// Issue 89 (Silverquill Influence), "... that attacking player draws a card and you put two +1/+1 counters on a creature you control." (D-653; Breena, the Demagogue).
 // Pins: CR 701.34 (counters are put on a permanent the controller chooses as the effect resolves: not a target, so no hexproof or protection matters), CR 608.2d (the choice is made
 // as the ability resolves), CR 603.2 (the trigger), CR 121.1 (draw).
 // Cards: the SYNTHETIC "Counter Watcher" of this file and the real Grizzly Bears and Healer's Hawk.

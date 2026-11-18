@@ -102,7 +102,7 @@ const BASE_PT: Parser<Effects> = map(
  * one protection a static ability gives, with the colors it names or the colors outside the commander's color identity.
  */
 const PROTECTION: Parser<Effects> = choice(
-  // D-602 (Flickering Ward, CR 702.16a, 607.2d): "protection from the chosen color", and the sentence that follows it on that Aura, "This effect doesn't remove ~."
+  // D-652 (Flickering Ward, CR 702.16a, 607.2d): "protection from the chosen color", and the sentence that follows it on that Aura, "This effect doesn't remove ~."
   // (the Aura of the chosen color stays attached, CR 702.16d, 704.5m).
   map(
     sequence(
@@ -208,7 +208,7 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
       : quiet(
           map(sequence(pattern(/(?: and |, and |, )/iu), areTypes(plural)), ([, what]) => what),
         );
-  // D-589 (CR 701.15b): "..., and is goaded", said of the permanent an Aura or Equipment is attached to.
+  // D-639 (CR 701.15b): "..., and is goaded", said of the permanent an Aura or Equipment is attached to.
   const andGoaded =
     mode === 'attached'
       ? map(
@@ -216,7 +216,7 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
           (): Effects => [{ kind: 'goaded' }],
         )
       : (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos);
-  // D-591 (CR 613.1f): "has flying and "Sacrifice a creature: ~ gets +2/+1 until end of turn."": an ability in quotes after what the subject has, joined with "and" or a comma.
+  // D-641 (CR 613.1f): "has flying and "Sacrifice a creature: ~ gets +2/+1 until end of turn."": an ability in quotes after what the subject has, joined with "and" or a comma.
   const andQuoted =
     mode === 'self' || mode === 'selfGrant'
       ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
@@ -362,11 +362,11 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     "Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.",
     'Enchanted creature gets +4/+4, has flying and first strike, and is an Angel in addition to its other types.',
     'Enchanted creature gets +2/+2, has flying, and is a Zombie in addition to its other types.',
-    // Issue 89 (D-589, CR 701.15b): the creature is goaded by the controller of the Aura.
+    // Issue 89 (D-639, CR 701.15b): the creature is goaded by the controller of the Aura.
     'Enchanted creature gets +1/+1 and is goaded.',
     'Enchanted creature has indestructible and is goaded.',
     'Enchanted creature gets +1/+1, has deathtouch, and is goaded.',
-    // Issue 89 (D-588, CR 702.21a): ward a static ability gives, with a mana cost.
+    // Issue 89 (D-638, CR 702.21a): ward a static ability gives, with a mana cost.
     'Enchanted creature has ward {2}.',
     'Enchanted creature gets +1/+0 and has lifelink and ward {2}.',
   ],
@@ -518,7 +518,7 @@ export const STATIC_EACH = defineRule<IrStatic>({
   ],
   parse: statement(
     'static.each',
-    // D-597: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
+    // D-647: "Each creature that's enchanted by an Aura you control can't attack you or planeswalkers you control."
     ['noun.each-permanent', 'noun.each-creature-enchanted-by-you'],
     'each',
   ),

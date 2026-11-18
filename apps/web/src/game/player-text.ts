@@ -47,7 +47,7 @@ export function playerSubject(
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };
     case 'triggerAttackedPlayer':
-      // D-598 (CR 508.6): the player attacked, "that opponent" of "whenever a player attacks one of your opponents".
+      // D-648 (CR 508.6): the player attacked, "that opponent" of "whenever a player attacks one of your opponents".
       return { text: 'that opponent', base: false };
     case 'declinedPlayer':
       // D-576: a player who declined a choice, named in its `otherwise` effect.

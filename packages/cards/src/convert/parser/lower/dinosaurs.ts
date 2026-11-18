@@ -142,7 +142,7 @@ export const REVEAL_UNTIL: Lowering<IrClause, Effects> = {
 
 /**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
- * bottom of your library in a random order." (D-609, CR 701.20, 303.4f, 608.2c): the engine's `revealUntil` that moves nothing (`put: 'none'`; the rest go to the bottom), then a `may`
+ * bottom of your library in a random order." (D-659, CR 701.20, 303.4f, 608.2c): the engine's `revealUntil` that moves nothing (`put: 'none'`; the rest go to the bottom), then a `may`
  * move of the card found onto the battlefield (an Aura chooses what it enchants as it enters) and, when the player did not, a move of it into the hand.
  */
 export const REVEAL_UNTIL_MAY_PUT: Lowering<IrClause, Effects> = {

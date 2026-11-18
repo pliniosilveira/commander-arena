@@ -1,5 +1,5 @@
 // Issue 89 (Silverquill Influence), "Exile the top eight cards of your library. You may cast an Aura spell from among them without paying its mana cost. Then put the rest on the
-// bottom of your library in a random order." (D-605; Herald of Amity).
+// bottom of your library in a random order." (D-655; Herald of Amity).
 // Pins: CR 701.13 (exile), CR 608.2g (a spell cast during resolution: no timing, no mana cost, no priority), CR 303.4 and 601.2c (an Aura spell targets a creature as it is cast),
 // CR 401.4 (cards put on the bottom of a library at once go in a random order), 614.1 not involved.
 // Cards: the SYNTHETIC Rite and Aura of this file, the real Grizzly Bears, Lightning Bolt and the basic lands.

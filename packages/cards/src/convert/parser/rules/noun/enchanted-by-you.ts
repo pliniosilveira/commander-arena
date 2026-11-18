@@ -1,5 +1,5 @@
 /**
- * "Each creature that's enchanted by an Aura you control" (Eriette of the Charmed Apple, D-597, CR 303.4e: the Aura's controller is separate from the enchanted permanent's
+ * "Each creature that's enchanted by an Aura you control" (Eriette of the Charmed Apple, D-647, CR 303.4e: the Aura's controller is separate from the enchanted permanent's
  * controller): the creatures that have an Aura attached to them that the controller of the ability controls. The engine's `ObjectFilter.enchantedByYou`, read as the group
  * changes (CR 611.3a).
  */

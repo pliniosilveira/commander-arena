@@ -169,7 +169,7 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       if (k.from === 'ringBearer') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
-      // D-602 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).
+      // D-652 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).
       if (k.from === 'chosenColor') {
         if (k.exceptSource !== undefined && k.exceptSource !== true) {
           issue(out, `${path}.exceptSource`, 'exceptSource must be true when present');
@@ -410,7 +410,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       checkAttackTax(s, path, out);
       break;
     case 'cantAttackYou':
-      // D-597: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
+      // D-647: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
       checkBattlefieldFilter(s.creatures, `${path}.creatures`, out);
       if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
         issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
@@ -465,7 +465,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'goaded':
-      // D-589 (CR 701.15b): only the permanent an Aura or Equipment is attached to is built.
+      // D-639 (CR 701.15b): only the permanent an Aura or Equipment is attached to is built.
       if (s.subject?.kind !== 'attached') {
         issue(out, `${path}.subject`, 'goaded is given to the attached permanent');
       } else {
@@ -479,7 +479,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       checkAbilityCostReduction(s, path, out);
       break;
     case 'castFromGraveyard':
-      // D-133: the face-level checks say where it may stand. D-606: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
+      // D-133: the face-level checks say where it may stand. D-656: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
       if (s.cost !== undefined) {
         if (!Array.isArray(s.cost) || s.cost.length === 0) {
           issue(
@@ -1330,7 +1330,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
-        // D-607: the Aura's own trigger "when enchanted creature dies".
+        // D-657: the Aura's own trigger "when enchanted creature dies".
         ...(a.trigger?.kind === 'dies' && kindOf(a.trigger.what) === 'attached'
           ? { auraDiesTrigger: true }
           : {}),
@@ -1436,7 +1436,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore reads the controller of a permanent the event is about',
           );
         }
-        // D-598: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
+        // D-648: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
         if (
           conditionHas(a.interveningIf, 'attackedHasMoreLifeThanOtherOpponent') &&
           a.trigger?.kind !== 'playerAttacksOpponent'
@@ -1447,7 +1447,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'attackedHasMoreLifeThanOtherOpponent reads the player a playerAttacksOpponent trigger is about: it is only valid in the intervening "if" of one',
           );
         }
-        // D-593: the attack declaration is what `attackersAtYouAtLeast` reads, so only the intervening "if" of an attackBatch trigger has it.
+        // D-643: the attack declaration is what `attackersAtYouAtLeast` reads, so only the intervening "if" of an attackBatch trigger has it.
         if (
           conditionHas(a.interveningIf, 'attackersAtYouAtLeast') &&
           a.trigger?.kind !== 'attackBatch'

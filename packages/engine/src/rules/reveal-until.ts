@@ -79,7 +79,7 @@ export function runRevealUntil(
         );
   return {
     ...done(bottom.state, [...events, ...bottom.events], [...put, ...bottom.front]),
-    // D-609: with `put: 'none'` the card found is what the effects after this one move ("You may put that card onto the battlefield").
+    // D-659: with `put: 'none'` the card found is what the effects after this one move ("You may put that card onto the battlefield").
     lastMoved: effect.put === 'none' && found !== null ? [found] : [],
   };
 }

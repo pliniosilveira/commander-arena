@@ -63,7 +63,7 @@ const BLOCKED_BY: Parser<IrStaticEffect> = map(
 
 export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticEffect> {
   const common = [
-    // D-597 (CR 508.1a): "Inklings can't attack you or planeswalkers you control.", said of a group.
+    // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control.", said of a group.
     ...(subject === 'plural' || subject === 'each'
       ? [
           map(

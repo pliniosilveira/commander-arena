@@ -260,7 +260,7 @@ describe('what a gain does not read', () => {
     });
   });
 
-  test('"gains ward {2}" is read since D-588; a ward with no cost is not', () => {
+  test('"gains ward {2}" is read since D-638; a ward with no cost is not', () => {
     expect(
       readAll('Target creature gains ward {2} until end of turn.').spell?.effect,
     ).toMatchObject({

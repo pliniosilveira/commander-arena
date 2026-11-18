@@ -189,7 +189,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     'Enchanted creature loses all abilities and is a Frog creature.',
     // Stage P50 (D-207): and a restriction.
     "Enchanted creature loses all abilities and doesn't untap during its controller's untap step.",
-    // Issue 89 (D-592): what the effect gives is kept, everything else is lost.
+    // Issue 89 (D-642): what the effect gives is kept, everything else is lost.
     'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types.',
   ],
   rejects: [
@@ -250,7 +250,7 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
       what = parsed.value;
       end = parsed.pos;
     }
-    // D-592 (CR 613.1f, 613.1d): "... and has indestructible, and it loses all other abilities, card types, and creature types.": what the effect gives is kept and
+    // D-642 (CR 613.1f, 613.1d): "... and has indestructible, and it loses all other abilities, card types, and creature types.": what the effect gives is kept and
     // everything else is lost, so the abilities are lost first and then the keywords given, in the order written (the layers keep that order for one permanent).
     let given: readonly string[] = [];
     let loseOthers = false;

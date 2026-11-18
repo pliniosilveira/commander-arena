@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 10 (D-597): "Inklings can't attack you or planeswalkers you control." (Combat Calligrapher) and "Each creature that's enchanted by an Aura you
+// Issue 89 (Silverquill Influence), group 10 (D-647): "Inklings can't attack you or planeswalkers you control." (Combat Calligrapher) and "Each creature that's enchanted by an Aura you
 // control can't attack you or planeswalkers you control." (Eriette of the Charmed Apple): a static ability of a permanent that keeps the creatures it describes from attacking its
 // controller and the planeswalkers that controller controls.
 // Pins: CR 508.1a and 508.1c (a creature that can't attack a player or a planeswalker is not declared attacking it; the requirement and the restriction are about each defender), CR 506.3

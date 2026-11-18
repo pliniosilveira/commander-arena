@@ -157,7 +157,7 @@ function lowerGrantedAbility(
     subject.kind !== 'this' &&
     ((subject.kind !== 'filter' &&
       !(
-        // D-591 (CR 113.6g, 602.2, 613.1f): an activated ability too for the permanent an Aura or Equipment is attached to: the creature has it as its own, so its
+        // D-641 (CR 113.6g, 602.2, 613.1f): an activated ability too for the permanent an Aura or Equipment is attached to: the creature has it as its own, so its
         // controller activates it and `~` in the quotation is the creature (the engine runs it: `scenario-xx-granted-activated.test.ts`).
         (subject.kind === 'attached' &&
           (inner.kind === 'triggered' || inner.kind === 'activated')) ||
@@ -295,7 +295,7 @@ function effectOf(
         : failure(at);
     case 'castFromGraveyard':
       // CR 113.6b (stage P29, D-133): the ability of a card in its owner's graveyard, so its subject is `~`.
-      // D-606 (Raffine's Guidance, CR 118.9): "by paying {2}{W} rather than paying its mana cost" is the ability's own alternative cost.
+      // D-656 (Raffine's Guidance, CR 118.9): "by paying {2}{W} rather than paying its mana cost" is the ability's own alternative cost.
       return subject.kind === 'this'
         ? ok({
             kind: 'castFromGraveyard',
@@ -419,11 +419,11 @@ function effectOf(
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
     case 'cantAttackYou':
-      // CR 508.1a (D-597): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
+      // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
     case 'goaded':
-      // D-589 (CR 701.15b): only the permanent an Aura or Equipment is attached to.
+      // D-639 (CR 701.15b): only the permanent an Aura or Equipment is attached to.
       if (subject.kind !== 'attached') return failure(at);
       return ok({ kind: 'goaded', subject });
     case 'restriction': {
@@ -451,7 +451,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
       // D-472, D-473: the keyword node of a granted afflict or landwalk is a kind of its own for the engine.
       if (AFFLICT_WORD.test(effect.keyword)) return ['static:grantKeyword', 'keyword:afflict'];
-      // D-590, D-588: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
+      // D-640, D-638: the keyword node of a granted annihilator or ward is a kind of its own for the engine.
       if (ANNIHILATOR_WORD.test(effect.keyword)) {
         return ['static:grantKeyword', 'keyword:annihilator'];
       }

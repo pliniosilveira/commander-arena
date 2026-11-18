@@ -93,13 +93,13 @@ const AURAS: readonly Line[] = [
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature has "{T}: Draw a card."',
     expect: OK,
-    note: 'SYNTHETIC; an attached permanent is given a triggered ability (stage P49, D-206), a mana ability and, since D-591 (issue 89), an activated one: the creature has it as its own',
+    note: 'SYNTHETIC; an attached permanent is given a triggered ability (stage P49, D-206), a mana ability and, since D-641 (issue 89), an activated one: the creature has it as its own',
   },
   {
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature has annihilator X.',
     expect: no('annihilator X.', 'static.attached'),
-    note: 'SYNTHETIC near miss: annihilator is granted only with a number in digits (D-590)',
+    note: 'SYNTHETIC near miss: annihilator is granted only with a number in digits (D-640)',
   },
   {
     kind: 'aura',
@@ -137,7 +137,7 @@ const AURAS: readonly Line[] = [
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded.',
     expect: OK,
-    note: 'backlog: 7 cards; the engine runs it since D-589 (issue 89, CR 701.15b)',
+    note: 'backlog: 7 cards; the engine runs it since D-639 (issue 89, CR 701.15b)',
   },
   {
     kind: 'aura',
@@ -306,7 +306,7 @@ const EQUIPMENT: readonly Line[] = [
       'static.attached',
       { ...NOT_RUNNABLE },
     ),
-    note: 'backlog: 1 card; the quoted ability is read since D-591 and not run (no rule for "create that many Treasure tokens")',
+    note: 'backlog: 1 card; the quoted ability is read since D-641 and not run (no rule for "create that many Treasure tokens")',
   },
   {
     kind: 'equipment',

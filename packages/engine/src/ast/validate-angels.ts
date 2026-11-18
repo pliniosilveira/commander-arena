@@ -39,7 +39,7 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       }
       return true;
     case 'playerAttacksOpponent':
-      // D-598: no parameters.
+      // D-648: no parameters.
       return true;
     case 'attackBatch':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {

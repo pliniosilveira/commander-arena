@@ -595,7 +595,7 @@ export function staticEffectsOn(
         if (colors.length === 0) return true;
         keyword = { kind: 'protection', from: 'color', colors };
       } else if (keyword.kind === 'protection' && keyword.from === 'chosenColor') {
-        // CR 702.16a, 607.2d (D-602): "the chosen color" is the choice of the permanent that gives the keyword; it chose none: nothing to give.
+        // CR 702.16a, 607.2d (D-652): "the chosen color" is the choice of the permanent that gives the keyword; it chose none: nothing to give.
         const chosen = source.object.chosen?.color;
         if (chosen === undefined) return true;
         keyword = {

@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 8 (D-595): a cost reduction for the spells that target something ("Spells you cast that target a creature cost {2} less to cast.", Killian, Ink
+// Issue 89 (Silverquill Influence), group 8 (D-645): a cost reduction for the spells that target something ("Spells you cast that target a creature cost {2} less to cast.", Killian, Ink
 // Duelist): the real Oracle line read through the whole pipeline, the node it lowers to, SYNTHETIC variants and the near misses. The engine runs what is lowered in
 // packages/engine/test/scenario-xx-cost-reduction-targets.test.ts.
 import { describe, expect, test } from 'vitest';

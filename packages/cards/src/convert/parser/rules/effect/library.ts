@@ -403,7 +403,7 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
 
 /**
  * `effect.look-put-attach`: "look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the
- * battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-608, CR 401.2, 303.4f, 301.5,
+ * battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, CR 401.2, 303.4f, 301.5,
  * 701.3, 401.4: Armored Skyhunter). Four sentences that `splitSentences` keeps together; the card is taken without being revealed ("put", not "reveal and put"), an Aura chooses what it
  * enchants as it enters, an Equipment may be attached to a creature the controller controls. The count is two or more.
  */

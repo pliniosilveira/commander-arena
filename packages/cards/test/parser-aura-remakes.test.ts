@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 5 (D-592): an Aura that remakes its creature and gives it a keyword, with everything else lost (Darksteel Mutation): the real Oracle line read
+// Issue 89 (Silverquill Influence), group 5 (D-642): an Aura that remakes its creature and gives it a keyword, with everything else lost (Darksteel Mutation): the real Oracle line read
 // through the whole pipeline, the nodes it lowers to, SYNTHETIC variants and the near misses the grammar must not read. The engine runs what is lowered in
 // packages/engine/test/scenario-xx-aura-remakes-creature.test.ts.
 import { describe, expect, test } from 'vitest';

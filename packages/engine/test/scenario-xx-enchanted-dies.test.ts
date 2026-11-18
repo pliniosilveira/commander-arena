@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Whenever an enchanted creature dies, draw a card for each Aura you controlled that was attached to it." (D-604; Hateful Eidolon).
+// Issue 89 (Silverquill Influence), "Whenever an enchanted creature dies, draw a card for each Aura you controlled that was attached to it." (D-654; Hateful Eidolon).
 // Pins: CR 603.10a (a leaves-the-battlefield ability looks back in time), CR 113.7a (last-known information: the Auras that were attached as it died), CR 303.4e (the Auras'
 // controller is separate from the creature's: only Auras the controller of the ability controlled count), CR 704.5m (the Auras go to the graveyard afterwards).
 // Cards: the SYNTHETIC "Eidolon" and Aura of this file, the real Grizzly Bears and Lightning Bolt.

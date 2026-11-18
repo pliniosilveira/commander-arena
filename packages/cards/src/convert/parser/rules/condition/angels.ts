@@ -190,7 +190,7 @@ const COUNT_WORDS: Readonly<Record<string, number>> = { two: 2, three: 3, four: 
 
 /**
  * `condition.those-attacking-you`: "two or more of those creatures are attacking you and/or planeswalkers you control" (CR 508.1b: a creature is declared as attacking a
- * player, a planeswalker or a battle; this counts the declaration at "you" and at the planeswalkers "you" control, together; D-593). "Those creatures" are the attackers that
+ * player, a planeswalker or a battle; this counts the declaration at "you" and at the planeswalkers "you" control, together; D-643). "Those creatures" are the attackers that
  * triggered the ability (`trigger.attack-batch`), which the lowering checks, and the condition is the intervening "if" of the ability.
  */
 export const CONDITION_THOSE_ATTACKING_YOU = defineRule<IrCondition>({
@@ -229,7 +229,7 @@ export const CONDITION_THOSE_ATTACKING_YOU = defineRule<IrCondition>({
 });
 
 /**
- * `condition.attacked-has-more-life`: "that opponent has more life than another of your opponents" (CR 603.4, 508.6, D-603): the player attacked by the declaration that
+ * `condition.attacked-has-more-life`: "that opponent has more life than another of your opponents" (CR 603.4, 508.6, D-653): the player attacked by the declaration that
  * triggered the ability has more life than another opponent of the controller who is still in the game. The intervening "if" of `trigger.player-attacks-opponent`, which the
  * lowering checks (the engine's `attackedHasMoreLifeThanOtherOpponent`).
  */

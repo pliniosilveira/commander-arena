@@ -172,7 +172,7 @@ function hasAbility(list: readonly Ability[], grant: Ability): boolean {
   return list.some((a) => a.kind === 'mana' && JSON.stringify(a) === written);
 }
 
-/** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-588: ward, CR 702.86b: annihilator) and so are not added once only. */
+/** The keywords whose instances each count (CR 702.83b: exalted, CR 702.108b: prowess, CR 702.130b: afflict, D-638: ward, CR 702.86b: annihilator) and so are not added once only. */
 const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'exalted',
   'prowess',
@@ -215,7 +215,7 @@ export function applyAbilityLayer(
       steps.push({ timestamp: e.timestamp, grant: null });
     }
   }
-  // CR 702.11b, 702.18a, 613.1f (D-599): "can't have hexproof or shroud" holds for every timestamp, so the two are taken out after all the steps.
+  // CR 702.11b, 702.18a, 613.1f (D-649): "can't have hexproof or shroud" holds for every timestamp, so the two are taken out after all the steps.
   const noHexproofShroud = effects.some((e) => e.change.kind === 'loseHexproofShroud');
   if (steps.length === 0 && !noHexproofShroud) return printed;
   // `sort` is stable, so grants with one timestamp (one permanent) keep their written order.

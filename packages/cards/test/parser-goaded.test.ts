@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), goad (D-589): "Enchanted creature ... is goaded" of an Aura read through the whole pipeline: the real Oracle lines of Coercive Impetus,
+// Issue 89 (Silverquill Influence), goad (D-639): "Enchanted creature ... is goaded" of an Aura read through the whole pipeline: the real Oracle lines of Coercive Impetus,
 // Parasitic Impetus, Redemption Arc and Ghoulish Impetus (its first line), the nodes they lower to, SYNTHETIC variants and the near misses the grammar must not read.
 // The engine runs what is lowered in packages/engine/test/scenario-xx-goad.test.ts.
 import { describe, expect, test } from 'vitest';
@@ -67,7 +67,7 @@ describe('"Enchanted creature gets +N/+N and is goaded." (CR 701.15b, 613.4c)', 
   });
 });
 
-describe('"Goad target creature." and "goad it" as effects (CR 701.15a, D-601)', () => {
+describe('"Goad target creature." and "goad it" as effects (CR 701.15a, D-651)', () => {
   test('the real first line of Killian, Decisive Mentor: tap and goad the same creature', () => {
     const abilities = readAll(
       'Whenever an enchantment you control enters, tap up to one target creature and goad it.',

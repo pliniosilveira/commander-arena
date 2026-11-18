@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 8 (D-595): "Spells you cast that target a creature cost {2} less to cast." (Killian, Ink Duelist).
+// Issue 89 (Silverquill Influence), group 8 (D-645): "Spells you cast that target a creature cost {2} less to cast." (Killian, Ink Duelist).
 // Pins: CR 601.2f (the cost is determined after the targets are chosen, CR 601.2c), CR 118.7a (a reduction takes only generic mana, never below zero), CR 115.1 (a spell that targets: its
 // chosen targets), D-424 (before any target is chosen the engine asks whether the spell can be cast assuming the most favourable target), and "you cast": an opponent's spell is not reduced.
 // Cards: the SYNTHETIC "Duelist" of this file, SYNTHETIC Might Aura ({1}{G}, targets a creature) and the real Grizzly Bears ({1}{G}, no target), SYNTHETIC Vanilla 3/3 (the creature to enchant: it makes no mana) and the basic lands.

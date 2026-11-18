@@ -1,5 +1,5 @@
 // Issue 89 (Silverquill Influence), "Whenever enchanted creature attacks, reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the
-// battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order." (D-609; Songbirds' Blessing).
+// battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order." (D-659; Songbirds' Blessing).
 // Pins: CR 701.20 (reveal), CR 303.4f (an Aura put onto the battlefield chooses what it enchants), CR 608.2c ("if you don't" reads the offer before it), CR 401.4 (the rest go to the
 // bottom of the library in a random order).
 // Cards: the SYNTHETIC Songbirds and Aura of this file, the real Grizzly Bears, Llanowar Elves and Plains.

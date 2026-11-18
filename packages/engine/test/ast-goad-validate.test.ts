@@ -1,4 +1,4 @@
-// Issue 89 (D-589): what `validateCard` allows of goad (CR 701.15): the effect "Goad target creature" and the static ability "is goaded" of the permanent an Aura or Equipment is
+// Issue 89 (D-639): what `validateCard` allows of goad (CR 701.15): the effect "Goad target creature" and the static ability "is goaded" of the permanent an Aura or Equipment is
 // attached to, never of another subject.
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
@@ -39,7 +39,7 @@ const spell = (effect: Effect) =>
 const messages = (card: Parameters<typeof validateCard>[0]) =>
   validateCard(card).map((i) => i.message);
 
-describe('goad (D-589)', () => {
+describe('goad (D-639)', () => {
   test('the effect goads the creature a target names', () => {
     expect(messages(spell({ kind: 'goad', objects: { kind: 'target', id: 't1' } }))).toEqual([]);
   });

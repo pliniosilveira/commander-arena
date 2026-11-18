@@ -102,7 +102,7 @@ interface Occurrence {
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
-  /** For `attackBatch` (D-593): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
+  /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
   readonly attackedAt?: readonly SeatId[];
 }
 
@@ -436,7 +436,7 @@ function occurrences(
           ]
         : [];
     case 'playerAttacksOpponent': {
-      // CR 508.1, 508.6, 603.2c (D-598): once for each player the declaration attacks (a planeswalker or a battle attacked is no player), however many creatures attack them.
+      // CR 508.1, 508.6, 603.2c (D-648): once for each player the declaration attacks (a planeswalker or a battle attacked is no player), however many creatures attack them.
       if (event.kind !== 'attackersDeclared') return [];
       const seats = [
         ...new Set(
@@ -462,7 +462,7 @@ function occurrences(
               attacked: event.attackers.flatMap((a) =>
                 a.target.kind === 'player' ? [a.target.seat] : [],
               ),
-              // CR 508.1b (D-593): a planeswalker attacked counts for its controller as the declaration is made; a battle is neither a player nor a planeswalker.
+              // CR 508.1b (D-643): a planeswalker attacked counts for its controller as the declaration is made; a battle is neither a player nor a planeswalker.
               attackedAt: event.attackers.flatMap((a) => {
                 if (a.target.kind === 'player') return [a.target.seat];
                 const attacked = state.objects[a.target.object];
@@ -690,7 +690,7 @@ function matches(
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'playerAttacksOpponent': {
-      // "One of your opponents": a player other than the controller of the ability (D-598).
+      // "One of your opponents": a player other than the controller of the ability (D-648).
       const attacked = occ.attacked?.[0];
       return attacked !== undefined && attacked !== candidate.controller;
     }

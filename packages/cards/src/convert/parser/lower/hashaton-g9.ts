@@ -74,7 +74,7 @@ const CAST_MOVED_FREE: Lowering<IrClause, Effects> = {
   needs: ['effect:castFree', 'selector:moved'],
   acceptsOptional: true,
   lower(clause, ctx) {
-    // D-605 (Herald of Amity): "cast an Aura spell from among them": only the cards of that kind of those the instruction before it exiled (the top of the library) are offered.
+    // D-655 (Herald of Amity): "cast an Aura spell from among them": only the cards of that kind of those the instruction before it exiled (the top of the library) are offered.
     const spell = arg(clause, 'spell');
     if (spell !== undefined) {
       if (spell.kind !== 'noun' || !clause.optional || ctx.exiled !== 'top') return failure(clause);
@@ -98,7 +98,7 @@ const CAST_MOVED_FREE: Lowering<IrClause, Effects> = {
 };
 
 /**
- * "Put the rest on the bottom of your library in a random order" (CR 401.4; D-605): the engine's `moveToZone` of the cards the instruction before it exiled from the top of the library
+ * "Put the rest on the bottom of your library in a random order" (CR 401.4; D-655): the engine's `moveToZone` of the cards the instruction before it exiled from the top of the library
  * (`moved`), to the bottom of the library in a random order. Refused unless the text exiled cards from the top of the library before it.
  */
 const PUT_REST_BOTTOM: Lowering<IrClause, Effects> = {

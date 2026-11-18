@@ -234,7 +234,7 @@ function recordLki(
   departedTogether?: readonly ObjectId[],
 ): GameState {
   const d = derive(state, obj);
-  // CR 113.7a, 303.4e (D-604): the Auras attached to it now, as the state-based action that puts them into the graveyard has not yet run.
+  // CR 113.7a, 303.4e (D-654): the Auras attached to it now, as the state-based action that puts them into the graveyard has not yet run.
   const auras = state.battlefield.flatMap((id) => {
     const attachment = state.objects[id];
     return attachment?.attachedTo === obj.id && derive(state, attachment).subtypes.includes('Aura')

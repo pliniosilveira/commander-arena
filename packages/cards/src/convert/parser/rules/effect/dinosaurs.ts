@@ -308,7 +308,7 @@ export const EFFECT_REVEAL_UNTIL = defineRule<Clauses>({
 
 /**
  * `effect.reveal-until-may-put`: "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your
- * hand. Put the rest on the bottom of your library in a random order" (D-609, CR 701.20, 401.4, 303.4f, 608.2c: Songbirds' Blessing). Four sentences that `splitSentences` keeps
+ * hand. Put the rest on the bottom of your library in a random order" (D-659, CR 701.20, 401.4, 303.4f, 608.2c: Songbirds' Blessing). Four sentences that `splitSentences` keeps
  * together: the card found is offered for the battlefield, goes into the hand when the player does not put it there, and the rest go to the bottom in a random order. Not read:
  * another place for the card, another place for the rest, "in any order", a quality with a mana value.
  */

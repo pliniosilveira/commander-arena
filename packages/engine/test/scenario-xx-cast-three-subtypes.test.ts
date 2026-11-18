@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 7 (D-594): "Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card" (Sram, Senior Edificer): a cast trigger whose filter is a
+// Issue 89 (Silverquill Influence), group 7 (D-644): "Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card" (Sram, Senior Edificer): a cast trigger whose filter is a
 // choice of three subtypes. Pins: CR 601.2i and 603.2 (a spell was cast: the ability triggers once for it), CR 205.3 (the subtypes of the spell's card are what it matches), CR 112.1
 // (only a spell: a permanent of that kind that enters another way does not trigger it) and "you" (an opponent's spell does not).
 // Cards: the SYNTHETIC "Spell Watcher" of this file, SYNTHETIC Might Aura, Blade and Rattle Wagon, the real Grizzly Bears and the basic lands.

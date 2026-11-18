@@ -113,7 +113,7 @@ export interface Scope {
   readonly selfCast?: boolean;
   /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
   readonly diesTrigger?: boolean;
-  /** True in the effect of the trigger "when enchanted creature dies" of an Aura: the card of the Aura itself (`thisCard`) may be returned by a delayed ability (D-607). */
+  /** True in the effect of the trigger "when enchanted creature dies" of an Aura: the card of the Aura itself (`thisCard`) may be returned by a delayed ability (D-657). */
   readonly auraDiesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
@@ -307,7 +307,7 @@ export function checkFilter(
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
-  // D-218, D-600: "attacking your opponents and/or planeswalkers they control" is a flag; `'players'` is "attacking one of your opponents".
+  // D-218, D-650: "attacking your opponents and/or planeswalkers they control" is a flag; `'players'` is "attacking one of your opponents".
   if (
     f.attackingOpponents !== undefined &&
     f.attackingOpponents !== true &&
@@ -1106,7 +1106,7 @@ export function checkObjectSelector(
     const each = sel as Extract<ObjectSelector, { kind: 'each' }>;
     checkFilter(each.filter, `${path}.filter`, out, scope);
     // D-151: "each other creature" besides the one an effect names.
-    // D-600: "each other creature that's attacking ..." of an Aura's attack trigger: besides the creature the trigger is about.
+    // D-650: "each other creature that's attacking ..." of an Aura's attack trigger: besides the creature the trigger is about.
     if (each.except?.kind === 'triggerSubject') {
       checkSubjectRef(each.except, 'permanent', `${path}.except`, scope, out);
     } else if (each.except !== undefined) {
@@ -1145,7 +1145,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
       }
       break;
     case 'triggerAttackedPlayer':
-      // D-598: "that opponent": the player a `playerAttacksOpponent` trigger is about.
+      // D-648: "that opponent": the player a `playerAttacksOpponent` trigger is about.
       if (scope.triggerAttacked !== true) {
         issue(
           out,
@@ -1463,7 +1463,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'aurasAttachedToTriggerSubject':
-      // CR 603.10a, 113.7a (D-604): the Auras that were attached to the permanent the trigger is about as it left.
+      // CR 603.10a, 113.7a (D-654): the Auras that were attached to the permanent the trigger is about as it left.
       if (scope.triggerSubject !== 'permanent') {
         issue(
           out,
@@ -2336,10 +2336,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       break;
     case 'attackedHasMoreLifeThanOtherOpponent':
-      // D-598: no parameters; where it may stand (the intervening "if" of a playerAttacksOpponent trigger) is checked with the trigger (validate.ts).
+      // D-648: no parameters; where it may stand (the intervening "if" of a playerAttacksOpponent trigger) is checked with the trigger (validate.ts).
       break;
     case 'attackersAtYouAtLeast':
-      // D-593: read from the declaration of the attack event; where it may stand (the intervening "if" of an attackBatch trigger) is checked with the trigger (validate.ts).
+      // D-643: read from the declaration of the attack event; where it may stand (the intervening "if" of an attackBatch trigger) is checked with the trigger (validate.ts).
       if (!isCount(c.count) || c.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
       }
@@ -2668,7 +2668,7 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'search' ||
     // D-216: the card a `lookAndSplit` exiled is "the exiled card" ("You may play the exiled card this turn").
     (e?.kind === 'lookAndSplit' && e.exile > 0) ||
-    // D-608: the card a `lookAtTop` put onto the battlefield is "it" ("If an Equipment is put onto the battlefield this way, you may attach it to a creature you control").
+    // D-658: the card a `lookAtTop` put onto the battlefield is "it" ("If an Equipment is put onto the battlefield this way, you may attach it to a creature you control").
     (e?.kind === 'lookAtTop' && e.take?.to === 'battlefield') ||
     // D-327: the cards a `mill` put into a graveyard are "that card" ("Mill a card. You may play that card this turn.").
     e?.kind === 'mill' ||
@@ -3677,7 +3677,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.tapped !== undefined && e.tapped !== true) {
         issue(out, `${path}.tapped`, 'tapped must be true when present');
       }
-      // D-598 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
+      // D-648 (CR 508.4): "that's attacking that opponent": the player the tokens attack.
       if (e.attacking !== undefined) {
         checkPlayerSelector(e.attacking.at, `${path}.attacking.at`, scope, out);
       }
@@ -3838,7 +3838,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'goad':
-      // D-589 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
+      // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'regenerate':
@@ -4224,7 +4224,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'moveToZone':
-      // D-605 (CR 401.4): "in a random order" is for several cards put at the bottom of a library at once.
+      // D-655 (CR 401.4): "in a random order" is for several cards put at the bottom of a library at once.
       if (
         e.random !== undefined &&
         (e.random !== true || e.to !== 'library' || e.position !== 'bottom')
@@ -4435,7 +4435,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.play !== undefined && e.play !== true)
         issue(out, `${path}.play`, 'play must be true when present');
       const objects = e.objects as ChooseSelector | ObjectRef;
-      // D-605: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
+      // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
       if (e.filter !== undefined) {
         if (kindOf(objects) === 'choose') {
           issue(out, `${path}.filter`, 'a choice from the hand has its own filter');
@@ -4854,7 +4854,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'attach':
       // CR 701.3: both are single objects named by reference ("this", a target, "this spell").
-      // D-610 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura or Equipment the trigger is about.
+      // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the Aura or Equipment the trigger is about.
       if (kindOf(e.object) === 'triggerSubject')
         checkSubjectRef(e.object, 'permanent', `${path}.object`, scope, out);
       else checkRef(e.object, 'object', `${path}.object`, scope, out);

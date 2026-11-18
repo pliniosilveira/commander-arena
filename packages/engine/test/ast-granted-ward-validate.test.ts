@@ -1,4 +1,4 @@
-// Issue 89 (D-588): what `validateCard` allows of a granted ward (CR 702.21a): a static ability and a grantKeyword effect may give it with a cost the ward ability can pay
+// Issue 89 (D-638): what `validateCard` allows of a granted ward (CR 702.21a): a static ability and a grantKeyword effect may give it with a cost the ward ability can pay
 // (mana, life, a discard), never with no cost or a cost it cannot pay.
 import { describe, expect, test } from 'vitest';
 import { singleFace } from '../src/cards/fixtures/helpers';
@@ -55,7 +55,7 @@ const grantEffect = (cost: readonly Cost[]): Effect => ({
 const messages = (card: Parameters<typeof validateCard>[0]) =>
   validateCard(card).map((i) => i.message);
 
-describe('a granted ward (D-588)', () => {
+describe('a granted ward (D-638)', () => {
   test.each([
     [[{ kind: 'mana', symbols: ['2'] }]],
     [[{ kind: 'payLife', amount: 3 }]],

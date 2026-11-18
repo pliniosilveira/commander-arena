@@ -1,5 +1,5 @@
 /**
- * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-597): which attack targets a creature may not be declared attacking because of the `cantAttackYou`
+ * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): which attack targets a creature may not be declared attacking because of the `cantAttackYou`
  * static abilities on the battlefield. The abilities are read from the derived abilities of the permanents (CR 604.1), so a permanent that lost its abilities restricts nothing; the
  * creatures are matched as filters of the battlefield read for the controller of the permanent as "you", with the permanent as the source (CR 109.4).
  */

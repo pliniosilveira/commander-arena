@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), Songbirds' Blessing (D-609): "Whenever enchanted creature attacks, reveal cards from the top of your library until you reveal an Aura card. You may
+// Issue 89 (Silverquill Influence), Songbirds' Blessing (D-659): "Whenever enchanted creature attacks, reveal cards from the top of your library until you reveal an Aura card. You may
 // put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order." read through the whole pipeline.
 // The engine runs the nodes in packages/engine/test/scenario-xx-reveal-until-may-put.test.ts.
 import { describe, expect, test } from 'vitest';

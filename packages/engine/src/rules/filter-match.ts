@@ -99,7 +99,7 @@ export interface FilterContext {
    * from the combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfOpponents?: readonly ObjectId[];
-  /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-600). */
+  /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-650). */
   readonly attackersOfOpponentPlayers?: readonly ObjectId[];
   /**
    * The power of this ability's source (`powerLessThanSource`, CR 702.134a, D-120), null when the source
@@ -155,7 +155,7 @@ function attachedToHolds(
 }
 
 /**
- * CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). With `by`, an Aura that player controls (CR 303.4e, D-597).
+ * CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). With `by`, an Aura that player controls (CR 303.4e, D-647).
  * Fails closed without `describeOther`.
  */
 function hasAuraAttached(
@@ -222,7 +222,7 @@ export function matchesFilterWith(
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
     return false;
   }
-  // CR 303.4e (D-597): "enchanted by an Aura you control".
+  // CR 303.4e (D-647): "enchanted by an Aura you control".
   if (filter.enchantedByYou === true && hasAuraAttached(state, obj, ctx, ctx.controller) !== true) {
     return false;
   }
@@ -245,7 +245,7 @@ export function matchesFilterWith(
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
     return false;
   }
-  // D-600 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
+  // D-650 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
   if (
     filter.attackingOpponents === 'players' &&
     !(ctx.attackersOfOpponentPlayers ?? []).includes(obj.id)

@@ -82,7 +82,7 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
-  /** D-598: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
+  /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
   attackedPlayer: {
     readonly selector: PlayerSelector;
     readonly needs: readonly FeatureRef[];
@@ -157,7 +157,7 @@ export interface LowerContext {
    */
   itDied: boolean;
   /**
-   * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-607, CR 603.10a, 303.4f): every event is `dies` of the attached
+   * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
    */
   auraDies: boolean;

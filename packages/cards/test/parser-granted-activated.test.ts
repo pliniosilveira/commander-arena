@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 4 (D-591): an activated ability an Aura gives, in quotes ("Enchanted creature has flying and "Sacrifice a creature: ~ gets +2/+1 until end of
+// Issue 89 (Silverquill Influence), group 4 (D-641): an activated ability an Aura gives, in quotes ("Enchanted creature has flying and "Sacrifice a creature: ~ gets +2/+1 until end of
 // turn."", Fallen Ideal): the real Oracle line read through the whole pipeline, the nodes it lowers to, SYNTHETIC variants and the near misses the grammar must not read. The engine
 // runs what is lowered in packages/engine/test/scenario-xx-granted-activated.test.ts.
 import { describe, expect, test } from 'vitest';

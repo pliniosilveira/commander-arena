@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "When enchanted creature dies, return this card from your graveyard to the battlefield." (D-607; Screams from Within) read through the whole
+// Issue 89 (Silverquill Influence), "When enchanted creature dies, return this card from your graveyard to the battlefield." (D-657; Screams from Within) read through the whole
 // pipeline: the real line, the node it lowers to and the near misses the grammar must not read.
 // The engine runs the node in packages/engine/test/scenario-xx-aura-returns.test.ts.
 import { describe, expect, test } from 'vitest';

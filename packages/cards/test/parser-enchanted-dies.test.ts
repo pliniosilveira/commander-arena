@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Whenever an enchanted creature dies, draw a card for each Aura you controlled that was attached to it." (D-604; Hateful Eidolon) read
+// Issue 89 (Silverquill Influence), "Whenever an enchanted creature dies, draw a card for each Aura you controlled that was attached to it." (D-654; Hateful Eidolon) read
 // through the whole pipeline: the real line, the node it lowers to and the near misses the grammar must not read.
 // The engine runs the node in packages/engine/test/scenario-xx-enchanted-dies.test.ts.
 import { describe, expect, test } from 'vitest';

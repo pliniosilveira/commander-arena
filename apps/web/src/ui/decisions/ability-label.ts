@@ -421,7 +421,7 @@ function recipientText(
     case 'triggerPlayer':
       return 'that player';
     case 'triggerAttackedPlayer':
-      // D-598: the player attacked by the declaration that triggered the ability.
+      // D-648: the player attacked by the declaration that triggered the ability.
       return 'that opponent';
     case 'declinedPlayer':
       return 'the player who declined';

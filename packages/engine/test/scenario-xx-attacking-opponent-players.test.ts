@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-600; Martial Impetus).
+// Issue 89 (Silverquill Influence), "each other creature that's attacking one of your opponents gets +1/+1 until end of turn" (D-650; Martial Impetus).
 // Pins: CR 508.1b (a creature attacks a player, a planeswalker or a battle: one at a planeswalker does not attack the player), CR 611.2c (the group is fixed as the effect
 // resolves), CR 603.2 (the Aura's controller's ability triggers when the enchanted creature attacks), CR 303.4m (the Aura's own abilities).
 // Cards: the SYNTHETIC Aura and Vanilla Planeswalker of this file, the real Grizzly Bears, Healer's Hawk and Llanowar Elves.

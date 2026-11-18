@@ -130,9 +130,9 @@ describe('the dimensions', () => {
       // D-207: "if it targets a tapped creature".
       'spellTargets',
       'attackersAttackedYou',
-      // D-593: "if two or more of those creatures are attacking you and/or planeswalkers you control".
+      // D-643: "if two or more of those creatures are attacking you and/or planeswalkers you control".
       'attackersAtYouAtLeast',
-      // D-598: "if that opponent has more life than another of your opponents".
+      // D-648: "if that opponent has more life than another of your opponents".
       'attackedHasMoreLifeThanOtherOpponent',
       // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
       'abilityResolvedTimes',
@@ -171,7 +171,7 @@ describe('the dimensions', () => {
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',
-      // D-597: "Inklings can't attack you or planeswalkers you control."
+      // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
       'optionalUntap',
       'crewSaddleBonus',
@@ -181,7 +181,7 @@ describe('the dimensions', () => {
       'grantKeyword',
       'grantAbility',
       'restriction',
-      // D-589: "Enchanted creature ... is goaded" (CR 701.15b).
+      // D-639: "Enchanted creature ... is goaded" (CR 701.15b).
       'goaded',
       'costReduction',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".

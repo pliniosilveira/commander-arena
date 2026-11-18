@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 9 (D-596): "Whenever you cast an Aura spell that targets a modified permanent you control, draw a card." (Pearl-Ear, Imperial Advisor): the real
+// Issue 89 (Silverquill Influence), group 9 (D-646): "Whenever you cast an Aura spell that targets a modified permanent you control, draw a card." (Pearl-Ear, Imperial Advisor): the real
 // Oracle line read through the whole pipeline, the node it lowers to, SYNTHETIC variants and the near misses. The engine runs what is lowered in
 // packages/engine/test/scenario-xx-cast-aimed-modified.test.ts.
 import { describe, expect, test } from 'vitest';

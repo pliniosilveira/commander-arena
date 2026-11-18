@@ -1,5 +1,5 @@
 /**
- * Goad (CR 701.15, D-589): a keyword action that makes a creature goaded, a designation: the creature attacks each combat if able and attacks a player other than the
+ * Goad (CR 701.15, D-639): a keyword action that makes a creature goaded, a designation: the creature attacks each combat if able and attacks a player other than the
  * player that goaded it if able (CR 701.15b). Goaded is neither an ability nor part of the copiable values, so it is kept as continuous effects of the game (an effect
  * of a spell or ability, until the goader's next turn, CR 701.15a) and read from the permanents attached to the creature (a static ability that says "is goaded").
  * `rules/combat-legality.ts` reads `goadersOf` where attackers are declared.

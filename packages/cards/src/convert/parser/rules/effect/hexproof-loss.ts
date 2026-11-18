@@ -1,5 +1,5 @@
 /**
- * Effect rule of issue 89 (Silverquill Influence, D-599): "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud."
+ * Effect rule of issue 89 (Silverquill Influence, D-649): "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud."
  */
 import { fail, literal, pattern, sequence } from '../../combinators';
 import type { IrDuration, IrNoun } from '../../ir/types';
@@ -8,7 +8,7 @@ import { type Clauses, single } from './operands';
 
 /**
  * `effect.lose-hexproof-shroud`: "until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b,
- * 702.18a, 611.2c, 613.1f, D-599): the creatures the words name as the effect begins lose the two abilities and can't have them again for the turn. The group is
+ * 702.18a, 611.2c, 613.1f, D-649): the creatures the words name as the effect begins lose the two abilities and can't have them again for the turn. The group is
  * "creatures" and who controls them, nothing else (the engine's `loseHexproofShroud` reads a group of creatures as the effect resolves). Both keywords, in this order,
  * and both again in the second half: another list of abilities is another effect.
  */

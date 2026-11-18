@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Whenever one or more creatures that are enchanted by an Aura you control attack, draw a card." (D-601; Killian, Decisive Mentor)
+// Issue 89 (Silverquill Influence), "Whenever one or more creatures that are enchanted by an Aura you control attack, draw a card." (D-651; Killian, Decisive Mentor)
 // read through the whole pipeline: the real line, the node it lowers to and the near misses the grammar must not read.
 // The engine runs what is lowered in packages/engine/test/scenario-xx-enchanted-attack-batch.test.ts.
 import { describe, expect, test } from 'vitest';

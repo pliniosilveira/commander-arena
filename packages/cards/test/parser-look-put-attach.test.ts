@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), Armored Skyhunter (D-608): "Whenever this creature attacks, look at the top six cards of your library. You may put an Aura or Equipment card from
+// Issue 89 (Silverquill Influence), Armored Skyhunter (D-658): "Whenever this creature attacks, look at the top six cards of your library. You may put an Aura or Equipment card from
 // among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your
 // library in a random order." read through the whole pipeline: the real line, the nodes it lowers to and the near misses.
 // The engine runs the nodes in packages/engine/test/scenario-xx-look-put-attach.test.ts.

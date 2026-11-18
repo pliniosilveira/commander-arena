@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-602; Flickering Ward).
+// Issue 89 (Silverquill Influence), "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-652; Flickering Ward).
 // Pins: CR 702.16a-d (protection from a color: can't be targeted by, enchanted by or damaged by sources of that color), CR 607.2d (the choice made as the Aura entered),
 // CR 704.5m (an Aura attached to an illegal object is put into its owner's graveyard: the exception keeps this one), CR 303.4d.
 // Cards: the SYNTHETIC Auras of this file, the real Grizzly Bears and Lightning Bolt.

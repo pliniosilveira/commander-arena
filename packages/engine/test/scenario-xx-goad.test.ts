@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), goad (D-589): the keyword action and the designation, an effect ("Goad target creature.") and a static ability of an Aura ("Enchanted
+// Issue 89 (Silverquill Influence), goad (D-639): the keyword action and the designation, an effect ("Goad target creature.") and a static ability of an Aura ("Enchanted
 // creature ... is goaded.").
 // Pins: CR 701.15a (a goad lasts until the next turn of the controller of the spell or ability), CR 701.15b (a goaded creature attacks each combat if able and attacks a
 // player other than the goader if able; goaded is a designation, not an ability), CR 701.15c (several players may goad one creature), CR 701.15d (goading it again by the

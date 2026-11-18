@@ -109,7 +109,7 @@ export const CONDITION_OBJECT_HAS_KEYWORD = defineRule<IrCondition>({
     const word = KEYWORD_WORDS(ctx, who.pos);
     if (!word.ok) return word;
     const [keyword, ...more] = word.value;
-    // D-588: a ward has a cost the filter of a condition cannot compare, so "it has ward {2}" is not read as a test.
+    // D-638: a ward has a cost the filter of a condition cannot compare, so "it has ward {2}" is not read as a test.
     if (keyword === undefined || more.length > 0 || keyword.startsWith('ward '))
       return fail(ctx, pos);
     const lead = who.value[0].slice(0, -' has '.length);

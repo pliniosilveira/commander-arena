@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), Ajani's Chosen (D-610): "Whenever an enchantment you control enters, create a 2/2 white Cat creature token. If that enchantment is an Aura, you may
+// Issue 89 (Silverquill Influence), Ajani's Chosen (D-660): "Whenever an enchantment you control enters, create a 2/2 white Cat creature token. If that enchantment is an Aura, you may
 // attach it to the token." read through the whole pipeline: the real line, the nodes it lowers to and the near misses.
 // The engine runs the nodes in packages/engine/test/scenario-xx-attach-entering-aura.test.ts.
 import { describe, expect, test } from 'vitest';

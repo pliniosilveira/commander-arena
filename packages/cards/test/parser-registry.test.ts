@@ -147,7 +147,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
   ),
   'trigger.dies-own-graveyard': whenever,
-  // D-604: "an enchanted creature dies".
+  // D-654: "an enchanted creature dies".
   'trigger.enchanted-creature-dies': whenever,
   'keyword.replicate': asIs,
   'keyword.ward': asIs,
@@ -436,7 +436,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.those-attacking-you': permanent(
     (e) => `Whenever an opponent attacks with creatures, if ${e}, draw a card.`,
   ),
-  // D-603: the intervening "if" of "a player attacks one of your opponents".
+  // D-653: the intervening "if" of "a player attacks one of your opponents".
   'condition.attacked-has-more-life': permanent(
     (e) => `Whenever a player attacks one of your opponents, if ${e}, draw a card.`,
   ),
@@ -498,7 +498,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.each-other-opponent': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.other-targets': spell((e) => `~ deals 1 damage to any target and 1 damage to ${e}.`),
-  // D-604: the Auras the controller controlled that were attached to the creature that died.
+  // D-654: the Auras the controller controlled that were attached to the creature that died.
   'amount.for-each-aura-attached': permanent(
     (e) => `Whenever an enchanted creature dies, draw a card ${e}.`,
   ),
@@ -650,7 +650,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.you-attack-with-one-or-more': whenever,
   'trigger.enters-one-or-more': whenever,
   'trigger.cast-or-copy': whenever,
-  // D-600: "each other creature that's attacking one of your opponents".
+  // D-650: "each other creature that's attacking one of your opponents".
   'noun.each-other-attacking-opponent': permanent(
     (e) => `When ~ enters, ${e} gets +1/+0 until end of turn.`,
   ),

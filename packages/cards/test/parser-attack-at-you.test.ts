@@ -1,4 +1,4 @@
-// Issue 89 (Silverquill Influence), group 6 (D-593): "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you
+// Issue 89 (Silverquill Influence), group 6 (D-643): "Whenever an opponent attacks with creatures, if two or more of those creatures are attacking you and/or planeswalkers you
 // control, ..." (Mangara, the Diplomat; Tomik, Wielder of Law): the real Oracle lines read through the whole pipeline, the nodes they lower to, SYNTHETIC variants and the near
 // misses the grammar must not read. The engine runs what is lowered in packages/engine/test/scenario-xx-attack-at-you.test.ts.
 import { describe, expect, test } from 'vitest';

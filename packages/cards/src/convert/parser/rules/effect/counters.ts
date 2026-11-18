@@ -48,7 +48,7 @@ const COUNTER_OPERANDS = [
 ] as const;
 
 /**
- * D-603 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control", one permanent the controller chooses as the effect resolves. Only the plain
+ * D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control", one permanent the controller chooses as the effect resolves. Only the plain
  * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
  */
 const ADD_COUNTERS_OPERANDS = [...COUNTER_OPERANDS, 'noun.a-permanent'] as const;
@@ -108,7 +108,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     // multiply, which the engine's one amount cannot say.
     satisfy(
       sequence(
-        // D-603 (Breena, the Demagogue): "... and you put two +1/+1 counters on a creature you control": the controller as the subject.
+        // D-653 (Breena, the Demagogue): "... and you put two +1/+1 counters on a creature you control": the controller as the subject.
         map(sequence(optional(literal('you '), null), literal('put ')), () => 'put '),
         family<IrAmount>('amount', { only: COUNT_ONLY }),
         literal(' '),
