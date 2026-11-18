@@ -74,6 +74,11 @@ export interface ManaObject {
    * Treasure is sacrificed to make its mana, so the permanent is gone when the mana is spent). Absent when unknown (mana a test adds).
    */
   readonly sourceTypes?: readonly string[];
+  /**
+   * D-650 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end": it does not empty as a step or a phase ends, but it does when the cleanup step
+   * of the turn ends (the effect that kept it ends with the turn). Absent for most mana.
+   */
+  readonly stays?: true;
 }
 
 /** A parsed mana cost: how many of each colored symbol, generic, and the special symbols. */

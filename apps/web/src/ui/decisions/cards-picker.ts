@@ -416,7 +416,9 @@ const WAITING_WORDS: Readonly<Record<NonNullable<GameView['waitingOn']>['purpose
   pair: 'choosing a card in a graveyard',
   // CR 700.3 (D-303): separating revealed cards into two piles, and choosing one of the piles.
   separate: 'separating the revealed cards into two piles',
-  pile: 'choosing one of two piles of the revealed cards',
+  pile: 'choosing one of two piles of cards',
+  // CR 608.2d (D-660): an opponent chooses one of the cards exiled.
+  opponentChoice: 'choosing one of the exiled cards',
 };
 
 /**

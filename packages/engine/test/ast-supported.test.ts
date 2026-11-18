@@ -70,6 +70,8 @@ const EXECUTABLE_KEYWORDS = [
   'improvise', // scenario-xx-pay-options
   'delve', // scenario-xx-pay-options
   'cascade', // scenario-xx-cascade
+  'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
+  'retrace', // scenario-xx-prismari-g3-retrace (D-667)
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
   'eternalize', // scenario-xx-hashaton-g5
@@ -168,6 +170,8 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   improvise: { kind: 'improvise' },
   delve: { kind: 'delve' },
   cascade: { kind: 'cascade' },
+  demonstrate: { kind: 'demonstrate' },
+  retrace: { kind: 'retrace' },
   unearth: { kind: 'unearth', cost: [{ kind: 'mana', symbols: ['R'] }] },
   encore: { kind: 'encore', cost: [{ kind: 'mana', symbols: ['3', 'R'] }] },
   eternalize: { kind: 'eternalize', cost: [{ kind: 'mana', symbols: ['5', 'U', 'U'] }] },
@@ -338,7 +342,7 @@ describe('supported feature gate', () => {
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('triggered');
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('activated');
     expect(SUPPORTED_FEATURES.effectKinds).toContain('createToken');
-    expect(SUPPORTED_FEATURES.sacrificeSelectors).toEqual(['this', 'choose', 'each']);
+    expect(SUPPORTED_FEATURES.sacrificeSelectors).toEqual(['this', 'choose', 'each', 'moved']);
     expect(SUPPORTED_FEATURES.tokenPresets).toEqual(['Treasure', 'Food', 'Clue']);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',

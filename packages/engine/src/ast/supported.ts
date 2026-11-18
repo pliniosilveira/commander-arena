@@ -76,13 +76,7 @@ function copySourceIssues(filter: ObjectFilter | null, path: string, out: AstIss
     });
     return;
   }
-  if (mightMatchAura(filter)) {
-    out.push({
-      path,
-      message:
-        'a token copy of a permanent that could be an Aura is not implemented by the engine yet (CR 303.4f)',
-    });
-  }
+  // D-668 (CR 303.4f): a token copy of an Aura asks what it enchants as it enters (`rules/enter-token.ts`), so a source that could be an Aura is run.
   // D-211 (CR 614.12): a token that is a copy of a land asks the questions of a shock land and of a land that reveals a card as a permanent does
   // (`rules/enter-token.ts`), so a copy whose source could be a land is run.
 }
@@ -304,7 +298,12 @@ function walkEffect(
       // CR 611.2a: only "until end of turn" has an end the engine runs (CR 514.2). The source must
       // be a permanent on the battlefield (a copy of an Aura or a land is a copy effect on an
       // object that already entered, so nothing is asked, unlike a token).
-      if (!SUPPORTED_FEATURES.durationKinds.includes(effect.duration)) {
+      // D-642 (CR 611.2a, 707.2): and no end at all (`permanent`): "each other token you control becomes a copy of that token" is a layer 1 copy effect that lasts as long as the
+      // permanent does.
+      if (
+        effect.duration !== 'permanent' &&
+        !SUPPORTED_FEATURES.durationKinds.includes(effect.duration)
+      ) {
         out.push({
           path: `${path}.duration`,
           message: `duration "${effect.duration}" is not implemented by the engine yet`,

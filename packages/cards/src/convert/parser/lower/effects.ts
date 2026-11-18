@@ -87,6 +87,9 @@ import { PLANESWALKER_LOWERINGS } from './planeswalker';
 import { POPULATE_LOWERINGS } from './populate';
 import { PREPARE_LOWERINGS } from './prepare';
 import { PREVENT_DAMAGE } from './prevent';
+import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
+import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
+import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
@@ -755,6 +758,15 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const spec = arg(clause, 'mana');
     if (spec?.kind !== 'manaSpec') return failure(clause);
+    // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
+    // ends. A choice of mana would be chosen later than the sentence says, so only fixed mana.
+    const staysFlag = arg(clause, 'stays');
+    const stays = staysFlag?.kind === 'flag' && staysFlag.value;
+    if (stays) {
+      const blockedStays = missingFeatures(['selector:manaStays']);
+      if (blockedStays.length > 0) return failure(clause, blockedStays);
+      if (spec.what.kind !== 'symbols') return failure(clause);
+    }
     // "Add {R} for each tapped land your opponents control." (stage P34, D-152, CR 106.1): the fixed mana once for each of an amount read
     // as the effect runs; a spell or a triggered ability only (a mana ability fixes its production before it resolves, CR 605.1a).
     if (arg(clause, 'times') !== undefined) {
@@ -782,7 +794,17 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
       const mana = spec.what.symbols as ManaColor[];
       return {
         ok: true,
-        value: [{ kind: 'addMana', mana: { kind: 'fixed', mana, times: times.value } }],
+        value: [
+          {
+            kind: 'addMana',
+            mana: {
+              kind: 'fixed',
+              mana,
+              times: times.value,
+              ...(stays ? { staysUntilEndOfTurn: true as const } : {}),
+            },
+          },
+        ],
         rule: clause.rule,
       };
     }
@@ -793,9 +815,18 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
     if (spec.what.kind !== 'symbols') {
       return { ok: false, needs: ['selector:colorChoice'], at: spec.span, rule: spec.rule };
     }
+    const produced = lowerMana(spec);
     return {
       ok: true,
-      value: [{ kind: 'addMana', mana: lowerMana(spec) }],
+      value: [
+        {
+          kind: 'addMana',
+          mana:
+            stays && produced.kind === 'fixed'
+              ? { ...produced, staysUntilEndOfTurn: true as const }
+              : produced,
+        },
+      ],
       rule: clause.rule,
     };
   },
@@ -1401,6 +1432,30 @@ function ownTokenName(named: string, ctx: LowerContext): string | null {
 function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effects> {
   const token = arg(clause, 'token');
   if (token?.kind !== 'token') return failure(clause);
+  // "For each opponent, create two 3/3 ... tokens with flying that attack that opponent this turn if able." (Prismari deck group 2, D-652, CR 111.2, 508.1d): the same tokens, made for
+  // each opponent and required to attack it. A custom creature token only, with no controller of its own.
+  const perOpponent = arg(clause, 'perOpponentAttack');
+  if (perOpponent?.kind === 'flag' && perOpponent.value) {
+    const blockedEach = missingFeatures(['selector:tokensPerOpponent']);
+    if (blockedEach.length > 0) return failure(clause, blockedEach);
+    const { perOpponentAttack: _flag, ...args } = clause.args;
+    const inner = lowerCreateToken({ ...clause, args }, ctx);
+    if (!inner.ok) return inner;
+    const [made, ...rest] = inner.value;
+    if (
+      made?.kind !== 'createToken' ||
+      rest.length > 0 ||
+      made.token.kind !== 'custom' ||
+      made.controller !== undefined
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ ...made, forEachOpponent: { mustAttack: true } }],
+      rule: clause.rule,
+    };
+  }
   const count = lowerAmount(token.count, ctx, clause.rule);
   if (!count.ok) return count;
   const at = { at: token.span, rule: token.rule };
@@ -1664,6 +1719,10 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...FEATHER_G2_LOWERINGS,
   // D-459, D-460: "It gains haste.", "Exile it at the beginning of the next end step.", "If it would leave the battlefield, exile it instead ...", "Put each creature card exiled with ~ onto the battlefield ...".
   ...GISA_G4_LOWERINGS,
+  ...PRISMARI_G1_LOWERINGS,
+  ...PRISMARI_G2_LOWERINGS,
+  // Prismari deck, group 3 (issue 87): spells cast from among exiled cards, piles of exiled cards, and the instructions that exile them.
+  ...PRISMARI_G3_LOWERINGS,
   // D-517, D-519: "Those creatures don't untap during ... next untap step", "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_LOWERINGS,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If it's a creature or land card, draw a card."
@@ -1743,6 +1802,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
               : test === 'attachedTo' ||
                   test === 'putThisWay' ||
                   test === 'exiledThisWay' ||
+                  test === 'triggerSpellManaValue' ||
                   test === 'milledThisWay'
                 ? 'objectMatches'
                 : test === 'discardedThisWay' ||

@@ -39,13 +39,16 @@ describe('ability labels', () => {
 
   test('Cycling reads as on the card', () => {
     const cycling = ability({
-      cost: [{ kind: 'discardThis' }, mana('2')],
+      cost: [{ kind: 'discardThis', cycling: true }, mana('2')],
       functionsIn: 'hand',
     });
     expect(isCycling(cycling)).toBe(true);
     expect(activationLabel(bear, entry(cycling, 1))).toBe('Cycling {2}');
     const life = ability({
-      cost: [{ kind: 'discardThis' }, { kind: 'payLife', amount: 2 }],
+      cost: [
+        { kind: 'discardThis', cycling: true },
+        { kind: 'payLife', amount: 2 },
+      ],
       functionsIn: 'hand',
     });
     expect(activationLabel(bear, entry(life))).toBe('Cycling—Pay 2 life');

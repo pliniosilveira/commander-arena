@@ -34,6 +34,7 @@ import type { GameObject, GameState, StackData } from '../state/types';
 import {
   alternativeOf,
   buybackCostOf,
+  costPerExtraTargetOf,
   escalateCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
@@ -86,6 +87,8 @@ export interface SpellCost {
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
+  /** D-667 (CR 702.81a): the cards that may be discarded are those this filter matches ("a land card"); absent when any card may be. */
+  readonly discardFilter?: ObjectFilter;
   /** The filter of the single Behold cost, or null. */
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
@@ -127,6 +130,7 @@ export function alternativeOfStack(
   stack: StackData | null | undefined,
 ): CastAlternative | undefined {
   if (stack?.flashback === true) return 'flashback';
+  if (stack?.retrace === true) return 'retrace';
   if (stack?.free === true) return 'free';
   return stack?.alt;
 }
@@ -248,6 +252,11 @@ export interface CostRequest {
    */
   readonly modes?: number;
   /**
+   * How many targets the spell has (CR 601.2c), for the cost "for each target beyond the first" (D-641): left out, the targets the spell on the stack has chosen
+   * (`StackData.chosenTargets`); 0 for a spell that is not on the stack yet.
+   */
+  readonly targets?: number;
+  /**
    * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-433), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
    * a caller has `modes` for the escalate cost it passes the set too.
    */
@@ -345,6 +354,12 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
+  // CR 601.2f (D-641): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
+  const perTarget = costPerExtraTargetOf(face);
+  if (perTarget !== null) {
+    const targets = request.targets ?? spell.stack?.chosenTargets.length ?? 0;
+    for (let i = 1; i < targets; i += 1) symbols.push(...manaSymbolsOf(perTarget));
+  }
   // CR 700.2h, 702.183a (D-433): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
   symbols.push(
     ...manaSymbolsOf(modeCostsOf(face, request.modeSet ?? spell.stack?.chosenModes ?? [])),
@@ -383,6 +398,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
+  // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
+  if (alternative === 'retrace') discard += 1;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(
@@ -417,6 +434,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
+    ...(alternative === 'retrace' ? { discardFilter: RETRACE_DISCARD } : {}),
     behold,
     exile,
     exileFromHand,
@@ -458,6 +476,30 @@ export function exilable(state: GameState, seat: SeatId, spell: ObjectId): Objec
 /** The cards in `seat`'s hand that can be discarded for the cost of `spell` (never the spell). */
 export function discardable(state: GameState, seat: SeatId, spell: ObjectId): ObjectId[] {
   return getSeat(state, seat).hand.filter((id) => id !== spell);
+}
+
+/** D-667 (CR 702.81a): the card discarded for retrace is a land card. */
+export const RETRACE_DISCARD: ObjectFilter = { types: ['land'] };
+
+/**
+ * The cards of the hand that can be discarded for the cost of `spell` when the cost names a kind of card (`filter`: "a land card", CR 702.81a, D-666); any card but the spell
+ * without one.
+ */
+export function discardableFor(
+  state: GameState,
+  seat: SeatId,
+  spell: ObjectId,
+  filter: ObjectFilter | undefined,
+): ObjectId[] {
+  const hand = discardable(state, seat, spell);
+  if (filter === undefined) return hand;
+  return hand.filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(state, card, { ...filter, zone: 'hand' }, { controller: seat, source: spell })
+    );
+  });
 }
 
 /**
@@ -548,7 +590,7 @@ export function canPaySpellCost(
   // CR 119.4: life can be paid only if the life total is at least the payment; paying all of it is allowed (the player then has 0 life and
   // loses when state-based actions are next checked, CR 704.5a).
   if (cost.life > 0 && (lifeTotalIsLocked(state, seat) || life < cost.life)) return false;
-  if (cost.discard > discardable(state, seat, spell.id).length) return false;
+  if (cost.discard > discardableFor(state, seat, spell.id, cost.discardFilter).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
   // An optional exile cost can always be paid by choosing zero cards.
   if (cost.behold !== null && beholdCandidates(state, seat, spell.id, cost.behold).length === 0) {

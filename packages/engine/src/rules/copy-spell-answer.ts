@@ -63,7 +63,7 @@ export function answerCopyTargets(
   const next = patchObject({ ...state, pending: null }, copy.id, {
     stack: { ...copy.stack, chosenTargets: kept },
   });
-  const events = becameTargetEvents(next, copy.id, res.controller);
+  const events = becameTargetEvents(next, copy.id, copy.controller);
   const after: Instruction = {
     ...head,
     count: head.count - 1,

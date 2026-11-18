@@ -64,6 +64,9 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],
   cascade: ['Csc', 'Cascade'],
+  // Prismari group 3 (D-666, D-667): Demonstrate and Retrace.
+  demonstrate: ['Dem', 'Demonstrate'],
+  retrace: ['Rtr', 'Retrace'],
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],
   soulbond: ['Sbd', 'Soulbond'],
@@ -214,6 +217,8 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   mustBlock: ['Blk!', 'Must block this turn if able'],
   doesntUntap: ['NoUnt', "Doesn't untap"],
   cantBeCountered: ['NoCtr', "Can't be countered"],
+  // Prismari group 2: "This creature can block only creatures with flying" (CR 509.1b).
+  canBlockOnlyFlying: ['BlkFly', 'Can block only creatures with flying'],
   // Galadriel group 3: "Its activated abilities can't be activated this turn" (CR 602.5).
   cantActivateAbilities: ['NoAct', "Its activated abilities can't be activated"],
 };

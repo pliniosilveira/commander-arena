@@ -525,6 +525,7 @@ export interface GameView {
       | 'lookSplit'
       | 'separate'
       | 'pile'
+      | 'opponentChoice'
       | 'behold'
       | 'additionalExile'
       | 'reveal'

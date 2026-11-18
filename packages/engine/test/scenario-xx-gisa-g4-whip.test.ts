@@ -237,7 +237,8 @@ describe('the delayed exile at the beginning of the next end step (CR 603.7, 603
     reanimate(g);
     g.passAll();
     g.advanceTo('end');
-    g.expect.stack([`${BEARS} (ability)`]);
+    // D-639 (CR 603.7e): the source of a delayed triggered ability is the source of the ability that created it, the Whip, not the creature it exiles.
+    g.expect.stack([`${WHIP} (ability)`]);
     g.expect.zone(BEARS, 'battlefield', { seat: 0 });
     g.passAll();
     g.expect.zone(BEARS, 'exile', { seat: 0 });
@@ -287,7 +288,8 @@ describe('the delayed exile at the beginning of the next end step (CR 603.7, 603
     reanimate(g);
     g.passAll();
     g.advanceTo('end');
-    g.expect.stack([`${BEARS} (ability)`]);
+    // D-639 (CR 603.7e): the source of a delayed triggered ability is the source of the ability that created it, the Whip, not the creature it exiles.
+    g.expect.stack([`${WHIP} (ability)`]);
     // The ability on the stack names the object; it still exiles it when it resolves.
     g.passAll();
     g.expect.zone(BEARS, 'exile', { seat: 0 });
