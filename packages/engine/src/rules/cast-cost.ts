@@ -711,9 +711,7 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
     if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.
     const home =
-      alt.kind === 'escape' ||
-      alt.kind === 'harmonize' ||
-      alt.kind === 'sacrificeFromGraveyard'
+      alt.kind === 'escape' || alt.kind === 'harmonize' || alt.kind === 'sacrificeFromGraveyard'
         ? 'graveyard'
         : alt.kind === 'foretell'
           ? 'exile'
