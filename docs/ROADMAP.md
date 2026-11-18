@@ -1,6 +1,6 @@
 # Roadmap: deferred work and known limitations
 
-What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the decisions are in `docs/decisions/`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
+What is deferred, blocked or knowingly incomplete (SPEC 12: no stubs in supported paths). Finished work is not listed here: the design is in `docs/ARCHITECTURE.md`, the mechanics in `docs/MECHANICS.md`. For what is happening now, read the open issues and pull requests; for the milestone definitions, SPEC section 15. When a limit below is fixed, delete its line in the same change.
 
 Every limit under "Deferred engine features" and "Deferred grammar" is refused or left unread (`validateCard`, the parser), so no supported card reaches it. The rows of "Known rules deviations" are the exception: they are places where supported play can differ from the Comprehensive Rules, and they are the first candidates for fixes.
 

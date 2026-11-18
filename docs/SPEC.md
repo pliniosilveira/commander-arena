@@ -30,7 +30,7 @@ Commander Arena is an unofficial, free, in-browser game of Magic: The Gathering 
 
 ### 4.1 Stack
 
-Defaults are recorded in `docs/decisions/repo.md` (D-029, D-030, D-032); deviations need a decision bullet (`docs/decisions/README.md`).
+Defaults are listed in section 17.7; deviations need a decision bullet (`docs/decisions/README.md`).
 
 - TypeScript in strict mode with pnpm workspaces, exact pinned dependencies. Biome for linting and formatting; dependency-cruiser for the package boundaries. React 19 with Vite, Zustand for UI state, Comlink for the Worker RPC. Zod schemas for serialized data (the AST, `GameState`, the card pipeline). Vitest for unit and scenario tests, fast-check for property tests, Playwright for browser tests.
 - Packages: `packages/engine` (pure rules engine: no DOM, network, timers, Node built-ins or randomness; imports only itself and `zod`), `packages/cards` (decklist parsing, Scryfall client and cache, the Oracle parser, the engine's real-card fixtures, validation, coverage tooling), `packages/ai` (agents; depends only on the engine's public API), `apps/web` (React UI; the engine and AI run in a Web Worker so the UI never freezes). A lint rule fails the build when a package imports what it must not (`AGENTS.md`, `tools/boundaries`).
@@ -271,7 +271,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 | `AGENTS.md`, `CLAUDE.md` | Standing instructions for any coding agent (setup, commands, codebase rules). `CLAUDE.md` imports `AGENTS.md`. |
 | `docs/SPEC.md` | This document. Changed only with the owner's approval. |
 | `docs/ARCHITECTURE.md` | Module map, state model, data flow; real and planned kept apart. |
-| `docs/decisions/` | The decisions that bind future work, by topic, and one file for each new one (`README.md`). |
+| `docs/decisions/README.md` | The few decisions that are written in no other document. |
 | `docs/rules/` | The CR text, `RULES_VERSION.md` and bulletins. |
 | `docs/RULES_COVERAGE.md`, `docs/MECHANICS.md` | Rules support by CR section; the per-mechanic catalogue, read before adding anything. |
 | `docs/CARD_SUPPORT_PLAYBOOK.md` | The procedure of 8.3 and its lessons learned. |
@@ -312,7 +312,7 @@ Together with the code, these are the project's long-term memory: a future sessi
 
 ## 17. Amendments index
 
-Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20 and 2026-11-08. Their text is not kept: each line says what the amendment decided and where it now lives, or which decision removed or superseded it. Where an amendment disagreed with an earlier section, the amendment won; the sections above already include the result. The reasoning of the decisions that still bind is in `docs/decisions/` under the D-number shown; the others are in the removed log (`docs/decisions/README.md` says how to read it).
+Thirty-four amendments (A1 to A34) were approved by the owner between 2026-10-20 and 2026-11-08. Their text is not kept: each line says what the amendment decided and where it now lives, or which decision removed or superseded it. Where an amendment disagreed with an earlier section, the amendment won; the sections above already include the result. The reasoning is in the removed log under the D-number shown (`docs/decisions/README.md` says how to read it).
 
 ### 17.1 Engine architecture
 

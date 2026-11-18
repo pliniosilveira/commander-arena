@@ -10,13 +10,13 @@ The long-term goal is that the engine supports 100% of the existing cards; a car
 
 Priorities, in order: rules correctness for every card marked supported; honesty (a card the engine does not fully understand is flagged, never guessed); determinism and testability; a legal and competent AI; polish.
 
-Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16) and `docs/decisions/` (the few decisions that still bind future work, by topic). When the SPEC and the CR disagree, the CR wins; record the discrepancy as a decision bullet.
+Authoritative documents: `docs/SPEC.md` (the short current specification; section 17 is the index of amendments A1 to A31, whose results are in sections 1 to 16) and `docs/decisions/README.md` (the few decisions written nowhere else). When the SPEC and the CR disagree, the CR wins; record the discrepancy as a decision bullet.
 
 ## Session start checklist
 
 1. Read this file.
 2. Read the SPEC sections your task touches: engine 4 and 5, cards 6 to 8, AI 9, UI 10, tests 12, milestones 15; section 17 only to resolve an amendment number cited in the code.
-3. Read the topic file of `docs/decisions/` for the area you will change (`engine.md`, `cards.md`, `ai.md`, `web.md`, `repo.md`), not the whole folder. Check `docs/ARCHITECTURE.md` to see what exists and what is only planned.
+3. Check `docs/ARCHITECTURE.md` to see what exists and what is only planned.
 4. Run `git status` and `git branch --show-current`. Work on a branch of its own for the task (`support-<deck>`, `fix-<topic>`, `feat-<topic>`), never on `main`.
 5. Run the checks once to learn the baseline (commands below).
 
@@ -110,7 +110,7 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 
 | Document | Update when |
 | --- | --- |
-| `docs/decisions/` | Only when you make a decision that binds future work (see below), including any deviation from the SPEC's stack defaults. |
+| `docs/decisions/README.md` | Only for a decision that binds future work and has no other home (see below). |
 | `docs/ARCHITECTURE.md` | A module, type or data flow changes. Move items from planned to real in the same change. |
 | `docs/ROADMAP.md` | Work is deferred or a known limitation is found. |
 | `docs/RULES_COVERAGE.md` | Rules support changes. |
@@ -118,7 +118,7 @@ References in the docs and in code comments to `docs/STATUS.md`, `docs/progress/
 | `README.md` | User-facing behavior changes. |
 | `docs/SPEC.md` | Only with the human's approval. |
 
-Most pull requests record no decision. A decision is an architecture or stack choice, a policy, or a deliberate deviation from the CR or the SPEC; how one card or one rule is built is not (that goes in the pull request, a comment that cites the CR rule, and `docs/MECHANICS.md`), and a convention already written in this file, the playbook or a skill needs none either. A decision is one bullet of at most 60 words in the topic file of `docs/decisions/`: no new file, no number, no template (`docs/decisions/README.md`; `tools/docs/decisions.test.ts` enforces it). An old `D-nnn` in code is history.
+Most pull requests record no decision. A decision is an architecture or stack choice, a policy, or a deliberate deviation from the CR or the SPEC; how one card or one rule is built is not (that goes in the pull request, a comment that cites the CR rule, and `docs/MECHANICS.md`), and a convention already written in this file, the playbook or a skill needs none either. When it does bind future work, write it in the document that covers the subject (this file, the SPEC, `ARCHITECTURE.md`, `ROADMAP.md`); only a decision with no such home is one bullet of at most 60 words in `docs/decisions/README.md` (no new file, no number, no template; `tools/docs/decisions.test.ts` enforces it). An old `D-nnn` in code is history.
 
 Do not write a test count into any document; it goes stale. Say how to run the checks instead.
 
@@ -126,7 +126,7 @@ Do not write a test count into any document; it goes stale. Say how to run the c
 
 - One branch and one pull request per task (a deck, a fix, a feature), named for it (`support-niv-mizzet`, `fix-auto-mana`). A branch that needs the changes of a pull request that is not merged yet is cut from that pull request's branch, and the pull request says "stacked on #N". Merge to `main` only after all checks pass. `main` is always deployable.
 - Never push to `main` directly.
-- Bump `PARSER_VERSION` and `ENGINE_VERSION` and regenerate `golden.expected.json` and `derive-digest.expected.json` once per pull request, as its last commits after merging `main` in, not after every group (`docs/decisions/repo.md`). Until then the golden and derive-digest checks of a deck pull request fail on purpose. `docs/CARD_SUPPORT_PLAYBOOK.md` step 9 has the order and the commands.
+- Bump `PARSER_VERSION` and `ENGINE_VERSION` and regenerate `golden.expected.json` and `derive-digest.expected.json` once per pull request, as its last commits after merging `main` in, not after every group (per-group bumps made every merge of `main` conflict). Until then the golden and derive-digest checks of a deck pull request fail on purpose. `docs/CARD_SUPPORT_PLAYBOOK.md` step 9 has the order and the commands.
 - Commit messages: a short imperative subject, then a body that says why. Attribution trailers are added by the harness; do not hardcode a model name.
 - Do not rewrite history that others may have pulled. A conflict is resolved by merging `main` in; a conflict in a generated file (the golden snapshot, the version constants, the derive digests) by merging and regenerating it with the repository's command, never by hand.
 - The GitHub tool that opens a pull request appends a footer with a link to the private session to its description, and this repository is public: edit the description right after creating the pull request, to remove that line (the edit stays removed), and keep session links out of commits and comments.
