@@ -581,6 +581,7 @@ describe('unmatched abilities', () => {
       'effect.meld',
       'effect.flicker',
       'effect.return-delayed',
+      'effect.return-this-card-delayed',
       'effect.return-at-upkeep',
       'effect.exile',
       'effect.return',

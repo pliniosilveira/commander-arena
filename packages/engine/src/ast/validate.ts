@@ -1330,6 +1330,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
+        // D-607: the Aura's own trigger "when enchanted creature dies".
+        ...(a.trigger?.kind === 'dies' && kindOf(a.trigger.what) === 'attached'
+          ? { auraDiesTrigger: true }
+          : {}),
         // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
         ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
           ? { entersX: true }

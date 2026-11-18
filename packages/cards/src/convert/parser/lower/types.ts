@@ -157,6 +157,11 @@ export interface LowerContext {
    */
   itDied: boolean;
   /**
+   * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-607, CR 603.10a, 303.4f): every event is `dies` of the attached
+   * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
+   */
+  auraDies: boolean;
+  /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
    */
@@ -285,6 +290,7 @@ export function newContext(
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,
+    auraDies: false,
     itDied: false,
     cardName,
     selfName: '',

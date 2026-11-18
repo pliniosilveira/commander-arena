@@ -424,3 +424,28 @@ export const DELAYED_RETURN: Lowering<IrClause, Effects> = {
     };
   },
 };
+
+/**
+ * "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step." (D-607, CR 603.7, 603.7c, 400.7, 303.4f): the engine's `delayedTrigger`
+ * at the end step of each turn whose effect puts the card of the Aura that has the ability (`thisCard`, in the graveyard by then) onto the battlefield under the control of the
+ * controller of the ability, where it chooses what it enchants (`rules/aura-entry.ts`). Refused anywhere but the "dies" trigger of the attached creature.
+ */
+export const DELAYED_RETURN_THIS_CARD: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnThisCard',
+  id: 'lower.delayed-return-this-card',
+  needs: ['effect:delayedTrigger', 'effect:moveToZone', 'selector:thisCard'],
+  lower(clause, ctx): LowerResult<Effects> {
+    if (!ctx.auraDies) return failure(clause);
+    const back: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'thisCard' },
+      to: 'battlefield',
+      controller: 'you',
+    };
+    return {
+      ok: true,
+      value: [{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};

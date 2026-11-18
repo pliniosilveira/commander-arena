@@ -1,5 +1,5 @@
 {
-  "parserVersion": 138,
+  "parserVersion": 139,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1001,19 +1001,10 @@
     "276eccd6-4a76-46e8-b604-94472e618115": {
       "name": "Ghoulish Impetus",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return-self-attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "eedd81e4"
+      "ast": "61887e91"
     },
     "27b047e3-0d41-45e2-98e9-9391d7923a1e": {
       "name": "Exotic Orchard",
@@ -4209,18 +4200,10 @@
     "a3b3b9ae-1e48-481d-80a5-7e2a26cf2f50": {
       "name": "Screams from Within",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "When enchanted creature dies, return this card from your graveyard to the battlefield.",
-          "reason": "notRunnable",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "0fac0212"
+      "ast": "b1cc82ef"
     },
     "a3f10772-d055-419d-a535-4f094eaf437c": {
       "name": "Borrowing 100,000 Arrows",
@@ -6709,7 +6692,7 @@
       "total": 61
     },
     "acceptance": {
-      "supported": 443,
+      "supported": 445,
       "total": 480
     }
   }

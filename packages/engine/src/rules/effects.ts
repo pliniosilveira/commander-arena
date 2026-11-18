@@ -1218,7 +1218,7 @@ function runEffect(
         const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
         const cards =
-          effect.effect.objects.kind === 'triggerCard'
+          effect.effect.objects.kind === 'triggerCard' || effect.effect.objects.kind === 'thisCard'
             ? resolveObjects(state, effect.effect.objects, ctx, targets)
             : (res.lastMoved ?? []);
         return done({

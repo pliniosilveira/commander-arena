@@ -30,6 +30,7 @@ import {
   BECOMES,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
+  DELAYED_RETURN_THIS_CARD,
   FLICKER,
   GRANT_KEYWORD,
   LOSE_ALL_ABILITIES,
@@ -344,6 +345,32 @@ function lowerReturnSelf(
   ctx: LowerContext,
 ): LowerResult<Effects> {
   const what = operand(clause, 'objects');
+  // D-607 (Screams from Within, CR 603.10a, 303.4f): "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard
+  // with the creature and comes back as the card it is now (`thisCard`); it chooses what it enchants as it enters (`rules/aura-entry.ts`).
+  if (
+    what?.kind === 'noun' &&
+    what.det === 'self' &&
+    ctx.auraDies &&
+    to.zone === 'battlefield' &&
+    operand(clause, 'attachTo') === undefined
+  ) {
+    const blockedCard = missingFeatures(['selector:thisCard']);
+    if (blockedCard.length > 0) return failure(clause, blockedCard);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'moveToZone',
+          objects: { kind: 'thisCard' },
+          to: 'battlefield',
+          controller: to.whose ?? 'you',
+          ...(to.tapped === true ? { tapped: true } : {}),
+          ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+        },
+      ],
+      rule: clause.rule,
+    };
+  }
   if (what?.kind !== 'noun' || what.det !== 'self' || !ctx.graveyardSource) return failure(clause);
   const blocked = missingFeatures(['selector:this']);
   if (blocked.length > 0) return failure(clause, blocked);
@@ -1567,6 +1594,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   FLICKER,
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
+  DELAYED_RETURN_THIS_CARD,
   SEARCH,
   PREVENT_DAMAGE,
   ATTACH,

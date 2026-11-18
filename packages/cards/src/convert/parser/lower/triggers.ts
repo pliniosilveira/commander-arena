@@ -1058,6 +1058,10 @@ export function lowerTriggered(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  // D-607: "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard as well.
+  ctx.auraDies = triggers.every(
+    (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'attached',
+  );
   // D-284: "it" is the card of a creature that died only when every event is `~` dying: a leave-the-battlefield trigger may find the card in any zone.
   ctx.itDied = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',

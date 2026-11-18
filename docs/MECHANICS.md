@@ -5164,3 +5164,12 @@ Three cards of the Bruna deck whose search or reveal reads a new template. All t
 - Engine: `rules/cast-cost.ts` (`spellCost`), `rules/alt-costs.ts` (`graveyardCostOf`). Parser: `rules/static/conditional.ts`, `lower/statics.ts`.
 - Tests: engine `scenario-xx-cast-graveyard-cost.test.ts` (the cost from the graveyard and from the hand, too little mana); cards `parser-cast-graveyard-cost.test.ts`.
 - Example cards: Raffine's Guidance (issue 89).
+
+## An Aura that comes back when its creature dies (issue 89, D-607)
+
+- CR: 603.10a, 603.7, 603.7c, 400.7, 303.4f (the Aura chooses what it enchants as it enters), 303.4g.
+- Gap class: T (the sentences) and P (a delayed move of `thisCard`).
+- AST nodes: `{ kind: 'triggered', trigger: { kind: 'dies', what: { kind: 'attached' } }, effect: { kind: 'moveToZone', objects: { kind: 'thisCard' }, to: 'battlefield', controller: 'owner' } }`; the delayed form is `{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: { kind: 'moveToZone', objects: { kind: 'thisCard' }, to: 'battlefield', controller: 'you' } }`.
+- Engine: `rules/effects.ts` (the delayed trigger for `thisCard`), `ast/validate-later.ts`. Parser: `lowerReturnSelf` (`lower/effects.ts`), `effect.return-this-card-delayed`, `DELAYED_RETURN_THIS_CARD`.
+- Tests: engine `scenario-xx-aura-returns.test.ts` (the Aura returns and enchants a creature, stays when there is none, comes back at the end step); cards `parser-aura-returns.test.ts` (the real lines of both cards, near misses).
+- Example cards: Screams from Within, Ghoulish Impetus (issue 89).

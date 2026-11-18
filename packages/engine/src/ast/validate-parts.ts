@@ -113,6 +113,8 @@ export interface Scope {
   readonly selfCast?: boolean;
   /** True in the effect of a `dies` trigger: the creature that died is what the trigger is about, and `sharesCreatureTypeWith` reads its creature types (D-261). */
   readonly diesTrigger?: boolean;
+  /** True in the effect of the trigger "when enchanted creature dies" of an Aura: the card of the Aura itself (`thisCard`) may be returned by a delayed ability (D-607). */
+  readonly auraDiesTrigger?: boolean;
   /** True in an activated ability that functions from the graveyard, the only place `unearth` may stand (D-124). */
   readonly fromGraveyard?: boolean;
   /**
@@ -3893,7 +3895,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'delayedTrigger':
       // CR 603.7 (D-128): an effect that creates a delayed triggered ability.
-      checkDelayedTrigger(e, path, out, scope.movedAvailable === true, scope.diesTrigger === true);
+      checkDelayedTrigger(
+        e,
+        path,
+        out,
+        scope.movedAvailable === true,
+        scope.diesTrigger === true,
+        scope.auraDiesTrigger === true,
+      );
       break;
     case 'prepare':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

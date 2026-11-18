@@ -41,4 +41,5 @@
 // 136: Read "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (D-602, issue 89).
 // 137: Read "... you put two +1/+1 counters on a creature you control" and "if that opponent has more life than another of your opponents" (D-603, issue 89).
 // 138: Read "an enchanted creature dies" and "for each Aura you controlled that was attached to it" (D-604), "cast an Aura spell from among them" and "put the rest on the bottom ... in a random order" (D-605), "by paying {2}{W} rather than paying its mana cost" from the graveyard (D-606), issue 89.
-export const PARSER_VERSION = 138;
+// 139: Read "When enchanted creature dies, return this card [from your graveyard] to the battlefield [at the beginning of the next end step]" (D-607, issue 89).
+export const PARSER_VERSION = 139;
