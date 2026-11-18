@@ -236,6 +236,7 @@ function lowerFilterAt(
   // D-139 (stage P31): "attacking creatures" (CR 508.1k), a number of colors (CR 105.2).
   if (filter.attacking === true) parts.push('selector:attacking');
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
+  if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
@@ -390,6 +391,7 @@ function lowerFilterAt(
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
+    ...(filter.powerLessThanSource === true ? { powerLessThanSource: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
@@ -880,7 +882,8 @@ export function objectSelectorOf(
   options: RefOptions = {},
 ): LowerResult<ObjectSelector> {
   // D-517: "those creatures" after "tap all creatures target player controls": the group the text named, as it was lowered.
-  if (options.eachMention === true && noun.det === 'anaphor') {
+  // Only the plural pronoun ("those creatures") names the group back: "it" after "each creature" is one of them, which the engine cannot name (issue 160, D-627).
+  if (options.eachMention === true && noun.det === 'anaphor' && noun.plural) {
     const mentioned = noun.ref === undefined ? undefined : ctx.eachMentions.get(noun.ref);
     if (mentioned !== undefined) return { ok: true, value: mentioned, rule: noun.rule };
   }

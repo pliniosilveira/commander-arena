@@ -15,25 +15,26 @@
  * hexproof and shroud: those restrict targeting, not being attached.
  */
 
-import type { ObjectFilter, TargetSpec } from '../ast/types';
+import type { Keyword, ObjectFilter, TargetSpec } from '../ast/types';
 import type { CardFace } from '../cards/definition';
-import type { ObjectId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { allocateTimestamp, patchObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { typeViewOf } from './derive-view';
+import { playerHasProtectionFrom } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { matchesFilter } from './select';
 
 /** The id of the target slot an Aura spell gets from its enchant ability (CR 303.4a). */
 export const ENCHANT_TARGET_ID = 'enchant';
 
-/** The enchant filter of an Aura's printed abilities, or null when it has none (CR 702.5a). */
-function enchantFilterIn(face: CardFace): ObjectFilter | null {
+/** The enchant keyword of an Aura's printed abilities, or null when it has none (CR 702.5a). */
+function enchantKeywordIn(face: CardFace): Extract<Keyword, { kind: 'enchant' }> | null {
   for (const a of face.abilities) {
-    if (a.kind === 'keyword' && a.keyword.kind === 'enchant') return a.keyword.filter;
+    if (a.kind === 'keyword' && a.keyword.kind === 'enchant') return a.keyword;
   }
   return null;
 }
@@ -46,22 +47,49 @@ export function auraTargetSpec(face: CardFace | null): TargetSpec | null {
   if (face === null || !face.subtypes.includes('Aura') || !face.types.includes('enchantment')) {
     return null;
   }
-  const filter = enchantFilterIn(face);
-  if (filter === null) return null;
+  const enchant = enchantKeywordIn(face);
+  if (enchant === null) return null;
+  // CR 702.5a, 303.4a (issue 160, D-629): "Enchant player": the Aura spell targets a player.
+  if (enchant.player === true)
+    return { id: ENCHANT_TARGET_ID, what: { kind: 'player', filter: 'any' } };
   return {
     id: ENCHANT_TARGET_ID,
-    what: { kind: 'object', filter: { ...filter, zone: 'battlefield' } },
+    what: { kind: 'object', filter: { ...enchant.filter, zone: 'battlefield' } },
   };
 }
 
-/** The enchant filter of a permanent that is an Aura now, or null. */
+/** The enchant filter of a permanent that is an Aura now, or null (also null for an Aura that enchants a player). */
 function enchantFilterOf(state: GameState, aura: GameObject): ObjectFilter | null {
   const d = derive(state, aura);
   if (!d.subtypes.includes('Aura')) return null;
   for (const a of d.abilities) {
-    if (a.kind === 'keyword' && a.keyword.kind === 'enchant') return a.keyword.filter;
+    if (a.kind === 'keyword' && a.keyword.kind === 'enchant') {
+      return a.keyword.player === true ? null : a.keyword.filter;
+    }
   }
   return null;
+}
+
+/** Whether a permanent that is an Aura now enchants players (CR 702.5a, "Enchant player", D-629). */
+export function enchantsPlayers(state: GameState, aura: GameObject): boolean {
+  const d = derive(state, aura);
+  return (
+    d.subtypes.includes('Aura') &&
+    d.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'enchant' && a.keyword.player === true,
+    )
+  );
+}
+
+/**
+ * Whether `aura` could enchant the player `seat` (CR 303.4c, 702.5a, 702.16c; D-629): the player is still in the game and has no protection from the Aura (from its card type
+ * or from everything).
+ */
+export function canEnchantPlayer(state: GameState, aura: GameObject, seat: SeatId): boolean {
+  if (aura.zone !== 'battlefield' || !enchantsPlayers(state, aura)) return false;
+  const player = state.seats[seat];
+  if (player === undefined || player.hasLost) return false;
+  return !playerHasProtectionFrom(state, seat, aura.id);
 }
 
 /**
@@ -140,6 +168,21 @@ export function attachEntered(
   };
 }
 
+/**
+ * CR 608.3c, 303.4b (D-629): an Aura spell that enchants a player and resolved enters the battlefield attached to the player it targeted. `entered` is the new permanent.
+ */
+export function attachEnteredToPlayer(
+  state: GameState,
+  entered: ObjectId,
+  seat: SeatId,
+): { state: GameState; events: GameEvent[] } {
+  if (state.seats[seat] === undefined) return { state, events: [] };
+  return {
+    state: patchObject(state, entered, { attachedToPlayer: seat }),
+    events: [{ kind: 'attachedToPlayer', object: entered, seat }],
+  };
+}
+
 /** CR 704.5m: Auras on the battlefield attached to an illegal object, or to nothing. */
 export function illegalAuras(state: GameState): GameObject[] {
   const out: GameObject[] = [];
@@ -147,6 +190,17 @@ export function illegalAuras(state: GameState): GameObject[] {
     const obj = state.objects[id];
     // The subtypes are the ones layers 1, 4 and 5 leave, which `derive` copies as they are: no later layer changes them.
     if (obj === undefined || !typeViewOf(state, obj).subtypes.includes('Aura')) continue;
+    // CR 303.4c, 704.5m (D-629): an Aura that enchants a player is legal while that player is in the game and has no protection from it; attached to an object, or
+    // to no one, it is illegal. An Aura that enchants objects and is attached to a player is illegal too.
+    if (enchantsPlayers(state, obj)) {
+      if (obj.attachedTo !== null || obj.attachedToPlayer === undefined) out.push(obj);
+      else if (!canEnchantPlayer(state, obj, obj.attachedToPlayer)) out.push(obj);
+      continue;
+    }
+    if (obj.attachedToPlayer !== undefined) {
+      out.push(obj);
+      continue;
+    }
     const host = obj.attachedTo === null ? undefined : state.objects[obj.attachedTo];
     if (host === undefined || !canAttach(state, obj, host)) out.push(obj);
   }

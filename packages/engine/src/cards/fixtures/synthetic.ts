@@ -22,6 +22,7 @@ import { SYNTHETIC_ATTACK_LIMIT_LIST } from './synthetic-attack-limits';
 import { SYNTHETIC_BATCH_LIST } from './synthetic-batch';
 import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
+import { SYNTHETIC_BLOCK_POWER_LIST } from './synthetic-block-power';
 import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
 import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
@@ -34,6 +35,7 @@ import { SYNTHETIC_CONTROL_LIST } from './synthetic-control';
 import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
+import { SYNTHETIC_CURSE_LIST } from './synthetic-curse';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DANITHA_G1A_LIST } from './synthetic-danitha-g1a';
 import { SYNTHETIC_DANITHA_G1B_LIST } from './synthetic-danitha-g1b';
@@ -129,6 +131,7 @@ import { SYNTHETIC_PLAY_RULE_LIST } from './synthetic-play-rules';
 import { SYNTHETIC_PLAYER_EFFECT_LIST } from './synthetic-player-effects';
 import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
 import { SYNTHETIC_POLYMORPH_LIST } from './synthetic-polymorph';
+import { SYNTHETIC_POPULATE_LIST } from './synthetic-populate';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
 import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
@@ -138,6 +141,7 @@ import { SYNTHETIC_REFERENCE_LIST } from './synthetic-references';
 import { SYNTHETIC_REPEATABLE_LIST } from './synthetic-repeatable';
 import { SYNTHETIC_RESELECT_LIST } from './synthetic-reselect';
 import { SYNTHETIC_RESTRICTION_LIST } from './synthetic-restrictions';
+import { SYNTHETIC_RETURN_CONTROL_LIST } from './synthetic-return-control';
 import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
@@ -150,6 +154,7 @@ import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
 import { SYNTHETIC_TAP_ALT_LIST } from './synthetic-tap-alt';
 import { SYNTHETIC_TAP_CHOICE_LIST } from './synthetic-tap-choice';
+import { SYNTHETIC_TAP_COST_LIST } from './synthetic-tap-cost';
 import { SYNTHETIC_TARGETING_LIST } from './synthetic-targeting';
 import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
@@ -441,6 +446,11 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
+  ...SYNTHETIC_TAP_COST_LIST,
+  ...SYNTHETIC_POPULATE_LIST,
+  ...SYNTHETIC_BLOCK_POWER_LIST,
+  ...SYNTHETIC_RETURN_CONTROL_LIST,
+  ...SYNTHETIC_CURSE_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,
   ...SYNTHETIC_PLAY_RULE_LIST,
   ...SYNTHETIC_UPKEEP_LIST,

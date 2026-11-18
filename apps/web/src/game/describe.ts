@@ -1183,6 +1183,17 @@ export function describeEvent(
         'CR 701.3',
       );
     }
+    case 'attachedToPlayer': {
+      // D-629 (CR 303.4b): an Aura that enchants a player enters attached to that player.
+      const caster = after.objects[event.object]?.controller;
+      return line(
+        'major',
+        `${name(event.object)} enchants ${who(event.seat)}.`,
+        caster ?? null,
+        [event.object],
+        'CR 303.4b',
+      );
+    }
     case 'unattached':
       // `from` may have left the battlefield: `name` falls back to last-known information. An
       // Equipment that moves emits `unattached` (replaced) and then `attached` (CR 701.3c).

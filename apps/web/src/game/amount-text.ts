@@ -112,17 +112,18 @@ const STAT_WORDS: Readonly<Record<'power' | 'toughness' | 'manaValue', string>> 
   manaValue: 'mana value',
 };
 
-/** "opponents with more life than you": what `opponentsWithMore` counts. */
-function opponentsWithMore(stat: PlayerStat): string {
+/** "opponents with more life than you": what `opponentsWithMore` counts (D-626: `fewer`, with less). */
+function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
+  const more = fewer ? 'fewer' : 'more';
   switch (stat) {
     case 'life':
-      return 'the number of opponents with more life than you';
+      return `the number of opponents with ${fewer ? 'less' : 'more'} life than you`;
     case 'cardsInHand':
-      return 'the number of opponents with more cards in hand than you';
+      return `the number of opponents with ${more} cards in hand than you`;
     case 'creatures':
-      return 'the number of opponents who control more creatures than you';
+      return `the number of opponents who control ${more} creatures than you`;
     case 'lands':
-      return 'the number of opponents who control more lands than you';
+      return `the number of opponents who control ${more} lands than you`;
   }
 }
 
@@ -275,7 +276,7 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'thisWay':
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':
-      return opponentsWithMore(amount.stat);
+      return opponentsWithMore(amount.stat, amount.fewer === true);
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
