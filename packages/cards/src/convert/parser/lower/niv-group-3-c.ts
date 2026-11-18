@@ -20,14 +20,18 @@ export const CAST_CARD: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const objects = operand(clause, 'objects');
     const may = arg(clause, 'may');
-    const anyType = arg(clause, 'anyManaType');
+    // The riders a rule does not carry are false: "without paying its mana cost" (`free`, the Diluvian Primordial group) has no mana to spend of any type.
+    const anyType = arg(clause, 'anyManaType') ?? { kind: 'flag' as const, value: false };
     const exile = arg(clause, 'exileInstead');
+    const free = arg(clause, 'free') ?? { kind: 'flag' as const, value: false };
     if (
       objects?.kind !== 'noun' ||
       objects.det !== 'target' ||
       may?.kind !== 'flag' ||
-      anyType?.kind !== 'flag' ||
-      exile?.kind !== 'flag'
+      anyType.kind !== 'flag' ||
+      exile?.kind !== 'flag' ||
+      free.kind !== 'flag' ||
+      (free.value && anyType.value)
     ) {
       return failure(clause);
     }
@@ -37,6 +41,7 @@ export const CAST_CARD: Lowering<IrClause, Effects> = {
       object: selected as Extract<typeof selected, { kind: 'target' }>,
       ...(anyType.value ? { anyManaType: true as const } : {}),
       ...(exile.value ? { exileInstead: true as const } : {}),
+      ...(free.value ? { free: true as const } : {}),
     }));
   },
 };

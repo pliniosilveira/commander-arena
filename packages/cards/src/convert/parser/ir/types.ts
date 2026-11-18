@@ -275,7 +275,7 @@ export interface IrFilter {
   /** "that targets only ~" (Feather group 3, D-437, CR 115.9c): a spell whose chosen targets are all the source of the ability. */
   readonly targetsOnlySelf?: true;
   /** "creatures attacking you" (stage P28, CR 508.1b): attackers whose attack target is the controller as a player. */
-  readonly attackingYou?: true;
+  readonly attackingYou?: true | 'orPlaneswalkers';
   /** "creatures attacking your opponents and/or planeswalkers they control" (stage P65, D-218, CR 508.1b, 506.3): attackers of an opponent or of a permanent of an opponent. */
   readonly attackingOpponents?: true | 'players';
   /** "attacking or blocking creatures" (stage P68, D-229, CR 506.4, 509.1g): creatures declared as attackers or as blockers that are still in combat. */
@@ -284,6 +284,8 @@ export interface IrFilter {
   readonly attacking?: true;
   /** "nonattacking creatures" (D-573): battlefield creatures not declared as attackers now. */
   readonly notAttacking?: true;
+  /** "blocking creatures" (CR 509.1g): creatures declared as blockers that are still in combat. */
+  readonly blocking?: true;
   /**
    * "monocolored", "multicolored", "that are one or more colors" (stage P31, CR 105.2): the number of colors the object has, compared
    * with a whole number.
@@ -368,6 +370,8 @@ export interface IrFilter {
   readonly targetsHost?: true;
   /** D-645 (Killian, Ink Duelist): "Spells you cast that target a creature cost {2} less": what the spell a cost reduction is about targets, read from the spell as it is cast (never a member of a choice). */
   readonly castTargets?: IrFilter;
+  /** D-149 (First Flight, Jubilant Skybonder): "Spells your opponents cast that target ~ cost {2} more": the spell a cost increase is about targets the object that has the ability (CR 601.2c, 113.6), read from the spell as it is cast. */
+  readonly castTargetsSelf?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
@@ -1354,6 +1358,8 @@ export type IrStaticEffect =
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
   | { readonly kind: 'costReduction'; readonly amount: IrAmount }
+  /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
+  | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
   | { readonly kind: 'abilityCostReduction'; readonly amount: number }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari deck, group 1, D-641, CR 601.2f): the mana symbols added once for each target beyond the first.

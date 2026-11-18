@@ -56,6 +56,15 @@ export interface ArchidektDeck {
 /** Categories that are not part of the deck: the boards a player keeps beside it, and the tokens and extras that come in the box. */
 const OUTSIDE = /^(sideboard|maybeboard|considering|tokens?|extras?|attractions?|stickers?)$/i;
 
+/**
+ * The name a ready-made deck shows: the deck's own name without the product it came in ("Eternal Might - Aetherdrift Commander" is "Eternal Might").
+ * Cut at the first " - " (spaced hyphen, en dash or em dash); a name that would be left empty stays whole.
+ */
+export function displayName(name: string): string {
+  const cut = name.split(/\s+[-–—]\s+/)[0]?.trim() ?? '';
+  return cut === '' ? name : cut;
+}
+
 /** The deck of an API answer (`/api/decks/<id>/`), or a message that says what is wrong with it. */
 export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string {
   if (typeof answer !== 'object' || answer === null)
@@ -111,7 +120,7 @@ export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string
     .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
     .map(([label, v]) => `${label} ${v.count}${v.left ? ' (left out)' : ''}`)
     .join(', ');
-  return { id, name: clean(name), text: parts.join('\n\n'), cards: count, breakdown };
+  return { id, name: displayName(clean(name)), text: parts.join('\n\n'), cards: count, breakdown };
 }
 
 /** A card of a decklist: the name and how many. */

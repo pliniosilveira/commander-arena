@@ -34,13 +34,15 @@ import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family } from '../registry';
 import { QUOTED_ABILITY } from './quoted';
 import { AND_RESTRICTION, type RestrictionSubject, restrictionEffects } from './restriction-words';
+import { QUOTED_COST_INCREASE } from './skybonder';
 
 type Effects = readonly IrStaticEffect[];
 
 /** "+2/+2", "-1/-1", "+3/-1": a change of power and toughness (CR 613.4c), never "+X/+X". */
 const PT: Parser<IrStaticEffect> = map(
   pattern(/([+-]\d+)\/([+-]\d+)(?![\p{L}\p{N}/])/u),
-  (m): IrStaticEffect => ({ kind: 'pt', power: Number(m[1]), toughness: Number(m[2]) }),
+  // `+ 0`: "-2/-0" is a change of 0, not the negative zero `Number('-0')` gives (`toEqual` and `Object.is` tell them apart).
+  (m): IrStaticEffect => ({ kind: 'pt', power: Number(m[1]) + 0, toughness: Number(m[2]) + 0 }),
 );
 
 const PERIOD = pattern(/\./);
@@ -155,6 +157,7 @@ const PROTECTION: Parser<Effects> = choice(
 const HAS_WHAT: Parser<Effects> = choice(
   QUOTED_MANA,
   QUOTED_ABILITY,
+  QUOTED_COST_INCREASE,
   QUOTED,
   BASE_PT,
   PROTECTION,
@@ -241,7 +244,10 @@ export function predicate(mode: RestrictionSubject): Parser<Effects> {
       ? (_ctx: Parameters<Parser<Effects>>[0], pos: number) => fail(_ctx, pos)
       : quiet(
           map(
-            sequence(pattern(/(?: and |, and |, )/iu), choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED)),
+            sequence(
+              pattern(/(?: and |, and |, )/iu),
+              choice(QUOTED_MANA, QUOTED_ABILITY, QUOTED_COST_INCREASE, QUOTED),
+            ),
             ([, what]) => what,
           ),
         );
@@ -389,6 +395,9 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     // Issue 89 (D-638, CR 702.21a): ward a static ability gives, with a mana cost.
     'Enchanted creature has ward {2}.',
     'Enchanted creature gets +1/+0 and has lifelink and ward {2}.',
+    // CR 508.1a, 506.3 (Vow of Duty): the creature may not attack the Aura's controller or the planeswalkers they control.
+    "Enchanted creature can't attack you or planeswalkers you control.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack you or planeswalkers you control.",
   ],
   rejects: [
     'Enchanted creature gets +2/+2',
@@ -415,7 +424,8 @@ export const STATIC_ATTACHED = defineRule<IrStatic>({
     'Enchanted creature has flying, first strike and vigilance.',
     'Enchanted creature loses flying.',
     "Enchanted creature can't attack or block alone.",
-    "Equipped creature can't attack you or planeswalkers you control.",
+    "Enchanted creature can't attack you or planeswalkers.",
+    "Enchanted creature gets +2/+2, has vigilance, and can't attack you.",
     'Enchanted creature gets +1/+1 and loses flying.',
     'Equipped land has hexproof.',
     'Equipped creature has "{T}: Add {G}.".',

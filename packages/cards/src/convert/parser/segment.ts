@@ -400,6 +400,16 @@ const EXILE_THAT_SPELL_INSTEAD =
   /^if that spell would be put into a graveyard, exile it instead\.$/i;
 
 /**
+ * "For each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost. If a spell cast this way would be put into a
+ * graveyard, exile it instead." (First Flight deck, CR 614.1a): "a spell cast this way" is each spell the first sentence cast, so the second sentence is a rider of the first and the
+ * two are read as one instruction (`effect.cast-per-opponent-graveyard-free`; the first may follow the comma of a trigger).
+ */
+const CAST_PER_OPPONENT_FREE =
+  /(?:^|, )for each opponent, you may cast up to one target [^.,]* cards? from that player['’]s graveyard without paying its mana cost\.$/i;
+const EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD =
+  /^if a spell cast this way would be put into a graveyard, exile it instead\.$/i;
+
+/**
  * "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead." (D-359, CR 614.1a, Vohar,
  * Vodalian Desecrator): the same rider on the permission to cast a card of your own graveyard (`effect.may-cast`), so the two sentences are one instruction.
  */
@@ -563,6 +573,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
             said(b, PUT_HAND_OTHER_BOTTOM))) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
+        (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||

@@ -1227,9 +1227,40 @@ function lowerIfDone(
     return null;
   }
   if (sentence.instead === true || sentence.where !== undefined) return refuse(sentence);
-  if (sentence.clauses.some((c) => c.optional)) return refuse(sentence);
+  // "Return it to its owner's hand. If you do, you may search your library for a Plains card, ..." (CR 608.2c, 701.23a): the offer is the engine's `search` with `optional`
+  // (a declined search is not a search), asked only when the instruction before was done. Any other optional clause is refused.
+  const [only, ...others] = sentence.clauses;
+  const offeredSearch =
+    only?.verb === 'search' && only.optional && others.length === 0 ? only : undefined;
+  if (offeredSearch === undefined && sentence.clauses.some((c) => c.optional)) {
+    return refuse(sentence);
+  }
   const blocked = missingFeatures(['condition:didPrevious', 'effect:conditional']);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  if (offeredSearch !== undefined) {
+    const searched = lowerClauses([{ ...offeredSearch, optional: false }], ctx);
+    if (!searched.ok) return searched;
+    const [search, ...extra] = searched.value;
+    if (
+      search?.kind !== 'search' ||
+      extra.length > 0 ||
+      search.optional === true ||
+      search.player.kind !== 'you'
+    ) {
+      return refuse(sentence);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'conditional',
+          condition: { kind: 'didPrevious' },
+          effect: { ...search, optional: true },
+        },
+      ],
+      rule: offeredSearch.rule,
+    };
+  }
   const after = lowerClauses(sentence.clauses, ctx);
   if (!after.ok) return after;
   return {

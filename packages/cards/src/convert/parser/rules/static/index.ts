@@ -34,6 +34,7 @@ import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
+import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { VRASKA_STATIC_RULES } from './vraska';
 
 /**
@@ -128,6 +129,8 @@ export const STATIC_RULES = [
   ...GISA_G4_STATIC_RULES,
   // Prismari deck, group 1 (D-641): "~ costs {2}{R} more to cast for each target beyond the first.".
   ...PRISMARI_G1_STATIC_RULES,
+  // First Flight deck (D-149): "Spells your opponents cast that target ~ cost {2} more to cast."
+  ...SKYBONDER_STATIC_RULES,
   // Galadriel deck, group 3 (issue 43): "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
   ...GALADRIEL_G3_STATIC_RULES,
 ];

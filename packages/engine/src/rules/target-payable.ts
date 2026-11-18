@@ -19,12 +19,10 @@ import {
   canPaySpellCost,
   spellCost,
 } from './cast-cost';
+import { costIncreaseSources } from './cost-increase';
 import { abilityReductionSources, costReductionSources } from './derive-statics';
 import { legalTargets, type SelectContext } from './select';
-import { flashSlotOf } from './target-choice';
-
-/** The object ids a slot may offer, or null for "all of its legal targets". */
-export type PayableOnly = readonly ObjectId[] | null;
+import { flashSlotOf, type PayableOnly } from './target-choice';
 
 /** The index of the slot a restriction applies to, or -1. */
 export function payableSlotOf(specs: readonly TargetSpec[]): number {
@@ -41,7 +39,11 @@ export function payableSpellTargets(
   specs: readonly TargetSpec[],
   ctx: SelectContext,
 ): PayableOnly {
-  if (!costReductionSources(state).some((s) => s.spells.targetsObject !== undefined)) return null;
+  const reduces = costReductionSources(state).some((s) => s.spells.targetsObject !== undefined);
+  // D-149 (CR 601.2f): a tax by the target ("Spells your opponents cast that target this creature cost {2} more") makes the cost larger for some targets, so the cost without a target is
+  // the cheapest, not the dearest: every target is looked at, whether or not that cost can be paid.
+  const taxes = costIncreaseSources(state).some((s) => s.spells.targetsObject !== undefined);
+  if (!reduces && !taxes) return null;
   const slot = payableSlotOf(specs);
   const spec = specs[slot];
   const spell = state.objects[casting.object];
@@ -58,7 +60,8 @@ export function payableSpellTargets(
     x: stack.x ?? 0,
   };
   // With no target chosen yet no reduction by the target applies: the cost as it stands without any.
-  if (canPaySpellCost(state, casting.seat, spell, spellCost(state, request))) return null;
+  const payableWithout = canPaySpellCost(state, casting.seat, spell, spellCost(state, request));
+  if (!taxes && payableWithout) return null;
   const ids: ObjectId[] = [];
   for (const target of legalTargets(state, spec, ctx)) {
     if (target.kind !== 'object') continue;
@@ -78,7 +81,7 @@ export function payableSpellTargets(
       ids.push(target.id);
     }
   }
-  return ids;
+  return { objects: ids, players: payableWithout };
 }
 
 /**
@@ -108,5 +111,5 @@ export function payableEquipTargets(
       ids.push(target.id);
     }
   }
-  return ids;
+  return { objects: ids, players: false };
 }

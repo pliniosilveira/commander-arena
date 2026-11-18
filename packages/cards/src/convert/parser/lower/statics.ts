@@ -40,6 +40,7 @@ import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
+import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
@@ -101,8 +102,9 @@ function conditionNamesLayerValue(condition: Condition): boolean {
 
 /**
  * A group of permanents: the filter without a zone, and "other" on the subject, as the fixtures. With `keywords` (stage P33, D-150) the
- * filter may name a keyword ("Other creatures you control with flying have indestructible."): only a keyword grant may, which the engine
- * reads after the effects that do not read keywords and again until none more applies (CR 613.8).
+ * filter may name a keyword ("Other creatures you control with flying have indestructible."): only a keyword grant or a "+N/+N" may,
+ * which the engine reads after the effects that do not read keywords (a keyword grant again until none more applies, a "+N/+N" once
+ * layer 6 is done, CR 613.8).
  */
 function groupSubject(noun: IrNoun, keywords = false): LowerResult<StaticSubject> {
   const filter = lowerFilter({ ...noun, other: false, filter: withoutZone(noun.filter) });
@@ -296,6 +298,12 @@ function effectOf(
         const mana = lowerGrantedMana(quoted, ctx.faceTypes);
         return mana.ok ? ok({ kind: 'grantAbility', subject, ability: mana.value }) : mana;
       }
+      // D-149 (CR 604.1, 613.1f): "Creatures you control with flying have \"Spells your opponents cast that target this creature cost {2} more to cast.\"": a group has the tax as its own.
+      if (inner.kind === 'static') {
+        if (subject.kind !== 'filter' || ctx.namedInQuotes) return failure(at);
+        const tax = lowerGrantedCostIncrease(quoted, at);
+        return tax.ok ? ok({ kind: 'grantAbility', subject, ability: tax.value }) : tax;
+      }
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
@@ -442,6 +450,14 @@ function effectOf(
       return ok({ kind: 'loseTypes', subject, types: effect.cardTypes as CardType[] });
     }
     case 'cantAttackYou':
+      // CR 508.1a, 303.4 (Vow of Duty): "Enchanted creature can't attack you or planeswalkers you control.": the creature the Aura is attached to, read for the Aura's controller as "you".
+      if (subject.kind === 'attached') {
+        return ok({
+          kind: 'cantAttackYou',
+          creatures: { hostOfSource: true },
+          planeswalkers: true,
+        });
+      }
       // CR 508.1a (D-647): a group of creatures, read for the controller of the permanent as "you"; "other" is not said.
       if (subject.kind !== 'filter' || subject.other === true) return failure(at);
       return ok({ kind: 'cantAttackYou', creatures: subject.filter, planeswalkers: true });
@@ -515,6 +531,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:takeFromLinkedExile'];
     case 'costReduction':
       return ['static:costReduction'];
+    case 'costIncrease':
+      return ['static:costIncrease'];
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
       return ['static:abilityCostReduction'];
@@ -696,11 +714,20 @@ function lowerPart(
   condition: Condition | undefined,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
-  // Stage P33 (D-150): a subject that names a keyword is read for keyword grants only (the engine's `grantKeyword`).
+  // Stage P33 (D-150): a subject that names a keyword is read for keyword grants and "+N/+N" effects only (the engine's `grantKeyword` and `modifyPt`).
   const subject = subjectOf(
     part.subject,
     ctx,
-    part.effects.every((e) => e.kind === 'grantKeyword' || e.kind === 'grantProtection'),
+    // First-flight statics (D-149): a "+N/+N" (layer 7c) may name one too; `derive` applies it after layer 6 (CR 613.1f, 613.4c).
+    part.effects.every(
+      (e) =>
+        e.kind === 'grantKeyword' ||
+        e.kind === 'grantProtection' ||
+        e.kind === 'pt' ||
+        e.kind === 'ptCount' ||
+        // D-149: a group named by a keyword may be given the cost increase: it gives no keyword, so it cannot change who is in the group (CR 613.8).
+        (e.kind === 'grantAbility' && e.ability.ability.kind === 'static'),
+    ),
   );
   if (!subject.ok) return subject;
   // D-286 (CR 702.95b): "each of those creatures" is read for a granted ability (the Seraph's line) and only "as long as ~ is paired with another creature": the engine
@@ -930,6 +957,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     }
     return { ok: true, value: abilities, rule: ability.rule };
   }
+  // "Spells your opponents cast that target ~ cost {2} more to cast." (First Flight deck, D-149, CR 601.2f).
+  if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
     return lowerCostReduction(ability, first.amount, ctx);
@@ -1077,6 +1106,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:grantAbility',
   'static:restriction',
   'static:costReduction',
+  'static:costIncrease',
   // D-428 (Danitha group 3): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   'static:abilityCostReduction',
   'static:setTypes',

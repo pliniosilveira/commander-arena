@@ -165,6 +165,9 @@ export const PLURAL_STARTS = [
   ...TYPE_LEADING_WORDS.map((word) => `non-${word}`),
   'nontoken',
   'colorless',
+  // CR 508.1k, 509.1g: "attacking creatures with flying get +1/+1", "blocking creatures with flying get +0/+2".
+  'attacking',
+  'blocking',
   ...['creatures', 'artifacts', 'enchantments', 'lands', 'planeswalkers', 'battles', 'permanents'],
   ...['artifact', 'enchantment', 'land', 'planeswalker', 'battle', 'creature'],
   ...['legendary', 'basic', 'snow', 'tapped', 'untapped'],
