@@ -39,12 +39,12 @@ The ready-made decks work without any setup:
 | Lathliss Dragons | A Dragon deck led by Lathliss, Dragon Queen. |
 | Ghoulcaller Gisa Zombies | A Zombie deck led by Ghoulcaller Gisa. |
 | Witherbloom Pestilence | Sacrifice creatures and overwhelm your opponent with Pests. Led by Dina, Essence Brewer. |
-| Token Triumph - Starter Commander Decks | A Commander precon led by Emmara, Soul of the Accord. |
-| Lorehold Spirit - Secrets of Strixhaven | A Commander precon led by Quintorius, History Chaser. |
-| Grave Danger - Starter Commander Decks | A Commander precon led by Gisa and Geralf. |
-| Prismari Artistry - Secrets of Strixhaven | A Commander precon led by Rootha, Mastering the Moment. |
-| Eternal Might - Aetherdrift Commander | A Commander precon led by Temmet, Naktamun's Will. |
-| First Flight - Starter Commander Decks | A Commander precon led by Isperia, Supreme Judge. |
+| Token Triumph | A Commander precon led by Emmara, Soul of the Accord. |
+| Lorehold Spirit | A Commander precon led by Quintorius, History Chaser. |
+| Grave Danger | A Commander precon led by Gisa and Geralf. |
+| Prismari Artistry | A Commander precon led by Rootha, Mastering the Moment. |
+| Eternal Might | A Commander precon led by Temmet, Naktamun's Will. |
+| First Flight | A Commander precon led by Isperia, Supreme Judge. |
 
 ## Playing with your own deck
 
