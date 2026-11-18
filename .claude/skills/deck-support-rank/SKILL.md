@@ -9,7 +9,7 @@ Returns a table of the open issues with the label `deck-support:ready`, fewest u
 
 ## Steps
 
-1. Run `bash .claude/skills/deck-support-rank/rank.sh` (optional argument: `owner/repo`). It pages through the public GitHub API, reads the `Unsupported cards (N)` line of each issue description and prints a tab-separated table: unsupported count, issue number, creation date, deck.
+1. Run `bash .claude/skills/deck-support-rank/rank.sh` (optional argument: `owner/repo`). It pages through the public GitHub API, reads the `Unsupported cards (N)` line of each issue description and drops the cards the engine already supports (the golden corpus on `main`; an issue's list is a snapshot from the day it was written) and prints a tab-separated table: unsupported count now, cards listed in the issue, issue number, creation date, deck.
 2. Show the table to the user as it is, in a Markdown table. A `?` means the issue has no `Unsupported cards (N)` line (a template-report issue): say so, do not guess a number.
 3. After the table, add at most two lines: issues that are the same deck (same title apart from the set name, for example a precon and its Commander Anthology reprint) and the cheapest issue.
 
