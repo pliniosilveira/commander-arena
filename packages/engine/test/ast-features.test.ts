@@ -115,6 +115,7 @@ describe('the dimensions', () => {
       'lifeTotal',
       'thisMatches',
       'didPrevious',
+      'movedTotalManaValue',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
