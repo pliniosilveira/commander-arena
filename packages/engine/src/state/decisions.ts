@@ -495,7 +495,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * `min` = `max` other cards from `seat`'s graveyard (`zone: 'graveyard'`) are exiled as the spell is cast; the
  * cards are public, `forCost` is always set, and `cancel` rewinds the cast. `'cast'` (D-145, CR 608.2g) is "You may cast a spell ... from
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
- * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-646)
+ * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-647)
  * the question is asked again after each spell cast. `'opponentChoice'` (D-647, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
  * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
  */

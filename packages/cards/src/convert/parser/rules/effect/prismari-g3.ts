@@ -1,5 +1,5 @@
 /**
- * Effect rules of group 3 of the Prismari deck (issue 87, D-646 and later): casting spells without paying their mana costs from among the cards an instruction exiled, and the
+ * Effect rules of group 3 of the Prismari deck (issue 87, D-647 and later): casting spells without paying their mana costs from among the cards an instruction exiled, and the
  * instructions that exile them.
  *
  * - `effect.exile-two-piles`: "Exile the top four cards of your library in a face-down pile, then exile the top four cards of your library in a face-up pile. An opponent chooses one of

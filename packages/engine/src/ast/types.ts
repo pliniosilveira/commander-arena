@@ -2851,7 +2851,7 @@ export type Effect =
       readonly play?: true;
       /**
        * "You may cast up to two spells from among the other cards exiled this way without paying their mana costs", "You may cast any number of spells from among those
-       * cards without paying their mana costs" (D-646, CR 608.2g, 601.2, 118.9): the most spells the controller may cast as this resolves, a whole number of 2 or more or `'any'`
+       * cards without paying their mana costs" (D-647, CR 608.2g, 601.2, 118.9): the most spells the controller may cast as this resolves, a whole number of 2 or more or `'any'`
        * (every card that can be cast); left out, one. The controller is asked again after each spell is cast, among the cards still there that can be cast now (a card is
        * offered only while it is in exile, and a spell cast earlier is already on the stack), and may stop at any question. All of them are cast during the resolution (CR 608.2g),
        * so they go on the stack together and resolve after it, the last one cast first. Only with `objects` a `moved` reference, and not with `play`.

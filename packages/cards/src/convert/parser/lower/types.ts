@@ -226,7 +226,7 @@ export interface LowerContext {
    */
   exiledRef: string | null;
   /**
-   * The kind of the last instruction lowered (Prismari deck group 3, D-646): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
+   * The kind of the last instruction lowered (Prismari deck group 3, D-651): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
    * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
    */
   lastEffectKind: string | null;

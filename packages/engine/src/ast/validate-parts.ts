@@ -4652,7 +4652,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2g (D-145): a card chosen from the hand, or the card an earlier effect or a linked exile names; `play` also allows a land.
       if (e.play !== undefined && e.play !== true)
         issue(out, `${path}.play`, 'play must be true when present');
-      // D-646 (CR 608.2g): "up to two spells", "any number of spells": the cards an earlier effect moved, spells only (a land is played, one at a time).
+      // D-647 (CR 608.2g): "up to two spells", "any number of spells": the cards an earlier effect moved, spells only (a land is played, one at a time).
       if (e.max !== undefined) {
         if (e.max !== 'any' && !(Number.isSafeInteger(e.max) && e.max >= 2)) {
           issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");

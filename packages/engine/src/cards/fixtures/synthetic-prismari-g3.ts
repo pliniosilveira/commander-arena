@@ -1,7 +1,7 @@
 /**
- * SYNTHETIC CARDS FOR GROUP 3 OF THE PRISMARI DECK (ISSUE 87, D-646 AND LATER). NOT REAL MAGIC CARDS.
+ * SYNTHETIC CARDS FOR GROUP 3 OF THE PRISMARI DECK (ISSUE 87, D-647 AND LATER). NOT REAL MAGIC CARDS.
  *
- * Invented for the tests of what the group added to the engine: spells cast without paying their mana costs from among cards exiled by the effect (`castFree` with `max`, D-646:
+ * Invented for the tests of what the group added to the engine: spells cast without paying their mana costs from among cards exiled by the effect (`castFree` with `max`, D-647:
  * "up to two", "any number"), the cards each player exiles until a nonland card and the opponent's choice among them (`exileUntilFound`, `opponentChoosesCard`, D-647), exiling the top
  * card as many times as the player chooses and the total mana value of what was exiled (`exileTopAnyNumber`, `movedTotalManaValue`, D-648), a delayed ability for the turn about a card
  * exiled earlier (`delayedCombatDamageTurn`, D-649), two piles of exiled cards, one face down, and an opponent's choice between them (`exilePiles`, D-650), `revealUntil` into exile
