@@ -9,10 +9,10 @@ import { defineRule } from '../registry';
 import { makeNoun } from './subjects';
 
 const NOT_IN_WORD = '(?![\\p{L}\\p{N}])';
-const CARD_KINDS = 'artifact|battle|creature|enchantment|land|planeswalker|instant|sorcery';
+export const CARD_KINDS = 'artifact|battle|creature|enchantment|land|planeswalker|instant|sorcery';
 
 /** The filter of "a land card", "a nonland card", "a card" (no kind) from the words that matched, or null when the article does not agree with the next word. */
-function cardFilter(
+export function cardFilter(
   article: string | undefined,
   non: string | undefined,
   kind: string | undefined,

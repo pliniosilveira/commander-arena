@@ -4312,7 +4312,20 @@ export type Trigger =
    * triggers once however many left. A card that goes from a graveyard to a graveyard (its owner's, the same) does not leave it. `triggerSubject` is none;
    * the cards are what `triggerCards` names (Spirit of Resilience, "from among those cards"). Only the graveyard of the controller (`who: 'you'`).
    */
-  | { readonly kind: 'leftGraveyard'; readonly who: 'you' }
+  | {
+      readonly kind: 'leftGraveyard';
+      readonly who: 'you';
+      /**
+       * "Whenever one or more creature cards leave your graveyard" (CR 400.7, 603.2c): only the cards this filter names, read as they were in the graveyard
+       * (`types` or `notTypes`, no zone, controller or owner). Left out, any card.
+       */
+      readonly filter?: ObjectFilter;
+      /**
+       * "Whenever a creature card leaves your graveyard" (CR 603.2, 400.7): not a batch, the ability triggers once for each card that leaves, even when several leave
+       * together. `triggerCards` is then that card.
+       */
+      readonly each?: true;
+    }
   /**
    * "Whenever a land card is put into your graveyard from anywhere" and "Whenever one or more land cards are put into your graveyard from anywhere for the first time each
    * turn" (CR 603.2, 603.2c, 400.7, 404.1): a card put into the graveyard of the player `who` names (`you`: the controller of this ability, who owns the card, CR 404.1) from
@@ -4323,8 +4336,13 @@ export type Trigger =
    */
   | {
       readonly kind: 'putIntoGraveyard';
-      readonly who: 'you';
-      readonly from: 'anywhere' | 'library';
+      /**
+       * `you`: the graveyard of the controller of this ability. `any` ("a creature card is put into a graveyard from anywhere other than the battlefield", CR 603.2,
+       * 404.1): the graveyard of any player; not with `firstTimeEachTurn`.
+       */
+      readonly who: 'you' | 'any';
+      /** `notBattlefield` (CR 700.4): any zone but the battlefield, so a permanent that dies is not counted. */
+      readonly from: 'anywhere' | 'library' | 'notBattlefield';
       readonly filter?: ObjectFilter;
       readonly batch?: true;
       readonly firstTimeEachTurn?: true;

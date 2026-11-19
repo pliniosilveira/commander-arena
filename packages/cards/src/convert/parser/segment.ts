@@ -140,6 +140,24 @@ function insideEventList(text: string, at: number): boolean {
   );
 }
 
+/** The words that end a clause of a trigger that lists whole clauses ("another creature dies, or a creature card leaves your graveyard"; CR 603.2c). */
+const GRAVEYARD_EVENT_END =
+  '(?:dies|leaves your graveyard|is put into a graveyard from anywhere other than the battlefield)';
+
+/**
+ * Whether the comma at `at` separates two clauses of a trigger of graveyard events ("Whenever another creature dies, or a creature card leaves your graveyard, ..."): a clause ends
+ * right before it and another clause that ends with one of those events follows it. The comma that ends the list is followed by the effect.
+ */
+function insideGraveyardEventList(text: string, at: number): boolean {
+  return (
+    new RegExp(`${GRAVEYARD_EVENT_END}$`, 'iu').test(text.slice(Math.max(0, at - 90), at)) &&
+    new RegExp(
+      `^, (?:or )?(?:an?|another) [^,]{0,60}? ${GRAVEYARD_EVENT_END}(?![\\p{L}\\p{N}])`,
+      'iu',
+    ).test(text.slice(at, at + 160))
+  );
+}
+
 /**
  * Whether the comma at `at` separates two types of a list of spells in the trigger ("Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card"; D-644): the words before it are
  * the start of the list after "cast" or "casts", and the words after it end the list with "spell". The comma after "spell" is the one that ends the trigger.
@@ -172,6 +190,7 @@ function topLevelCommas(text: string, start: number, end: number): number[] {
       ) &&
       // D-448 (CR 603.2c): "Whenever ~ attacks, blocks, or becomes the target of a spell, ...": a comma between the events of a list is not the end of the trigger condition.
       !insideEventList(text, i) &&
+      !insideGraveyardEventList(text, i) &&
       // D-644: "Whenever you cast an Aura, Equipment, or Vehicle spell, ...": a comma between the types of a list of spells is not the end of the trigger condition.
       !insideSpellTypeList(text, i) &&
       // D-278 (CR 201.2): the name of a card may hold a comma ("a creature named Bruna, the Fading Light"): a comma inside the name after "named" is not the end of the clause.

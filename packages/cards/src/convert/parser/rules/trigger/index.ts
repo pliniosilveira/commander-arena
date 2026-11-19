@@ -43,6 +43,7 @@ import { EXERT_TRIGGER_RULES } from './exert';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
+import { GRAVEYARD_EVENTS_TRIGGER_RULES } from './graveyard-events';
 import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
@@ -1200,6 +1201,9 @@ export const TRIGGER_RULES = [
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  // Syr Konrad: "another creature dies, or a creature card is put into a graveyard from anywhere other than the battlefield, or a creature card leaves your graveyard" (a prefix
+  // of which `trigger.dies` would read, so it comes first).
+  ...GRAVEYARD_EVENTS_TRIGGER_RULES,
   // CR 709.5h: "you unlock this door" (a Room).
   ...ROOM_TRIGGER_RULES,
   // Jeskai free-cast cards (issue 100): "you cast your first instant or sorcery spell each turn".

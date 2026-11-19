@@ -416,6 +416,7 @@ describe('unmatched abilities', () => {
       'trigger.cast-nth',
       'trigger.enters-one-or-more-creatures',
       'trigger.you-create-tokens',
+      'trigger.graveyard-events',
       'trigger.unlock-this-door',
       'trigger.cast-first-of-kind',
       'trigger.enchanted-creature-dies',

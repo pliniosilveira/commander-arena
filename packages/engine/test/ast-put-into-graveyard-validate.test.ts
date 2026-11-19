@@ -19,12 +19,19 @@ const triggered = (trigger: unknown) => ({
   effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
 });
 const land = { types: ['land'] };
+const creature = { types: ['creature'] };
 
 describe('the trigger "putIntoGraveyard"', () => {
   test.each([
     { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
     { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', filter: land },
     { kind: 'putIntoGraveyard', who: 'you', from: 'library', batch: true },
+    // Syr Konrad, the Grim: any player's graveyard, from any zone but the battlefield.
+    { kind: 'putIntoGraveyard', who: 'any', from: 'notBattlefield', filter: creature },
+    // Insidious Roots and Syr Konrad: the creature cards that leave your graveyard, in a batch or each.
+    { kind: 'leftGraveyard', who: 'you' },
+    { kind: 'leftGraveyard', who: 'you', filter: creature },
+    { kind: 'leftGraveyard', who: 'you', filter: creature, each: true },
     {
       kind: 'putIntoGraveyard',
       who: 'you',
@@ -40,6 +47,22 @@ describe('the trigger "putIntoGraveyard"', () => {
   test.each([
     [{ kind: 'putIntoGraveyard', who: 'opponent', from: 'anywhere' }, 'unknown player'],
     [{ kind: 'putIntoGraveyard', who: 'you', from: 'hand' }, 'from must be'],
+    [
+      {
+        kind: 'putIntoGraveyard',
+        who: 'any',
+        from: 'anywhere',
+        batch: true,
+        firstTimeEachTurn: true,
+      },
+      'goes with the graveyard of "you"',
+    ],
+    [{ kind: 'leftGraveyard', who: 'any' }, 'unknown player'],
+    [{ kind: 'leftGraveyard', who: 'you', each: false }, 'each must be true'],
+    [
+      { kind: 'leftGraveyard', who: 'you', filter: { zone: 'graveyard' } },
+      'no zone, controller or owner',
+    ],
     [{ kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', batch: false }, 'batch must be'],
     [
       { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere', firstTimeEachTurn: true },

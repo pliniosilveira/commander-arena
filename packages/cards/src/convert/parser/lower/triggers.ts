@@ -642,12 +642,29 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
-    case 'leftGraveyard':
-    case 'exiledFromLibraryOrGraveyard': {
-      // "one or more cards leave your graveyard" (stage P68, D-229, CR 400.7, 603.2c): the cards of the controller's own zones.
+    case 'leftGraveyard': {
+      // "one or more cards leave your graveyard" (stage P68, D-229, CR 400.7, 603.2c): the cards of the controller's own zones; "one or more creature cards", "a creature
+      // card leaves your graveyard" (CR 603.2): a kind of card is a filter on the card as it was in the graveyard.
       const missing = missingFeatures([`trigger:${t.event}`]);
       if (missing.length > 0) return failure(t, missing);
-      return ok({ kind: t.event, who: 'you' });
+      const kind = t.subject?.filter;
+      const filter =
+        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+          ? null
+          : lowerFilter(t.subject);
+      if (filter !== null && !filter.ok) return filter;
+      return ok({
+        kind: 'leftGraveyard',
+        who: 'you',
+        ...(filter === null ? {} : { filter: filter.value }),
+        ...(t.each === true ? { each: true as const } : {}),
+      });
+    }
+    case 'exiledFromLibraryOrGraveyard': {
+      // "one or more cards are put into exile from your library and/or your graveyard" (stage P68, D-229, CR 400.7, 603.2c): the cards of the controller's own zones.
+      const missing = missingFeatures([`trigger:${t.event}`]);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'exiledFromLibraryOrGraveyard', who: 'you' });
     }
     case 'putIntoGraveyard': {
       // "Whenever a land card is put into your graveyard from anywhere" (Death Toll deck, group B, CR 603.2, 603.2c): the kind of card is a filter on the card in the graveyard.
@@ -661,8 +678,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (filter !== null && !filter.ok) return filter;
       return ok({
         kind: 'putIntoGraveyard',
-        who: 'you',
-        from: t.fromLibrary === true ? 'library' : 'anywhere',
+        // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
+        who: t.fromNotBattlefield === true ? 'any' : 'you',
+        from:
+          t.fromNotBattlefield === true
+            ? 'notBattlefield'
+            : t.fromLibrary === true
+              ? 'library'
+              : 'anywhere',
         ...(filter === null ? {} : { filter: filter.value }),
         ...(t.batch === true ? { batch: true as const } : {}),
         ...(t.firstEachTurn === true ? { firstTimeEachTurn: true as const } : {}),
