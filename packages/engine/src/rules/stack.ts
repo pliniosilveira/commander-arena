@@ -261,6 +261,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
+                destroyedValue:
+                  (res.thisWay?.destroyedValue ?? 0) + (out.thisWay.destroyedValue ?? 0),
                 playersDrew: (res.thisWay?.playersDrew ?? 0) + (out.thisWay.playersDrew ?? 0),
                 tapped: (res.thisWay?.tapped ?? 0) + (out.thisWay.tapped ?? 0),
                 discarded: (res.thisWay?.discarded ?? 0) + (out.thisWay.discarded ?? 0),

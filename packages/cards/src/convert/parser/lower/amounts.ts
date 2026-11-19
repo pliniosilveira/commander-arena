@@ -391,6 +391,40 @@ export function lowerAmount(
       if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
         return { ok: false, needs: [], at: amount.span, rule };
       }
+      // "the greatest power among creatures they control" (Death Toll deck, group D, CR 109.4, 608.2c): the player is a target the ability declares, read as the amount is
+      // worked out (the engine's `controlledBy` of a target, as in a count). Only a permanent of the battlefield, and only a target: any other player is left unread.
+      const controller = amount.of.filter.controller;
+      if (typeof controller === 'object') {
+        const missingRef = missingFeatures(['selector:controllerRef']);
+        if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
+        const outside =
+          amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
+        // "they" is the player a target names, bound to that target (an anaphor with its reference); a player the binding left unbound is refused.
+        if (
+          outside ||
+          amount.asCast === true ||
+          controller.orPlaneswalkerController === true ||
+          (controller.noun.det !== 'target' && controller.noun.det !== 'anaphor')
+        ) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        const named = playerSelectorOf(controller.noun, ctx);
+        if (!named.ok) return named;
+        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        const { controller: _named, ...rest } = amount.of.filter;
+        const plain = countFilter({ ...amount.of, filter: rest });
+        if (!plain.ok) return plain;
+        return {
+          ok: true,
+          value: {
+            kind: 'aggregate',
+            how: amount.how,
+            stat: amount.stat,
+            filter: { ...plain.value, controlledBy: named.value },
+          },
+          rule,
+        };
+      }
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
       return {

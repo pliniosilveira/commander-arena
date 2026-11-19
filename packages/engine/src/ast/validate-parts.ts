@@ -1483,6 +1483,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
+  destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
@@ -1507,7 +1508,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
-  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken'];
+  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
@@ -1745,6 +1746,27 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'an aggregate needs a filter');
+      } else if (a.filter.controlledBy !== undefined) {
+        // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": the player is a target the effect declared, read as the amount
+        // is worked out (with the targets), as a count's is; a player named any other way is not read here.
+        const { controlledBy, ...rest } = a.filter;
+        if (kindOf(controlledBy) !== 'target') {
+          issue(
+            out,
+            `${path}.filter.controlledBy`,
+            'an aggregate names the player whose objects it reads by a target of the ability or spell (controlledBy: target)',
+          );
+        } else {
+          checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
+        }
+        if (rest.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'controlledBy replaces controller: set one of them',
+          );
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
       }

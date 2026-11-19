@@ -37,6 +37,7 @@ import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { countAmount, counted } from './count';
+import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
@@ -304,6 +305,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     DAMAGE_DEALT_AMOUNT,
     // Galadriel deck group 3 (CR 706.2): "the result" of a die rolled earlier in the text.
     DIE_RESULT,
+    // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way".
+    DESTROYED_VALUE_AMOUNT,
   );
 
 /** "half <atom>, rounded down" (CR 107.1a: the text always says how it rounds). */
@@ -588,8 +591,15 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures you control as you cast ~',
     // Galadriel deck group 3 (CR 706.2): the die rolled before.
     'where X is the result',
+    // Death Toll deck, group D (CR 202.3, 608.2h): what a destroy before it in the text destroyed.
+    'where X is the total mana value of permanents destroyed this way',
+    // CR 109.4, 608.2c: the permanents of the player a target before it names.
+    'where X is the greatest power among creatures they control',
   ],
   rejects: [
+    'where X is the total mana value of creatures destroyed this way',
+    'where X is the total mana value of permanents destroyed',
+    'where X is the greatest mana value of permanents destroyed this way',
     'where X is the results',
     'where X is the result of',
     'where X is',

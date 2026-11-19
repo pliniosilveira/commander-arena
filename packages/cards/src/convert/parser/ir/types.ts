@@ -538,6 +538,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedValue'
         | 'playersDrew'
         | 'tapped'
         | 'discarded'

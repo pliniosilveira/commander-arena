@@ -268,7 +268,7 @@ export type Amount =
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
    * controllers sacrifice), "for each creature destroyed this way" (`destroyed`: the permanents an earlier
-   * `destroy` effect destroyed, indestructible or regenerated ones not counted) and "for each opponent who drew a
+   * `destroy` effect destroyed, indestructible or regenerated ones not counted; `destroyedValue`: their mana values added) and "for each opponent who drew a
    * card this way" (`playersDrew`: the players who drew at least one card in an earlier `draw` effect) and, D-139, "gets +X/+0
    * where X is the number of Myr tapped this way" (`tapped`: the permanents an earlier `tap` effect tapped). Counted over
    * the whole resolution so far; valid only after an effect of that kind in the same sequence.
@@ -365,6 +365,8 @@ export type ThisWayKind =
   | 'destroyed'
   // D-230: "for each nontoken creature you controlled that was destroyed this way" (Ceaseless Conflict): the creatures the controller of the effect controlled as they were destroyed.
   | 'destroyedOwnNontoken'
+  // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way" (Convert to Slime): the mana values the permanents a `destroy` destroyed had on the battlefield, added.
+  | 'destroyedValue'
   // D-231: "When one or more nonland cards are exiled this way, put that many +1/+1 counters" (Augusta): the nonland cards `exileOwnGraveyardCard` exiled (CR 603.12).
   | 'exiledNonland'
   | 'playersDrew'

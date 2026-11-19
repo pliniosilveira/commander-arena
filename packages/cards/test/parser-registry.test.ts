@@ -599,6 +599,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // D-295 to D-298 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
   'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
+  // Death Toll deck, group D: the header of a kicked modal spell, and what a destroy of the same text did.
+  'modal.choose-kicked': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
+  'condition.destroyed-this-way': permanent(
+    (e) => `When ~ enters, you may destroy another target creature. If ${e}, you gain 1 life.`,
+  ),
   'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.one-or-two-targets-bare': spell(
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,

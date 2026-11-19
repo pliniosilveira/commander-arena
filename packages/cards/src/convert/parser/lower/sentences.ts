@@ -1483,6 +1483,9 @@ function countsWhatHappened(
         (word === 'permanent' || names(earlier.args.objects).every((n) => n === word))
       );
     }
+    case 'destroyedValue':
+      // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way": every permanent a `destroy` before it destroyed.
+      return earlier.verb === 'destroy';
     case 'destroyedOwnNontoken':
       // Stage P68 (D-230): "for each nontoken creature you controlled that was destroyed this way": a `destroy` of creatures before it.
       return (

@@ -152,7 +152,11 @@ export function commandersManaValue(state: GameState, seat: GameObject['controll
  * The cards are matched through `typeViewOf` like a count (layers 1, 4 and 5). The power read is the printed one, or what the card's own characteristic-defining ability
  * gives a `*` (it works in every zone, CR 604.3): never a layer 7 result of another object, so the amount cannot loop (CR 613.8).
  */
-function greatestPrintedPowerFor(state: GameState, filter: ObjectFilter, source: GameObject): number {
+function greatestPrintedPowerFor(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+): number {
   const zone = filter.zone ?? 'graveyard';
   const chosen = chosenOf(state, source.id);
   const ctx = {
