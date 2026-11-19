@@ -39,7 +39,12 @@ import {
   isEnchanted,
 } from './casual-attachments';
 import { copiesTargetSpell, copyWorthCasting, hasStorm } from './casual-copies';
-import { additionalCostsWorthPaying, discountsHand, ownGraveyardCreatures } from './casual-costs';
+import {
+  additionalCostsWorthPaying,
+  discountsHand,
+  flashbackWorthPaying,
+  ownGraveyardCreatures,
+} from './casual-costs';
 import { chooseTurnFaceUp } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { chooseSpecialAction } from './casual-later';
@@ -355,7 +360,9 @@ export function choosePriorityAction(
       o.kind === 'castSpell' && o.alternative === 'flashback'
         ? findObject(view, o.object)
         : undefined;
-    return obj !== undefined && allowed(view, obj, activations) ? [obj] : [];
+    return obj !== undefined && allowed(view, obj, activations) && flashbackWorthPaying(view, obj)
+      ? [obj]
+      : [];
   });
   if (flashbacks.length > 0) {
     const best = Math.max(...flashbacks.map(manaValueOf));

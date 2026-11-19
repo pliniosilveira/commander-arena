@@ -850,8 +850,12 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana and life ("Flashback—{1}{U}, Pay 3 life."; rules/cast-cost.ts, rules/cast.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        // CR 702.34a: an alternative cost; mana, life and the sacrifice of N permanents ("Flashback—{1}{U}, Pay 3 life.", "Flashback—Sacrifice three creatures"; rules/cast-cost.ts, rules/cast.ts).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, [
+          'mana',
+          'payLife',
+          'sacrifice',
+        ]);
       } else if (a.keyword.kind === 'echo') {
         // CR 702.30a: paid as the echo trigger resolves (rules/pay-unless.ts); mana only, no X (D-127).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);

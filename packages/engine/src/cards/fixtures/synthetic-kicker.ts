@@ -228,6 +228,25 @@ export const SYNTHETIC_KICKER_LIST: readonly CardDefinition[] = [
     ],
     spell: { effect: gain(3) },
   }),
+  // A flashback cost that is no mana: "Flashback—Sacrifice two creatures." (CR 702.34a, 118.9, 701.21a).
+  singleFace({
+    name: 'SYNTHETIC Flash Sacrifice',
+    manaCost: ['2', 'B'],
+    types: ['sorcery'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText: 'You gain 5 life. Flashback—Sacrifice two creatures.',
+    abilities: [
+      {
+        kind: 'keyword',
+        keyword: {
+          kind: 'flashback',
+          cost: [{ kind: 'sacrifice', what: { types: ['creature'] }, count: 2 }],
+        },
+      },
+    ],
+    spell: { effect: gain(5) },
+  }),
   // Kicker and flashback on one card: the kicker cost is added to the flashback cost (CR 118.9d).
   singleFace({
     name: 'SYNTHETIC Kick Flash',

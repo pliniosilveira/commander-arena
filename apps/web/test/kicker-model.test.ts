@@ -135,6 +135,16 @@ describe('a graveyard card with a flashback option', () => {
     expect(flashbackCost(undefined)).toBeNull();
     expect(flashbackLabel(undefined)).toBe('Flashback');
   });
+
+  test('a cost that is an action is read from the Oracle text after the dash', () => {
+    const dread = {
+      ...card(9, 'Dread'),
+      oracleText:
+        'Return target creature card from your graveyard to the battlefield.\nFlashback—Sacrifice three creatures. (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    };
+    expect(flashbackCost(dread)).toBeNull();
+    expect(flashbackLabel(dread)).toBe('Flashback—Sacrifice three creatures');
+  });
 });
 
 const kicker = (cost: ConfirmOptionalDecision['cost']): ConfirmOptionalDecision => ({

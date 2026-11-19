@@ -15,6 +15,7 @@ import type { CardType, Characteristics, Color, Subtype, Supertype } from './cha
 import type { ObjectId, SeatId } from './ids';
 import type { ManaColor, ManaObject } from './mana/types';
 import { activatedAbilitiesOf } from './rules/activate-legality';
+import { flashbackCostOf } from './rules/alt-costs';
 import { alternativeCostsOf, castCostOf } from './rules/cast-cost';
 import { type ControlEnd, controlEndOf, controllerOf } from './rules/control';
 import { copiableValues } from './rules/copiable';
@@ -342,6 +343,11 @@ export interface ObjectView {
    */
   readonly additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
   /**
+   * For a card in its owner's graveyard with a printed flashback (CR 702.34a): the flashback cost, as the card says it ("Flashback—Sacrifice three creatures": a sacrifice and no mana),
+   * so a player or an agent can tell what the cast would give up. Public, like `oracleText`. Absent for any other card.
+   */
+  readonly flashbackCost?: readonly Cost[];
+  /**
    * For a card with more than one face (split, Adventure, double-faced: CR 709, 715, 712): the index
    * of the face that is up, which is 0 except for a spell on the stack cast as its second half, its
    * Adventure or its back face, and a double-faced permanent that is transformed or was played as
@@ -560,6 +566,7 @@ function castCostFields(
   additionalCosts?: readonly Cost[];
   additionalCostChoice?: readonly [readonly Cost[], readonly Cost[]];
   alternativeCosts?: readonly AlternativeCostView[];
+  flashbackCost?: readonly Cost[];
 } {
   if (obj.card === null || obj.zone === 'battlefield') return {};
   const castCost = castCostOf(state, obj);
@@ -571,12 +578,14 @@ function castCostFields(
   const additional = face?.additionalCosts;
   const choice = face?.additionalCostChoice;
   const alternatives = alternativeCostsOf(state, obj);
+  const flashback = obj.zone === 'graveyard' ? flashbackCostOf(face ?? null) : null;
   return {
     ...(castCost === null ? {} : { castCost }),
     ...(commanderTaxLife === 0 ? {} : { castCostLife: commanderTaxLife }),
     ...(alternatives.length === 0 ? {} : { alternativeCosts: alternatives }),
     ...(additional === undefined ? {} : { additionalCosts: additional }),
     ...(choice === undefined ? {} : { additionalCostChoice: choice }),
+    ...(flashback === null ? {} : { flashbackCost: flashback }),
   };
 }
 

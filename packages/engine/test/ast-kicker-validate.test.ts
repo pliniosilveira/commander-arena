@@ -332,12 +332,35 @@ describe('flashback', () => {
       'life paid must be at least 1',
     ]);
     expect(structure(spell([flashback({ kind: 'discard', count: 1 })], draw))).toEqual([
-      'a flashback cost may be mana or life only',
+      'a flashback cost may be mana, life or a sacrifice only',
     ]);
     expect(structure(spell([flashback(mana('X'))], draw))).toEqual([
       'X in a flashback cost is not supported',
     ]);
     expect(structure(spell([flashback()], draw))).toHaveLength(1);
+  });
+
+  test('a sacrifice of N permanents that match a filter is fine ("Flashback—Sacrifice three creatures", CR 118.9); not itself, X, any number, or two of them', () => {
+    const sac = (extra: object = {}): Cost =>
+      ({ kind: 'sacrifice', what: { types: ['creature'] }, count: 3, ...extra }) as Cost;
+    expect(structure(spell([flashback(sac())], draw))).toEqual([]);
+    expect(structure(spell([flashback(mana('1', 'B'), sac({ count: undefined }))], draw))).toEqual(
+      [],
+    );
+    const bad = 'a flashback sacrifice names permanents by a filter and a count';
+    expect(
+      structure(spell([flashback({ kind: 'sacrifice', what: { kind: 'this' } })], draw)),
+    ).toEqual([bad]);
+    expect(structure(spell([flashback(sac({ count: undefined, countX: true }))], draw))).toEqual([
+      bad,
+    ]);
+    expect(structure(spell([flashback(sac({ count: undefined, anyNumber: true }))], draw))).toEqual(
+      [bad],
+    );
+    expect(structure(spell([flashback(sac({ count: 1 }))], draw))).toContain(bad);
+    expect(structure(spell([flashback(sac(), sac())], draw))).toContain(
+      'a flashback cost has one sacrifice',
+    );
   });
 
   test('not on a permanent (CR 702.34a)', () => {

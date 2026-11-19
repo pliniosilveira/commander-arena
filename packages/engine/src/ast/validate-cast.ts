@@ -36,8 +36,26 @@ export function checkFlashbackCost(cost: readonly Cost[], path: string, out: Ast
       if (!Number.isSafeInteger(c.amount) || c.amount < 1) {
         issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');
       }
+    } else if (c?.kind === 'sacrifice') {
+      // CR 118.9, 601.2h: "Flashback—Sacrifice three creatures": a filter of the caster's permanents and how many (one cost, paid as an additional cost's sacrifice is).
+      if (
+        'kind' in c.what ||
+        c.countX === true ||
+        c.anyNumber === true ||
+        c.atLeastOne === true ||
+        (c.count !== undefined && (!Number.isSafeInteger(c.count) || c.count < 2))
+      ) {
+        issue(
+          out,
+          `${path}[${i}]`,
+          'a flashback sacrifice names permanents by a filter and a count',
+        );
+      }
+      if (cost.filter((o) => o?.kind === 'sacrifice').length > 1) {
+        issue(out, `${path}[${i}]`, 'a flashback cost has one sacrifice');
+      }
     } else if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana or life only');
+      issue(out, `${path}[${i}]`, 'a flashback cost may be mana, life or a sacrifice only');
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }
@@ -124,7 +142,7 @@ function mentionsTimesKicked(node: unknown): boolean {
 export function checkCastFace(
   abilities: readonly Ability[],
   spell: SpellText | null,
-  face: { readonly types: readonly CardType[] },
+  face: { readonly types: readonly CardType[]; readonly additionalCosts?: readonly Cost[] },
   path: string,
   out: AstIssue[],
   alternatives: readonly AlternativeCost[] = [],
@@ -305,6 +323,22 @@ export function checkCastFace(
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
+  }
+  // The cast pays one sacrifice: a flashback cost that sacrifices cannot go with an additional cost that does (CR 118.9d).
+  const flashbackAbility = abilities.find(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'flashback',
+  );
+  if (
+    flashbackAbility?.kind === 'keyword' &&
+    flashbackAbility.keyword.kind === 'flashback' &&
+    flashbackAbility.keyword.cost.some((c) => c.kind === 'sacrifice') &&
+    (face.additionalCosts ?? []).some((c) => c.kind === 'sacrifice')
+  ) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'a flashback sacrifice with an additional sacrifice is not supported',
+    );
   }
   // D-667 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
   if (has('retrace') && face.types.includes('land')) {
