@@ -5800,27 +5800,10 @@
     "c0d8fef4-65f4-4769-982d-b397d2b7e977": {
       "name": "Animate Dead",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Enchant creature card in a graveyard",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.bare-permanent"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with ~.\" Return enchanted creature card to the battlefield under your control and attach ~ to it. When ~ leaves the battlefield, that creature's controller sacrifices it.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "08b5dfe4"
+      "ast": "66b1e534"
     },
     "c1909d70-d8f4-4c54-8587-0a910f123238": {
       "name": "Shelter",
@@ -7705,7 +7688,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 629,
+      "supported": 630,
       "total": 651
     }
   }
