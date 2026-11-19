@@ -89,5 +89,3 @@ Mainboard
 1x Wrenn and Seven
 7x Forest
 7x Swamp
-
----
