@@ -69,6 +69,14 @@ export function faceDownEntry(
   return by === undefined ? {} : { faceDown: { by, n: nextFaceDownNumber(state) } };
 }
 
+/** The fields of a card cast face down (CR 702.37c, 708.4): a spell on the stack that is face down by `by`, labelled `n` (the label a spell has is provisional: the permanent it becomes is labelled as it enters). */
+export function faceDownSpellFields(
+  by: FaceDownBy,
+  n: number,
+): { readonly faceDown: { readonly by: FaceDownBy; readonly n: number } } {
+  return { faceDown: { by, n } };
+}
+
 /** The object as it is when turned face up (CR 708.8): the same object, with the face-down status gone. Everything else about it is unchanged. */
 export function withoutFaceDown(obj: GameObject): GameObject {
   const { faceDown: _gone, ...rest } = obj;

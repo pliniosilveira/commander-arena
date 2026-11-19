@@ -1,5 +1,5 @@
 {
-  "parserVersion": 160,
+  "parserVersion": 161,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1338,6 +1338,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "702db583"
+    },
+    "2b80faaf-92fd-4fa0-a3f6-8bb263e7ff1d": {
+      "name": "Akroma, Angel of Fury",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5fd5e7c7"
     },
     "2bd111bb-ce02-414c-b5b7-e0e037d8d96b": {
       "name": "Bolas's Citadel",
@@ -3621,18 +3629,10 @@
     "72aef1d8-11df-4bc2-af83-907b05df73a8": {
       "name": "Grim Haruspex",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Morph {B}",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "39ccedf9"
+      "ast": "241e0be9"
     },
     "7324abaa-48da-439d-9339-b0ea5eea612e": {
       "name": "Unnatural Growth",
@@ -4248,6 +4248,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c5cd4c5e"
+    },
+    "867aa0b7-b814-4d33-a677-f6368c8e93c0": {
+      "name": "Aphetto Alchemist",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b1729717"
     },
     "868882d2-ed4e-4171-a17c-478a341080fb": {
       "name": "Prossh, Skyraider of Kher",
@@ -7789,12 +7797,12 @@
   },
   "summary": {
     "training": {
-      "supported": 150,
-      "total": 174
+      "supported": 152,
+      "total": 175
     },
     "holdout": {
-      "supported": 51,
-      "total": 56
+      "supported": 52,
+      "total": 57
     },
     "acceptance": {
       "supported": 649,

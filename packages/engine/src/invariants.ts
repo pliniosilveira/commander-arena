@@ -254,7 +254,9 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 708.2, 708.6 (D-308): a face-down object is a card on the battlefield (or phased out), and its label is its own among the face-down permanents.
     if (obj.faceDown !== undefined) {
-      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+      // CR 708.4: a card cast face down is a face-down spell on the stack until it resolves.
+      const downSpell = obj.zone === 'stack' && obj.faceDown.by === 'morph';
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased' && !downSpell) {
         problems.push(`${id} is face down but is in ${obj.zone}`);
       }
       if (obj.card === null || obj.token !== null) {

@@ -162,8 +162,13 @@ export function assemble(
       ...(onBattlefield && o.level !== undefined ? { level: o.level } : {}),
       ...(onBattlefield && o.chosen !== undefined ? { chosen: o.chosen } : {}),
       // D-308: a face-down permanent, labelled in the order the scenario places them.
-      ...(onBattlefield && o.faceDown === true
-        ? { faceDown: { by: 'manifest' as const, n: ++faceDownCount } }
+      ...(onBattlefield && o.faceDown !== undefined
+        ? {
+            faceDown: {
+              by: o.faceDown === 'morph' ? ('morph' as const) : ('manifest' as const),
+              n: ++faceDownCount,
+            },
+          }
         : {}),
     };
     if (e.zone === 'battlefield') battlefield.push(oid);
