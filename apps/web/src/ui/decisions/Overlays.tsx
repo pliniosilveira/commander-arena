@@ -30,7 +30,7 @@ import { MiniCard } from './MiniCard';
 import { ModesDialog } from './ModesDialog';
 import type { DecisionModel } from './model';
 import { NamedOptionDialog } from './NamedOptionDialog';
-import { OpponentCommanders } from './OpponentCommanders';
+import { OpponentCommanders, PlayerCommander } from './OpponentCommanders';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
@@ -149,6 +149,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
           <Hand view={view} ids={d.hand} selected={[]} />
           <BarButtons buttons={model.bar.buttons} />
           {d.canMulligan ? null : <p className="dec-sub">No more mulligans are possible.</p>}
+          <PlayerCommander view={view} />
           <OpponentCommanders view={view} />
         </Dialog>
       );

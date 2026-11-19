@@ -47,6 +47,8 @@ export interface NewGameOptions {
   readonly aiCards?: DeckConfig;
   /** The name of the precon the opponent plays, when it is a shipped precon (not a saved deck). */
   readonly aiPreconName?: string;
+  /** The same for the human seat's deck. */
+  readonly humanPreconName?: string;
   /**
    * The first mulligan is free: after it you keep seven cards, with the London bottoming starting
    * from the second (Commander's usual rule; a house rule in two-player games, CR 103.5c).
