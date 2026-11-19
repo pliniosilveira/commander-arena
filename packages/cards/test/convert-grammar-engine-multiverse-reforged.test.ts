@@ -2,7 +2,7 @@
 // engine scenario and plays them through applyAction. Every card name starts with "SYNTHETIC"; the wording of each text is that of the real card, taken from the card data the deck
 // support workflow fetched from Scryfall for the issue. No real card's text is claimed beyond that.
 import { scenario } from '@commander-arena/engine/testing';
-import { describe, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { parsed } from './convert-grammar-helpers';
 
 // ---- Mass Polymorph: "Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed
@@ -112,6 +112,61 @@ describe('Mass Polymorph: exile your creatures, then reveal that many creature c
     g.act(0).cast(POLYMORPH.name, { pay: true });
     g.passAll();
     g.expect.librarySize(0, 3);
+    g.expect.invariants();
+  });
+});
+
+// ---- White Sun's Twilight: "You gain X life. Create X 1/1 colorless Phyrexian Mite artifact creature tokens with toxic 1 and \"This token can't block.\" If X is 5 or more, destroy all other
+// creatures." (CR 107.3a, 608.2c, 702.164 Toxic: the tokens survive their own destruction clause because they are created first, "other" excluding the source spell only).
+
+const TWILIGHT = parsed(
+  "SYNTHETIC Parsed White Sun's Twilight",
+  'Sorcery',
+  'You gain X life. Create X 1/1 colorless Phyrexian Mite artifact creature tokens with toxic 1 and "This token can\'t block." If X is 5 or more, destroy all other creatures.',
+  { manaCost: '{X}{W}{W}', colors: ['W'] },
+);
+
+describe("White Sun's Twilight: life, Mites, and a wrath at X of 5 or more", () => {
+  const start = (lands: number) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(TWILIGHT)
+      .hand(TWILIGHT.name)
+      .battlefield('Plains', { count: lands })
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Giant Spider')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  const mites = (g: ReturnType<typeof start>) =>
+    g.state.battlefield.filter(
+      (id) => g.state.objects[id]?.token?.characteristics.name === 'Phyrexian Mite',
+    ).length;
+
+  test('X of 4: four life, four Mites, and every other creature lives', () => {
+    const g = start(6);
+    g.act(0).cast(TWILIGHT.name, { x: 4, pay: true });
+    g.passAll();
+    g.expect.life(0, 24);
+    expect(mites(g)).toBe(4);
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('X of 5: five Mites survive and every creature that is not one of them is destroyed', () => {
+    const g = start(7);
+    g.act(0).cast(TWILIGHT.name, { x: 5, pay: true });
+    g.passAll();
+    g.expect.life(0, 25);
+    expect(mites(g)).toBe(5);
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.zone('Giant Spider', 'graveyard', { seat: 1 });
     g.expect.invariants();
   });
 });
