@@ -315,6 +315,9 @@ export function targetText(spec: TargetSpec | undefined): string {
     case 'playerOrObject':
       // D-200: "target player or planeswalker", "target opponent or planeswalker" (or battle).
       return `target ${spec.what.player === 'opponent' ? 'opponent' : 'player'} or ${nounOf(spec.what.filter)}`;
+    case 'objectOrSpell':
+      // Issue 81 (Fatehold Charm, CR 115.1): "target spell or creature".
+      return `target spell or ${nounOf(spec.what.filter)}`;
     case 'objectOrGraveyardCard': {
       // D-270 (CR 115.1): "up to three other target creatures from the battlefield and/or creature cards from graveyards".
       const cards = nounOf(spec.what.card);
@@ -389,6 +392,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'triggerCard':
       // Persist and Undying: "return it to the battlefield", the card the creature became (CR 603.10a); D-230 "return that card".
       return 'it';
+    case 'triggerSources':
+      // Issue 81 (Tamiyo): the creatures that dealt the combat damage of the trigger.
+      return 'those creatures';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -499,6 +505,8 @@ function recipientText(
       return 'its owner';
     case 'triggerSubject':
       return 'it';
+    case 'triggerSources':
+      return 'those creatures';
     case 'defendingPlayer':
       return 'the defending player';
     case 'attackedBy':
@@ -559,6 +567,8 @@ const RESTRICTION_EFFECT: Readonly<Record<Restriction, string>> = {
   cantAttack: "can't attack",
   cantBlock: "can't block",
   cantBeBlocked: "can't be blocked",
+  // Issue 81 (CR 509.1b): the Gingerbrute token.
+  cantBeBlockedExceptByHaste: "can't be blocked except by creatures with haste",
   cantBeBlockedByMoreThanOne: "can't be blocked by more than one creature",
   attacksEachCombat: 'attacks if able',
   mustBeBlocked: 'must be blocked if able',

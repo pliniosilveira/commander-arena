@@ -21,6 +21,7 @@ import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { matchesFilter } from './select';
 import { objectOrLki } from './source-info';
+import { staticConditionHolds } from './static-conditions';
 
 type DoubleTriggers = Extract<StaticEffect, { kind: 'doubleTriggers' }>;
 
@@ -36,9 +37,16 @@ interface Doubler {
   readonly doublings: readonly Doubling[];
 }
 
-function doublingsOf(abilities: readonly Ability[]): readonly Doubling[] {
+function doublingsOf(
+  abilities: readonly Ability[],
+  state: GameState,
+  source: GameObject,
+): readonly Doubling[] {
   return abilities.flatMap((a) =>
-    a.kind === 'static' && a.static.kind === 'doubleTriggers'
+    a.kind === 'static' &&
+    a.static.kind === 'doubleTriggers' &&
+    // Issue 81 (Windcrag Siege: "Mardu — ..."): the ability works only while its condition holds, read from the permanent that has it (CR 607.2d).
+    (a.condition === undefined || staticConditionHolds(state, a.condition, source))
       ? [{ subject: a.static.subject, cause: a.static.cause }]
       : [],
   );
@@ -54,7 +62,7 @@ function doublersOf(state: GameState): readonly Doubler[] {
       (a) => a.kind === 'static' && a.static.kind === 'doubleTriggers',
     );
     if (!mayHave) continue;
-    const doublings = doublingsOf(derive(state, obj).abilities);
+    const doublings = doublingsOf(derive(state, obj).abilities, state, obj);
     if (doublings.length > 0) out.push({ id, controller: controllerOf(state, obj), doublings });
   }
   return out;
@@ -89,6 +97,13 @@ function causedBy(
   doubler: Doubler,
   cause: NonNullable<DoubleTriggers['cause']>,
 ): boolean {
+  if (cause.kind === 'creatureAttacks') {
+    // CR 603.2d (issue 81): the event is a creature attacking, whoever controls it.
+    return (
+      trigger.ability.kind === 'triggered' &&
+      (trigger.ability.trigger.kind === 'attacks' || trigger.ability.trigger.kind === 'attackBatch')
+    );
+  }
   if (trigger.ability.kind !== 'triggered' || trigger.ability.trigger.kind !== 'castSpell') {
     return false;
   }
@@ -118,7 +133,7 @@ function departedDoublers(state: GameState, events: readonly GameEvent[]): reado
       continue;
     const known = state.lki[event.from];
     if (known === undefined) continue;
-    const doublings = doublingsOf(known.abilities);
+    const doublings = doublingsOf(known.abilities, state, known.object);
     if (doublings.length > 0) {
       out.push({ id: event.from, controller: known.object.controller, doublings }); // stored controller: frozen with the effective one as it left
     }

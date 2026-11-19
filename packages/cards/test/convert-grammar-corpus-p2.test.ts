@@ -376,9 +376,9 @@ const CYCLING: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: 'Cycling {X}',
-    expect: no('{X}', 'keyword.cycling'),
-    note: 'X in a cost is not read',
+    text: 'Equip {X}',
+    expect: no('{X}', 'keyword.equip'),
+    note: 'X in a cost is not read (Cycling reads it since issue 81)',
   },
 ];
 

@@ -309,6 +309,15 @@ export function runDiscard(
       return types.includes('instant') || types.includes('sorcery');
     }),
   );
+  // Occult Epiphany (CR 205.2a): the card types of the cards discarded, read before they leave the hand; a card with two types counts for both.
+  const discardedTypes = [
+    ...new Set(
+      chosen.flatMap((id) => {
+        const card = state.objects[id];
+        return card?.zone === 'hand' ? derive(state, card).types : [];
+      }),
+    ),
+  ];
   // CR 701.50a (D-209): "if a nonland card is discarded this way", read before the card leaves the hand.
   const nonland = chosen.some((id) => {
     const card = state.objects[id];
@@ -354,6 +363,7 @@ export function runDiscard(
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
       discardedInstantOrSorcery: discardedSpells,
+      ...(discardedCards > 0 ? { discardedTypes, discardedTypeCount: discardedTypes.length } : {}),
       // Issue 279: this player's own number; the resolution keeps the greatest of them (`stack.ts`).
       discardedMost: discardedCards,
       ...(discardedCards > 0 ? { discardedBy: [seat] } : {}),

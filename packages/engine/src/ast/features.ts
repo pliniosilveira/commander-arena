@@ -275,11 +275,19 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'rollDie',
     'scry',
     'surveil',
+    // Issue 81 (Map token, Restless Anchorage): "target creature you control explores" (CR 701.44).
+    'explore',
+    // Issue 81 (Plan for All Outcomes): "the owner of target permanent puts it on their choice of the top or bottom of their library".
+    'ownerPutsOnLibrary',
     'lookAndReorder',
     'lookAndSplit',
     // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (CR 700.3).
     'revealAndSeparate',
     'putFromHandOnTop',
+    // Issue 81 (Jace, Multiverse Architect): "put a card from your hand on the bottom of your library".
+    'putFromHandOnBottom',
+    // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
+    'cantAttackPlaneswalkers',
     'createToken',
     'search',
     'attach',
@@ -354,6 +362,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
     'reselectAttack',
+    // Issue 81 (Dack Fayden): "choose a different opponent for each of those permanents; each opponent gains control of theirs".
+    'assignControlToOpponents',
     // D-175: "create a Food token or a Treasure token": the controller chooses one of the instructions as it resolves (CR 608.2d).
     'chooseOne',
     // D-194: "starting with you, each player votes for profit or security" (CR 701.38a).
@@ -711,7 +721,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold'],
+  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute', 'Incubator'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -792,6 +802,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerOrObject',
     // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (`exile` only).
     'objectOrGraveyardCard',
+    // Issue 81 (Fatehold Charm): "target spell or creature".
+    'objectOrSpell',
     'each',
     'choose',
     'you',
@@ -867,6 +879,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
+    // Issue 81 (Tamiyo): "those creatures" of a combat damage batch trigger.
+    'triggerSources',
     'manaValueAtMost',
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
@@ -1163,6 +1177,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'blockTax',
     // D-151: "You don't lose unspent red mana as steps and phases end."
     'unspentManaStays',
+    // Issue 81 (Omnath, Locus of the Void): "If you would lose unspent mana, that mana becomes colorless instead."
+    'unspentManaBecomesColorless',
     // D-151: "You may cast creature spells with power 4 or greater from the top of your library."
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
@@ -1186,6 +1202,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Food',
     'Clue',
     'Gold',
+    'Map',
+    'Gingerbrute',
+    'Incubator',
     'custom',
     'copyOf',
     'tapped',
@@ -1236,6 +1255,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
+    // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
+    'unspentMana',
     'affected',
     'half',
     'multiple',
@@ -1251,6 +1272,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerTargetCount',
     // Quandrix Unlimited group E: "put X counters" in a cast trigger: the X of the spell that was cast.
     'triggerSpellX',
+    // Issue 81 (Shark Typhoon): the X of the cycling cost, in a "when you cycle this card" trigger.
+    'triggerCycleX',
+    'triggerAttackerCount',
     // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
     'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
@@ -1288,6 +1312,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escape',
     // CR 702.180: Harmonize.
     'harmonize',
+    // Issue 81 (CR 702.176): Impending.
+    'impending',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -1381,6 +1407,8 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // Issue 81 (Gingerbrute): "can't be blocked this turn except by creatures with haste".
+  'cantBeBlockedExceptByHaste',
   'attacksEachCombat',
   'mustBeBlocked',
   // Galadriel group 3: "Its activated abilities can't be activated this turn."
@@ -1534,6 +1562,8 @@ export const SELECTOR_KINDS = [
   'playerOrObject',
   /** "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270): `TargetSpec.what` `objectOrGraveyardCard`. */
   'objectOrGraveyardCard',
+  /** "Target spell or creature" (CR 115.1, issue 81): `TargetSpec.what` `objectOrSpell`. */
+  'objectOrSpell',
   'each',
   'choose',
   'you',
@@ -1629,6 +1659,8 @@ export const SELECTOR_KINDS = [
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
   'triggerCard',
+  /** "Those creatures" of a combat damage batch trigger (CR 603.2c, issue 81): the engine's `triggerSources`. */
+  'triggerSources',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
   /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */
@@ -1978,6 +2010,8 @@ export const STATIC_KINDS = [
   'blockTax',
   /** "You don't lose unspent red mana as steps and phases end" (CR 500.5, D-151): `unspentManaStays`. */
   'unspentManaStays',
+  /** "If you would lose unspent mana, that mana becomes colorless instead" (CR 106.4, 614.1a, issue 81): `unspentManaBecomesColorless`. */
+  'unspentManaBecomesColorless',
   /** "You may cast creature spells with power 4 or greater from the top of your library" (CR 601.3, D-151): `castFromTopOfLibrary`. */
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
@@ -2004,6 +2038,8 @@ export const TOKEN_KINDS = [
   'Clue',
   'Gold',
   'Map',
+  'Gingerbrute',
+  'Incubator',
   'Blood',
   'custom',
   /** "A token that's a copy of target creature" (CR 707.2): the engine's `copyOf`. */
@@ -2069,6 +2105,8 @@ export const AMOUNT_KINDS = [
   'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
+  /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
+  'unspentMana',
   /** "Double the power and toughness of each creature you control" (CR 701.10, D-145): the engine's `affected` power or toughness amount. */
   'affected',
   /** "Half the number of ..., rounded down" (D-131): the engine's `half`. */
@@ -2093,6 +2131,10 @@ export const AMOUNT_KINDS = [
   'triggerTargetCount',
   /** "X" in a cast trigger (CR 107.3, 113.7a): the engine's `triggerSpellX`. */
   'triggerSpellX',
+  /** "X" in a "when you cycle this card" trigger (CR 702.29a, 107.3, issue 81): the engine's `triggerCycleX`. */
+  'triggerCycleX',
+  /** "that many" in a "whenever one or more Sphinxes attack" trigger (issue 81): the engine's `triggerAttackerCount`. */
+  'triggerAttackerCount',
   /** "For each card type among those cards" (CR 205.2a, 603.2c): the engine's `cardTypesAmongTriggerCards`, of a batch `putIntoGraveyard` trigger. */
   'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
@@ -2147,6 +2189,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'tapPermanents',
   'retrace',
   'sacrificeFromGraveyard',
+  'impending',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 
@@ -2307,10 +2350,14 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   rollDie: true,
   scry: true,
   surveil: true,
+  explore: true,
+  ownerPutsOnLibrary: true,
   lookAndReorder: true,
   lookAndSplit: true,
   revealAndSeparate: true,
   putFromHandOnTop: true,
+  putFromHandOnBottom: true,
+  cantAttackPlaneswalkers: true,
   createToken: true,
   search: true,
   attach: true,
@@ -2364,6 +2411,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   castFree: true,
   castCard: true,
   reselectAttack: true,
+  assignControlToOpponents: true,
   chooseOne: true,
   chooseCreatureType: true,
   vote: true,

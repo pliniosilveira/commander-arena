@@ -31,14 +31,18 @@ import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BRUNA_EFFECT_RULES } from './bruna';
+import { CAST_MILLED_EFFECT_RULES } from './cast-milled';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { EFFECT_COPY_SPELL } from './copy-spell';
+import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DACK_EFFECT_RULES } from './dack';
+import { DAMAGE_BATCH_EFFECT_RULES } from './damage-batch';
 import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
@@ -85,9 +89,11 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
+import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
@@ -116,7 +122,9 @@ import {
   single,
   UNDER_CONTROL,
 } from './operands';
+import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { EFFECT_PAY } from './pay';
+import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import {
@@ -149,7 +157,9 @@ import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
+import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
+import { REVEAL_UNTIL_OTHER_EFFECT_RULES } from './reveal-until-other';
 import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
@@ -579,6 +589,19 @@ const RETURN_CHOSEN = map(
   }),
 );
 
+/** "return target spell or creature to its owner's hand" (issue 81, Fatehold Charm): the slot of a spell on the stack or a creature on the battlefield. */
+const RETURN_SPELL_OR_CREATURE_TO_HAND = map(
+  sequence(
+    literal('return '),
+    operands(['noun.target-spell-or-creature'], 'effect.return'),
+    spanned(OWNERS_HAND),
+  ),
+  ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({
+    objects,
+    to: zone('effect.return', to.span, 'hand', { whose: 'owner' }),
+  }),
+);
+
 const RETURN_TO_HAND = map(
   sequence(
     literal('return '),
@@ -842,6 +865,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'effect.return',
     choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec; attachTo?: IrNoun }>(
       RETURN_TO_HAND,
+      RETURN_SPELL_OR_CREATURE_TO_HAND,
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
@@ -1065,6 +1089,16 @@ export const EFFECT_RULES = [
   ...DRAW_COMMANDER_CASTS_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "reveal the top X cards ... put all land cards from among them onto the battlefield tapped", "reveal cards until you reveal X land cards".
   ...REVEAL_X_CARDS_EFFECT_RULES,
+  ...REVEAL_THAT_MANY_EFFECT_RULES,
+  ...COPY_SPELL_TWICE_EFFECT_RULES,
+  ...DAMAGE_BATCH_EFFECT_RULES,
+  ...OWNER_LIBRARY_EFFECT_RULES,
+  ...INCUBATE_EFFECT_RULES,
+  ...CAST_MILLED_EFFECT_RULES,
+  ...DACK_EFFECT_RULES,
+  ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
+  ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
+  ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,

@@ -38,7 +38,9 @@ export function parseOnly(card: StoredCard): ImportedCard {
 }
 
 /** The card fields `parsed` lets a test set besides name, type line and text. */
-export type ParsedExtra = Partial<Pick<StoredFace, 'manaCost' | 'power' | 'toughness' | 'colors'>>;
+export type ParsedExtra = Partial<
+  Pick<StoredFace, 'manaCost' | 'power' | 'toughness' | 'colors' | 'loyalty'>
+>;
 
 /**
  * Imports text through the grammar only, and requires that it is fully supported. The card's own

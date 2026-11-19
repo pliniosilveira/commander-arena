@@ -26,6 +26,7 @@ export function optionText(
     | 'color'
     | 'cardType'
     | 'attackTarget'
+    | 'assignOpponent'
     | 'option'
     | 'effect'
     | 'riot'
@@ -37,6 +38,11 @@ export function optionText(
   // D-451: "gains protection from the color of your choice", answered with a color letter.
   if (purpose === 'color' || purpose === 'protectionColor') return colorName(option);
   if (purpose === 'riot') return riotAnswerText(option);
+  // Issue 81 (Dack Fayden): "seat:1" is the opponent in that seat (seats count from 0).
+  if (purpose === 'assignOpponent') {
+    const seat = /^seat:(\d+)$/.exec(option)?.[1];
+    return seat === undefined ? option : `player ${Number(seat) + 1}`;
+  }
   // D-139 (CR 508.7): "player:1" is a player (seats count from 0), "permanent:o17" a planeswalker or battle.
   if (purpose === 'attackTarget') {
     const seat = /^player:(\d+)$/.exec(option)?.[1];
@@ -52,6 +58,7 @@ export function purposeNoun(
     | 'color'
     | 'cardType'
     | 'attackTarget'
+    | 'assignOpponent'
     | 'option'
     | 'effect'
     | 'riot'
@@ -68,6 +75,7 @@ export function purposeNoun(
   if (purpose === 'vote') return 'vote';
   if (purpose === 'replacement') return 'effect to apply first';
   if (purpose === 'attackTarget') return 'player or permanent to attack';
+  if (purpose === 'assignOpponent') return 'opponent to gain control';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
   return purpose === 'color' ? 'color' : 'creature type';

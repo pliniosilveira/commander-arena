@@ -215,7 +215,10 @@ const IF_KICKED = leadCondition(false);
  */
 const WHERE_X: Parser<IrAmount> = quiet(
   map(
-    sequence(literal(', '), family<IrAmount>('amount', { only: ['amount.where-x'] })),
+    sequence(
+      literal(', '),
+      family<IrAmount>('amount', { only: ['amount.where-x', 'amount.where-x-exiled-creatures'] }),
+    ),
     ([, amount]) => amount,
   ),
 );

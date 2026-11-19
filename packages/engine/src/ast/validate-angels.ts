@@ -300,12 +300,25 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       // D-339 (CR 603.2d): the cause is the controller casting or copying a spell the filter names, which is a filter of spells.
       if (s.cause !== undefined) {
-        if (kindOf(s.cause) !== 'castOrCopySpell') {
-          issue(out, `${path}.cause`, 'the cause of an additional trigger is castOrCopySpell');
-        } else if (s.cause.spell === undefined || s.cause.spell.stackKind !== 'spell') {
-          issue(out, `${path}.cause.spell`, 'the spell is a filter of spells (stackKind "spell")');
+        if (kindOf(s.cause) === 'creatureAttacks') {
+          // Issue 81 (CR 603.2d): a creature attacking, no parameter.
+        } else if (kindOf(s.cause) !== 'castOrCopySpell') {
+          issue(
+            out,
+            `${path}.cause`,
+            'the cause of an additional trigger is castOrCopySpell or creatureAttacks',
+          );
         } else {
-          checkFilter(s.cause.spell, `${path}.cause.spell`, out);
+          const spell = (s.cause as Extract<typeof s.cause, { kind: 'castOrCopySpell' }>).spell;
+          if (spell === undefined || spell.stackKind !== 'spell') {
+            issue(
+              out,
+              `${path}.cause.spell`,
+              'the spell is a filter of spells (stackKind "spell")',
+            );
+          } else {
+            checkFilter(spell, `${path}.cause.spell`, out);
+          }
         }
       }
       return true;

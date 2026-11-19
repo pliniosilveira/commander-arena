@@ -236,14 +236,22 @@ export const DRAGON_NEEDS: readonly FeatureRef[] = [
   'effect:payAnyAmount',
   'amount:shortfall',
   'static:unspentManaStays',
+  'static:unspentManaBecomesColorless',
   'static:castFromTopOfLibrary',
 ];
 
 type Static = Extract<IrAbility, { kind: 'static' }>;
-type DragonStaticEffect = Extract<IrStaticEffect, { kind: 'unspentManaStays' | 'castFromTop' }>;
+type DragonStaticEffect = Extract<
+  IrStaticEffect,
+  { kind: 'unspentManaStays' | 'unspentManaBecomesColorless' | 'castFromTop' }
+>;
 
 export function isDragonStatic(effect: IrStaticEffect): effect is DragonStaticEffect {
-  return effect.kind === 'unspentManaStays' || effect.kind === 'castFromTop';
+  return (
+    effect.kind === 'unspentManaStays' ||
+    effect.kind === 'unspentManaBecomesColorless' ||
+    effect.kind === 'castFromTop'
+  );
 }
 
 function staticFailure(node: Static, needs: readonly FeatureRef[] = []): LowerFailure {
@@ -279,6 +287,18 @@ export function lowerDragonStatic(ability: Static): LowerResult<readonly Ability
           static: { kind: 'unspentManaStays', colors: effect.colors as ManaColor[] },
         },
       ],
+      rule: ability.rule,
+    };
+  }
+  if (effect.kind === 'unspentManaBecomesColorless') {
+    const blockedColorless = missingFeatures([
+      'ability:static',
+      'static:unspentManaBecomesColorless',
+    ]);
+    if (blockedColorless.length > 0) return staticFailure(ability, blockedColorless);
+    return {
+      ok: true,
+      value: [{ kind: 'static', static: { kind: 'unspentManaBecomesColorless' } }],
       rule: ability.rule,
     };
   }

@@ -100,6 +100,8 @@ describe('amounts that read an object', () => {
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'timesAttacked',
+      // Issue 81 (Omnath): "for each unspent mana you have".
+      'unspentMana',
       'affected',
       'half',
       'multiple',
@@ -115,6 +117,9 @@ describe('amounts that read an object', () => {
       'triggerTargetCount',
       // Quandrix Unlimited group E: the X of the spell that caused a cast trigger.
       'triggerSpellX',
+      // Issue 81 (Shark Typhoon): the X of the cycling cost, in "when you cycle this card".
+      'triggerCycleX',
+      'triggerAttackerCount',
       // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
       'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).

@@ -8,11 +8,11 @@ import type { IrCondition } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule } from '../registry';
 
-const ORDINALS: Readonly<Record<string, number>> = { second: 2, third: 3, fourth: 4 };
+const ORDINALS: Readonly<Record<string, number>> = { first: 1, second: 2, third: 3, fourth: 4 };
 
 /**
  * `condition.resolved-times`: "this is the second time this ability has resolved this turn" (CR 608.2c: the instruction is read as it comes up, so the resolution that is
- * happening counts). The engine's `abilityResolvedTimes`. Not read: "first" (every resolution is a first one until a second comes), a number word that is not an ordinal ("two
+ * happening counts). The engine's `abilityResolvedTimes`. "First" (issue 81, Nissa, Leyline Tamer) is the resolution that is happening when no other has begun this turn. Not read: a number word that is not an ordinal ("two
  * times"), another subject ("this spell", "that ability"), another span than the turn, the plural, the past tense of "is".
  */
 export const CONDITION_RESOLVED_TIMES = defineRule<IrCondition>({
@@ -24,9 +24,10 @@ export const CONDITION_RESOLVED_TIMES = defineRule<IrCondition>({
     'this is the second time this ability has resolved this turn',
     'This is the third time this ability has resolved this turn',
     'this is the fourth time this ability has resolved this turn',
+    'this is the first time this ability has resolved this turn',
   ],
   rejects: [
-    'this is the first time this ability has resolved this turn',
+    'this is the first time this ability has resolved',
     'this is the second time this ability has resolved',
     'this is the second time this spell has resolved this turn',
     'this is the second time that ability has resolved this turn',
@@ -40,7 +41,7 @@ export const CONDITION_RESOLVED_TIMES = defineRule<IrCondition>({
   parse: (ctx, pos) => {
     const r = pattern(
       new RegExp(
-        `this is the (second|third|fourth) time this ability has resolved this turn${BOUNDARY}(?! and\\b)`,
+        `this is the (first|second|third|fourth) time this ability has resolved this turn${BOUNDARY}(?! and\\b)`,
         'iu',
       ),
     )(ctx, pos);

@@ -189,10 +189,8 @@ describe('cycling', () => {
     expect(gate(cycling([{ kind: 'sacrifice', what: { types: ['land'] } }]))).toEqual([
       expect.stringContaining('cost "sacrifice" is not implemented'),
     ]);
-    // X is announced for an ability's own cost, not for a keyword's (D-103).
-    expect(gate(cycling([{ kind: 'mana', symbols: ['X'] }]))[0]).toContain(
-      'X in the cost of a keyword',
-    );
+    // Issue 81 (Shark Typhoon): the X of a cycling cost is announced as the cycling ability is activated (CR 107.3, 602.2b).
+    expect(gate(cycling([{ kind: 'mana', symbols: ['X'] }]))).toEqual([]);
   });
 
   test('an empty cycling cost is malformed (CR 602.1: an ability with no cost says {0})', () => {

@@ -322,6 +322,33 @@ export function runRequireAttack(
 }
 
 /**
+ * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, issue 81): one continuous effect over the creatures the effect names as it begins, which
+ * bars them from the planeswalkers of the subtype the controller controls (`rules/attack-bans.ts`) until end of turn.
+ */
+export function runCantAttackPlaneswalkers(
+  state: GameState,
+  node: Extract<Effect, { kind: 'cantAttackPlaneswalkers' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const objects = resolveObjects(state, node.objects, ctx, targets);
+  if (objects.length === 0) return done(state);
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const created: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects,
+    until: 'endOfTurn',
+    change: {
+      kind: 'cantAttackPlayer',
+      seat: ctx.controller,
+      planeswalkerSubtype: node.subtype,
+    },
+  };
+  return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
  * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d, 611.2a, 611.2c): for each player the effect names, one
  * continuous effect with no set of objects, read where that player declares attackers, for the creatures they control then. It ends with the cleanup step of that player's next
  * turn (`turnEnd`, the one after this moment: a turn of theirs that has begun already is not counted), so it covers the whole turn. It does nothing when the permanent with the

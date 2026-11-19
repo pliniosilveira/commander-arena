@@ -132,7 +132,7 @@ describe('"If this is the second time this ability has resolved this turn" (Elro
   });
 
   test.each([
-    'Whenever ~ enters, scry 1. If this is the first time this ability has resolved this turn, the Ring tempts you.',
+    'Whenever ~ enters, scry 1. If this is the fifth time this ability has resolved this turn, the Ring tempts you.',
     'Whenever ~ enters, scry 1. If this is the second time this ability has resolved, the Ring tempts you.',
     'Whenever ~ enters, scry 1. If this is the second time this spell has resolved this turn, the Ring tempts you.',
     'Whenever ~ enters, scry 1. If this is the second time you have scried this turn, the Ring tempts you.',

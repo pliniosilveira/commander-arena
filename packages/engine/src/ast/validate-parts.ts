@@ -128,6 +128,8 @@ export interface Scope {
   readonly sacrificedCost?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
   readonly tappedCost?: boolean;
+  /** True in the effect of a triggered ability of a `combatDamageBatch` trigger: `triggerSources` names the creatures that dealt the damage. */
+  readonly triggerSources?: boolean;
   /** True in the effect of a triggered ability about the cards that left a graveyard (`becomeCopyOfCard`, D-232). */
   readonly triggerCards?: boolean;
   /** True in the effect of an activated ability whose cost exiles cards from the graveyard (`splitCostExiled`, D-232). */
@@ -143,6 +145,10 @@ export interface Scope {
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
   readonly triggerDamage?: boolean;
+  /** True in the effect of a `cycled` trigger: `triggerCycleX` reads the X of the cycling cost (issue 81, Shark Typhoon). */
+  readonly triggerCycleX?: boolean;
+  /** True in the effect of an `attackBatch` trigger: `triggerAttackerCount` reads the creatures of the declaration that matched (issue 81, The Ur-Sphinx). */
+  readonly triggerAttackerCount?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -733,6 +739,8 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerDamage',
   'triggerTargetCount',
   'triggerSpellX',
+  'triggerCycleX',
+  'triggerAttackerCount',
   'cardTypesAmongTriggerCards',
   'dieResult',
   'votesFor',
@@ -887,6 +895,49 @@ export function declareTargets(
         }
         break;
       }
+      case 'objectOrSpell':
+        // CR 115.1 (issue 81, Fatehold Charm): "target spell or creature": a permanent the filter matches or a spell the spell filter matches.
+        checkFilter(what.filter, `${p}.what.filter`, out);
+        checkFilter(what.spell, `${p}.what.spell`, out);
+        if (
+          filterSome(
+            what.filter,
+            (f) =>
+              (f.zone !== undefined && f.zone !== 'battlefield') ||
+              f.stackKind !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${p}.what.filter`,
+            'the permanent half is on the battlefield: no other zone, owner or stackKind',
+          );
+        }
+        if (
+          what.spell?.stackKind !== 'spell' ||
+          (what.spell.zone !== undefined && what.spell.zone !== 'stack') ||
+          what.spell.owner !== undefined
+        ) {
+          issue(
+            out,
+            `${p}.what.spell`,
+            'the spell half is a spell on the stack: stackKind "spell", no zone or owner',
+          );
+        }
+        if (
+          spec.onePerOpponent !== undefined ||
+          spec.divide !== undefined ||
+          spec.upToThatMany !== undefined ||
+          spec.anyNumber !== undefined
+        ) {
+          issue(
+            out,
+            p,
+            'a target of a permanent or a spell takes one target, not onePerOpponent, divide, upToThatMany or anyNumber',
+          );
+        }
+        break;
       default:
         issue(out, `${p}.what`, `unknown target kind ${kindOf(what)}`);
     }
@@ -1214,6 +1265,16 @@ export function checkRef(
       // Read only where a node says so: the object of a moveToZone in an ability (Persist's "return it").
       issue(out, path, "'thisCard' is only valid as the object of moveToZone in an ability");
       break;
+    case 'triggerSources':
+      // Tamiyo, Upriser Crowned: the creatures of the batch of combat damage that triggered the ability.
+      if (scope.triggerSources !== true) {
+        issue(
+          out,
+          path,
+          "'triggerSources' needs a triggered ability of a combatDamageBatch trigger",
+        );
+      }
+      break;
     case 'triggerCard':
       // D-230: read only where a node says so: the object of a moveToZone or an exile in a triggered ability.
       issue(
@@ -1499,6 +1560,8 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
+  exiledCreatures: 'an exile effect',
+  discardedTypeCount: 'a discard effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1520,12 +1583,13 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedNoncreature',
       'discardedInstantOrSorcery',
       'discardedMost',
+      'discardedTypeCount',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
   if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
   // Oversimplify: the creatures an exile really exiled, by controller.
-  if (e?.kind === 'exile') return ['exiledPowerOwn'];
+  if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -2028,6 +2092,26 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         issue(out, path, "'triggerSpellX' needs a trigger about a spell being cast");
       }
       break;
+    case 'triggerCycleX':
+      // CR 702.29a (issue 81, Shark Typhoon): the X of the cycling cost of the card that was cycled.
+      if (scope.triggerCycleX !== true) {
+        issue(
+          out,
+          path,
+          "'triggerCycleX' needs a triggered ability whose trigger is cycling this card",
+        );
+      }
+      break;
+    case 'triggerAttackerCount':
+      // CR 508.1 (issue 81): the creatures of the declaration the trigger counted.
+      if (scope.triggerAttackerCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerAttackerCount' needs a triggered ability whose trigger is a batch of attackers",
+        );
+      }
+      break;
     case 'cardTypesAmongTriggerCards':
       // CR 603.2c: the cards a batch trigger saw put into a graveyard.
       if (scope.triggerCards !== true) {
@@ -2273,6 +2357,13 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
+  // Issue 81 (Omnath, CR 106.4): "for each unspent mana you have": plain (+N/+N) only.
+  if (amount?.kind === 'unspentMana') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not unspent mana');
+    }
+    return;
+  }
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not a commander');
@@ -3141,7 +3232,15 @@ function movesObjects(e: Effect): boolean {
   );
 }
 
-const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue', 'Gold'];
+const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
+  'Treasure',
+  'Food',
+  'Clue',
+  'Gold',
+  'Map',
+  'Gingerbrute',
+  'Incubator',
+];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
 const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
@@ -4794,6 +4893,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, path, "'attackRandomOpponent' needs an ability of a permanent, not a spell");
       }
       break;
+    case 'assignControlToOpponents':
+      // Issue 81 (Dack Fayden): the permanents an earlier effect moved.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "the permanents are the ones an effect before moved ('moved')",
+        );
+      }
+      break;
     case 'goad':
       // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
@@ -4864,6 +4974,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         scope.movedAvailable === true,
         scope.diesTrigger === true,
         scope.auraDiesTrigger === true,
+        scope.thisWay?.includes('exiledCreatures') === true,
       );
       break;
     case 'prepare':
@@ -5615,6 +5726,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.max`, 'several cards are cast, not played (no play)');
         }
       }
+      // CR 608.2g, 101.4 (issue 81): one question for each owner of the cards an earlier effect moved: nothing else about who casts or how many.
+      if (e.perOwner !== undefined) {
+        if (
+          e.perOwner !== true ||
+          kindOf(e.objects) !== 'moved' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.filter !== undefined ||
+          e.player !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.perOwner`,
+            "perOwner is true, on the cards an effect before moved ('moved'), with no play, max, filter or player",
+          );
+        }
+      }
       const objects = e.objects as ChooseSelector | ObjectRef;
       // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.
       if (e.player !== undefined) {
@@ -5772,8 +5900,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkAmount(e.count, `${path}.count`, scope, out);
         }
       }
-      if (e.rest !== undefined && e.rest !== 'stay') {
-        issue(out, `${path}.rest`, 'rest is stay when present');
+      if (e.rest !== undefined && e.rest !== 'stay' && e.rest !== 'bottomChosen') {
+        issue(out, `${path}.rest`, 'rest is stay or bottomChosen when present');
+      }
+      // Issue 81 (Jhoira, Proteus Staff): whose library is revealed, and who controls the card put onto the battlefield.
+      if (e.from !== undefined) {
+        checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      }
+      if (
+        e.putUnder !== undefined &&
+        (e.putUnder !== 'revealer' || e.from === undefined || e.put !== 'battlefield')
+      ) {
+        issue(
+          out,
+          `${path}.putUnder`,
+          'putUnder is revealer, only with from and a card put onto the battlefield',
+        );
       }
       break;
     case 'gainLevel':
@@ -6466,6 +6608,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;
+    case 'ownerPutsOnLibrary':
+      // CR 108.3 (issue 81): the permanents named are put into their owners' libraries; they are a selector of permanents.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
+    case 'explore':
+      // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'scry':
     case 'surveil':
       // CR 701.22a, 701.25a: the player looks at their own library, which is hidden from everyone
@@ -6485,6 +6635,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'lookAndReorder':
     case 'putFromHandOnTop':
       checkAmount(e.count, `${path}.count`, scope, out);
+      break;
+    case 'putFromHandOnBottom':
+      break;
+    case 'cantAttackPlaneswalkers':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (typeof e.subtype !== 'string' || e.subtype === '') {
+        issue(out, `${path}.subtype`, 'a planeswalker subtype is a non-empty string');
+      }
       break;
     case 'lookAndSplit':
       // D-216: the piles are whole numbers, and with a fixed count they add up to it (the cards looked at are all placed).

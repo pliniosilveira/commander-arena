@@ -515,6 +515,15 @@ function withOption(outcome: ParseOutcome, option: string): ParseOutcome {
   if (!outcome.ok) return outcome;
   const abilities: IrAbility[] = [];
   for (const ability of outcome.abilities) {
+    // Issue 81 (Windcrag Siege, "• Mardu — If a creature attacking causes ..."): a static ability that makes a trigger happen an additional time is linked to the option too.
+    if (
+      ability.kind === 'static' &&
+      ability.statement.effects.length === 1 &&
+      ability.statement.effects[0]?.kind === 'doubleTriggers'
+    ) {
+      abilities.push({ ...ability, statement: { ...ability.statement, option } });
+      continue;
+    }
     if (ability.kind !== 'triggered') {
       const failure = { progress: 0, closestRule: ability.rule, slot: null, recognised: [] };
       return { ok: false, failure: { ...failure, recognised: outcome.recognised } };
@@ -526,6 +535,11 @@ function withOption(outcome: ParseOutcome, option: string): ParseOutcome {
 
 /** Reads one ability line's skeleton into IR with the rules of `rules`. */
 export function parseAbility(sk: AbilitySkeleton, rules: RuleLookup): ParseOutcome {
+  // Issue 81 (Windcrag Siege): a static ability under a bullet ("• Mardu — If a creature attacking causes ..."): the line is read from the words after the bullet, since the static and
+  // keyword rules read from the start of the text they are given.
+  if (sk.option !== undefined && sk.head === 'other') {
+    return withOption(readHead(segment(sk.text.slice(sk.whole.start), sk.face), rules), sk.option);
+  }
   const outcome = readHead(sk, rules);
   return sk.option === undefined ? outcome : withOption(outcome, sk.option);
 }

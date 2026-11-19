@@ -241,6 +241,13 @@ function evades(state: GameState, blocker: GameObject, attacker: GameObject): bo
     return true;
   }
   const b = derive(state, blocker);
+  // CR 509.1b (issue 81, Gingerbrute): "can't be blocked this turn except by creatures with haste", read as the blockers are declared.
+  if (
+    a.restrictions.includes('cantBeBlockedExceptByHaste') &&
+    !abilitiesHaveKeyword(b.abilities, 'haste')
+  ) {
+    return true;
+  }
   // CR 702.16f (D-229): protection from a color: it can't be blocked by creatures of that color.
   if (hasProtectionFrom(state, attacker, blocker.id)) return true;
   // CR 701.54c (D-196): "Your Ring-bearer ... can't be blocked by creatures with greater power", read as the blockers are declared.

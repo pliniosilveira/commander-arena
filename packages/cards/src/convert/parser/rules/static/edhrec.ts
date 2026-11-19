@@ -159,7 +159,62 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_CAUSE = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.triggers-additional-time-attacking` (issue 81, Windcrag Siege, "Mardu"): "If a creature attacking causes a triggered ability of a permanent you control to trigger, that
+ * ability triggers an additional time." (CR 603.2d, 508.1m: the cause is a creature attacking, any creature; the abilities that trigger on that attack trigger once more). The
+ * permanents are "a permanent you control". Not read: another player's permanents, another kind of permanent, "attacks" as a verb, another number of times, a second sentence.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-attacking',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 508.1m (Declare Attackers Step)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  rejects: [
+    'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time',
+    'If a creature attacking causes a triggered ability of a creature you control to trigger, that ability triggers an additional time.',
+    'If a creature attacking causes a triggered ability of a permanent to trigger, that ability triggers an additional time.',
+    'If a creature attacking causes an activated ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers two additional times.',
+    'If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time. Draw a card.',
+    'If a creature entering causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+    'If creatures attacking cause a triggered ability of a permanent you control to trigger, that ability triggers an additional time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-attacking';
+    const r = sequence(
+      literal(
+        'if a creature attacking causes a triggered ability of a permanent you control to trigger',
+      ),
+      literal(TAIL),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { controller: 'you', raw: 'permanent' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(id, subject, [{ kind: 'doubleTriggers', causeAttacks: true }], pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 export const EDHREC_STATIC_RULES = [
+  STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING,
   STATIC_TRIGGERS_ADDITIONAL_TIME,
   STATIC_TRIGGERS_ADDITIONAL_TIME_CAUSE,
 ].map(quietly);

@@ -35,6 +35,7 @@ import {
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
   DELAYED_RETURN_THIS_CARD_ATTACHED,
+  DELAYED_RETURN_TO_BATTLEFIELD,
   DELAYED_RETURN_TO_HAND,
   FLICKER,
   GAIN_ALL_CREATURE_TYPES,
@@ -49,6 +50,8 @@ import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { DACK_LOWERINGS } from './dack';
+import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
@@ -1794,7 +1797,7 @@ const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
 /**
  * "Create a Treasure token", "create two 1/1 white Soldier creature tokens" (CR 111.2, 111.10).
  * A predefined token the engine cannot run (Food and Clue carry abilities it cannot activate yet,
- * Map and Blood are not in the AST) is reported with `token:<name>`.
+ * Blood is not in the AST) is reported with `token:<name>`.
  */
 const CREATE_TOKEN: Lowering<IrClause, Effects> = {
   head: 'createToken',
@@ -1903,7 +1906,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
     if (blocked.length > 0) return { ok: false, needs: blocked, ...at };
-    if (name === 'Map' || name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
+    if (name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
     return {
       ok: true,
       value: [
@@ -2116,6 +2119,16 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   libraryVerb('lookAndReorder'),
   LOOK_AND_SPLIT,
   libraryVerb('putFromHandOnTop'),
+  {
+    head: 'putFromHandOnBottom',
+    id: 'lower.put-from-hand-on-bottom',
+    needs: ['effect:putFromHandOnBottom'],
+    lower: (clause) => ({
+      ok: true,
+      value: [{ kind: 'putFromHandOnBottom' }],
+      rule: clause.rule,
+    }),
+  },
   LOOK_TAKE,
   LOOK_TAKE_BOTTOM,
   LOOK_TAKE_ONE_TOP,
@@ -2131,6 +2144,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SET_PT,
   FLICKER,
   DELAYED_RETURN,
+  DELAYED_RETURN_TO_BATTLEFIELD,
   DELAYED_RETURN_TO_HAND,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
@@ -2196,6 +2210,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUANDRIX_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
+  ...DAMAGE_BATCH_LOWERINGS,
+  ...DACK_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,

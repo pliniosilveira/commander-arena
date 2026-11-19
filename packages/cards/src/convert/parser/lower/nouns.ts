@@ -437,7 +437,18 @@ function lowerFilterAt(
   // "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga.
   let anyOfFinal = anyOf;
   if (filter.historic === true) {
-    if (anyOf !== undefined) return bad([]);
+    // Issue 81 (Jhoira, "a historic permanent card"): every historic object is a permanent already (an artifact, a legendary permanent, a Saga), so "permanent" adds nothing.
+    const onlyPermanentTypes =
+      anyOf !== undefined &&
+      anyOf.every(
+        (member) =>
+          Object.keys(member).length === 1 &&
+          member.types?.length === 1 &&
+          ['artifact', 'creature', 'enchantment', 'land', 'planeswalker', 'battle'].includes(
+            member.types[0] ?? '',
+          ),
+      );
+    if (anyOf !== undefined && !onlyPermanentTypes) return bad([]);
     anyOfFinal = [{ types: ['artifact'] }, { supertypes: ['legendary'] }, { subtypes: ['Saga'] }];
   }
   const value: ObjectFilter = {
@@ -587,6 +598,12 @@ export function declareDividedTarget(
 function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   const id = noun.ref;
   if (id === undefined) return failure(noun, []);
+  // Issue 81 (Plan for All Outcomes): "up to one other target nonland permanent" as the first target of an ability of a permanent: there is no slot before it to be different
+  // from, so "other" is the permanent with the ability (CR 115.1, 109.1), as in "another target ...".
+  if (noun.otherTarget === true && ctx.targets.length === 0 && ctx.owner === 'ability') {
+    const { otherTarget: _apart, ...rest } = noun;
+    return declareTarget({ ...rest, other: true }, ctx);
+  }
   // "Any number of target creatures" has no bounds of its own: a divided damage reads it (`declareDividedTarget`), and an effect that takes any number of
   // targets (stage P74, D-234: "any number of other target creatures you control phase out") has the slot `anyNumber`.
   const anyNumberTarget = noun.anyNumber === true && noun.det === 'target';
@@ -679,6 +696,30 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       spec = anyNumberTarget
         ? { id, what: { kind: 'player', filter: noun.filter.player }, anyNumber: true }
         : { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
+    } else if (noun.orSpell !== undefined) {
+      // "target spell or creature" (issue 81, Fatehold Charm, CR 115.1): the engine's slot of a permanent or a spell; one target, nothing else about the noun.
+      if (
+        noun.upTo === true ||
+        noun.other ||
+        noun.otherTarget === true ||
+        anyNumberTarget ||
+        noun.perOpponent === true ||
+        noun.upToThatMany === true ||
+        noun.count !== undefined
+      ) {
+        return failure(noun, []);
+      }
+      const blocked = missingFeatures(['selector:objectOrSpell']);
+      if (blocked.length > 0) return failure(noun, blocked);
+      const permanents = lowerFilter(noun);
+      if (!permanents.ok) return permanents;
+      const spells = lowerFilterAt(noun.orSpell, { ...noun, other: false }, false);
+      if (!spells.ok) return spells;
+      spec = {
+        id,
+        what: { kind: 'objectOrSpell', filter: permanents.value, spell: spells.value },
+        ...boundsOf(noun),
+      };
     } else if (noun.orCard !== undefined) {
       // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): the engine's slot of two zones. The text of a
       // spell has no such slot (the engine reads it in a triggered ability only), and nothing else about the noun may be set that the slot does not say.

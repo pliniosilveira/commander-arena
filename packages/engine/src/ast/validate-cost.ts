@@ -183,6 +183,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'spectacle',
   'escape',
   'harmonize',
+  'impending',
   'madness',
   'miracle',
   'foretell',
@@ -227,6 +228,19 @@ export function checkAlternativeCosts(
         out,
         alt.kind === 'miracle' || alt.kind === 'harmonize',
       );
+    }
+    // CR 702.176a (issue 81): an impending cost says how many time counters the permanent enters with; no other kind has the field.
+    const counters = (alt as { readonly counters?: unknown }).counters;
+    if (alt.kind === 'impending') {
+      if (!Number.isSafeInteger(counters) || (counters as number) < 1) {
+        issue(
+          out,
+          `${p}.counters`,
+          'impending enters with a positive whole number of time counters',
+        );
+      }
+    } else if (counters !== undefined) {
+      issue(out, `${p}.counters`, `only impending names counters (${alt.kind} has none)`);
     }
     // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
     const exile = (alt as { readonly exile?: unknown }).exile;
@@ -294,6 +308,10 @@ export function checkCostReduction(
   path: string,
   out: Out,
 ): void {
+  // CR 113.6 (issue 81, Eminence): "in the command zone" is for a reduction of other spells, not the spell's own `this` ability.
+  if (s.inCommandZone !== undefined && (s.inCommandZone !== true || kindOf(s.spells) === 'this')) {
+    issue(out, `${path}.inCommandZone`, 'inCommandZone is true, and only on a reduction by filter');
+  }
   if (kindOf(s.spells) !== 'this') {
     const filter = s.spells as ObjectFilter;
     // D-424 (CR 601.2c, 601.2f): "Aura spells you cast that target enchanted creature cost {3} less": the targets are chosen before the cost is determined, so the outer

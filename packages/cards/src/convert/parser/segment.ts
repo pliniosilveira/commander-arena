@@ -202,6 +202,8 @@ const NEW_TARGETS_SENTENCE = /^you may choose new targets for the copy\.$/i;
  */
 const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\.$/i;
 const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
+/** "Copy target instant or sorcery spell an opponent controls twice." (issue 81, Venser, Fervent Forger): its permission to choose new targets for the copies is the next sentence. */
+const COPY_TWICE = /(?:^|, )copy target [^.]* an opponent controls twice\.$/i;
 
 /**
  * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (Feather group 3, D-438, CR 707.10e): the
@@ -238,7 +240,8 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
-    COPY_FOR_EACH.test(text.slice(before.start, before.end))
+    (COPY_FOR_EACH.test(text.slice(before.start, before.end)) ||
+      COPY_TWICE.test(text.slice(before.start, before.end)))
   );
 }
 
@@ -346,9 +349,18 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
  */
 const REVEAL_UNTIL =
-  /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
+  /^(?:then if this is the (?:first|second|third|fourth) time this ability has resolved this turn, )?(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD =
   /^put (?:that card|those [\p{L}]+ cards|all [\p{L}]+ cards revealed this way) [^.]*\.$/iu;
+/**
+ * "Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the
+ * battlefield, then shuffle the rest of the revealed cards into your library." (Mass Polymorph): two sentences that are one instruction, kept together for
+ * `effect.reveal-until-that-many`.
+ */
+const EXILE_THEN_REVEAL_THAT_MANY =
+  /^exile all [^.]*, then reveal cards from the top of your library until you reveal that many creature cards\.$/i;
+const PUT_ALL_REVEALED_SHUFFLE_REST =
+  /^put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library\.$/i;
 /**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
  * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
@@ -409,6 +421,28 @@ const EACH_PLAYER_VOW_KEEP =
   /^each player puts an? [a-z]+ counter on a creature they control and sacrifices the rest\.$/i;
 const THOSE_CREATURES_CANT_ATTACK_YOU =
   /^each of those creatures can['’]t attack you or planeswalkers you control for as long as it has an? [a-z]+ counter on it\.$/i;
+
+/**
+ * "At the beginning of combat on each opponent's turn, they may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn." (Jace, Multiverse Architect,
+ * issue 81, CR 118.12a, 508.1a): the second sentence says what happens when the player does not pay the first one asks, so the two are read as one instruction.
+ */
+const THEY_MAY_PAY = /(?:^|, )they may pay (?:\{[^}]+\})+\.$/i;
+const IF_THEY_DONT_CANT_ATTACK =
+  /^if they don['’]t, creatures they control can['’]t attack [\p{L}]+ you control this turn\.$/iu;
+
+/**
+ * "When ~ enters, reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have. Put those creature cards onto the battlefield,
+ * then shuffle." and "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (Dack Fayden, issue 81): each
+ * pair is one instruction, kept together for `effect.reveal-until-opponents` and `effect.assign-control-to-opponents`.
+ */
+const REVEAL_UNTIL_OPPONENTS_FIRST =
+  /(?:^|, )reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have\.$/i;
+const PUT_THOSE_CREATURES_SHUFFLE =
+  /^put those creature cards onto the battlefield, then shuffle\.$/i;
+const FOR_EACH_PERMANENT_DIFFERENT_OPPONENT =
+  /^for each of those permanents, choose a different opponent\.$/i;
+const EACH_OPPONENT_GAINS_CONTROL =
+  /^each opponent gains control of the permanent for which they were chosen\.$/i;
 
 /**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
@@ -590,6 +624,9 @@ const IF_ITS_LAND_OR_MAY_PUT =
 /** "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." (Galadriel deck, group 1, CR 205.1b): the second sentence keeps the old types. */
 const THEY_BECOME = /^they become [^.]*\.$/i;
 const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
+/** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
+const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [^.]*\.$/i;
+const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
 /**
  * "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~." (Galadriel deck, group 3, CR 701.20a, 400.7j): the second sentence
  * reads the card the first one drew and revealed, so the two are read as one instruction (`effect.draw-reveal-remove`; the first may follow a loyalty cost).
@@ -613,6 +650,16 @@ const TOKEN_HAS_ENCHANT = /^the token has enchant creature(?:\.| and ["“].*["�
  */
 const MAY_PUT_AMONG_TAPPED = /^you may put [^.]* from among them onto the battlefield tapped\.$/i;
 const IF_NOT_PUT_AMONG_HAND = /^if you don['’]t, put a card from among them into your hand\.$/i;
+const PLAYER_REVEALS_UNTIL =
+  /^target opponent reveals cards from the top of their library until they reveal [^.]*\.$/i;
+const YOU_PUT_AND_LOSE_LIFE =
+  /^you put that card onto the battlefield under your control and lose life equal to that permanent['’]s mana value\.$/i;
+const THAT_PLAYER_PUTS_REST_RANDOM =
+  /^that player puts the rest of the revealed cards on the bottom of their library in a random order\.$/i;
+const CONTROLLER_REVEALS_UNTIL =
+  /^that creature['’]s controller reveals cards from the top of their library until they reveal [^.]*\.$/i;
+const THE_PLAYER_PUTS_ANY_ORDER =
+  /^the player puts that card onto the battlefield and the rest on the bottom of their library in any order\.$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -620,6 +667,32 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    // Issue 81 (Jhoira, Weatherlight Corsair): "Target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that card onto the battlefield
+    // under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a random order.": one
+    // instruction (`effect.player-reveals-until-you-put`).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, PLAYER_REVEALS_UNTIL) &&
+      said(b, YOU_PUT_AND_LOSE_LIFE) &&
+      said(c, THAT_PLAYER_PUTS_REST_RANDOM)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
+    // Issue 81 (Proteus Staff): "That creature's controller reveals cards from the top of their library until they reveal a creature card. The player puts that card onto the battlefield and
+    // the rest on the bottom of their library in any order." (`effect.controller-reveals-until-puts`).
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, CONTROLLER_REVEALS_UNTIL) &&
+      said(b, THE_PLAYER_PUTS_ANY_ORDER)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
     if (
       a !== undefined &&
       d !== undefined &&
@@ -742,6 +815,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
+        (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
@@ -803,6 +877,38 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EXILE_THEN_REVEAL_THAT_MANY) &&
+      said(b, PUT_ALL_REVEALED_SHUFFLE_REST)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, THEY_MAY_PAY) &&
+      said(b, IF_THEY_DONT_CANT_ATTACK)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, REVEAL_UNTIL_OPPONENTS_FIRST) &&
+      said(b, PUT_THOSE_CREATURES_SHUFFLE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, FOR_EACH_PERMANENT_DIFFERENT_OPPONENT) &&
+      said(b, EACH_OPPONENT_GAINS_CONTROL)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
     } else if (a !== undefined) out.push(a);
   }
   return out;
@@ -832,6 +938,8 @@ export function splitSentences(text: string, start: number, end: number): Span[]
         closes &&
         /\.['’]?$/u.test(text.slice(from, i)) &&
         (/^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end)) ||
+          // Issue 81 (White Sun's Twilight): a token's quoted ability ends with its period and the next sentence is the condition on X: `... "This token can't block." If X is 5 or more, ...`.
+          /^\s+if x is\b/iu.test(text.slice(i + 1, end)) ||
           (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&
             /^\s+\S/u.test(text.slice(i + 1, end))))
       ) {
@@ -1125,7 +1233,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     REPLACEMENT_ESCAPES.test(text) ||
     REPLACEMENT_UMBRA_ARMOR.test(text) ||
     REPLACEMENT_IF_ENTERS.test(text) ||
-    (/ would /.test(text) && / instead\b/.test(text))
+    // Issue 81 (Omnath): "If you would lose unspent mana, that mana becomes colorless instead." is a static ability of the permanent about its controller's pool (`static.unspent-mana-colorless`).
+    (/ would /.test(text) &&
+      / instead\b/.test(text) &&
+      !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text))
   ) {
     return { ...base, head: 'replacement' };
   }

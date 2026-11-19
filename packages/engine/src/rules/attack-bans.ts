@@ -42,11 +42,14 @@ export function withoutBannedTargets(
   for (const e of state.continuousEffects) {
     if (e.change.kind !== 'cantAttackPlayer' || !e.objects.includes(attacker)) continue;
     const protectedSeat = e.change.seat;
+    const subtype = e.change.planeswalkerSubtype;
     allowed = allowed.filter((t) => {
-      if (t.kind === 'player') return t.seat !== protectedSeat;
+      if (t.kind === 'player') return subtype !== undefined || t.seat !== protectedSeat;
       const attacked = getObject(state, t.object);
+      const derived = derive(state, attacked);
       return !(
-        derive(state, attacked).types.includes('planeswalker') &&
+        derived.types.includes('planeswalker') &&
+        (subtype === undefined || derived.subtypes.includes(subtype)) &&
         controllerOf(state, attacked) === protectedSeat
       );
     });

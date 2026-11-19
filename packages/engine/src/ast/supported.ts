@@ -823,8 +823,15 @@ function walkAbility(
           message: `keyword "${a.keyword.kind}" is not implemented by the engine yet`,
         });
       } else if (a.keyword.kind === 'cycling') {
-        // CR 702.29a: the cost is paid like any activation cost; only mana and life are run.
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
+        // CR 702.29a: the cost is paid like any activation cost; only mana and life are run. Issue 81 (Shark Typhoon): its {X} is announced as the cycling ability is activated
+        // (CR 107.3, 602.2b), and "When you cycle this card" reads it (`triggerCycleX`).
+        activationCostIssues(
+          a.keyword.cost,
+          `${path}.keyword.cost`,
+          out,
+          ['mana', 'payLife'],
+          true,
+        );
       } else if (a.keyword.kind === 'equip') {
         // CR 702.6a: paid like any activation cost; only mana and life are run (as for Cycling).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);

@@ -1024,6 +1024,20 @@ export function describeEvent(
       // CR 614.12a (D-100): "You choose Elf for SYNTHETIC Banner." The source is still in the hand or on
       // the stack (or is the spell or ability that makes a token), so its name comes from the question.
       const asked = before.pending;
+      if (event.purpose === 'assignOpponent') {
+        // Issue 81 (Dack Fayden, CR 613.1b): "You choose Opponent to gain control of Grizzly Bears (Dack Fayden)."
+        const permanent = asked?.kind === 'chooseOption' ? asked.assignFor : undefined;
+        const seat = Number(/^seat:(\d+)$/.exec(event.option)?.[1]);
+        const target = seat === viewer ? 'you' : 'Opponent';
+        const what = permanent === undefined ? 'a permanent' : name(permanent);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${target} to gain control of ${what} (${label(event.source)}).`,
+          event.seat,
+          permanent === undefined ? [] : [permanent],
+          'CR 613.1b',
+        );
+      }
       if (event.purpose === 'attackTarget') {
         // CR 508.7 (D-139): "You choose that Grizzly Bears attacks Opponent (SYNTHETIC Crooked Signpost)."
         const attacker = asked?.kind === 'chooseOption' ? asked.attacker : undefined;

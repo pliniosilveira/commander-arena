@@ -126,6 +126,76 @@ export const TRIGGER_COMBAT_DAMAGE_BATCH = defineRule<IrTrigger>({
 });
 
 /**
+ * `trigger.combat-damage-batch-to-you` (issue 81, Tamiyo, Upriser Crowned): "one or more creatures deal combat damage to you while you're the monarch" (CR 603.2c, 510.2, 725.2:
+ * one trigger for the creatures, of any controller, that damaged the controller in one damage event; "while you're the monarch" is part of the event: the controller was the monarch as
+ * the damage was dealt). The engine's `combatDamageBatch` with `to: 'you'` and `whileMonarch`. Not read: other recipients, a group of one controller, without the condition.
+ */
+export const TRIGGER_COMBAT_DAMAGE_BATCH_TO_YOU = defineRule<IrTrigger>({
+  id: 'trigger.combat-damage-batch-to-you',
+  family: 'trigger',
+  leading: ['one'],
+  cites: [
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 510.2 (Combat Damage Step)',
+    'CR 725.2 (The Monarch)',
+  ],
+  examples: [
+    "one or more creatures deal combat damage to you while you're the monarch",
+    'one or more creatures deal combat damage to you while you’re the monarch',
+  ],
+  rejects: [
+    'one or more creatures deal combat damage to you',
+    "one or more creatures deal combat damage to a player while you're the monarch",
+    "one or more creatures you control deal combat damage to you while you're the monarch",
+    "one or more creatures deals combat damage to you while you're the monarch",
+    "one or more creatures deal combat damage to you while you're not the monarch",
+    "one or more creatures deal damage to you while you're the monarch",
+    "two or more creatures deal combat damage to you while you're the monarch",
+  ],
+  parse: (ctx, pos) => {
+    const r = quiet(
+      sequence(
+        spanned(
+          sequence(
+            literal('one or more '),
+            satisfy(
+              map(permanentPhrase(true, 'all'), withoutZone),
+              (filter) =>
+                filter.controller === undefined &&
+                (filter.types ?? []).join() === 'creature' &&
+                (filter.subtypes ?? []).length === 0,
+            ),
+          ),
+        ),
+        pattern(
+          new RegExp(` deal combat damage to you while you['’]re the monarch${NOT_IN_WORD}`, 'iu'),
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [group] = r.value;
+    const subject: IrNoun = {
+      ...makeNoun('trigger.combat-damage-batch-to-you', group.span, 'a', group.value[1]),
+      plural: true,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'combatDamageBatch',
+        subject,
+        damaged: 'you',
+        whileMonarch: true,
+        args: {},
+        span: { start: pos, end: r.pos },
+        rule: 'trigger.combat-damage-batch-to-you',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `trigger.tapped-for-mana`: "you tap a permanent for {C}", "you tap a land for mana", "you tap a Forest for mana", "you tap a creature
  * for mana" (CR 106.12: to "tap a permanent for mana" is to activate a mana ability of it with {T} in its cost; CR 605.1b: an ability
  * that triggers from it is a mana ability). "For {C}" names the type of mana the tapped ability made; "for mana" any.
@@ -320,6 +390,7 @@ export const TRIGGER_ENTERS_DURING = defineRule<IrTrigger>({
 /** The rules of this file; `trigger.enters-during` comes before `trigger.enters`, whose phrase is a prefix of it. */
 export const ARTIFACT_TRIGGER_RULES = [
   TRIGGER_COMBAT_DAMAGE_BATCH,
+  TRIGGER_COMBAT_DAMAGE_BATCH_TO_YOU,
   TRIGGER_TAPPED_FOR_MANA,
   TRIGGER_STATE,
   TRIGGER_ENTERS_DURING,

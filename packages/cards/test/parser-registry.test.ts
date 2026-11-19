@@ -142,6 +142,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 104: Embalm is a line of its own, like Eternalize.
   'keyword.embalm': asIs,
   'keyword.escape': asIs,
+  'keyword.impending': asIs,
+  'static.eminence-cost-reduction': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
   'keyword.cumulative-upkeep': asIs,
@@ -793,6 +795,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.triggers-additional-time': asIs,
   // Issue 25 (D-339): the line of its own, with the card's wording.
   'static.triggers-additional-time-cause': asIs,
+  'static.triggers-additional-time-attacking': asIs,
+  'static.pt-unspent-mana': asIs,
+  'static.unspent-mana-colorless': asIs,
   'keyword.equip-quality': asIs,
   // Stage P70 (D-259): the equip of a commander is a line of its own.
   'keyword.equip-commander': asIs,
@@ -1067,6 +1072,29 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,
   ),
+  'amount.for-each-card-type-discarded': spell(
+    (e) =>
+      `Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with flying ${e}.`,
+  ),
+  'trigger.combat-damage-batch-to-you': permanent((e) => `Whenever ${e}, you gain 1 life.`),
+  'effect.tap-and-stun-those-creatures': permanent(
+    (e) =>
+      `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
+  ),
+  'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
+  'effect.player-reveals-until-you-put': permanent((e) => `When ~ enters, ${e}.`),
+  'effect.controller-reveals-until-puts': spell(
+    (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
+  ),
+  'amount.where-x-exiled-creatures': spell((e) => `Exile all creatures. Incubate X, ${e}.`),
+  'effect.incubate': spell((e) => `Exile all creatures. ${cap(e)}.`),
+  // Issue 81 (Jace, Multiverse Architect): the payer is the player whose combat it is.
+  'effect.pay-or-cant-attack-planeswalkers': permanent(
+    (e) => `At the beginning of combat on each opponent's turn, ${e}.`,
+  ),
+  'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
+  // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
+  'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

@@ -175,7 +175,8 @@ function lowerCostedKeyword(
         ? ['mana', 'payLife', 'sacrifice', 'discard']
         : ['mana', 'payLife'];
   if (!kinds.includes(only.kind)) return failure(ability);
-  const cost = lowerCost(only);
+  // Issue 81 (Shark Typhoon, "Cycling {X}{1}{U}", CR 702.29a, 107.3): the cycling ability is an activated ability, which announces its X.
+  const cost = lowerCost(only, name === 'cycling' ? { x: true } : {});
   if (!cost.ok) return cost;
   const blocked = gate(ability, [
     'ability:keyword',

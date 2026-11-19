@@ -1,0 +1,142 @@
+/**
+ * Lowerings of the Multiverse Reforged deck (issue 81, Tamiyo, Upriser Crowned): the creatures that dealt the combat damage of a batch trigger, tapped and given a stun counter. Same
+ * contract as effects.ts: each declares the engine features it needs and is checked before it runs.
+ */
+
+import type { Cost } from '@commander-arena/engine';
+import type { IrClause } from '../ir/types';
+import { amountArg, arg, type Effects, eachObject, failure } from './clauses';
+import { lowerCost } from './costs';
+import type { Lowering } from './types';
+
+/** "Tap those creatures" (CR 701.26a): the engine's `tap` of the `triggerSources` of a `combatDamageBatch` trigger. Refused in any other ability. */
+const TAP_TRIGGER_SOURCES: Lowering<IrClause, Effects> = {
+  head: 'tapTriggerSources',
+  id: 'lower.tap-trigger-sources',
+  needs: ['effect:tap', 'selector:triggerSources'],
+  lower(clause, ctx) {
+    if (!ctx.damageBatchTrigger) return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'tap', objects: { kind: 'triggerSources' } }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/** "Put a stun counter on each of them" (CR 122.1d): the engine's `addCounters` of `stun` on the `triggerSources` of a `combatDamageBatch` trigger. Refused in any other ability. */
+const STUN_TRIGGER_SOURCES: Lowering<IrClause, Effects> = {
+  head: 'stunTriggerSources',
+  id: 'lower.stun-trigger-sources',
+  needs: ['effect:addCounters', 'selector:triggerSources'],
+  lower(clause, ctx) {
+    if (!ctx.damageBatchTrigger) return failure(clause);
+    return {
+      ok: true,
+      value: [
+        { kind: 'addCounters', objects: { kind: 'triggerSources' }, counter: 'stun', count: 1 },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "The owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library." (CR 108.3, 401.4, issue 81): the engine's `ownerPutsOnLibrary`
+ * over the permanents the operand names (a target of the ability).
+ */
+const OWNER_PUTS_ON_LIBRARY: Lowering<IrClause, Effects> = {
+  head: 'ownerPutsOnLibrary',
+  id: 'lower.owner-puts-on-library',
+  needs: ['effect:ownerPutsOnLibrary'],
+  lower: (clause, ctx) =>
+    eachObject(clause, ctx, (objects) => ({ kind: 'ownerPutsOnLibrary', objects })),
+};
+
+/**
+ * "Incubate N" (CR 701.53a, 111.10i, issue 81): the Incubator token, which enters with N +1/+1 counters: the engine's `createToken` of the preset, then the counters on the token made (`moved`).
+ */
+const INCUBATE: Lowering<IrClause, Effects> = {
+  head: 'incubate',
+  id: 'lower.incubate',
+  needs: ['effect:createToken', 'token:Incubator', 'effect:addCounters', 'selector:moved'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        { kind: 'createToken', token: { kind: 'preset', preset: 'Incubator' }, count: 1 },
+        { kind: 'addCounters', objects: { kind: 'moved' }, counter: '+1/+1', count: count.value },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "They may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn." (Jace, Multiverse Architect, issue 81, CR 118.12a, 508.1a): the engine's
+ * `unlessPays` of the player the trigger is about with `cantAttackPlaneswalkers` over the creatures that player controls. Only a trigger about a player (`validateCard` refuses the rest).
+ */
+const PAY_OR_CANT_ATTACK_PLANESWALKERS: Lowering<IrClause, Effects> = {
+  head: 'payOrCantAttackPlaneswalkers',
+  id: 'lower.pay-or-cant-attack-planeswalkers',
+  needs: ['effect:unlessPays', 'effect:cantAttackPlaneswalkers', 'cost:mana', 'selector:each'],
+  lower(clause) {
+    const costs = arg(clause, 'cost');
+    const subtype = arg(clause, 'subtype');
+    if (costs?.kind !== 'costList' || subtype?.kind !== 'name') return failure(clause);
+    const cost: Cost[] = [];
+    for (const item of costs.costs) {
+      const lowered = lowerCost(item);
+      if (!lowered.ok) return lowered;
+      cost.push(lowered.value);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'unlessPays',
+          player: { kind: 'triggerPlayer' },
+          cost,
+          effect: {
+            kind: 'cantAttackPlaneswalkers',
+            objects: {
+              kind: 'each',
+              filter: { zone: 'battlefield', types: ['creature'], controller: 'triggerPlayer' },
+            },
+            subtype: subtype.name,
+          },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "For each player, you may cast a card that player milled this way without paying its mana cost." (issue 81, CR 701.17a, 608.2g): the engine's `castFree` of the cards the mill before it
+ * moved, one question for each owner (`perOwner`). Refused after any instruction but a mill: "that player milled this way" has nothing to read.
+ */
+const CAST_MILLED_EACH_PLAYER: Lowering<IrClause, Effects> = {
+  head: 'castMilledEachPlayer',
+  id: 'lower.cast-milled-each-player',
+  needs: ['effect:castFree', 'selector:moved'],
+  lower(clause, ctx) {
+    if (ctx.lastEffectKind !== 'mill') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'castFree', objects: { kind: 'moved' }, perOwner: true }],
+      rule: clause.rule,
+    };
+  },
+};
+
+export const DAMAGE_BATCH_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  INCUBATE,
+  CAST_MILLED_EACH_PLAYER,
+  PAY_OR_CANT_ATTACK_PLANESWALKERS,
+  OWNER_PUTS_ON_LIBRARY,
+  TAP_TRIGGER_SOURCES,
+  STUN_TRIGGER_SOURCES,
+];
