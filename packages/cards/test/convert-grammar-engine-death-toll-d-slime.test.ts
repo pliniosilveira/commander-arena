@@ -84,3 +84,51 @@ describe('"where X is the total mana value of permanents destroyed this way" (CR
     g.expect.invariants();
   });
 });
+
+// The real wording of Convert to Slime, delirium included (CR 207.2c, 205.2a): "Then if there are four or more card types among cards in your graveyard".
+const realSlime = parsed(
+  'SYNTHETIC Parsed Real Slime',
+  'Sorcery',
+  'Destroy up to one target artifact, up to one target creature, and up to one target enchantment.\nDelirium — Then if there are four or more card types among cards in your graveyard, create an X/X green Ooze creature token, where X is the total mana value of permanents destroyed this way.',
+  { manaCost: '{3}{B}{G}', colors: ['B', 'G'] },
+);
+
+const gem = parsed('SYNTHETIC Parsed Gem', 'Artifact', 'Flash', { manaCost: '{2}' });
+
+describe('the delirium sentence of the real Convert to Slime text (CR 207.2c, 205.2a)', () => {
+  const withYard = (yard: readonly string[]) =>
+    scenario()
+      .define(realSlime)
+      .define(trinket)
+      .define(bear)
+      .define(idol)
+      .define(gem)
+      .seat(0)
+      .library(...FILLER)
+      .hand(realSlime.name)
+      .graveyard(...yard)
+      .battlefield('Swamp')
+      .battlefield('Forest')
+      .battlefield('Island', { count: 3 })
+      .seat(1)
+      .library(...FILLER)
+      .battlefield(trinket.name)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('four card types in the graveyard: the destroy still happens and the Ooze is 3/3', () => {
+    const g = withYard(['Island', bear.name, idol.name, gem.name]);
+    g.act(0).cast(realSlime.name, { targets: [trinket.name], pay: true });
+    g.passAll();
+    g.expect.zone(trinket.name, 'graveyard', { seat: 1 });
+    g.expect.pt('Ooze', 3, 3);
+  });
+
+  test('only three card types: no Ooze, the destroy still happened', () => {
+    const g = withYard(['Island', bear.name, idol.name]);
+    g.act(0).cast(realSlime.name, { targets: [trinket.name], pay: true });
+    g.passAll();
+    g.expect.zone(trinket.name, 'graveyard', { seat: 1 });
+    g.expect.noObject('Ooze', { zone: 'battlefield' });
+  });
+});

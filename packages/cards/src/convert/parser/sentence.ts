@@ -151,6 +151,8 @@ const LEAD_CONDITIONS = [
   'condition.two-milled-cards-share-all-types',
   // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
   'condition.destroyed-this-way',
+  // Death Toll deck: "Delirium — Then if there are four or more card types among cards in your graveyard, create ..." (CR 205.2a, 608.2c).
+  'condition.card-types-among',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
