@@ -892,7 +892,7 @@ export type ObjectRef =
        * D-662 (CR 603.7c, 400.7): the zone the objects are expected in; left out, the battlefield (D-639). A card that left it is a new object with a new id and is not found.
        * Surge to Victory's delayed ability is about the card it exiled, `exile`.
        */
-      readonly zone?: 'exile';
+      readonly zone?: 'exile' | 'library';
     }
   /**
    * "That creature", "it" for the permanent an earlier `sacrifice` effect of the same resolution sacrificed (D-177, CR 701.21, 603.12, 608.2h): in
@@ -1472,7 +1472,7 @@ export interface TokenDefinition extends Characteristics {
 }
 
 /** Predefined tokens (CR 111.10) the engine knows by name. See `cards/tokens.ts`. */
-export type TokenPreset = 'Treasure' | 'Food' | 'Clue' | 'Gold';
+export type TokenPreset = 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -3263,6 +3263,12 @@ export type Effect =
    * are not this node.
    */
   | { readonly kind: 'transform'; readonly objects: ObjectSelector }
+  /**
+   * "Target creature you control explores." (CR 701.44, issue 81): each permanent `objects` names that is on the battlefield explores, one after the other: its controller reveals the
+   * top card of their library; a land card goes into their hand, otherwise the permanent gets a +1/+1 counter and the controller may put the revealed card into their graveyard.
+   * An empty library reveals nothing, so the permanent gets the counter (CR 701.44a, 701.44b). The permanent explores even when the counter cannot be put on it.
+   */
+  | { readonly kind: 'explore'; readonly objects: ObjectSelector }
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */
   | { readonly kind: 'shuffle'; readonly player: PlayerSelector }
   /**

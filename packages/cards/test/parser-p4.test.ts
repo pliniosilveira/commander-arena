@@ -726,11 +726,7 @@ describe('Food and Clue lower (CR 111.10b, 111.10f)', () => {
     );
   });
 
-  test('Map and Blood still need what the engine lacks', () => {
-    expect(dropped('Create a Map token.')).toMatchObject({
-      reason: 'notRunnable',
-      needs: ['token:Map'],
-    });
+  test('Blood still needs what the engine lacks', () => {
     expect(dropped('Create a Blood token.')).toMatchObject({
       reason: 'notRunnable',
       needs: ['token:Blood'],

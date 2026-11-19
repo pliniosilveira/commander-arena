@@ -266,6 +266,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'rollDie',
     'scry',
     'surveil',
+    // Issue 81 (Map token, Restless Anchorage): "target creature you control explores" (CR 701.44).
+    'explore',
     'lookAndReorder',
     'lookAndSplit',
     // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (CR 700.3).
@@ -692,7 +694,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold'],
+  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -1162,6 +1164,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Food',
     'Clue',
     'Gold',
+    'Map',
     'custom',
     'copyOf',
     'tapped',
@@ -2258,6 +2261,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   rollDie: true,
   scry: true,
   surveil: true,
+  explore: true,
   lookAndReorder: true,
   lookAndSplit: true,
   revealAndSeparate: true,

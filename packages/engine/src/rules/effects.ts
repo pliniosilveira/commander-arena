@@ -86,6 +86,7 @@ import { markExileOnResolve } from './exile-on-resolve';
 import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { runExileUntilFound } from './exile-until-found';
+import { runExplore } from './explore';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runGoad } from './goad';
@@ -2809,6 +2810,10 @@ function runEffect(
         [],
         [{ kind: 'behold', seat: res.controller, filter: effect.filter, chosen: null }],
       );
+
+    case 'explore':
+      // CR 701.44 (issue 81): the permanents explore one at a time (rules/explore.ts).
+      return runExplore(state, resolveObjects(state, effect.objects, ctx, targets), effect);
 
     case 'revealTop':
       // CR 701.20 (D-151): reveal the top card, and put it onto the battlefield if it matches (rules/reveal-top.ts).

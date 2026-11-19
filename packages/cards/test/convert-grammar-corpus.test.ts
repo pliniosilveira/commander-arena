@@ -560,12 +560,12 @@ const P1_EFFECTS: readonly Line[] = [
   { kind: 'sorcery', text: 'Create a Food token.', expect: OK, note: 'Food runs since D-075' },
   {
     kind: 'sorcery',
-    text: 'Create a Map token.',
-    expect: no('a Map token.', 'token.predefined', {
+    text: 'Create a Blood token.',
+    expect: no('a Blood token.', 'token.predefined', {
       reason: 'notRunnable',
-      needs: ['token:Map'],
+      needs: ['token:Blood'],
     }),
-    note: 'the AST has no Map token',
+    note: 'the AST has no Blood token',
   },
   {
     kind: 'sorcery',

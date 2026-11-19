@@ -65,6 +65,29 @@ export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
       effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
     },
   ]),
+  // CR 111.10s: "{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery."
+  Map: artifactToken(
+    'Map',
+    '{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery.',
+    [
+      {
+        kind: 'activated',
+        cost: [
+          { kind: 'mana', symbols: ['1'] },
+          { kind: 'tap' },
+          { kind: 'sacrifice', what: { kind: 'this' } },
+        ],
+        targets: [
+          {
+            id: 'explorer',
+            what: { kind: 'object', filter: { types: ['creature'], controller: 'you' } },
+          },
+        ],
+        effect: { kind: 'explore', objects: { kind: 'target', id: 'explorer' } },
+        timing: 'sorcery',
+      },
+    ],
+  ),
 };
 
 /**

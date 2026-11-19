@@ -3089,7 +3089,7 @@ function movesObjects(e: Effect): boolean {
   );
 }
 
-const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue', 'Gold'];
+const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue', 'Gold', 'Map'];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
 const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [
@@ -6267,6 +6267,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (typeof e.counter !== 'string' || e.counter === '') {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
+      break;
+    case 'explore':
+      // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       break;
     case 'scry':
     case 'surveil':

@@ -391,3 +391,61 @@ describe('Tamiyo: creatures that damage the monarch are tapped and stunned', () 
     g.expect.life(0, 18);
   });
 });
+
+// ---- Map and Explore: "{1}, {T}, Sacrifice this token: Target creature you control explores. Activate only as a sorcery." (CR 111.10, 701.44a: reveal the top card; a land goes to hand,
+// otherwise the creature gets a +1/+1 counter and its controller may put the card into the graveyard).
+
+const MAPMAKER = parsed('SYNTHETIC Parsed Map Maker', 'Artifact', '{T}: Create a Map token.');
+
+describe('the Map token: a creature you control explores', () => {
+  const start = (library: readonly string[]) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(MAPMAKER)
+      .battlefield(MAPMAKER.name, 'Grizzly Bears', 'Plains')
+      .library(...library)
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  const explore = (library: readonly string[]) => {
+    const g = start(library);
+    g.act(0).activate(MAPMAKER.name);
+    g.passAll();
+    g.act(0).activate('Map', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('a land revealed goes to the hand and the creature gets no counter', () => {
+    const g = explore(['Forest', 'Plains', 'Plains']);
+    g.expect.zone('Forest', 'hand', { seat: 0 });
+    g.expect.counters('Grizzly Bears', {});
+    g.expect.noObject('Map');
+    g.expect.invariants();
+  });
+
+  test('a nonland card gives a +1/+1 counter and may go to the graveyard', () => {
+    const g = explore(['Giant Spider', 'Plains', 'Plains']);
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.expect.counters('Grizzly Bears', { '+1/+1': 1 });
+    g.expect.zone('Giant Spider', 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a nonland card stays on top when the player declines', () => {
+    const g = explore(['Giant Spider', 'Plains', 'Plains']);
+    g.act(0).decline();
+    g.expect.counters('Grizzly Bears', { '+1/+1': 1 });
+    g.expect.zone('Giant Spider', 'library', { seat: 0 });
+  });
+
+  test('an empty library still gives the counter (CR 701.44a: nothing was revealed, so it was not a land)', () => {
+    const g = explore([]);
+    g.expect.counters('Grizzly Bears', { '+1/+1': 1 });
+  });
+});
