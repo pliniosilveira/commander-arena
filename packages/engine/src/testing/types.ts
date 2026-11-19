@@ -345,6 +345,8 @@ export interface TapOptions {
   readonly combination?: ManaSpec;
   /** Index of the mana ability on the card. Default: the first one. */
   readonly ability?: number;
+  /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b): needed when the land has such an ability on it. */
+  readonly extraColors?: readonly ManaColor[];
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): needed when the player has more than one. */
   readonly sacrifice?: CardRef;
   /** The permanent a cost "Tap an untapped creature you control" taps (D-625): needed when the player has more than one. */

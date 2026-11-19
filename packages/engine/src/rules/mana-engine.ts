@@ -43,7 +43,7 @@ import {
   spendRestrictionOf,
   spentRiderOf,
 } from './mana-outcomes';
-import { additionalManaFor } from './mana-triggers';
+import { additionalManaOptions } from './mana-triggers';
 
 export {
   canTapForMana,
@@ -189,6 +189,8 @@ export function activateManaAbility(
   sacrifice?: ObjectId,
   /** The permanent a cost "Tap an untapped creature you control" taps (D-625): required when the player has more than one to tap. */
   tapped?: ObjectId,
+  /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b, 605.3b): required when the land has such an ability on it. */
+  extraColors: readonly ManaColor[] | null = null,
 ): ActivationResult {
   // A source that does not exist (a stale or invented id in a payManual action) is an illegal
   // action, which the caller answers with an error; it must not throw.
@@ -247,7 +249,25 @@ export function activateManaAbility(
   }
   const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice, tapped);
   // CR 605.4a (D-139): the triggered mana abilities of "whenever you tap a permanent for {C}" resolve at once, into the same pool.
-  const extra = additionalManaFor(working, obj, found.ability, chosen);
+  const alternatives = additionalManaOptions(working, obj, found.ability, chosen);
+  const only = alternatives[0];
+  let extra: ManaColor[];
+  if (alternatives.length === 1 && only !== undefined) {
+    if (extraColors !== null && extraColors.length > 0) {
+      return refuse(`${name} adds no additional mana of a color you choose`);
+    }
+    extra = only;
+  } else if (extraColors === null || extraColors.length === 0) {
+    return refuse(`Choose the color of the additional mana ${name} makes (W, U, B, R or G)`);
+  } else {
+    const named = alternatives.find((a) => a.join('') === extraColors.join(''));
+    if (named === undefined) {
+      return refuse(
+        `${name} cannot add ${extraColors.join('')} as the additional mana: it is one mana of each of W, U, B, R or G (colorless is not a color)`,
+      );
+    }
+    extra = named;
+  }
   const made = [...chosen, ...extra];
   let next = patchSeat(paid.state, seat, {
     manaPool: addToPool(

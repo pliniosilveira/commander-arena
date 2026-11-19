@@ -890,8 +890,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the permanent tapped is on the battlefield: no zone, owner or stackKind',
         );
       }
-      if (t.by !== 'you')
-        issue(out, `${path}.by`, 'only your own tapping is supported: by must be "you"');
+      if (t.by !== 'you' && t.by !== 'tapper')
+        issue(
+          out,
+          `${path}.by`,
+          'by must be "you" (your own tapping) or "tapper" (whoever taps it)',
+        );
       if (t.mana !== undefined && !isOneOf(t.mana, ['W', 'U', 'B', 'R', 'G', 'C'])) {
         issue(out, `${path}.mana`, `unknown mana type ${JSON.stringify(t.mana)}`);
       }
@@ -1539,7 +1543,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       if (a.trigger?.kind === 'tappedForMana') {
         const plain =
           a.effect?.kind === 'addMana' &&
-          a.effect.mana?.kind === 'fixed' &&
+          (a.effect.mana?.kind === 'fixed' ||
+            // CR 106.1b, 605.3b: one mana of any color, named as the mana ability is activated.
+            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1)) &&
           a.targets === undefined &&
           a.modes === undefined &&
           a.optional !== true &&
@@ -1548,7 +1554,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           issue(
             out,
             path,
-            'an ability that triggers when a permanent is tapped for mana is a triggered mana ability (CR 605.1b): it only adds fixed mana, with no target, mode, "may" or intervening "if"',
+            'an ability that triggers when a permanent is tapped for mana is a triggered mana ability (CR 605.1b): it only adds fixed mana or one mana of any color, with no target, mode, "may" or intervening "if"',
           );
         }
       }

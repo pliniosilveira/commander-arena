@@ -65,6 +65,8 @@ export interface SelectContext {
   readonly owners?: readonly SeatId[];
   /** The seats a `controlledBy` selector of the filter names (D-179, see `FilterContext.controllers`). */
   readonly controllers?: readonly SeatId[];
+  /** The power `powerGreaterThan` of an `each` filter compares with, read as the effect resolves (see `FilterContext.powerLimit`). */
+  readonly powerLimit?: number | null;
   /**
    * An object a `countOf` does not count: the card of a spell that is not on the stack yet while its
    * cost is looked at beforehand (`canCast`), which the real cast has already moved there (CR 601.2a).
@@ -708,13 +710,25 @@ export function resolveObjects(
               ...withOwners,
               controllers: resolvePlayers(state, selector.filter.controlledBy, ctx, targets),
             };
+      // CR 208.1, 608.2c: "with power greater than target creature's power", read now, with the targets and every effect on the creature.
+      const powerRef = selector.filter.powerGreaterThan;
+      const limited =
+        powerRef === undefined
+          ? filterCtx
+          : {
+              ...filterCtx,
+              powerLimit:
+                resolveObjects(state, powerRef, ctx, targets)
+                  .map((id) => powerOfObject(state, id))
+                  .find((p) => p !== null) ?? null,
+            };
       // D-151: "each other creature" besides the one the effect names (`except`), read now, with the targets.
       const left =
         selector.except === undefined ? [] : resolveObjects(state, selector.except, ctx, targets);
       return objectsInZone(state, zone).filter(
         (id) =>
           !left.includes(id) &&
-          matchesFilter(state, getObject(state, id), selector.filter, filterCtx),
+          matchesFilter(state, getObject(state, id), selector.filter, limited),
       );
     }
     default: {

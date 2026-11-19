@@ -48,6 +48,8 @@ export interface AbilityChoice {
   readonly color: ManaColor | null;
   /** The combination this choice makes, for a mana ability with several (a filter land, D-099). */
   readonly combination?: readonly ManaColor[];
+  /** The additional mana this choice makes, for a land with "adds an additional one mana of any color" on it (CR 605.1b, 106.1b). */
+  readonly extraColors?: readonly ManaColor[];
   readonly label: string;
   /** The life the ability costs, when the card's text says so: shown beside the label. */
   readonly life: number;
@@ -131,7 +133,8 @@ export function clickOutcome(
       action: manaAction(id, o),
       color: o.color,
       ...(o.combination === undefined ? {} : { combination: o.combination }),
-      label: manaChoiceLabel(o.abilityIndex, o.color, o.combination),
+      ...(o.extraColors === undefined ? {} : { extraColors: o.extraColors }),
+      label: manaChoiceLabel(o.abilityIndex, o.color, o.combination, o.extraColors),
       life: lifeCostOf(index?.get(id), o.color, o.combination),
       ...(o.sacrifice === undefined
         ? {}

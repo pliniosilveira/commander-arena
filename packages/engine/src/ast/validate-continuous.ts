@@ -125,6 +125,23 @@ function checkSetTypes(
   path: string,
   out: AstIssue[],
 ): void {
+  if (e.allCreatureTypes !== undefined) {
+    // CR 205.3m, 702.73a: "gain all creature types" is its own effect: added to what the object has, with nothing else to say.
+    if (e.allCreatureTypes !== true) {
+      issue(out, `${path}.allCreatureTypes`, 'allCreatureTypes must be true when present');
+    }
+    if (e.types !== undefined || e.subtypes !== undefined || e.additive !== undefined) {
+      issue(
+        out,
+        path,
+        'allCreatureTypes adds every creature type alone: no types, subtypes or additive with it',
+      );
+    }
+    if (e.basePt !== undefined) {
+      issue(out, `${path}.basePt`, 'allCreatureTypes does not set base power and toughness');
+    }
+    return;
+  }
   if (e.types === undefined && e.subtypes === undefined) {
     issue(out, path, 'setTypes needs types, subtypes or both');
   }

@@ -17,11 +17,19 @@ import { matchesFilter } from './select';
 
 type ManaTrigger = Extract<Trigger, { kind: 'tappedForMana' }>;
 
+/** What a triggered mana ability adds: mana of fixed types, or one mana of a color its player chooses (CR 106.1b). */
+type Extra =
+  | { readonly kind: 'fixed'; readonly mana: readonly ManaColor[] }
+  | { readonly kind: 'anyColor' };
+
 interface Source {
   readonly object: GameObject;
   readonly trigger: ManaTrigger;
-  readonly mana: readonly ManaColor[];
+  readonly extra: Extra;
 }
+
+/** The colors "one mana of any color" can be: colorless is not a color (CR 105.1, 106.1b). */
+export const ANY_COLORS: readonly ManaColor[] = ['W', 'U', 'B', 'R', 'G'];
 
 interface Index {
   readonly battlefield: GameState['battlefield'];
@@ -39,12 +47,20 @@ function scan(state: GameState): Index {
     if (object === undefined) continue;
     for (const a of derive(state, object).abilities) {
       if (
-        a.kind === 'triggered' &&
-        a.trigger.kind === 'tappedForMana' &&
-        a.effect.kind === 'addMana' &&
-        a.effect.mana.kind === 'fixed'
+        a.kind !== 'triggered' ||
+        a.trigger.kind !== 'tappedForMana' ||
+        a.effect.kind !== 'addMana'
       ) {
-        sources.push({ object, trigger: a.trigger, mana: a.effect.mana.mana });
+        continue;
+      }
+      if (a.effect.mana.kind === 'fixed') {
+        sources.push({
+          object,
+          trigger: a.trigger,
+          extra: { kind: 'fixed', mana: a.effect.mana.mana },
+        });
+      } else if (a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) {
+        sources.push({ object, trigger: a.trigger, extra: { kind: 'anyColor' } });
       }
     }
   }
@@ -72,21 +88,28 @@ function sourcesOf(state: GameState): readonly Source[] {
 }
 
 /**
- * The mana the triggered mana abilities add when `tapped` is tapped for `produced` by `ability`: nothing for an ability without {T} in its
- * cost or one that makes no mana. In the order of the abilities on the battlefield.
+ * The mana the triggered mana abilities add when `tapped` is tapped for `produced` by `ability`, as the alternatives the player may choose among: one list of mana when
+ * nothing is left to choose (nothing at all for an ability without {T} in its cost or one that makes no mana: `[[]]`), several when an ability adds one mana of any color (one
+ * alternative for each color, and for several such abilities the colors of each, in the order of the abilities on the battlefield, CR 605.1b, 106.1b).
  */
-export function additionalManaFor(
+export function additionalManaOptions(
   state: GameState,
   tapped: GameObject,
   ability: ManaAbility,
   produced: readonly ManaColor[],
-): ManaColor[] {
-  if (produced.length === 0 || !ability.cost.some((c) => c.kind === 'tap')) return [];
+): ManaColor[][] {
+  if (produced.length === 0 || !ability.cost.some((c) => c.kind === 'tap')) return [[]];
   const sources = sourcesOf(state);
-  if (sources.length === 0) return [];
-  const extra: ManaColor[] = [];
+  if (sources.length === 0) return [[]];
+  let options: ManaColor[][] = [[]];
   for (const src of sources) {
-    if (controllerOf(state, src.object) !== controllerOf(state, tapped)) continue;
+    // CR 106.12, 605.1b: `you` taps it for the controller of the ability; `tapper` is whoever controls the permanent that was tapped (only they can tap it, CR 605.2).
+    if (
+      src.trigger.by === 'you' &&
+      controllerOf(state, src.object) !== controllerOf(state, tapped)
+    ) {
+      continue;
+    }
     if (src.trigger.mana !== undefined && !produced.includes(src.trigger.mana)) continue;
     const filter = { ...src.trigger.what, zone: 'battlefield' as const };
     if (
@@ -97,7 +120,9 @@ export function additionalManaFor(
     ) {
       continue;
     }
-    extra.push(...src.mana);
+    const adds: ManaColor[][] =
+      src.extra.kind === 'fixed' ? [[...src.extra.mana]] : ANY_COLORS.map((c) => [c]);
+    options = options.flatMap((so) => adds.map((a) => [...so, ...a]));
   }
-  return extra;
+  return options;
 }

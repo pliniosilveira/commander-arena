@@ -72,6 +72,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyTarget',
   'selector:anyOf',
   'selector:controllerRef',
+  'selector:powerGreaterThan',
   'selector:bound',
   'selector:ownerRef',
   'selector:power',
@@ -163,6 +164,8 @@ function lowerFilterAt(
     rule,
   });
   if (typeof filter.controller === 'object') return bad(['selector:controllerRef']);
+  // CR 208.1, 608.2c: "with power greater than target creature's power" is read by the group of an effect (`selectorOf`), where the targets are known.
+  if (filter.powerGreaterThanNoun !== undefined) return bad(['selector:powerGreaterThan']);
   // D-656: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
   if (filter.namedSelf === true) return bad([]);
   const types = filter.types ?? [];
@@ -1035,6 +1038,24 @@ function selectorOf(
     if (blocked !== null) return blocked;
     // "Each creature that player controls" (stage P37, D-180, CR 109.4): the filter names the player by reference, the engine's `controlledBy`, read
     // here where the targets are known (`lowerFilter` alone refuses it).
+    // "Each creature with power greater than target creature's power" (CR 208.1, 608.2c): the filter names the target by reference, the engine's `powerGreaterThan`.
+    const powerNoun = noun.filter.powerGreaterThanNoun;
+    if (powerNoun !== undefined) {
+      const refused = gate(noun, ['selector:powerGreaterThan']);
+      if (refused !== null) return refused;
+      if (typeof noun.filter.controller === 'object') return failure(noun, []);
+      const named = selectorOf(powerNoun, ctx);
+      if (!named.ok) return named;
+      if (named.value.kind !== 'target') return failure(powerNoun, []);
+      const { powerGreaterThanNoun: _bound, ...rest } = noun.filter;
+      const plain = lowerFilterAt(rest, noun, false);
+      if (!plain.ok) return plain;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: { ...plain.value, powerGreaterThan: named.value } },
+        rule: noun.rule,
+      };
+    }
     const controller = noun.filter.controller;
     if (typeof controller === 'object') {
       const refused = gate(noun, ['selector:controllerRef']);

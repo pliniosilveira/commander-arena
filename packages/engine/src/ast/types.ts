@@ -692,6 +692,12 @@ export interface ObjectFilter {
    */
   readonly powerAboveBase?: true;
   /**
+   * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
+   * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
+   * (as `controlledBy` is). An object with no power, or a reference that names nothing, matches nothing.
+   */
+  readonly powerGreaterThan?: ObjectRef;
+  /**
    * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.
@@ -2769,6 +2775,12 @@ export type Effect =
       readonly subtypes?: readonly Subtype[];
       readonly additive?: true;
       /**
+       * "Creatures you control gain all creature types" (CR 205.3m, 613.1d, 702.73a): every creature type is added to the objects, in addition to the ones they have
+       * (so it is `additive` by nature, the flag is not set with it) and with no `types` or `subtypes` of its own. The same layer 4 effect a changeling is, for the
+       * objects the selector named as the effect began (CR 611.2c).
+       */
+      readonly allCreatureTypes?: true;
+      /**
        * "Each noncreature artifact you control becomes a 4/4 artifact creature until end of turn" (D-217, CR 613.4b, 611.2c): the same permanents also have
        * these base power and toughness (a `setPt` of the objects the selector named as the effect began: the selector is not read again, so "noncreature" does
        * not stop matching once they are creatures). Applies in the same duration.
@@ -3881,14 +3893,19 @@ export type Trigger =
    * "Whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b, 605.4, D-139): a triggered mana ability. It triggers as a
    * mana ability of a permanent that `what` matches is activated with {T} in its cost (CR 106.12: tapping a permanent for mana) by the
    * controller of this ability (`by` is `you`: the added mana is its controller's), and, with `mana`, only when that ability made mana of that
-   * type. Its effect is `addMana` of fixed mana and nothing else (no target, no choice, no "may", no intervening "if"), and it does not
+   * type. Its effect is `addMana` of fixed mana, or of `anyColor` (one mana of any color, which the player names as the mana ability is activated: `extraColors` of the
+   * action, CR 106.1b, 605.3b), and nothing else (no target, no "may", no intervening "if"), and it does not
    * use the stack: it resolves as soon as the mana ability that triggered it has, and the mana is added to the same pool (CR 605.4a).
    * The planner that pays costs counts the mana as made by the source, so it never taps more than it must.
    */
   | {
       readonly kind: 'tappedForMana';
       readonly what: ObjectFilter;
-      readonly by: 'you';
+      /**
+       * `you`: the permanent is tapped by the controller of this ability. `tapper` (CR 106.12, 605.1b, 303.4): whoever taps it, and the mana is theirs ("Whenever enchanted land is tapped for
+       * mana, its controller adds an additional one mana of any color": an Aura's controller need not control the land, and only the player who controls the land can tap it).
+       */
+      readonly by: 'you' | 'tapper';
       readonly mana?: ManaColor;
     }
   /**
@@ -3968,6 +3985,13 @@ export type Trigger =
        */
       readonly attackedEnchantedPlayer?: true;
     }
+  /**
+   * "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 603.2, 508.1b): once for each player `who` names (relative to the controller
+   * of this ability: only `opponent`) who controls at least one attacking creature that attacks the controller of this ability as a player (an attack on a planeswalker or a battle
+   * is not an attack on them) and that no creature was declared to block, as the declare blockers step's blockers are declared (also when nobody can block, or the defending
+   * player declares none). The creatures are read after the blockers are declared. `triggerPlayer` is the player who controls those creatures ("that player").
+   */
+  | { readonly kind: 'unblockedAttackBatch'; readonly who: 'opponent' }
   /**
    * "Whenever a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c, D-648): once for each player the declaration attacks (an attack on a planeswalker or a battle is not an
    * attack on its controller or protector, CR 508.6) who is not the controller of this ability, whoever declares the attackers and however many creatures attack that player.

@@ -531,4 +531,5 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "For each creature exiled this way, its controller" is read only for an exile with targets, not for destroy or sacrifice.
 - An Omen (Tarkir: Dragonstorm) follows its reminder text, shuffled into its owner's library as it resolves; the Comprehensive Rules text for Omen could not be checked, and a copy of an Omen spell is not looked at.
 - Selvala's Stampede: with no wild vote nothing is revealed but the library is still shuffled; the rulings of that case could not be checked.
-- The colors of the mana spent to cast a spell (Converge) are read only for the spell itself, not for "that spell" in a cast trigger; Mirror Entity and Coveted Jewel are unsupported (issue 310).
+- The colors of the mana spent to cast a spell (Converge) are read only for the spell itself, not for "that spell" in a cast trigger.
+- A triggered mana ability adds mana of fixed types or one mana of any color; "of the chosen color" (Utopia Sprawl) and "of any type that land could produce" are not read.

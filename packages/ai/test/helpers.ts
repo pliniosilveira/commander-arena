@@ -4408,6 +4408,18 @@ export const ACTIVATES_ABILITY_NAMES = [
 ] as const;
 
 /**
+ * SYNTHETIC cards of the top-5 ranking work (a creature-power filter on a target, an {X} group base power with all creature types, an unblocked-attack trigger): kept out of
+ * the random pools, so the seeded games the older tests rely on stay as they were.
+ */
+const RANKED_CARD_NAMES = [
+  'SYNTHETIC Humbling Sweep',
+  'SYNTHETIC Shapeshifter Choir',
+  'SYNTHETIC Greedy Gem',
+  'SYNTHETIC Prismatic Growth',
+  'SYNTHETIC Verdant Surge',
+] as const;
+
+/**
  * Creature and permanent pools for the combat-heavy deck mix. They are read from the engine's
  * exported fixtures instead of being listed by name, so every supported creature fixture (the
  * combat keywords, vanilla bodies, a planeswalker, a battle) joins the games as soon as it exists.
@@ -4581,6 +4593,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(KEYWORD2_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(TRIGGER_SLICE_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(TRIGGER_SLICE_UNUSED_NAMES as readonly string[]).includes(card.name))
+  .filter((card) => !(RANKED_CARD_NAMES as readonly string[]).includes(card.name))
   .filter((card) => validateCard(card).length === 0);
 const frontTypes = (card: CardDefinition): readonly string[] => card.faces[0]?.types ?? [];
 const isLegendary = (card: CardDefinition) =>

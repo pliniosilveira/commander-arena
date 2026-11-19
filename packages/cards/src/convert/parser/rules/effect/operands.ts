@@ -61,6 +61,8 @@ export const PERMANENT_OPERANDS = [
   'noun.target-commander',
   'noun.target-permanent',
   'noun.all-permanents',
+  // CR 208.1: "all creatures with power greater than target creature's power".
+  'noun.all-with-power-above-target',
   // D-426 (Danitha group 3): "all creatures that aren't enchanted".
   'noun.all-enchanted',
   'noun.each-permanent',

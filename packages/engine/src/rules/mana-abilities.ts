@@ -16,6 +16,7 @@ import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
+import { additionalManaOptions } from './mana-triggers';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
@@ -418,13 +419,25 @@ export function activationChoices(
   state: GameState,
   obj: GameObject,
   ability: ManaAbility,
-): { color: ManaColor | null; combination?: readonly ManaColor[] }[] {
-  const out: { color: ManaColor | null; combination?: readonly ManaColor[] }[] = [];
+): {
+  color: ManaColor | null;
+  combination?: readonly ManaColor[];
+  extraColors?: readonly ManaColor[];
+}[] {
+  const out: {
+    color: ManaColor | null;
+    combination?: readonly ManaColor[];
+    extraColors?: readonly ManaColor[];
+  }[] = [];
   for (const outcome of productionOutcomes(state, obj, ability)) {
     if (outcome.length === 0) continue;
-    if (isCombinationProduction(ability.production))
-      out.push({ color: null, combination: outcome });
-    else out.push({ color: isColorChoice(ability.production) ? outcomeColor(outcome) : null });
+    const base = isCombinationProduction(ability.production)
+      ? { color: null, combination: outcome }
+      : { color: isColorChoice(ability.production) ? outcomeColor(outcome) : null };
+    // CR 605.1b, 106.1b: a land with "adds an additional one mana of any color" on it offers one activation for each color of that mana.
+    const extras = additionalManaOptions(state, obj, ability, outcome);
+    if (extras.length === 1) out.push(base);
+    else for (const extraColors of extras) out.push({ ...base, extraColors });
   }
   return out;
 }
