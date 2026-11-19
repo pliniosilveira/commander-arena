@@ -48,6 +48,8 @@ export interface SelectContext {
   readonly triggerSubject?: ObjectId;
   /** What `sacrificedCost` means (D-133): the permanents sacrificed to pay the cost of the ability that is resolving. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What `tappedAsCostPower` means (CR 702.184a): the power of the creatures tapped to pay the cost of the ability that is resolving. */
+  readonly costTappedPower?: number;
   /** What `sacrificed` means (D-177): the permanents the earlier `sacrifice` instructions of this resolution sacrificed. */
   readonly sacrificed?: readonly ObjectId[];
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */

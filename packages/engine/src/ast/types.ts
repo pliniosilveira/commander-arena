@@ -336,7 +336,13 @@ export type Amount =
    */
   | { readonly kind: 'sacrificedAsCost' }
   /** "For each card exiled this way" as an additional spell cost: the chosen cards for the cast, read at CR 601.2f. */
-  | { readonly kind: 'exiledAsCost' };
+  | { readonly kind: 'exiledAsCost' }
+  /**
+   * "Put charge counters equal to its power on this permanent" (CR 702.184a, Station): the power the creature tapped to pay the cost of the activated ability had as it was
+   * tapped (CR 608.2h, 113.7a: the ability resolves later, and the creature may have changed or be gone), added up when the cost taps more than one. Only in the effect of an
+   * activated ability whose cost is `tapPermanents` (`validateCard`); 0 for any other.
+   */
+  | { readonly kind: 'tappedAsCostPower' };
 
 /** What a `thisWay` amount counts (D-131). */
 export type ThisWayKind =
@@ -3490,8 +3496,8 @@ export type ManaProduction =
       readonly mana: readonly ManaColor[];
       /**
        * "Add {R} for each tapped land your opponents control" (D-151, CR 106.1): the mana listed is added once for each of the amount (an `Amount` read
-       * as the effect runs; 0 adds nothing). Only the `addMana` effect of a spell or a triggered ability, not a mana ability (CR 605.1a: its
-       * production is fixed before it resolves).
+       * as the effect runs; 0 adds nothing). In a mana ability (CR 605.1a, 605.3b, Uthros, Titanic Godcore: "Add {U} for each artifact you control") it is read as the ability
+       * resolves, which is at once after its costs are paid, so a count of the permanents the cost gives up is refused (`validateCard`) and only a state amount is valid.
        */
       readonly times?: Amount;
       /**
@@ -3515,6 +3521,11 @@ export type ManaProduction =
        * ability resolves (2 or more; one mana when left out). Not "in any combination of colors": every mana is the same color.
        */
       readonly count?: number;
+      /**
+       * "Add X mana of any one color, where X is the number of charge counters on this" (CR 106.1b, 605.3b, The Eternity Elevator): the number of mana is the amount, read as the
+       * ability resolves (after its costs are paid); 0 makes none. Replaces `count`: a card gives one or the other. Only in a mana ability (`validateCard`), and a state amount.
+       */
+      readonly times?: Amount;
     }
   /**
    * "Add {U} or {B}" (the types of mana are in CR 106.1b): one mana of a color chosen from a list of at least two distinct
@@ -4212,6 +4223,12 @@ export type Keyword =
    * abilities (`rules/derive.ts`). `power` is N, a positive integer.
    */
   | { readonly kind: 'crew'; readonly power: number }
+  /**
+   * CR 702.184a (Station): "Tap another untapped creature you control: Put a number of charge counters on this permanent equal to the tapped creature's power. Activate only as a
+   * sorcery." An activated ability of a station card (CR 702.184b, 721.4: it works at every number of charge counters); the engine expands it when it derives the object's
+   * abilities (`rules/derive-keywords.ts`).
+   */
+  | { readonly kind: 'station' }
   /**
    * `exceptSource` (D-652): only what `chosenColor` becomes once applied, never written in a card: the object whose attachment this protection does not stop (CR 702.16d).
    */
@@ -5967,6 +5984,17 @@ export type Ability =
    * before this node). The abilities are not themselves `level` abilities. Levels are not copiable (CR 716.2b): a copy of the Class has the abilities its own level gives it.
    */
   | { readonly kind: 'level'; readonly level: number; readonly abilities: readonly Ability[] }
+  /**
+   * "12+ | {G}, {T}: Add {G} for each creature you control." (CR 721.2, 721.2a, Station): what follows a station symbol. The permanent has `abilities` as long as it has `threshold` or
+   * more charge counters on it, read each time its abilities are looked at (nothing is locked in, CR 611.3a); with fewer it does not have them, and the abilities of the card that
+   * no symbol gates, the station ability included, are there at every count (CR 721.4). A card lists it after the abilities it gates nothing of. A card with a power and toughness box in the
+   * striation (CR 721.2b) is not built. A copy of a station permanent has the abilities its own counters give it, as counters are not copiable (CR 707.2).
+   */
+  | {
+      readonly kind: 'stationLevel';
+      readonly threshold: number;
+      readonly abilities: readonly Ability[];
+    }
   /**
    * A static ability of a permanent (CR 604.1), in force while it is on the battlefield. With `condition` it applies
    * only "as long as" the condition holds (D-133, CR 611.3a: read each time the effect is looked at, nothing is

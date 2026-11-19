@@ -911,7 +911,8 @@ function walkAbility(
       }
       return;
     case 'level':
-      // CR 716.2a (D-235): the abilities of a class level bar are held to the same rules as any other.
+    case 'stationLevel':
+      // CR 716.2a (D-235), 721.2a: the abilities of a class level bar or a station symbol are held to the same rules as any other.
       for (const [i, inner] of a.abilities.entries()) {
         walkAbility(inner, `${path}.abilities[${i}]`, out, owner);
       }

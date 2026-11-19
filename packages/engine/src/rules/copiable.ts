@@ -104,7 +104,7 @@ export function copiableValues(state: GameState, obj: GameObject): CopiableValue
   // Layer 1b (CR 613.2b, 708.2, 708.10): a face-down permanent has the characteristics of the rules for face-down permanents, applied after the copy effects, so one
   // that became a copy keeps them and one that is copied is copied as it is (CR 707.2).
   if (isFaceDown(obj)) return FACE_DOWN_VALUES;
-  return atLevel(values, obj.level ?? 1);
+  return atStation(atLevel(values, obj.level ?? 1), obj.counters.charge ?? 0);
 }
 
 const levelled = new WeakMap<readonly Ability[], Map<number, readonly Ability[]>>();
@@ -127,6 +127,31 @@ function atLevel(values: CopiableValues, level: number): CopiableValues {
       a.kind === 'level' ? (level >= a.level ? a.abilities : []) : [a],
     );
     byLevel.set(level, list);
+  }
+  return { ...values, abilities: list };
+}
+
+const stationed = new WeakMap<readonly Ability[], Map<number, readonly Ability[]>>();
+
+/**
+ * CR 721.2a, 721.4 (Station): the abilities of a station symbol are there as long as the permanent has `threshold` or more charge counters on it; the others (the station
+ * ability, the abilities printed before the first symbol) are there at every count. The charge counters are the permanent's own (counters are not copiable, CR 707.2), so a copy
+ * has the abilities its own counters give it. The list is made once for each list of abilities and number of counters, and only for a card that has such an ability.
+ */
+function atStation(values: CopiableValues, charge: number): CopiableValues {
+  const { abilities } = values;
+  if (!abilities.some((a) => a.kind === 'stationLevel')) return values;
+  let byCount = stationed.get(abilities);
+  if (byCount === undefined) {
+    byCount = new Map();
+    stationed.set(abilities, byCount);
+  }
+  let list = byCount.get(charge);
+  if (list === undefined) {
+    list = abilities.flatMap((a) =>
+      a.kind === 'stationLevel' ? (charge >= a.threshold ? a.abilities : []) : [a],
+    );
+    byCount.set(charge, list);
   }
   return { ...values, abilities: list };
 }

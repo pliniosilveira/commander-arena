@@ -77,7 +77,16 @@ export interface SupportedFeatures {
 }
 
 export const SUPPORTED_FEATURES: SupportedFeatures = {
-  abilityKinds: ['mana', 'replacement', 'keyword', 'triggered', 'static', 'activated', 'level'],
+  abilityKinds: [
+    'mana',
+    'replacement',
+    'keyword',
+    'triggered',
+    'static',
+    'activated',
+    'level',
+    'stationLevel',
+  ],
   // D-133: `staticCondition`, "as long as ..." on a static ability.
   abilityFeatures: [
     'activateOnlyIf',
@@ -503,6 +512,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'prowess',
     'ward',
     'crew',
+    'station',
     'landwalk',
     'fear',
     'intimidate',
@@ -1183,6 +1193,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sacrificedAsCost',
     // D-575: "for each card exiled this way" for a spell's additional cost.
     'exiledAsCost',
+    // CR 702.184a (Station): "counters equal to the tapped creature's power".
+    'tappedAsCostPower',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
     // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
@@ -1981,6 +1993,8 @@ export const AMOUNT_KINDS = [
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */
   'exiledAsCost',
+  /** "Put charge counters equal to its power" (CR 702.184a, Station): the engine's `tappedAsCostPower`, the power of the creature tapped for the cost. */
+  'tappedAsCostPower',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
   /** "For each Aura you controlled that was attached to it" (D-654, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
@@ -2055,6 +2069,7 @@ type KindTable<T extends string> = { readonly [K in T]: true };
 
 const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   level: true,
+  stationLevel: true,
   staticCondition: true,
   costReducedIf: true,
   ifGiftPromised: true,
@@ -2331,6 +2346,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   prowess: true,
   ward: true,
   crew: true,
+  station: true,
   protection: true,
   landwalk: true,
   fear: true,

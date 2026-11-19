@@ -50,6 +50,7 @@ type StateAmount = Extract<
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
       | 'sacrificedAsCost'
+      | 'tappedAsCostPower'
       | 'exiledAsCost'
       | 'cardTypesAmong';
   }
@@ -93,6 +94,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'sacrificedAsCost' ||
+    amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong'
   );
@@ -405,6 +407,9 @@ export function stateAmountOf(
       }
       return best;
     }
+    case 'tappedAsCostPower':
+      // CR 702.184a, 608.2h: the power the creatures had as they were tapped for the cost of the ability that is resolving.
+      return ctx.costTappedPower ?? 0;
     case 'sacrificedAsCost': {
       // CR 602.2b, 701.21a (D-584): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
       // them, and its resolution reads them (`ResolutionContext.costSacrificed`, which an ability without such a cost does not have).

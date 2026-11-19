@@ -126,6 +126,8 @@ export interface Scope {
   readonly triggerSubject?: 'permanent' | 'stack';
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
+  /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
+  readonly tappedCost?: boolean;
   /** True in the effect of a triggered ability about the cards that left a graveyard (`becomeCopyOfCard`, D-232). */
   readonly triggerCards?: boolean;
   /** True in the effect of an activated ability whose cost exiles cards from the graveyard (`splitCostExiled`, D-232). */
@@ -1615,6 +1617,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     return;
   }
   switch (a?.kind) {
+    case 'tappedAsCostPower':
+      // CR 702.184a (Station): the power of the creature tapped for the cost, read when the ability resolves.
+      if (scope.tappedCost !== true) {
+        issue(
+          out,
+          path,
+          "'tappedAsCostPower' needs an activated ability whose cost taps permanents (a tapPermanents cost)",
+        );
+      }
+      break;
     case 'x':
       if (!scope.xAllowed)
         issue(out, path, 'X is used but nothing in this ability or spell has an X');
@@ -5668,6 +5680,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-151: "Add {R} for each tapped land your opponents control": an amount read as the effect runs.
       if (e.mana?.kind === 'fixed' && e.mana.times !== undefined) {
         checkAmount(e.mana.times, `${path}.mana.times`, scope, out);
+      }
+      // CR 605.3b: "Add X mana of any one color" with a count is the production of a mana ability, whose color is chosen as it resolves (`validate-mana-ability.ts`).
+      if (e.mana?.kind === 'anyColor' && e.mana.times !== undefined) {
+        issue(
+          out,
+          `${path}.mana.times`,
+          'only a mana ability adds a counted number of mana of one color',
+        );
       }
       break;
     case 'addCounters':

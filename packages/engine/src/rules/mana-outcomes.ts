@@ -20,7 +20,7 @@ import { COLORS } from '../characteristics';
 import type { ObjectId } from '../ids';
 import type { ManaColor, ManaRestriction, ManaRider } from '../mana/types';
 import type { GameObject, GameState } from '../state/types';
-import { devotionOf } from './amounts';
+import { amountOf, devotionOf } from './amounts';
 import { commanderIdentity } from './commander-identity';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -161,14 +161,24 @@ function plainOutcomes(
       }
       return color === undefined ? [[]] : [[color]];
     }
-    case 'fixed':
-      return [[...p.mana]];
+    case 'fixed': {
+      if (p.times === undefined) return [[...p.mana]];
+      // CR 605.1a, 605.3b: "Add {U} for each artifact you control": the mana listed once for each of the amount, read as the ability resolves (0 makes none).
+      const times = Math.max(0, amountOf(state, p.times, { controller: seat, source: obj.id }, []));
+      return [Array.from({ length: times }, () => p.mana).flat()];
+    }
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
       return colorMultisets(p.count, p.distinct === true);
-    case 'anyColor':
-      // D-145: "two mana of any one color": `count` mana of the one color chosen.
-      return COLORS.map((c) => Array.from({ length: p.count ?? 1 }, () => c));
+    case 'anyColor': {
+      // D-145: "two mana of any one color": `count` mana of the one color chosen. CR 106.1b, 605.3b: "Add X mana of any one color, where X is ...": as many as the
+      // amount, read as the ability resolves; with none every outcome is empty (nothing to pick).
+      const count =
+        p.times === undefined
+          ? (p.count ?? 1)
+          : Math.max(0, amountOf(state, p.times, { controller: seat, source: obj.id }, []));
+      return COLORS.map((c) => Array.from({ length: count }, () => c));
+    }
     case 'anyColorDevotion':
       // CR 700.5, 605.3b: "Choose a color. Add an amount of mana of that color equal to your devotion to that color": one outcome per color, with as many
       // mana as the controller's devotion to it now (a color with none is an empty outcome: nothing to pick).

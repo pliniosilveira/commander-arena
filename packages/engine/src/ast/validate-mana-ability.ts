@@ -8,7 +8,7 @@ import type { ManaAbility } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
 import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
-import { checkCondition, checkCosts, checkEnumList } from './validate-parts';
+import { checkCondition, checkCosts, checkEnumList, checkStateAmount } from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   checkCosts(a.cost, `${path}.cost`, out);
@@ -54,13 +54,22 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
-  // D-151: "for each ..." mana is added as a spell or a triggered ability resolves; a mana ability makes its mana before it can read anything (CR 605.1a).
-  if (a.production?.kind === 'fixed' && a.production.times !== undefined) {
-    issue(
-      out,
-      `${path}.production.times`,
-      'a mana ability adds a fixed amount of mana, never a count',
-    );
+  // CR 605.1a, 605.3b: "Add {U} for each artifact you control" and "Add X mana of any one color, where X is the number of charge counters on this": the count is what the game
+  // says as the ability resolves, right after its costs are paid (no target, no X, no earlier instruction to read). A cost that gives a permanent up could change what it counts, so
+  // the two are not combined (the planner counts the amount before it knows which permanents the plan gives up).
+  const counted =
+    a.production?.kind === 'fixed' || a.production?.kind === 'anyColor'
+      ? a.production.times
+      : undefined;
+  if (counted !== undefined) {
+    checkStateAmount(counted, `${path}.production.times`, out, 'the mana a mana ability makes');
+    if ((Array.isArray(a.cost) ? a.cost : []).some((c) => c?.kind === 'sacrifice')) {
+      issue(
+        out,
+        `${path}.production.times`,
+        'a mana ability that sacrifices a permanent does not add mana by a count: the count could change with what is given up',
+      );
+    }
   }
   // D-650: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
   if (a.production?.kind === 'fixed' && a.production.staysUntilEndOfTurn !== undefined) {

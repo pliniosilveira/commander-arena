@@ -168,6 +168,7 @@ import { SYNTHETIC_SEARCH_ZONES_LIST } from './synthetic-search-zones';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
+import { SYNTHETIC_STATION_LIST } from './synthetic-station';
 import { SYNTHETIC_STUN_LIST } from './synthetic-stun';
 import { SYNTHETIC_SUBJECT_LIST } from './synthetic-subjects';
 import { SYNTHETIC_TAP_ALT_LIST } from './synthetic-tap-alt';
@@ -423,6 +424,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DICE_LIST,
   ...SYNTHETIC_PLAYER_MORE_LIST,
   ...SYNTHETIC_DEVOTION_MANA_LIST,
+  ...SYNTHETIC_STATION_LIST,
   ...SYNTHETIC_DAWNBREAK_LIST,
   ...SYNTHETIC_ATTACK_BATCH_LIST,
   ...SYNTHETIC_ENTERS_GROUP_LIST,

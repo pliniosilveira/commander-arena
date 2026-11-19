@@ -644,6 +644,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
     ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
+    ...(res.costTappedPower === undefined ? {} : { costTappedPower: res.costTappedPower }),
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),

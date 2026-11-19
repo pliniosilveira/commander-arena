@@ -188,6 +188,9 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
         issue(out, `${path}.power`, 'crew power must be a positive integer');
       }
       break;
+    case 'station':
+      // CR 702.184a: no parameters; the permanent is a station card (CR 702.184b).
+      break;
     case 'kicker':
       // CR 702.33a: an additional cost, paid as the spell is cast.
       checkKickerCost(k.cost, `${path}.cost`, out);
@@ -1444,6 +1447,31 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         });
       }
       break;
+    case 'stationLevel':
+      // CR 721.2a (Station): the abilities of a station symbol, from `threshold` charge counters on: a whole number of 1 or more, one or more abilities, and no symbol inside another.
+      if (!Number.isSafeInteger(a.threshold) || a.threshold < 1) {
+        issue(
+          out,
+          `${path}.threshold`,
+          'the threshold of a station symbol is a whole number from 1',
+        );
+      }
+      if (!Array.isArray(a.abilities) || a.abilities.length === 0) {
+        issue(out, `${path}.abilities`, 'a station symbol gates at least one ability');
+      } else {
+        a.abilities.forEach((inner, i) => {
+          if (inner?.kind === 'stationLevel' || inner?.kind === 'level') {
+            issue(
+              out,
+              `${path}.abilities[${i}]`,
+              `a station symbol does not hold a ${inner.kind} ability`,
+            );
+          } else {
+            checkAbility(inner, `${path}.abilities[${i}]`, out);
+          }
+        });
+      }
+      break;
     case 'static':
       checkStatic(a.static, `${path}.static`, out);
       checkStaticCondition(a.static, a.condition, path, out);
@@ -1816,6 +1844,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // D-133: "the sacrificed creature" is readable where the cost sacrificed something.
         ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'sacrifice')
           ? { sacrificedCost: true }
+          : {}),
+        // CR 702.184a: "equal to the tapped creature's power" is readable where the cost taps permanents.
+        ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'tapPermanents')
+          ? { tappedCost: true }
           : {}),
         // D-232: "the exiled cards" are readable where the cost exiled cards from the graveyard.
         ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'exileFromGraveyard')
