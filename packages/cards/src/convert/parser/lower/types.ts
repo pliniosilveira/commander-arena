@@ -261,6 +261,11 @@ export interface LowerContext {
    */
   movedToHand: boolean;
   /**
+   * True right after a clause that was the exile of "any number of cards from your graveyard with four or more card types among them" (Death Toll deck, Winter, Cynical Opportunist,
+   * CR 608.2c): "them" of "put a permanent card from among them onto the battlefield" are the cards that exile moved. Any other clause lowered after it makes it false again.
+   */
+  exiledAnyCardTypes: boolean;
+  /**
    * What "it" means in "If you do, return it to the battlefield ... at the beginning of the next end step" (stage P48, D-205, CR 603.7c, 400.7j): the reference of the
    * target the last instruction exiled, which the engine's `moved` names. Null before an exile of a target and after any other move, destroy or sacrifice.
    */
@@ -346,6 +351,7 @@ export function newContext(
     destroyed: false,
     createdToken: null,
     movedToHand: false,
+    exiledAnyCardTypes: false,
     exiledRef: null,
     lastEffectKind: null,
     randomYardCard: false,
