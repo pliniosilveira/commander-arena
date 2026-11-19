@@ -333,6 +333,46 @@ export const MODAL_TIERED = defineRule<IrModeHeader>({
   },
 });
 
+/**
+ * `modal.choose-may-different`: "you may choose two. Each mode must target a different player." (CR 700.2, 700.2b, 700.2d): the controller of a triggered ability chooses no
+ * mode or exactly two of them as it goes on the stack, and no target is chosen for two of the modes (the engine's `ModeChoice.allOrNone` and `differentTargets`).
+ */
+export const MODAL_CHOOSE_MAY_DIFFERENT = defineRule<IrModeHeader>({
+  id: 'modal.choose-may-different',
+  family: 'modal',
+  leading: ['you'],
+  cites: [
+    'CR 700.2 (General)',
+    'CR 700.2b (General)',
+    'CR 700.2d (General)',
+    'CR 603.3c (Handling Triggered Abilities)',
+  ],
+  examples: ['you may choose two. Each mode must target a different player.'],
+  rejects: [
+    'you may choose two. Each mode must target a different player',
+    'you may choose two.',
+    'you may choose two. Each mode must target a different creature.',
+    'you may choose three. Each mode must target a different player.',
+    'you may choose one. Each mode must target a different player.',
+    'Choose two. Each mode must target a different player.',
+    'you may choose two. Each mode must target a different player. —',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/you may choose two\. each mode must target a different player\.$/i)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 0, max: 2, allOrNone: true, differentTargets: true },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-may-different',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
 export const MODAL_RULES = [
   MODAL_CHOOSE,
   MODAL_CHOOSE_COMMANDER,
@@ -341,4 +381,5 @@ export const MODAL_RULES = [
   MODAL_CHOOSE_NOT_REPEATED_SOURCE,
   MODAL_CHOOSE_REPEATABLE,
   MODAL_TIERED,
+  MODAL_CHOOSE_MAY_DIFFERENT,
 ];

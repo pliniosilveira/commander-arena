@@ -27,6 +27,7 @@ import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
+import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BRUNA_EFFECT_RULES } from './bruna';
@@ -89,6 +90,7 @@ import {
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
+import { NILS_EFFECT_RULES } from './nils';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
 import { NIV_GROUP_3_A_EFFECT_RULES } from './niv-group-3-a';
@@ -131,6 +133,7 @@ import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
+import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -682,10 +685,20 @@ const RETURN_THIS_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
  */
 const TO_BATTLEFIELD_AHEAD = /^return [^.]*? to the battlefield/i;
 
-const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = (
-  ctx,
-  pos,
-) => {
+/**
+ * " attached to that token" after the battlefield (issue 89, Forum Filibuster, CR 303.4f, 400.7j): an Aura or an Equipment card put onto the battlefield attached to the token the
+ * sentences before it made, which names it, so nothing is asked. Only the token: another host is another statement.
+ */
+const ATTACHED_TO_THAT_TOKEN: Parser<IrNoun> = map(
+  sequence(literal(' attached to '), family<IrNoun>('noun', { only: ['noun.that-token'] })),
+  ([, host]) => host,
+);
+
+const RETURN_FROM_GRAVEYARD: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+  attachTo?: IrNoun;
+}> = (ctx, pos) => {
   const toBattlefield = TO_BATTLEFIELD_AHEAD.test(ctx.text.slice(pos));
   const r = sequence(
     literal('return '),
@@ -700,8 +713,21 @@ const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSp
       toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
     ),
     toBattlefield ? TO_THE_BATTLEFIELD : TO_YOUR_HAND,
+    optional(ATTACHED_TO_THAT_TOKEN, null),
   )(ctx, pos);
-  return r.ok ? { ok: true, value: { objects: r.value[1], to: r.value[2] }, pos: r.pos } : r;
+  // Only a card put onto the battlefield is attached as it enters.
+  if (r.ok && !toBattlefield && r.value[3] !== null) return fail(ctx, pos);
+  return r.ok
+    ? {
+        ok: true,
+        value: {
+          objects: r.value[1],
+          to: r.value[2],
+          ...(r.value[3] === null ? {} : { attachTo: r.value[3] }),
+        },
+        pos: r.pos,
+      }
+    : r;
 };
 
 /**
@@ -749,6 +775,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     // D-362 (Victimize): the cards an earlier sentence chose as targets.
     'return the chosen cards to the battlefield',
     'return the chosen cards to the battlefield tapped',
+    // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
+    'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
+    'return target Aura card from your graveyard to the battlefield attached to that token',
   ],
   rejects: [
     "return that card to its owner's hand",
@@ -782,10 +811,16 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return the chosen cards to their owners' hands",
     'return the chosen card to the battlefield',
     'return the chosen cards to the battlefield under their owners control',
+    'return target creature card from your graveyard to your hand attached to that token',
+    'return target creature card from your graveyard to the battlefield attached to target creature',
+    'return target creature card from your graveyard to the battlefield attached to it',
+    'return target creature card from your graveyard to the battlefield attached to that creature',
+    'return target creature card from your graveyard to the battlefield attached to those tokens',
+    'return target creature card from your graveyard to the battlefield attached to',
   ],
   parse: single(
     'effect.return',
-    choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>(
+    choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec; attachTo?: IrNoun }>(
       RETURN_TO_HAND,
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
@@ -795,7 +830,10 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_THE_CHOSEN_CARDS,
       RETURN_THIS_CARD,
     ),
-    ({ objects, to }) => ({ verb: 'return', args: { objects, to } }),
+    ({ objects, to, attachTo }) => ({
+      verb: 'return',
+      args: { objects, to, ...(attachTo === undefined ? {} : { attachTo }) },
+    }),
   ),
 });
 
@@ -946,6 +984,8 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
+  // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
+  ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
   ...GRAVEYARD_CHOICE_RULES,
   // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
@@ -969,6 +1009,8 @@ export const EFFECT_RULES = [
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
+  // Silverquill deck (Nils): "for each player, put a +1/+1 counter on up to one target creature that player controls" starts like the plain "for each" rules, and is tried first.
+  ...NILS_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
@@ -999,6 +1041,8 @@ export const EFFECT_RULES = [
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
   ...GIDEON_EFFECT_RULES,
+  // CR 701.20a, 119.3: 'you and target opponent each reveal the top card of your library. You each lose life ...' starts like the plain player rules, so it is tried first.
+  ...REVEAL_TOP_DUEL_EFFECT_RULES,
   ...HEXPROOF_LOSS_EFFECT_RULES,
   ...GOAD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".

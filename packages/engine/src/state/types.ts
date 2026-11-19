@@ -206,6 +206,12 @@ export interface GameObject {
    */
   readonly linkedExile?: readonly ObjectId[];
   /**
+   * The permanent (an Aura) an effect of which put this permanent onto the battlefield with `moveToZone.putWithSource` (CR 400.7, 303.4; Animate Dead: "enchant creature put onto the
+   * battlefield with this Aura"): its object id as it was, read by `ObjectFilter.putWithSource` and the `putWithThis` reference, also after that permanent has left. It is this object's own: a
+   * permanent that leaves and returns is a new object with none. Absent otherwise.
+   */
+  readonly putWith?: ObjectId;
+  /**
    * Present on a card in exile that a Hideaway ability exiled face down (CR 702.75a, D-145): the permanent whose ability exiled it, whose
    * controller may look at it for as long as that permanent is still on the battlefield as the same object (nobody may when it left). It is
    * the exile object's own: a new object after any zone change (CR 400.7) has none. Absent otherwise.
@@ -527,6 +533,8 @@ export interface StackData {
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`PendingTrigger.thisWayBefore`). */
   readonly thisWayBefore?: ThisWayCounts;
+  /** For a reflexive ability with `carriesMoved` (issue 89): the objects the resolution that created it had made or moved, which `moved` names in it (`StackData.movedBefore`). */
+  readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` ability (D-232): the cards that left the graveyard, as the objects they are now (`PendingTrigger.cards`). */
   readonly triggerCards?: readonly ObjectId[];
   /**
@@ -753,6 +761,8 @@ export interface PendingTrigger {
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted (`ThisWayCounts`), read by its `thisWay` amounts. */
   readonly thisWayBefore?: ThisWayCounts;
+  /** For a reflexive ability with `carriesMoved` (issue 89): the objects the resolution that created it had made or moved, which `moved` names in it (`StackData.movedBefore`). */
+  readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` trigger (D-232): the cards that left the graveyard in the events that triggered it, as the objects they became. */
   readonly cards?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
@@ -1114,6 +1124,10 @@ export type Instruction =
       readonly kind: 'spare';
       /** D-484: each of `players` chooses among their own permanents and sacrifices all the rest, lands too (`sparePermanents.own`); absent: the controller chooses and the lands stay. */
       readonly own?: true;
+      /** Promise of Loyalty (`sparePermanents.own`): only permanents of `types` are sacrificed; `counter` goes on each kept; `cantAttackYou` bars each kept from attacking the controller. */
+      readonly typesOnly?: true;
+      readonly counter?: string;
+      readonly cantAttackYou?: true;
       readonly players: readonly SeatId[];
       readonly types: readonly CardType[];
       readonly step: number;
@@ -1691,6 +1705,8 @@ export type Instruction =
       readonly linkTo?: ObjectId;
       /** The Aura enters attached to this permanent (CR 303.4f, `auraEntry`, D-149). */
       readonly attachTo?: ObjectId;
+      /** The permanent it becomes remembers it was put onto the battlefield with this permanent (`moveToZone.putWithSource`, `GameObject.putWith`). */
+      readonly putWith?: ObjectId;
       /** The card exiled is returned to the battlefield when this permanent leaves it (`exile.until`, CR 610.3): an `ExileReturn` is recorded. */
       readonly untilLeaves?: ObjectId;
       /** "Until an opponent becomes the monarch" (D-231, CR 610.3): the permanent whose ability exiled the card; the card comes back when an opponent of its controller becomes the monarch. */
@@ -1954,6 +1970,15 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
+  /**
+   * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp
+   * the enchant ability `loses` is taken away and the one `gains` is added.
+   */
+  | {
+      readonly kind: 'replaceEnchant';
+      readonly loses: Extract<Keyword, { readonly kind: 'enchant' }>;
+      readonly gains: Extract<Keyword, { readonly kind: 'enchant' }>;
+    }
   /** "Lose hexproof and shroud and can't have them" (`loseHexproofShroud`, D-649, CR 613.1f): layer 6, applied after every grant whatever its timestamp. */
   | { readonly kind: 'loseHexproofShroud' }
   /**
@@ -2015,6 +2040,11 @@ export type ContinuousChange =
    */
   | { readonly kind: 'mustAttackPlayer'; readonly seat: SeatId }
   /**
+   * "Each of those creatures can't attack you or planeswalkers you control" (`sparePermanents.own.cantAttackYou`, CR 508.1a): the objects of the effect can't be declared attacking
+   * the player `seat` or the planeswalkers `seat` controls. A restriction of the rules, not an ability: read in `rules/attack-bans.ts`, not in a layer.
+   */
+  | { readonly kind: 'cantAttackPlayer'; readonly seat: SeatId }
+  /**
    * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is
    * empty): read as a permanent enters the battlefield (`rules/enters-group.ts`, `enteredTappedByEffect`), for each permanent `filter` matches then, with `controller` as "you".
    */
@@ -2062,6 +2092,8 @@ export type ContinuousChange =
        * `controller` as "you"; absent: any source. Together with `sources` both must hold (the effect never sets both).
        */
       readonly sourceFilter?: { readonly filter: ObjectFilter; readonly controller: SeatId };
+      /** "For each 1 damage prevented this way, create a token" (CR 615.5): the token `controller` (the controller of the effect) creates for each point this shield prevents. */
+      readonly perPrevented?: { readonly definition: TokenDefinition; readonly controller: SeatId };
     };
 
 /**
@@ -2122,7 +2154,12 @@ export type EffectEnd =
    * "For as long as this Saga remains on the battlefield" (D-207, CR 611.2b): while the object `source` is on the battlefield; it ends, for good, as that stops
    * being so (`endLostControlEffects`, with the state-based actions). Whoever controls it does not matter.
    */
-  | { readonly kind: 'whileOnBattlefield'; readonly source: ObjectId };
+  | { readonly kind: 'whileOnBattlefield'; readonly source: ObjectId }
+  /**
+   * "For as long as it has a vow counter on it" (CR 611.2b, 122.1): while the object `object` is on the battlefield with a counter of the kind `counter`; it ends, for good, as that
+   * stops being so (`endLostControlEffects`, with the state-based actions).
+   */
+  | { readonly kind: 'whileHasCounter'; readonly object: ObjectId; readonly counter: string };
 
 /**
  * What happened this turn that some abilities ask about (D-139), kept for the whole game state and emptied as each turn begins
@@ -2224,6 +2261,8 @@ export interface TurnLog {
     readonly controller: SeatId;
     readonly types: readonly CardType[];
     readonly token: boolean;
+    /** CR 700.9, 603.10a: whether the permanent was modified as it left the battlefield (a counter, an Equipment, or an Aura its controller controlled). */
+    readonly modified: boolean;
   }[];
   /**
    * Each time a card left a graveyard this turn (D-206, CR 400.7), by the seat that owns the card, in order: "if a card left your graveyard this turn".

@@ -358,6 +358,10 @@ export function matchesFilterWith(
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
   // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
   if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
+  // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura": the object remembers the source, as the same object.
+  if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
+    return false;
+  }
   // CR 702.134a (D-120): "with power less than this creature's power".
   if (filter.powerLessThanSource === true) {
     const power = ctx.sourcePower;

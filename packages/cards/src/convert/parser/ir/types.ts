@@ -149,6 +149,7 @@ export interface IrNoun extends IrNode {
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
+    | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
   readonly filter: IrFilter;
@@ -353,6 +354,8 @@ export interface IrFilter {
   readonly enteredThisTurn?: true;
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
   readonly exiledWithSelf?: true;
+  /** "creature put onto the battlefield with ~" (issue 89, Animate Dead, CR 400.7): a permanent that an effect of this permanent put onto the battlefield (the engine's `putWithSource`). */
+  readonly putWithSelf?: true;
   /**
    * "attached to it", "attached to enchanted creature", "that's attached to a creature" (Danitha deck group 3, D-426, CR 303.4, 301.5, 701.3): the object is a permanent attached to
    * another one. `it` is the permanent the statement is about (the lowering of a static ability reads it as the source or, for "enchanted creature gets ...", the permanent the
@@ -429,6 +432,8 @@ export type IrAmount =
       readonly types?: readonly string[];
       readonly token?: boolean;
       readonly controller: 'you' | 'any';
+      /** "A modified creature died under your control this turn" (CR 700.9): only the permanents that were modified as they died. */
+      readonly modified?: true;
       readonly span: Span;
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
@@ -639,6 +644,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
+    // Issue 89 (CR 603.4, Animate Dead): "it's on the battlefield": the permanent the trigger is about, which is the source, is still on the battlefield
+    | { readonly kind: 'thisOnBattlefield' }
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
@@ -1040,6 +1047,8 @@ export interface IrToken extends IrNode {
   readonly copyStartingLoyalty?: number;
   /** "create two tapped Treasure tokens" (stage P28, CR 110.5b): the tokens enter tapped. */
   readonly tapped?: true;
+  /** "The token has enchant creature" (issue 89, CR 702.5a): an Aura token that enchants a creature. */
+  readonly enchantsCreature?: true;
   readonly count: IrAmount;
   /**
    * Set by bind() on a token made one at a time ("create a 2/2 red Dwarf creature token"; stage P48, D-205): the name later words use for it ("that token",
@@ -1258,7 +1267,7 @@ export interface IrTrigger extends IrNode {
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
   /**
-   * 'lifeGained': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
+   * 'lifeGained' and 'lifeLost': "for the first time each turn" (stage P33, D-150, CR 119.9): only the first gain of the player in the turn. Stage P34 (D-152,
    * CR 508.1, 500.8): 'attacks' "for the first time each turn", only the first time the creature was declared as an attacker this turn.
    */
   readonly firstEachTurn?: true;
@@ -1442,7 +1451,13 @@ export type IrStaticEffect =
    * those creatures." (stage P24, D-125, CR 508.1d, 508.1h): the `cost` one attacker pays, a mana cost whose symbols
    * are plain, hybrid or Phyrexian (never X), and whether the planeswalkers of the controller are covered too.
    */
-  | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
+  | {
+      readonly kind: 'attackTax';
+      readonly cost: IrCost;
+      readonly planeswalkers?: true;
+      /** "unless its controller pays {X}, where X is the number of counters on that creature": only creatures with counters, `cost` once for each counter. */
+      readonly perCounter?: true;
+    }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
   /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */
@@ -1704,6 +1719,10 @@ export interface IrModeChoice {
    * of bullets, and `min` is 0 for "Choose up to three. You may choose the same mode more than once.".
    */
   readonly repeatable?: true;
+  /** "you may choose two" (CR 700.2b): no mode or exactly `max` of them, `min` is 0; the engine's `ModeChoice.allOrNone`. Only a triggered ability. */
+  readonly allOrNone?: true;
+  /** "Each mode must target a different player." (CR 700.2d): the engine's `ModeChoice.differentTargets`. */
+  readonly differentTargets?: true;
 }
 
 /** The header line of a modal spell or ability ("Choose one —"), read by the `modal` rules. */

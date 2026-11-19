@@ -11,6 +11,10 @@
  *   attacks cannot tap for the mana of its own tax (unless it has vigilance). `payableAttackTax` plans the
  *   payment on the state with the attackers tapped, the same planner as every other mana payment, so Phyrexian
  *   mana may be paid with life (CR 107.4f) and the pool counts.
+ * - Per counter (`perCounter`, "Each creature with one or more counters on it can't attack you ... unless its
+ *   controller pays {X}, where X is the number of counters on that creature"): only a creature with a counter
+ *   of any kind (CR 122.1) is taxed, and it pays the cost once for each counter on it, read as the attack is
+ *   declared. The cost an attacker pays therefore depends on the attacker, not only on the target.
  * - A requirement (CR 508.1d): a player is not required to pay a cost to attack, so a creature that must
  *   attack if able and has only taxed targets is not required (`untaxedTargets`).
  */
@@ -31,6 +35,17 @@ interface Tax {
   readonly controller: SeatId;
   readonly symbols: readonly string[];
   readonly planeswalkers: boolean;
+  readonly perCounter: boolean;
+}
+
+/** What `tax` costs `attacker` (CR 508.1h): its symbols, or for a per-counter tax once for each counter on it. */
+function symbolsFor(state: GameState, tax: Tax, attacker: ObjectId): readonly string[] {
+  if (!tax.perCounter) return tax.symbols;
+  const counters = Object.values(state.objects[attacker]?.counters ?? {}).reduce(
+    (sum, n) => sum + n,
+    0,
+  );
+  return Array.from({ length: counters }, () => tax.symbols).flat();
 }
 
 /** Every `attackTax` ability on the battlefield, in battlefield order. */
@@ -53,6 +68,7 @@ function taxesOnBoard(state: GameState): Tax[] {
         controller: controllerOf(state, obj),
         symbols: manaSymbolsOf(a.static.cost),
         planeswalkers: a.static.planeswalkers === true,
+        perCounter: a.static.perCounter === true,
       });
     }
   }
@@ -74,18 +90,22 @@ function covers(state: GameState, tax: Tax, target: AttackTarget): boolean {
 
 /** The taxes on the board, for the reads below that look at several targets. */
 export interface AttackTaxes {
-  /** What one creature pays to attack `target`: the symbols of every tax that covers it (empty: free). */
-  costOf(target: AttackTarget): string[];
-  /** The first permanent that taxes an attack on `target`, or null. */
-  sourceOf(target: AttackTarget): ObjectId | null;
+  /** What `attacker` pays to attack `target`: the symbols of every tax that covers it (empty: free). */
+  costOf(target: AttackTarget, attacker: ObjectId): string[];
+  /** The first permanent that taxes `attacker` attacking `target`, or null. */
+  sourceOf(target: AttackTarget, attacker: ObjectId): ObjectId | null;
 }
 
 export function attackTaxes(state: GameState): AttackTaxes {
   const taxes = taxesOnBoard(state);
   return {
-    costOf: (target) =>
-      taxes.filter((t) => covers(state, t, target)).flatMap((t) => [...t.symbols]),
-    sourceOf: (target) => taxes.find((t) => covers(state, t, target))?.source ?? null,
+    costOf: (target, attacker) =>
+      taxes
+        .filter((t) => covers(state, t, target))
+        .flatMap((t) => [...symbolsFor(state, t, attacker)]),
+    sourceOf: (target, attacker) =>
+      taxes.find((t) => covers(state, t, target) && symbolsFor(state, t, attacker).length > 0)
+        ?.source ?? null,
   };
 }
 
@@ -95,17 +115,17 @@ export function attackTaxSymbols(
   attacks: readonly { readonly attacker: ObjectId; readonly target: AttackTarget }[],
 ): string[] {
   const taxes = attackTaxes(state);
-  return attacks.flatMap((a) => taxes.costOf(a.target));
+  return attacks.flatMap((a) => taxes.costOf(a.target, a.attacker));
 }
 
 /** The first permanent that taxes any of the attacks: the `source` of the payment decision. */
 export function firstTaxSource(
   state: GameState,
-  attacks: readonly { readonly target: AttackTarget }[],
+  attacks: readonly { readonly attacker: ObjectId; readonly target: AttackTarget }[],
 ): ObjectId | null {
   const taxes = attackTaxes(state);
   for (const a of attacks) {
-    const source = taxes.sourceOf(a.target);
+    const source = taxes.sourceOf(a.target, a.attacker);
     if (source !== null) return source;
   }
   return null;
@@ -174,14 +194,18 @@ export function attackCostsFor(
       const key = JSON.stringify(target);
       if (seen.has(key)) continue;
       seen.add(key);
-      const cost = taxes.costOf(target);
+      // The attackers that can attack this target and what each would pay: a per-counter tax makes the cost depend
+      // on the creature. `cost` is the dearest one, and `affordable` counts the dearest attackers, so a declaration
+      // of that many is payable whichever creatures it holds (a floor, as above).
+      const costs = candidates
+        .filter((x) => x.targets.some((t) => JSON.stringify(t) === key))
+        .map((x) => taxes.costOf(target, x.attacker))
+        .sort((a, b) => b.length - a.length);
+      const cost = costs[0] ?? [];
       if (cost.length === 0) continue;
-      const attackers = candidates.filter((x) =>
-        x.targets.some((t) => JSON.stringify(t) === key),
-      ).length;
       let affordable = 0;
-      while (affordable < attackers) {
-        const symbols = Array.from({ length: affordable + 1 }, () => cost).flat();
+      while (affordable < costs.length) {
+        const symbols = costs.slice(0, affordable + 1).flat();
         if (planFor(tapped, seat, symbols, { ability: true }) === null) break;
         affordable += 1;
       }
@@ -197,8 +221,9 @@ export function attackCostsFor(
  */
 export function untaxedTargets(
   state: GameState,
+  attacker: ObjectId,
   targets: readonly AttackTarget[],
 ): readonly AttackTarget[] {
   const taxes = attackTaxes(state);
-  return targets.filter((t) => taxes.costOf(t).length === 0);
+  return targets.filter((t) => taxes.costOf(t, attacker).length === 0);
 }

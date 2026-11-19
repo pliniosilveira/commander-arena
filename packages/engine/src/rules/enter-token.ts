@@ -73,6 +73,27 @@ function auraEnchantFilter(definition: TokenDefinition) {
   return null;
 }
 
+/**
+ * CR 303.4f, 303.4g (issue 89): whether the Aura token with `definition` created for `seat` by `source` can enter attached to `host`, the object the effect names: a permanent its
+ * enchant ability allows, read as the token's controller (hexproof and shroud do not matter, CR 303.4c).
+ */
+export function auraTokenCanEnterAttached(
+  state: GameState,
+  seat: SeatId,
+  definition: TokenDefinition,
+  source: ObjectId,
+  host: ObjectId,
+): boolean {
+  const enchant = auraEnchantFilter(definition);
+  const obj = state.objects[host];
+  return (
+    enchant !== null &&
+    obj !== undefined &&
+    obj.zone === 'battlefield' &&
+    matchesFilter(state, obj, { ...enchant, zone: 'battlefield' }, { controller: seat, source })
+  );
+}
+
 /** The permanents a token with `definition` may become a copy of as it is created (CR 614.12, 707.9: "As this enters, you may have it become a copy of ..."); none when it has no such ability. */
 function tokenCopyCandidates(
   state: GameState,
@@ -363,5 +384,6 @@ export function runEnterToken(
       ...hostEvents,
     ]),
     lastMoved: [...(res.lastMoved ?? []), ...created],
+    performed: created.length,
   };
 }

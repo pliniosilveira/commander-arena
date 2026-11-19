@@ -27,7 +27,15 @@ import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
 
 /** The alternative costs listed on a face, in the order their options are offered (D-121). */
-const ALTERNATIVES = ['free', 'overload', 'evoke', 'dash', 'spectacle', 'tapPermanents'] as const;
+const ALTERNATIVES = [
+  'free',
+  'overload',
+  'evoke',
+  'dash',
+  'bestow',
+  'spectacle',
+  'tapPermanents',
+] as const;
 
 export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[] {
   const options: PriorityOption[] = [{ kind: 'pass' }];

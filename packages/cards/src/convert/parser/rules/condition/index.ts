@@ -24,6 +24,7 @@ import { defineRule, spanned } from '../registry';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
+import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
@@ -41,6 +42,7 @@ import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
+import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
@@ -437,6 +439,51 @@ export const CONDITION_CREATURE_DIED_THIS_TURN = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.modified-creature-died`: "a modified creature died under your control this turn" (CR 700.9, 700.4, 603.10a): a creature that was modified (a counter, an Equipment, or an
+ * Aura its controller controlled) as it left the battlefield and died under the controller of the ability. The engine's `diedThisTurn` amount with `modified`, at least one.
+ */
+export const CONDITION_MODIFIED_CREATURE_DIED = defineRule<IrCondition>({
+  id: 'condition.modified-creature-died',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 700.9 (Modified)', 'CR 700.4 (Dies)', 'CR 603.10a (Handling Triggered Abilities)'],
+  examples: ['a modified creature died under your control this turn'],
+  rejects: [
+    'a modified creature died this turn',
+    'a modified creature died under your control last turn',
+    'a modified creature dies under your control this turn',
+    'a modified creature died under an opponent’s control this turn',
+    'a modified creature card died under your control this turn',
+    'a creature died under your control this turn',
+    'a modified creature died under your control this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a modified creature died under your control this turn(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'diedThisTurn',
+      controller: 'you',
+      types: ['creature'],
+      modified: true,
+      span,
+    };
+    return {
+      ok: true,
+      value: condition('condition.modified-creature-died', span, {
+        kind: 'amountIs',
+        amount,
+        compare: { cmp: 'atLeast', value: 1 },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
  * (CR 903.3), and a commander in the command zone is not controlled). The engine's
@@ -482,6 +529,8 @@ export const CONDITION_RULES = [
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
+  ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
@@ -491,6 +540,7 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_LAND_TYPE,
   CONDITION_OPPONENT_POISON_AT_LEAST,
   CONDITION_CREATURE_DIED_THIS_TURN,
+  CONDITION_MODIFIED_CREATURE_DIED,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,
@@ -528,6 +578,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G2_LATE_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
+  // Issue 89: "it's attacking one of your opponents".
+  ...ATTACKING_OPPONENTS_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".

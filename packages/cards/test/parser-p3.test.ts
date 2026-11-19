@@ -88,7 +88,8 @@ describe('keyword.enchant: "Enchant <permanent phrase>" (CR 702.5a)', () => {
 
   test.each([
     ['Enchant creature with flying or reach', 'or reach', 'noun'],
-    ['Enchant creature card in a graveyard', 'card in a graveyard', 'noun'],
+    // SYNTHETIC: the graveyard of one player is not read ("Enchant creature card in a graveyard" is, issue 89).
+    ['Enchant creature card in your graveyard', 'card in your graveyard', 'noun'],
   ] as const)('"%s" stays unparsed at "%s"', (text, stoppedAt, slot) => {
     expect(diagnosticOf(text, 'Aura')).toMatchObject({ reason: 'unrecognised', stoppedAt, slot });
   });
@@ -99,12 +100,12 @@ describe('keyword.enchant: "Enchant <permanent phrase>" (CR 702.5a)', () => {
         name: 'SYNTHETIC Graveyard Aura',
         manaCost: '{1}{B}',
         typeLine: 'Enchantment — Aura',
-        oracleText: 'Enchant creature card in a graveyard',
+        oracleText: 'Enchant creature card in your graveyard',
       }),
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed.map((u) => u.text)).toEqual([
-      'Enchant creature card in a graveyard',
+      'Enchant creature card in your graveyard',
     ]);
     expect(imported.support.reasons).toEqual([]);
   });

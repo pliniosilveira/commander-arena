@@ -157,6 +157,7 @@ import { SYNTHETIC_RESELECT_LIST } from './synthetic-reselect';
 import { SYNTHETIC_RESTRICTION_LIST } from './synthetic-restrictions';
 import { SYNTHETIC_RETURN_CONTROL_LIST } from './synthetic-return-control';
 import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
+import { SYNTHETIC_REVEAL_DUEL_LIST } from './synthetic-reveal-duel';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
@@ -394,6 +395,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_LIBRARY_LIST,
   ...SYNTHETIC_REFERENCE_LIST,
   ...SYNTHETIC_RESTRICTION_LIST,
+  ...SYNTHETIC_REVEAL_DUEL_LIST,
   ...SYNTHETIC_COST_LIST,
   ...SYNTHETIC_CROSS_ZONE_LIST,
   ...SYNTHETIC_MANA_PLUS_LIST,

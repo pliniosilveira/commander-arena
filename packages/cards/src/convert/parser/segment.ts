@@ -70,7 +70,8 @@ const EXERT_LEAD = /^you may exert (?:~|this creature) as it attacks\. when you 
 const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
-const MODAL_HEADER = /^(?:choose\b|tiered(?:\n|$))/i;
+const MODAL_HEADER =
+  /^(?:choose\b|tiered(?:\n|$)|you may choose two\. each mode must target a different player\.(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
 /** "You may have ~ enter as a copy of any creature on the battlefield, except ..." (issue 104, CR 614.12): the replacement effect of a permanent that enters as a copy, said without "As". */
 const REPLACEMENT_ENTER_AS_COPY = /^you may have ~ enter as a copy of\b/i;
@@ -290,6 +291,13 @@ const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
 
 /**
+ * "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying." (CR 615.5):
+ * the second sentence is the additional effect of the prevention the first makes, so the two are read as one instruction (`effect.prevent-all-create-tokens`).
+ */
+const PREVENT_ALL_SENTENCE = /^prevent all [^.]*\.$/i;
+const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, create [^.]*\.$/i;
+
+/**
  * "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (Prismari deck group 2, D-654, CR 707.12): the
  * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
  */
@@ -355,6 +363,15 @@ const FOR_EACH_PLAYER_CHOOSE =
   /^for each player, you choose from among the permanents that player controls [^.]*\.$/i;
 const THEN_SACRIFICE_OTHERS =
   /^then each player sacrifices all other nonland permanents they control\.$/i;
+
+/**
+ * "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow
+ * counter on it." (Promise of Loyalty, issue 89, CR 122.1, 508.1a, 611.2b): "those creatures" are the ones that got the counter, so the two sentences are read as one instruction.
+ */
+const EACH_PLAYER_VOW_KEEP =
+  /^each player puts an? [a-z]+ counter on a creature they control and sacrifices the rest\.$/i;
+const THOSE_CREATURES_CANT_ATTACK_YOU =
+  /^each of those creatures can['’]t attack you or planeswalkers you control for as long as it has an? [a-z]+ counter on it\.$/i;
 
 /**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
@@ -465,6 +482,14 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  */
 const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
 /**
+ * "You and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you
+ * revealed into your hand." (CR 701.20a, 119.3): three sentences that are one instruction, kept together for `effect.reveal-top-duel`.
+ */
+const EACH_REVEAL_TOP = /^you and [^.]* each reveal the top card of your library\.$/i;
+const EACH_LOSE_LIFE_OTHER =
+  /^you each lose life equal to the mana value of the card revealed by the other player\.$/i;
+const EACH_PUT_REVEALED_INTO_HAND = /^you each put the card you revealed into your hand\.$/i;
+/**
  * "Scry 3, then reveal the top card of your library. If it's a creature or land card, draw a card." and "Whenever you scry, you may reveal the top card of your library. If a land card
  * is revealed this way, put it onto the battlefield tapped." (Galadriel deck, group 1, CR 701.20): the second sentence says what the card revealed by the first one does, so the two
  * are read as one instruction (`effect.reveal-top-then`; the first may follow the comma of a trigger or of "scry N, then").
@@ -493,6 +518,12 @@ const REMOVE_COUNTERS_MANA_VALUE =
   /^remove a number of [^.]* counters equal to that card['’]s mana value from [^.]*\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
+/**
+ * "Create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and \"...\"" (issue 89, CR 303.4f, 702.5a): an
+ * Aura token is created attached to a target and the sentence after it says what it enchants and has, so the two are read as one (`effect.create-token`).
+ */
+const CREATE_AURA_TOKEN = /^create [^.]* Aura enchantment token [^.]*\.$/i;
+const TOKEN_HAS_ENCHANT = /^the token has enchant creature(?:\.| and ["“].*["”]\.?)$/i;
 
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
@@ -542,6 +573,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     } else if (
       a !== undefined &&
       c !== undefined &&
+      said(a, EACH_REVEAL_TOP) &&
+      said(b, EACH_LOSE_LIFE_OTHER) &&
+      said(c, EACH_PUT_REVEALED_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
       said(a, REVEAL_THE_TOP) &&
       said(b, SEPARATES_INTO_PILES) &&
       said(c, PUT_ONE_PILE)
@@ -580,6 +620,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
+        (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
@@ -587,6 +628,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
+        (said(a, EACH_PLAYER_VOW_KEEP) && said(b, THOSE_CREATURES_CANT_ATTACK_YOU)) ||
         (said(a, OPPONENT_CHOOSES_EXILED) && said(b, PUT_THAT_CARD_BOTTOM_RETURN_OTHER)) ||
         (said(a, EXILE_AT_RANDOM) && said(b, PLAY_THE_EXILED_CARD)) ||
         (said(a, CHOOSE_EXILED_WITH) && said(b, MAY_CAST_THAT_FREE)) ||
@@ -599,6 +641,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
+        (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
@@ -656,10 +699,13 @@ export function splitSentences(text: string, start: number, end: number): Span[]
       // `It gains "You can't lose the game." Activate only as a sorcery.` The restriction is always a sentence of its own; the period inside the
       // quote is the one of the sentence (the sentence parser reads a quote that ends the text as its end). Any other text after a quote stays in the
       // sentence, as before ("Create a token with "Draw a card." Draw a card." is one).
+      // The same after a quoted enchant ability (issue 89, Animate Dead, CR 702.5a): `... gains "enchant creature put onto the battlefield with ~." Return ...`.
       if (
         closes &&
         /\.['’]?$/u.test(text.slice(from, i)) &&
-        /^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end))
+        (/^\s+(?:activate\b|this ability costs\b)/iu.test(text.slice(i + 1, end)) ||
+          (/\sgains "enchant [^"]*$/iu.test(text.slice(from, i)) &&
+            /^\s+\S/u.test(text.slice(i + 1, end))))
       ) {
         const span = trimmed(text, from, i + 1);
         if (span.end > span.start) out.push(span);

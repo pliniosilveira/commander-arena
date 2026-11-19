@@ -44,6 +44,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'combatDamageBatch':
     case 'noncombatDamageDealt':
     case 'lifeGained':
+    case 'lifeLost':
     case 'attackBatch':
     // CR 509.1h: the player who controls the unblocked attackers.
     case 'unblockedAttackBatch':

@@ -18,6 +18,7 @@ import { AMOUNT_NEEDS } from './amounts';
 import { ANGEL_NEEDS } from './angels';
 import { ARDEN_NEEDS } from './arden';
 import { ATTACHMENT_NEEDS } from './attachments';
+import { AURA_GRAVEYARD_NEEDS } from './aura-graveyard';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
 import { DESTINY_NEEDS } from './destiny';
@@ -29,9 +30,10 @@ import { GIDEON_NEEDS } from './gideon';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
 import { MELD_NEEDS } from './meld';
-import { MODAL_NEEDS, MODE_COST_NEEDS } from './modal';
+import { MODAL_NEEDS, MODE_CHOICE_NEEDS, MODE_COST_NEEDS } from './modal';
 import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
+import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
 import { NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
@@ -137,6 +139,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ALTERNATIVE_COST_NEEDS,
     ...MODAL_NEEDS,
     ...MODE_COST_NEEDS,
+    ...MODE_CHOICE_NEEDS,
     ...ACTIVATED_NEEDS,
     ...COST_NEEDS,
     ...SEARCH_NEEDS,
@@ -145,9 +148,11 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ATTACHMENT_NEEDS,
     ...ANGEL_NEEDS,
     ...ARDEN_NEEDS,
+    ...AURA_GRAVEYARD_NEEDS,
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
     ...GIDEON_NEEDS,
+    ...REVEAL_TOP_DUEL_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,
     ...MELD_NEEDS,

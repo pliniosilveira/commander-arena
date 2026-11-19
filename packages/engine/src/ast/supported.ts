@@ -408,7 +408,13 @@ function walkEffect(
         }
       }
       for (const [i, a] of def.abilities.entries()) {
-        walkAbility(a, `${path}.token.definition.abilities[${i}]`, out, 'token');
+        walkAbility(
+          a,
+          `${path}.token.definition.abilities[${i}]`,
+          out,
+          'token',
+          effect.attachTo !== undefined,
+        );
         if (a.kind === 'static' && 'subject' in a.static && a.static.subject.kind === 'attached') {
           if (!def.subtypes.includes('Equipment')) {
             out.push({
@@ -640,6 +646,8 @@ function walkAbility(
   path: string,
   out: AstIssue[],
   owner: 'card' | 'token' = 'card',
+  /** An Aura token the effect creates attached to a target (`createToken.attachTo`, CR 303.4f): its enchant ability is the one it is attached by. */
+  attachedAura = false,
 ): void {
   if (!SUPPORTED_FEATURES.abilityKinds.includes(a.kind)) {
     out.push({ path, message: `ability kind "${a.kind}" is not implemented by the engine yet` });
@@ -869,8 +877,8 @@ function walkAbility(
       } else if (a.keyword.kind === 'unearth') {
         // CR 702.84a: paid like any activation cost from the graveyard; mana only (D-124).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
-      } else if (a.keyword.kind === 'enchant' && owner === 'token') {
-        // An Aura token would enter the battlefield with no spell to say what it enchants (CR 303.4f).
+      } else if (a.keyword.kind === 'enchant' && owner === 'token' && !attachedAura) {
+        // An Aura token would enter the battlefield with no spell to say what it enchants (CR 303.4f): only `createToken.attachTo` names it.
         out.push({
           path: `${path}.keyword`,
           message: 'an Aura token is not implemented by the engine yet',

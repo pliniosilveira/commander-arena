@@ -17,15 +17,53 @@
  * still happens when the permanent has lost its abilities (CR 603.7e).
  */
 import type { Ability, NamedAlternativeKind, PermanentAlternativeKind } from '../ast/types';
-import type { GameObject, GameState, TriggeredAbility } from '../state/types';
+import type { ContinuousEffect, GameObject, GameState, TriggeredAbility } from '../state/types';
 import { controlledSince, controllerOf } from './control';
 
 /** The alternative cost a permanent remembers having been cast for, if it is one that matters on the battlefield. */
 export function permanentAlternative(
   alt: NamedAlternativeKind | undefined,
 ): PermanentAlternativeKind | undefined {
-  return alt === 'evoke' || alt === 'dash' || alt === 'escape' ? alt : undefined;
+  return alt === 'evoke' || alt === 'dash' || alt === 'escape' || alt === 'bestow'
+    ? alt
+    : undefined;
 }
+
+/**
+ * CR 702.103b, 702.103d, 702.103f (Bestow; the rules text was not available to check these numbers): a spell cast for its bestow cost is an Aura enchantment spell, and a
+ * permanent that entered from one is an Aura enchantment only while it is attached to a permanent; once it is unattached (or never was: its target was illegal as it resolved,
+ * CR 702.103e) it is the creature its card is, for good.
+ */
+export function isBestowedAura(obj: GameObject): boolean {
+  if (obj.zone === 'stack') return obj.stack?.alt === 'bestow' && obj.stack.ability == null;
+  return obj.zone === 'battlefield' && obj.alt === 'bestow' && obj.attachedTo !== null;
+}
+
+/** The layer 4 effects of a bestowed Aura: no longer a creature, an Aura enchantment instead. */
+export function bestowTypeEffects(obj: GameObject): readonly ContinuousEffect[] {
+  return [
+    {
+      id: `bestow:${obj.id}:remove`,
+      timestamp: obj.timestamp,
+      objects: [obj.id],
+      until: 'permanent',
+      change: { kind: 'setTypes', remove: ['creature'] },
+    },
+    {
+      id: `bestow:${obj.id}:aura`,
+      timestamp: obj.timestamp,
+      objects: [obj.id],
+      until: 'permanent',
+      change: { kind: 'setTypes', types: ['enchantment'], subtypes: ['Aura'], additive: true },
+    },
+  ];
+}
+
+/** CR 702.103b: a bestowed Aura has "enchant creature" (what its spell targets and what it may stay attached to). */
+export const BESTOW_ENCHANT_ABILITY: Ability = {
+  kind: 'keyword',
+  keyword: { kind: 'enchant', filter: { types: ['creature'] } },
+};
 
 /** CR 702.74a: "When this permanent enters, ... its controller sacrifices it." */
 export const EVOKE_ABILITY: Ability = {
@@ -63,6 +101,7 @@ export const UNEARTH_EXILE_ABILITY: TriggeredAbility = {
  * their expansions. A returned-by-unearth permanent has haste (CR 702.84a "It gains haste").
  */
 export function alternativeAbilitiesOf(state: GameState, obj: GameObject): readonly Ability[] {
+  if (isBestowedAura(obj)) return [BESTOW_ENCHANT_ABILITY];
   if (obj.alt === 'evoke')
     return obj.riotHaste === true ? [EVOKE_ABILITY, DASH_HASTE_ABILITY] : [EVOKE_ABILITY];
   // CR 702.62a (D-128, D-224): a creature cast by its suspend ability has haste "until you lose control of the spell or the permanent it becomes": while

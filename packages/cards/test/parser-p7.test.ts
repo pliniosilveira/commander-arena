@@ -322,9 +322,10 @@ describe('what stays unread, with the gap behind each (stoppedAt, closestRule)',
     expect(d.stoppedAt).toBe(stoppedAt);
   });
 
-  test('a second sentence the grammar does not read drops the whole line (Inkshield, 1 card)', () => {
+  // Inkshield itself is read now (`effect.prevent-all-create-tokens`, parser-prevent-tokens.test.ts); a rider the grammar does not read still drops the whole line.
+  test('a second sentence the grammar does not read drops the whole line', () => {
     const text =
-      'Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.';
+      'Prevent all combat damage that would be dealt to you this turn. For each 2 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.';
     const parsed = read(text);
     expect(parsed.unparsed).toHaveLength(1);
     expect(parsed.spell).toBeNull();

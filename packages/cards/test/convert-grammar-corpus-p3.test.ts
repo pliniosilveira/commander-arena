@@ -80,8 +80,14 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature card in a graveyard',
-    expect: no('card in a graveyard', 'noun.bare-permanent'),
-    note: 'backlog: 2 cards',
+    expect: OK,
+    note: 'issue 89 (Animate Dead): `noun.card-in-a-graveyard`, the enchant ability of a card in a graveyard',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature card in your graveyard',
+    expect: no('card in your graveyard', 'noun.bare-permanent'),
+    note: 'SYNTHETIC; the graveyard of one player is not read (the engine filter has no owner of a card in a graveyard for an Aura)',
   },
   {
     kind: 'aura',

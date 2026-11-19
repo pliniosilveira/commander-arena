@@ -524,6 +524,11 @@ export function evaluateCondition(
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
     }
+    case 'thisOnBattlefield': {
+      // CR 603.4, 400.7 (Animate Dead): "if it's on the battlefield": the live object, which is a new one elsewhere once it has left.
+      const from = ctx.source === null ? undefined : state.objects[ctx.source];
+      return from?.zone === 'battlefield';
+    }
     case 'controlsRingBearer':
       // CR 701.54e (D-196): a creature on the battlefield under the controller's control with their Ring-bearer designation.
       return ringBearerOf(state, ctx.controller) !== null;

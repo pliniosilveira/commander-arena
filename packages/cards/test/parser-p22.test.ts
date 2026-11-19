@@ -179,7 +179,6 @@ describe('what stays unread (never half-executed)', () => {
     ['Overloaded {2}{U}', 'another word'],
     ['Dashed {1}{R}', 'another word'],
     ['Blitz {2}{B}', 'D-117 step not built'],
-    ['Bestow {3}{W}', 'D-117 step not built'],
   ])('"%s" is not read (%s)', (text) => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'unrecognised' });
   });

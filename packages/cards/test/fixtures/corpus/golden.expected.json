@@ -35,8 +35,8 @@
           "ability": 2,
           "text": "Whenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color.",
           "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.controller-adds-additional-mana"
+          "slot": "trigger",
+          "closestRule": "none"
         }
       ],
       "reasons": [],
@@ -797,10 +797,19 @@
     "17e905ca-c0bd-473d-95a7-e180ba5fea43": {
       "name": "Mirror Entity",
       "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.lose-hexproof-shroud"
+        }
+      ],
       "reasons": [],
-      "ast": "48dd03ac"
+      "ast": "fc0da47b"
     },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
@@ -1002,14 +1011,6 @@
       "reasons": [],
       "ast": "16010b8f"
     },
-    "1fbb2a7c-8093-4729-b8fe-cf032d99470f": {
-      "name": "Fell the Mighty",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "456e19ff"
-    },
     "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
       "name": "Scavenging Ooze",
       "group": "training",
@@ -1053,19 +1054,10 @@
     "2143f413-7baa-4fd6-a7ca-32f52bfa553f": {
       "name": "Shadrix Silverquill",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "At the beginning of combat on your turn, you may choose two. Each mode must target a different player.\n• Target player creates a 2/1 white and black Inkling creature token with flying.\n• Target player draws a card and loses 1 life.\n• Target player puts a +1/+1 counter on each creature they control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-cards-in-your-graveyard"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1674dcba"
+      "ast": "2312f4ab"
     },
     "223fa044-d387-4884-bf4e-75f1b61c6a46": {
       "name": "Curiosity",
@@ -1375,19 +1367,10 @@
     "2c11c72f-5b04-47d8-bdf8-8d9d197ebc1b": {
       "name": "Gift of Immortality",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When enchanted creature dies, return that card to the battlefield under its owner's control. Return this card to the battlefield attached to that creature at the beginning of the next end step.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return-self-attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "52245d2f"
+      "ast": "dad079bc"
     },
     "2c275a85-5a15-46cd-a6e7-add63f9b853d": {
       "name": "Sterling Grove",
@@ -2182,26 +2165,10 @@
     "441b51b0-ecd0-466d-9ca8-e754eb563aec": {
       "name": "Eidolon of Countless Battles",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Bestow {2}{W}{W}",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "~ and enchanted creature each get +1/+1 for each creature you control and +1/+1 for each Aura you control.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.self"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "59184c80"
+      "ast": "94f671a0"
     },
     "446db5a4-21b0-44c1-b12b-d365313dd67a": {
       "name": "Clifftop Lookout",
@@ -3150,19 +3117,10 @@
     "64c986f0-e786-419c-9b51-8c316c8fae0e": {
       "name": "Scriv, the Obligator",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ enters or attacks, create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and \"Whenever enchanted creature attacks, it gets +2/+0 until end of turn if it's attacking one of your opponents. Otherwise, its controller loses 2 life.\"",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.predefined"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "305c01e8"
+      "ast": "08f3d9ca"
     },
     "651c967c-8f71-4eb5-b22f-545e55ea050e": {
       "name": "Carnelian Orb of Dragonkind",
@@ -3384,19 +3342,10 @@
     "6a9cc11b-a223-46f0-bf58-c1e08ad1253d": {
       "name": "Forum Filibuster",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, create a 2/1 white and black Inkling creature token with flying. When you do, return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.return"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9485a19c"
+      "ast": "4c51712f"
     },
     "6b75b94e-83b7-457e-ac41-7ca90b5a59aa": {
       "name": "Battlefield Forge",
@@ -3449,27 +3398,10 @@
     "6c948f71-5c86-450c-8828-df4d8deaf1dd": {
       "name": "Intermediate Chirography",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever you lose life for the first time each turn, put a +1/+1 counter on target creature you control.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        },
-        {
-          "face": 0,
-          "ability": 4,
-          "text": "At the beginning of each end step, if a modified creature died under your control this turn, create a 2/1 white and black Inkling creature token with flying.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "condition.exiled-this-way"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "379466d3"
+      "ast": "b5105de1"
     },
     "6cb8b8c4-0674-4f14-9d89-010969fbb80e": {
       "name": "Grave Researcher // Reanimate",
@@ -3546,10 +3478,19 @@
     "706ae742-1807-44b7-a4fa-f2e26f61519a": {
       "name": "Wild Growth",
       "group": "training",
-      "status": "supported",
-      "unparsed": [],
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "Whenever enchanted land is tapped for mana, its controller adds an additional {G}.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "trigger.becomes-target"
+        }
+      ],
       "reasons": [],
-      "ast": "330d8a17"
+      "ast": "ab936c3f"
     },
     "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
       "name": "Reality Shift",
@@ -4350,20 +4291,6 @@
       "unparsed": [
         {
           "face": 0,
-          "ability": 0,
-          "text": "Bestow {1}{G}",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets +1/+1.",
-          "reason": "notRunnable",
-          "closestRule": "noun.attached-permanent"
-        },
-        {
-          "face": 0,
           "ability": 2,
           "text": "Whenever a land you control enters, you may pay {1}{G} if ~ is attached to a creature you control. If you do, create a token that's a copy of that creature. If you didn't create a token this way, create a 1/1 green Insect creature token.",
           "reason": "unrecognised",
@@ -4372,7 +4299,7 @@
         }
       ],
       "reasons": [],
-      "ast": "1ba91cb5"
+      "ast": "260434ba"
     },
     "8a52f3c0-2552-4425-b2e3-5496eb2232a7": {
       "name": "Mystic Remora",
@@ -4690,10 +4617,19 @@
     "98492d7d-3b9e-4ae1-ac45-1b508d6d2670": {
       "name": "Coveted Jewel",
       "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Whenever one or more creatures an opponent controls attack you and aren't blocked, that player draws three cards and gains control of ~. Untap it.",
+          "reason": "unrecognised",
+          "slot": "trigger",
+          "closestRule": "none"
+        }
+      ],
       "reasons": [],
-      "ast": "59ec418c"
+      "ast": "d071894b"
     },
     "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
       "name": "Magma Opus",
@@ -5655,19 +5591,10 @@
     "b8602f19-6fc2-43c4-b0c4-2cd11d5dbda2": {
       "name": "Keen Duelist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your upkeep, you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you revealed into your hand.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3b38819b"
+      "ast": "1dafb6ba"
     },
     "b8f566ea-8283-4afa-9ac8-737e26419283": {
       "name": "Explore",
@@ -5873,27 +5800,10 @@
     "c0d8fef4-65f4-4769-982d-b397d2b7e977": {
       "name": "Animate Dead",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Enchant creature card in a graveyard",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.bare-permanent"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "When ~ enters, if it's on the battlefield, it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with ~.\" Return enchanted creature card to the battlefield under your control and attach ~ to it. When ~ leaves the battlefield, that creature's controller sacrifices it.",
-          "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "08b5dfe4"
+      "ast": "66b1e534"
     },
     "c1909d70-d8f4-4c54-8587-0a910f123238": {
       "name": "Shelter",
@@ -6329,14 +6239,6 @@
       "reasons": [],
       "ast": "073e63aa"
     },
-    "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
-      "name": "Fertile Ground",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "84f6e9ec"
-    },
     "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
       "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
       "group": "acceptance",
@@ -6652,19 +6554,10 @@
     "da93264e-4e04-401a-9809-e4e1056cf604": {
       "name": "Inkshield",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "72605a51"
+      "ast": "3ddfd447"
     },
     "da989677-3647-46b8-aa56-b2cfb60f7a2a": {
       "name": "Pugnacious Hammerskull",
@@ -6862,19 +6755,10 @@
     "e1d294e8-67b1-4a4a-86b8-f98f28a327d9": {
       "name": "Promise of Loyalty",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "cb0a7c4e"
+      "ast": "4a691c90"
     },
     "e233cb5b-7237-4271-8157-9179cc897b6c": {
       "name": "Killian, Ink Duelist",
@@ -7780,27 +7664,10 @@
     "ff6b52b7-ae3c-465b-b10e-901160e5230e": {
       "name": "Nils, Discipline Enforcer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of your end step, for each player, put a +1/+1 counter on up to one target creature that player controls.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.each"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "88a54c82"
+      "ast": "8032ef5c"
     },
     "name:Angel's Mercy": {
       "name": "Angel's Mercy",
@@ -7813,7 +7680,7 @@
   },
   "summary": {
     "training": {
-      "supported": 150,
+      "supported": 149,
       "total": 174
     },
     "holdout": {
@@ -7821,8 +7688,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 623,
-      "total": 653
+      "supported": 630,
+      "total": 651
     }
   }
 }

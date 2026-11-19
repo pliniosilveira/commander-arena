@@ -92,6 +92,7 @@ import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
+import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
@@ -1022,6 +1023,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
             controller: sourceInfo(next, old.id)?.controller ?? controllerOf(state, old),
             types: last?.characteristics.types ?? derive(state, old).types,
             token: old.token !== null,
+            // CR 700.9, 603.10a: modified as it left (`state` is still the battlefield with its counters and attachments).
+            modified: isModified(state, old),
           },
         ],
       },

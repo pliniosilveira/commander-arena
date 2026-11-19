@@ -17,12 +17,13 @@ const landDrops = (count: number, eachPlayer?: true): Ability => ({
 });
 
 /** "Creatures can't attack you unless their controller pays [mana] for each creature attacking you" (CR 508.1h). */
-const attackTax = (symbols: string[], planeswalkers?: true): Ability => ({
+const attackTax = (symbols: string[], planeswalkers?: true, perCounter?: true): Ability => ({
   kind: 'static',
   static: {
     kind: 'attackTax',
     cost: [{ kind: 'mana', symbols }],
     ...(planeswalkers ? { planeswalkers } : {}),
+    ...(perCounter ? { perCounter } : {}),
   },
 });
 
@@ -161,6 +162,16 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
     oracleText:
       "Creatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
     abilities: [attackTax(['1'], true)],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Tax Counter',
+    manaCost: ['2', 'W'],
+    types: ['enchantment'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    abilities: [attackTax(['1'], true, true)],
   }),
   singleFace({
     name: 'SYNTHETIC Tax Blood',

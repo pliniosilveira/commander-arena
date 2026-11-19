@@ -34,10 +34,12 @@ import {
 import type {
   IrAmount,
   IrArg,
+  IrClause,
   IrDamageScope,
   IrDuration,
   IrNoun,
   IrNounList,
+  IrToken,
   Span,
 } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
@@ -463,4 +465,74 @@ export const EFFECT_PREVENT_ALL_BY_COLOR = defineRule<Clauses>({
   },
 });
 
-export const PREVENT_RULES = [EFFECT_PREVENT_ALL, EFFECT_PREVENT_NEXT, EFFECT_PREVENT_ALL_BY_COLOR];
+/**
+ * `effect.prevent-all-create-tokens`: "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature
+ * token with flying." (CR 615.5, 615.6, 111.2: the additional effect of a prevention effect happens as the damage is prevented.) The two sentences are one instruction (`segment.ts`
+ * keeps them together): any shield `effect.prevent-all` reads, then one token for each 1 damage it prevents, made by the controller of the effect. The engine's `preventDamage` with
+ * `perPrevented`. Not read: another number than 1 ("for each 2 damage"), more than one token for each, a token that is a copy or a predefined one, "that would be prevented", the second
+ * sentence alone or after another kind of prevention, a "next N" shield, a third sentence.
+ */
+export const EFFECT_PREVENT_ALL_CREATE_TOKENS = defineRule<Clauses>({
+  id: 'effect.prevent-all-create-tokens',
+  family: 'effect',
+  leading: ['prevent'],
+  cites: [
+    'CR 615.5 (Prevention Effects)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 111.2 (Tokens)',
+    'CR 120.2a (Damage)',
+  ],
+  examples: [
+    'prevent all combat damage that would be dealt to you this turn. for each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying',
+    'Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying',
+    'prevent all damage that would be dealt to you this turn. for each 1 damage prevented this way, create a 1/1 white Soldier creature token',
+  ],
+  rejects: [
+    'prevent all combat damage that would be dealt to you this turn. for each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying and draw a card',
+    'prevent all combat damage that would be dealt to you this turn. for each 2 damage prevented this way, create a 2/1 white and black Inkling creature token with flying',
+    'prevent all combat damage that would be dealt to you this turn. for each damage prevented this way, create a 2/1 white and black Inkling creature token with flying',
+    'prevent all combat damage that would be dealt to you this turn. for each 1 damage prevented this way, create two 2/1 white and black Inkling creature tokens with flying',
+    'prevent all combat damage that would be dealt to you this turn. for each 1 damage prevented this way, create a token that is a copy of target creature',
+    'prevent all combat damage that would be dealt to you this turn. for each 1 damage that would be prevented this way, create a 2/1 white and black Inkling creature token with flying',
+    'prevent all combat damage that would be dealt to you this turn. you gain 1 life for each 1 damage prevented this way',
+    'prevent the next 3 damage that would be dealt to you this turn. for each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying',
+    'for each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.prevent-all-create-tokens';
+    // Only a text that carries the second sentence is this rule's (see `effect.add-mana-stays`).
+    if (!/\. for each 1 damage prevented this way, create /iu.test(ctx.text.slice(pos))) {
+      return fail(ctx, pos);
+    }
+    const shield = family<Clauses>('effect', { only: [ALL] })(ctx, pos);
+    if (!shield.ok) return shield;
+    const [only, ...more] = shield.value;
+    if (only === undefined || more.length > 0) return fail(ctx, pos);
+    const head = literal('. for each 1 damage prevented this way, create ')(ctx, shield.pos);
+    if (!head.ok) return fail(ctx, pos);
+    const token = family<IrToken>('token')(ctx, head.pos);
+    if (!token.ok) return fail(ctx, pos);
+    // One token of a kind the engine makes plain, for each 1 damage: a described token (the lowering refuses what it cannot run).
+    const count = token.value.count;
+    if (count.kind !== 'number' || count.value !== 1) return fail(ctx, pos);
+    if (token.value.copyOf !== undefined || token.value.predefined !== undefined) {
+      return fail(ctx, pos);
+    }
+    const span = { start: pos, end: token.pos };
+    const clause: IrClause = {
+      ...only,
+      verb: 'preventDamagePerPrevented',
+      span,
+      rule: id,
+      args: { ...only.args, token: token.value },
+    };
+    return { ok: true, value: [clause], pos: token.pos };
+  },
+});
+
+export const PREVENT_RULES = [
+  EFFECT_PREVENT_ALL_CREATE_TOKENS,
+  EFFECT_PREVENT_ALL,
+  EFFECT_PREVENT_NEXT,
+  EFFECT_PREVENT_ALL_BY_COLOR,
+];

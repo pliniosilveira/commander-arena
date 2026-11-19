@@ -11,6 +11,7 @@ import {
   checkDamageRecipient,
   checkFilter,
   checkRef,
+  checkReplacementToken,
   isCount,
   issue,
   type Scope,
@@ -84,6 +85,21 @@ export function checkPreventDamage(
       checkFilter(e.byFilter, `${path}.byFilter`, out);
       if (e.byFilter.zone !== undefined && e.byFilter.zone !== 'battlefield') {
         issue(out, `${path}.byFilter.zone`, 'the source of damage is read on the battlefield');
+      }
+    }
+  }
+  // CR 615.5: "for each 1 damage prevented this way, create a token": a predefined or a described token, made as the damage is prevented (no question can be asked).
+  if (e.perPrevented !== undefined) {
+    if (e.perPrevented === null || typeof e.perPrevented !== 'object') {
+      issue(out, `${path}.perPrevented`, 'perPrevented is { token }');
+    } else {
+      checkReplacementToken(e.perPrevented.token, `${path}.perPrevented.token`, out);
+      if (e.perPrevented.token.kind === 'custom' && e.perPrevented.token.ptAmount !== undefined) {
+        issue(
+          out,
+          `${path}.perPrevented.token.ptAmount`,
+          'the token made for prevented damage has a fixed power and toughness',
+        );
       }
     }
   }

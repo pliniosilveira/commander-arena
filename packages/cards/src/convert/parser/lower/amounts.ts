@@ -267,6 +267,12 @@ export function lowerAmount(
     case 'diedThisTurn': {
       const blocked = needs(amount.kind);
       if (blocked !== null) return blocked;
+      // CR 700.9 (modified): the deaths record whether the permanent was modified as it left.
+      const modified = amount.kind === 'diedThisTurn' && amount.modified === true;
+      if (modified) {
+        const missing = missingFeatures(['selector:modified']);
+        if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
+      }
       return {
         ok: true,
         value: {
@@ -274,6 +280,7 @@ export function lowerAmount(
           controller: amount.controller,
           ...(amount.types === undefined ? {} : { types: amount.types as readonly CardType[] }),
           ...(amount.token === undefined ? {} : { token: amount.token }),
+          ...(modified ? { modified: true as const } : {}),
         },
         rule,
       };

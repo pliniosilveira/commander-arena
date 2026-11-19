@@ -502,6 +502,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
       });
     }
+    case 'lifeLost': {
+      // "Whenever you lose life [for the first time each turn]" (CR 119.3, 603.2): the player is relative to the controller.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:lifeLost']);
+      if (blocked.length > 0) return failure(t, blocked);
+      return ok({
+        kind: 'lifeLost',
+        who,
+        ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+      });
+    }
     case 'countersAdded': {
       // "Whenever you put one or more +1/+1 counters on ~" (stage P33, D-150, CR 122.6): once for one instance of putting.
       const what = whatOf(t, ctx);
@@ -644,6 +656,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'sacrifice',
       'becomesTarget',
       'lifeGained',
+      'lifeLost',
       'attackBatch',
       // CR 509.1h: the opponent whose creatures were not blocked ("that player").
       'unblockedAttackBatch',
@@ -1442,6 +1455,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tapsForMana',
   'trigger:state',
   'trigger:lifeGained',
+  'trigger:lifeLost',
   'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',

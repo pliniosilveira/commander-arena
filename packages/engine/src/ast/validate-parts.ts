@@ -316,6 +316,7 @@ export function checkFilter(
     'castFromHand',
     'enteredThisTurn',
     'exiledWithSource',
+    'putWithSource',
     'singleTarget',
     'modified',
     'goaded',
@@ -447,6 +448,14 @@ export function checkFilter(
       out,
       `${path}.exiledWithSource`,
       "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
+    );
+  }
+  // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura" is a permanent.
+  if (f.putWithSource === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(
+      out,
+      `${path}.putWithSource`,
+      'only a permanent on the battlefield was put onto the battlefield with another',
     );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
@@ -652,6 +661,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
+  f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
   f.goaded !== undefined ||
@@ -1146,6 +1156,12 @@ export function checkRef(
       // D-139: "enchanted creature", "equipped creature": the permanent this Aura or Equipment is attached to (an ability's).
       if (scope.owner === 'spell') {
         issue(out, path, "'attached' is only valid in abilities of an Aura or an Equipment");
+      }
+      break;
+    case 'putWithThis':
+      // CR 400.7 (Animate Dead): "that creature", what the permanent put onto the battlefield with `moveToZone.putWithSource`: the permanent's own, so an ability's.
+      if (scope.owner === 'spell') {
+        issue(out, path, "'putWithThis' is only valid in abilities of a permanent");
       }
       break;
     case 'linkedExile':
@@ -1725,8 +1741,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.token !== undefined && typeof a.token !== 'boolean') {
         issue(out, `${path}.token`, 'history token filter is a boolean');
       }
+      if (a.kind === 'diedThisTurn' && a.modified !== undefined && a.modified !== true) {
+        issue(out, `${path}.modified`, 'history modified filter must be true when present');
+      }
       for (const key of Object.keys(a)) {
-        if (!['kind', 'types', 'controller', 'token'].includes(key)) {
+        if (!['kind', 'types', 'controller', 'token', 'modified'].includes(key)) {
           issue(out, `${path}.${key}`, 'history does not record this property');
         }
       }
@@ -2834,6 +2853,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
+    case 'thisOnBattlefield':
+      // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
+      break;
     case 'xAtLeast': // issue 233: the X of the spell is at least a whole number of 1 or more
       if (!Number.isSafeInteger(c.value) || c.value < 1) {
         issue(out, `${path}.value`, 'xAtLeast names a whole number of at least 1');
@@ -3424,6 +3446,47 @@ function checkCopyExceptions(
   }
 }
 
+/**
+ * CR 303.4f, 303.4g, 701.3 (issue 89): `createToken.attachTo` names the target an Aura token is attached to as it is created. An Aura token (a custom token with the Aura subtype)
+ * has one, and a token with one is a custom Aura token with an "enchant" ability that is not "enchant player" (a player is not a permanent a target can name here).
+ */
+function checkAuraTokenAttachment(
+  e: Extract<Effect, { kind: 'createToken' }>,
+  path: string,
+  scope: Scope,
+  out: Out,
+): void {
+  const definition = e.token?.kind === 'custom' ? e.token.definition : undefined;
+  const isAura = definition?.subtypes?.includes('Aura') === true;
+  if (e.attachTo === undefined) {
+    if (isAura) {
+      issue(out, `${path}.attachTo`, 'an Aura token is created attached to a target: name it');
+    }
+    return;
+  }
+  if (e.attachTo?.kind !== 'target') {
+    issue(out, `${path}.attachTo`, 'the object an Aura token is attached to is a target');
+  } else {
+    checkRef(e.attachTo, 'object', `${path}.attachTo`, scope, out);
+  }
+  const enchants = (definition?.abilities ?? []).some(
+    (a) => a?.kind === 'keyword' && a.keyword?.kind === 'enchant' && a.keyword.player !== true,
+  );
+  if (
+    !isAura ||
+    definition?.types?.includes('enchantment') !== true ||
+    !enchants ||
+    e.attacking !== undefined ||
+    e.forEachOpponent !== undefined
+  ) {
+    issue(
+      out,
+      `${path}.attachTo`,
+      'only a custom Aura enchantment token with an enchant ability is created attached',
+    );
+  }
+}
+
 function checkTokenSpec(
   spec: Extract<Effect, { kind: 'createToken' }>['token'],
   path: string,
@@ -3697,11 +3760,16 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
   switch (c?.kind) {
     case 'objectMatches': {
       const ofKind = kindOf(c.of);
-      if (ofKind !== 'target' && ofKind !== 'moved' && ofKind !== 'triggerSubject') {
+      if (
+        ofKind !== 'target' &&
+        ofKind !== 'moved' &&
+        ofKind !== 'triggerSubject' &&
+        ofKind !== 'attached'
+      ) {
         issue(
           out,
           `${path}.of`,
-          'objectMatches reads a target, the object that was moved or the object that caused the trigger',
+          'objectMatches reads a target, the object that was moved, the object that caused the trigger or the permanent this Aura or Equipment is attached to',
         );
       } else if (ofKind === 'triggerSubject') {
         // D-149: "If that land is a Plains": the permanent whose event caused the trigger.
@@ -3925,7 +3993,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               // D-231: "each player exiles a card from their graveyard. When one or more nonland cards are exiled this way, ...".
               child?.kind === 'exileOwnGraveyardCard' ||
               // Lorehold group 1: "you may exile one of them from your graveyard. If you do, ...".
-              child?.kind === 'exileFromTriggerCards') &&
+              child?.kind === 'exileFromTriggerCards' ||
+              // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
+              child?.kind === 'createToken') &&
             after.mayAvailable !== true
           ) {
             after = { ...after, mayAvailable: true };
@@ -4118,6 +4188,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.attacking !== undefined) {
         checkPlayerSelector(e.attacking.at, `${path}.attacking.at`, scope, out);
       }
+      // CR 303.4f, 303.4g, 701.3 (issue 89): an Aura token is created attached to a target of the ability (its host is named by the effect, never chosen), and only an Aura token is.
+      checkAuraTokenAttachment(e, path, scope, out);
       // D-652 (CR 508.1d, 101.4): "for each opponent, create ... tokens that attack that opponent this turn if able": the controller of the effect makes them for each opponent;
       // the tokens are plain (keywords only), so nothing is asked as they enter and each opponent's tokens are known.
       if (e.forEachOpponent !== undefined) {
@@ -4938,6 +5010,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 400.7 (Animate Dead): the permanent put onto the battlefield remembers the permanent whose ability put it there.
+      if (e.putWithSource !== undefined) {
+        if (e.putWithSource !== true) {
+          issue(out, `${path}.putWithSource`, 'putWithSource must be true when present');
+        }
+        if (e.to !== 'battlefield' || scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.putWithSource`,
+            'only an ability of a permanent that puts a card onto the battlefield remembers it',
+          );
+        }
+        if (kindOf(e.objects) === 'choose') {
+          issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
+        }
+      }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
       if (e.attachTo !== undefined) {
         if (e.to !== 'battlefield') {
@@ -4947,8 +5035,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'only a card put onto the battlefield is attached as it enters',
           );
         }
-        if (e.attachTo?.kind !== 'target') {
-          issue(out, `${path}.attachTo`, 'the object it enters attached to is a target');
+        if (e.attachTo?.kind === 'moved') {
+          // Issue 89 (CR 400.7j): "attached to that token", "attached to that creature": the object an effect before it made or moved, or the one a reflexive ability carries.
+          checkRef(e.attachTo as ObjectRef, 'object', `${path}.attachTo`, scope, out);
+          if (kindOf(e.objects) === 'choose') {
+            issue(
+              out,
+              `${path}.attachTo`,
+              'a card chosen as the effect runs is not attached to the object it names',
+            );
+          }
+        } else if (e.attachTo?.kind !== 'target') {
+          issue(
+            out,
+            `${path}.attachTo`,
+            'the object it enters attached to is a target, or the object an effect before it made',
+          );
         } else {
           checkRef(e.attachTo, 'object', `${path}.attachTo`, scope, out);
         }
@@ -5352,6 +5454,27 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'the players who choose for themselves are each player or each opponent',
           );
         }
+        if (e.own.typesOnly !== undefined && e.own.typesOnly !== true) {
+          issue(out, `${path}.own.typesOnly`, 'typesOnly is true or absent');
+        }
+        if (
+          e.own.counter !== undefined &&
+          (typeof e.own.counter !== 'string' || e.own.counter === '')
+        ) {
+          issue(out, `${path}.own.counter`, 'counter names the kind of counter put on each kept');
+        }
+        if (e.own.cantAttackYou !== undefined) {
+          if (e.own.cantAttackYou !== true) {
+            issue(out, `${path}.own.cantAttackYou`, 'cantAttackYou is true or absent');
+          }
+          if (e.own.counter === undefined) {
+            issue(
+              out,
+              `${path}.own.cantAttackYou`,
+              'cantAttackYou lasts while the counter does: it needs counter',
+            );
+          }
+        }
       }
       break;
     case 'exileOwnGraveyardCard':
@@ -5675,10 +5798,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         false,
         scope.sacrificedEarlier === true,
       );
+      // Issue 89 (CR 603.12, 400.7j): "Create a token. When you do, return ... attached to that token": the ability carries the objects the resolution before it made.
+      if (e.carriesMoved !== undefined) {
+        if (e.carriesMoved !== true) {
+          issue(out, `${path}.carriesMoved`, 'carriesMoved must be true when present');
+        } else if (scope.movedAvailable !== true || e.afterPayment !== undefined) {
+          issue(
+            out,
+            `${path}.carriesMoved`,
+            'a reflexive ability carries the objects an effect before it made or moved, not those of a payment',
+          );
+        }
+      }
       const innerOf = (declared: Scope['targets']): Scope => ({
         owner: scope.owner,
         targets: declared,
         xAllowed: false,
+        ...(e.carriesMoved === true ? { movedAvailable: true } : {}),
         // D-177: the reflexive ability reads the permanent the resolution that created it sacrificed.
         ...(scope.sacrificedEarlier === true ? { sacrificedEarlier: true } : {}),
         // D-231: and the count the `ifThisWay` names.

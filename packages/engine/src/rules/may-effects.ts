@@ -73,6 +73,8 @@ export function runReflexive(
     ...(res.sacrificed === undefined || res.sacrificed.length === 0
       ? {}
       : { sacrificedBefore: res.sacrificed }),
+    // Issue 89 (CR 603.12, 400.7j): "When you do, return ... attached to that token": the objects this resolution made, fixed as the ability is created.
+    ...(effect.carriesMoved === true ? { movedBefore: res.lastMoved ?? [] } : {}),
   };
   return done({ ...state, pendingTriggers: [...state.pendingTriggers, pending] });
 }

@@ -7,8 +7,8 @@
  * `validateCard` refuses it ("only an Aura has an enchant ability", CR 702.5a), and that reason is
  * what the import reports, so the face's subtype is not checked twice.
  */
-import type { Ability } from '@commander-arena/engine';
-import type { IrFilter, IrKeyword } from '../ir/types';
+import type { Ability, ObjectFilter } from '@commander-arena/engine';
+import type { IrFilter, IrKeyword, IrNoun } from '../ir/types';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter } from './nouns';
 import type { LowerResult } from './types';
@@ -29,13 +29,22 @@ export function lowerEnchant(ability: IrKeyword): LowerResult<readonly Ability[]
   if (missing.length > 0) {
     return { ok: false, needs: missing, at: ability.span, rule: ability.rule };
   }
-  const filter = lowerFilter({ ...what, filter: withoutZone(what.filter) });
+  const filter = lowerEnchantFilter(what);
   if (!filter.ok) return filter;
   return {
     ok: true,
     value: [{ kind: 'keyword', keyword: { kind: 'enchant', filter: filter.value } }],
     rule: 'keyword.enchant',
   };
+}
+
+/**
+ * The filter of an enchant ability, from the noun the words name: read on the battlefield, so with no zone, or, for "creature card in a graveyard" (issue 89, Animate Dead, CR 303.4a),
+ * in a graveyard. `selector:putWithSource` ("creature put onto the battlefield with ~") is the engine's `putWithSource`.
+ */
+export function lowerEnchantFilter(what: IrNoun): LowerResult<ObjectFilter> {
+  const inGraveyard = what.filter.zone === 'graveyard';
+  return lowerFilter({ ...what, filter: inGraveyard ? what.filter : withoutZone(what.filter) });
 }
 
 /** "Enchant player" (issue 160, D-629, CR 702.5a): the engine's `enchant` keyword of a player, whose filter of permanents is empty. */

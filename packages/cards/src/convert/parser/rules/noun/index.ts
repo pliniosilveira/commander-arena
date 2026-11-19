@@ -21,6 +21,7 @@ import { AJANI_NOUN_RULES } from './ajani';
 import { ANGEL_NOUN_RULES } from './angels';
 import { NOUN_ATTACKED_BY_IT } from './attacked';
 import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
+import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER } from './controller';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
@@ -337,6 +338,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'two target land cards from your graveyard',
     'up to three target land cards from your graveyard',
     'up to one target card from a graveyard',
+    // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
+    'up to one target Aura or Equipment card from your graveyard',
+    'target Aura or Equipment card from your graveyard',
   ],
   rejects: [
     'target creature',
@@ -344,6 +348,9 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',
+    'two target Aura or Equipment cards from your graveyard',
+    'target Aura or Equipment from your graveyard',
+    'target Aura or Equipment or Saga card from your graveyard',
   ],
   parse: targetOf(ID.targetGraveyard, graveyardPhrase),
 });
@@ -787,6 +794,8 @@ export const NOUN_RULES = [
   NOUN_UP_TO_ONE_PERMANENT,
   NOUN_TARGET_CARDS_IN_YOUR_GRAVEYARD,
   NOUN_TARGET_CARD_IN_A_GRAVEYARD,
+  // Issue 89 (Animate Dead): "creature card in a graveyard" and "creature put onto the battlefield with ~", read by the enchant ability of an Aura only.
+  ...AURA_GRAVEYARD_NOUN_RULES,
   // D-386 (Hashaton, group 10): "X target creature cards from your graveyard", read by `effect.return` only.
   ...HASHATON_G10_NOUN_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "any number of target cards from your graveyard", read by `effect.shuffle-cards-into-library` only.

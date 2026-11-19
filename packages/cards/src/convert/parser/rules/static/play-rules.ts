@@ -427,10 +427,75 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.attack-tax-counters`: "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the
+ * number of counters on that creature." (CR 508.1d: a creature that can't attack unless a cost is paid; 508.1h: the total cost is paid as the attackers are declared; 122.1:
+ * counters of any kind). Only a creature with a counter is taxed, and it pays {1} for each counter on it: the engine's `attackTax` with `perCounter`. Not read: another count,
+ * a kind of counter, a cost that is not {X}, a subject other than each creature with counters, the form without the planeswalkers.
+ */
+export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
+  id: 'static.attack-tax-counters',
+  family: 'static',
+  leading: ['each'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 508.1h (Declare Attackers Step)',
+    'CR 122.1 (Counters)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    'Each creature with one or more counters on it can’t attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.',
+  ],
+  rejects: [
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature",
+    "Each creature with one or more counters on it can't attack you unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {2}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of creatures you control.",
+    "Each creature with one or more +1/+1 counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}{X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless you pay {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't block you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature. Draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(
+      /each creature with one or more counters on it can['’]t attack you or planeswalkers you control unless its controller pays \{X\}, where X is the number of counters on that creature\./iy,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const costNode: IrCost = {
+      kind: 'mana',
+      symbols: ['1'],
+      span: { start: pos, end: head.pos },
+      rule: 'static.attack-tax-counters',
+    };
+    const who = subject(
+      'each',
+      'creature with one or more counters on it',
+      { start: pos, end: pos + 'each creature'.length },
+      'static.attack-tax-counters',
+      ['creature'],
+    );
+    const effect: IrStaticEffect = {
+      kind: 'attackTax',
+      cost: costNode,
+      planeswalkers: true,
+      perCounter: true,
+    };
+    return {
+      ok: true,
+      value: statement('static.attack-tax-counters', who, effect, { start: pos, end: head.pos }),
+      pos: head.pos,
+    };
+  },
+});
+
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
   STATIC_ATTACK_TAX,
+  STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,
   STATIC_UNTAP_IN_OTHERS_STEP,
 ];

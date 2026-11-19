@@ -179,6 +179,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'overload',
   'evoke',
   'dash',
+  'bestow',
   'spectacle',
   'escape',
   'harmonize',
@@ -523,5 +524,8 @@ export function checkAttackTax(
   }
   if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
     issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
+  }
+  if (s.perCounter !== undefined && s.perCounter !== true) {
+    issue(out, `${path}.perCounter`, 'perCounter is true or absent');
   }
 }

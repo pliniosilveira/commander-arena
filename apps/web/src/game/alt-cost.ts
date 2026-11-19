@@ -1,5 +1,5 @@
 /**
- * The named alternative costs Overload (CR 702.96), Evoke (CR 702.74), Dash (CR 702.109),
+ * The named alternative costs Overload (CR 702.96), Evoke (CR 702.74), Dash (CR 702.109), Bestow (CR 702.103),
  * Spectacle (CR 702.137) and Escape (CR 702.138) in the UI and the log (D-121, D-124), and the
  * unearth mark of a permanent (CR 702.84a). The engine lists one `castSpell { object, alternative }`
  * option for each cost that can be paid, `ObjectView.alternativeCosts` says what each costs now
@@ -19,6 +19,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   overload: 'Overload',
   evoke: 'Evoke',
   dash: 'Dash',
+  // CR 702.103: cast as an Aura spell that enchants a creature.
+  bestow: 'Bestow',
   spectacle: 'Spectacle',
   escape: 'Escape',
   harmonize: 'Harmonize',
@@ -74,6 +76,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
       'Cast for its dash cost. It has haste and returns to its owner’s hand at the beginning of the next end step.',
     fact: 'Cast for its dash cost: haste, returns to its owner’s hand at the next end step',
   },
+  bestow: {
+    text: 'bestowed',
+    title:
+      'Cast for its bestow cost: an Aura spell with enchant creature. If its target is illegal as it resolves, it resolves as a creature.',
+    fact: 'Cast for its bestow cost: an Aura spell that targets a creature',
+  },
   spectacle: {
     text: 'spectacle',
     title: 'Cast for its spectacle cost: an opponent lost life this turn.',
@@ -128,6 +136,11 @@ const PERMANENT_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBa
     title:
       'Dashed: it has haste and returns to its owner’s hand at the beginning of the next end step.',
     fact: 'Dashed: returns to its owner’s hand at the next end step',
+  },
+  bestow: {
+    text: 'bestowed',
+    title: 'Bestowed: an Aura while it is attached to a creature; a creature again once it is not.',
+    fact: 'Bestowed: an Aura while attached, a creature once unattached',
   },
   escape: {
     text: 'escaped',
