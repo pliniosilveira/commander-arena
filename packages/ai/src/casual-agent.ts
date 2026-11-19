@@ -30,6 +30,7 @@ import { chooseDevourSacrifice } from './casual-keywords';
 import { laterAnswer } from './casual-later';
 import { chooseArrangement } from './casual-library';
 import { chooseModalTargets, chooseModesAnswer } from './casual-modes';
+import { hasNoTargetToChoose, noteCast, withoutTriedCasts } from './casual-no-target';
 import { chooseOptionAnswer } from './casual-options';
 import { choosePayOptionsAnswer } from './casual-pay-options';
 import {
@@ -75,11 +76,22 @@ export function createCasualHandlers(
   activations: Set<string> = new Set(),
 ): DecisionHandlers<Action> {
   return {
-    priority: (d) => choosePriorityAction(view, d, draw, activations),
+    priority: (d) => {
+      const action = choosePriorityAction(
+        view,
+        withoutTriedCasts(view, d, activations),
+        draw,
+        activations,
+      );
+      noteCast(view, action, activations);
+      return action;
+    },
     mulligan: (d) => chooseMulligan(view, d, MIN_KEEP_SIZE),
     mulliganBottom: (d) => chooseCardsToLose(view, d),
     // "Deals X damage" once X is known: a creature that X kills, else the opponent (casual-x.ts).
     targets: (d) => {
+      // No legal target for a slot that needs one: the cast is cancelled (it is not chosen again, `casual-no-target.ts`).
+      if (hasNoTargetToChoose(d)) return { kind: 'cancel' };
       // The new target of a spell or ability whose target a resolving effect changes (D-181, CR 115.7a).
       const redirected = chooseNewTarget(view, d);
       if (redirected !== null) return redirected;

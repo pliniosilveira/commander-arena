@@ -58,7 +58,7 @@ export const SYNTHETIC_PRIMORDIAL_LIST: readonly CardDefinition[] = [
     oracleText: 'Exile target card from a graveyard.',
     spell: {
       targets: [{ id: 't1', what: { kind: 'object', filter: { zone: 'graveyard' } } }],
-      effect: { kind: 'moveToZone', objects: { kind: 'target', id: 't1' }, to: 'exile' },
+      effect: { kind: 'exile', objects: { kind: 'target', id: 't1' } },
     },
   }),
 ];

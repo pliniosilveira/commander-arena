@@ -29,6 +29,7 @@ import {
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
 import { isHelpfulSpell } from './casual-helpful';
+import { noteCast, withoutTriedCasts } from './casual-no-target';
 import { chooseRingBearerWithEvasion } from './casual-ring';
 import { findObject } from './casual-view';
 import { chooseHeuristicAttack } from './heuristic-attacks';
@@ -115,7 +116,9 @@ export class HeuristicAgent implements ExplainingAgent {
       ...casual,
       priority: (d) => {
         this.opponent.observe(view);
-        const choice = choosePriorityHeuristic(view, d, think, this.activations, answer);
+        const open = withoutTriedCasts(view, d, this.activations);
+        const choice = choosePriorityHeuristic(view, open, think, this.activations, answer);
+        noteCast(view, choice.action, this.activations);
         note(choice.reason);
         return choice.action;
       },

@@ -34,6 +34,28 @@ export function firstSafeAction(decision: PendingDecision): Action {
 }
 
 /**
+ * The first legal action, in the order of `preferredActions` but with `cancel` kept after the plays, for which `attempt` gives a value (not null), with that value: the
+ * fallback of an answer the engine refused. Every legal action is tried, plays before `cancel` before
+ * `concede`; trying only the first left a game stuck when that one was refused too. Null when none is.
+ */
+export function firstAcceptedAction<T>(
+  decision: PendingDecision,
+  attempt: (action: Action) => T | null,
+): { readonly action: Action; readonly value: T } | null {
+  const legal = legalActionsForDecision(decision);
+  const ordered = [
+    ...legal.filter((a) => a.kind !== 'cancel' && a.kind !== 'concede'),
+    ...legal.filter((a) => a.kind === 'cancel'),
+    { kind: 'concede' } as const,
+  ];
+  for (const action of ordered) {
+    const value = attempt(action);
+    if (value !== null) return { action, value };
+  }
+  return null;
+}
+
+/**
  * The cost of attacking (CR 508.1h, D-125): trims a declaration to what the decision's `attackCosts` says can be
  * paid for. Each taxed target takes at most `affordable` attackers, and only one taxed target is used (the
  * budget is for one); an attacker that does not fit goes to a target that costs nothing when it has one, and

@@ -20,44 +20,29 @@ export async function openStartFlow(page: Page): Promise<Locator> {
 /** In the open dialog, opens the tab and returns the decks it lists. */
 export async function decksIn(dialog: Locator, tab: DeckTab): Promise<Locator> {
   await dialog.getByRole('tab', { name: tab }).click();
-  return dialog.getByRole('radio');
+  return dialog.locator('button.scr-deck');
 }
 
-/** In the open dialog, opens the tab and marks the deck whose name matches (no confirmation). */
-export async function markDeck(
-  dialog: Locator,
-  tab: DeckTab,
-  name: RegExp | string,
-): Promise<void> {
-  await dialog.getByRole('tab', { name: tab }).click();
-  await dialog.getByRole('radio', { name }).check();
-}
-
-/** In the open dialog, opens the tab and marks the deck with this id (a precon id). */
-export async function markDeckById(dialog: Locator, tab: DeckTab, id: string): Promise<void> {
-  await dialog.getByRole('tab', { name: tab }).click();
-  await dialog.locator(`input[value="${id}"]`).check();
-}
-
-/** Confirms the marked deck with the Select button. */
-export async function select(dialog: Locator): Promise<void> {
-  await dialog.getByRole('button', { name: 'Select', exact: true }).click();
-}
-
-/** Marks the deck whose name matches and confirms it. */
+/** In the open dialog, opens the tab and taps the deck whose name matches: it is chosen at once. */
 export async function chooseDeck(
   dialog: Locator,
   tab: DeckTab,
   name: RegExp | string,
 ): Promise<void> {
-  await markDeck(dialog, tab, name);
-  await select(dialog);
+  await dialog.getByRole('tab', { name: tab }).click();
+  await dialog.locator('button.scr-deck', { hasText: name }).click();
 }
 
-/** Marks the deck with this id (a precon id) and confirms it. */
+/** Taps the deck with this id (a precon id): it is chosen at once. */
 export async function chooseDeckById(dialog: Locator, tab: DeckTab, id: string): Promise<void> {
-  await markDeckById(dialog, tab, id);
-  await select(dialog);
+  await dialog.getByRole('tab', { name: tab }).click();
+  await dialog.locator(`button.scr-deck[data-deck-id="${id}"]`).click();
+}
+
+/** Taps the first precon listed: any precon will do. */
+export async function select(dialog: Locator): Promise<void> {
+  await dialog.getByRole('tab', { name: 'Precons' }).click();
+  await dialog.locator('button.scr-deck').first().click();
 }
 
 /** The versus screen before the opening hand of a game started from the menu. */

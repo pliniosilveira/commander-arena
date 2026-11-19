@@ -213,7 +213,7 @@ describe('what the real planeswalkers still stop at (no card is half read)', () 
     ['Liliana of the Veil', /two piles/],
     ['Jace, the Mind Sculptor', /bottom of that player/],
     ['Nissa, Who Shakes the World', /noncreature land/],
-    ['Gideon Jura', /attack ~ if able/],
+    // Gideon Jura stopped at "attack ~ if able" until the First Flight decks taught the engine `requireAttackSource` (CR 508.1d).
     ['Tamiyo, Compleated Sage', /Compleated/],
     ['Narset, Parter of Veils', /can't draw more than one card/],
   ];
