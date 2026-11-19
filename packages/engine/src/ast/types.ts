@@ -159,6 +159,11 @@ export type Amount =
       readonly types?: readonly CardType[];
       readonly token?: boolean;
       readonly controller: 'you' | 'any';
+      /**
+       * "A modified creature died under your control this turn" (CR 700.9, 700.4, 603.10a): only the permanents that were modified as they left the battlefield (a counter on
+       * it, an Equipment attached, or an Aura its controller controlled attached), read from the game as they left, not from the card in the graveyard.
+       */
+      readonly modified?: true;
     }
   /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
@@ -520,6 +525,12 @@ export interface ObjectFilter {
    */
   readonly exiledWithSource?: true;
   /**
+   * "Creature put onto the battlefield with this Aura" (CR 303.4, 400.7, 702.5a; Animate Dead): the object is a permanent that an effect of the source of the filter (an Aura) put
+   * onto the battlefield with `moveToZone.putWithSource`, and it is still that same object (one that left and came back is a new object, CR 400.7). Read where the filter is matched
+   * against the game with the source: an enchant ability's filter (the Aura it belongs to is the source), a target slot, an `each` selector. The filter's zone is the battlefield.
+   */
+  readonly putWithSource?: true;
+  /**
    * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
    */
@@ -822,6 +833,12 @@ export type ObjectRef =
    * is `controllerOf` of this in a condition. Nothing when the source is attached to nothing.
    */
   | { readonly kind: 'attached' }
+  /**
+   * "That creature" for the permanent an effect of this permanent put onto the battlefield with `moveToZone.putWithSource` (CR 400.7, 603.10a; Animate Dead): the permanents on the
+   * battlefield that were put there with the permanent the ability belongs to, as it is, or as it was when it has left (an Aura's "When this Aura leaves the battlefield, that
+   * creature's controller sacrifices it"). Nothing when it put none there, or when they have left (a permanent that left and came back is a new object).
+   */
+  | { readonly kind: 'putWithThis' }
   /**
    * "The exiled card" of a linked ability (D-145, CR 607.2a, 702.75a Hideaway): the cards the permanent the ability belongs to exiled with its
    * linked ability (`exile.linked`, or the exile of Hideaway) that are still in exile, in the order they were exiled. Nothing when the
@@ -1235,6 +1252,7 @@ export type NamedAlternativeKind =
   | 'overload'
   | 'evoke'
   | 'dash'
+  | 'bestow'
   | 'spectacle'
   | 'escape'
   | 'harmonize'
@@ -1250,7 +1268,7 @@ export type NamedAlternativeKind =
  * cast). Each is the new object's own: any zone change makes a new object without it (CR 400.7).
  */
 export type PermanentAlternativeKind =
-  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape'>
+  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow'>
   | 'unearth'
   | 'suspend';
 
@@ -1272,6 +1290,10 @@ export type PermanentAlternativeKind =
  *   permanent has haste as long as its dash cost was paid, and a delayed triggered ability created as
  *   the spell resolves returns it to its owner's hand at the beginning of the next end step (the engine
  *   adds both: `GameObject.alt`, `GameState.delayedTriggers`, `rules/derive-alt.ts`).
+ * - `bestow` (CR 702.103, not checked against the rules text): the `cost` is paid instead of the mana cost of a creature spell; the spell is an Aura enchantment
+ *   spell, not a creature spell, with "enchant creature" (it targets a creature), and if that target is illegal as it resolves it resolves as a creature instead (CR 702.103e). The
+ *   permanent is an Aura enchantment, not a creature, only while it is attached, and a bestow permanent that becomes unattached stays as a creature (CR 702.103f). The engine reads
+ *   all of it from `GameObject.alt` and `attachedTo` (`rules/derive-alt.ts`, `rules/attach.ts`), so the card lists only the cost.
  * - `spectacle` (D-124, CR 702.137a): the `cost` is paid instead of the mana cost of a spell, but only if an
  *   opponent lost life this turn. The engine reads that condition itself (`GameState` seats'
  *   `lifeLostThisTurn`, at the first casting step), so the card lists only the cost; a `condition` of the
@@ -1628,6 +1650,14 @@ export type Effect =
        * filter that names a type of permanent; a filter of colors only matches a spell on the stack as well (Hylda group 3: "black and/or red sources"). Not with `by`. The filter names no zone, owner or X.
        */
       readonly byFilter?: ObjectFilter;
+      /**
+       * "For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the additional effect of the
+       * prevention, which happens as the damage is prevented. For each point of damage this shield prevents, the controller of the effect creates one `token`
+       * (a preset or a custom token without `ptAmount`), made with the replacement effects of token creation applied (CR 614.1). Nothing for damage the shield does not prevent.
+       */
+      readonly perPrevented?: {
+        readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
+      };
       /** `forAsLongAsThisRemains` (D-207, CR 611.2b, 615): the shield ends when the permanent with the ability leaves the battlefield; only in an ability of a permanent. */
       readonly duration: 'untilEndOfTurn' | 'forAsLongAsThisRemains';
     }
@@ -1815,6 +1845,12 @@ export type Effect =
        * something: the ability is created whenever this effect runs, which is when the cost of the `mayPay` it is the effect of was paid. Only the `effect` of a `mayPay`.
        */
       readonly afterPayment?: true;
+      /**
+       * "Create a 2/1 Inkling creature token. When you do, return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token" (issue 89,
+       * CR 603.12, 400.7j): `moved` in the ability is what the resolution that created it made or moved last (the tokens of a `createToken`), fixed as the ability is created. The
+       * instruction before the reflexive ability is a `createToken` (whose doing is a token created) or one of the kinds a `may` wraps.
+       */
+      readonly carriesMoved?: true;
     }
   /**
    * "You may cast target [filter] card from your graveyard this turn" (D-135, CR 601.2, 113.6, 611.2a): until end of turn
@@ -1924,7 +1960,21 @@ export type Effect =
        * `types` they control (none when they control none; the same permanent may be chosen for several of its types), and then sacrifices every other permanent they control,
        * lands included, all of them together. Without `own` the controller of the effect chooses for every player and the lands are kept (Tragic Arrogance).
        */
-      readonly own?: { readonly players: PlayerSelector };
+      readonly own?: {
+        readonly players: PlayerSelector;
+        /**
+         * "Each player puts a vow counter on a creature they control and sacrifices the rest." (Promise of Loyalty; CR 122.1, 701.21a): only the permanents of the card types
+         * `types` names are sacrificed when they are not kept (the lands and the rest stay).
+         */
+        readonly typesOnly?: true;
+        /** The kind of counter put on each permanent kept (`vow`), as the choices are made and before the rest are sacrificed (CR 122.1). */
+        readonly counter?: string;
+        /**
+         * "Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it." (CR 508.1a, 611.2b): each permanent kept (a
+         * creature) can't attack the controller of the effect or the planeswalkers they control, until it no longer has the `counter` (it ends for good, CR 611.2b). Needs `counter`.
+         */
+        readonly cantAttackYou?: true;
+      };
     }
   /**
    * "[Cost]: Level 2" (CR 716.2a, 716.2c, D-235): "This Class's level becomes N": the permanent the ability belongs to has level `level`, a designation that stays while it is on
@@ -2062,6 +2112,26 @@ export type Effect =
        * where the card goes when it does not match `ifMatches`, instead of staying on top. Only with `to`, and only into the hand.
        */
       readonly otherwiseTo?: 'hand';
+    }
+  /**
+   * "At the beginning of your upkeep, you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card
+   * revealed by the other player. You each put the card you revealed into your hand." (CR 701.20a Reveal, 119.3, 202.3): each of the two players `players` names reveals the top
+   * card of their own library (nothing for an empty library: the other player then loses no life), each loses life equal to the mana value of the card the OTHER player revealed,
+   * and each puts the card they revealed into their hand. `players` is `{ kind: 'all', of: [a, b] }` of two selectors that name different players, so "the other player" is
+   * defined; the cards are all revealed before any life is lost, and the mana values are read from the cards as they were revealed.
+   */
+  | { readonly kind: 'revealTopDuel'; readonly players: PlayerSelector }
+  /**
+   * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\"" (CR 702.5a, 613.1f, 611.2a, 303.4c; Animate Dead): the
+   * Aura `objects` names (`this`) stops having the enchant ability `loses` and has the enchant ability `gains` instead, for as long as it stays on the battlefield (a layer 6 continuous
+   * effect with its own timestamp; the permanent that leaves and returns is a new object, CR 400.7). What it may be attached to, and what state-based actions check (CR 704.5m), is read
+   * from the abilities it has now, so after this a graveyard card is no longer a legal object for it. Nothing happens when the Aura is not on the battlefield, or does not have `loses`.
+   */
+  | {
+      readonly kind: 'replaceEnchant';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'this' }>;
+      readonly loses: Extract<Keyword, { readonly kind: 'enchant' }>;
+      readonly gains: Extract<Keyword, { readonly kind: 'enchant' }>;
     }
   /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an
@@ -2435,8 +2505,21 @@ export type Effect =
        * "Return this card from your graveyard to the battlefield attached to target creature you control with power 1 or less" (CR 303.4f, 303.4g,
        * D-207): the Aura card enters the battlefield already attached to the target the effect names, which is not a choice of its controller. Only
        * with `to` `battlefield`; a `target` of the ability, an object. A card that cannot enchant it stays where it is (CR 303.4g).
+       * `moved` ("... to the battlefield attached to that token", "... attached to that creature"; issue 89, CR 303.4f, 303.4i, 400.7j): the object an earlier effect of the
+       * same sequence made or put onto the battlefield, or, in a `reflexive` ability with `carriesMoved`, the one the resolution that created it made. An Aura it cannot enchant
+       * stays where it is; an Equipment enters unattached when the object is not a creature (rules text unchecked, see docs/ROADMAP.md); nothing named is nothing moved.
+       * In a `delayedTrigger` the object is the one that was named as the ability was created.
        */
-      readonly attachTo?: { readonly kind: 'target'; readonly id: string };
+      readonly attachTo?:
+        | { readonly kind: 'target'; readonly id: string }
+        | { readonly kind: 'moved' }
+        | Extract<ObjectRef, { readonly kind: 'boundObjects' }>;
+      /**
+       * "Return enchanted creature card to the battlefield under your control" for an Aura that then enchants it (CR 400.7, 303.4; Animate Dead): the permanent the card becomes remembers it
+       * was put onto the battlefield with the source of this ability (`GameObject.putWith`, read by `ObjectFilter.putWithSource` and `ObjectRef` `putWithThis`). Only with `to` `battlefield`
+       * and a source that is a permanent (the ability of an Aura).
+       */
+      readonly putWithSource?: true;
     }
   | { readonly kind: 'counter'; readonly objects: ObjectSelector }
   /**
@@ -3315,6 +3398,12 @@ export type Effect =
        * required to). `moved` names all of the tokens afterwards. The token is a custom token whose abilities are keywords, so it asks nothing as it enters; no `controller`.
        */
       readonly forEachOpponent?: { readonly mustAttack: true };
+      /**
+       * "Create a white Aura enchantment token named Contract attached to target creature an opponent controls" (CR 303.4f, 303.4g, 111.2, 701.3; issue 89): the Aura token enters
+       * attached to the object the effect names, which is not a choice of its controller. Only with a custom token that is an Aura (the subtype and an `enchant` ability that is
+       * not "enchant player"), whose host is a target of the ability; the token is attached when it is created, so no player can respond between the two.
+       */
+      readonly attachTo?: { readonly kind: 'target'; readonly id: string };
     }
   /**
    * CR 701.3 (Attach): `object` (an Aura or Equipment) becomes attached to `to`. If it cannot be
@@ -3837,6 +3926,17 @@ export type Trigger =
       readonly firstEachTurn?: true;
     }
   /**
+   * "Whenever you lose life", "whenever you lose life for the first time each turn", "whenever an opponent loses life" (CR 119.3, 119.9, CR 603.2): once for each event in which
+   * the player `who` names (relative to the controller of this ability) loses life (damage, a life-loss effect, life paid: every reduction of a life total). A loss of 0 life is no
+   * event. `firstEachTurn` limits it to the first such event of that player in the turn (CR 603.2: the trigger counts the player's losses, not this ability's resolutions).
+   * `triggerPlayer` is the player who lost the life.
+   */
+  | {
+      readonly kind: 'lifeLost';
+      readonly who: 'you' | 'opponent' | 'any';
+      readonly firstEachTurn?: true;
+    }
+  /**
    * "Whenever you put one or more +1/+1 counters on this creature" (CR 122.6, 122.6a, D-149): once each time counters are put on a
    * permanent `what` names by the player `by` says ("you": the controller of this ability; `any`: whoever). `counter` limits the kind (as
    * the engine writes it, "+1/+1"); left out, any kind. Counters put by the permanent's own entering ("enters with") are put by its
@@ -3980,9 +4080,9 @@ export type Keyword =
   | { readonly kind: 'cycling'; readonly cost: readonly Cost[] }
   /**
    * CR 702.5a (Enchant): "Enchant [object]" restricts what an Aura spell can target (CR 303.4a) and
-   * what it can stay attached to (CR 704.5m). `filter` describes the objects; it is read on the
-   * battlefield, relative to the Aura's controller ("Enchant creature you control" sets
-   * `controller: 'you'`). Only permanents are supported: `zone` is unset or 'battlefield'.
+   * what it can stay attached to (CR 704.5m). `filter` describes the objects; it is read relative to the Aura's controller ("Enchant creature you control" sets
+   * `controller: 'you'`). `zone` is unset (the battlefield) or `graveyard` ("Enchant creature card in a graveyard", Animate Dead: the spell targets such a card, the Aura enters
+   * attached to it, CR 608.3c, and stays legal while that card is a card of the graveyard that matches the filter, CR 704.5m; `GameObject.attachedTo` then names the card).
    */
   | {
       readonly kind: 'enchant';
@@ -4863,6 +4963,11 @@ export type Condition =
    */
   | { readonly kind: 'thisInYourGraveyard' }
   /**
+   * "If it's on the battlefield" (CR 603.4, 400.7; Animate Dead): the permanent the condition belongs to is on the battlefield now, the same object that triggered (an object that has
+   * left is a new object elsewhere, so this reads the live object, never last-known information). Read as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'thisOnBattlefield' }
+  /**
    * "If you control your Ring-bearer" (CR 701.54e, D-196): the controller of the condition has a creature that is on the battlefield under their
    * control and is their Ring-bearer. Not for a static ability.
    */
@@ -5189,6 +5294,11 @@ export type StaticSubject =
       readonly types?: readonly CardType[];
       /** The host must have every one of these supertypes ("Enchanted legendary creature"). */
       readonly supertypes?: readonly Supertype[];
+      /**
+       * "~ and enchanted creature each get +1/+1" (a bestow card, CR 702.103): the permanent the ability belongs to as well as the one it is attached to, whatever it is
+       * (it is a creature when it is not attached). Only for a modification of power and toughness (`validateCard` refuses the rest).
+       */
+      readonly andThis?: true;
     }
   | { readonly kind: 'filter'; readonly filter: ObjectFilter; readonly other?: boolean }
   /**
@@ -5262,6 +5372,12 @@ export type StaticEffect =
       readonly kind: 'attackTax';
       readonly cost: readonly Cost[];
       readonly planeswalkers?: true;
+      /**
+       * "Each creature with one or more counters on it can't attack you ... unless its controller pays {X}, where X is the
+       * number of counters on that creature." (CR 508.1d, 508.1h, 122.1): only a creature with a counter of any kind is
+       * taxed, and it pays `cost` once for each counter on it.
+       */
+      readonly perCounter?: true;
     }
   /**
    * "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): while the permanent has the ability, no creature `creatures` describes can be declared as
@@ -6031,6 +6147,16 @@ export interface ModeChoice {
    * or `notRepeatedThisTurn`.
    */
   readonly repeatable?: true;
+  /**
+   * "At the beginning of combat on your turn, you may choose two." (CR 700.2, 700.2b): the controller chooses no mode at all or exactly `max` of them, never fewer. `min`
+   * is 0. Only a triggered ability (no mode chosen removes it from the stack), not with `repeatable` or `maxIf`, and `max` is at least 2.
+   */
+  readonly allOrNone?: true;
+  /**
+   * "Each mode must target a different player." (CR 700.2d): no target is chosen for two of the chosen modes (the targets of one mode may still be several). A set of modes
+   * for which each target slot cannot get a target of its own is not offered. Not with `repeatable`.
+   */
+  readonly differentTargets?: true;
 }
 
 export interface SpellMode {

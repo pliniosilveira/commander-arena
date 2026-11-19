@@ -178,6 +178,11 @@ export interface LowerContext {
    */
   auraDies: boolean;
   /**
+   * True after the instruction "return that card to the battlefield" of the dies trigger of an Aura's enchanted creature has been lowered (issue 89, Gift of Immortality, CR 400.7, 603.10a):
+   * the creature that returned is what "that creature" of the next instruction is (the engine's `moved`), not the one that died.
+   */
+  returnedDyingCard: boolean;
+  /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
    */
@@ -344,6 +349,7 @@ export function newContext(
     meldPartner: null,
     itIsCard: false,
     auraDies: false,
+    returnedDyingCard: false,
     itDied: false,
     diesTrigger: false,
     cardName,

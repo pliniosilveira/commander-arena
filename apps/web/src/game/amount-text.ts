@@ -74,6 +74,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'linkedExile':
       // D-145: the card a permanent exiled with a linked ability (Hideaway).
       return "the exiled card's";
+    case 'putWithThis':
+      // Animate Dead: the creature this permanent put onto the battlefield.
+      return "that creature's";
   }
 }
 
@@ -101,6 +104,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return attachedText(ctx.self);
     case 'linkedExile':
       return 'the exiled card';
+    case 'putWithThis':
+      return 'that creature';
   }
 }
 

@@ -39,7 +39,48 @@ function instant(
   });
 }
 
+const INKLING = {
+  name: 'SYNTHETIC Inkling',
+  manaCost: null,
+  supertypes: [],
+  types: ['creature'],
+  subtypes: ['Inkling'],
+  colors: ['W', 'B'],
+  power: 2,
+  toughness: 1,
+  loyalty: null,
+  defense: null,
+  oracleText: '',
+  abilities: [{ kind: 'keyword', keyword: { kind: 'flying' } }],
+} as const;
+
 export const SYNTHETIC_PREVENTION_LIST: readonly CardDefinition[] = [
+  instant(
+    'SYNTHETIC Ink Fog',
+    ['1', 'W'],
+    'Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying.',
+    {
+      kind: 'preventDamage',
+      scope: 'combat',
+      amount: 'all',
+      to: { kind: 'you' },
+      duration: END,
+      perPrevented: { token: { kind: 'custom', definition: INKLING } },
+    },
+  ),
+  instant(
+    'SYNTHETIC Ink Shield Three',
+    ['1', 'W'],
+    'Prevent the next 3 damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying.',
+    {
+      kind: 'preventDamage',
+      scope: 'all',
+      amount: 3,
+      to: { kind: 'you' },
+      duration: END,
+      perPrevented: { token: { kind: 'custom', definition: INKLING } },
+    },
+  ),
   instant(
     'SYNTHETIC Fog Spell',
     ['W'],

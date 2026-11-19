@@ -31,7 +31,7 @@ import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
 import { runAttackRandomOpponent } from './attack-random-opponent';
-import { runAuraEntry, withAuraEntries } from './aura-entry';
+import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
@@ -79,7 +79,7 @@ import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
-import { runEnterToken } from './enter-token';
+import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
 import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
 import { runExilePiles, startExilePiles } from './exile-piles';
@@ -125,9 +125,11 @@ import {
   runProtectionColor,
 } from './protection-choice';
 import { runRegenerate } from './regenerate';
+import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
+import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
@@ -453,10 +455,15 @@ export function runInstruction(
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
     // CR 303.4f (D-149): an Aura that entered by an effect enters attached to the object its controller chose.
+    // CR 400.7 (Animate Dead): the permanent it became remembers the permanent it was put onto the battlefield with.
+    const remembered =
+      instruction.putWith !== undefined && result.newObject !== null
+        ? patchObject(result.state, result.newObject, { putWith: instruction.putWith })
+        : result.state;
     const attached =
       instruction.attachTo !== undefined && result.newObject !== null
-        ? attachEntered(result.state, result.newObject, instruction.attachTo)
-        : { state: result.state, events: [] as GameEvent[] };
+        ? attachEntered(remembered, result.newObject, instruction.attachTo)
+        : { state: remembered, events: [] as GameEvent[] };
     // CR 603.6a (D-272): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
     const moveEvents = [
       ...(instruction.together === true
@@ -968,7 +975,7 @@ function runEffect(
       // states otherwise, so an effect with no control named means 'you', not the owner. Every
       // other zone has no controller: the card goes to its owner's zone (CR 108.3, 400.3).
       const controller = effect.to === 'battlefield' ? (effect.controller ?? 'you') : undefined;
-      const moves = moveInstructions(
+      const plainMoves = moveInstructions(
         ids,
         effect.to,
         effect.position ?? 'top',
@@ -976,6 +983,13 @@ function runEffect(
         controller,
         effect.withCounters,
       );
+      // CR 400.7, 303.4 (Animate Dead): "Return enchanted creature card to the battlefield ... attach this Aura to it": the permanent remembers it was put there with this Aura.
+      const moves =
+        effect.putWithSource === true && effect.to === 'battlefield'
+          ? plainMoves.map(
+              (m): Instruction => (m.kind === 'move' ? { ...m, putWith: res.source } : m),
+            )
+          : plainMoves;
       // CR 303.4f (D-149): an Aura card put onto the battlefield chooses what it enchants as it enters.
       // CR 303.4g, 303.4i (D-207): "attached to target creature ...": the effect names the object, so the Aura does not choose; it enters attached to the target
       // when that is still a legal object to enchant, and stays where it is when the target is gone.
@@ -983,10 +997,25 @@ function runEffect(
         const [host] = resolveObjects(state, effect.attachTo, ctx, targets).filter(
           (id) => state.objects[id]?.zone === 'battlefield',
         );
-        if (host === undefined) return { ...done(state), lastMoved: [] };
+        const hostObject = host === undefined ? undefined : state.objects[host];
+        if (host === undefined || hostObject === undefined) {
+          return { ...done(state), lastMoved: [] };
+        }
+        // Issue 89 (CR 303.4g, 303.4i): an Aura the object cannot be enchanted by stays where it is; an Equipment enters unattached when it is no creature (`rules/aura-entry.ts`).
         return moving(
           state,
-          moves.map((m) => (m.kind === 'move' ? { ...m, attachTo: host } : m)),
+          moves.flatMap((m): Instruction[] => {
+            if (m.kind !== 'move') return [m];
+            const card = state.objects[m.object];
+            if (card === undefined) return [m];
+            const how = entryAttachment(
+              state,
+              card,
+              hostObject,
+              m.controller === 'owner' ? card.owner : res.controller,
+            );
+            return how === 'stay' ? [] : how === 'attach' ? [{ ...m, attachTo: host }] : [m];
+          }),
         );
       }
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
@@ -1350,7 +1379,15 @@ function runEffect(
         });
       }
       if (effect.effect.kind === 'moveToZone') {
-        const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
+        // Issue 89 (CR 603.7c, 400.7): "Return this card to the battlefield attached to that creature at the beginning of the next end step": the creature is the object
+        // the effect before it returned, bound as it is now (`boundObjects`: found later only if it is still that object on the battlefield, else the Aura stays, CR 303.4g).
+        const back: Effect = {
+          ...effect.effect,
+          objects: { kind: 'triggerSubject' },
+          ...(effect.effect.attachTo?.kind === 'moved'
+            ? { attachTo: { kind: 'boundObjects' as const, ids: res.lastMoved ?? [] } }
+            : {}),
+        };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
         const cards =
           effect.effect.objects.kind === 'triggerCard' || effect.effect.objects.kind === 'thisCard'
@@ -1990,7 +2027,25 @@ function runEffect(
           front.push(...made.front);
           created = [...created, ...made.created];
         }
-        return { ...done(next, events, front), lastMoved: created };
+        return { ...done(next, events, front), lastMoved: created, performed: created.length };
+      }
+      // CR 303.4f, 303.4g (issue 89): "create an Aura token attached to target creature": the Aura enters attached to the object the effect names, which is not a choice of its
+      // controller; when that object is not one its enchant ability allows (or is gone) the Aura does not enter, and a token that never was in a zone is not created.
+      let attachHost: ObjectId | undefined;
+      if (effect.attachTo !== undefined) {
+        attachHost = resolveObjects(state, effect.attachTo, ctx, targets)[0];
+        if (
+          attachHost === undefined ||
+          !auraTokenCanEnterAttached(
+            state,
+            creators[0] ?? res.controller,
+            described,
+            res.object,
+            attachHost,
+          )
+        ) {
+          return done(state);
+        }
       }
       for (const seat of creators) {
         // D-221 (CR 616.1): the replacement effects of the creation are settled with the creator's answers; then the tokens are made, those that ask (D-185:
@@ -2003,6 +2058,7 @@ function runEffect(
           effect.tapped === true,
           flow,
           effect.token.kind === 'copyOf' && effect.token.embalmed === true,
+          attachHost,
         );
         if (made.kind === 'asked') return asking(state, made);
         next = made.state;
@@ -2048,7 +2104,8 @@ function runEffect(
       }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
-      return { ...done(next, events, front), lastMoved: created };
+      // Issue 89 (CR 603.12): the tokens made are something done, for "create a token. When you do, ...".
+      return { ...done(next, events, front), lastMoved: created, performed: created.length };
     }
 
     case 'shuffle': {
@@ -2216,6 +2273,13 @@ function runEffect(
             effect.own === undefined
               ? undefined
               : resolvePlayers(state, effect.own.players, ctx, targets),
+            effect.own === undefined
+              ? {}
+              : {
+                  ...(effect.own.typesOnly === true ? { typesOnly: true as const } : {}),
+                  ...(effect.own.counter === undefined ? {} : { counter: effect.own.counter }),
+                  ...(effect.own.cantAttackYou === true ? { cantAttackYou: true as const } : {}),
+                },
           ),
         ],
       );
@@ -2563,6 +2627,14 @@ function runEffect(
     case 'revealTop':
       // CR 701.20 (D-151): reveal the top card, and put it onto the battlefield if it matches (rules/reveal-top.ts).
       return runRevealTop(state, res, effect, ctx, targets);
+
+    case 'replaceEnchant':
+      // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
+      return runReplaceEnchant(state, effect, ctx, targets);
+
+    case 'revealTopDuel':
+      // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).
+      return runRevealTopDuel(state, res, effect, ctx, targets);
 
     case 'exileUntilCast':
       // CR 701.57 (D-151): Discover and "exile until you exile a nonland card; you may cast it, else put it into your hand".

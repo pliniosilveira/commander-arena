@@ -13,6 +13,7 @@ import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
+import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
@@ -89,6 +90,8 @@ export const STATIC_RULES = [
   ...ETERNAL_MIGHT_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
+  // CR 702.103: "~ and enchanted creature each get +1/+1 for each creature you control ..." (a bestow card).
+  ...BESTOW_PT_STATIC_RULES,
   ...RESTRICTION_STATIC_RULES,
   ...PLAY_RULE_STATIC_RULES,
   ...COST_STATIC_RULES,

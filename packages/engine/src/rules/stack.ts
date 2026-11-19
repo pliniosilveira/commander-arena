@@ -114,7 +114,8 @@ export function resolveTop(input: GameState): ResolveOutcome {
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 
-  if (specs.length > 0 && chosen.length > 0 && legal.length === 0) {
+  // CR 702.103e (bestow, rules text not checked): a bestow spell whose target is illegal is not countered: it resolves as a creature spell.
+  if (specs.length > 0 && chosen.length > 0 && legal.length === 0 && obj.stack?.alt !== 'bestow') {
     // CR 608.2b: all targets are illegal, so the spell doesn't resolve.
     events.push({ kind: 'fizzled', object: id });
     const moved = moveObject(input, { object: id, to: 'graveyard' });
@@ -174,6 +175,8 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.exiledAsCost === undefined ? {} : { costExiled: obj.stack.exiledAsCost }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
+      // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").
+      ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
       ...(obj.stack?.triggerTargetCount === undefined
@@ -358,7 +361,10 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const permanent = types.some((t) => isPermanentType(t));
     // CR 608.3c: an Aura spell enters attached to the object it targeted (it fizzled before this
     // if that target was illegal, CR 608.3b). The spell's own text says what it targeted.
-    const auraHost = auraTargetSpec(faceOf(next, obj)) === null ? null : enchantedHost(res);
+    const auraHost =
+      auraTargetSpec(faceOf(next, obj)) === null && obj.stack?.alt !== 'bestow'
+        ? null
+        : enchantedHost(res);
     // CR 715.3d: a spell cast as an Adventure that resolves is exiled instead of going to the
     // graveyard; a countered or fizzled one never gets here (CR 715.4) and goes to the graveyard.
     const adventure = isAdventureSpell(next, obj);

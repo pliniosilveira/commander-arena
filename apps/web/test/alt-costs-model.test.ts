@@ -105,6 +105,18 @@ describe('the cast buttons', () => {
     expect(alternativeLogWords('spectacle')).toBe('for its spectacle cost');
   });
 
+  test('Bestow: its own button, a badge on the stack and one on the permanent (CR 702.103)', () => {
+    const spirit = card('Eidolon', {
+      alternativeCosts: [{ kind: 'bestow', cost: ['2', 'W', 'W'] }],
+    });
+    expect(castLabel(cast({ alternative: 'bestow' }) as never, spirit, 'Eidolon')).toBe(
+      'Bestow {2}{W}{W}',
+    );
+    expect(alternativeBadge({ alternative: 'bestow', zone: 'stack' })?.text).toBe('bestowed');
+    expect(alternativeBadge({ alternative: 'bestow', zone: 'battlefield' })?.text).toBe('bestowed');
+    expect(alternativeLogWords('bestow')).toBe('for its bestow cost');
+  });
+
   test('a commander tax the view appends as a separate symbol is added to the generic mana', () => {
     const taxed = card('Commander', {
       alternativeCosts: [{ kind: 'dash', cost: ['1', 'R', '2'] }],

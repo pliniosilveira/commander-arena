@@ -423,6 +423,54 @@ export const SYNTHETIC_ALT_COST_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // ---- Bestow (CR 702.103)
+  // "Bestow {3}{W}. Enchanted creature gets +2/+2." The Aura half is the engine's; the card writes its own creature text and the static ability the bestowed permanent has.
+  singleFace({
+    name: 'SYNTHETIC Bestow Spirit',
+    manaCost: ['1', 'W', 'W'],
+    types: ['enchantment', 'creature'],
+    subtypes: ['Spirit'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Bestow {3}{W}. Enchanted creature gets +2/+2.',
+    alternativeCosts: [{ kind: 'bestow', cost: mana('3', 'W') }],
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'modifyPt',
+          subject: { kind: 'attached', types: ['creature'] },
+          power: 2,
+          toughness: 2,
+        },
+      },
+    ],
+  }),
+  // A plain creature card with bestow: its permanent is a vanilla 1/1 and an Aura that gives flying.
+  singleFace({
+    name: 'SYNTHETIC Bestow Wisp',
+    manaCost: ['W'],
+    types: ['creature'],
+    subtypes: ['Spirit'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 1,
+    toughness: 1,
+    oracleText: 'Bestow {2}{W}. Enchanted creature has flying.',
+    alternativeCosts: [{ kind: 'bestow', cost: mana('2', 'W') }],
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantKeyword',
+          subject: { kind: 'attached', types: ['creature'] },
+          keyword: { kind: 'flying' },
+        },
+      },
+    ],
+  }),
   // Takes a card out of a graveyard in response to an unearth.
   singleFace({
     name: 'SYNTHETIC Grave Scour',

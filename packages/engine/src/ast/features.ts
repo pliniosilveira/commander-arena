@@ -129,6 +129,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'delayedReturnToCommandZone',
     // D-433: "Tiered", a mode with a cost listed before its effect (`SpellMode.cost`, CR 700.2h, 702.183a).
     'modeCost',
+    // CR 700.2b, 700.2d: "you may choose two. Each mode must target a different player." (`ModeChoice.allOrNone`, `differentTargets`).
+    'modeAllOrNone',
+    'modeDifferentTargets',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
@@ -138,6 +141,12 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
     'reflexiveModal',
     'reflexivePaid',
+    // Issue 89: "Create a token. When you do, return ... attached to that token", "Return this card to the battlefield attached to that creature at the beginning of the next end step".
+    'reflexiveMoved',
+    'attachedToMoved',
+    'delayedReturnAttached',
+    // CR 400.7, 303.4: "Return enchanted creature card to the battlefield ..., attach this Aura to it" (Animate Dead): `moveToZone.putWithSource`, the permanent remembers the Aura.
+    'putWithSource',
   ],
   effectKinds: [
     'sequence',
@@ -361,6 +370,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileUntilCast',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
+    // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
+    'revealTopDuel',
+    // CR 702.5a, 613.1f: "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (Animate Dead).
+    'replaceEnchant',
     // D-151: "you may behold a Dragon" (CR 701.4).
     'behold',
     // D-151: "you may pay any amount of {R}. When you do, ..." (CR 603.12).
@@ -410,6 +423,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-149: "whenever you gain life [for the first time each turn]", "whenever you put one or more +1/+1 counters on this creature",
     // "whenever you attack with two or more creatures".
     'lifeGained',
+    // CR 119.3, 603.2: "whenever you lose life [for the first time each turn]".
+    'lifeLost',
     'countersAdded',
     'attackBatch',
     // D-648: "Whenever a player attacks one of your opponents" (CR 508.6).
@@ -632,7 +647,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
-  sacrificeSelectors: ['this', 'choose', 'each', 'moved'],
+  sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
   tokenPresets: ['Treasure', 'Food', 'Clue'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
@@ -741,6 +756,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
     'exiledWithSource',
+    // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
+    'putWithSource',
+    'putWithThis',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
@@ -769,6 +787,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tokensPerOpponent',
     // D-650: "Until end of turn, you don't lose this mana as steps and phases end" (`addMana` of a fixed production with `staysUntilEndOfTurn`).
     'manaStays',
+    // CR 615.5: "For each 1 damage prevented this way, create a token" (`preventDamage.perPrevented`).
+    'tokensPerPrevented',
     'moved',
     'triggerSubject',
     // D-100: `ObjectFilter.chosenType` and `chosenColor`, read relative to the source's choice.
@@ -951,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
+    // CR 603.4 (Animate Dead): "if it's on the battlefield".
+    'thisOnBattlefield',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -1077,6 +1099,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapped',
     'copyExceptions',
     'attacking',
+    // Issue 89: an Aura token that enters attached to a target (`createToken.attachTo`).
+    'attached',
   ],
   amountKinds: [
     'number',
@@ -1157,6 +1181,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'overload',
     'evoke',
     'dash',
+    'bestow',
     'spectacle',
     'escape',
     // CR 702.180: Harmonize.
@@ -1325,6 +1350,10 @@ export const ABILITY_FEATURES = [
   'delayedReturnToCommandZone',
   /** "Tiered" (D-433, CR 700.2h, 702.183a): a mode of a modal spell with a cost listed before its effect, paid as an additional cost when the mode is chosen (`SpellMode.cost`). */
   'modeCost',
+  /** "At the beginning of combat on your turn, you may choose two." (CR 700.2, 700.2b): a triggered ability's `ModeChoice.allOrNone`, no mode or exactly `max` of them. */
+  'modeAllOrNone',
+  /** "Each mode must target a different player." (CR 700.2d): `ModeChoice.differentTargets`, no target is chosen for two of the chosen modes. */
+  'modeDifferentTargets',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
@@ -1335,6 +1364,14 @@ export const ABILITY_FEATURES = [
   'reflexiveModal',
   /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-511): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
   'reflexivePaid',
+  /** "Create a 2/1 token. When you do, ... attached to that token" (CR 603.12, 400.7j, issue 89): a `reflexive` effect with `carriesMoved` after a `createToken`. */
+  'reflexiveMoved',
+  /** "Return target Aura or Equipment card from your graveyard to the battlefield attached to that token" (CR 303.4f, 303.4g, issue 89): a `moveToZone` with `attachTo` `moved`. */
+  'attachedToMoved',
+  /** "Return this card to the battlefield attached to that creature at the beginning of the next end step" (CR 603.7c, 303.4f, issue 89): a delayed `moveToZone` of `thisCard` with `attachTo` `moved`. */
+  'delayedReturnAttached',
+  /** "Return enchanted creature card to the battlefield ... attach this Aura to it" (CR 400.7, 303.4, Animate Dead): `moveToZone` with `putWithSource`. */
+  'putWithSource',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1409,6 +1446,10 @@ export const SELECTOR_KINDS = [
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
   'exiledWithSource',
+  /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
+  'putWithSource',
+  /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
+  'putWithThis',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
@@ -1437,6 +1478,8 @@ export const SELECTOR_KINDS = [
   'tokensPerOpponent',
   /** "Until end of turn, you don't lose this mana as steps and phases end" (CR 500.5, 106.4, D-650): the engine's `staysUntilEndOfTurn` of a fixed `addMana` production. */
   'manaStays',
+  /** "For each 1 damage prevented this way, create a 2/1 Inkling creature token with flying" (CR 615.5, 615.6, 111.2): the engine's `preventDamage.perPrevented`. */
+  'tokensPerPrevented',
   /** "Target spell or ability with a single target" (CR 115.9a, D-181): the engine's `ObjectFilter.singleTarget`. */
   'singleTarget',
   /** "with one or more targets" on a cast trigger (D-574). */
@@ -1651,6 +1694,8 @@ export const CONDITION_KINDS = [
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
+  /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
+  'thisOnBattlefield',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -1816,6 +1861,8 @@ export const TOKEN_KINDS = [
   'copyExceptions',
   /** "Create a tapped ... token that's attacking that opponent" (CR 508.4, D-648): the engine's `createToken.attacking`. */
   'attacking',
+  /** "Create a white Aura enchantment token ... attached to target creature" (CR 303.4f, 111.2): the engine's `createToken.attachTo`. */
+  'attached',
 ] as const;
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
@@ -1926,6 +1973,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'overload',
   'evoke',
   'dash',
+  'bestow',
   'spectacle',
   'escape',
   'harmonize',
@@ -1996,11 +2044,17 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilCount: true,
   delayedReturnToCommandZone: true,
   modeCost: true,
+  modeAllOrNone: true,
+  modeDifferentTargets: true,
   sacrificeX: true,
   optionalSacrifice: true,
   sacrificeOneOrMore: true,
   reflexiveModal: true,
   reflexivePaid: true,
+  reflexiveMoved: true,
+  attachedToMoved: true,
+  delayedReturnAttached: true,
+  putWithSource: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -2149,6 +2203,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   enterAttacking: true,
   exileUntilCast: true,
   revealTop: true,
+  revealTopDuel: true,
+  replaceEnchant: true,
   behold: true,
   payAnyAmount: true,
 };
@@ -2184,6 +2240,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tapsForMana: true,
   combatDamageBatch: true,
   lifeGained: true,
+  lifeLost: true,
   countersAdded: true,
   attackBatch: true,
   playerAttacksOpponent: true,

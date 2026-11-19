@@ -192,6 +192,29 @@ export const SYNTHETIC_GISA_G3_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it
+  // has a vow counter on it." (Promise of Loyalty)
+  singleFace({
+    name: 'SYNTHETIC Vow Rite',
+    manaCost: ['4', 'W'],
+    types: ['sorcery'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it.",
+    spell: {
+      effect: {
+        kind: 'sparePermanents',
+        types: ['creature'],
+        own: {
+          players: { kind: 'eachPlayer' },
+          typesOnly: true,
+          counter: 'vow',
+          cantAttackYou: true,
+        },
+      },
+    },
+  }),
   singleFace({
     name: 'SYNTHETIC Gisa Relic',
     manaCost: ['1'],

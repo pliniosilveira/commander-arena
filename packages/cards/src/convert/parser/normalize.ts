@@ -300,6 +300,18 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
 const OPTION_CHOICE = /^[Aa]s ~ enters, choose \p{Lu}[^.—•\n]*? or \p{Lu}[^.—•\n]*\.$/u;
 
 /**
+ * "... When ~ leaves the battlefield, that creature's controller sacrifices it." (issue 89, Animate Dead; CR 603.1, 607.2): a triggered ability that the Oracle text prints in the
+ * same paragraph as the one it is linked to is an ability of its own, so it starts a line. Only after the period that ends a sentence, outside quotes.
+ */
+const LINKED_LEAVES = /(?<=\.) (?=When ~ leaves the battlefield, )/gu;
+
+function splitLinkedLeaves(normalized: string): string {
+  return normalized.replace(LINKED_LEAVES, (_match, offset: number) =>
+    (normalized.slice(0, offset).match(/["”“]/gu)?.length ?? 0) % 2 === 0 ? '\n' : ' ',
+  );
+}
+
+/**
  * Splits normalized text into abilities, one per line. A bullet line ("• ...") belongs to the
  * line above it, so "Choose one —" stays together with its modes; the bullets of a choice among
  * named options are lines of their own (`segment` reads the name).
@@ -307,7 +319,7 @@ const OPTION_CHOICE = /^[Aa]s ~ enters, choose \p{Lu}[^.—•\n]*? or \p{Lu}[^.
 export function splitAbilities(normalized: string): string[] {
   const abilities: string[] = [];
   let optionBullets = false;
-  for (const line of normalized.split('\n')) {
+  for (const line of splitLinkedLeaves(normalized).split('\n')) {
     if (line === '') continue;
     const last = abilities.length - 1;
     if (line.startsWith('•') && last >= 0 && !optionBullets) {

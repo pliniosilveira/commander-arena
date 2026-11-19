@@ -23,7 +23,7 @@ import { KEYWORD_WORDS } from '../keyword/list';
 import { defineRule, family } from '../registry';
 
 /** "+1/+1", "-1/-1", "+1/+0": the change for each object counted. Never X, and never "+0/+0". */
-const STEP: Parser<{ power: number; toughness: number }> = (ctx, pos) => {
+export const STEP: Parser<{ power: number; toughness: number }> = (ctx, pos) => {
   const m = pattern(/([+-])(\d+)\/([+-])(\d+)(?![\p{L}\p{N}/])/u)(ctx, pos);
   if (!m.ok) return m;
   const signed = (sign: string | undefined, digits: string | undefined) =>
@@ -34,9 +34,9 @@ const STEP: Parser<{ power: number; toughness: number }> = (ctx, pos) => {
   return { ok: true, value: { power, toughness }, pos: m.pos };
 };
 
-const PERIOD = literal('.');
+export const PERIOD = literal('.');
 // Stage P37 (D-180): "for each color among permanents you control" counts colors, not objects.
-const FOR_EACH = family<IrAmount>('amount', {
+export const FOR_EACH = family<IrAmount>('amount', {
   only: [
     'amount.for-each-and-each',
     'amount.for-each',

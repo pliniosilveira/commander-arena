@@ -1193,9 +1193,29 @@ function lowerDoneReflexive(
   const done = lowerClauses(sentence.clauses, ctx);
   if (!done.ok) return done;
   const [only, ...rest] = done.value;
-  if (only === undefined || rest.length > 0 || !MAY_KINDS.has(only.kind)) return refuse(sentence);
+  // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
+  const madeToken = only?.kind === 'createToken';
+  if (only === undefined || rest.length > 0 || !(MAY_KINDS.has(only.kind) || madeToken)) {
+    return refuse(sentence);
+  }
   const effect = lowerReflexive(next, ctx);
   if (!effect.ok) return effect;
+  // "... attached to that token" in the reflexive ability is the token made before it: the ability carries what that resolution made (`moved`).
+  if (
+    madeToken &&
+    effect.value.kind === 'reflexive' &&
+    JSON.stringify(effect.value).includes('"moved"')
+  ) {
+    const blockedMoved = missingFeatures(['ability:reflexiveMoved']);
+    if (blockedMoved.length > 0) return { ...refuse(next), needs: blockedMoved };
+    return {
+      ok: true,
+      value: [only, { ...effect.value, carriesMoved: true }],
+      rule: clause.rule,
+    };
+  }
+  // A reflexive ability that does not read the token knows nothing of it: only an effect that reads it follows a token.
+  if (madeToken) return refuse(next);
   return { ok: true, value: [only, effect.value], rule: clause.rule };
 }
 

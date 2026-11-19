@@ -117,6 +117,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.additional-land': asIs,
   'static.look-at-top': asIs,
   'static.attack-tax': asIs,
+  'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,
   'keyword.enchant': asIs,
   'keyword.enchant-player': asIs,
@@ -129,6 +130,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.overload': asIs,
   'keyword.evoke': asIs,
   'keyword.dash': asIs,
+  'keyword.bestow': asIs,
   // Stage P23: Spectacle, Unearth and Escape are lines of their own.
   'keyword.spectacle': asIs,
   'keyword.unearth': asIs,
@@ -185,6 +187,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P20: power and toughness from a count; the statements are lines of their own.
   'static.pt-count': asIs,
   'static.defines-pt': asIs,
+  'static.self-and-enchanted-pt-count': asIs,
   'cost.discard': permanent((e) => `${e}: Draw a card.`),
   'cost.discard-hand': permanent((e) => `${e}: Draw a card.`),
   'cost.mill': permanent((e) => `{T}, ${e}: Add {C}.`),
@@ -473,6 +476,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.others-enter-with-counters': asIs,
   'static.tap-alt-cost': asIs,
   'trigger.life-gained': whenever,
+  'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
@@ -586,6 +590,20 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.choose-not-repeated-source': permanent(
     (e) => `At the beginning of your end step, ${e}\n• Draw a card.\n• You gain 1 life.`,
   ),
+  // Scriv, the Obligator (CR 303.4f): an Aura token created attached to a target, and the "it's attacking one of your opponents" condition.
+  'token.aura': permanent(
+    (e) =>
+      `Whenever ~ attacks, create ${e} attached to target creature. The token has enchant creature.`,
+  ),
+  'condition.it-attacking-opponents': permanent(
+    (e) => `Whenever enchanted creature attacks, it gets +2/+0 until end of turn if ${e}.`,
+  ),
+  // Shadrix Silverquill: "you may choose two" with a different player for each mode (CR 700.2d).
+  'modal.choose-may-different': permanent(
+    (e) =>
+      `At the beginning of combat on your turn, ${e}\n• Target player draws a card and loses 1 life.\n• Target player creates a 2/1 white and black Inkling creature token with flying.`,
+  ),
+  'noun.each-permanent-they-control': spell((e) => `Target player puts a +1/+1 counter on ${e}.`),
   // D-344 (repeatable modes, CR 700.2d): the header with no dash, its bullets after it.
   'modal.choose-repeatable': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.`),
   // Danitha deck, group 7 (D-433): Tiered, whose bullets name their mode and its cost before the effect.
@@ -926,6 +944,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Target creature gets -1/-1 until end of turn. That creature gets -13/-13 until end of turn instead if ${e}.`,
   ),
+  'condition.modified-creature-died': permanent(
+    (e) =>
+      `At the beginning of each end step, if ${e}, create a 2/1 white and black Inkling creature token with flying.`,
+  ),
   'condition.host-is-tapped': permanent((e) => `At the beginning of each upkeep, if ${e}, tap it.`),
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way" after a search; "any number of target cards from your graveyard" of a shuffle.
   'condition.searched-this-way': permanent(
@@ -953,6 +975,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.cost-reduction-your-turn': permanent(
     (e) => `{1}, {T}: Tap target creature. ${cap(e)}`,
   ),
+  // Issue 89 (Gift of Immortality): the delayed return of the Aura's own card follows the return of the creature.
+  'effect.return-this-card-attached-delayed': permanent(
+    (e) =>
+      `When enchanted creature dies, return that card to the battlefield under its owner's control. ${cap(e)}.`,
+  ),
+  // Issue 89 (Animate Dead): the Aura that enchants a creature card in a graveyard, swaps its enchant ability, returns the card and has the creature sacrificed when it leaves.
+  'noun.card-in-a-graveyard': permanent((e) => `Enchant ${e}`),
+  'noun.put-onto-with-self': permanent(
+    (e) =>
+      `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
+  ),
+  'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
+  'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
+  'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

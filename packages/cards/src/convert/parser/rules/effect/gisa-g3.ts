@@ -128,6 +128,76 @@ export const EFFECT_YOU_ADD_MANA = defineRule<Clauses>({
   },
 });
 
-export const GISA_G3_EFFECT_RULES = [EFFECT_EACH_OPPONENT_CHOOSE_KEEP, EFFECT_YOU_ADD_MANA].map(
-  quietly,
-);
+/**
+ * `effect.each-player-counter-keep-cant-attack`: "each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or
+ * planeswalkers you control for as long as it has a vow counter on it" (Promise of Loyalty; CR 608.2d, 701.21a, 122.1, 508.1a, 611.2b: each player chooses one creature they control,
+ * which gets the counter, and sacrifices their other creatures; the creatures that got the counter can't attack the controller of the spell or their planeswalkers while they keep
+ * it). Two sentences that `splitSentences` keeps together. The engine's `sparePermanents` of the creature type with `own`, `typesOnly`, the counter and `cantAttackYou`. Not read:
+ * another player word, another type, another counter in the second sentence, a different restriction or duration, "the rest" without the second sentence.
+ */
+export const EFFECT_EACH_PLAYER_COUNTER_KEEP_CANT_ATTACK = defineRule<Clauses>({
+  id: 'effect.each-player-counter-keep-cant-attack',
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 701.21a (Sacrifice)',
+    'CR 122.1 (Counters)',
+    'CR 508.1a (Declare Attackers Step)',
+    'CR 611.2b (Continuous Effects from Resolving Spells and Abilities)',
+  ],
+  examples: [
+    "each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it",
+  ],
+  rejects: [
+    'each player puts a vow counter on a creature they control and sacrifices the rest',
+    "each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you for as long as it has a vow counter on it",
+    "each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a oath counter on it",
+    "each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control",
+    "each opponent puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it",
+    "each player puts a vow counter on a land they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it",
+    "each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't block you or planeswalkers you control for as long as it has a vow counter on it",
+    "each player puts a vow counter on a creature they control and sacrifices the others. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.each-player-counter-keep-cant-attack';
+    const r = spanned(
+      pattern(
+        /each player puts an? ([a-z]+) counter on a creature they control and sacrifices the rest\. Each of those creatures can['’]t attack you or planeswalkers you control for as long as it has an? \1 counter on it(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    const span = r.value.span;
+    const types: IrArg = {
+      kind: 'typeList',
+      subtypes: [],
+      cardTypes: ['creature'],
+      span,
+      rule: id,
+    };
+    const counter: IrArg = {
+      kind: 'counterSpec',
+      name: (r.value.value[1] ?? '').toLowerCase(),
+      span,
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'sparePermanents',
+          { types, eachPlayer: flag(id, true, span), counter },
+          span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const GISA_G3_EFFECT_RULES = [
+  EFFECT_EACH_OPPONENT_CHOOSE_KEEP,
+  EFFECT_EACH_PLAYER_COUNTER_KEEP_CANT_ATTACK,
+  EFFECT_YOU_ADD_MANA,
+].map(quietly);

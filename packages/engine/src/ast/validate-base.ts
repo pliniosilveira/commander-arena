@@ -44,6 +44,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'combatDamageBatch':
     case 'noncombatDamageDealt':
     case 'lifeGained':
+    case 'lifeLost':
     case 'attackBatch':
     // D-648: the attacking player ("that attacking player").
     case 'playerAttacksOpponent':

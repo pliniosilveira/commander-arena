@@ -144,6 +144,10 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'dash') && !face.types.includes('creature')) {
     issue(out, `${path}.alternativeCosts`, 'dash is on a creature card (CR 702.109a)');
   }
+  // CR 702.103a: bestow is on a creature card (the spell is an Aura spell with "enchant creature" when cast for it).
+  if (alternatives.some((a) => a?.kind === 'bestow') && !face.types.includes('creature')) {
+    issue(out, `${path}.alternativeCosts`, 'bestow is on a creature card (CR 702.103a)');
+  }
   // CR 702.137a: spectacle is a way to cast a spell, so it is on a card that is not a land.
   if (alternatives.some((a) => a?.kind === 'spectacle') && face.types.includes('land')) {
     issue(out, `${path}.alternativeCosts`, 'spectacle is on a spell, not on a land (CR 702.137a)');

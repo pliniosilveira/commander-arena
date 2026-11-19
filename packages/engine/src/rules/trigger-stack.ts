@@ -90,6 +90,7 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       // D-177: a reflexive ability reads the permanents its resolution sacrificed.
       (t.sacrificedBefore === undefined ? '' : `s${t.sacrificedBefore.join(',')}#`) +
       (t.thisWayBefore === undefined ? '' : `w${JSON.stringify(t.thisWayBefore)}#`) +
+      (t.movedBefore === undefined ? '' : `m${t.movedBefore.join(',')}#`) +
       (t.cards === undefined ? '' : `c${t.cards.join(',')}#`);
     // Exalted (D-110) reads only the attacking creature, never the permanent with the keyword, and Extort
     // (D-120) only its controller: triggers of different permanents for one event are interchangeable (A18).
@@ -137,6 +138,7 @@ function pushTrigger(
       ? {}
       : { sacrificedBefore: trigger.sacrificedBefore }),
     ...(trigger.thisWayBefore === undefined ? {} : { thisWayBefore: trigger.thisWayBefore }),
+    ...(trigger.movedBefore === undefined ? {} : { movedBefore: trigger.movedBefore }),
     ...(trigger.cards === undefined ? {} : { cards: trigger.cards }),
     ...(targets.length === 0 ? {} : { targets }),
     ...(modes.length === 0 ? {} : { modes }),

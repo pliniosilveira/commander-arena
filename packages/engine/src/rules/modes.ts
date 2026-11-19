@@ -15,6 +15,7 @@
  */
 import type { Effect, ModeChoice, SpellMode, SpellText, TargetSpec } from '../ast/types';
 import type { ObjectId } from '../ids';
+import type { ChosenTarget } from '../state/chosen';
 import type { ChooseModesDecision, NewDecision } from '../state/decisions';
 import type { GameObject, GameState, StackAbility } from '../state/types';
 import { evaluateCondition } from './conditions';
@@ -115,6 +116,8 @@ export function legalModeSets(
       ? 0
       : modeLimit(state, modal, ctx)
     : Math.min(modeLimit(state, modal, ctx), available.length);
+  // CR 700.2b: "you may choose two": no mode at all, or exactly `max` of them.
+  const allOrNone = modal.choose.allOrNone === true;
   const out: number[][] = [];
   const build = (from: number, picked: number[], size: number): void => {
     if (picked.length === size) {
@@ -128,8 +131,42 @@ export function legalModeSets(
       picked.pop();
     }
   };
-  for (let size = modal.choose.min; size <= max; size += 1) build(0, [], size);
-  return out;
+  for (let size = modal.choose.min; size <= max; size += 1) {
+    if (!allOrNone || size === 0 || size === max) build(0, [], size);
+  }
+  // CR 700.2d: "each mode must target a different player": a set whose modes cannot all get a target of their own is not offered.
+  return modal.choose.differentTargets === true
+    ? out.filter((set) => distinctTargetsPossible(state, modal, set, ctx))
+    : out;
+}
+
+/** A target as a comparable key: an object by id, a player by seat. */
+function targetKey(
+  t: Pick<ChosenTarget, 'kind'> & { readonly id?: unknown; readonly seat?: unknown },
+): string {
+  return t.kind === 'object' ? `o${t.id}` : `p${t.seat}`;
+}
+
+/**
+ * CR 700.2d ("each mode must target a different player"): every chosen mode with a required target can be given a first
+ * target that no other chosen mode has (a system of distinct representatives over the legal targets of each mode's first slot).
+ */
+function distinctTargetsPossible(
+  state: GameState,
+  modal: ModalText,
+  set: readonly number[],
+  ctx: SelectContext,
+): boolean {
+  const lists = set.flatMap((i) => {
+    const spec = (modal.modes[i]?.targets ?? []).find((t) => targetBounds(t).min >= 1);
+    return spec === undefined ? [] : [legalTargets(state, spec, ctx).map(targetKey)];
+  });
+  const assign = (at: number, used: ReadonlySet<string>): boolean => {
+    const options = lists[at];
+    if (options === undefined) return true;
+    return options.some((key) => !used.has(key) && assign(at + 1, new Set([...used, key])));
+  };
+  return assign(0, new Set());
 }
 
 /** Whether `chosen` is one of the legal sets, in any order (the answer to the question). */
@@ -250,6 +287,8 @@ export function chosenEffect(modal: ModalText, chosen: readonly number[]): Effec
 export interface SlotMode {
   readonly mode: number;
   readonly instance: number;
+  /** CR 700.2d (`ModeChoice.differentTargets`): the ids of the slots of the other chosen modes, whose targets this slot may not take. */
+  readonly differentFrom?: readonly string[];
 }
 
 /** The slot-to-mode map of a chosen set, for the `mode` and `instance` of each `TargetChoiceSpec`. */
@@ -257,10 +296,22 @@ export function specModes(
   modal: ModalText,
   chosen: readonly number[],
 ): ReadonlyMap<string, SlotMode> {
+  const slots = chosenModeSpecs(modal, chosen);
+  const different = modal.choose.differentTargets === true;
   return new Map(
-    chosenModeSpecs(modal, chosen).map(
-      ({ spec, mode, occurrence }) => [spec.id, { mode, instance: occurrence }] as const,
-    ),
+    slots.map(({ spec, mode, occurrence }) => {
+      const others = slots.filter((o) => o.mode !== mode || o.occurrence !== occurrence);
+      return [
+        spec.id,
+        {
+          mode,
+          instance: occurrence,
+          ...(different && others.length > 0
+            ? { differentFrom: others.map((o) => o.spec.id) }
+            : {}),
+        },
+      ] as const;
+    }),
   );
 }
 
@@ -296,6 +347,7 @@ export function modesDecision(
     min: modal.choose.min,
     max: modeLimit(state, modal, ctx),
     ...(modal.choose.repeatable === true ? { repeatable: true as const } : {}),
+    ...(modal.choose.allOrNone === true ? { allOrNone: true as const } : {}),
     sets,
     ...(purpose === 'trigger' ? { forTrigger: true as const } : {}),
   };

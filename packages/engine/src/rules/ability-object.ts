@@ -44,6 +44,8 @@ export interface AbilityObjectRequest {
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted. */
   readonly thisWayBefore?: ThisWayCounts;
+  /** For a reflexive ability with `carriesMoved` (issue 89): the objects the resolution that created it had made or moved. */
+  readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` ability (D-232): the cards that left the graveyard. */
   readonly cards?: readonly ObjectId[];
   /** For a Saga's chapter ability: the chapter number reached (CR 714.2). */
@@ -99,6 +101,7 @@ export function pushAbilityObject(
         ? {}
         : { sacrificedBefore: request.sacrificedBefore }),
       ...(request.thisWayBefore === undefined ? {} : { thisWayBefore: request.thisWayBefore }),
+      ...(request.movedBefore === undefined ? {} : { movedBefore: request.movedBefore }),
       ...(request.cards === undefined ? {} : { triggerCards: request.cards }),
       ...(request.chapter === undefined ? {} : { chapter: request.chapter }),
     },

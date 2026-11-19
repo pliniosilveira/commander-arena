@@ -23,6 +23,8 @@ import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
+import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
+import { lowerAuraToken } from './aura-token';
 import { CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
@@ -32,6 +34,7 @@ import {
   DELAYED_RETURN,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
+  DELAYED_RETURN_THIS_CARD_ATTACHED,
   DELAYED_RETURN_TO_HAND,
   FLICKER,
   GRANT_KEYWORD,
@@ -98,6 +101,7 @@ import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
+import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -500,6 +504,34 @@ const RETURN: Lowering<IrClause, Effects> = {
         rule: clause.rule,
       };
     }
+    // "When enchanted creature dies, return that card to the battlefield under its owner's control" (issue 89, Gift of Immortality, CR 400.7, 603.10a): "that card" is the card the
+    // enchanted creature became in the graveyard, not the creature the Aura was attached to (the binding pass names that one).
+    if (
+      ctx.auraDies &&
+      zone === 'battlefield' &&
+      chosen?.kind === 'noun' &&
+      chosen.det === 'enchanted' &&
+      chosen.rule === 'noun.that-card' &&
+      operand(clause, 'attachTo') === undefined
+    ) {
+      const blocked = missingFeatures(['selector:triggerCard', 'selector:triggerSubject']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      ctx.returnedDyingCard = true;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'moveToZone',
+            objects: { kind: 'triggerCard' },
+            to: 'battlefield',
+            controller: to.whose ?? 'you',
+            ...(to.tapped === true ? { tapped: true } : {}),
+            ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     // "Return that nonland permanent card to the battlefield" (stage P33, D-150, CR 608.2c): the card an earlier instruction chose from a
     // graveyard; a pronoun for anything else (a permanent on the battlefield, a player) is not a card to return. D-362 (Victimize): "the chosen cards" the same.
     if (
@@ -511,6 +543,18 @@ const RETURN: Lowering<IrClause, Effects> = {
       if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
         return failure(clause);
       }
+    }
+    // "... to the battlefield attached to that token" (issue 89, Forum Filibuster, CR 303.4f, 400.7j): the token the instruction before made, which names it.
+    const hostNoun = operand(clause, 'attachTo');
+    let attachTo: { readonly kind: 'moved' } | undefined;
+    if (hostNoun !== undefined) {
+      if (zone !== 'battlefield' || hostNoun.kind !== 'noun') return failure(clause);
+      const host = objectRefOf(hostNoun, ctx, { token: true });
+      if (!host.ok) return host;
+      if (host.value.kind !== 'moved') return failure(clause);
+      const blockedHost = missingFeatures(['ability:attachedToMoved']);
+      if (blockedHost.length > 0) return failure(clause, blockedHost);
+      attachTo = { kind: 'moved' };
     }
     // CR 110.2a: what an effect puts onto the battlefield is controlled by the player performing it
     // unless the text says otherwise; the node says so rather than lean on the engine's default.
@@ -528,6 +572,7 @@ const RETURN: Lowering<IrClause, Effects> = {
               ...(to.tapped === true ? { tapped: true } : {}),
               // "... with a finality counter on it" (stage P68, D-230, CR 122.6): the counter it enters with.
               ...(to.counters === undefined ? {} : { withCounters: { ...to.counters } }),
+              ...(attachTo === undefined ? {} : { attachTo }),
             }
           : { kind: 'moveToZone', objects, to: zone },
       'objects',
@@ -851,6 +896,51 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
 }
 
 const MANA_ORDER = ['W', 'U', 'B', 'R', 'G', 'C'];
+
+/**
+ * "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying." (CR 615.5,
+ * 615.6, 111.2): the shield `lower.prevent-damage` makes, and the token the engine makes for each 1 damage it prevents (`preventDamage.perPrevented`), one token of a predefined or a
+ * described kind with no entry condition of its own.
+ */
+const PREVENT_DAMAGE_PER_PREVENTED: Lowering<IrClause, Effects> = {
+  head: 'preventDamagePerPrevented',
+  id: 'lower.prevent-damage-per-prevented',
+  needs: ['effect:preventDamage', 'duration:untilEndOfTurn', 'selector:tokensPerPrevented'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    const { token, ...rest } = clause.args;
+    if (token?.kind !== 'token') return failure(clause);
+    const shield = PREVENT_DAMAGE.lower({ ...clause, verb: 'preventDamage', args: rest }, ctx);
+    if (!shield.ok) return shield;
+    const [prevented, ...others] = shield.value;
+    if (prevented?.kind !== 'preventDamage' || others.length > 0) return failure(clause);
+    const { duration: _duration, ...tokenClause } = clause;
+    void _duration;
+    const made = lowerCreateToken({ ...tokenClause, verb: 'createToken', args: { token } }, ctx);
+    if (!made.ok) return made;
+    const [created, ...more] = made.value;
+    if (
+      created?.kind !== 'createToken' ||
+      more.length > 0 ||
+      created.count !== 1 ||
+      created.controller !== undefined ||
+      created.tapped !== undefined ||
+      created.attacking !== undefined ||
+      created.forEachOpponent !== undefined ||
+      (created.token.kind !== 'custom' && created.token.kind !== 'preset') ||
+      (created.token.kind === 'custom' && created.token.ptAmount !== undefined)
+    ) {
+      return failure(clause);
+    }
+    const blocked = missingFeatures(['effect:createToken']);
+    if (blocked.length > 0) return failure(clause, blocked);
+    return {
+      ok: true,
+      value: [{ ...prevented, perPrevented: { token: created.token } }],
+      rule: clause.rule,
+    };
+  },
+};
 
 function sortedMana(symbols: readonly string[]): ManaColor[] {
   return [...symbols].sort((a, b) => MANA_ORDER.indexOf(a) - MANA_ORDER.indexOf(b)) as ManaColor[];
@@ -1490,6 +1580,20 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
     const objectsArg = arg(clause, 'objects');
+    // "Target player puts a +1/+1 counter on each creature they control" (CR 115.1, 122.6): the player is a target of its own (read first, so it is the slot "they" names), and the
+    // permanents are the `each` selector of that player's.
+    const putter = arg(clause, 'player');
+    if (putter !== undefined) {
+      if (
+        putter.kind !== 'noun' ||
+        objectsArg?.kind !== 'noun' ||
+        objectsArg.rule !== 'noun.each-permanent-they-control'
+      ) {
+        return failure(clause);
+      }
+      const who = playerSelectorOf(putter, ctx);
+      if (!who.ok) return who;
+    }
     if (
       objectsArg?.kind === 'noun' &&
       objectsArg.det === 'a' &&
@@ -1678,6 +1782,11 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     colors.push(letter);
   }
   const types = (token.types ?? []) as CardType[];
+  // CR 303.4f, 111.4 (issue 89): "a white Aura enchantment token named Contract attached to target creature ... The token has enchant creature": an Aura token, created attached to the
+  // target the text names; it is not a creature and has no power or toughness.
+  if (token.subtypes?.includes('Aura') === true || token.enchantsCreature === true) {
+    return lowerAuraToken(clause, token, count.value, entersTapped, by, colors, types, ctx);
+  }
   const creature = types.includes('creature');
   // D-543 (CR 208.2a, 604.3): a token with no numbers has a characteristic-defining ability in its quotes that defines both ("Beau's power and toughness are each equal
   // to ..."); a token with numbers never has one (the star and the ability go together, `validateCard`).
@@ -1877,12 +1986,16 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DELAYED_RETURN_TO_HAND,
   DELAYED_RETURN_AT_UPKEEP,
   DELAYED_RETURN_THIS_CARD,
+  DELAYED_RETURN_THIS_CARD_ATTACHED,
   SEARCH,
   PREVENT_DAMAGE,
+  PREVENT_DAMAGE_PER_PREVENTED,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...ARDEN_LOWERINGS,
+  // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
+  ...AURA_GRAVEYARD_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
@@ -1919,6 +2032,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...GIDEON_LOWERINGS,
+  ...REVEAL_TOP_DUEL_LOWERINGS,
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,

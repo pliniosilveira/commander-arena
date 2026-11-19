@@ -596,6 +596,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const who = trigger.who === 'you' ? 'you gain' : `${BY_WORDS[trigger.who]} gains`;
       return `Whenever ${who} life${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
     }
+    case 'lifeLost': {
+      // CR 119.3: "Whenever you lose life", once for each loss; with "for the first time each turn" only the first.
+      const who = trigger.who === 'you' ? 'you lose' : `${BY_WORDS[trigger.who]} loses`;
+      return `Whenever ${who} life${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
+    }
     case 'countersAdded': {
       // D-149 (CR 122.6): "Whenever you put one or more +1/+1 counters on this creature".
       const what = subjectPhrase(trigger.what, ctx);

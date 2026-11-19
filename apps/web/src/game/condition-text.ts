@@ -454,6 +454,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'thisInYourGraveyard':
       // D-271 (CR 113.6b, 603.4): "if this card is in your graveyard".
       return `this card is ${negate ? 'not ' : ''}in your graveyard`;
+    case 'thisOnBattlefield':
+      // CR 603.4 (Animate Dead): "if it's on the battlefield".
+      return `this permanent is ${negate ? 'not ' : ''}on the battlefield`;
     case 'cardLeftYourGraveyard':
       // D-206 (CR 400.7): "if a card left your graveyard this turn".
       return negate

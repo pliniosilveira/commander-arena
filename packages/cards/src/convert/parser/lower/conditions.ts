@@ -196,6 +196,13 @@ export function lowerCondition(
       if (ctx?.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisInYourGraveyard' });
     }
+    case 'thisOnBattlefield': {
+      // CR 603.4, 400.7 (issue 89, Animate Dead): "if it's on the battlefield" is read only as the intervening "if" of a trigger about the source itself, where "it" is the source.
+      const blocked = missingFeatures(['condition:thisOnBattlefield']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (!itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisOnBattlefield' });
+    }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
       // "That player" of a trigger about a player (the active player of an opponent's end step, CR 102.1, 603.2b) is that player, not the controller of a
@@ -358,6 +365,14 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:objectMatches']);
       if (blocked.length > 0) return failure(c, blocked);
       const at = ctx ?? newContext('ability', []);
+      // "it gets +2/+0 until end of turn if it's attacking one of your opponents" (issue 89, CR 303.4b, 508.1b): "it" is the permanent the Aura or Equipment is attached to.
+      if (test.who.det === 'enchanted' || test.who.det === 'equipped') {
+        const hostBlocked = missingFeatures(['selector:attached']);
+        if (hostBlocked.length > 0) return failure(c, hostBlocked);
+        const matched = lowerFilter({ ...test.who, det: 'a', filter: test.filter });
+        if (!matched.ok) return matched;
+        return ok({ kind: 'objectMatches', of: { kind: 'attached' }, filter: matched.value });
+      }
       // "If that land is a Plains" (stage P33, D-150): the permanent whose event triggered the ability, as it is now.
       if (test.who.det === 'triggerSubject') {
         const subject = missingFeatures(['selector:triggerSubject']);
@@ -722,6 +737,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
+  'condition:thisOnBattlefield',
   'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',
   'condition:yourMainPhase',
