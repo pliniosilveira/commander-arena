@@ -247,7 +247,6 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
 
 /** A sentence's failure, blamed on the first rule it used and pointing at the whole sentence. */
 function refuse(sentence: IrSentence): LowerFailure {
-  console.log("REFUSE", new Error().stack?.split("\n").slice(2, 7).join("\n"));
   return {
     ok: false,
     needs: [],
