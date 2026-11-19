@@ -1577,7 +1577,12 @@ export type IrStaticEffect =
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */
-  | { readonly kind: 'doubleTriggers'; readonly cause?: IrNoun }
+  | {
+      readonly kind: 'doubleTriggers';
+      readonly cause?: IrNoun;
+      /** Issue 81 (Windcrag Siege): "If a creature attacking causes a triggered ability ... to trigger". */
+      readonly causeAttacks?: true;
+    }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }
   /** "You can't lose the game" (stage P33, D-150, CR 104.3b). The subject is `you`. */
@@ -1713,6 +1718,8 @@ export interface IrStatic extends IrNode {
    * graveyard, and not on the battlefield; the words are no condition of the engine, they say where the ability works.
    */
   readonly functionsIn?: 'graveyard';
+  /** Issue 81 (Windcrag Siege, "• Mardu — ...", CR 607.2d): the ability works while the permanent has this option, chosen as it entered. Only an additional trigger carries it. */
+  readonly option?: string;
   /** Stage P29: the other subjects the statement names after the first ("~ gets +2/+2 and creatures you control have vigilance"). */
   readonly also?: readonly IrStaticPart[];
 }

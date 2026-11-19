@@ -864,7 +864,11 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
       return failure(ability);
     }
-    const blocked = missingFeatures(['ability:static', 'static:doubleTriggers']);
+    const blocked = missingFeatures([
+      'ability:static',
+      'static:doubleTriggers',
+      ...(statement.option === undefined ? [] : (['condition:chosenOption'] as const)),
+    ]);
     if (blocked.length > 0) return failure(ability, blocked);
     const subject = subjectOf(statement.subject, ctx);
     if (!subject.ok) return subject;
@@ -872,6 +876,11 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
       return failure(ability);
     // Stage P71 (D-339, CR 603.2d): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger,
     // that ability triggers an additional time." The spell the cast or copy must name.
+    // Issue 81 (Windcrag Siege, "• Mardu — ..."): linked to the option the permanent chose as it entered (CR 607.2d).
+    const linked =
+      statement.option === undefined
+        ? {}
+        : { condition: { kind: 'chosenOption' as const, option: statement.option } };
     if (first.cause !== undefined) {
       const spell = lowerFilter(first.cause);
       if (!spell.ok) return spell;
@@ -885,6 +894,24 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
               subject: subject.value,
               cause: { kind: 'castOrCopySpell', spell: spell.value },
             },
+            ...linked,
+          },
+        ],
+        rule: ability.rule,
+      };
+    }
+    if (first.causeAttacks === true) {
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'static',
+            static: {
+              kind: 'doubleTriggers',
+              subject: subject.value,
+              cause: { kind: 'creatureAttacks' },
+            },
+            ...linked,
           },
         ],
         rule: ability.rule,
@@ -892,7 +919,13 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     }
     return {
       ok: true,
-      value: [{ kind: 'static', static: { kind: 'doubleTriggers', subject: subject.value } }],
+      value: [
+        {
+          kind: 'static',
+          static: { kind: 'doubleTriggers', subject: subject.value },
+          ...linked,
+        },
+      ],
       rule: ability.rule,
     };
   }

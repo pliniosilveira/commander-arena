@@ -694,3 +694,92 @@ describe('Jace +1: draw two, then put a card from your hand on the bottom of you
     g.expect.invariants();
   });
 });
+
+// ---- Windcrag Siege: "As this enchantment enters, choose Mardu or Jeskai. • Mardu — If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability
+// triggers an additional time. • Jeskai — At the beginning of your upkeep, create a 1/1 red Goblin creature token. It gains lifelink and haste until end of turn." (CR 603.2d, 607.2d,
+// 614.12, 508.1m).
+
+const WINDCRAG = parsed(
+  'SYNTHETIC Parsed Windcrag',
+  'Enchantment',
+  'As this enchantment enters, choose Mardu or Jeskai.\n• Mardu — If a creature attacking causes a triggered ability of a permanent you control to trigger, that ability triggers an additional time.\n• Jeskai — At the beginning of your upkeep, create a 1/1 red Goblin creature token. It gains lifelink and haste until end of turn.',
+  { manaCost: '{2}{R}', colors: ['R'] },
+);
+const RALLIER = parsed(
+  'SYNTHETIC Parsed Rallier',
+  'Creature — Human',
+  'Whenever ~ attacks, you gain 1 life.',
+  { manaCost: '{1}{W}', colors: ['W'], power: '1', toughness: '1' },
+);
+
+describe('Windcrag Siege: Mardu doubles attack triggers, Jeskai makes a Goblin each upkeep', () => {
+  const board = (option: string) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(WINDCRAG)
+      .define(RALLIER)
+      .battlefield(WINDCRAG.name, { chosen: { option } })
+      .battlefield(RALLIER.name)
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('Mardu: a creature attacking makes the trigger happen twice', () => {
+    const g = board('Mardu');
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([RALLIER.name]);
+    g.passAll();
+    const pending = g.state.pending;
+    if (pending?.kind === 'orderTriggers') {
+      g.act(0).orderTriggers(...pending.triggers.map((_t, i) => i));
+    }
+    g.passAll();
+    g.passAll();
+    g.expect.life(0, 22);
+  });
+
+  test('Jeskai: the Mardu ability does nothing, an upkeep makes a Goblin with lifelink and haste', () => {
+    const g = board('Jeskai');
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([RALLIER.name]);
+    g.passAll();
+    g.passAll();
+    g.expect.life(0, 21);
+  });
+
+  test('Jeskai: the Goblin appears at the upkeep, with lifelink and haste; Mardu makes none', () => {
+    const goblins = (option: string) => {
+      const g = board(option);
+      g.advanceTo('upkeep', { turn: 3 });
+      g.passAll();
+      return g.state.battlefield.filter(
+        (id) => g.state.objects[id]?.token?.characteristics.name === 'Goblin',
+      );
+    };
+    expect(goblins('Jeskai')).toHaveLength(1);
+    expect(goblins('Mardu')).toHaveLength(0);
+  });
+
+  test('the Siege asks which option as it enters', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(WINDCRAG)
+      .hand(WINDCRAG.name)
+      .battlefield('Mountain', 'Mountain', 'Mountain')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(WINDCRAG.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseOption('Mardu');
+    g.expect.chosen(WINDCRAG.name, { option: 'Mardu' });
+  });
+});

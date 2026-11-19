@@ -292,6 +292,17 @@ export function checkStaticCondition(
     checkCondition(condition, `${path}.condition`, out);
     return;
   }
+  // Issue 81 (Windcrag Siege, "Mardu — ..."; CR 607.2d): an additional trigger linked to an option the permanent chose as it entered, read by `rules/trigger-doubling.ts`. No other condition.
+  if (s?.kind === 'doubleTriggers') {
+    if (kindOf(condition) !== 'chosenOption') {
+      issue(
+        out,
+        `${path}.condition`,
+        'a doubleTriggers static ability takes only the condition chosenOption (a linked ability of a choice made as the permanent entered)',
+      );
+    }
+    return;
+  }
   if (!CONDITIONAL_STATICS.includes(s?.kind)) {
     issue(
       out,

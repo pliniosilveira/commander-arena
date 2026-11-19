@@ -6071,7 +6071,10 @@ export type StaticEffect =
   | {
       readonly kind: 'doubleTriggers';
       readonly subject: StaticSubject;
-      readonly cause?: { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter };
+      readonly cause?:
+        | { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter }
+        // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
+        | { readonly kind: 'creatureAttacks' };
     }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (CR 101.2, 601.2, 113.6, D-149): the ability of a card that works
