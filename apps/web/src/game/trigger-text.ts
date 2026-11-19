@@ -664,6 +664,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         trigger.what === undefined
           ? 'creatures'
           : `${core.endsWith('s') ? core : `${core}s`}${withText(trigger.what)}`;
+      // Death Toll deck group B (CR 508.1b, 508.6): "Whenever one or more Demons you control attack a player", once for each player attacked.
+      if (trigger.eachAttackedPlayer === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1
+          ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
+          : null;
+      }
       // D-187: "Whenever you attack" is one creature or more, said without the count.
       // D-218: "Whenever one or more creatures attack" (any player).
       if (trigger.who === 'any') return `Whenever one or more ${things} attack`;

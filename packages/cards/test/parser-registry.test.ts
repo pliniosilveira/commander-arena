@@ -762,6 +762,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `As many times as you choose, you may exile the top card of your library. If ${e}, you may cast any number of spells from among those cards without paying their mana costs.`,
   ),
+  // Death Toll deck, group B (CR 205.2a): the condition leads the sentence that follows a mill.
+  'condition.two-milled-cards-share-all-types': spell(
+    (e) => `Mill two cards. If ${e}, you gain 1 life.`,
+  ),
   // Prismari deck, group 3 (D-662): a delayed ability for the turn, after the exile of a card.
   'effect.delayed-combat-damage-copy-exiled': permanent(
     (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,

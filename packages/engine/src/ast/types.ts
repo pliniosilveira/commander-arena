@@ -4205,6 +4205,12 @@ export type Trigger =
        * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
        */
       readonly attackedEnchantedPlayer?: true;
+      /**
+       * "Whenever one or more Demons you control attack a player" (CR 508.1b, 508.6, 603.2c, Demonic Covenant): one occurrence for each player the declaration attacks (as a player: an
+       * attack on a planeswalker or a battle is not an attack on its controller or protector), counting only the creatures declared as attacking that player: the ability triggers once for
+       * each player attacked with `atLeast` or more creatures `what` names, whoever declares them. `triggerAttacked` is that player alone. Not with `attackedEnchantedPlayer`.
+       */
+      readonly eachAttackedPlayer?: true;
     }
   /**
    * "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 603.2, 508.1b): once for each player `who` names (relative to the controller
@@ -5055,6 +5061,13 @@ export type Condition =
    * that is no longer there counts 0; with no card the total is 0. Only in a `conditional` effect that follows a moving effect in its sequence.
    */
   | { readonly kind: 'movedTotalManaValue'; readonly compare: NumberComparison }
+  /**
+   * "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c, Demonic Covenant): among the cards the earlier effects of this resolution moved (`moved`:
+   * the cards a `mill` put into a graveyard), at least two have the same card types, no more and no fewer (supertypes and subtypes are not card types: a creature and a legendary
+   * creature share all their card types; a land and an artifact land do not). A card of `moved` that is no longer there is read as it last was; with fewer than two cards the test is false.
+   * Only in a `conditional` effect that follows a moving effect in its sequence.
+   */
+  | { readonly kind: 'movedShareAllCardTypes' }
   /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).

@@ -2705,6 +2705,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'didPrevious':
     case 'thisWayAtLeast':
     case 'movedTotalManaValue':
+    case 'movedShareAllCardTypes':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -3936,6 +3937,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       if (!isCount(c.compare?.value)) {
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
+      break;
+    case 'movedShareAllCardTypes':
+      // CR 205.2a (Demonic Covenant): the cards an earlier moving effect of the sequence moved, compared by their card types.
+      checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
       break;
     case 'ringBearerChosen':
       issue(

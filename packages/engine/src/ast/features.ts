@@ -989,6 +989,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'didPrevious',
     // D-661: "if the total mana value of the cards exiled this way is 13 or less" (`movedTotalManaValue`).
     'movedTotalManaValue',
+    // CR 205.2a: "If two cards that share all their card types were milled this way" (`movedShareAllCardTypes`).
+    'movedShareAllCardTypes',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -1753,6 +1755,8 @@ export const CONDITION_KINDS = [
   'didPrevious',
   /** "If the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c, D-661): the engine's `movedTotalManaValue`. */
   'movedTotalManaValue',
+  /** "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c): the engine's `movedShareAllCardTypes`. */
+  'movedShareAllCardTypes',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */

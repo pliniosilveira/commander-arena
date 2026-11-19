@@ -113,3 +113,33 @@ describe('the effect "revealUntil" that puts the cards found into the graveyard'
     expect(messages(effectOf(reveal('library'))).join(' | ')).toContain('into the graveyard');
   });
 });
+
+describe('the trigger "attackBatch" with eachAttackedPlayer, and the condition "movedShareAllCardTypes" (Death Toll deck, group B)', () => {
+  const attack = (extra: Record<string, unknown>) =>
+    withAbility(NAME, triggered({ kind: 'attackBatch', who: 'you', atLeast: 1, ...extra }));
+  test('eachAttackedPlayer is valid, and only true', () => {
+    expect(messages(attack({ eachAttackedPlayer: true }))).toEqual([]);
+    expect(messages(attack({ eachAttackedPlayer: false })).join(' | ')).toContain('is true');
+  });
+
+  const sacrificeIfShared = (effects: readonly unknown[]) =>
+    effectOf({
+      kind: 'sequence',
+      effects: [
+        ...effects,
+        {
+          kind: 'conditional',
+          condition: { kind: 'movedShareAllCardTypes' },
+          effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+        },
+      ],
+    });
+  test('after a mill it is valid', () => {
+    expect(
+      messages(sacrificeIfShared([{ kind: 'mill', player: { kind: 'you' }, count: 2 }])),
+    ).toEqual([]);
+  });
+  test('with no instruction before it that moved cards it is refused', () => {
+    expect(messages(sacrificeIfShared([])).length).toBeGreaterThan(0);
+  });
+});

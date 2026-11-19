@@ -563,6 +563,13 @@ export function lowerCondition(
         compare: { cmp: 'atMost', value: test.atMost },
       });
     }
+    case 'movedShareAllCardTypes': {
+      // CR 205.2a, 608.2c (Demonic Covenant): the cards an instruction before this one milled (`moved`); no other cards are named.
+      if (ctx?.lastEffectKind !== 'mill') return failure(c, []);
+      const blocked = missingFeatures(['condition:movedShareAllCardTypes']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({ kind: 'movedShareAllCardTypes' });
+    }
     case 'triggerSpellManaValue': {
       // CR 202.3, 608.2h (D-646): "that spell" is the spell that caused the trigger, read as it is on the stack or as it last was; in any other text no spell is named, so it is not lowered.
       if (ctx?.castTrigger !== true) return failure(c, []);

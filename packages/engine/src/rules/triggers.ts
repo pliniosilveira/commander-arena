@@ -559,6 +559,24 @@ function occurrences(
       }));
     }
     case 'attackBatch':
+      // CR 508.1b, 508.6, 603.2c (Demonic Covenant): "attack a player": one occurrence for each player attacked as a player, with the creatures that attack that player.
+      if (event.kind === 'attackersDeclared' && trigger.eachAttackedPlayer === true) {
+        const players = [
+          ...new Set(
+            event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+          ),
+        ];
+        return players.map((player) => ({
+          subject: null,
+          seat: event.seat,
+          player: event.seat,
+          attackers: event.attackers
+            .filter((a) => a.target.kind === 'player' && a.target.seat === player)
+            .map((a) => a.object),
+          attacked: [player],
+          attackedAt: [player],
+        }));
+      }
       // CR 508.1, 603.2 (D-149): once for the whole declaration, whoever the creatures attack.
       return event.kind === 'attackersDeclared'
         ? [

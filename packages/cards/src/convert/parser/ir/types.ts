@@ -767,6 +767,8 @@ export interface IrCondition extends IrNode {
     // Prismari deck, group 3 (D-661, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
     // only after an instruction that exiled cards.
     | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }
+    // Death Toll deck, group B (CR 205.2a, 608.2c): "two cards that share all their card types were milled this way": the cards the instruction before it milled; lowered only after a mill.
+    | { readonly kind: 'movedShareAllCardTypes' }
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
@@ -1320,6 +1322,8 @@ export interface IrTrigger extends IrNode {
   readonly batch?: true;
   /** 'putIntoGraveyard' (Death Toll deck group B, CR 603.2): "from your library" (the cards came from the library), not "from anywhere". */
   readonly fromLibrary?: true;
+  /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */
+  readonly eachAttackedPlayer?: true;
 }
 
 export interface IrRestriction extends IrNode {

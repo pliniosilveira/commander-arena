@@ -474,9 +474,130 @@ describe('Moldgraf Monstrosity (when it dies, exile it, then return two creature
     g.expect.zone(MOLD.name, 'exile');
   });
 
-  test('fewer than two creature cards: all there are come back; none: nothing comes back and it is still exiled', () => {
+  test('no creature card: nothing comes back and it is still exiled', () => {
     const none = kill(['Forest']);
     expect(names(none.state, 0)).toEqual(['Plains', 'Plains']);
     none.expect.zone(MOLD.name, 'exile');
+  });
+});
+
+describe('Demonic Covenant (Demons you control attack a player; the end step token and mill)', () => {
+  const COVENANT = real('Demonic Covenant');
+  const demon = (name: string) =>
+    parsed(name, 'Creature — Demon', '', { manaCost: '{1}', power: '2', toughness: '2' });
+  const IMP = demon('SYNTHETIC Imp');
+  const FIEND = demon('SYNTHETIC Fiend');
+  const LEGEND = parsed('SYNTHETIC Legend Bear', 'Legendary Creature — Bear', '', {
+    manaCost: '{1}{G}',
+    power: '2',
+    toughness: '2',
+  });
+  const WALKER = 'SYNTHETIC Vanilla Planeswalker';
+
+  test('read as a batch trigger per player attacked and an end step ability of token, mill and a test of the cards milled', () => {
+    const abilities = COVENANT.faces[0]?.abilities.filter((a) => a.kind === 'triggered');
+    expect(abilities?.[0]).toMatchObject({
+      trigger: { kind: 'attackBatch', who: 'you', atLeast: 1, eachAttackedPlayer: true },
+    });
+    expect(abilities?.[1]).toMatchObject({
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'createToken' },
+          { kind: 'mill', count: 2 },
+          { kind: 'conditional', condition: { kind: 'movedShareAllCardTypes' } },
+        ],
+      },
+    });
+  });
+
+  const attackGame = (attackers: readonly string[], target?: string) => {
+    const g = scenario()
+      .define(COVENANT)
+      .define(IMP)
+      .define(FIEND)
+      .define(BEAR)
+      .seat(0)
+      .battlefield(COVENANT.name, IMP.name, FIEND.name, BEAR.name)
+      .library(...FILLER)
+      .seat(1)
+      .battlefield(WALKER)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers(
+      attackers.map((a) => (target === undefined ? { attacker: a } : { attacker: a, target })),
+    );
+    settle(g);
+    return g;
+  };
+
+  test('two Demons attack the player: one trigger, one card drawn and 1 life lost', () => {
+    const g = attackGame([IMP.name, FIEND.name]);
+    g.expect.handSize(0, 1);
+    g.expect.life(0, 39);
+    g.expect.invariants();
+  });
+
+  test('a creature that is not a Demon attacks: nothing', () => {
+    const g = attackGame([BEAR.name]);
+    g.expect.handSize(0, 0);
+    g.expect.life(0, 40);
+  });
+
+  test('a Demon attacking a planeswalker is not attacking a player: nothing', () => {
+    const g = attackGame([IMP.name], WALKER);
+    g.expect.handSize(0, 0);
+    g.expect.life(0, 40);
+  });
+
+  const endStep = (top: readonly string[]) => {
+    const g = scenario()
+      .define(COVENANT)
+      .define(BEAR)
+      .define(LEGEND)
+      .seat(0)
+      .battlefield(COVENANT.name)
+      .library(...top, ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('postcombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('end');
+    settle(g);
+    return g;
+  };
+
+  test('two lands milled share all their card types: the Demon token is made and Covenant is sacrificed', () => {
+    const g = endStep(['Forest', 'Island']);
+    expect(names(g.state, 0)).toEqual(['Demon']);
+    expect(zoneNames(g.state, 0, 'graveyard').sort()).toEqual([COVENANT.name, 'Forest', 'Island']);
+    g.expect.invariants();
+  });
+
+  test('a land and a creature share no card type: Covenant stays', () => {
+    const g = endStep(['Forest', BEAR.name]);
+    expect(names(g.state, 0).sort()).toEqual(['Demon', COVENANT.name]);
+  });
+
+  test('supertypes and subtypes are not taken into account: a creature and a legendary creature share all their card types', () => {
+    const g = endStep([BEAR.name, LEGEND.name]);
+    expect(names(g.state, 0)).toEqual(['Demon']);
+  });
+
+  test('only one card milled (a library of one): nothing to share, Covenant stays', () => {
+    const g = scenario()
+      .define(COVENANT)
+      .seat(0)
+      .battlefield(COVENANT.name)
+      .library('Forest')
+      .seat(1)
+      .library(...FILLER)
+      .at('postcombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('end');
+    settle(g);
+    expect(names(g.state, 0).sort()).toEqual(['Demon', COVENANT.name]);
   });
 });
