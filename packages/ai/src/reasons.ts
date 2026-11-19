@@ -66,6 +66,8 @@ export const REASONS = [
   'counter',
   /** An Aura with flash for a commander (D-408) was cast in response to a removal that targets the agent's commander. */
   'protect-commander',
+  /** A protection spell was cast in response to a spell or ability that names a permanent of the agent's. */
+  'protect-threatened',
   /** A play was held back for a better window. */
   'hold',
   /** The target of a removal spell is the opposing commander. */

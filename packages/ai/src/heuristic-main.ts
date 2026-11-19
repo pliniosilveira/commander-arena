@@ -12,7 +12,9 @@
  *     much as the best creature of the set; Storm last. The commander is a play like any other (valued
  *     as a creature plus 4) with one rule for the commander tax (CR 903.8): with a tax of 4 or more (two
  *     casts or more) it is cast only when the best set without it uses less than half of the mana and the
- *     agent is not clearly losing (`evaluate` at least `LOSING`).
+ *     agent is not clearly losing (`evaluate` at least `LOSING`). Each play of the set is then cast on the
+ *     sample (`heuristic-delta.ts`) and dropped when the board it leaves scores clearly worse than
+ *     passing, so a board wipe that costs the agent more than the opponent is held.
  *  3. Everything else that an instant-speed card could do waits for a window (below); the mana it needs
  *     stays untapped because the set above does not count it.
  *  4. What is left is the casual rules without the plays above (flashback, escape, special actions,
@@ -32,10 +34,8 @@ import type {
   GameView,
   ObjectId,
   ObjectView,
-  PendingDecision,
   PriorityDecision,
 } from '@commander-arena/engine';
-import { getView } from '@commander-arena/engine';
 import { flashesForCommander, isAura } from './casual-attachments';
 import { hasStorm } from './casual-copies';
 import { discountsHand } from './casual-costs';
@@ -44,12 +44,13 @@ import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import { choosePriorityAction, type Play, spellPlays, spendOf, withFace } from './casual-priority';
-import { hasKeyword, manaValueOf } from './casual-view';
+import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
 import { creatureValue, evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
+import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { canPayAll, costSymbols, ownUnits } from './heuristic-mana';
-import { applyOrNull, playOut } from './heuristic-sim';
+import { protectionPlay } from './heuristic-protect';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
 
@@ -71,7 +72,8 @@ const TARGETS_SPELL = /target (activated or triggered ability|(\w+ )?spell)/i;
 
 const isInstantSpeed = (o: ObjectView): boolean =>
   o.types.includes('instant') || hasKeyword(o, 'flash');
-const isCounter = (o: ObjectView): boolean => isInstantSpeed(o) && TARGETS_SPELL.test(o.oracleText);
+const isCounter = (o: ObjectView): boolean =>
+  isInstantSpeed(o) && TARGETS_SPELL.test(withoutReminder(o.oracleText));
 
 const castAction = (p: Play): Action => ({
   kind: 'castSpell',
@@ -184,6 +186,7 @@ function mainPhase(
   d: PriorityDecision,
   think: Think,
   activations: Set<string>,
+  answer: Answer,
 ): PriorityChoice {
   const land = planLand(view, d);
   if (land !== null && !land.hold) {
@@ -202,7 +205,9 @@ function mainPhase(
     )[0];
     set = dearest === undefined ? [] : [dearest];
   }
-  const first = order(view, set)[0];
+  // Each play is cast on the sample first: one that leaves the board clearly worse than passing (a wipe
+  // that costs the agent more than the opponent) is dropped, the next one of the set is tried.
+  const first = vetPlays(view, order(view, set), think, answer, castAction)[0];
   if (first !== undefined) {
     if (isPreventionSpell(first.obj)) activations.add(preventionKey(view));
     const reason: Reason = first.obj.isCommander
@@ -217,48 +222,6 @@ function mainPhase(
     return { action: rest, reason: land?.hold === true ? 'hold' : 'no-play' };
   }
   return { action: rest, reason: 'delegated' };
-}
-
-type Answer = (view: GameView, pending: PendingDecision) => Action;
-
-/** Casts `play` on the sample and plays the follow-up questions and the rest of the combat out; the score or null. */
-function scoreCast(
-  sample: ReturnType<Think['sample']>,
-  me: number,
-  play: Action | null,
-  answer: Answer,
-  budget: Think['budget'],
-): number | null {
-  if (sample === undefined) return null;
-  let state = sample;
-  if (play !== null) {
-    const cast = applyOrNull(state, me, play);
-    if (cast === null) return null;
-    state = cast;
-    for (let i = 0; i < 12; i += 1) {
-      const pending = state.pending;
-      if (pending === null || pending.seat !== me || pending.kind === 'priority') break;
-      let next: ReturnType<typeof applyOrNull>;
-      try {
-        next = applyOrNull(state, me, answer(getView(state, me), pending));
-      } catch {
-        return null;
-      }
-      if (next === null) return null;
-      state = next;
-    }
-  }
-  // Played on to the start of the next turn, so effects that last until end of turn (a pump) and marked
-  // damage are gone and only what lasts is scored.
-  const turn = sample.turn.number;
-  const end = playOut(
-    state,
-    me,
-    { abort: budget.over },
-    (s) => s.result !== null || s.turn.number > turn,
-    200,
-  );
-  return end === null ? null : evaluate(getView(end, me), me).score;
 }
 
 /**
@@ -328,6 +291,9 @@ function windowPlay(
     const ward = plays.find((p) => isAura(p.obj) && flashesForCommander(p.obj));
     if (ward !== undefined) return { action: castAction(ward), reason: 'protect-commander' };
   }
+  // In response to an opponent's spell or ability that names a permanent of the agent's: a protection spell.
+  const shield = protectionPlay(view, plays, think, answer, castAction);
+  if (shield !== null) return { action: castAction(shield), reason: 'protect-threatened' };
   // In response to an opponent's spell: a counterspell for a spell worth it.
   if (top !== undefined && top.controller !== me && !top.abilitySource) {
     const counter = plays
@@ -398,7 +364,7 @@ export function choosePriorityHeuristic(
     view.activeSeat === me &&
     (view.step === 'precombatMain' || view.step === 'postcombatMain') &&
     view.stack.length === 0;
-  if (mainWindow) return mainPhase(view, d, think, activations);
+  if (mainWindow) return mainPhase(view, d, think, activations, answer);
   const faceUp = faceUpWindow(view, d, think, answer);
   if (faceUp !== null) return faceUp;
   const play = windowPlay(view, d, think, activations, answer);
