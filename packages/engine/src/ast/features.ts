@@ -137,8 +137,6 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseFromCommandZone',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
-    /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
-    'revealUntilGraveyard',
     // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
     'revealUntilGraveyard',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
@@ -197,6 +195,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-445: "Monstrosity N" (CR 701.37).
     'monstrosity',
     'exileRandomFromGraveyard',
+    'chooseRandomFromGraveyard',
     // D-393 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
     'exileRandomFromHand',
     // D-232: Spirit of Resilience's "become a copy of an artifact or creature card from among those cards".
@@ -1428,6 +1427,8 @@ export const ABILITY_FEATURES = [
   'chooseFromCommandZone',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
   'revealUntilCount',
+  /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
+  'revealUntilGraveyard',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
@@ -2220,6 +2221,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   gainLevel: true,
   monstrosity: true,
   exileRandomFromGraveyard: true,
+  chooseRandomFromGraveyard: true,
   exileRandomFromHand: true,
   becomeCopyOfCard: true,
   gainLife: true,

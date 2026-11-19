@@ -64,3 +64,52 @@ describe('the trigger "putIntoGraveyard"', () => {
     expect(messages(withAbility(NAME, triggered(trigger))).join(' | ')).toContain(message);
   });
 });
+
+const effectOf = (effect: unknown) =>
+  withAbility(NAME, { kind: 'triggered', trigger: { kind: 'upkeep', whose: 'you' }, effect });
+const toBattlefield = { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'battlefield' };
+
+describe('the effect "chooseRandomFromGraveyard" (Death Toll deck, group B)', () => {
+  test.each([
+    { kind: 'chooseRandomFromGraveyard', count: 1 },
+    { kind: 'chooseRandomFromGraveyard', count: 2, filter: land },
+  ])('%o, then a move of the cards, is valid', (pick) => {
+    expect(messages(effectOf({ kind: 'sequence', effects: [pick, toBattlefield] }))).toEqual([]);
+  });
+
+  test.each([
+    [{ kind: 'chooseRandomFromGraveyard', count: 0 }, 'one or more'],
+    [{ kind: 'chooseRandomFromGraveyard', count: 1.5 }, 'one or more'],
+    [
+      { kind: 'chooseRandomFromGraveyard', count: 1, filter: { zone: 'graveyard' } },
+      'your graveyard',
+    ],
+    [
+      { kind: 'chooseRandomFromGraveyard', count: 1, filter: { controller: 'you' } },
+      'your graveyard',
+    ],
+  ])('%o is refused', (pick, message) => {
+    expect(
+      messages(effectOf({ kind: 'sequence', effects: [pick, toBattlefield] })).join(' | '),
+    ).toContain(message);
+  });
+
+  test('a move of "moved" with no instruction before it that moved or picked cards is refused', () => {
+    expect(messages(effectOf(toBattlefield)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('the effect "revealUntil" that puts the cards found into the graveyard', () => {
+  const reveal = (put: string) => ({
+    kind: 'revealUntil',
+    filter: { types: ['creature'] },
+    count: 2,
+    put,
+  });
+  test('graveyard is a place the cards may go', () => {
+    expect(messages(effectOf(reveal('graveyard')))).toEqual([]);
+  });
+  test('a place that is none of the five is refused', () => {
+    expect(messages(effectOf(reveal('library'))).join(' | ')).toContain('into the graveyard');
+  });
+});

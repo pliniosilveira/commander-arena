@@ -2094,6 +2094,17 @@ export type Effect =
    */
   | { readonly kind: 'exileRandomFromGraveyard' }
   /**
+   * "Choose a card at random in your graveyard", "return two creature cards at random from your graveyard to the battlefield" (CR 608.2c, 400.7; Death Toll deck group B): the
+   * controller's graveyard cards that `filter` names (a filter of cards with no zone, controller or owner; every card when left out), `count` of them (all there are when fewer),
+   * picked by the game's seeded generator: nobody chooses and nobody sees the order. Nothing moves: the cards chosen are what `moved` names for the instructions after it (a move
+   * of them, "If it's a creature card"). With no card to pick `moved` is empty and the instructions after it do nothing.
+   */
+  | {
+      readonly kind: 'chooseRandomFromGraveyard';
+      readonly count: number;
+      readonly filter?: ObjectFilter;
+    }
+  /**
    * "That source's controller exiles a card from their hand at random" (CR 701.13, 406.3, 400.7, D-393 provisional): the player `player` names exiles one card of their own hand chosen at
    * random by the game's generator (none when the hand is empty, and nobody is asked), face up and public: the card is named by the exile, and nothing is revealed before it. It is what
    * `moved` names afterwards ("If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost"). `moved` is empty

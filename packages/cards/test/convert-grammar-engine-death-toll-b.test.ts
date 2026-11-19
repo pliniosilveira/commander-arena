@@ -313,3 +313,170 @@ describe('Old Stickfingers (reveal cards from the top of your library until you 
     g.expect.pt(STICK.name, 1, 1);
   });
 });
+
+describe('Deadbridge Chant (choose a card at random in your graveyard; a creature card onto the battlefield, otherwise into your hand)', () => {
+  const CHANT = real('Deadbridge Chant');
+
+  test('read as a random choice of one card of the graveyard, then a conditional move of the card chosen (CR 608.2c)', () => {
+    const ability = CHANT.faces[0]?.abilities.find(
+      (a) => a.kind === 'triggered' && a.trigger.kind !== 'entersBattlefield',
+    );
+    expect(ability).toMatchObject({
+      kind: 'triggered',
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'chooseRandomFromGraveyard', count: 1 },
+          { kind: 'conditional', effect: { kind: 'moveToZone', to: 'battlefield' } },
+        ],
+      },
+    });
+  });
+
+  const game = (yard: readonly string[]) =>
+    scenario()
+      .define(CHANT)
+      .define(BEAR)
+      .seat(0)
+      .battlefield(CHANT.name)
+      .graveyard(...yard)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('end', { active: 1, turn: 2 })
+      .build();
+  const upkeep = (yard: readonly string[]) => {
+    const g = game(yard);
+    g.advanceTo('upkeep');
+    settle(g);
+    return g;
+  };
+
+  test('a creature card is the only card: it is put onto the battlefield', () => {
+    const g = upkeep([BEAR.name]);
+    expect(names(g.state, 0)).toContain(BEAR.name);
+    expect(zoneNames(g.state, 0, 'graveyard')).toEqual([]);
+    g.expect.invariants();
+  });
+
+  test('a land card is the only card: it is put into your hand (the draw step has not happened yet)', () => {
+    const g = upkeep(['Forest']);
+    expect(zoneNames(g.state, 0, 'hand')).toEqual(['Forest']);
+    expect(zoneNames(g.state, 0, 'graveyard')).toEqual([]);
+  });
+
+  test('an empty graveyard: nothing happens', () => {
+    const g = upkeep([]);
+    expect(zoneNames(g.state, 0, 'hand')).toEqual([]);
+    expect(names(g.state, 0)).toEqual([CHANT.name]);
+  });
+
+  test('one card of three is chosen: exactly one leaves the graveyard, to the zone its type says', () => {
+    const g = upkeep([BEAR.name, 'Forest', 'Mountain']);
+    expect(zoneNames(g.state, 0, 'graveyard')).toHaveLength(2);
+    const onBattlefield = names(g.state, 0).includes(BEAR.name);
+    expect(zoneNames(g.state, 0, 'hand')).toHaveLength(onBattlefield ? 0 : 1);
+  });
+
+  test('the choice is made by the seeded generator: the same game gives the same card, and different seeds give both outcomes', () => {
+    const outcome = (seed: number) => {
+      const g = scenario()
+        .define(CHANT)
+        .define(BEAR)
+        .seed(seed)
+        .seat(0)
+        .battlefield(CHANT.name)
+        .graveyard(BEAR.name, 'Forest')
+        .library(...FILLER)
+        .seat(1)
+        .library(...FILLER)
+        .at('end', { active: 1, turn: 2 })
+        .build();
+      g.advanceTo('upkeep');
+      settle(g);
+      return names(g.state, 0).includes(BEAR.name);
+    };
+    const results = Array.from({ length: 24 }, (_, i) => outcome(i + 1));
+    expect(results).toEqual(Array.from({ length: 24 }, (_, i) => outcome(i + 1)));
+    expect(results).toContain(true);
+    expect(results).toContain(false);
+  });
+});
+
+describe('Moldgraf Monstrosity (when it dies, exile it, then return two creature cards at random from your graveyard to the battlefield)', () => {
+  const MOLD = real('Moldgraf Monstrosity');
+  const ELF = parsed('SYNTHETIC Elf', 'Creature — Elf', '', {
+    manaCost: '{1}',
+    power: '1',
+    toughness: '1',
+  });
+  const WOLF = parsed('SYNTHETIC Wolf', 'Creature — Wolf', '', {
+    manaCost: '{1}',
+    power: '1',
+    toughness: '1',
+  });
+  const KILL = parsed('SYNTHETIC Kill', 'Sorcery', 'Destroy target creature.', { manaCost: '{1}' });
+
+  test('read as an exile of the card it became, a random choice of two creature cards of the graveyard, and their return (CR 400.7, 603.10a)', () => {
+    const ability = MOLD.faces[0]?.abilities.find((a) => a.kind === 'triggered');
+    expect(ability).toMatchObject({
+      kind: 'triggered',
+      trigger: { kind: 'dies', what: { kind: 'this' } },
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'exile', objects: { kind: 'thisCard' } },
+          { kind: 'chooseRandomFromGraveyard', count: 2, filter: { types: ['creature'] } },
+          { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'battlefield' },
+        ],
+      },
+    });
+  });
+
+  const game = (yard: readonly string[]) =>
+    scenario()
+      .define(MOLD)
+      .define(BEAR)
+      .define(ELF)
+      .define(WOLF)
+      .define(KILL)
+      .seat(0)
+      .hand(KILL.name)
+      .battlefield(MOLD.name)
+      .battlefield('Plains', { count: 2 })
+      .graveyard(...yard)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+  const kill = (yard: readonly string[]) => {
+    const g = game(yard);
+    g.act(0).cast(KILL.name, { pay: true, targets: [MOLD.name] });
+    settle(g);
+    return g;
+  };
+
+  test('two of three creature cards come back; Moldgraf Monstrosity is exiled, and the land card stays', () => {
+    const g = kill([BEAR.name, ELF.name, WOLF.name, 'Forest']);
+    const back = names(g.state, 0).filter((n) => [BEAR.name, ELF.name, WOLF.name].includes(n));
+    expect(back).toHaveLength(2);
+    expect(zoneNames(g.state, 0, 'graveyard')).toHaveLength(3); // Kill, the card left over and the Forest
+    expect(zoneNames(g.state, 0, 'graveyard')).toContain('Forest');
+    g.expect.zone(MOLD.name, 'exile');
+    g.expect.invariants();
+  });
+
+  test('it is exiled before the choice: it is never one of the cards returned', () => {
+    const g = kill([BEAR.name]);
+    expect(names(g.state, 0)).toContain(BEAR.name);
+    expect(names(g.state, 0)).not.toContain(MOLD.name);
+    g.expect.zone(MOLD.name, 'exile');
+  });
+
+  test('fewer than two creature cards: all there are come back; none: nothing comes back and it is still exiled', () => {
+    const none = kill(['Forest']);
+    expect(names(none.state, 0)).toEqual(['Plains', 'Plains']);
+    none.expect.zone(MOLD.name, 'exile');
+  });
+});

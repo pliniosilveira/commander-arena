@@ -3051,6 +3051,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
+    // Death Toll deck group B: the cards `chooseRandomFromGraveyard` picked are "it" ("If it's a creature card, put it onto the battlefield").
+    e?.kind === 'chooseRandomFromGraveyard' ||
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
@@ -5613,6 +5615,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'exileRandomFromGraveyard':
       // CR 701.13 (D-235): no fields.
+      break;
+    case 'chooseRandomFromGraveyard':
+      // CR 608.2c (Death Toll deck group B): one or more cards of the controller's graveyard, described by a filter of cards.
+      if (!Number.isSafeInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'count is a whole number of one or more');
+      }
+      if (e.filter !== undefined) {
+        checkFilter(e.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            e.filter,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards are in your graveyard: no zone, controller, owner, stackKind, or anything read from the game',
+          );
+        }
+      }
       break;
     case 'exileRandomFromHand':
       // CR 701.13 (D-393): one player exiles one card of their own hand at random, and `moved` names it, so the selector names one player.

@@ -1058,6 +1058,12 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return `${playerVerb(effect.player, ability, 'exile')} a card from ${
         effect.player.kind === 'you' ? 'your' : 'their'
       } hand at random`;
+    case 'chooseRandomFromGraveyard': {
+      // CR 608.2c (Death Toll deck group B): "Choose a card at random in your graveyard", "Choose two creature cards at random in your graveyard".
+      const kind = effect.filter?.types?.length === 1 ? `${effect.filter.types[0]} ` : '';
+      const cards = effect.count === 1 ? `a ${kind}card` : `${effect.count} ${kind}cards`;
+      return `Choose ${cards} at random in your graveyard`;
+    }
     case 'phaseOut':
       // CR 702.26 (D-234): "any number of other target creatures you control phase out".
       return `Phase out ${object(effect.objects)}`;

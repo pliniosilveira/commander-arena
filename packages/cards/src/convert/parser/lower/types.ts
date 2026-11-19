@@ -269,6 +269,11 @@ export interface LowerContext {
    */
   lastEffectKind: string | null;
   /**
+   * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
+   * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
+   */
+  randomYardCard: boolean;
+  /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
    */
@@ -340,6 +345,7 @@ export function newContext(
     movedToHand: false,
     exiledRef: null,
     lastEffectKind: null,
+    randomYardCard: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

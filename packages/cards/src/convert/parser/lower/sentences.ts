@@ -207,6 +207,8 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     effects.push(...lowered.value);
     ctx.lowered += 1;
     ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
+      ctx.randomYardCard = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteTokensMade(lowered.value, ctx);
