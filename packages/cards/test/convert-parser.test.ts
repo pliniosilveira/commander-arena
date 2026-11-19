@@ -628,6 +628,7 @@ describe('unmatched abilities', () => {
       'effect.tap-and-stun-those-creatures',
       'effect.owner-puts-on-library',
       'effect.incubate',
+      'effect.pay-or-cant-attack-planeswalkers',
       'effect.player-reveals-until-you-put',
       'effect.controller-reveals-until-puts',
       'effect.lead-becomes-land-creature-keywords',

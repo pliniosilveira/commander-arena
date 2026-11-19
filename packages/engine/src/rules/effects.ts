@@ -42,6 +42,7 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
   runBecomeCopy,
+  runCantAttackPlaneswalkers,
   runContinuous,
   runEntersTappedGroup,
   runRequireAttack,
@@ -2961,6 +2962,10 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'cantAttackPlaneswalkers':
+      // CR 508.1a, 611.2a (issue 81): the creatures named can't attack the controller's planeswalkers of a subtype this turn.
+      return runCantAttackPlaneswalkers(state, effect, ctx, targets);
 
     case 'requireAttackSource':
       // CR 508.1d, 611.2c: creatures of the named player attack this permanent if able, during that player's next turn.

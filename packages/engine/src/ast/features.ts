@@ -277,6 +277,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'putFromHandOnTop',
     // Issue 81 (Jace, Multiverse Architect): "put a card from your hand on the bottom of your library".
     'putFromHandOnBottom',
+    // Issue 81 (Jace, Multiverse Architect): "creatures they control can't attack Jaces you control this turn".
+    'cantAttackPlaneswalkers',
     'createToken',
     'search',
     'attach',
@@ -2294,6 +2296,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   revealAndSeparate: true,
   putFromHandOnTop: true,
   putFromHandOnBottom: true,
+  cantAttackPlaneswalkers: true,
   createToken: true,
   search: true,
   attach: true,

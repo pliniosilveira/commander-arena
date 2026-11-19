@@ -6384,6 +6384,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'putFromHandOnBottom':
       break;
+    case 'cantAttackPlaneswalkers':
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (typeof e.subtype !== 'string' || e.subtype === '') {
+        issue(out, `${path}.subtype`, 'a planeswalker subtype is a non-empty string');
+      }
+      break;
     case 'lookAndSplit':
       // D-216: the piles are whole numbers, and with a fixed count they add up to it (the cards looked at are all placed).
       checkAmount(e.count, `${path}.count`, scope, out);

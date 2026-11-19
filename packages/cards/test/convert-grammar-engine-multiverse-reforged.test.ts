@@ -1305,3 +1305,59 @@ describe('Sunfall: an Incubator with a counter for each creature exiled, which t
     g.expect.pt('Phyrexian Token', 2, 2);
   });
 });
+
+// ---- Jace, Multiverse Architect: "At the beginning of combat on each opponent's turn, they may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn."
+// (CR 118.12a, 508.1a, 611.2a).
+
+const JACE_WARDEN = parsed(
+  'SYNTHETIC Parsed Jace',
+  'Legendary Planeswalker — Jace',
+  "At the beginning of combat on each opponent's turn, they may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn.",
+  { manaCost: '{1}{W}{U}{B}{R}', loyalty: '4' },
+);
+const OTHER_WALKER = parsed('SYNTHETIC Parsed Gideon', 'Legendary Planeswalker — Gideon', '', {
+  manaCost: '{2}{W}',
+  loyalty: '3',
+});
+
+describe('Jace tax: creatures can not attack Jaces unless their controller pays {2}', () => {
+  const start = () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(JACE_WARDEN)
+      .define(OTHER_WALKER)
+      .battlefield(JACE_WARDEN.name, OTHER_WALKER.name)
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears', 'Mountain', 'Mountain')
+      .library('Plains', 'Plains')
+      .at('upkeep', { active: 1 })
+      .build();
+    g.advanceTo('beginningOfCombat', { attack: false });
+    g.passAll();
+    return g;
+  };
+
+  test('not paying bars the Jace, not the other planeswalker or the player', () => {
+    const g = start();
+    g.expect.pending('confirmOptional', 1);
+    g.act(1).decline();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.expect.illegal(1, {
+      declareAttackers: [{ attacker: 'Grizzly Bears', target: JACE_WARDEN.name }],
+    });
+    g.act(1).declareAttackers([{ attacker: 'Grizzly Bears', target: OTHER_WALKER.name }]);
+    g.expect.invariants();
+  });
+
+  test('paying {2} leaves the Jace open to attack', () => {
+    const g = start();
+    g.act(1).accept();
+    g.act(1).payAuto();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(1).declareAttackers([{ attacker: 'Grizzly Bears', target: JACE_WARDEN.name }]);
+    g.expect.invariants();
+  });
+});

@@ -2,8 +2,11 @@
  * Lowerings of the Multiverse Reforged deck (issue 81, Tamiyo, Upriser Crowned): the creatures that dealt the combat damage of a batch trigger, tapped and given a stun counter. Same
  * contract as effects.ts: each declares the engine features it needs and is checked before it runs.
  */
+
+import type { Cost } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
-import { amountArg, type Effects, eachObject, failure } from './clauses';
+import { amountArg, arg, type Effects, eachObject, failure } from './clauses';
+import { lowerCost } from './costs';
 import type { Lowering } from './types';
 
 /** "Tap those creatures" (CR 701.26a): the engine's `tap` of the `triggerSources` of a `combatDamageBatch` trigger. Refused in any other ability. */
@@ -71,8 +74,49 @@ const INCUBATE: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "They may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn." (Jace, Multiverse Architect, issue 81, CR 118.12a, 508.1a): the engine's
+ * `unlessPays` of the player the trigger is about with `cantAttackPlaneswalkers` over the creatures that player controls. Only a trigger about a player (`validateCard` refuses the rest).
+ */
+const PAY_OR_CANT_ATTACK_PLANESWALKERS: Lowering<IrClause, Effects> = {
+  head: 'payOrCantAttackPlaneswalkers',
+  id: 'lower.pay-or-cant-attack-planeswalkers',
+  needs: ['effect:unlessPays', 'effect:cantAttackPlaneswalkers', 'cost:mana', 'selector:each'],
+  lower(clause) {
+    const costs = arg(clause, 'cost');
+    const subtype = arg(clause, 'subtype');
+    if (costs?.kind !== 'costList' || subtype?.kind !== 'name') return failure(clause);
+    const cost: Cost[] = [];
+    for (const item of costs.costs) {
+      const lowered = lowerCost(item);
+      if (!lowered.ok) return lowered;
+      cost.push(lowered.value);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'unlessPays',
+          player: { kind: 'triggerPlayer' },
+          cost,
+          effect: {
+            kind: 'cantAttackPlaneswalkers',
+            objects: {
+              kind: 'each',
+              filter: { zone: 'battlefield', types: ['creature'], controller: 'triggerPlayer' },
+            },
+            subtype: subtype.name,
+          },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const DAMAGE_BATCH_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   INCUBATE,
+  PAY_OR_CANT_ATTACK_PLANESWALKERS,
   OWNER_PUTS_ON_LIBRARY,
   TAP_TRIGGER_SOURCES,
   STUN_TRIGGER_SOURCES,

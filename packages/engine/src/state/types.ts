@@ -2103,7 +2103,12 @@ export type ContinuousChange =
    * "Each of those creatures can't attack you or planeswalkers you control" (`sparePermanents.own.cantAttackYou`, CR 508.1a): the objects of the effect can't be declared attacking
    * the player `seat` or the planeswalkers `seat` controls. A restriction of the rules, not an ability: read in `rules/attack-bans.ts`, not in a layer.
    */
-  | { readonly kind: 'cantAttackPlayer'; readonly seat: SeatId }
+  | {
+      readonly kind: 'cantAttackPlayer';
+      readonly seat: SeatId;
+      /** Jace, Multiverse Architect: only the planeswalkers of this subtype `seat` controls are barred, not the player. */
+      readonly planeswalkerSubtype?: string;
+    }
   /**
    * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is
    * empty): read as a permanent enters the battlefield (`rules/enters-group.ts`, `enteredTappedByEffect`), for each permanent `filter` matches then, with `controller` as "you".

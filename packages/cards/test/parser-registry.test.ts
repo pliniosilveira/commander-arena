@@ -1064,6 +1064,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.where-x-exiled-creatures': spell((e) => `Exile all creatures. Incubate X, ${e}.`),
   'effect.incubate': spell((e) => `Exile all creatures. ${cap(e)}.`),
+  // Issue 81 (Jace, Multiverse Architect): the payer is the player whose combat it is.
+  'effect.pay-or-cant-attack-planeswalkers': permanent(
+    (e) => `At the beginning of combat on each opponent's turn, ${e}.`,
+  ),
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),

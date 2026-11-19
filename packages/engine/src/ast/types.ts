@@ -3578,6 +3578,16 @@ export type Effect =
    */
   | { readonly kind: 'putFromHandOnBottom' }
   /**
+   * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, Jace, Multiverse Architect, issue 81): the creatures `objects` names (fixed as the effect
+   * begins) can't be declared attacking a planeswalker of the subtype `subtype` that the controller of the effect controls, until end of turn. The player and their other
+   * planeswalkers can still be attacked.
+   */
+  | {
+      readonly kind: 'cantAttackPlaneswalkers';
+      readonly objects: ObjectSelector;
+      readonly subtype: string;
+    }
+  /**
    * CR 701.23 (Search): `player` looks through their own library (so `filter` sets neither `zone`
    * nor `controller`) for up to `max` cards matching `filter`, may find fewer (CR 701.23b), and
    * puts the cards found where `destinations` say, in the order they were chosen, under their own

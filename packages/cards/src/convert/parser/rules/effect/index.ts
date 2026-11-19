@@ -117,6 +117,7 @@ import {
 } from './operands';
 import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { EFFECT_PAY } from './pay';
+import { PAY_OR_CANT_ATTACK_EFFECT_RULES } from './pay-or-cant-attack';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
 import {
@@ -1085,6 +1086,7 @@ export const EFFECT_RULES = [
   ...DAMAGE_BATCH_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
+  ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   EFFECT_DAMAGE,

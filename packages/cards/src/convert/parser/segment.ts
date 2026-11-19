@@ -417,6 +417,14 @@ const THOSE_CREATURES_CANT_ATTACK_YOU =
   /^each of those creatures can['’]t attack you or planeswalkers you control for as long as it has an? [a-z]+ counter on it\.$/i;
 
 /**
+ * "At the beginning of combat on each opponent's turn, they may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn." (Jace, Multiverse Architect,
+ * issue 81, CR 118.12a, 508.1a): the second sentence says what happens when the player does not pay the first one asks, so the two are read as one instruction.
+ */
+const THEY_MAY_PAY = /(?:^|, )they may pay (?:\{[^}]+\})+\.$/i;
+const IF_THEY_DONT_CANT_ATTACK =
+  /^if they don['’]t, creatures they control can['’]t attack [\p{L}]+ you control this turn\.$/iu;
+
+/**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
  * sentence says what happens to the card the first one makes the opponent choose, so the two are read as one instruction.
  */
@@ -787,6 +795,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, EXILE_THEN_REVEAL_THAT_MANY) &&
       said(b, PUT_ALL_REVEALED_SHUFFLE_REST)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, THEY_MAY_PAY) &&
+      said(b, IF_THEY_DONT_CANT_ATTACK)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

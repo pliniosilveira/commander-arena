@@ -1744,19 +1744,10 @@
     "3321c134-bf5b-4f63-8035-fca0bbdfa86b": {
       "name": "Jace, Multiverse Architect",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "At the beginning of combat on each opponent's turn, they may pay {2}. If they don't, creatures they control can't attack Jaces you control this turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.player"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "df3d99ee"
+      "ast": "d61938d8"
     },
     "335a6c6a-030f-45d4-806c-467a22962eed": {
       "name": "Final Act",
@@ -8376,7 +8367,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 715,
+      "supported": 716,
       "total": 738
     }
   }
