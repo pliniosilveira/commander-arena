@@ -259,7 +259,11 @@ const LEGENDARY_TOKEN_NAME = map(
  * and one or more capitalized words, nothing else of `~`. The lowering puts the card's own short name back; a name that is only `~` or has it later is not read.
  */
 const SELF_TOKEN_NAME = map(
-  pattern(/~['’]s(?:(?: (?:of|the|de|la|in|on))* [A-Z][\p{L}'’-]*)+/u),
+  choice(
+    pattern(/~['’]s(?:(?: (?:of|the|de|la|in|on))* [A-Z][\p{L}'’-]*)+/u),
+    // Issue 81 (Kher Keep, CR 111.4): "Kobolds of ~": capitalized words, "of" and the card's own name, which ends the token's name.
+    pattern(/[A-Z][\p{L}'’-]*(?: [A-Z][\p{L}'’-]*)* of ~(?![\p{L}\p{N}~])/u),
+  ),
   (m) => m[0],
 );
 
@@ -384,6 +388,7 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     // Stage P39 (D-184, CR 111.4): a token with a name of its own.
     'X 0/1 red Kobold creature tokens named Kobolds of Kher Keep',
     'a 1/1 white Soldier creature token named Hero',
+    'a 0/1 red Kobold creature token named Kobolds of ~',
     'two 2/2 black Zombie creature tokens named Dead Knights with menace',
     // Stage P40 (D-186, CR 702.82a): a token with devour.
     'a 1/1 red and green Dragon creature token with flying and devour 2',

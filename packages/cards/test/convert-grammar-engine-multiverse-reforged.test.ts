@@ -170,3 +170,34 @@ describe("White Sun's Twilight: life, Mites, and a wrath at X of 5 or more", () 
     g.expect.invariants();
   });
 });
+
+// ---- Kher Keep: "Create a 0/1 red Kobold creature token named Kobolds of ~." (CR 111.4: a token with a name of its own is named so; the card's own name ends it).
+
+const KEEP = parsed(
+  'SYNTHETIC Parsed Kher Keep',
+  'Legendary Land',
+  '{T}: Add {C}.\n{1}{R}, {T}: Create a 0/1 red Kobold creature token named Kobolds of ~.',
+);
+
+describe('Kher Keep: a Kobold token named for the land', () => {
+  test('the token is a 0/1 red Kobold with the name of its own', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(KEEP)
+      .battlefield(KEEP.name, 'Mountain', 'Mountain')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(KEEP.name, { ability: 1, pay: true });
+    g.passAll();
+    const kobolds = g.state.battlefield.filter(
+      (id) => g.state.objects[id]?.token?.characteristics.name === `Kobolds of ${KEEP.name}`,
+    );
+    expect(kobolds).toHaveLength(1);
+    g.expect.invariants();
+  });
+});
