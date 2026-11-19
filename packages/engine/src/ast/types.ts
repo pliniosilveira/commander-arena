@@ -1628,6 +1628,13 @@ export interface ChooseSelector {
    * `filter.zone` `hand` and no `fromMoved`. The question is the `chooseCards` of purpose `move`, which lists both places.
    */
   readonly alsoGraveyard?: true;
+  /**
+   * `minCardTypes`: "You may exile any number of cards from your graveyard with four or more card types among them" (Death Toll deck, CR 205.2a, 608.2d): the player chooses none or
+   * any number of the candidates (`count` is left out), and a choice of cards is legal only when the cards chosen together have at least `minCardTypes` different card types
+   * (a supertype or a subtype is no card type); the empty choice is the player saying no. With no way to reach that many types among the candidates nothing is asked and nothing
+   * happens. Only with `optional` and `anyNumber`, for a `moveToZone` of cards chosen from the graveyard into exile (`anyNumber` is otherwise a sacrifice's).
+   */
+  readonly minCardTypes?: number;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
 }

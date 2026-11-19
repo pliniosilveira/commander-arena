@@ -3276,8 +3276,31 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
-  if (sel.anyNumber !== undefined || sel.greatest !== undefined) {
+  if (
+    sel.greatest !== undefined ||
+    (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
+  ) {
     issue(out, path, 'anyNumber and greatest belong to a sacrifice choice (D-135)');
+  }
+  // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
+  if (sel.minCardTypes !== undefined) {
+    if (!isCount(sel.minCardTypes) || sel.minCardTypes < 2 || sel.minCardTypes > 8) {
+      issue(out, `${path}.minCardTypes`, 'minCardTypes is a whole number of card types, 2 to 8');
+    }
+    if (
+      sel.anyNumber !== true ||
+      sel.optional !== true ||
+      sel.count !== undefined ||
+      sel.filter?.zone !== 'graveyard' ||
+      sel.fromMoved !== undefined ||
+      sel.alsoGraveyard !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.minCardTypes`,
+        "minCardTypes goes with anyNumber and optional, with no count, for cards chosen from the graveyard (zone 'graveyard') and not from among moved cards",
+      );
+    }
   }
   if (sel.filter?.controller !== 'you') {
     issue(
@@ -3297,7 +3320,7 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
     );
   }
   // D-207, CR 607.2a: "a card exiled with this artifact": the permanent's own linked exile, so an ability's.
-  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability') {
+  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability' && sel.fromMoved !== true) {
     issue(
       out,
       `${path}.filter.zone`,
@@ -3327,11 +3350,12 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.fromMoved !== undefined) {
     if (sel.fromMoved !== true)
       issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
-    if (sel.filter?.zone !== 'graveyard') {
+    // Death Toll deck: "exile any number of cards ... If you do, put a permanent card from among them onto the battlefield": the cards the effect before it exiled.
+    if (sel.filter?.zone !== 'graveyard' && sel.filter?.zone !== 'exile') {
       issue(
         out,
         `${path}.filter.zone`,
-        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411): set zone to 'graveyard'",
+        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411) or exile: set zone to 'graveyard' or 'exile'",
       );
     }
     if (scope.movedAvailable !== true) {
@@ -5226,7 +5250,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'a commander chosen from the command zone is put onto the battlefield',
           );
         }
-        if (zone === 'exile' && e.to === 'battlefield') {
+        if (
+          zone === 'exile' &&
+          e.to === 'battlefield' &&
+          (e.objects as ChooseSelector).fromMoved !== true
+        ) {
           issue(
             out,
             `${path}.to`,
@@ -5246,12 +5274,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
           );
         }
-        // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
+        // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand); onto the battlefield from exile too.
         const among = e.objects as ChooseSelector;
         if (
           among.fromMoved === true &&
           e.to !== 'hand' &&
-          !(e.to === 'battlefield' && among.fromAnyGraveyard === true)
+          !(e.to === 'battlefield' && among.fromAnyGraveyard === true) &&
+          !(e.to === 'battlefield' && zone === 'exile')
         ) {
           issue(
             out,

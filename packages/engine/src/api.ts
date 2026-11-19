@@ -20,6 +20,7 @@ import {
 } from './rules/activate';
 import { activationRefusal } from './rules/activate-legality';
 import { isArrangement } from './rules/arrange';
+import { coversCardTypes } from './rules/card-types-choice';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
   answerBuyback,
@@ -689,6 +690,8 @@ function validCardsChoice(
   }
   // CR 205.3i (D-262): "that share a land type": two or more cards need a land type that all of them have.
   if (d.shareLandType !== undefined && !sharesLandType(chosen, d.shareLandType)) return false;
+  // CR 205.2a: "with four or more card types among them": the cards chosen together have that many different card types, or none are chosen.
+  if (d.minCardTypes !== undefined && !coversCardTypes(chosen, d.minCardTypes)) return false;
   // CR 202.3 (D-230): "with total mana value 4 or less": the mana values of the cards chosen add up to no more than the limit.
   if (
     d.totalManaValue !== undefined &&
