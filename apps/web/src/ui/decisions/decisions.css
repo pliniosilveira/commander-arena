@@ -415,6 +415,7 @@
   gap: 10px;
 }
 .dec-mulligan {
+  position: relative;
   width: min(2000px, 100%);
   max-height: 100%;
   overflow-y: auto;
@@ -1393,35 +1394,50 @@
   z-index: 4;
 }
 
-/* The versus card above the opening hand: both decks as the deck picker shows them. */
+/* The versus card above the opening hand: both decks as tall cells with big commander art. */
 .dec-versus-wrap {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
   margin-bottom: 12px;
+}
+/* In the top left corner of the dialog, over the empty space beside the cells. */
+.dec-versus-cancel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+/* Too narrow for the corner: the button sits above the cells instead. */
+@media (max-width: 760px) {
+  .dec-versus-wrap {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dec-versus-cancel {
+    position: static;
+    align-self: flex-start;
+  }
 }
 .dec-versus {
   display: flex;
   align-items: stretch;
+  justify-content: center;
   gap: 12px;
   width: 100%;
 }
 .dec-versus-side {
-  flex: 1 1 0;
+  flex: 0 1 320px;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
-  padding: 9px 12px;
+  padding: 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--bg-raised);
 }
 .dec-versus-art {
-  flex: none;
-  width: 96px;
-  height: 70px;
+  width: 100%;
+  aspect-ratio: 6 / 5;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--line);
@@ -1440,23 +1456,18 @@
   color: var(--text-dim);
 }
 .dec-versus-name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-weight: 700;
   font-size: 15px;
 }
 .dec-versus-commander {
   font-size: 12px;
 }
-.dec-versus-colors {
-  flex: none;
-  margin-left: auto;
-}
 .dec-versus-x {
   align-self: center;
   font-size: 22px;
   color: var(--text-dim);
-}
-@media (max-width: 640px) {
-  .dec-versus {
-    flex-direction: column;
-  }
 }

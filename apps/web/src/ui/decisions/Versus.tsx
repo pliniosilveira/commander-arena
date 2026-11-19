@@ -25,20 +25,22 @@ function Side({
       )}
       <span className="dec-versus-text">
         <span className="dec-versus-who">{who === 'you' ? 'You' : 'Opponent'}</span>
-        {deck !== undefined && <span className="dec-versus-name">{deck.name}</span>}
-        <span className="dec-versus-commander">
-          {commander === '' ? 'No commander' : `Commander: ${commander}`}
+        <span className="dec-versus-name">
+          {deck?.name ?? commander}
+          <ManaCost cost={colors.length === 0 ? ['C'] : colors} />
         </span>
-      </span>
-      <span className="dec-versus-colors">
-        <ManaCost cost={colors.length === 0 ? ['C'] : colors} />
+        {deck !== undefined && (
+          <span className="dec-versus-commander">
+            {commander === '' ? 'No commander' : `Commander: ${commander}`}
+          </span>
+        )}
       </span>
     </div>
   );
 }
 
 /**
- * "[Your deck] x [Opponent's deck]" above the opening hand, with a Cancel that leaves the game, so a
+ * "[Your deck] x [Opponent's deck]" above the opening hand, with a Cancel in the top left corner that leaves the game, so a
  * hand is judged knowing both decks. The decks come from the deck picker's list; a deck that is not
  * in it (a hidden test deck) shows its commander from the command zone, without art.
  */
@@ -52,6 +54,9 @@ export function Versus({ view }: { view: GameView }) {
   const theirs = commanderOf(view.seats.find((s) => s.id !== view.viewer));
   return (
     <div className="dec-versus-wrap">
+      <button type="button" className="dec-btn dec-versus-cancel" onClick={backToMenu}>
+        Cancel
+      </button>
       <div className="dec-versus" data-versus>
         <Side
           who="you"
@@ -69,9 +74,6 @@ export function Versus({ view }: { view: GameView }) {
           fallbackColors={theirs?.colors ?? []}
         />
       </div>
-      <button type="button" className="dec-btn dec-versus-cancel" onClick={backToMenu}>
-        Cancel
-      </button>
     </div>
   );
 }
