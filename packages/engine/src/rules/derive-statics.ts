@@ -180,6 +180,9 @@ export interface GraveyardPlaySource {
   readonly land: boolean;
   readonly entersTapped: boolean;
   readonly gains: Ability | undefined;
+  /** `playLandsFromGraveyard`: the land cards that may be played (any land when absent); the permission is not used up by a use. */
+  readonly lands?: ObjectFilter;
+  readonly unlimited?: true;
 }
 
 /**
@@ -351,6 +354,18 @@ function graveyardPlaysOf(
         land: a.static.land === true,
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
+      });
+    }
+    // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.
+    if (a.kind === 'static' && a.static.kind === 'playLandsFromGraveyard') {
+      out.push({
+        object,
+        cast: undefined,
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        unlimited: true,
+        ...(a.static.lands === undefined ? {} : { lands: a.static.lands }),
       });
     }
   }

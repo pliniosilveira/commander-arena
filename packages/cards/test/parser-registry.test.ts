@@ -116,6 +116,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P24: the play rules are lines of their own.
   'static.additional-land': asIs,
   'static.look-at-top': asIs,
+  'static.play-lands-from-graveyard': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,

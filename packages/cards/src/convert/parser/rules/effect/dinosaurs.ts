@@ -398,7 +398,7 @@ export const EFFECT_REVEAL_UNTIL_MAY_PUT = defineRule<Clauses>({
 export const EFFECT_CAST_FREE = defineRule<Clauses>({
   id: 'effect.cast-free',
   family: 'effect',
-  leading: ['you', 'cast'],
+  leading: ['you', 'cast', 'play'],
   cites: [
     'CR 608.2g (Resolving Spells and Abilities)',
     'CR 118.9 (Alternative Costs)',
@@ -413,6 +413,8 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost',
     'you may play the exiled card without paying its mana cost',
     'you may cast the exiled card without paying its mana cost',
+    // Death Toll deck, group D: in a triggered ability the "you may" is the ability's own.
+    'play the exiled card without paying its mana cost',
   ],
   rejects: [
     'you may cast a spell with mana value 5 or less from your hand',
@@ -488,7 +490,7 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
       (ctx, pos) => {
         const r = spanned(
           pattern(
-            /you may (cast|play) the exiled card without paying its mana cost(?![\p{L}\p{N}])/iu,
+            /(you may )?(cast|play) the exiled card without paying its mana cost(?![\p{L}\p{N}])/iu,
           ),
         )(ctx, pos);
         if (!r.ok) return r;
@@ -506,8 +508,9 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
           ok: true,
           value: {
             objects,
-            play: (r.value.value[1] ?? '').toLowerCase() === 'play',
-            written: true,
+            play: (r.value.value[2] ?? '').toLowerCase() === 'play',
+            // Inside a triggered ability the "you may" is the ability's (the clause is optional), as for the cast of a spell of the hand above.
+            written: r.value.value[1] !== undefined,
           },
           pos: r.pos,
         };

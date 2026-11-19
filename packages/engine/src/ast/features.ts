@@ -1143,6 +1143,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
     'playFromGraveyardOnceEachTurn',
+    // CR 305.1: "You may play Forests from your graveyard."
+    'playLandsFromGraveyard',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -1944,6 +1946,8 @@ export const STATIC_KINDS = [
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
   'playFromGraveyardOnceEachTurn',
+  /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
+  'playLandsFromGraveyard',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
 ] as const;

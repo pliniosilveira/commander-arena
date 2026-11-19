@@ -789,7 +789,7 @@ function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerR
 }
 
 /** The instructions a spell may offer with "you may" and nothing after it (stage P63, D-216). */
-const LONE_MAY_KINDS: ReadonlySet<string> = new Set(['shuffle']);
+const LONE_MAY_KINDS: ReadonlySet<string> = new Set(['shuffle', 'mill']);
 
 /**
  * "You may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1,
@@ -885,12 +885,25 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
   // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
   // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
   if (clause?.verb === 'castFree' && clause.optional && more.length === 0) {
+    // Death Toll deck, group D (CR 608.2c): "Then if there are twenty or more cards in your graveyard, you may play the exiled card without paying its mana cost.": a test of the
+    // game the sentence starts with, which the engine's `conditional` runs the free cast under (the cast is the controller's to decline, as with no test). Any other test (what an
+    // offer before it did, a kicker) is still refused here, never guessed.
+    const test = sentence.condition?.test.kind;
+    const stateTest = test === 'cardsInGraveyard' || test === 'amountIs' || test === 'control';
     if (
-      sentence.condition !== undefined ||
+      (sentence.condition !== undefined && !stateTest) ||
       sentence.instead === true ||
       sentence.where !== undefined
     ) {
       return refuse(sentence);
+    }
+    let guard: Condition | null = null;
+    if (sentence.condition !== undefined) {
+      const blocked = missingFeatures(['effect:conditional']);
+      if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+      const lowered = lowerCondition(sentence.condition, false, ctx);
+      if (!lowered.ok) return lowered;
+      guard = lowered.value;
     }
     const play = clause.args.play;
     const offered =
@@ -903,9 +916,20 @@ function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effe
               mayWritten: { kind: 'flag' as const, value: true, span: play.span, rule: play.rule },
             },
           };
-    return lowerClauses([{ ...offered, optional: false }], ctx);
+    const cast = lowerClauses([{ ...offered, optional: false }], ctx);
+    if (!cast.ok || guard === null) return cast;
+    return {
+      ok: true,
+      value: [{ kind: 'conditional', condition: guard, effect: oneEffect(cast.value) }],
+      rule: cast.rule,
+    };
   }
-  if (clause === undefined || more.length > 0 || !clause.optional || clause.verb !== 'shuffle') {
+  if (
+    clause === undefined ||
+    more.length > 0 ||
+    !clause.optional ||
+    (clause.verb !== 'shuffle' && clause.verb !== 'mill')
+  ) {
     return null;
   }
   const blocked = missingFeatures(['effect:may']);

@@ -1033,6 +1033,7 @@ describe('unmatched abilities', () => {
       'static.self-chosen-type',
       'static.additional-land',
       'static.look-at-top',
+      'static.play-lands-from-graveyard',
       'static.attack-tax',
       'static.attack-tax-counters',
       'static.optional-untap',

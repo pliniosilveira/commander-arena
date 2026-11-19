@@ -1478,6 +1478,8 @@ export type IrStaticEffect =
     }
   /** "You may look at the top card of your library any time." (stage P24, D-125, CR 401.5). The subject is `you`. */
   | { readonly kind: 'lookAtTopOfLibrary' }
+  /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
+  | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of

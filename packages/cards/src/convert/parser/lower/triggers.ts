@@ -1371,7 +1371,10 @@ function lowerTriggeredAbility(
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
-      c.verb === 'putFromAmong');
+      c.verb === 'putFromAmong' ||
+      // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
+      // engine's `may` of the mill alone (the ability's own `optional` would cover the whole effect); a trigger of the one offer keeps the ability's `optional`.
+      (c.verb === 'mill' && sentences.length > 1));
   // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
   // `optional` could not). Without a condition the "you may" of an attach stays the ability's.
   const conditionalAttach = (s: Sentence) =>
