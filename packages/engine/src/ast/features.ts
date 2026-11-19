@@ -600,6 +600,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // additional +1/+1 counter on it".
     'lifeGainBonus',
     'lifeGainDouble',
+    // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead".
+    'countersPlus',
     'othersEnterWithCounters',
     // D-219: "If one or more artifact tokens would be created under your control, ... are created instead".
     'tokensInstead',
@@ -2372,6 +2374,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   wouldDie: true,
   lifeGainBonus: true,
   lifeGainDouble: true,
+  countersPlus: true,
   othersEnterWithCounters: true,
   tokensInstead: true,
   groupEntersUntapped: true,

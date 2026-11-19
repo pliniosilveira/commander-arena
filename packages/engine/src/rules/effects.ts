@@ -51,6 +51,7 @@ import { runExchangeControl, runGainControl, runReturnControl } from './control-
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
+import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
   asking,
@@ -1938,8 +1939,18 @@ function runEffect(
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
       const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
-        const put = putCountersOn(state, next, id, effect.counter, count, ctx.controller, blockers);
+        const put = putCountersOn(
+          state,
+          next,
+          id,
+          effect.counter,
+          count,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
         next = put.state;
         events.push(...put.events);
       }
@@ -1950,10 +1961,20 @@ function runEffect(
       // CR 701.10 (Double): "double the number of +1/+1 counters on it" puts that many more counters on each object, read as the effect
       // resolves, each its own, through the same placement as `addCounters` (counters put by the controller, CR 122.6).
       const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const count = next.objects[id]?.counters[effect.counter] ?? 0;
         if (count <= 0) continue;
-        const put = putCountersOn(state, next, id, effect.counter, count, ctx.controller, blockers);
+        const put = putCountersOn(
+          state,
+          next,
+          id,
+          effect.counter,
+          count,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
         next = put.state;
         events.push(...put.events);
       }
@@ -2210,14 +2231,15 @@ function runEffect(
       let afterCounters = state;
       const monstrousEvents: GameEvent[] = [];
       if (count > 0 && !blocks(state, counterBlockers(state), source, '+1/+1')) {
+        const put = counterCountOn(state, source, '+1/+1', count);
         afterCounters = patchObject(afterCounters, source.id, {
-          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + count },
+          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + put },
         });
         monstrousEvents.push({
           kind: 'counterAdded',
           object: source.id,
           counter: '+1/+1',
-          count,
+          count: put,
           by: ctx.controller,
         });
       }
@@ -2826,13 +2848,16 @@ function putCountersOn(
   count: number,
   by: SeatId,
   blockers: ReturnType<typeof counterBlockers>,
+  bonuses: ReturnType<typeof counterBonuses>,
 ): { readonly state: GameState; readonly events: readonly GameEvent[] } {
   const obj = state.objects[id];
   if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
+  // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
+  const put = bonusCounters(read, bonuses, obj, counter, count);
   return {
     state: patchObject(state, id, {
-      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + count },
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
     }),
-    events: [{ kind: 'counterAdded', object: id, counter, count, by }],
+    events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
   };
 }

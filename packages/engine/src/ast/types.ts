@@ -5213,6 +5213,21 @@ export type Replacement =
   /** "If you would gain life, you gain twice that much life instead" (CR 614.1a): applies once to a life-gain event. */
   | { readonly kind: 'lifeGainDouble' }
   /**
+   * "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (CR 614.1a, 122.6,
+   * 616.1): a replacement effect of a permanent on the battlefield for every putting of counters of the kind `counter` on a permanent that `what` matches
+   * (`controller: 'you'` is the controller of the permanent with the ability, `other` leaves that permanent out; what is read is the permanent as it is, or as it would
+   * be on the battlefield when it enters with the counters). The permanent gets `extra` more counters than would have been put on it. Each such effect applies once to
+   * one putting of counters (CR 614.5) and, as they only add, their order never changes the result. Counters an effect puts, counters a permanent or a token enters
+   * with, proliferate and the like are all covered; moving a counter from one permanent to another is not (docs/ROADMAP.md). It is the ability of the permanent (lost
+   * with "loses all abilities"). `what` names no zone, owner, X, combat or stack kind.
+   */
+  | {
+      readonly kind: 'countersPlus';
+      readonly what: ObjectFilter;
+      readonly counter: string;
+      readonly extra: number;
+    }
+  /**
    * "Each other Angel you control enters with an additional +1/+1 counter on it for each Angel you already control", "Each other creature
    * you control of the chosen type enters with an additional +1/+1 counter on it" (D-149, CR 614.1c, 614.12, 122.6): a replacement effect of
    * a permanent on the battlefield for the permanents that enter the battlefield and that `what` matches (`controller: 'you'` is the

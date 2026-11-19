@@ -20,6 +20,7 @@ import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
+import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
@@ -330,14 +331,15 @@ export function runDiscard(
     const conniver = next.objects[instruction.conniver];
     // D-380 (CR 122.6, 101.2): a creature that can't have +1/+1 counters gets none.
     if (conniver?.zone === 'battlefield' && !counterBlocked(next, conniver, '+1/+1')) {
+      const put = counterCountOn(next, conniver, '+1/+1', 1);
       next = patchObject(next, conniver.id, {
-        counters: { ...conniver.counters, '+1/+1': (conniver.counters['+1/+1'] ?? 0) + 1 },
+        counters: { ...conniver.counters, '+1/+1': (conniver.counters['+1/+1'] ?? 0) + put },
       });
       events.push({
         kind: 'counterAdded',
         object: conniver.id,
         counter: '+1/+1',
-        count: 1,
+        count: put,
         by: instruction.seat,
       });
     }
