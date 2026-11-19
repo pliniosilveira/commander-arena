@@ -61,6 +61,7 @@ import {
   youNoun,
 } from './subjects';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
+import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -1164,6 +1165,8 @@ export const TRIGGER_RULES = [
   ...PRISMARI_G1_TRIGGER_RULES,
   // Quandrix Unlimited deck, group E: "you cast a spell with {X} in its mana cost" and its first-each-turn form start like `trigger.cast`, which stops before the rest.
   ...QUANDRIX_E_TRIGGER_RULES,
+  // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
+  ...UNBOUND_I_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,

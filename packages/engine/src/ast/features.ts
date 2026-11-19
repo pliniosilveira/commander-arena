@@ -272,6 +272,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'copySpell',
     // D-439: "exile that card instead of putting it into your graveyard as it resolves. If you do, return it to your hand at the beginning of the next end step" (`exileOnResolve`).
     'exileOnResolve',
+    // Unbound Flourishing: "double the value of X" (`doubleSpellX`, CR 107.3).
+    'doubleSpellX',
     // D-651: "Exile this spell with three time counters on it" (CR 608.2n, 122.1).
     'exileSpellWithTimeCounters',
     // D-181: "Change the target of target spell or ability with a single target" (CR 115.7a).
@@ -480,6 +482,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedBy',
     'notAsAttacker',
     'tapBatch',
+    // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
+    'activatesAbilityX',
   ],
   keywordKinds: [
     'flying',
@@ -1424,6 +1428,8 @@ export const TRIGGER_FEATURES = [
   'notAsAttacker',
   /** "Whenever you tap one or more untapped creatures" (CR 603.2c, D-510): the engine's `becomesTapped` with `batch`. */
   'tapBatch',
+  /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
+  'activatesAbilityX',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -2189,6 +2195,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   cascade: true,
   copySpell: true,
   exileOnResolve: true,
+  doubleSpellX: true,
   exileSpellWithTimeCounters: true,
   changeTarget: true,
   storm: true,
@@ -2310,6 +2317,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
+  activatesAbilityX: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

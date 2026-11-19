@@ -1184,6 +1184,19 @@ function runEffect(
       return done(markExileOnResolve(state, spells, res.controller, res.source));
     }
 
+    case 'doubleSpellX': {
+      // CR 107.3 (Unbound Flourishing): the X announced for each spell the effect names, still on the stack, becomes twice its value. A spell that left the stack, a copy
+      // of an ability and a spell with no X announced are not changed. The cost paid stays what it was (CR 601.2f).
+      let after = state;
+      for (const id of resolveObjects(state, effect.spell, ctx, targets)) {
+        const spell = after.objects[id];
+        const x = spell?.stack?.x ?? null;
+        if (spell?.zone !== 'stack' || spell.stack?.kind !== 'spell' || x === null) continue;
+        after = patchObject(after, id, { stack: { ...spell.stack, x: x * 2 } });
+      }
+      return done(after);
+    }
+
     case 'exileSpellWithTimeCounters': {
       // CR 608.2n, 122.1 (D-651): the resolving spell carries the exile until it finishes resolving (`rules/stack.ts`, `finish`).
       const spell = state.objects[res.object];

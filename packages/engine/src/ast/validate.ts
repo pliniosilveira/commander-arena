@@ -797,6 +797,13 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
+      if (t.kind === 'activatesAbility') {
+        for (const flag of ['xCost', 'anySource'] as const) {
+          if (t[flag] !== undefined && t[flag] !== true) {
+            issue(out, `${path}.${flag}`, 'must be true when present');
+          }
+        }
+      }
       break;
     case 'cycled':
       // D-179: "when you cycle this card" has no parameters; the face is checked for Cycling or typecycling with its abilities.

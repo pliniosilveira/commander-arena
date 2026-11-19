@@ -240,7 +240,12 @@ function occurrences(
       }));
     case 'castSpell':
       // D-218 (CR 707.10): a copy put onto the stack is not cast, but "cast or copy" counts it, under the control of the player who has it.
-      if (trigger.orCopy === true && event.kind === 'spellCopied') {
+      // A copy of an ability (`spellCopied` of an ability, Unbound Flourishing) is no spell: "cast or copy a spell" does not see it.
+      if (
+        trigger.orCopy === true &&
+        event.kind === 'spellCopied' &&
+        state.objects[event.copy]?.stack?.kind === 'spell'
+      ) {
         return [
           {
             subject: event.copy,
@@ -447,8 +452,9 @@ function occurrences(
         : [];
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that uses the stack (a mana ability is no such event); the ability on the stack is the subject.
+      // `anySource` (Unbound Flourishing, "activate an ability"): an ability of a card in a hand or a graveyard counts as well.
       return event.kind === 'abilityActivated' &&
-        event.fromBattlefield === true &&
+        (event.fromBattlefield === true || trigger.anySource === true) &&
         event.stackObject !== null
         ? [{ subject: event.stackObject, seat: event.seat, player: event.seat }]
         : [];
@@ -783,6 +789,17 @@ function matches(
     case 'crimeCommitted':
     case 'tokenCreated':
     case 'activatesAbility':
+      // CR 107.3, 602.2b, 603.4: "if that ability's activation cost contains {X}": an {X} symbol in the mana of its cost ("Pay X life" and "-X" are not an {X}).
+      if (
+        trigger.kind === 'activatesAbility' &&
+        trigger.xCost === true &&
+        !(
+          subject?.stack?.ability?.kind === 'activated' &&
+          subject.stack.ability.cost.some((c) => c.kind === 'mana' && c.symbols.includes('X'))
+        )
+      ) {
+        return false;
+      }
       // CR 700.13, 111.2, 602.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;

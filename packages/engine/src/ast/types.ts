@@ -2284,7 +2284,8 @@ export type Effect =
     }
   /**
    * CR 707.10, 707.10c (D-129): "Copy target instant or sorcery spell. You may choose new targets for the copy." Puts
-   * a copy of the spell `spell` names onto the stack under the control of the effect's controller. A copy of a spell
+   * a copy of the spell `spell` names onto the stack (also, with `triggerSubject` of an `activatesAbility` trigger, a copy of the activated ability on the stack, "copy that spell or ability":
+   * it has the ability's text, targets and X, is controlled by the player who has it put on the stack and is not a spell, CR 707.10, 113.7a) under the control of the effect's controller. A copy of a spell
    * is a spell that is not cast (it triggers nothing that watches casting): it copies the characteristics and every
    * choice made for the original (its modes, targets, X, kicker and the alternative cost it was cast for), and
    * ceases to exist if it leaves the stack (CR 707.10a); a permanent spell's copy becomes a token (CR 707.10f).
@@ -2332,6 +2333,13 @@ export type Effect =
    * end step (the one that is exiled; one that left exile since is a new object, CR 400.7). Does nothing when the spell has left the stack as this resolves.
    */
   | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
+  /**
+   * "Double the value of X." (CR 107.3, 107.3a, Unbound Flourishing): the X announced for the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`)
+   * becomes twice its value, as it is on the stack: every X in its text and in the permanent it becomes ("enters with X counters", CR 107.3m) reads the new value, and so does a copy
+   * made after. The cost already paid does not change (CR 601.2f: the total cost was determined as it was cast). Does nothing when the spell has left the stack as this resolves, and for
+   * a spell with no X announced.
+   */
+  | { readonly kind: 'doubleSpellX'; readonly spell: ObjectRef }
   /**
    * "Exile this spell with three time counters on it." (CR 608.2n, 122.1, 702.62b, D-651, Rousing Refrain): the last instruction of an instant or sorcery's own text: as the spell
    * finishes resolving it is exiled, with `count` time counters on it, instead of being put into its owner's graveyard (or its owner's hand, or exile as it would by flashback or as an
@@ -3746,7 +3754,20 @@ export type Trigger =
    * does an ability of a card in a hand or graveyard (Cycling, Unearth). `triggerSubject` is the ability on the stack and `triggerPlayer` the player who
    * activated it.
    */
-  | { readonly kind: 'activatesAbility'; readonly who: 'you' | 'opponent' | 'any' }
+  | {
+      readonly kind: 'activatesAbility';
+      readonly who: 'you' | 'opponent' | 'any';
+      /**
+       * "Whenever you cast an instant or sorcery spell or activate an ability, if that ability's activation cost contains {X}" (Unbound Flourishing, CR 107.3, 602.2b, 603.4): only an ability
+       * activated with an {X} symbol in the mana of its cost ("Pay X life" and "-X" are no {X}). The condition is about the event itself, so it is read as the ability is activated.
+       */
+      readonly xCost?: true;
+      /**
+       * "Whenever you activate an ability" (CR 602.2, 605.1a): any ability that uses the stack, also one of a card in a hand or a graveyard (cycling, a loyalty ability is included in
+       * both readings), not only an ability of a permanent. Without it only an ability of a permanent counts. A mana ability is never put on the stack and never triggers it.
+       */
+      readonly anySource?: true;
+    }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }
   /**

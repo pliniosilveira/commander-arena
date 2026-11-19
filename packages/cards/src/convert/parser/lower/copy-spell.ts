@@ -26,6 +26,10 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
     if (/^it$/iu.test(noun.filter.raw.trim()) && noun.det !== 'triggerSubject') {
       return failure(clause);
     }
+    // "copy that spell or ability" (Unbound Flourishing, CR 707.10): the trigger is about the activation of an ability as well, whose copy the engine makes as it does a spell's.
+    if (/^that spell or ability$/iu.test(noun.filter.raw.trim()) && !ctx.activateTrigger) {
+      return failure(clause);
+    }
     if (noun.det === 'triggerSubject') {
       const missing = missingFeatures(['selector:triggerSubject']);
       if (missing.length > 0) return failure(clause, missing);

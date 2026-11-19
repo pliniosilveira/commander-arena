@@ -127,6 +127,8 @@ function classify(raw: string): Pronoun | null {
   }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
+  // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
+  if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
