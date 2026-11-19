@@ -1,5 +1,5 @@
 {
-  "parserVersion": 162,
+  "parserVersion": 163,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -639,6 +639,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a407f84a"
+    },
+    "11323af4-b8b8-4ca9-932f-377c7fd77dea": {
+      "name": "The Eternity Elevator",
+      "group": "training",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6b3f09f6"
     },
     "1135ebc3-9537-4341-956b-6e22d8be5f20": {
       "name": "Troyan, Gutsy Explorer",
@@ -4372,26 +4380,10 @@
     "83161d59-2520-4741-9328-e2a4a8b5d5bc": {
       "name": "Evendo, Waking Haven",
       "group": "holdout",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Station",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 3,
-          "text": "12+ | {G}, {T}: Add {G} for each creature you control.",
-          "reason": "unrecognised",
-          "slot": "cost",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "9a35e9cd"
+      "ast": "901f3d9f"
     },
     "836ecd67-6487-4f3d-9e08-013746be829a": {
       "name": "Revival // Revenge",
@@ -7109,6 +7101,14 @@
       "reasons": [],
       "ast": "e99a2316"
     },
+    "df08ac72-010f-42f8-beb3-6d645c638e1e": {
+      "name": "Uthros, Titanic Godcore",
+      "group": "holdout",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "84ac8b51"
+    },
     "df0b5995-117b-4ba8-964d-ea3c592621ef": {
       "name": "The Warring Triad",
       "group": "acceptance",
@@ -8141,12 +8141,12 @@
   },
   "summary": {
     "training": {
-      "supported": 153,
-      "total": 175
+      "supported": 154,
+      "total": 176
     },
     "holdout": {
-      "supported": 52,
-      "total": 57
+      "supported": 54,
+      "total": 58
     },
     "acceptance": {
       "supported": 695,
