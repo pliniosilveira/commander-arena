@@ -58,6 +58,8 @@ export interface LowerContext {
    * spell itself), so "that spell" is the spell that caused the trigger, which the engine reads as its `triggerSubject` (CR 601.2h).
    */
   castTrigger: boolean;
+  /** The triggers are all "whenever you cast a spell with {X} in its mana cost": an X in the body is the X of that spell (Quandrix Unlimited group E, CR 107.3). */
+  castTriggerX: boolean;
   /**
    * The ids of targets an earlier instruction of this text sent away from the battlefield (destroy,
    * exile, return, sacrifice): "it" after them is the card in its new zone, which a tap or an untap
@@ -306,6 +308,7 @@ export function newContext(
     itIsSelf: false,
     selfCast: false,
     castTrigger: false,
+    castTriggerX: false,
     removed: new Set(),
     madeAToken: false,
     tokensMade: false,

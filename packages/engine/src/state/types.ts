@@ -2284,6 +2284,10 @@ export interface TurnLog {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
     readonly manaValue: number;
+    /** The spell (Quandrix Unlimited group E): "your first spell with {X} in its mana cost each turn" tells it from the others. */
+    readonly object: ObjectId;
+    /** The spell's mana cost has an {X} (CR 107.3). */
+    readonly hasX?: true;
     /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
     readonly fromGraveyard?: true;
   }[];

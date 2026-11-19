@@ -20,6 +20,11 @@ export type ManaRestriction =
   /** May be spent only on activated abilities. */
   | { readonly kind: 'abilitiesOnly' }
   /**
+   * May be spent only on a cost that contains {X} (CR 106.6, 107.3; "Spend this mana only on costs that contain {X}", Elementalist's Palette): the mana cost of a spell or the
+   * activation cost of an ability with an {X} in it.
+   */
+  | { readonly kind: 'xCost' }
+  /**
    * May be spent only on spells (never on abilities) that match (CR 106.6; D-149: "Spend this mana only to cast an Angel spell"): the spell
    * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
    */

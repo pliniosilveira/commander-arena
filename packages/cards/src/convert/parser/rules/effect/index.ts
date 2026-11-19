@@ -130,6 +130,7 @@ import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
+import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
@@ -1099,6 +1100,7 @@ export const EFFECT_RULES = [
   EFFECT_CHANGE_TARGET,
   // Stage P33 (D-150): proliferate, an exile for each opponent, and the sentences about the ability before them.
   ...ANGEL_EFFECT_RULES,
+  ...QUANDRIX_E_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.

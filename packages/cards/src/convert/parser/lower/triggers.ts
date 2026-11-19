@@ -1028,6 +1028,10 @@ function lowerTriggeredAbility(
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
   ctx.castTrigger = triggers.every((t) => t.kind === 'castSpell' && t.self !== true);
+  // Quandrix Unlimited group E (CR 107.3): "put X +1/+1 counters" of "whenever you cast a spell with {X} in its mana cost" is the X of the spell that was cast.
+  ctx.castTriggerX = triggers.every(
+    (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
+  );
   // CR 603.4: the intervening "if" is checked as the event happens and again on resolution, so
   // the ability does not trigger when it is false. It is not a conditional effect inside the
   // ability. "It" is the source only when every event is about the source itself.

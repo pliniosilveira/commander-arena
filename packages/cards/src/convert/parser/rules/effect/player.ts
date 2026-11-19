@@ -215,6 +215,18 @@ export const lifeAction: Action = (subject, you, rule) => {
       };
     },
   );
+  // "gain half X life, rounded down" (Quandrix Unlimited group E, Brass Infiniscope; CR 107.1a, 107.3): half the X the text names, the life after it, the rounding last.
+  const halfX: Parser<IrAmount> = map(
+    spanned(
+      sequence(verbWord('gain', you), pattern(/half X life, rounded (down|up)(?![\p{L}\p{N}])/u)),
+    ),
+    ({ value, span }) => ({
+      kind: 'half',
+      of: { kind: 'x', span },
+      round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+      span,
+    }),
+  );
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -248,7 +260,7 @@ export const lifeAction: Action = (subject, you, rule) => {
             ),
             ([, , amount]) => amount,
           ),
-          ...(base === 'lose' ? [halfTheirLife] : []),
+          ...(base === 'lose' ? [halfTheirLife] : [halfX]),
         ),
       ),
       ({ value, span }) => actionClause(rule, verb, { player: subject, amount: value }, span),

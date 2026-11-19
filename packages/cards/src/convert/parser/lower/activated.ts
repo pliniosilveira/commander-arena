@@ -32,13 +32,14 @@ import type {
   IrQuotedAbility,
 } from '../ir/types';
 import { lowerAmount } from './amounts';
+import { amountArg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause, lowerMana } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { colorLetter } from './nouns';
-import { kindOfNoun, lowerSentences } from './sentences';
+import { kindOfNoun, lowerDelayedCast, lowerSentences } from './sentences';
 import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
 
 type Activated = Extract<IrAbility, { kind: 'activated' }>;
@@ -78,6 +79,9 @@ const plainClause = (clause: IrClause) =>
  * color, a quality or a mix of the two kinds in one choice says more than the engine's restriction and is not lowered.
  */
 function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
+  // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
+  const xCost = clause.args.xCost;
+  if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
   // "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of the qualities.
   const atLeast = clause.args.manaValueAtLeast;
   const hasX = clause.args.hasX;
@@ -309,8 +313,35 @@ function lowerManaAbility(
     if (plain === null) return failure(ability);
     production = plain;
   }
+  // "Add {C} for each charge counter on ~." (Quandrix Unlimited group E, CR 605.1a, 106.1): the fixed mana as many times as the counters on the permanent itself, read as the ability is
+  // activated. Any other count would be dropped by this reading, so it is not read (a mana ability reads no target, no X and no other object).
+  const countsOwnCounters = add.args.times !== undefined && production.kind === 'fixed';
+  if (countsOwnCounters && production.kind === 'fixed') {
+    const times = amountArg(add, 'times', trial);
+    if (!times.ok) return times;
+    const count = times.value;
+    if (
+      typeof count !== 'object' ||
+      count.kind !== 'countersOn' ||
+      count.of.kind !== 'this' ||
+      trial.usesX
+    ) {
+      return failure(ability);
+    }
+    production = { ...production, times: count };
+  }
+  // A "for each" the production does not read would be dropped by this reading, so it is not read.
+  if (
+    add.args.times !== undefined &&
+    production.kind !== 'fixed' &&
+    production.kind !== 'anyColorAmount'
+  ) {
+    return failure(ability);
+  }
   const needs: FeatureRef[] = [
     'ability:mana',
+    ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
+    ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
@@ -811,10 +842,48 @@ export function lowerActivated(
     if (chosen !== null) return chosen;
     const instead = lowerManaInstead(ability, ctx.faceTypes);
     if (instead !== null) return instead;
+    // "{T}: Add {C}{C}. When you next cast a spell with {X} in its mana cost this turn, you draw a card and gain half X life, rounded down." (Quandrix Unlimited group E, CR 603.7,
+    // 605.1a): the mana ability, and the delayed trigger it creates as its extra effect (`also`).
+    const delayed = lowerManaWithDelayedCast(ability, ctx);
+    if (delayed !== null) return delayed;
     const mana = lowerManaAbility(ability, clauses, ctx.faceTypes);
     if (mana !== null) return mana;
   }
   return lowerOrdinary(ability, ctx);
+}
+
+/**
+ * A mana ability whose last sentence is a "When you next cast ..." delayed trigger: the sentence is the `also` effect `delayedCast` (the engine runs it in the same activation, as
+ * the mana is added), the rest is read as any mana ability. Null when the ability has no such sentence.
+ */
+function lowerManaWithDelayedCast(
+  ability: Activated,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> | null {
+  const sentences = ability.body.sentences;
+  const at = sentences.findIndex((s) => s.delayed?.step === 'nextCast');
+  const sentence = sentences[at];
+  if (at < 1 || at !== sentences.length - 1 || sentence === undefined) return null;
+  const spell = sentence.delayed?.spell;
+  const without = { ...ability, body: { ...ability.body, sentences: sentences.slice(0, at) } };
+  const base = lowerManaAbility(
+    without,
+    without.body.sentences.flatMap((s) => s.clauses),
+    ctx.faceTypes,
+  );
+  if (base === null) return null;
+  if (!base.ok) return base;
+  const [mana] = base.value;
+  if (mana?.kind !== 'mana' || spell === undefined) return failure(ability);
+  const blocked = gate(ability, ['manaAlso:delayedCast', 'effect:delayedCast']);
+  if (blocked !== null) return blocked;
+  const lowered = lowerDelayedCast(sentence, spell, newContext('ability', ctx.faceTypes));
+  if (!lowered.ok) return lowered;
+  return {
+    ok: true,
+    value: [{ ...mana, also: [...(mana.also ?? []), lowered.value] }],
+    rule: base.rule,
+  };
 }
 
 /** Features the activated and mana ability lowerings can name, for the dimension test. */
@@ -833,7 +902,9 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:couldProduce',
   'manaProduction:combination',
   'manaProduction:chosenColor',
-  'ability:manaSpendOnly',
+  'ability:manaSpendOnlyChosenType',
+  'ability:manaSpendOnlyXCost',
+  'ability:manaCountOwnCounters',
   'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',

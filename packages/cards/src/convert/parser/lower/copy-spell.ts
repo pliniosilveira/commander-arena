@@ -22,6 +22,10 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
     const flag = arg(clause, 'newTargets');
     if (noun?.kind !== 'noun' || flag?.kind !== 'flag') return failure(clause);
     let spell: ObjectRef;
+    // "copy it" is the spell of a cast trigger only; anywhere else "it" is a card or a permanent, which is no spell to copy (CR 707.10).
+    if (/^it$/iu.test(noun.filter.raw.trim()) && noun.det !== 'triggerSubject') {
+      return failure(clause);
+    }
     if (noun.det === 'triggerSubject') {
       const missing = missingFeatures(['selector:triggerSubject']);
       if (missing.length > 0) return failure(clause, missing);

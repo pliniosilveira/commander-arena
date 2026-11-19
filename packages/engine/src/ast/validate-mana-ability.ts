@@ -8,7 +8,13 @@ import type { ManaAbility } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
 import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
-import { checkCondition, checkCosts, checkEnumList, checkStateAmount } from './validate-parts';
+import {
+  checkCondition,
+  checkCosts,
+  checkDelayedCast,
+  checkEnumList,
+  checkStateAmount,
+} from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   checkCosts(a.cost, `${path}.cost`, out);
@@ -55,12 +61,22 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   });
   checkManaProduction(a.production, `${path}.production`, out);
   // D-151: "for each ..." mana is added as a spell or a triggered ability resolves; a mana ability makes its mana before it can read anything (CR 605.1a).
+  // CR 605.1a: the count of a mana ability is read as it is activated and comes from the permanent itself: the counters on it ("Add {C} for each charge counter on this
+  // artifact", Elementalist's Palette). No other count: a mana ability reads no target, no X and no other object.
   if (a.production?.kind === 'fixed' && a.production.times !== undefined) {
-    issue(
-      out,
-      `${path}.production.times`,
-      'a mana ability adds a fixed amount of mana, never a count',
-    );
+    const times = a.production.times;
+    const ownCounters =
+      typeof times === 'object' &&
+      times !== null &&
+      times.kind === 'countersOn' &&
+      kindOf(times.of) === 'this';
+    if (!ownCounters) {
+      issue(
+        out,
+        `${path}.production.times`,
+        'a mana ability adds a fixed amount of mana, never a count but the counters on the permanent itself',
+      );
+    }
   }
   // D-650: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
   if (a.production?.kind === 'fixed' && a.production.staysUntilEndOfTurn !== undefined) {
@@ -108,6 +124,23 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       issue(out, `${path}.also`, 'also must be a non-empty list when present');
     } else {
       a.also.forEach((e, i) => {
+        // CR 603.7, 605.1a (Brass Infiniscope): the delayed trigger a mana ability creates is checked as that of any effect.
+        if (e?.kind === 'delayedCast') {
+          checkDelayedCast(
+            e,
+            `${path}.also[${i}]`,
+            {
+              owner: 'ability',
+              targets: new Map(),
+              xAllowed: false,
+              checkAbility: () => undefined,
+              checkContinuous: () => undefined,
+              checkEffectExt: () => false,
+            },
+            out,
+          );
+          return;
+        }
         checkManaAbilityAlso(e, `${path}.also[${i}]`, out);
       });
     }
@@ -121,6 +154,19 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
+      if (only.xCost !== undefined && only.xCost !== true) {
+        issue(out, `${path}.spendOnly.xCost`, 'xCost must be true when present');
+      }
+      if (
+        only.xCost === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly xCost names no types, subtypes or qualities');
+      }
       if (only.qualities !== undefined) {
         if (!Array.isArray(only.qualities) || only.qualities.length === 0) {
           issue(
@@ -154,7 +200,8 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         only.types === undefined &&
         only.subtypes === undefined &&
         only.chosenType !== true &&
-        only.qualities === undefined
+        only.qualities === undefined &&
+        only.xCost !== true
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }

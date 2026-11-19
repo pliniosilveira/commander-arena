@@ -122,6 +122,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
+      if (ctx.castTriggerX) {
+        const blockedCast = needs('triggerSpellX');
+        return blockedCast ?? { ok: true, value: { kind: 'triggerSpellX' }, rule };
+      }
       const blocked = needs('x');
       if (blocked !== null) return blocked;
       ctx.usesX = true;
@@ -798,5 +803,6 @@ export const AMOUNT_NEEDS = [
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:triggerSpellX',
   'amount:votesFor',
 ] as const;

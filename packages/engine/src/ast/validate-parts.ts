@@ -314,6 +314,8 @@ export function checkFilter(
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'castFromHand',
+    'xInManaCost',
+    'firstXSpellThisTurn',
     'enteredThisTurn',
     'exiledWithSource',
     'putWithSource',
@@ -692,6 +694,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'thisWay',
   'triggerDamage',
   'triggerTargetCount',
+  'triggerSpellX',
   'dieResult',
   'votesFor',
   'exiledStillThere',
@@ -1908,6 +1911,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           path,
           "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage, dealsCombatDamage or noncombatDamageDealt) or life being gained (lifeGained)",
         );
+      }
+      break;
+    case 'triggerSpellX':
+      // CR 107.3 (Quandrix Unlimited group E): the X of the spell a "whenever you cast" trigger is about.
+      if (scope.triggerSubject !== 'stack') {
+        issue(out, path, "'triggerSpellX' needs a trigger about a spell being cast");
       }
       break;
     case 'triggerTargetCount':
@@ -3939,6 +3948,64 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
   }
 }
 
+/**
+ * What a delayed cast trigger may do (CR 603.7c: nothing of the spell or ability that created it is left to name, so it does something to the spell that was cast, or something
+ * only the controller does): copy the spell that was cast (D-336), or draw cards and gain life, alone or in a sequence (Quandrix Unlimited group E, Brass Infiniscope).
+ */
+function isDelayedCastBody(e: Effect | undefined): boolean {
+  if (e === undefined || e === null) return false;
+  if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
+  if (e.kind === 'draw') return kindOf(e.player) === 'you';
+  if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
+  if (e.kind === 'sequence') {
+    return Array.isArray(e.effects) && e.effects.length > 0 && e.effects.every(isDelayedCastBody);
+  }
+  return false;
+}
+
+/**
+ * The effect `delayedCast` (CR 603.7, D-336): creates a delayed triggered ability on the controller's next cast of a spell the filter names. Shared by a spell or ability and by the
+ * extra effects of a mana ability (Brass Infiniscope).
+ */
+export function checkDelayedCast(
+  e: Extract<Effect, { readonly kind: 'delayedCast' }>,
+  path: string,
+  scope: Scope,
+  out: Out,
+): void {
+  checkFilter(e.filter, `${path}.filter`, out);
+  if (e.filter?.stackKind !== 'spell') {
+    issue(
+      out,
+      `${path}.filter`,
+      'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
+    );
+  }
+  if (!isDelayedCastBody(e.effect)) {
+    issue(
+      out,
+      `${path}.effect`,
+      'a delayed cast trigger copies the spell that was cast, or its controller draws cards and gains life',
+    );
+    return;
+  }
+  checkEffect(
+    e.effect,
+    `${path}.effect`,
+    {
+      owner: 'ability',
+      targets: new Map(),
+      xAllowed: false,
+      triggerSubject: 'stack',
+      triggerPlayer: true,
+      checkAbility: scope.checkAbility,
+      checkContinuous: scope.checkContinuous,
+      checkEffectExt: scope.checkEffectExt,
+    },
+    out,
+  );
+}
+
 export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): void {
   if (
     e !== undefined &&
@@ -4586,43 +4653,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
-    case 'delayedCast': {
-      // CR 603.7 (D-336): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
-      checkFilter(e.filter, `${path}.filter`, out);
-      if (e.filter?.stackKind !== 'spell') {
-        issue(
-          out,
-          `${path}.filter`,
-          'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
-        );
-      }
-      // CR 603.7c: nothing of the spell or ability that created it is left to name, so it does something to the spell cast, and only that.
-      const inner = e.effect;
-      if (inner?.kind !== 'copySpell' || kindOf(inner.spell) !== 'triggerSubject') {
-        issue(
-          out,
-          `${path}.effect`,
-          'a delayed cast trigger copies the spell that was cast (copySpell of triggerSubject)',
-        );
-        break;
-      }
-      checkEffect(
-        inner,
-        `${path}.effect`,
-        {
-          owner: 'ability',
-          targets: new Map(),
-          xAllowed: false,
-          triggerSubject: 'stack',
-          triggerPlayer: true,
-          checkAbility: scope.checkAbility,
-          checkContinuous: scope.checkContinuous,
-          checkEffectExt: scope.checkEffectExt,
-        },
-        out,
-      );
+    case 'delayedCast':
+      checkDelayedCast(e, path, scope, out);
       break;
-    }
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);

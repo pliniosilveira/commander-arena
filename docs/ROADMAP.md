@@ -139,6 +139,8 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- A mana ability's "Add {C} for each ..." reads only the counters on its own permanent (Elementalist's Palette); any other count (Gaea's Cradle) is refused, not read as one mana.
+- Unbound Flourishing is unsupported: "double the value of X" and copying an activated or triggered ability on the stack ("copy that spell or ability") are not built.
 - "Attached to that token" is read only after a token created in the same ability (Forum Filibuster). An Equipment put onto the battlefield attached to a non-creature enters unattached; that rule's text was not checked.
 - An Aura token an effect creates attached to a target is read only as one "white Aura enchantment token" with "enchant creature"; other enchant restrictions, several tokens and a replacement-made extra Aura (which still asks its host) are not.
 - An Aura attached to a card in a graveyard (Animate Dead, until its enters ability resolves) shows as unattached in the view and the web: the card is no permanent.

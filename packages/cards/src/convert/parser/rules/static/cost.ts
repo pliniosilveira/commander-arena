@@ -934,8 +934,70 @@ export const STATIC_ADDITIONAL_COST_SACRIFICE_COPIES = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.first-x-spell-cost-reduction`: "The first spell you cast with {X} in its mana cost each turn costs {1} less to cast for each +1/+1 counter on ~." (Quandrix Unlimited deck,
+ * group E; CR 118.7a, 601.2f, 601.2i, 604.2: a static ability of a permanent that reduces the generic mana of the first spell with an {X} in its mana cost its controller casts each
+ * turn, read as the cost is determined). The engine's `costReduction` of the spells with `xInManaCost` and `firstXSpellThisTurn`. The count after the cost is read as for the other
+ * reductions. Not read: another caster, a spell that is not the first, "each turn" missing, a reduction with no period.
+ */
+export const STATIC_FIRST_X_SPELL_COST_REDUCTION = defineRule<IrStatic>({
+  id: 'static.first-x-spell-cost-reduction',
+  family: 'static',
+  leading: ['The', 'the'],
+  cites: [
+    'CR 118.7a (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'The first spell you cast with {X} in its mana cost each turn costs {1} less to cast for each +1/+1 counter on ~.',
+    'The first spell you cast with {X} in its mana cost each turn costs {1} less to cast.',
+  ],
+  rejects: [
+    'The first spell you cast with {X} in its mana cost each turn costs {1} less to cast for each +1/+1 counter on ~',
+    'The first spell your opponents cast with {X} in its mana cost each turn costs {1} less to cast.',
+    'The second spell you cast with {X} in its mana cost each turn costs {1} less to cast.',
+    'The first spell you cast with {X} in its mana cost costs {1} less to cast.',
+    'The first spell you cast with {X} in its mana cost each turn costs {1} more to cast.',
+    'The first spell you cast each turn costs {1} less to cast.',
+    'The first spell you cast with {X} in its mana cost each turn costs {W} less to cast.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.first-x-spell-cost-reduction';
+    const head = pattern(
+      /[Tt]he first spell you cast with \{X\} in its mana cost each turn costs /u,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const r = sequence(reduction(), PERIOD)(ctx, head.pos);
+    if (!r.ok) return r;
+    const [amount] = r.value;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: {
+        controller: 'you',
+        xInManaCost: true,
+        firstXSpellThisTurn: true,
+        raw: 'The first spell you cast with {X} in its mana cost each turn',
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: head.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: statement(id, subject, { kind: 'costReduction', amount }, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
+  STATIC_FIRST_X_SPELL_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
   STATIC_SPELLS_AFFINITY,
   // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.

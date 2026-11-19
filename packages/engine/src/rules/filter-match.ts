@@ -14,6 +14,7 @@ import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
 import { isCommanderObject } from './melded';
+import { xSymbolCount } from './x-value';
 
 /** The characteristics a filter looks at. `Derived` has all of them. */
 export interface FilterSubject {
@@ -32,6 +33,8 @@ export interface FilterSubject {
   /** The base power (CR 208.4b), read by `powerAboveBase` (D-431); left out where the caller does not know it, which fails that test closed. */
   readonly basePower?: number | null;
   readonly manaValue?: number;
+  /** The mana cost symbols, read by `xInManaCost`; left out where the caller does not know it, which fails that test closed. */
+  readonly manaCost?: readonly string[] | null;
   /**
    * The keywords without parameters the object has (`keywords`, `notKeywords`, D-133); left out where the caller does
    * not know them, which fails a `keywords` test closed and passes a `notKeywords` one (`validateCard` refuses both
@@ -353,6 +356,21 @@ export function matchesFilterWith(
       ctx.castFrom ??
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'hand') return false;
+  }
+  // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
+  if (
+    filter.xInManaCost === true &&
+    (d.manaCost === undefined || xSymbolCount(d.manaCost ?? []) === 0)
+  )
+    return false;
+  // CR 601.2i (Quandrix Unlimited group E): "your first spell with {X} in its mana cost each turn": no earlier one cast this turn by the caster.
+  if (
+    filter.firstXSpellThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) => e.hasX === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
   }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;

@@ -103,6 +103,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnly',
     // Issue 199: "Spend this mana only to cast a creature spell of the chosen type." (`ManaAbility.spendOnly.chosenType`)
     'manaSpendOnlyChosenType',
+    // Quandrix Unlimited group E: "Spend this mana only on costs that contain {X}." (`ManaAbility.spendOnly.xCost`) and "Add {C} for each charge counter on this artifact." (`times` of a fixed production).
+    'manaSpendOnlyXCost',
+    'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
@@ -655,7 +658,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
   ],
-  manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
+  // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
+  manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
@@ -763,6 +767,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
     'castFromHand',
+    // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
+    'xInManaCost',
+    'firstXSpellThisTurn',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
@@ -1168,6 +1175,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
     'triggerTargetCount',
+    // Quandrix Unlimited group E: "put X counters" in a cast trigger: the X of the spell that was cast.
+    'triggerSpellX',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -1339,6 +1348,10 @@ export const ABILITY_FEATURES = [
   'manaSpendOnly',
   /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
   'manaSpendOnlyChosenType',
+  /** "Spend this mana only on costs that contain {X}" (CR 106.6, 107.3): `ManaAbility.spendOnly.xCost`. */
+  'manaSpendOnlyXCost',
+  /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
+  'manaCountOwnCounters',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
@@ -1503,6 +1516,10 @@ export const SELECTOR_KINDS = [
   'notCastFromHand',
   /** "A spell you cast from your hand" (CR 601.2a, D-638): the engine's `ObjectFilter.castFromHand`. */
   'castFromHand',
+  /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
+  'xInManaCost',
+  /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
+  'firstXSpellThisTurn',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -1953,6 +1970,8 @@ export const AMOUNT_KINDS = [
   'triggerDamage',
   /** Number of targets chosen for a spell in a cast trigger (D-574). */
   'triggerTargetCount',
+  /** "X" in a cast trigger (CR 107.3, 113.7a): the engine's `triggerSpellX`. */
+  'triggerSpellX',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
@@ -2050,6 +2069,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaInstead: true,
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
+  manaSpendOnlyXCost: true,
+  manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,
