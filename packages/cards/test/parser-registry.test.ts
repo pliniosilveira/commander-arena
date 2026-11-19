@@ -1045,6 +1045,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,
   ),
+  'amount.for-each-card-type-discarded': spell(
+    (e) =>
+      `Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with flying ${e}.`,
+  ),
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),

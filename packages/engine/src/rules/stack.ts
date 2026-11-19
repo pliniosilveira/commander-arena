@@ -278,6 +278,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   (res.thisWay?.discardedInstantOrSorcery ?? 0) +
                   (out.thisWay.discardedInstantOrSorcery ?? 0),
                 searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
+                ...mergeTypes(res.thisWay?.discardedTypes, out.thisWay.discardedTypes),
                 // Issue 279: the greatest number one player discarded, not a sum.
                 discardedMost: Math.max(
                   res.thisWay?.discardedMost ?? 0,
@@ -348,6 +349,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
 }
 
 /** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
+/** The card types of two `thisWay` tallies of discarded cards, each type once (CR 205.2a: a type counts once however many cards have it). */
+function mergeTypes(
+  a: readonly string[] | undefined,
+  b: readonly string[] | undefined,
+): { readonly discardedTypes?: readonly string[]; readonly discardedTypeCount?: number } {
+  if (a === undefined && b === undefined) return {};
+  const types = [...new Set([...(a ?? []), ...(b ?? [])])];
+  return { discardedTypes: types, discardedTypeCount: types.length };
+}
+
 /** The totals of power by seat of two `thisWay` tallies, added (Oversimplify); nothing when neither has any. */
 function mergePowerBy(
   a: Readonly<Record<number, number>> | undefined,

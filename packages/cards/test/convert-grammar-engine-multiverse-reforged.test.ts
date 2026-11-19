@@ -252,3 +252,57 @@ describe('Avacyn: your nontoken creatures come back at the next end step', () =>
     g.expect.invariants();
   });
 });
+
+// ---- Occult Epiphany: "Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with flying for each card type among cards discarded this way." (CR 205.2a, 608.2c:
+// a card with two types counts for both; each type counts once).
+
+const EPIPHANY = parsed(
+  'SYNTHETIC Parsed Epiphany',
+  'Instant',
+  'Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with flying for each card type among cards discarded this way.',
+  { manaCost: '{X}{U}{U}', colors: ['U'] },
+);
+
+describe('Occult Epiphany: a Spirit for each card type among the cards discarded', () => {
+  const start = (library: readonly string[]) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(EPIPHANY)
+      .hand(EPIPHANY.name)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island')
+      .library(...library)
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  const spirits = (g: ReturnType<typeof start>) =>
+    g.state.battlefield.filter(
+      (id) => g.state.objects[id]?.token?.characteristics.name === 'Spirit',
+    ).length;
+
+  test('a creature and two lands are two card types: two Spirits', () => {
+    const g = start(['Grizzly Bears', 'Plains', 'Plains', 'Plains']);
+    g.act(0).cast(EPIPHANY.name, { x: 3, pay: true });
+    g.passAll();
+    expect(spirits(g)).toBe(2);
+    g.expect.handSize(0, 0);
+    g.expect.invariants();
+  });
+
+  test('three lands are one card type: one Spirit', () => {
+    const g = start(['Plains', 'Plains', 'Plains', 'Plains']);
+    g.act(0).cast(EPIPHANY.name, { x: 3, pay: true });
+    g.passAll();
+    expect(spirits(g)).toBe(1);
+  });
+
+  test('X of 0 discards nothing and makes no Spirit', () => {
+    const g = start(['Grizzly Bears', 'Plains']);
+    g.act(0).cast(EPIPHANY.name, { x: 0, pay: true });
+    g.passAll();
+    expect(spirits(g)).toBe(0);
+  });
+});

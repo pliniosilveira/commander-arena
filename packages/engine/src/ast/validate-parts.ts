@@ -1498,6 +1498,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
   exiledCreatures: 'an exile effect',
+  discardedTypeCount: 'a discard effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1519,6 +1520,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedNoncreature',
       'discardedInstantOrSorcery',
       'discardedMost',
+      'discardedTypeCount',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
