@@ -76,7 +76,7 @@ export async function startFromForm(
     allowHidden: false,
   });
   if (!result.ok) return { started: false, kind: 'refused', reason: result.reason };
-  await startGame(result.options);
+  await startGame({ ...result.options, intro: true });
   return { started: true };
 }
 

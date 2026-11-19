@@ -45,6 +45,12 @@ export interface NewGameOptions {
    * indices, prepared by the page. When present it replaces the test deck named by `aiDeck`.
    */
   readonly aiCards?: DeckConfig;
+  /** The name of the precon the opponent plays, when it is a shipped precon (not a saved deck). */
+  readonly aiPreconName?: string;
+  /** The same for the human seat's deck. */
+  readonly humanPreconName?: string;
+  /** Show the versus screen before the opening hand (the menu sets it; `?autostart` games skip it). */
+  readonly intro?: boolean;
   /**
    * The first mulligan is free: after it you keep seven cards, with the London bottoming starting
    * from the second (Commander's usual rule; a house rule in two-player games, CR 103.5c).
