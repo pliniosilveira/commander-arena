@@ -30,6 +30,9 @@ export interface DeckChoice {
   readonly commanderImage?: string;
   /** The deck's colors: the commander's color identity; absent when unknown. */
   readonly colors?: readonly string[];
+  /** The precon's set and release year, when recorded. */
+  readonly set?: string;
+  readonly year?: number;
   readonly kind: 'precon' | 'saved';
   /** A precon the player edited: the list in use is theirs, not the one that shipped. */
   readonly edited: boolean;
@@ -71,6 +74,8 @@ export function deckChoices(
       commander: commander === '' ? precon.commander : commander,
       ...(image === undefined ? {} : { commanderImage: image }),
       ...(colors === undefined ? {} : { colors }),
+      ...(precon.set === undefined ? {} : { set: precon.set }),
+      ...(precon.year === undefined ? {} : { year: precon.year }),
       kind: 'precon',
       edited: mine !== undefined,
     };

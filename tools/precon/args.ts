@@ -18,6 +18,8 @@ Required:
   --blurb <text>    one sentence for the menu
 
 Options:
+  --set <text>      the set the precon was sold in (shown under the blurb)
+  --year <year>     the year it was released
   --out <dir>       the folder to write into (default: apps/web/src/precons/snapshots/)
   -h, --help        show this text
 
@@ -31,6 +33,8 @@ export interface Options {
   readonly id: string;
   readonly name: string;
   readonly blurb: string;
+  readonly set: string | undefined;
+  readonly year: number | undefined;
   readonly out: string | undefined;
   readonly help: boolean;
 }
@@ -51,6 +55,8 @@ export function parseOptions(argv: readonly string[]): Options | string {
         id: { type: 'string' },
         name: { type: 'string' },
         blurb: { type: 'string' },
+        set: { type: 'string' },
+        year: { type: 'string' },
         out: { type: 'string' },
         help: { type: 'boolean', short: 'h' },
       },
@@ -69,6 +75,8 @@ export function parseOptions(argv: readonly string[]): Options | string {
     id: text('id'),
     name: text('name'),
     blurb: text('blurb'),
+    set: text('set') === '' ? undefined : text('set'),
+    year: text('year') === '' ? undefined : Number(text('year')),
     out: text('out') === '' ? undefined : text('out'),
     help,
   };
@@ -77,6 +85,8 @@ export function parseOptions(argv: readonly string[]): Options | string {
   for (const key of ['file', 'deck', 'id', 'name', 'blurb'] as const) {
     if (options[key] === '') return `--${key} is required`;
   }
+  if (options.year !== undefined && !/^\d{4}$/.test(text('year')))
+    return '--year must be a four-digit year';
   if (!ID.test(options.id))
     return '--id may only hold lower-case letters, digits and single dashes';
   return options;

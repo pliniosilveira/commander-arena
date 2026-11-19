@@ -27,6 +27,14 @@ describe('parseOptions', () => {
     });
   });
 
+  test('reads the optional set and year, and rejects a year that is not four digits', () => {
+    expect(parseOptions([...GOOD, '--set', 'SYNTHETIC Set', '--year', '2022'])).toMatchObject({
+      set: 'SYNTHETIC Set',
+      year: 2022,
+    });
+    expect(parseOptions([...GOOD, '--year', '22'])).toBe('--year must be a four-digit year');
+  });
+
   test('--help needs nothing else', () => {
     expect(parseOptions(['--help'])).toMatchObject({ help: true });
     expect(parseOptions(['-h'])).toMatchObject({ help: true });

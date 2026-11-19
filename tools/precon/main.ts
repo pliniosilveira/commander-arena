@@ -176,6 +176,8 @@ export async function run(argv: readonly string[], io: Io, deps: Deps): Promise<
     blurb: options.blurb,
     source: path.basename(file),
     decklist,
+    ...(options.set === undefined ? {} : { set: options.set }),
+    ...(options.year === undefined ? {} : { year: options.year }),
     cards: [...resolved.cards.values()]
       .map((card) => card.stored)
       .concat(faces)

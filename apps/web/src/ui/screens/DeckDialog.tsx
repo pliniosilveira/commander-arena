@@ -189,8 +189,8 @@ export function DeckDialog({
                   src={deck.commanderImage}
                   alt=""
                   loading="lazy"
-                  width={96}
-                  height={70}
+                  width={106}
+                  height={77}
                 />
               )}
               <span className="scr-deck-text">
@@ -199,6 +199,11 @@ export function DeckDialog({
                   {deck.edited && <span className="scr-deck-tag">edited</span>}
                 </span>
                 <span className="scr-deck-blurb">{deck.blurb}</span>
+                {(deck.set !== undefined || deck.year !== undefined) && (
+                  <span className="scr-deck-set">
+                    {[deck.set, deck.year].filter((part) => part !== undefined).join(' · ')}
+                  </span>
+                )}
                 <span className="scr-deck-commander">
                   {deck.commander === '' ? 'No commander marked' : `Commander: ${deck.commander}`}
                 </span>

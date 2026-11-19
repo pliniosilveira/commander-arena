@@ -95,8 +95,8 @@
 }
 .scr-deck-art {
   flex: none;
-  width: 96px;
-  height: 70px;
+  width: 106px;
+  height: 77px;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--line);
@@ -118,6 +118,10 @@
 .scr-deck-blurb {
   color: var(--text-dim);
   font-size: 13px;
+}
+.scr-deck-set {
+  color: var(--text-dim);
+  font-size: 12px;
 }
 .scr-deck-commander {
   font-size: 12px;
