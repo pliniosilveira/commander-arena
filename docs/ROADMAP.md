@@ -139,6 +139,12 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
+- The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the payment by hand that holds mana open skips such sources and leaves them to `payAuto`.
+- A spell with a target tax (Skybonder) is offered by `canCast` when the cheapest cost is payable, though no target leaves it payable; the targets decision then lists none. The agents cancel it (CR 601.2c, 601.2f).
+- An Aftermath half that targets "target card from a graveyard" is offered when its own card is the only one there: it is still in the graveyard when the targets are read (CR 601.2a). The agents cancel it.
+- A prepared copy of a spell (CR 722.3c) was offered, then the engine refused `payAuto` ("You cannot pay that cost"); cause not traced. The agents cancel it and do not cast it again that turn.
+- The CasualAgent sometimes casts a spell with "creature with mana value X" that the engine refuses ("No creature has a mana value that X could be"); one refused answer, then the fallback.
 - The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.
 - A station symbol is read only with one ability line each and no power and toughness box (CR 721.2b); a line after a symbol that carries none is left unread, as its striation is not in the text.
 - The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment in the web cannot.

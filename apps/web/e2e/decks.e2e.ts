@@ -6,6 +6,7 @@ import {
   openStartFlow,
   select,
   startDefaultGame,
+  startFromVersus,
 } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { fakeScryfall } from './harness/synthetic-scryfall';
@@ -125,8 +126,9 @@ test.describe('precons on the decks page', () => {
     await page.getByRole('button', { name: 'Back to menu' }).click();
     // The edited precon is marked in both dialogs of the start-game flow.
     const mine = await openStartFlow(page);
+    await mine.getByRole('tab', { name: 'Precons' }).click();
     await expect(mine.locator('.scr-deck-tag')).toHaveCount(1);
-    // Selecting your deck opens the opponent's dialog, which marks it too.
+    // Choosing your deck opens the opponent's dialog, which marks it too.
     await select(mine);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
     await expect(theirs.locator('.scr-deck-tag')).toHaveCount(1);
@@ -179,6 +181,7 @@ test.describe('a saved deck as the opponent', () => {
     await select(mine);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
     await chooseDeck(theirs, 'My Decks', /SYNTHETIC Saved/);
+    await startFromVersus(page);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
     // The opponent's commander is the saved deck's, in the opponent's command zone.

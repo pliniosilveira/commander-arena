@@ -25,12 +25,12 @@ import { toggleCard } from './cards';
 import { commanderZoneDetail } from './commander-zone';
 import { DamagePanel } from './DamagePanel';
 import { Dialog } from './Dialog';
+import { IntroScreen } from './IntroScreen';
 import { attackTargetLabel, myHand, nameOf, objectIndex, plural, sameAttackTarget } from './lookup';
 import { MiniCard } from './MiniCard';
 import { ModesDialog } from './ModesDialog';
 import type { DecisionModel } from './model';
 import { NamedOptionDialog } from './NamedOptionDialog';
-import { OpponentCommanders } from './OpponentCommanders';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
@@ -56,6 +56,8 @@ export interface OverlayProps {
   /** Sends an action to the engine (the dialogs that draw their own choices answer with it). */
   readonly act: (action: Action) => void;
   readonly error: string | null;
+  /** The screen before the opening hand is up: Start game moves on to the mulligan. */
+  readonly intro?: { readonly onStart: () => void } | null;
 }
 
 const none = () => null;
@@ -136,6 +138,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     ),
 
     mulligan: (d) => {
+      if (props.intro) return <IntroScreen view={view} onStart={props.intro.onStart} />;
       const taken = view.seats[view.viewer]?.mulligans ?? 0;
       return (
         <Dialog label="Opening hand" className="dec-mulligan" popup>
@@ -149,7 +152,6 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
           <Hand view={view} ids={d.hand} selected={[]} />
           <BarButtons buttons={model.bar.buttons} />
           {d.canMulligan ? null : <p className="dec-sub">No more mulligans are possible.</p>}
-          <OpponentCommanders view={view} />
         </Dialog>
       );
     },

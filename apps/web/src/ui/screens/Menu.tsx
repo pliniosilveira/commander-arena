@@ -165,8 +165,6 @@ export function Menu() {
               ? "Select the deck you'll play in this game."
               : 'Select the deck your opponent will play.'
           }
-          name={step === 'player' ? 'human-deck' : 'ai-deck'}
-          value={step === 'player' ? form.humanDeck : form.aiDeck}
           decks={choices}
           error={step === 'opponent' ? refused : null}
           busy={starting}

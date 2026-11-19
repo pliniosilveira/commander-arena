@@ -32,6 +32,7 @@ import {
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
 import { chooseLoyaltyActivation } from './casual-loyalty';
+import { noteCast, withoutTriedCasts } from './casual-no-target';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import { chooseLand, landPlays, type Play, spellPlays, spendOf, withFace } from './casual-priority';
 import { manaValueOf } from './casual-view';
@@ -127,7 +128,9 @@ export class GreedyAgent implements ExplainingAgent {
     return {
       ...createCasualHandlers(view, draw, this.activations),
       priority: (d) => {
-        const { action, reason } = choosePriority(view, d, draw, this.activations);
+        const open = withoutTriedCasts(view, d, this.activations);
+        const { action, reason } = choosePriority(view, open, draw, this.activations);
+        noteCast(view, action, this.activations);
         note(reason);
         return action;
       },

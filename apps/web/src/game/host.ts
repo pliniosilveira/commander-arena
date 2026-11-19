@@ -3,7 +3,12 @@
  * until the human is asked something or the game ends. Framework-free, so the Worker wraps it and
  * tests drive it in process (SPEC 4.1, 10, 17.6 A28).
  */
-import { type Agent, DEFAULT_BUDGET_MS, firstSafeAction } from '@commander-arena/ai';
+import {
+  type Agent,
+  DEFAULT_BUDGET_MS,
+  firstAcceptedAction,
+  firstSafeAction,
+} from '@commander-arena/ai';
 import {
   type Action,
   applyAction,
@@ -372,9 +377,14 @@ export class GameHost implements GameClient {
       let applied = applyAction(before, AI_SEAT, action);
       if (!applied.ok) {
         this.aiFallbacks += 1;
-        action = firstSafeAction(decision);
-        applied = applyAction(before, AI_SEAT, action);
-        if (!applied.ok) break;
+        // Every legal action is tried until one is accepted (plays, then cancel, then concede).
+        const fallback = firstAcceptedAction(decision, (a) => {
+          const tried = applyAction(before, AI_SEAT, a);
+          return tried.ok ? tried : null;
+        });
+        if (fallback === null) break;
+        action = fallback.action;
+        applied = fallback.value;
       }
       this.state = applied.state;
       this.actions.push({ seat: AI_SEAT, action });

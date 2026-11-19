@@ -29,6 +29,7 @@ import {
 import type { DecideContext, FallbackRecord } from './agent';
 import { createCasualHandlers } from './casual-agent';
 import { isHelpfulSpell } from './casual-helpful';
+import { noteCast, withoutTriedCasts } from './casual-no-target';
 import { chooseRingBearerWithEvasion } from './casual-ring';
 import { findObject } from './casual-view';
 import { chooseHeuristicAttack } from './heuristic-attacks';
@@ -37,7 +38,7 @@ import { NO_BUDGET, startBudget, type Think } from './heuristic-budget';
 import { choosePriorityHeuristic } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
-import { isProtectionSpell, protectedTarget } from './heuristic-protect';
+import { isProtectionSpell, payHolding, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
 import { chooseRemovalTargets, creatureToHelp } from './heuristic-targets';
 import { chooseVoteByOutcome } from './heuristic-vote';
@@ -60,6 +61,8 @@ export class HeuristicAgent implements ExplainingAgent {
   private readonly reasonList: ReasonRecord[] = [];
   /** Prevention spells cast in the window they were cast in (casual-prevention.ts). */
   private readonly activations = new Set<string>();
+  /** The mana the payment of the cast just chosen keeps open for a protection spell (`heuristic-protect.ts`). */
+  private reserve: readonly string[] | null = null;
   /** How the opponent has blocked (heuristic-model.ts). */
   readonly opponent = new OpponentModel();
 
@@ -115,9 +118,18 @@ export class HeuristicAgent implements ExplainingAgent {
       ...casual,
       priority: (d) => {
         this.opponent.observe(view);
-        const choice = choosePriorityHeuristic(view, d, think, this.activations, answer);
+        this.reserve = null;
+        const open = withoutTriedCasts(view, d, this.activations);
+        const choice = choosePriorityHeuristic(view, open, think, this.activations, answer);
+        noteCast(view, choice.action, this.activations);
+        this.reserve = choice.action.kind === 'castSpell' ? (choice.reserve ?? null) : null;
         note(choice.reason);
         return choice.action;
+      },
+      payMana: (d) => {
+        const hold = this.reserve;
+        this.reserve = null;
+        return (hold === null ? null : payHolding(view, d, hold)) ?? casual.payMana(d);
       },
       mulligan: (d) => {
         const choice = chooseHeuristicMulligan(view, d, MIN_KEEP_SIZE);

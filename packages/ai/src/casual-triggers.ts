@@ -200,9 +200,21 @@ export function chooseSlot(
   const ranked = slot.legal
     .map((t, index) => ({ t, index, score: score(view, t, plan) }))
     .sort((a, b) => b.score - a.score || a.index - b.index);
-  const wanted = ranked.filter((r) => r.score >= 0).length;
-  const count = Math.min(slot.max, slot.legal.length, Math.max(slot.min, wanted));
-  return ranked.slice(0, count).map((r) => r.t);
+  // D-149, CR 601.2c: "for each opponent" takes at most one target of each controller, the best-scored first.
+  const seen = new Set<unknown>();
+  const pool =
+    slot.onePerGroup === true
+      ? ranked.filter((r) => {
+          const group = r.t.kind === 'object' ? r.t.group : undefined;
+          if (group === undefined) return true;
+          if (seen.has(group)) return false;
+          seen.add(group);
+          return true;
+        })
+      : ranked;
+  const wanted = pool.filter((r) => r.score >= 0).length;
+  const count = Math.min(slot.max, pool.length, Math.max(slot.min, wanted));
+  return pool.slice(0, count).map((r) => r.t);
 }
 
 /** The plan a slot gets when no effect names it: harm, the default. */
