@@ -366,6 +366,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'landfall':
       return ok({ kind: 'landfall' });
+    case 'playsCard': {
+      // "Whenever you play a card with two or more card types" (Death Toll deck, group D, CR 305.1, 601.2, 205.2a): the player is the controller of the ability.
+      if (t.actor?.det !== 'you' || t.atLeast === undefined) return failure(t);
+      const blocked = missingFeatures(['trigger:playsCard']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
+    }
     case 'cycled': {
       // "When you cycle this card" (stage P37, D-180, CR 702.29c): the card with the ability, which the engine finds in the zone it wound up in.
       if (t.actor?.det !== 'you' || t.subject?.det !== 'self') return failure(t);
@@ -1569,6 +1577,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:diesBatch',
   'trigger:discarded',
   'trigger:exerted',
+  'trigger:playsCard',
   'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',

@@ -172,9 +172,21 @@ const GOAD: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const operandNoun = operand(clause, 'objects');
     if (operandNoun?.kind !== 'noun') return failure(clause);
-    const object = objectRefOf(operandNoun, ctx, { moved: true });
+    const object = objectRefOf(operandNoun, ctx, { moved: true, token: true });
     if (!object.ok) return object;
-    return { ok: true, value: [{ kind: 'goad', objects: object.value }], rule: clause.rule };
+    // "The tokens are goaded for the rest of the game" (CR 701.15a, 611.2b): no end.
+    const forever = arg(clause, 'forever');
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'goad',
+          objects: object.value,
+          ...(forever?.kind === 'flag' && forever.value ? { forever: true as const } : {}),
+        },
+      ],
+      rule: clause.rule,
+    };
   },
 };
 

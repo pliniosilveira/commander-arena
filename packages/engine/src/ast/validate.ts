@@ -817,6 +817,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'landfall':
       break;
+    case 'playsCard':
+      // CR 305.1, 601.2: at least one card type (a card has one or more); none is any card.
+      if (t.minCardTypes !== undefined && (!isCount(t.minCardTypes) || t.minCardTypes < 1)) {
+        issue(out, `${path}.minCardTypes`, 'minCardTypes must be a positive integer when present');
+      }
+      break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
         issue(out, `${path}.bearerChosen`, 'must be true when present');

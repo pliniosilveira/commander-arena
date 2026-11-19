@@ -54,6 +54,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'discarded':
     case 'crimeCommitted':
     case 'tokenCreated':
+    case 'playsCard':
     case 'activatesAbility':
     // D-513: the player who scried.
     case 'scries':

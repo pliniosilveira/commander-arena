@@ -3157,8 +3157,9 @@ export type Effect =
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
    * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
+   * `forever` (CR 701.15a, 611.2b): "The tokens are goaded for the rest of the game": the goad has no end, so the creatures stay goaded as long as they are in the game.
    */
-  | { readonly kind: 'goad'; readonly objects: ObjectRef }
+  | { readonly kind: 'goad'; readonly objects: ObjectRef; readonly forever?: true }
   /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
@@ -3844,6 +3845,12 @@ export type Trigger =
   | { readonly kind: 'becomesBlocked'; readonly what: TriggerSubject }
   /** "Whenever a land enters under your control" (landfall). */
   | { readonly kind: 'landfall' }
+  /**
+   * "Whenever you play a card with two or more card types" (CR 305.1, 601.2, 205.2a, 603.2): once each time the controller plays a card, as a land (a land play, a special action) or as a
+   * spell (cast). The card is the subject (`triggerSubject`): the land as it is on the battlefield, the spell as it is on the stack. `minCardTypes` is the least number of card types
+   * (artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, sorcery: not supertypes or subtypes) the card has, 1 or more; none is any card.
+   */
+  | { readonly kind: 'playsCard'; readonly minCardTypes?: number }
   /**
    * "Whenever the Ring tempts you" (CR 701.54d, D-196): once each time the Ring tempts the controller of the ability, as they have done what
    * CR 701.54a says, even when some or all of it was impossible (no creature to choose). The creature they chose is in the event, not the

@@ -709,6 +709,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
+  'trigger.play-card': whenever,
   'trigger.activate-ability': whenever,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,

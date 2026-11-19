@@ -93,6 +93,8 @@ describe('amounts that read an object', () => {
       'lifeTotalOf',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
+      // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
+      'greatestPowerAmong',
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'timesAttacked',

@@ -1289,7 +1289,8 @@ export interface IrTrigger extends IrNode {
   readonly mana?: string;
   /**
    * 'combatDamageBatch': "two or more ..." (stage P31, CR 603.2c): the fewest sources; left out for "one or more". 'attackBatch' (stage
-   * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
+   * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out). 'playsCard' (Death Toll deck, group D, CR 205.2a): the fewest card
+   * types the card played has ("a card with two or more card types").
    */
   readonly atLeast?: number;
   /**

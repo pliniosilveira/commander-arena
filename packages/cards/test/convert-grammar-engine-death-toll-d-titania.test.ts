@@ -77,4 +77,26 @@ describe('"You may play Forests from your graveyard." (CR 305.1)', () => {
     const theirs = g.act(0).try.playLand({ name: 'Forest', zone: 'graveyard', seat: 1 });
     expect(theirs.ok).toBe(false);
   });
+
+  test('"You may play lands from your graveyard." (no land type named): any land card of the graveyard', () => {
+    const excavator = parsed(
+      'SYNTHETIC Parsed Excavator',
+      'Creature — Elemental',
+      'You may play lands from your graveyard.',
+      { manaCost: '{2}{G}', power: '2', toughness: '3', colors: ['G'] },
+    );
+    const g = scenario()
+      .define(excavator)
+      .seat(0)
+      .library(...FILLER)
+      .graveyard('Island')
+      .battlefield(excavator.name)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).playLand({ name: 'Island', zone: 'graveyard', seat: 0 });
+    g.expect.zone('Island', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
 });

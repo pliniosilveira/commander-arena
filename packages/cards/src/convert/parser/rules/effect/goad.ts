@@ -2,7 +2,9 @@
  * Effect rule of issue 89 (Silverquill Influence, D-651): "Goad target creature." and "goad it." (CR 701.15a).
  */
 import { literal, pattern, sequence } from '../../combinators';
-import { defineRule } from '../registry';
+import type { IrNoun } from '../../ir/types';
+import { defineRule, spanned } from '../registry';
+import { flag } from './dragons';
 import { type Clauses, makeClause, operands, single } from './operands';
 
 /**
@@ -85,4 +87,52 @@ export const EFFECT_ATTACK_RANDOM_OPPONENT = defineRule<Clauses>({
   },
 });
 
-export const GOAD_EFFECT_RULES = [EFFECT_GOAD, EFFECT_ATTACK_RANDOM_OPPONENT];
+/**
+ * `effect.tokens-goaded`: "the tokens are goaded for the rest of the game" (Death Toll deck, group D, CR 701.15a, 701.15b, 611.2b; Rendmaw, Creaking Nest): the tokens the instruction before it
+ * created (each player's, the engine's `moved`) are goaded by the controller of the ability with no end. The engine's `goad` with `forever`. Not read: a goad with an end ("until your next
+ * turn"), another group ("the creatures", "those tokens"), the active voice ("goad the tokens"), "each of them", another duration.
+ */
+export const EFFECT_TOKENS_GOADED = defineRule<Clauses>({
+  id: 'effect.tokens-goaded',
+  family: 'effect',
+  leading: ['the'],
+  cites: ['CR 701.15a (Goad)', 'CR 701.15b (Goad)', 'CR 611.2b (Continuous Effects)'],
+  examples: [
+    'the tokens are goaded for the rest of the game',
+    'The tokens are goaded for the rest of the game',
+  ],
+  rejects: [
+    'the tokens are goaded',
+    'the tokens are goaded until your next turn',
+    'the tokens are goaded for the rest of the turn',
+    'the creatures are goaded for the rest of the game',
+    'those tokens are goaded for the rest of the game',
+    'the token is goaded for the rest of the game',
+    'goad the tokens for the rest of the game',
+    'the tokens are goaded for the rest of the game and',
+    'tokens are goaded for the rest of the game',
+  ],
+  parse: single(
+    'effect.tokens-goaded',
+    spanned(pattern(/the tokens are goaded for the rest of the game(?![\p{L}\p{N}])/iu)),
+    (found) => {
+      // "the tokens" are the tokens the instruction before it made, which the binding pass names for "that token": the noun is that pronoun (the engine's `moved` holds all of them).
+      const objects: IrNoun = {
+        kind: 'noun',
+        det: 'anaphor',
+        filter: { raw: 'that token' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: found.span,
+        rule: 'effect.tokens-goaded',
+      };
+      return {
+        verb: 'goad',
+        args: { objects, forever: flag('effect.tokens-goaded', true, found.span) },
+      };
+    },
+  ),
+});
+
+export const GOAD_EFFECT_RULES = [EFFECT_GOAD, EFFECT_TOKENS_GOADED, EFFECT_ATTACK_RANDOM_OPPONENT];

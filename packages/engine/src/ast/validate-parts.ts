@@ -4686,6 +4686,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'goad':
       // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.forever !== undefined && e.forever !== true) {
+        issue(out, `${path}.forever`, 'forever must be true when present');
+      }
       break;
     case 'regenerate':
       // CR 701.19a: a shield for each permanent the selector names, until end of turn.

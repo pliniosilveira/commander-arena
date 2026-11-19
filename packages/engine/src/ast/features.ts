@@ -416,6 +416,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attacks',
     'castSpell',
     'landfall',
+    // CR 305.1, 601.2: "Whenever you play a card with two or more card types".
+    'playsCard',
     'upkeep',
     'endStep',
     'permanentSacrificed',
@@ -2388,6 +2390,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
+  playsCard: true,
   activatesAbility: true,
   scries: true,
   surveils: true,

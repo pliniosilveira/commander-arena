@@ -38,7 +38,11 @@ export function runGoad(
       id: `ce${timestamp}`,
       timestamp,
       objects: [id],
-      until: { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
+      // CR 611.2b: "for the rest of the game" has no end.
+      until:
+        node.forever === true
+          ? 'permanent'
+          : { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
       change: { kind: 'goaded', by: ctx.controller },
     });
   }
