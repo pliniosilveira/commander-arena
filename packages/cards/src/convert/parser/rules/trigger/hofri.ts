@@ -8,6 +8,7 @@ import { choice, fail, literal, map, pattern, sequence } from '../../combinators
 import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { permanentPhrase, spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, quietly, spanned } from '../registry';
+import { CARD_KINDS, cardFilter } from './death-toll-b';
 import { makeNoun } from './subjects';
 
 /** A trigger of one event with no subject, from `pos` to `end`. */
@@ -23,20 +24,26 @@ function plain(id: string, event: string, pos: number, end: number): IrTrigger {
 
 /**
  * `trigger.cards-leave-graveyard`: "one or more cards leave your graveyard" (CR 400.7: a card that changes zones becomes a new object; a card that leaves a
- * graveyard for any other zone leaves it; CR 603.2c: the ability triggers once however many cards left together). The engine's `leftGraveyard`. Not read: a
- * number, the graveyard of another player, "a card leaves", the cards that go to a zone.
+ * graveyard for any other zone leaves it; CR 603.2c: the ability triggers once however many cards left together). The engine's `leftGraveyard`; a kind of card
+ * ("one or more creature cards") is a filter on the card as it was in the graveyard. Not read: a number, the graveyard of another player, "a card leaves", the cards that go
+ * to a zone, a card of two kinds.
  */
 export const TRIGGER_CARDS_LEAVE_GRAVEYARD = defineRule<IrTrigger>({
   id: 'trigger.cards-leave-graveyard',
   family: 'trigger',
   leading: ['one'],
   cites: ['CR 400.7 (Zones)', 'CR 603.2c (Handling Triggered Abilities)', 'CR 404.1 (Graveyard)'],
-  examples: ['one or more cards leave your graveyard'],
+  examples: [
+    'one or more cards leave your graveyard',
+    'one or more creature cards leave your graveyard',
+    'one or more nonland cards leave your graveyard',
+  ],
   rejects: [
     'one or more cards leave a graveyard',
     "one or more cards leave an opponent's graveyard",
     'one or more cards leaves your graveyard',
-    'one or more creature cards leave your graveyard',
+    'one or more land or creature cards leave your graveyard',
+    'one or more creature cards leaves your graveyard',
     'two or more cards leave your graveyard',
     'one card leaves your graveyard',
     'one or more cards leave your graveyard and',
@@ -44,14 +51,30 @@ export const TRIGGER_CARDS_LEAVE_GRAVEYARD = defineRule<IrTrigger>({
     'one or more cards are put into your graveyard',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/one or more cards leave your graveyard(?![\p{L}\p{N}])(?!\s+and)/iu)(
-      ctx,
-      pos,
-    );
+    const r = pattern(
+      new RegExp(
+        `one or more (?:(non)?(${CARD_KINDS}) )?cards leave your graveyard(?![\\p{L}\\p{N}])(?!\\s+and)`,
+        'iu',
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
+    const [, non, kind] = r.value;
+    const filter = cardFilter(undefined, non, kind);
+    if (filter === null) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    const value = plain('trigger.cards-leave-graveyard', 'leftGraveyard', pos, r.pos);
     return {
       ok: true,
-      value: plain('trigger.cards-leave-graveyard', 'leftGraveyard', pos, r.pos),
+      value:
+        kind === undefined
+          ? value
+          : {
+              ...value,
+              subject: {
+                ...makeNoun('trigger.cards-leave-graveyard', span, 'a', filter),
+                plural: true,
+              },
+            },
       pos: r.pos,
     };
   },

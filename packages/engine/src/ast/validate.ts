@@ -1027,6 +1027,27 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'exiledFromLibraryOrGraveyard':
       // D-229: the cards of the controller's own graveyard (and library): `who` is "you".
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (t.kind === 'leftGraveyard') {
+        if (t.each !== undefined && t.each !== true) {
+          issue(out, `${path}.each`, 'each must be true when present');
+        }
+        // The card is read where it was (its owner's graveyard): no zone, controller or owner.
+        if (t.filter !== undefined) {
+          checkFilter(t.filter, `${path}.filter`, out);
+          if (
+            filterSome(
+              t.filter,
+              (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+            )
+          ) {
+            issue(
+              out,
+              `${path}.filter`,
+              'the card that left the graveyard is read there: the filter names no zone, controller or owner',
+            );
+          }
+        }
+      }
       break;
     case 'doorUnlocked':
       // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
@@ -1035,9 +1056,22 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'putIntoGraveyard':
       // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
-      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
-      if (!isOneOf(t.from, ['anywhere', 'library'])) {
-        issue(out, `${path}.from`, `from must be "anywhere" or "library", not ${String(t.from)}`);
+      if (!isOneOf(t.who, ['you', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      if (!isOneOf(t.from, ['anywhere', 'library', 'notBattlefield'])) {
+        issue(
+          out,
+          `${path}.from`,
+          `from must be "anywhere", "library" or "notBattlefield", not ${String(t.from)}`,
+        );
+      }
+      if (t.who === 'any' && t.firstTimeEachTurn !== undefined) {
+        issue(
+          out,
+          `${path}.firstTimeEachTurn`,
+          'firstTimeEachTurn goes with the graveyard of "you"',
+        );
       }
       if (t.batch !== undefined && t.batch !== true) {
         issue(out, `${path}.batch`, 'batch must be true when present');
