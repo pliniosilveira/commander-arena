@@ -123,6 +123,7 @@ describe('the dimensions', () => {
       'thisMatches',
       'didPrevious',
       'movedTotalManaValue',
+      'movedShareAllCardTypes',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
