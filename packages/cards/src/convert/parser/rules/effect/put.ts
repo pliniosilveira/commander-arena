@@ -18,10 +18,10 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrFlag, IrNoun, IrNounList, IrZoneSpec } from '../../ir/types';
-import { PERMANENT_TYPES, typeWords } from '../noun/phrases';
+import type { IrArg, IrFilter, IrFlag, IrNoun, IrNounList, IrZoneSpec } from '../../ir/types';
+import { PERMANENT_CARD_TYPES, PERMANENT_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
-import { defineRule, spanned } from '../registry';
+import { defineRule, family, spanned } from '../registry';
 import {
   type Clauses,
   GRAVEYARD_OPERANDS,
@@ -227,6 +227,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     // D-544: a card of the hand or of the graveyard.
     'you may put a land card from your hand or graveyard onto the battlefield',
     'put a creature card from your hand or graveyard onto the battlefield tapped',
+    // CR 107.3a, 202.3: the mana value limit is the X of the spell.
+    'you may put a permanent card with mana value X or less from your hand onto the battlefield tapped',
+    'you may put a creature card with mana value X or less from your hand onto the battlefield',
   ],
   rejects: [
     'you may put an artifact card from your hand onto the battlefield under your control',
@@ -243,6 +246,10 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a land card from your hand or your graveyard onto the battlefield',
     'you may put a land card from your hand or graveyard into your hand',
     'you may put a land card from your hand or graveyard onto the battlefield and draw a card',
+    'you may put a permanent card with mana value 3 or less from your hand onto the battlefield',
+    'you may put a permanent card with mana value x from your hand onto the battlefield',
+    'you may put a permanent card with mana value x or more from your hand onto the battlefield',
+    'you may put a permanent card with mana value y or less from your hand onto the battlefield',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -266,10 +273,23 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
                   ),
                 ),
                 choice(
-                  map(pattern(/permanent(?![\p{L}\p{N}])/iu), (): string[] => []),
+                  map(pattern(/permanent(?![\p{L}\p{N}])/iu), (): string[] => ['permanent']),
                   typeWords(PERMANENT_TYPES, false),
                 ),
-                literal(' card from your '),
+                literal(' card'),
+                // CR 107.3a, 202.3: "with mana value X or less", the X of the spell (Mind into Matter); read as the effect resolves.
+                optional(
+                  map(
+                    sequence(
+                      literal(' with mana value '),
+                      family<IrArg>('amount', { only: ['amount.x'] }),
+                      literal(' or less'),
+                    ),
+                    ([, x]) => x,
+                  ),
+                  null,
+                ),
+                literal(' from your '),
                 choice(
                   // D-544 (Galadriel deck, group 2): "from your hand or graveyard", the cards of both places together.
                   map(literal('hand or graveyard'), () => 'handOrGraveyard' as const),
@@ -289,12 +309,20 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         value: [null, tapped.value] as const,
         span: { start: onto.span.start, end: tapped.span.end },
       };
-      const [, subtypes, types, , zone] = card.value;
+      const [, subtypes, typeWordsRead, , atMostX, , zone] = card.value;
+      // CR 110.4a (Permanents): "a permanent card" is a card of any of the six permanent types, not any card (an instant or a sorcery cannot be put onto the battlefield).
+      const anyPermanent = typeWordsRead.includes('permanent');
+      const types = anyPermanent ? [] : typeWordsRead;
       const objects: IrNoun = {
         kind: 'noun',
         det: 'a',
         filter: {
           zone: zone === 'handOrGraveyard' ? 'hand' : zone,
+          ...(anyPermanent
+            ? {
+                anyOf: PERMANENT_CARD_TYPES.map((t): IrFilter => ({ types: [t], raw: t })),
+              }
+            : {}),
           ...(types.length > 0 ? { types } : {}),
           ...(subtypes.length > 0 ? { subtypes } : {}),
           controller: 'you',
@@ -329,11 +357,21 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: FROM_HAND_RULE,
       };
-      return { ok: true, value: { objects, to, may: flag, both }, pos: r.pos };
+      return {
+        ok: true,
+        value: { objects, to, may: flag, both, atMostX },
+        pos: r.pos,
+      };
     },
-    ({ objects, to, may, both }) => ({
+    ({ objects, to, may, both, atMostX }) => ({
       verb: 'putFromZone',
-      args: { objects, to, may, ...(both.value ? { alsoGraveyard: both } : {}) },
+      args: {
+        objects,
+        to,
+        may,
+        ...(both.value ? { alsoGraveyard: both } : {}),
+        ...(atMostX === null ? {} : { manaValueAtMost: atMostX }),
+      },
     }),
   ),
 });

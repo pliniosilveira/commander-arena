@@ -171,3 +171,18 @@ describe('what an unclassified line means depends on the face', () => {
     expect(segment('Destroy target creature.', 'spell').sentences).toHaveLength(1);
   });
 });
+
+describe('the four sentences of a look at the top with an "if you don\'t" (CR 608.2c)', () => {
+  const text =
+    "Look at the top four cards of your library. You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand. Put the rest on the bottom of your library in a random order.";
+  const split = (t: string) => splitSentences(t, 0, t.length).map((s) => slice(t, s));
+
+  test('are one instruction', () => {
+    expect(split(text)).toEqual([text]);
+  });
+
+  test('without the last sentence they are not joined', () => {
+    const three = text.slice(0, text.indexOf(' Put the rest'));
+    expect(split(three)).toHaveLength(3);
+  });
+});

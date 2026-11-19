@@ -325,6 +325,8 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  // CR 107.3a: the X announced for the spell the effect belongs to (0 when it has none, CR 107.3b).
+  if (amount.kind === 'x') return xFilterContext(state, ctx).x ?? 0;
   if (amount.kind === 'countOf') {
     const owner = amount.filter.owner;
     const countedContext =

@@ -57,8 +57,13 @@ function revealedEvent(
 function mayTakeWords(ins: LookTake, to: 'hand' | 'battlefield' | 'exileFaceDown'): string {
   const cards = ins.max === 1 ? 'a card that matches' : `up to ${ins.max} cards that match`;
   const them = ins.max === 1 ? 'it' : 'them';
-  const where = to === 'hand' ? 'into your hand' : 'onto the battlefield';
-  return ins.revealAll === true
+  const where =
+    to === 'hand'
+      ? 'into your hand'
+      : ins.tapped === true
+        ? 'onto the battlefield tapped'
+        : 'onto the battlefield';
+  return ins.revealAll === true || ins.hidden === true
     ? `You may put ${cards} from among them ${where}`
     : `You may reveal ${cards} and put ${them} ${where}`;
 }
@@ -127,7 +132,7 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
           ? 'Exile one of them face down'
           : ins.totalManaValue !== undefined
             ? `Put any number of cards that match with total mana value ${ins.totalManaValue} or less onto the battlefield`
-            : ins.hidden === true
+            : ins.hidden === true && to === 'hand'
               ? `Put ${ins.max === 1 ? 'one of them' : `${ins.max} of them`} into your hand`
               : mayTakeWords(ins, to)
       }; the rest ${
@@ -145,6 +150,15 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     return { state, events: [], front: [], needs: decision };
   }
   const chosen = chosenNow ?? [];
+  // CR 608.2c: "If you don't, put a card from among them into your hand": nothing was taken (declined, or no card matched), so the same cards are looked at again for one
+  // card of any kind that goes to the hand unrevealed. The instruction is rewritten as that take, and nothing is announced twice.
+  if (ins.elseAnyToHand === true && chosen.length === 0) {
+    const { elseAnyToHand: _else, tapped: _tapped, manaValueAtMost: _limit, ...rest } = ins;
+    void _else;
+    void _tapped;
+    void _limit;
+    return done(state, [], [{ ...rest, filter: {}, to: 'hand', min: 1, max: 1, chosen: null }]);
+  }
   // CR 701.20a (D-396): with `revealAll` the whole top was shown already and nothing is said of the cards looked at.
   const events: GameEvent[] =
     ins.revealAll === true ? [] : [{ kind: 'topCardsLooked', seat, count: looked.length }];

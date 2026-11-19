@@ -373,13 +373,32 @@ const REMOVE_COUNTERS_MANA_VALUE =
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 
+/**
+ * "Look at the top four cards of your library. You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand. Put
+ * the rest on the bottom of your library in a random order." (Planar Genesis, CR 608.2c): four sentences that are one instruction (the second and third depend on each other and
+ * on the cards the first one looks at), kept together for `effect.look-take-else-hand`. Only all four in a row.
+ */
+const MAY_PUT_AMONG_TAPPED = /^you may put [^.]* from among them onto the battlefield tapped\.$/i;
+const IF_NOT_PUT_AMONG_HAND = /^if you don['’]t, put a card from among them into your hand\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
     const [a, b, c] = [spans[i], spans[i + 1], spans[i + 2]];
+    const d = spans[i + 3];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, LOOK_AT_TOP) &&
+      said(b, MAY_PUT_AMONG_TAPPED) &&
+      said(c, IF_NOT_PUT_AMONG_HAND) &&
+      said(d, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       c !== undefined &&
       said(a, REVEAL_THE_TOP) &&

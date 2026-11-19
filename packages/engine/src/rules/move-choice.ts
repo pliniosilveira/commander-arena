@@ -10,6 +10,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { withAuraEntries } from './aura-entry';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
 import { matchesFilter } from './select';
@@ -93,20 +94,22 @@ export function runChooseMove(
       automatic,
     };
     // D-283 (CR 603.10a): permanents put into a graveyard (or elsewhere) together keep the last-known information recorded before the first leaves.
+    const moves = moveInstructions(
+      objects,
+      instruction.to,
+      instruction.position,
+      instruction.tapped ?? false,
+      instruction.controller,
+      instruction.withCounters,
+    ).map((i) =>
+      i.kind === 'move' && instruction.countsNonland === true
+        ? { ...i, countsNonland: true as const }
+        : i,
+    );
     const together = recordTogether(
       state,
-      moveInstructions(
-        objects,
-        instruction.to,
-        instruction.position,
-        instruction.tapped ?? false,
-        instruction.controller,
-        instruction.withCounters,
-      ).map((i) =>
-        i.kind === 'move' && instruction.countsNonland === true
-          ? { ...i, countsNonland: true as const }
-          : i,
-      ),
+      // CR 303.4f (D-149): an Aura card chosen from the hand or the graveyard and put onto the battlefield chooses what it enchants as it enters (`rules/aura-entry.ts`).
+      instruction.to === 'battlefield' ? withAuraEntries(state, moves) : moves,
     );
     return { ...done(together.state, [event], together.instructions), lastMoved: [], ...restart };
   };

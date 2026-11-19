@@ -345,12 +345,14 @@ export function checkFilter(
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
       a?.kind === 'lifeGainedThisTurn' ||
+      // CR 107.3a: "mana value X or less" of a spell with an {X}, read in the choice of an effect of that spell.
+      (a?.kind === 'x' && where.xAllowed === true) ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
         `${path}.manaValueAtMost`,
-        'the limit is a number, the power of this or the damage that triggered the ability',
+        'the limit is a number, the power of this, the damage that triggered the ability or the X of the spell',
       );
     }
     if (f.manaValue !== undefined) {
@@ -517,6 +519,8 @@ export function checkFilter(
 interface FilterWhere {
   readonly onStack?: boolean;
   readonly inTargets?: boolean;
+  /** The effect belongs to a spell or ability with an {X}, so "mana value X or less" has an X to read (CR 107.3a). */
+  readonly xAllowed?: boolean;
 }
 
 /** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
@@ -2785,7 +2789,9 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
  * among cards in other zones, is not run (docs/ROADMAP.md).
  */
 function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
-  checkFilter(sel.filter, `${path}.filter`, out);
+  checkFilter(sel.filter, `${path}.filter`, out, undefined, undefined, {
+    xAllowed: scope.xAllowed,
+  });
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
@@ -4351,11 +4357,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
-      if (e.take?.hidden !== undefined && (e.take.hidden !== true || e.take.to === 'battlefield')) {
+      if (
+        e.take?.hidden !== undefined &&
+        (e.take.hidden !== true || (e.take.to === 'battlefield' && e.take.elseAnyToHand !== true))
+      ) {
         issue(
           out,
           `${path}.take.hidden`,
-          'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
+          'hidden is true, and only for cards put into the hand, or onto the battlefield with elseAnyToHand (a card put onto the battlefield is public, but it is not revealed)',
+        );
+      }
+      // CR 608.2c: "If you don't, put a card from among them into your hand": after a take onto the battlefield that reveals nothing, of at most one card the player may decline.
+      if (
+        e.take?.elseAnyToHand !== undefined &&
+        (e.take.elseAnyToHand !== true ||
+          e.take.to !== 'battlefield' ||
+          e.take.hidden !== true ||
+          e.take.max !== 1 ||
+          e.take.min !== undefined ||
+          e.take.totalManaValue !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take.elseAnyToHand`,
+          'elseAnyToHand is true, for one optional card taken onto the battlefield unrevealed (to battlefield, hidden, max 1, no min or totalManaValue)',
         );
       }
       // D-396 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
