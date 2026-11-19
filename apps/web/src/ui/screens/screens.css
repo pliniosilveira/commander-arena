@@ -431,7 +431,7 @@
 }
 
 .scr-deck-search {
-  flex: 0 1 320px;
+  flex: 1 1 180px;
   min-width: 180px;
   box-sizing: border-box;
 }
