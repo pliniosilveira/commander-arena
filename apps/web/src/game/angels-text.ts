@@ -244,11 +244,15 @@ export function manaRestrictionWording(
   const special =
     ability.production.kind === 'chosenColor' || ability.production.kind === 'anyCombination';
   if (ability.spendOnly === undefined && ability.spentRider === undefined && !special) return null;
+  // CR 605.1a: "Add {C} for each charge counter" is counted as it is activated: no wording for it here, the card's own text says it.
+  if (ability.production.kind === 'fixed' && ability.production.times !== undefined) return null;
   const made = productionWords(ability.production);
   if (made === null) return null;
   const cost: readonly Cost[] = ability.cost;
   let text = `${activationCostText(cost)}: Add ${made}`;
-  if (ability.spendOnly !== undefined) {
+  if (ability.spendOnly?.xCost === true) {
+    text = `${text}. Spend this mana only on costs that contain {X}`;
+  } else if (ability.spendOnly !== undefined) {
     const spells =
       ability.spendOnly.alsoAbilities === true
         ? spendOnDragonWords(ability.spendOnly)
@@ -284,6 +288,9 @@ export function restrictionWords(restriction: PoolRestriction): string {
   switch (restriction.kind) {
     case 'abilitiesOnly':
       return 'Spend only to activate abilities';
+    case 'xCost':
+      // CR 106.6, 107.3 (Elementalist's Palette): a spell or an ability whose cost contains {X}.
+      return 'Spend only on costs that contain {X}';
     case 'spellTypes':
       return `Spend only to cast ${restriction.types.join(' or ')} spells`;
     case 'spellMatch': {
