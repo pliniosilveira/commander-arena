@@ -2521,7 +2521,12 @@ export type Effect =
        */
       readonly putWithSource?: true;
     }
-  | { readonly kind: 'counter'; readonly objects: ObjectSelector }
+  /**
+   * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard" (CR 701.6a, 614.1a): with `exileInstead` each spell
+   * countered is exiled, not put into its owner's graveyard; the card exiled is what `moved` names afterwards ("then you may cast it without paying its mana cost"), and `moved`
+   * is empty when nothing was countered (a spell that can't be countered stays on the stack).
+   */
+  | { readonly kind: 'counter'; readonly objects: ObjectSelector; readonly exileInstead?: true }
   /**
    * "Counter [it] unless its controller pays [cost]" (CR 702.21a Ward, 701.6): the controller of
    * each spell or ability named is asked, as this resolves, whether to pay; if they decline, or
@@ -4863,6 +4868,11 @@ export type Condition =
    * `zone`: a card cast with Flashback or any other permission from its owner's graveyard is cast from the graveyard.
    */
   | { readonly kind: 'castFromZone'; readonly zone: Zone }
+  /**
+   * "When this creature enters, if you cast it, ..." (CR 601.2a, 603.4): the source, a permanent that has just entered (or what it was as it left), came from a spell that
+   * was cast (from any zone), not from an effect that put it onto the battlefield and not from a copy of a spell. The intervening "if" of an enters trigger of the permanent itself.
+   */
+  | { readonly kind: 'wasCast' }
   /**
    * "This spell costs {3} less to cast if it targets a tapped creature" (CR 601.2c, 601.2f, D-207): at least one of the targets the source spell has chosen
    * is an object the filter matches (a player never is). The targets are chosen before the total cost is determined (CR 601.2c comes before 601.2f), so

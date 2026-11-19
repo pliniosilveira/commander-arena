@@ -107,3 +107,57 @@ describe('Velomachus Lorehold', () => {
     g.expect.life(1, 17);
   });
 });
+
+describe('Transcendent Dragon', () => {
+  const CARD = real('Transcendent Dragon');
+  const NAME = CARD.name;
+  const SIX = Array.from({ length: 6 }, () => 'Island');
+  const respond = () => {
+    const g = scenario()
+      .define(CARD)
+      .seat(0)
+      .life(20)
+      .hand(NAME)
+      .battlefield(...SIX)
+      .seat(1)
+      .life(20)
+      .hand(BOLT)
+      .battlefield('Mountain')
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.act(1).cast(BOLT, { targets: [{ player: 0 }], pay: true });
+    g.act(1).pass();
+    return g;
+  };
+
+  test('it reads as supported and is valid', () => {
+    expect(validateCard(CARD)).toEqual([]);
+  });
+
+  test('cast with flash in response: the Bolt is countered and exiled, and cast for free by the Dragon controller', () => {
+    const g = respond();
+    g.act(0).cast(NAME, { pay: true });
+    g.passAll();
+    g.expect.zone(BOLT, 'exile');
+    g.act(0).chooseCards({ name: BOLT, zone: 'exile', seat: 1 });
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.expect.life(0, 20);
+    g.expect.life(1, 17);
+    g.expect.zone(NAME, 'battlefield', { seat: 0 });
+  });
+
+  test('a Dragon that was not cast (put onto the battlefield by a scenario) does not trigger', () => {
+    const g = scenario()
+      .define(CARD)
+      .seat(0)
+      .life(20)
+      .battlefield(NAME)
+      .seat(1)
+      .hand(BOLT)
+      .battlefield('Mountain')
+      .build();
+    g.expect.zone(NAME, 'battlefield', { seat: 0 });
+    g.expect.stack([]);
+  });
+});

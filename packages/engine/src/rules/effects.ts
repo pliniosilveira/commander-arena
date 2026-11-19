@@ -1032,6 +1032,10 @@ function runEffect(
         canBeCountered(state, id),
       );
       for (const id of ids) events.push({ kind: 'countered', object: id });
+      // CR 701.6a, 614.1a: "exile it instead of putting it into its owner's graveyard": the card exiled is `moved` for the instructions after this one.
+      if (effect.exileInstead === true) {
+        return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 

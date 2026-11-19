@@ -687,6 +687,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
+    // "if you cast it" (CR 601.2a, 603.4): the permanent the trigger is about came from a spell that was cast
+    | { readonly kind: 'wasCast' }
     // "an opponent controls four or more nonbasic lands" (stage P30): some one opponent controls that many
     | { readonly kind: 'opponentControls'; readonly noun: IrNoun; readonly atLeast: IrAmount }
     // "it escaped" (CR 702.138b), stage P23: the permanent was cast with its escape cost; the rule that reads

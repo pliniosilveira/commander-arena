@@ -869,6 +869,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     ...(to === 'battlefield' && old.stack?.kind === 'spell' && (old.stack.x ?? 0) > 0
       ? { castX: old.stack.x ?? 0 }
       : {}),
+    // CR 601.2a, 603.4: "if you cast it": a permanent remembers that it was cast, and from where.
+    ...(to === 'battlefield' && old.stack?.kind === 'spell' && old.stack.castFrom !== undefined
+      ? { castFrom: old.stack.castFrom }
+      : {}),
     // CR 702.174 (D-135): a permanent remembers the opponent its spell's gift was promised to.
     ...(to === 'battlefield' && old.stack?.giftTo !== undefined
       ? { giftTo: old.stack.giftTo }

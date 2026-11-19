@@ -106,6 +106,38 @@ export const SYNTHETIC_FREE_CAST_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // CR 701.6a, 614.1a, 608.2g, 603.4: "Flash. When this creature enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of
+  // putting it into its owner's graveyard, then you may cast it without paying its mana cost."
+  singleFace({
+    name: 'SYNTHETIC Thief Dragon',
+    manaCost: ['2', 'U'],
+    types: ['creature'],
+    subtypes: ['Dragon'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 2,
+    toughness: 2,
+    oracleText:
+      "Flash. When this creature enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost.",
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'flash' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        interveningIf: { kind: 'wasCast' },
+        targets: [
+          { id: 't1', what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } } },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'counter', objects: { kind: 'target', id: 't1' }, exileInstead: true },
+            { kind: 'castFree', objects: { kind: 'moved' } },
+          ],
+        },
+      },
+    ],
+  }),
   // CR 107.3a, 202.3: "mana value X or less" is the X announced for this spell.
   singleFace({
     name: 'SYNTHETIC X Burn Free Rite',

@@ -4,7 +4,7 @@
 import { choice, literal, pattern, sequence } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { CARD_TYPES, typeChoice, typeWords } from '../noun/phrases';
-import { defineRule, spanned } from '../registry';
+import { defineRule, family, spanned } from '../registry';
 import { AT_LEAST_TWO } from './library';
 import { type Clauses, single } from './operands';
 
@@ -112,4 +112,46 @@ export const EFFECT_LOOK_CAST_FREE = defineRule<Clauses>({
   ),
 });
 
-export const JESKAI_CASTFREE_EFFECT_RULES = [EFFECT_LOOK_CAST_FREE];
+/**
+ * `effect.counter-exile-cast`: "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without
+ * paying its mana cost." (CR 701.6a, 614.1a, 608.2g: Transcendent Dragon). Two sentences that `splitSentences` keeps together. The engine's `counter` with `exileInstead`, then a
+ * `castFree` of the card exiled. Not read: a counter with a condition ("unless"), another place for the spell, a cast that costs mana, the second sentence alone.
+ */
+export const EFFECT_COUNTER_EXILE_CAST = defineRule<Clauses>({
+  id: 'effect.counter-exile-cast',
+  family: 'effect',
+  leading: ['counter'],
+  cites: [
+    'CR 701.6a (Counter)',
+    'CR 614.1a (Replacement Effects)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+  ],
+  examples: [
+    "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost",
+    "counter target noncreature spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost",
+  ],
+  rejects: [
+    "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard",
+    "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it",
+    "counter target spell. If that spell is countered this way, put it into its owner's hand, then you may cast it without paying its mana cost",
+    "counter target spell unless its controller pays {1}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost",
+    "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it by paying {2}",
+    "counter target spell. If that creature is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost",
+  ],
+  parse: single(
+    'effect.counter-exile-cast',
+    sequence(
+      literal('counter '),
+      family<IrNoun>('noun', {
+        only: ['noun.target-spell'],
+      }),
+      pattern(
+        /\. if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard, then you may cast it without paying its mana cost(?![\p{L}\p{N}])/iu,
+      ),
+    ),
+    ([, objects]) => ({ verb: 'counterExileCast', args: { objects } }),
+  ),
+});
+
+export const JESKAI_CASTFREE_EFFECT_RULES = [EFFECT_LOOK_CAST_FREE, EFFECT_COUNTER_EXILE_CAST];

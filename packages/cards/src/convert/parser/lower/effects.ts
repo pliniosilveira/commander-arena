@@ -74,6 +74,7 @@ import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
+import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -2001,6 +2002,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PREVENT_DAMAGE_PER_PREVENTED,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
+  ...JESKAI_CASTFREE_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...ARDEN_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.

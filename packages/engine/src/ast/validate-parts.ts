@@ -2670,6 +2670,8 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.zone, ZONES))
         issue(out, `${path}.zone`, `unknown zone ${JSON.stringify(c.zone)}`);
       break;
+    case 'wasCast':
+      break;
     case 'sameNameAtLeast':
       // D-149: some name shared by `count` of the controller's permanents that match; whose they are is the condition's.
       checkFilter(c.filter, `${path}.filter`, out);
@@ -2933,6 +2935,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exile' ||
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
+    // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
+    (e?.kind === 'counter' && e.exileInstead === true) ||
     e?.kind === 'createToken' ||
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||

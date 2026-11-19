@@ -88,3 +88,46 @@ describe('Velomachus Lorehold: "Whenever ~ attacks, look at the top seven cards 
     expect(dropped(text, 'creature').reason).toBeDefined();
   });
 });
+
+describe('Transcendent Dragon: "When ~ enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner\'s graveyard, then you may cast it without paying its mana cost." (CR 603.4, 701.6a, 614.1a, 608.2g)', () => {
+  const REAL =
+    "When ~ enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost.";
+
+  test('the real text: an enters trigger with the intervening "if you cast it"', () => {
+    const parsed = readAll(REAL, 'creature', ['Dragon']);
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        interveningIf: { kind: 'wasCast' },
+        targets: [{ id: 't1', what: { kind: 'object', filter: { zone: 'stack' } } }],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'counter', objects: { kind: 'target', id: 't1' }, exileInstead: true },
+            { kind: 'castFree', objects: { kind: 'moved' } },
+          ],
+        },
+      },
+    ]);
+  });
+
+  test('another kind of spell (SYNTHETIC)', () => {
+    const parsed = readAll(
+      REAL.replace('counter target spell', 'counter target noncreature spell'),
+      'creature',
+    );
+    expect(parsed.abilities).toMatchObject([
+      { kind: 'triggered', effect: { effects: [{ kind: 'counter', exileInstead: true }, {}] } },
+    ]);
+  });
+
+  test.each([
+    // "if you cast it" is the intervening "if" of a trigger about the permanent itself.
+    "Whenever another creature enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost.",
+    "When ~ enters, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+    "When ~ enters, if you cast it, counter target spell unless its controller pays {1}. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost.",
+  ])('not read: %s', (text) => {
+    expect(dropped(text, 'creature').reason).toBeDefined();
+  });
+});

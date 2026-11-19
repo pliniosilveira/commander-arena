@@ -939,6 +939,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardLeftYourGraveyard',
     'manaSpentAtLeast',
     'castFromZone',
+    // CR 603.4: "When this creature enters, if you cast it".
+    'wasCast',
     'spellTargets',
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
@@ -1654,6 +1656,8 @@ export const CONDITION_KINDS = [
   'manaSpentAtLeast',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
   'castFromZone',
+  /** "When this creature enters, if you cast it" (CR 603.4): the engine's `wasCast`. */
+  'wasCast',
   /** "If it targets a tapped creature" (CR 601.2f, D-207): the engine's `spellTargets`. */
   'spellTargets',
   /** "During the declare attackers step" (CR 506.1, D-139): the engine's `duringStep`. */

@@ -199,6 +199,11 @@ export interface GameObject {
    */
   readonly giftTo?: SeatId;
   /**
+   * The zone the spell this permanent came from was cast from (CR 601.2a, 603.4: "When this creature enters, if you cast it, ..."): remembered by the permanent the spell
+   * became. Absent for a permanent that was put onto the battlefield without being cast (and for one that came from a copy of a spell).
+   */
+  readonly castFrom?: Zone;
+  /**
    * The cards this permanent exiled with a linked ability (CR 607.2a, D-139: "Imprint", "exiled with this creature"), in the order they
    * were exiled; `exile.linked` records them and the static `takeFromLinkedExile` reads them. A card that has left exile is a new object
    * (CR 400.7) and no longer one of them: readers keep only those still in exile. It is this object's own: gone when the permanent
