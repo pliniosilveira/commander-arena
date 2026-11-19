@@ -89,6 +89,62 @@ describe('Velomachus Lorehold: "Whenever ~ attacks, look at the top seven cards 
   });
 });
 
+describe('Transforming Flourish: "Destroy target artifact or creature you don\'t control. If that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost." (CR 701.8, 701.13, 608.2g, 118.9)', () => {
+  const REAL =
+    "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost.";
+  const CONTROLLER = { kind: 'controllerOf', of: { kind: 'target', id: 't1' } } as const;
+  const NONLAND = { notTypes: ['land'] };
+
+  test('the real text: the destroy, then the exile and the free cast of the controller of the target, when it was destroyed', () => {
+    const parsed = readAll(REAL, 'instant');
+    expect(parsed.spell).toMatchObject({
+      targets: [{ id: 't1' }],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+          {
+            kind: 'conditional',
+            condition: { kind: 'thisWayAtLeast', what: 'destroyed', count: 1 },
+            effect: {
+              kind: 'sequence',
+              effects: [
+                { kind: 'exileUntilFound', players: CONTROLLER, filter: NONLAND },
+                {
+                  kind: 'castFree',
+                  objects: { kind: 'moved' },
+                  filter: NONLAND,
+                  player: CONTROLLER,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  test('Demonstrate is a keyword of its own (CR 702.144)', () => {
+    expect(readAll('Demonstrate', 'instant').abilities).toEqual([
+      { kind: 'keyword', keyword: { kind: 'demonstrate' } },
+    ]);
+  });
+
+  test('another permanent (SYNTHETIC)', () => {
+    const parsed = readAll(REAL.replace(/permanent is/g, 'creature is'), 'instant');
+    expect(parsed.spell?.effect).toMatchObject({ kind: 'sequence' });
+  });
+
+  test.each([
+    // The cards are exiled by the player who controlled the permanent, so "you" is another reading.
+    "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, you exile cards from the top of your library until you exile a nonland card, then you may cast that card without paying its mana cost.",
+    "Exile target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost.",
+    "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card.",
+  ])('not read: %s', (text) => {
+    expect(dropped(text, 'instant').reason).toBeDefined();
+  });
+});
+
 describe('Transcendent Dragon: "When ~ enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner\'s graveyard, then you may cast it without paying its mana cost." (CR 603.4, 701.6a, 614.1a, 608.2g)', () => {
   const REAL =
     "When ~ enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost.";

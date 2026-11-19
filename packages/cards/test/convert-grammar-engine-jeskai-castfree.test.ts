@@ -108,6 +108,43 @@ describe('Velomachus Lorehold', () => {
   });
 });
 
+describe('Transforming Flourish', () => {
+  const CARD = real('Transforming Flourish');
+  const NAME = CARD.name;
+  const game = (library: readonly string[]) =>
+    scenario()
+      .define(CARD)
+      .seat(0)
+      .life(20)
+      .hand(NAME)
+      .battlefield('Mountain', 'Mountain', 'Mountain')
+      .seat(1)
+      .life(20)
+      .battlefield(BEARS)
+      .library(...library, 'Island', 'Island')
+      .build();
+
+  test('it reads as supported and is valid', () => {
+    expect(validateCard(CARD)).toEqual([]);
+  });
+
+  test('destroying the Bears: the opponent exiles to the Bolt, and casts it for free at the caster', () => {
+    const g = game(['Island', BOLT]);
+    g.act(0).cast(NAME, { targets: [{ name: BEARS }], pay: true });
+    // Demonstrate: the copy is declined (CR 702.144a).
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    g.expect.zone(BEARS, 'graveyard', { seat: 1 });
+    g.expect.pending('chooseCards', 1);
+    g.act(1).chooseCards(BOLT);
+    g.act(1).chooseTargets({ player: 0 });
+    g.passAll();
+    g.expect.life(0, 17);
+    g.expect.zone(BOLT, 'graveyard', { seat: 1 });
+  });
+});
+
 describe('Transcendent Dragon', () => {
   const CARD = real('Transcendent Dragon');
   const NAME = CARD.name;

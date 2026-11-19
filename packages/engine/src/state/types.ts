@@ -1746,6 +1746,8 @@ export type Instruction =
       readonly remaining?: number | 'any';
       /** The cards the question is about, when the effect names them itself: the cards of a library looked at ("cast a spell from among them"). Overrides `objects`. */
       readonly cards?: readonly ObjectId[];
+      /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
+      readonly seat?: SeatId;
       readonly chosen: readonly ObjectId[] | null;
     };
 

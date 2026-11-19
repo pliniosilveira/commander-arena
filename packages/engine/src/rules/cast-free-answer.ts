@@ -33,7 +33,12 @@ export function declineCastFree(state: GameState): ResolveOutcome | null {
   const res = state.resolution;
   if (a === null || res === null) return null;
   return continueResolution({ ...state, pending: null, resolution: { ...res, queue: a.rest } }, [
-    { kind: 'optionalAnswered', seat: res.controller, source: res.source, accepted: false },
+    {
+      kind: 'optionalAnswered',
+      seat: a.head.seat ?? res.controller,
+      source: res.source,
+      accepted: false,
+    },
   ]);
 }
 
@@ -45,13 +50,15 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
   const a = asking(state);
   const res = state.resolution;
   if (a === null || res === null) return fail('Nothing is asking');
-  const begun = beginCast(state, res.controller, card, 'free', 0, true);
+  // "... then they may cast that card": the player the effect names casts it (and controls the spell).
+  const caster = a.head.seat ?? res.controller;
+  const begun = beginCast(state, caster, card, 'free', 0, true);
   if (!begun.ok) return begun;
   const resolving = begun.state.resolution;
   if (resolving === null) return fail('The resolution is gone');
   const accepted: GameEvent = {
     kind: 'optionalAnswered',
-    seat: res.controller,
+    seat: caster,
     source: res.source,
     accepted: true,
   };

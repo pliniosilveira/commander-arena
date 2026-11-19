@@ -3221,6 +3221,12 @@ export type Effect =
        * so they go on the stack together and resolve after it, the last one cast first. Only with `objects` a `moved` reference, and not with `play`.
        */
       readonly max?: number | 'any';
+      /**
+       * "Its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost" (CR 608.2g, 118.9):
+       * the player who may cast, when it is not the controller of the effect: one player the selector names (`controllerOf` of a target, `triggerPlayer`...). They are the one asked and
+       * the one who casts the spell (and controls it), whoever owns the card. Only with `objects` a `moved` reference, whose cards are in exile.
+       */
+      readonly player?: PlayerSelector;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it

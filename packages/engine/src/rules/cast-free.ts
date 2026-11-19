@@ -36,9 +36,10 @@ export function isLandCard(state: GameState, id: ObjectId): boolean {
 export function freeCandidates(
   state: GameState,
   res: ResolutionContext,
-  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards'>,
+  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards' | 'seat'>,
 ): ObjectId[] {
-  const seat = res.controller;
+  // "... then they may cast that card": the player the effect names casts it, not always its controller.
+  const seat = ins.seat ?? res.controller;
   const ctx: SelectContext = {
     controller: seat,
     source: res.source,
@@ -111,7 +112,7 @@ export function runCastFree(
     front: [],
     needs: {
       kind: 'chooseCards',
-      seat: res.controller,
+      seat: ins.seat ?? res.controller,
       source: res.object,
       purpose: 'cast',
       zone,

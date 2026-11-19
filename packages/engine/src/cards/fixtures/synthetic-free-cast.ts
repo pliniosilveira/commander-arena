@@ -138,6 +138,58 @@ export const SYNTHETIC_FREE_CAST_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // CR 701.8, 701.13, 608.2g: "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their
+  // library until they exile a nonland card, then they may cast that card without paying its mana cost."
+  singleFace({
+    name: 'SYNTHETIC Flourish',
+    manaCost: ['2', 'R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost.",
+    spell: {
+      targets: [
+        {
+          id: 't1',
+          what: {
+            kind: 'object',
+            filter: {
+              zone: 'battlefield',
+              controller: 'opponent',
+              anyOf: [{ types: ['artifact'] }, { types: ['creature'] }],
+            },
+          },
+        },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+          {
+            kind: 'conditional',
+            condition: { kind: 'thisWayAtLeast', what: 'destroyed', count: 1 },
+            effect: {
+              kind: 'sequence',
+              effects: [
+                {
+                  kind: 'exileUntilFound',
+                  players: { kind: 'controllerOf', of: { kind: 'target', id: 't1' } },
+                  filter: { notTypes: ['land'] },
+                },
+                {
+                  kind: 'castFree',
+                  objects: { kind: 'moved' },
+                  filter: { notTypes: ['land'] },
+                  player: { kind: 'controllerOf', of: { kind: 'target', id: 't1' } },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  }),
   // CR 107.3a, 202.3: "mana value X or less" is the X announced for this spell.
   singleFace({
     name: 'SYNTHETIC X Burn Free Rite',

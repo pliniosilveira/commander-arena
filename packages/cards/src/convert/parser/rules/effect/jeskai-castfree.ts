@@ -1,12 +1,13 @@
 /**
  * Effects of the Jeskai free-cast cards (deck support issue 100): a free cast of a spell from among the cards looked at, from the library they are still in.
  */
-import { choice, literal, pattern, sequence } from '../../combinators';
+import { choice, literal, map, pattern, quiet, sequence } from '../../combinators';
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
+import { NOUN_ITS_CONTROLLER } from '../noun/controller';
 import { CARD_TYPES, typeChoice, typeWords } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { AT_LEAST_TWO } from './library';
-import { type Clauses, single } from './operands';
+import { type Clauses, makeClause, single } from './operands';
 
 /**
  * `effect.look-cast-free`: "look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them
@@ -154,4 +155,61 @@ export const EFFECT_COUNTER_EXILE_CAST = defineRule<Clauses>({
   ),
 });
 
-export const JESKAI_CASTFREE_EFFECT_RULES = [EFFECT_LOOK_CAST_FREE, EFFECT_COUNTER_EXILE_CAST];
+/**
+ * `effect.destroyed-controller-exile-cast`: "if that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card,
+ * then they may cast that card without paying its mana cost." (CR 701.8, 701.13, 608.2g, 118.9: Transforming Flourish). The sentence after a destroy: when the permanent was
+ * destroyed (not when it was indestructible or regenerated), the player who controlled it exiles from the top of their own library until a nonland card is exiled and may cast
+ * that card for free. The engine's `exileUntilFound` and `castFree` of the card exiled, for that player, behind `thisWayAtLeast` of the `destroyed` count. Not read: another
+ * moment of the condition, another player, a land, a cast that costs mana, a kind of card other than nonland.
+ */
+export const EFFECT_DESTROYED_CONTROLLER_EXILE_CAST = defineRule<Clauses>({
+  id: 'effect.destroyed-controller-exile-cast',
+  family: 'effect',
+  leading: ['if'],
+  cites: [
+    'CR 701.8 (Destroy)',
+    'CR 701.13 (Exile)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+  ],
+  examples: [
+    'if that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost',
+    'if that creature is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost',
+  ],
+  rejects: [
+    'if that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card',
+    'if that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a land card, then they may cast that card without paying its mana cost',
+    'if that permanent is destroyed this way, you exile cards from the top of your library until you exile a nonland card, then you may cast that card without paying its mana cost',
+    'if that permanent is exiled this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost',
+    'if that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card',
+    'that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost',
+  ],
+  parse: (ctx, pos) =>
+    map(
+      spanned(
+        quiet(
+          sequence(
+            pattern(/if that (?:permanent|creature|artifact) is destroyed this way, /iu),
+            NOUN_ITS_CONTROLLER.parse,
+            pattern(
+              / exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost(?![\p{L}\p{N}])/iu,
+            ),
+          ),
+        ),
+      ),
+      ({ value, span }): Clauses => [
+        makeClause(
+          'effect.destroyed-controller-exile-cast',
+          'destroyedControllerExileCast',
+          { player: value[1] },
+          span,
+        ),
+      ],
+    )(ctx, pos),
+});
+
+export const JESKAI_CASTFREE_EFFECT_RULES = [
+  EFFECT_LOOK_CAST_FREE,
+  EFFECT_COUNTER_EXILE_CAST,
+  EFFECT_DESTROYED_CONTROLLER_EXILE_CAST,
+];

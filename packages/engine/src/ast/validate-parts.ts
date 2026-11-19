@@ -5222,6 +5222,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       const objects = e.objects as ChooseSelector | ObjectRef;
+      // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.
+      if (e.player !== undefined) {
+        checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        if (kindOf(objects) !== 'moved' || e.play === true) {
+          issue(
+            out,
+            `${path}.player`,
+            "another player casts the cards an effect before moved ('moved'), and does not play them",
+          );
+        }
+      }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
       if (e.filter !== undefined) {
         if (kindOf(objects) === 'choose') {
