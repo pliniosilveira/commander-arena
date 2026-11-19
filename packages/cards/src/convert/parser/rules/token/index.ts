@@ -50,6 +50,16 @@ const COUNT = choice(
       span,
     }),
   ),
+  // Quandrix Unlimited deck, group D2 (The Goose Mother, CR 107.1a): "create half X, rounded up Food tokens" (`normalizeOracleText` writes the rounding after the X).
+  map(
+    spanned(pattern(/half X, rounded (up|down)(?![\p{L}\p{N}])/iu)),
+    ({ value, span }): IrAmount => ({
+      kind: 'half',
+      of: { kind: 'x', span },
+      round: (value[1] ?? 'down').toLowerCase() as 'down' | 'up',
+      span,
+    }),
+  ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
   // Issue 160 (D-626, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
@@ -83,7 +93,8 @@ function predefinedToken(count: Parser<IrAmount>, pluralOnly = false): Parser<Ba
         ),
         TOKEN_WORD,
       ),
-      ([amount, , , , plural]) => (amount.kind !== 'x' && !pluralOnly) || plural,
+      ([amount, , , , plural]) =>
+        (amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural,
     ),
     ([amount, , tapped, predefined]): Bare => ({
       kind: 'token',
@@ -228,6 +239,21 @@ const TOKEN_NAME = map(
 );
 
 /**
+ * The name of a legendary token: a token name, and the epithet some legends carry ("Primo, the Indivisible", CR 111.4, 201.2: the whole of it is the name). The epithet is the
+ * comma, "the" and capitalized words; the comma before ", a legendary" is the one that ends the name.
+ */
+const LEGENDARY_TOKEN_NAME = map(
+  sequence(
+    TOKEN_NAME,
+    optional(
+      map(pattern(/, the [A-Z][\p{L}'’-]*(?: [A-Z][\p{L}'’-]*)*/u), (m) => m[0]),
+      '',
+    ),
+  ),
+  ([name, epithet]) => `${name}${epithet}`,
+);
+
+/**
  * " named ~'s Pridemate" (D-266): the name of a token that begins with the name of the card that makes it, as Ajani's Pridemate does. The card's name was
  * written `~` when the text was normalized (a legendary card's short name too), so the possessive after it is what shows it is a name and not the card's: `~'s`
  * and one or more capitalized words, nothing else of `~`. The lowering puts the card's own short name back; a name that is only `~` or has it later is not read.
@@ -283,7 +309,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
         ),
       ),
       ([amount, , , pt, , , , , plural]) =>
-        ((amount.kind !== 'x' && !pluralOnly) || plural) &&
+        ((amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural) &&
         ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')),
     ),
     ([
@@ -420,6 +446,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   examples: [
     'Smaug, a legendary 6/6 red Dragon creature token with flying, haste, and "When Smaug dies, create fourteen Treasure tokens."',
     'Hero, a legendary 2/2 white Soldier creature token',
+    'Primo, the Indivisible, a legendary 0/0 green and blue Fractal creature token',
     'Hero, a legendary 2/2 white Soldier creature token with flying',
     'Dead Knight of Doom, a legendary 3/3 black Zombie Knight creature token with menace',
     'Hero, a legendary 2/2 white Soldier creature token with "When Hero dies, you gain 1 life."',
@@ -437,6 +464,8 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
     'smaug, a legendary 6/6 red Dragon creature token',
     'a legendary 6/6 red Dragon creature token',
     'Smaug a legendary 6/6 red Dragon creature token',
+    'Primo, the, a legendary 0/0 green and blue Fractal creature token',
+    'Primo, The Indivisible, a legendary 0/0 green and blue Fractal creature token',
     'Smaug, a legendary 6/6 red Dragon creature token named Smaug',
     'Smaug, a legendary 6/6 red Dragon creature token with "When Smaug dies, create fourteen Treasure tokens"',
     'Smaug, a legendary 6/6 red Dragon creature token with flying, haste and "When Smaug dies, create fourteen Treasure tokens." and more',
@@ -454,7 +483,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   parse: node<Bare, IrToken>(
     'token.named-legendary',
     (ctx, pos) => {
-      const named = spanned(TOKEN_NAME)(ctx, pos);
+      const named = spanned(LEGENDARY_TOKEN_NAME)(ctx, pos);
       if (!named.ok) return named;
       const name = named.value.value;
       const rest = choice(

@@ -84,6 +84,8 @@ export function lowerCondition(
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
       const blocked = missingFeatures(['condition:xAtLeast']);
       if (blocked.length > 0) return failure(c, blocked);
+      // CR 107.3m (D2 group, Kinetic Ooze): in the enters trigger of the permanent itself the X is the one of the spell it came from (`validateCard` checks the cost has an {X}).
+      if (ctx?.entersX === true) return ok({ kind: 'xAtLeast', value: test.atLeast });
       if (ctx?.owner !== 'spell') return failure(c, []);
       ctx.usesX = true;
       return ok({ kind: 'xAtLeast', value: test.atLeast });
@@ -346,6 +348,14 @@ export function lowerCondition(
       if (!amount.ok) return amount;
       const { cmp, value } = test.compare;
       return ok({ kind: 'amountIs', amount: amount.value, compare: { cmp, value } });
+    }
+    case 'amountIsPrime': {
+      // "You control a prime number of lands" (Zimone, All-Questioning): a count of the game, which is or is not a prime number, read as the ability triggers and as it resolves (CR 603.4).
+      const blocked = missingFeatures(['condition:amountIsPrime']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const amount = lowerAmount(test.amount, ctx ?? newContext('ability', []), c.rule);
+      if (!amount.ok) return amount;
+      return ok({ kind: 'amountIsPrime', amount: amount.value });
     }
     case 'designation': {
       // CR 725.1: the monarch is a designation a player has; the selector names the players that count.
@@ -618,6 +628,7 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'ringBearerChosen', other: true });
     }
+    case 'costContainsX':
     case 'notDeclaredAttacker':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
       // as a condition of anything else there is nothing to read it from.
@@ -726,6 +737,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:thisWayAtLeast',
   'condition:unlessPays',
   'condition:amountIs',
+  'condition:amountIsPrime',
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:giftPromised',

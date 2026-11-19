@@ -318,8 +318,8 @@ const SEARCH: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap those lands.',
-    expect: no('those lands.', 'effect.untap'),
-    note: 'SYNTHETIC; a plural pronoun is not read after a search for one card (since stage P49 "Then if you control four or more lands," is)',
+    expect: no('untap those lands.', 'effect.untap-those-lands', { reason: 'notRunnable' }),
+    note: 'SYNTHETIC; "those lands" is the lands a reveal of the top put onto the battlefield (the reading of Animist\'s Awakening), not those of a search (since stage P49 "Then if you control four or more lands," is read)',
   },
 ];
 
@@ -460,11 +460,11 @@ runCorpus('the template corpus (stage P2)', CORPUS);
 
 test('the P2 corpus has unique lines, and supported, unparsed and not-runnable expectations', () => {
   expect(new Set(CORPUS.map((l) => `${l.kind}|${l.text}`)).size).toBe(CORPUS.length);
-  // Stages P51 and P52 (D-209, D-210) read two lines of this corpus that were unread ("at random", "your hand"): the floor of the unread lines moved from 15 to 13; stage P63 (D-216) read two sacrifice mana abilities, so the not-runnable floor moved from 5 to 3; D-262 read "up to two basic land cards that share a land type" (Myriad Landscape), so the unread floor moved from 13 to 12.
+  // Stages P51 and P52 (D-209, D-210) read two lines of this corpus that were unread ("at random", "your hand"): the floor of the unread lines moved from 15 to 13; stage P63 (D-216) read two sacrifice mana abilities, so the not-runnable floor moved from 5 to 3; D-262 read "up to two basic land cards that share a land type" (Myriad Landscape), so the unread floor moved from 13 to 12; the Quandrix D2 group read "untap those lands" (Animist's Awakening: the lands a reveal put onto the battlefield, refused after a search), so it moved from 12 to 11.
   expect(CORPUS.filter((l) => 'supported' in l.expect).length).toBeGreaterThanOrEqual(40);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === undefined).length,
-  ).toBeGreaterThanOrEqual(12);
+  ).toBeGreaterThanOrEqual(11);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === 'notRunnable')
       .length,

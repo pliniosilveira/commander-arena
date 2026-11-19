@@ -378,6 +378,7 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       if (ability.trigger?.kind === 'castSpell' && ability.trigger.self === true) {
         return 'this spell';
       }
+      if (ability.trigger?.kind === 'activatesAbility') return 'that ability';
       return ability.trigger === undefined ||
         ability.trigger.kind === 'castSpell' ||
         ability.trigger.kind === 'becomesTarget'
@@ -1377,6 +1378,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Untap ${object(effect.objects)}`;
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
+    case 'moveAllCounters':
+      // CR 122.1: "Move all counters from target nonland permanent you control onto another target nonland permanent you control".
+      return `Move all counters from ${object(effect.from)} onto ${object(effect.to)}`;
     case 'removeAllPlayerCounters':
       return `${playerVerb(effect.player, ability, 'lose')} all counters`;
     case 'createCopies': {
@@ -1590,6 +1594,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       const spell = object(effect.spell);
       return spell === UNSAID ? UNSAID : copySpellWords(spell, effect.newTargets, count);
     }
+    case 'doubleSpellX':
+      // CR 107.3 (Unbound Flourishing): the X of the spell that was cast.
+      return object(effect.spell) === UNSAID ? UNSAID : 'Double the value of X';
     case 'exileOnResolve': {
       // D-439 (CR 614.1a, 608.2n, 603.7): the spell whose casting caused the trigger is exiled as it resolves, and comes back to the hand at the next end step.
       return object(effect.spell) === UNSAID

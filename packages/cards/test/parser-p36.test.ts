@@ -632,7 +632,7 @@ const REFUSED: readonly (readonly [string, FaceType, readonly string[], string])
     'Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Untap those lands.',
     'sorcery',
     [],
-    'unrecognised',
+    'notRunnable',
   ],
   // An ability alone, or "or ability" after the "or".
   ['Whenever ~ becomes the target of an ability, you gain 1 life.', 'creature', [], 'unrecognised'],

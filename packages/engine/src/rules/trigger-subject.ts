@@ -16,6 +16,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
   if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;
+  // CR 107.3, 113.7a (Quandrix Unlimited group E): "put X +1/+1 counters" of a cast trigger reads the X of the spell that was cast, as the ability resolves.
+  if (effects.includes('"triggerSpellX"')) return true;
   // CR 601.2h, 608.2c: "If five or more mana was spent to cast that spell, ... instead" is a condition of the effect, read as the effect resolves from the spell that
   // caused the trigger, so the subject stays on the stack as it does for the intervening "if" below.
   if (effects.includes('"manaSpentAtLeast"')) return true;

@@ -70,7 +70,9 @@ export function lower(ability: IrAbility, ctx: LowerContext): LowerResult<Lowere
   // CR 107.3j: a triggered or static ability has no X announced for it, so a text that reads X
   // there (not defined by "where X is ...", which no rule reads) is refused, as `validateCard` does.
   const withoutX = <T>(r: LowerResult<T>): LowerResult<T> =>
-    r.ok && ctx.usesX ? { ok: false, needs: [], at: ability.span, rule: ability.rule } : r;
+    r.ok && ctx.usesX && !ctx.selfCast
+      ? { ok: false, needs: [], at: ability.span, rule: ability.rule }
+      : r;
   switch (ability.kind) {
     case 'keyword': {
       // Overload, Evoke, Dash and the other named alternatives (Madness and Foretell: stage P26) are

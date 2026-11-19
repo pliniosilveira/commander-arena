@@ -3,7 +3,7 @@
  * read by `keyword.line` in a list with the keywords without a parameter ("Flying, protection from black"). Protection from a quality that is not a color
  * (a card type, a player, everything, monocolored) is not read.
  */
-import { fail, type Parser, pattern } from '../../combinators';
+import { choice, fail, type Parser, pattern } from '../../combinators';
 import type { IrKeyword } from '../../ir/types';
 import { node } from '../registry';
 
@@ -76,11 +76,24 @@ export const PROTECTION_OUTSIDE_COMMANDER_IDENTITY: Parser<RegExpExecArray> = pa
   /protection from each color that['\u2019]s not in your commander['\u2019]s color identity(?![\p{L}\p{N}])/iu,
 );
 
+/** "protection from multicolored" (CR 702.16a, 105.2): protection from every source with two or more colors. */
+const PROTECTION_MULTICOLORED: Parser<RegExpExecArray> = pattern(
+  /protection from multicolored(?![\p{L}\p{N}])/iu,
+);
+
 export function protectionKeyword(rule: string): Parser<IrKeyword> {
-  return node<string[], IrKeyword>(rule, PROTECTION_COLORS, (colors) => ({
-    kind: 'keyword',
-    name: 'protection',
-    params: [],
-    colors,
-  }));
+  return choice(
+    node<string[], IrKeyword>(rule, PROTECTION_COLORS, (colors) => ({
+      kind: 'keyword',
+      name: 'protection',
+      params: [],
+      colors,
+    })),
+    node<RegExpExecArray, IrKeyword>(rule, PROTECTION_MULTICOLORED, () => ({
+      kind: 'keyword',
+      name: 'protection',
+      params: [],
+      quality: 'multicolored',
+    })),
+  );
 }

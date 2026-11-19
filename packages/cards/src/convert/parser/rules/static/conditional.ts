@@ -42,6 +42,8 @@ const STATIC_CONDITIONS = [
   'condition.host-is-color',
   'condition.other-attached-to-host',
   'condition.this-entered-this-turn',
+  // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
+  'condition.this-has-counter-count',
 ] as const;
 
 const CONDITION: Parser<IrCondition> = family<IrCondition>('condition', {

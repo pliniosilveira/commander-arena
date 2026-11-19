@@ -17,6 +17,7 @@ import type { GameEvent } from '../state/events';
 import { allocateTimestamp, patchObject } from '../state/ops';
 import type { ContinuousEffect, GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { counterCountOn } from './counter-bonus';
 import { asking } from './damage-effects';
 import type { OrderFlow } from './damage-order';
 import { derive } from './derive';
@@ -107,14 +108,15 @@ export function runAmass(
   // CR 701.47b: the player amassed even when nothing could be done (a replacement made no Army token, the chosen Army left).
   if (picked === undefined || obj === undefined) return done(next, events);
   if (ins.amount > 0) {
+    const put = counterCountOn(next, obj, '+1/+1', ins.amount);
     next = patchObject(next, picked, {
-      counters: { ...obj.counters, '+1/+1': (obj.counters['+1/+1'] ?? 0) + ins.amount },
+      counters: { ...obj.counters, '+1/+1': (obj.counters['+1/+1'] ?? 0) + put },
     });
     events.push({
       kind: 'counterAdded',
       object: picked,
       counter: '+1/+1',
-      count: ins.amount,
+      count: put,
       by: seat,
     });
   }

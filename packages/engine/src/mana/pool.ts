@@ -14,10 +14,16 @@ export type SpendTarget =
        * of the mana itself and the snow of {S} are not about its type and still apply.
        */
       readonly anyType?: true;
+      /** The mana value of the spell as it is cast (CR 202.3e: an {X} counts as the value announced on the stack, 0 elsewhere); read by a `qualities` restriction. */
+      readonly manaValue?: number;
+      /** Whether its mana cost has an {X} (CR 107.3); read by a `qualities` restriction. */
+      readonly hasX?: boolean;
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
       readonly ability: true;
+      /** The activation cost has an {X} (CR 107.3, 602.2b). */
+      readonly hasX?: true;
       readonly source?: { readonly types: readonly string[]; readonly subtypes: readonly string[] };
     };
 
@@ -43,9 +49,12 @@ export function restrictionAllows(
   if (restriction === null) return true;
   const isAbility = 'ability' in target;
   if (restriction.kind === 'abilitiesOnly') return isAbility;
+  // CR 106.6, 107.3: a spell or an ability whose cost contains {X}.
+  if (restriction.kind === 'xCost') return target.hasX === true;
   if (isAbility) {
     // D-151: "... or activate abilities of Dragons": an ability of a permanent that matches the same card types and subtypes.
     if (restriction.kind !== 'spellMatch' || restriction.alsoAbilities !== true) return false;
+    if (restriction.qualities !== undefined) return false;
     const source = 'source' in target ? target.source : undefined;
     return (
       source !== undefined &&
@@ -58,6 +67,17 @@ export function restrictionAllows(
   if (restriction.kind === 'spellMatch') {
     // D-149: the spell is of one of the types and of one of the subtypes the restriction names (each only when it names any).
     const subtypes = 'subtypes' in target ? (target.subtypes ?? []) : [];
+    // CR 106.6, 202.3, 107.3: "spells with mana value 5 or greater or spells with {X} in their mana costs": at least one quality holds (a spell that does not say is none).
+    if (
+      restriction.qualities !== undefined &&
+      !restriction.qualities.some((q) =>
+        q.kind === 'hasX'
+          ? 'hasX' in target && target.hasX === true
+          : 'manaValue' in target && target.manaValue !== undefined && target.manaValue >= q.value,
+      )
+    ) {
+      return false;
+    }
     return (
       (restriction.types === undefined ||
         target.types.some((t) => restriction.types?.includes(t) === true)) &&

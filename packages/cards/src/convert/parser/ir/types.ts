@@ -355,6 +355,10 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "from your hand" (Prismari deck group 1, D-638, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
   readonly castFromHand?: true;
+  /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
+  readonly xInManaCost?: true;
+  /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
+  readonly firstXSpellThisTurn?: true;
   /** "that entered this turn" (group 4 of the Vraska deck, CR 400.7): a permanent that entered the battlefield during this turn (the engine's `enteredThisTurn`). */
   readonly enteredThisTurn?: true;
   /** "target card exiled with ~" (Lorehold group 2, CR 607.2a): a card in exile that the permanent exiled with its linked ability (the engine's `exiledWithSource`). */
@@ -384,6 +388,8 @@ export interface IrFilter {
   readonly castTargetsSelf?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
+  /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
+  readonly basePowerIs?: number;
   /**
    * "with power greater than target creature's power" (CR 208.1, 608.2c): the engine's `powerGreaterThan` of the target this noun is. A target noun of its own, numbered with
    * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
@@ -406,7 +412,11 @@ export interface IrFilter {
 
 export type IrAmount =
   | { readonly kind: 'number'; readonly value: number; readonly span: Span }
-  | { readonly kind: 'x'; readonly span: Span }
+  | {
+      readonly kind: 'x';
+      readonly span: Span /** "twice X": X multiplied by this (an integer of 2 or more). */;
+      readonly times?: number;
+    }
   // "for each creature you control"
   | { readonly kind: 'countOf'; readonly of: IrNoun; readonly span: Span }
   | { readonly kind: 'powerOf'; readonly of: IrNoun; readonly span: Span }
@@ -477,7 +487,7 @@ export type IrAmount =
   // "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3)
   | { readonly kind: 'commanderManaValue'; readonly span: Span }
   // "for each time you've cast your commander from the command zone this game" (stage P68, D-229, CR 903.8)
-  | { readonly kind: 'commanderCasts'; readonly span: Span }
+  | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it
@@ -534,7 +544,8 @@ export type IrAmount =
         | 'milledValue'
         | 'milledCreature'
         | 'discardedMost'
-        | 'damageDealt';
+        | 'damageDealt'
+        | 'countersRemoved';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
       /** "that many" (stage P30): the number of whatever the instruction before it did, whichever words the text uses. */
@@ -621,6 +632,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'ringBearerChosen' }
     // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
     | { readonly kind: 'notDeclaredAttacker' }
+    // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
+    | { readonly kind: 'costContainsX' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
     | { readonly kind: 'controlCommander'; readonly yours?: true }
     // Stage P29 (D-133): "you have 30 or more life", "you have at least 7 life more than your starting life total"
@@ -708,6 +721,8 @@ export interface IrCondition extends IrNode {
     // creature cards in your graveyard", "if an opponent controls more creatures than you": any amount of the
     // game compared with a number
     | { readonly kind: 'amountIs'; readonly amount: IrAmount; readonly compare: IrComparison }
+    /** "you control a prime number of lands" (Zimone, All-Questioning): the engine's `amountIsPrime`. */
+    | { readonly kind: 'amountIsPrime'; readonly amount: IrAmount }
     // "if you're the monarch", "if an opponent is the monarch" (CR 725.1: a designation); `not` for the negative
     | {
         readonly kind: 'designation';
@@ -864,6 +879,10 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
+    // "one mana of that color for each charge counter on ~" (CR 605.3b, 106.1b): after "Choose a color.", as many mana of it as the `times` amount of the clause
+    | { readonly kind: 'thatColor' }
+    // "X mana of any one color, where X is ~'s power" (CR 106.1b, 107.3c): `count` mana of one color chosen as the ability resolves, X what the sentence defines
+    | { readonly kind: 'anyOneColorX' }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }
@@ -976,6 +995,8 @@ export interface IrBasePt extends IrNode {
   readonly toughness: number;
   /** "base power and toughness X/X" (CR 107.3, 613.4b): the X of the ability; `power` and `toughness` are 0 and are not read. */
   readonly x?: true;
+  /** "become equal to ~'s power and toughness" (CR 613.4b, 611.2c): the source's power and toughness as the effect resolves; `power` and `toughness` are 0 and are not read. */
+  readonly fromSource?: true;
 }
 
 /**

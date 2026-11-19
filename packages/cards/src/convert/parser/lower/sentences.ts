@@ -746,6 +746,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'behold',
   // D-212: "you may have ~ become a copy of ... If you do, ..." (CR 707.2).
   'becomeCopy',
+  // Quandrix Unlimited deck, group G (CR 122.1, 608.2c): "you may remove a +1/+1 counter from ~. If you do, ...".
+  'removeCounters',
 ]);
 
 /**
@@ -1472,6 +1474,9 @@ function countsWhatHappened(
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
+    case 'countersRemoved':
+      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
+      return earlier.verb === 'removeAllCounters';
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';
@@ -1614,19 +1619,48 @@ function lowerNextCast(
   ) {
     return stop(refuse(sentence));
   }
-  const filter = lowerFilter(spell);
-  if (!filter.ok) return stop(filter);
-  const inner = lowerClauses(sentence.clauses, ctx);
-  if (!inner.ok) return stop(inner);
-  const effect = oneEffect(inner.value);
-  if (effect.kind !== 'copySpell' || effect.spell.kind !== 'triggerSubject') {
-    return stop(refuse(sentence));
-  }
-  steps.push({
-    effects: [{ kind: 'delayedCast', filter: filter.value, effect }],
-    replaceable: false,
-  });
+  const lowered = lowerDelayedCast(sentence, spell, ctx);
+  if (!lowered.ok) return stop(lowered);
+  steps.push({ effects: [lowered.value], replaceable: false });
   return { last: i };
+}
+
+/**
+ * The `delayedCast` of a "When you next cast ..." sentence (D-336, Quandrix Unlimited group E): what it does is copying the spell that was cast, or the controller's own
+ * instructions (draw, gain life) with an X that is the X of the spell cast ("a spell with {X} in its mana cost": "gain half X life, rounded down"). Also the extra effect of a mana ability.
+ */
+export function lowerDelayedCast(
+  sentence: IrSentence,
+  spell: NonNullable<IrSentence['delayed']>['spell'],
+  ctx: LowerContext,
+): LowerResult<Effect> {
+  if (
+    spell === undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refuse(sentence);
+  }
+  const filter = lowerFilter(spell);
+  if (!filter.ok) return filter;
+  // An X in what the spell does is the X of the spell cast (CR 107.3), only when the spell is one with an {X} in its mana cost.
+  const before = ctx.castTriggerX;
+  ctx.castTriggerX = filter.value.xInManaCost === true;
+  const inner = lowerClauses(sentence.clauses, ctx);
+  ctx.castTriggerX = before;
+  if (!inner.ok) return inner;
+  const effect = oneEffect(inner.value);
+  const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
+  const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
+  if (!(onlyCopy || onlyOwn)) return refuse(sentence);
+  return {
+    ok: true,
+    value: { kind: 'delayedCast', filter: filter.value, effect },
+    rule: sentence.rule,
+  };
 }
 
 /**

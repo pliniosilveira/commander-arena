@@ -134,6 +134,66 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   ),
 });
 
+/** The objects the counters of a kind can be doubled on: this permanent, "it", a target, or a group as the effect resolves. */
+const DOUBLE_COUNTER_OPERANDS = [
+  'noun.self',
+  'noun.it',
+  'noun.target-permanent',
+  'noun.each-permanent',
+  'noun.all-permanents',
+  // Quandrix Unlimited deck, group D2 (Kinetic Ooze): "any number of other target creatures".
+  'noun.any-number-targets',
+] as const;
+
+/**
+ * `effect.double-counters`: "double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, 122.6): each object gets as
+ * many more counters of the kind as it has as the effect resolves. The counters are put by the controller of the spell or ability, so they go
+ * through the same placement as "put a +1/+1 counter on" does. Not read: a doubling of a quantity that is not a counter kind ("double the
+ * number of counters" with no kind, which is every kind) or one with a trailing clause.
+ */
+export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
+  id: 'effect.double-counters',
+  family: 'effect',
+  leading: ['double'],
+  cites: ['CR 701.10 (Double)', 'CR 122.6 (Counters)', 'CR 122.1 (Counters)'],
+  examples: [
+    'double the number of +1/+1 counters on target creature you control',
+    'double the number of +1/+1 counters on ~',
+    'double the number of +1/+1 counters on it',
+    'double the number of -1/-1 counters on target creature',
+    'double the number of charge counters on ~',
+    'double the number of +1/+1 counters on each creature you control',
+    'double the number of +1/+1 counters on any number of other target creatures',
+  ],
+  rejects: [
+    'double the number of counters on target creature',
+    'double the number of +1/+1 counters on target creature you control and draw a card',
+    'double the number of +1/+1 counters on',
+    'double the number of +1/+1 counters',
+    'double the +1/+1 counters on ~',
+    'double the number of +1/+1 counters on ~ until end of turn',
+    'double the power and toughness of ~ until end of turn',
+  ],
+  parse: single(
+    'effect.double-counters',
+    sequence(
+      literal('double the number of '),
+      map(
+        spanned(pattern(COUNTER_NAME)),
+        ({ value, span }): IrCounterSpec => ({
+          kind: 'counterSpec',
+          name: value[0].toLowerCase(),
+          span,
+          rule: 'effect.double-counters',
+        }),
+      ),
+      pattern(/ counters on /i),
+      operands(DOUBLE_COUNTER_OPERANDS, 'effect.double-counters'),
+    ),
+    ([, counter, , objects]) => ({ verb: 'doubleCounters', args: { counter, objects } }),
+  ),
+});
+
 /**
  * `effect.add-counters-number-of`: "Put a number of +1/+1 counters on each creature you control equal to the number of security votes" (stage P44, D-195,
  * CR 122.6, 608.2c): the count is the amount after "equal to", worked out as the instruction runs and put on each of the objects (the same count on every
@@ -313,6 +373,7 @@ export const EFFECT_PLAYER_ADD_COUNTERS = defineRule<Clauses>({
 export const COUNTER_RULES = [
   EFFECT_PLAYER_ADD_COUNTERS,
   EFFECT_ADD_COUNTERS,
+  EFFECT_DOUBLE_COUNTERS,
   EFFECT_ADD_COUNTERS_NUMBER_OF,
   EFFECT_ADD_COUNTERS_KINDS,
 ];

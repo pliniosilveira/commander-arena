@@ -113,7 +113,8 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
   }
   // D-324: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
   const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
-  const chosenNow = ins.chosen ?? (forced ? legal : null);
+  // `take.all`: "put all land cards from among them": every card that matches goes, with no question.
+  const chosenNow = ins.all === true ? legal : (ins.chosen ?? (forced ? legal : null));
   if (chosenNow === null && legal.length > 0) {
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',

@@ -278,6 +278,22 @@ function withLevelBarPeriod(line: string): string {
   return /^(?:\{[^}]+\})+: Level [2-9]\d*$/u.test(line) ? `${line}.` : line;
 }
 
+/**
+ * "half X" says how it rounds (CR 107.1a), in one of two places that no phrase of the grammar sits next to: after the whole instruction ("create half X Food tokens, rounded
+ * up.") or in a sentence of its own for every "half" before it ("... gain half X life and draw half X cards. Round down each time."). The line is written so the rounding follows
+ * the amount, as the other "half" phrases have it: "create half X, rounded up Food tokens." The sentence "Round down each time." is dropped once its rounding is written in.
+ */
+export function withHalfRounding(line: string): string {
+  const each = /^(.*?)\s*\bRound (up|down) each time\.?$/u.exec(line);
+  if (each?.[1] !== undefined && /\bhalf X\b/u.test(each[1])) {
+    return each[1].replace(/\bhalf X\b(?!, rounded)/gu, `half X, rounded ${each[2] ?? 'down'}`);
+  }
+  return line.replace(
+    /\bhalf X ((?:(?!half)[^,.])+), rounded (up|down)(?=[.,]|$)/gu,
+    'half X, rounded $2 $1',
+  );
+}
+
 export function normalizeOracleText(text: string, options: NormalizeOptions): string {
   let out = stripReminderText(text);
   for (const name of selfNames(options)) {
@@ -288,7 +304,9 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
   out = tokenSelfInQuotes(out);
   return out
     .split('\n')
-    .map((line) => withLevelBarPeriod(stripAbilityWord(line.replace(/[ \t]+/g, ' ').trim())))
+    .map((line) =>
+      withHalfRounding(withLevelBarPeriod(stripAbilityWord(line.replace(/[ \t]+/g, ' ').trim()))),
+    )
     .filter((line) => line !== '')
     .join('\n');
 }

@@ -77,7 +77,8 @@ describe('"When you next cast an instant or sorcery spell this turn, copy that s
     'When you next cast a spell this turn, copy that spell.',
     'When you next cast an instant or sorcery spell next turn, copy that spell.',
     // another thing the delayed trigger does
-    'When you next cast an instant or sorcery spell this turn, draw a card.',
+    // (Drawing and gaining life are read since the Quandrix Unlimited deck, group E: Brass Infiniscope.)
+    'When you next cast an instant or sorcery spell this turn, discard a card.',
     'When you next cast an instant or sorcery spell this turn, copy that spell and draw a card.',
     'When you next cast an instant or sorcery spell this turn, you may copy that spell.',
     'When you next cast an instant or sorcery spell this turn, copy target instant spell.',

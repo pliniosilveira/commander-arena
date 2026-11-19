@@ -33,6 +33,13 @@ import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
+/** A prime number: a whole number of 2 or more with no divisor but 1 and itself (`amountIsPrime`); 0, 1 and negative numbers are not. */
+function isPrime(n: number): boolean {
+  if (!Number.isInteger(n) || n < 2) return false;
+  for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+  return true;
+}
+
 function attackingMostLife(state: GameState, source: ObjectId | null): boolean {
   if (source === null) return false;
   const entry = state.combat?.attackers.find((a) => a.object === source);
@@ -147,7 +154,8 @@ export function evaluateCondition(
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell as it resolves, or from its last-known information once it has left.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
-      return source !== null && (source.stack?.x ?? 0) >= condition.value;
+      // CR 107.3m: in "When this creature enters, ... If X is 5 or more" the X is the one of the spell the permanent came from, which the permanent remembers (`castX`).
+      return source !== null && (source.stack?.x ?? source.castX ?? 0) >= condition.value;
     }
     case 'castInOwnMainPhase': {
       // CR 601.2, 505.1 (issue 244): "If you cast this spell during your main phase"; read from the spell, or from its last-known information once it has left.
@@ -341,6 +349,16 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atLeast') return n >= condition.compare.value;
       if (condition.compare.cmp === 'atMost') return n <= condition.compare.value;
       return n === condition.compare.value;
+    }
+    case 'amountIsPrime': {
+      // Zimone, All-Questioning: the state-reading amount as it is now (the validator allows only amounts that need no target, X, trigger subject or earlier instruction).
+      const n = amountOf(
+        state,
+        condition.amount,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      );
+      return isPrime(n);
     }
     case 'classLevelIs':
       // CR 716.2a, 716.2d (D-235): the level of the permanent the ability belongs to; none is level 1.

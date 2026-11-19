@@ -95,6 +95,9 @@ const SAYABLE: ReadonlySet<string> = new Set([
   // D-139: "with two or more colors", "with mana value X", "whose controller was dealt combat damage by this creature this turn".
   'colorCount',
   'manaValueX',
+  // Quandrix Unlimited group E (CR 107.3, 601.2i): "a spell with {X} in its mana cost" and "your first such spell each turn", said by `withText` and the cast trigger.
+  'xInManaCost',
+  'firstXSpellThisTurn',
   'controllerDealtDamageBySource',
   // D-145: "a commander", "a creature with a counter on it".
   'commander',
@@ -181,6 +184,7 @@ export function withText(filter: ObjectFilter): string {
     filter.toughness === undefined ? '' : comparisonText('toughness', filter.toughness),
     filter.manaValue === undefined ? '' : comparisonText('mana value', filter.manaValue),
     filter.manaValueX === true ? 'mana value X' : '',
+    filter.xInManaCost === true ? '{X} in its mana cost' : '',
     filter.colorCount === undefined ? '' : colorCountText(filter.colorCount),
     // D-145 (CR 122.1): "with a counter on it", "with a stun counter on it".
     filter.hasCounter === undefined ? '' : counterOnIt(filter.hasCounter),
@@ -567,6 +571,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
+      // Quandrix Unlimited group E (CR 601.2i): "your first spell with {X} in its mana cost each turn" says nothing else about the spell; with more words it cannot be said here.
+      if (trigger.filter.firstXSpellThisTurn === true) {
+        const { firstXSpellThisTurn: _first, ...rest } = trigger.filter;
+        const onlyX = Object.keys(rest).every((k) => k === 'stackKind' || k === 'xInManaCost');
+        if (!onlyX || rest.xInManaCost !== true || trigger.nth !== undefined) return null;
+        const caster =
+          trigger.by === 'you' ? 'you cast your' : `${BY_WORDS[trigger.by]} casts their`;
+        return `Whenever ${caster} first spell with {X} in its mana cost each turn`;
+      }
       const spell = filterPhrase(trigger.filter, 'spell', ctx.self);
       if (spell === null) return null;
       // D-218 (CR 707.10): Magecraft's "cast or copy".
@@ -595,7 +608,7 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
     case 'activatesAbility':
       // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
-      return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability of a permanent that isn't a mana ability`;
+      return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;

@@ -383,6 +383,8 @@ describe('supported feature gate', () => {
       'tappedBy',
       'notAsAttacker',
       'tapBatch',
+      // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}".
+      'activatesAbilityX',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

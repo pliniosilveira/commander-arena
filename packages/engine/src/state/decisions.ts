@@ -167,6 +167,8 @@ export interface TargetChoiceSpec {
    * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
    */
   readonly eachController?: true;
+  /** "Up to three target cards from their graveyard" (`TargetSpec.ownedByTarget`): every target of this slot is a card of the graveyard of the player chosen for the slot with this id (its `group`). */
+  readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
   /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes). */
@@ -1106,6 +1108,11 @@ export interface ChooseXDecision extends DecisionBase {
   readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
   readonly min: number;
   readonly max: number;
+  /**
+   * The values from `min` to `max` that leave the spell a legal target, for a spell whose target is "with mana value X" (CR 601.2b, 601.2c: X is announced before the
+   * targets, and a spell with no legal target cannot be cast). Absent: every value is legal.
+   */
+  readonly values?: readonly number[];
   readonly perX: {
     readonly mana: number;
     readonly life: number;

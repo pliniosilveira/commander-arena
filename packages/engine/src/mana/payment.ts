@@ -341,7 +341,12 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         vec[C_RESERVE] = reserveColors.size;
         vec[C_FLEX] = flexColors.size;
         vec[C_PAYOPT] = source.abilityIndex < 0 && source.tier === 'artifact' ? 1 : 0;
-        vec[C_EXTRA] = source.extraEffect === true || (source.lifeLoss ?? 0) > 0 ? 1 : 0;
+        vec[C_EXTRA] =
+          source.weighExtraByLife === true
+            ? (source.lifeLoss ?? 0)
+            : source.extraEffect === true || (source.lifeLoss ?? 0) > 0
+              ? 1
+              : 0;
         entries.push({
           abilityIndex: source.abilityIndex,
           outcome,

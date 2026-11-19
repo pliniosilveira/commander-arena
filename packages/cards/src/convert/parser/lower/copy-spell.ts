@@ -22,6 +22,14 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
     const flag = arg(clause, 'newTargets');
     if (noun?.kind !== 'noun' || flag?.kind !== 'flag') return failure(clause);
     let spell: ObjectRef;
+    // "copy it" is the spell of a cast trigger only; anywhere else "it" is a card or a permanent, which is no spell to copy (CR 707.10).
+    if (/^it$/iu.test(noun.filter.raw.trim()) && noun.det !== 'triggerSubject') {
+      return failure(clause);
+    }
+    // "copy that spell or ability" (Unbound Flourishing, CR 707.10): the trigger is about the activation of an ability as well, whose copy the engine makes as it does a spell's.
+    if (/^that spell or ability$/iu.test(noun.filter.raw.trim()) && !ctx.activateTrigger) {
+      return failure(clause);
+    }
     if (noun.det === 'triggerSubject') {
       const missing = missingFeatures(['selector:triggerSubject']);
       if (missing.length > 0) return failure(clause, missing);
