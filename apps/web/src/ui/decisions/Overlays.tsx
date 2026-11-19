@@ -30,7 +30,6 @@ import { MiniCard } from './MiniCard';
 import { ModesDialog } from './ModesDialog';
 import type { DecisionModel } from './model';
 import { NamedOptionDialog } from './NamedOptionDialog';
-import { OpponentCommanders, PlayerCommander } from './OpponentCommanders';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
@@ -45,6 +44,7 @@ import { TargetsPanel } from './TargetsPanel';
 import { UntapDialog } from './UntapDialog';
 import type { UiState } from './ui-state';
 import { isUntapChoice } from './untap';
+import { Versus } from './Versus';
 import { XDialog } from './XDialog';
 
 export interface OverlayProps {
@@ -139,6 +139,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       const taken = view.seats[view.viewer]?.mulligans ?? 0;
       return (
         <Dialog label="Opening hand" className="dec-mulligan" popup>
+          <Versus view={view} />
           <h2 className="dec-title">Your opening hand</h2>
           <p className="dec-sub">
             {taken === 0 ? 'First hand.' : `Mulligans taken: ${taken}.`}{' '}
@@ -149,8 +150,6 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
           <Hand view={view} ids={d.hand} selected={[]} />
           <BarButtons buttons={model.bar.buttons} />
           {d.canMulligan ? null : <p className="dec-sub">No more mulligans are possible.</p>}
-          <PlayerCommander view={view} />
-          <OpponentCommanders view={view} />
         </Dialog>
       );
     },

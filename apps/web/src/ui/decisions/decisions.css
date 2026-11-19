@@ -419,11 +419,6 @@
   max-height: 100%;
   overflow-y: auto;
 }
-.dec-opponent .mana-cost {
-  display: inline-flex;
-  vertical-align: middle;
-  margin-left: 2px;
-}
 .dec-title {
   margin: 0;
   font-size: calc(18px * var(--text-scale));
@@ -1396,4 +1391,72 @@
   box-shadow: 0 0 14px var(--accent);
   position: relative;
   z-index: 4;
+}
+
+/* The versus card above the opening hand: both decks as the deck picker shows them. */
+.dec-versus-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.dec-versus {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+}
+.dec-versus-side {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+.dec-versus-art {
+  flex: none;
+  width: 96px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+.dec-versus-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+.dec-versus-who {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.dec-versus-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+.dec-versus-commander {
+  font-size: 12px;
+}
+.dec-versus-colors {
+  flex: none;
+  margin-left: auto;
+}
+.dec-versus-x {
+  align-self: center;
+  font-size: 22px;
+  color: var(--text-dim);
+}
+@media (max-width: 640px) {
+  .dec-versus {
+    flex-direction: column;
+  }
 }
