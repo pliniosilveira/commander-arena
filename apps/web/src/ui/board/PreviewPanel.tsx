@@ -19,6 +19,7 @@ import { designationKind } from '../../game/designations';
 import { realCardOf } from '../../game/face-down-text';
 import { controlFact } from '../../game/korvold-text';
 import { laterFacts } from '../../game/later-text';
+import { roomFacts } from '../../game/room-text';
 import { castCostChanged, costsX, costText, symbolsText, withX } from '../decisions/cast-cost';
 import { faceCostText, faceFacts, faceRole } from '../decisions/layouts';
 import { chosenModeTexts } from '../decisions/modes-picker';
@@ -190,6 +191,8 @@ function PreviewDetails({ object }: { object: ObjectView }) {
       );
     }
   }
+  // CR 709.5c (Room): which halves are unlocked and which are locked, and what unlocking a locked half costs.
+  facts.push(...roomFacts(object));
   if (view !== null) facts.push(...laterFacts(object, view.viewer));
   const kicked = kickedWords(object);
   if (kicked !== null) facts.push(`${kicked.charAt(0).toUpperCase()}${kicked.slice(1)}`);

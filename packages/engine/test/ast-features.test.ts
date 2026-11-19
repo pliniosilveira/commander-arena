@@ -123,6 +123,7 @@ describe('the dimensions', () => {
       'thisMatches',
       'didPrevious',
       'movedTotalManaValue',
+      'movedShareAllCardTypes',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
@@ -221,6 +222,8 @@ describe('the dimensions', () => {
       'cantBeBlockedBy',
       'takeFromLinkedExile',
       'castAsThoughFlash',
+      // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
+      'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
@@ -240,6 +243,8 @@ describe('the dimensions', () => {
       'unspentManaStays',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      // CR 305.1: "You may play Forests from your graveyard."
+      'playLandsFromGraveyard',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
       // D-282: "Your opponents can't cast spells with mana value 3 or less."

@@ -150,6 +150,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'destroyedValue':
+      // Convert to Slime: "the total mana value of permanents destroyed this way".
+      return 'the total mana value of the permanents destroyed this way';
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
@@ -283,6 +286,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       const cards = thingsPhrase(amount.filter, true);
       return cards === null ? UNKNOWN_AMOUNT : `the number of card types among ${cards}`;
     }
+    case 'cardTypesAmongTriggerCards':
+      // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger (Polluted Cistern).
+      return 'the number of card types among those cards';
     case 'devotion':
       return `your devotion to ${colorList(amount.colors)}`;
     case 'commanderColors':

@@ -22,6 +22,7 @@ import { definitionOf, getSeat, objectsInZone } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
+import { copiableValues } from './copiable';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
@@ -133,6 +134,33 @@ export function colorsAmongForSource(
 }
 
 /**
+ * CR 205.2a: "the number of card types among cards in your graveyard": how many card types the objects the filter matches have between them, each once (a supertype or
+ * a subtype is no card type). Read through `typeViewOf` like a count; the cards of a graveyard or exile have no effect of layers 1, 4 or 5 on them, and nothing of layer 7 is read.
+ */
+export function cardTypesAmongForSource(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+): number {
+  const zone = filter.zone ?? 'graveyard';
+  const chosen = chosenOf(state, source.id);
+  const ctx = {
+    controller: controllerOf(state, source),
+    source: source.id,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+  };
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, zone)) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const view = typeViewOf(state, obj);
+    if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
+    for (const type of view.types) seen.add(type);
+  }
+  return seen.size;
+}
+
+/**
  * CR 903.3, 202.3 (D-145): "the greatest mana value among your commanders": the printed mana value of each of the seat's commander cards
  * (the front face of a double-faced card, CR 712.8a, 202.3b), the largest of them; 0 with no commander. It reads the card, not the
  * permanent: no layer can change it, which keeps layer 7 free of loops (CR 613.8).
@@ -142,6 +170,40 @@ export function commandersManaValue(state: GameState, seat: GameObject['controll
   for (const card of getSeat(state, seat).commanders) {
     const cost = definitionOf(state, card).faces[0]?.manaCost ?? null;
     if (cost !== null) best = Math.max(best, manaValue(cost));
+  }
+  return best;
+}
+
+/**
+ * CR 613.4c, 208.2, 604.3: "the greatest power among creature cards in your graveyard": the largest power the cards of the filter's zone that match it have, 0 with none.
+ * The cards are matched through `typeViewOf` like a count (layers 1, 4 and 5). The power read is the printed one, or what the card's own characteristic-defining ability
+ * gives a `*` (it works in every zone, CR 604.3): never a layer 7 result of another object, so the amount cannot loop (CR 613.8).
+ */
+function greatestPrintedPowerFor(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+): number {
+  const zone = filter.zone ?? 'graveyard';
+  const chosen = chosenOf(state, source.id);
+  const ctx = {
+    controller: controllerOf(state, source),
+    source: source.id,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+  };
+  let best = 0;
+  for (const id of objectsInZone(state, zone)) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const view = typeViewOf(state, obj);
+    if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
+    const values = copiableValues(state, obj);
+    const printed = values.characteristics.power;
+    const power =
+      printed === '*'
+        ? (characteristicPtOf(state, obj, values.abilities)?.power ?? 0)
+        : (printed ?? 0);
+    best = Math.max(best, power);
   }
   return best;
 }
@@ -174,6 +236,8 @@ export function staticAmountOf(
   if (amount.kind === 'commanderCasts')
     return commandersCastCount(state, controllerOf(state, source));
   if (amount.kind === 'colorsAmong') return colorsAmongForSource(state, amount.filter, source);
+  if (amount.kind === 'greatestPowerAmong')
+    return greatestPrintedPowerFor(state, amount.filter, source);
   if (amount.kind === 'times')
     return amount.factor * countForSource(state, amount.of.filter, source, keywordsOf);
   // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".
@@ -209,6 +273,18 @@ export function characteristicPtOf(
   let toughness: number | null = null;
   let found = false;
   for (const a of abilities) {
+    // CR 604.3, 613.4a (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...": the 1/1 of the ability, in every zone but the battlefield.
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'creatureOffBattlefield' &&
+      obj.zone !== 'battlefield'
+    ) {
+      if (!found && hasLostAbilities(state, obj.id)) return null;
+      found = true;
+      power = a.static.power;
+      toughness = a.static.toughness;
+      continue;
+    }
     if (a.kind !== 'static' || a.static.kind !== 'characteristicPt') continue;
     if (!found && hasLostAbilities(state, obj.id)) return null;
     found = true;

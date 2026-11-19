@@ -196,6 +196,12 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'cardTypesAmongThoseCards': {
+      // CR 205.2a, 603.2c: "for each card type among those cards": the cards of a batch trigger; `validateCard` refuses it where the trigger has no cards.
+      const blocked = needs('cardTypesAmongTriggerCards');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'cardTypesAmongTriggerCards' }, rule };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -390,6 +396,40 @@ export function lowerAmount(
       // "as you cast ~" names a spell: an ability has no cast (CR 601.2d, 602.2b), so its total is a number or an amount that reads no "cast".
       if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
         return { ok: false, needs: [], at: amount.span, rule };
+      }
+      // "the greatest power among creatures they control" (Death Toll deck, group D, CR 109.4, 608.2c): the player is a target the ability declares, read as the amount is
+      // worked out (the engine's `controlledBy` of a target, as in a count). Only a permanent of the battlefield, and only a target: any other player is left unread.
+      const controller = amount.of.filter.controller;
+      if (typeof controller === 'object') {
+        const missingRef = missingFeatures(['selector:controllerRef']);
+        if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
+        const outside =
+          amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
+        // "they" is the player a target names, bound to that target (an anaphor with its reference); a player the binding left unbound is refused.
+        if (
+          outside ||
+          amount.asCast === true ||
+          controller.orPlaneswalkerController === true ||
+          (controller.noun.det !== 'target' && controller.noun.det !== 'anaphor')
+        ) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        const named = playerSelectorOf(controller.noun, ctx);
+        if (!named.ok) return named;
+        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        const { controller: _named, ...rest } = amount.of.filter;
+        const plain = countFilter({ ...amount.of, filter: rest });
+        if (!plain.ok) return plain;
+        return {
+          ok: true,
+          value: {
+            kind: 'aggregate',
+            how: amount.how,
+            stat: amount.stat,
+            filter: { ...plain.value, controlledBy: named.value },
+          },
+          rule,
+        };
       }
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
@@ -741,6 +781,26 @@ export function lowerStaticAmount(
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderCasts' }, rule } : lowered;
   }
+  // "+X/+0, where X is the greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, which reads the printed power of cards
+  // in a zone outside the battlefield (a greatest power among permanents would read layer 7 itself, CR 613.8: refused).
+  if (amount.kind === 'aggregate' && amount.how === 'greatest' && amount.stat === 'power') {
+    const missing = missingFeatures(['amount:greatestPowerAmong']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
+    const zone = amount.of.filter.zone;
+    if (
+      zone === undefined ||
+      zone === 'battlefield' ||
+      zone === 'stack' ||
+      amount.asCast === true ||
+      staticCannotRead(amount.of.filter)
+    ) {
+      return { ok: false, needs: [], at: amount.span, rule };
+    }
+    const filter = countFilter(amount.of);
+    return filter.ok
+      ? { ok: true, value: { kind: 'greatestPowerAmong', filter: filter.value }, rule }
+      : filter;
+  }
   return lowerStaticPtStep(1, amount, ctx, rule);
 }
 
@@ -798,6 +858,7 @@ export const AMOUNT_NEEDS = [
   'amount:commanderCasts',
   'amount:lifeTotalOf',
   'amount:colorsAmong',
+  'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
   'amount:half',
   'amount:multiple',
@@ -809,6 +870,7 @@ export const AMOUNT_NEEDS = [
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:cardTypesAmongTriggerCards',
   'amount:triggerSpellX',
   'amount:votesFor',
 ] as const;

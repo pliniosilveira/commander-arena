@@ -184,6 +184,81 @@ export const STATIC_LOOK_AT_TOP = defineRule<IrStatic>({
   },
 });
 
+/** The plural words of the basic land types, as the Oracle text of a card names them ("Forests", "Plains"), with the type each is. */
+const BASIC_LAND_PLURALS: ReadonlyMap<string, string> = new Map([
+  ['plains', 'Plains'],
+  ['islands', 'Island'],
+  ['swamps', 'Swamp'],
+  ['mountains', 'Mountain'],
+  ['forests', 'Forest'],
+]);
+
+/**
+ * `static.play-lands-from-graveyard`: "You may play lands from your graveyard." and "You may play Forests from your graveyard." (CR 305.1, 604.1, 305.2: the permission only says where
+ * the land card may come from; when a land may be played, and how many, are those of the turn, which the engine's `playLandsFromGraveyard` leaves as they are). The engine adds the
+ * land cards of the graveyard of the controller that the named basic land type (or any land) matches. Not read: another card kind ("cast creature spells"), a non-basic land type,
+ * another zone, another player's graveyard, a count ("one land"), "once during each of your turns" (`playFromGraveyardOnceEachTurn`), and a line with more text.
+ */
+export const STATIC_PLAY_LANDS_FROM_GRAVEYARD = defineRule<IrStatic>({
+  id: 'static.play-lands-from-graveyard',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 305.1 (Lands)',
+    'CR 305.2 (Lands)',
+    'CR 604.1 (Handling Static Abilities)',
+    'CR 113.6 (Abilities)',
+  ],
+  examples: [
+    'You may play lands from your graveyard.',
+    'You may play Forests from your graveyard.',
+    'You may play Plains from your graveyard.',
+    'You may play Islands from your graveyard.',
+  ],
+  rejects: [
+    'You may play lands from your graveyard',
+    'You may play a land from your graveyard.',
+    'You may play Forest from your graveyard.',
+    'You may play Gates from your graveyard.',
+    'You may play lands from the graveyard.',
+    "You may play lands from an opponent's graveyard.",
+    'You may play lands from your graveyard this turn.',
+    'You may play lands from your graveyard or your hand.',
+    'You may cast creature spells from your graveyard.',
+    'Once during each of your turns, you may play a land from your graveyard.',
+    'You may play lands from your library.',
+    'You may play Forests and Islands from your graveyard.',
+    'You may play lands from your graveyard. You may look at the top card of your library any time.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may play (lands|plains|islands|swamps|mountains|forests) from your graveyard\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const word = (r.value[1] ?? '').toLowerCase();
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.play-lands-from-graveyard',
+    );
+    const span = { start: pos, end: r.pos };
+    const landType = BASIC_LAND_PLURALS.get(word);
+    return {
+      ok: true,
+      value: statement(
+        'static.play-lands-from-graveyard',
+        who,
+        landType === undefined
+          ? { kind: 'playLandsFromGraveyard' }
+          : { kind: 'playLandsFromGraveyard', landType },
+        span,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * The mana cost an attacker pays: plain symbols ({2}, {W}, {C}), hybrid ones ({R/W}, {2/W}, {C/W}) and Phyrexian
  * ones ({W/P}, CR 107.4f), which the engine's planner pays as it pays any cost (D-125). Never {X} (nobody announces
@@ -494,6 +569,7 @@ export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
+  STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,

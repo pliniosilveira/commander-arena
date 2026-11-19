@@ -8,10 +8,14 @@ import { NO_PARTS, toFilter } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
-const KIND = '(land|creature|artifact|enchantment)';
+export const KIND = '(land|creature|artifact|enchantment)';
 
 /** The kind of card the instruction picks out, as the noun of a card in a library ("land cards": a plural noun, no article). */
-function kindOfCards(rule: string, type: string, span: { start: number; end: number }): IrNoun {
+export function kindOfCards(
+  rule: string,
+  type: string,
+  span: { start: number; end: number },
+): IrNoun {
   return {
     kind: 'noun',
     det: 'a',
@@ -75,6 +79,64 @@ export const EFFECT_REVEAL_UNTIL_X = defineRule<Clauses>({
     const clause: IrClause = {
       kind: 'clause',
       verb: 'revealUntilX',
+      args: { card: kindOfCards(id, type, kind.value.span), count: x.value },
+      optional: false,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: [clause], pos: tail.pos };
+  },
+});
+
+/**
+ * `effect.reveal-until-x-graveyard`: "reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest
+ * on the bottom of your library in a random order" (CR 701.20, 401.4, 107.3a: the cards are revealed one at a time until X of the kind have been revealed, all of them if the library runs out
+ * first; the cards of the kind are put into the graveyard, not milled). Two sentences that `splitSentences` keeps together. The engine's `revealUntil` with a `count` and `put: 'graveyard'`;
+ * the kind in the second sentence must be the one of the first.
+ */
+export const EFFECT_REVEAL_UNTIL_X_GRAVEYARD = defineRule<Clauses>({
+  id: 'effect.reveal-until-x-graveyard',
+  family: 'effect',
+  leading: ['reveal'],
+  cites: [
+    'CR 701.20 (Reveal)',
+    'CR 401.4 (Library)',
+    'CR 107.3a (Numbers and Symbols)',
+    'CR 404.1 (Graveyard)',
+  ],
+  examples: [
+    'reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order',
+    'reveal cards from the top of your library until you reveal X land cards. Put all land cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'reveal cards from the top of your library until you reveal X creature cards',
+    'reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard',
+    'reveal cards from the top of your library until you reveal X creature cards. Put all land cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order',
+    'reveal cards from the top of your library until you reveal two creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order',
+    'reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your hand, then put the rest on the bottom of your library in a random order',
+    'reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest into your hand',
+    "reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into an opponent's graveyard, then put the rest on the bottom of your library in a random order",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.reveal-until-x-graveyard';
+    const head = literal('reveal cards from the top of your library until you reveal ')(ctx, pos);
+    if (!head.ok) return head;
+    const x = X_AMOUNT()(ctx, head.pos);
+    if (!x.ok) return x;
+    const kind = spanned(pattern(new RegExp(` ${KIND} cards(?![\\p{L}\\p{N}])`, 'u')))(ctx, x.pos);
+    if (!kind.ok) return kind;
+    const type = kind.value.value[1] ?? '';
+    const tail = pattern(
+      new RegExp(
+        `\\. put all ${type} cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order(?![\\p{L}\\p{N}])`,
+        'iu',
+      ),
+    )(ctx, kind.pos);
+    if (!tail.ok) return tail;
+    const span = { start: pos, end: tail.pos };
+    const clause: IrClause = {
+      kind: 'clause',
+      verb: 'revealUntilXGraveyard',
       args: { card: kindOfCards(id, type, kind.value.span), count: x.value },
       optional: false,
       span,
@@ -156,6 +218,7 @@ export const EFFECT_UNTAP_THOSE_LANDS = defineRule<Clauses>({
 
 export const REVEAL_X_CARDS_EFFECT_RULES = [
   EFFECT_REVEAL_UNTIL_X,
+  EFFECT_REVEAL_UNTIL_X_GRAVEYARD,
   EFFECT_REVEAL_PUT_ALL,
   EFFECT_UNTAP_THOSE_LANDS,
 ];

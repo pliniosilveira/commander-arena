@@ -52,6 +52,9 @@ import { lowerCost } from './costs';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
+import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
+import { DEATH_TOLL_C_LOWERINGS } from './death-toll-c';
+import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
@@ -164,6 +167,18 @@ const ATTACK_RANDOM_OPPONENT: Lowering<IrClause, Effects> = {
   }),
 };
 
+/** "Choose an opponent at random. ~ attacks that player this combat if able." (CR 508.1d): the engine's `attackRandomOpponent` with `anyOpponent`. */
+const ATTACK_RANDOM_OPPONENT_ANY: Lowering<IrClause, Effects> = {
+  head: 'attackRandomOpponentAny',
+  id: 'lower.attack-random-opponent-any',
+  needs: ['effect:attackRandomOpponent'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'attackRandomOpponent', creature: { kind: 'this' }, anyOpponent: true }],
+    rule: clause.rule,
+  }),
+};
+
 /** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
@@ -172,9 +187,21 @@ const GOAD: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const operandNoun = operand(clause, 'objects');
     if (operandNoun?.kind !== 'noun') return failure(clause);
-    const object = objectRefOf(operandNoun, ctx, { moved: true });
+    const object = objectRefOf(operandNoun, ctx, { moved: true, token: true });
     if (!object.ok) return object;
-    return { ok: true, value: [{ kind: 'goad', objects: object.value }], rule: clause.rule };
+    // "The tokens are goaded for the rest of the game" (CR 701.15a, 611.2b): no end.
+    const forever = arg(clause, 'forever');
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'goad',
+          objects: object.value,
+          ...(forever?.kind === 'flag' && forever.value ? { forever: true as const } : {}),
+        },
+      ],
+      rule: clause.rule,
+    };
   },
 };
 
@@ -2024,6 +2051,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('untap'),
   GOAD,
   ATTACK_RANDOM_OPPONENT,
+  ATTACK_RANDOM_OPPONENT_ANY,
   simple('transform'),
   REGENERATE,
   ADD_MANA,
@@ -2088,8 +2116,11 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,
   ...DANITHA_G1B_LOWERINGS,
+  ...DEATH_TOLL_B_LOWERINGS,
   // D-411: "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_LOWERINGS,
+  // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
+  ...DEATH_TOLL_WINTER_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".
@@ -2123,6 +2154,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUANDRIX_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
+  ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
   ...FLASH_PERMISSION_LOWERINGS,
@@ -2197,6 +2229,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
                 ? 'objectMatches'
                 : test === 'discardedThisWay' ||
                     test === 'discardedSpellThisWay' ||
+                    test === 'destroyedThisWay' ||
                     test === 'searchedThisWay'
                   ? 'thisWayAtLeast'
                   : test === 'otherAttachedToHost' || test === 'xAtLeast'

@@ -259,6 +259,18 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
       return total === condition.compare.value;
     }
+    case 'movedShareAllCardTypes': {
+      // CR 205.2a, 608.2c (Demonic Covenant): two of the cards an earlier instruction moved have exactly the same card types, as they are (or last were).
+      const seen = new Set<string>();
+      for (const id of ctx.moved ?? []) {
+        const card = objectOrLki(state, id);
+        if (card === null) continue;
+        const key = [...derive(state, card).types].sort().join(',');
+        if (seen.has(key)) return true;
+        seen.add(key);
+      }
+      return false;
+    }
     case 'objectMatches': {
       // D-135, CR 113.7a, 608.2h: the object the reference names, as it is or as it last was (a card an earlier instruction
       // moved is read as it was when it left), against the filter in whatever zone it was in.

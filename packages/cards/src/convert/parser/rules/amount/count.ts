@@ -44,7 +44,7 @@ import {
   typeWords,
 } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
-import { defineRule, spanned } from '../registry';
+import { defineRule, family, spanned } from '../registry';
 
 const ON_THE_BATTLEFIELD = pattern(new RegExp(` on the battlefield${BOUNDARY}`, 'iu'));
 const ATTACKING_YOU = pattern(new RegExp(` attacking you${BOUNDARY}`, 'iu'));
@@ -55,6 +55,9 @@ const ATTACKING_YOU = pattern(new RegExp(` attacking you${BOUNDARY}`, 'iu'));
 const TARGET_PLAYER_CONTROLS = pattern(
   new RegExp(` (target (?:player|opponent)) controls${BOUNDARY}`, 'iu'),
 );
+
+/** " they control": the permanents of the player an earlier noun of the text names (see `battlefield`). */
+const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
 
 /** The words a list of kinds is joined with, in the shapes English has: "A or B", "A, B, or C". */
 const CONNECTORS = ['and/or', 'and', 'or'] as const;
@@ -165,7 +168,14 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       end = attacking.pos;
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
-      if (targeted.ok) {
+      // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
+      const they = targeted.ok ? null : THEY_CONTROL(ctx, end);
+      if (they?.ok === true) {
+        const player = family<IrNoun>('noun', { only: ['noun.they'] })(ctx, end + 1);
+        if (!player.ok) return fail(ctx, end);
+        filter = { ...filter, controller: { noun: player.value } };
+        end = they.pos;
+      } else if (targeted.ok) {
         const word = targeted.value[1] ?? '';
         const start = end + 1;
         const player: IrNoun = {

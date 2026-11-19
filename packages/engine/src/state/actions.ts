@@ -61,6 +61,11 @@ export type Action =
    * mana cost.
    */
   | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
+  /**
+   * Unlock a half of a Room you control (CR 709.5e, 116): a special action, taken any time you have priority and the stack is empty during a main phase of your turn. You pay the
+   * mana cost of the locked half `door` (0 the left half, 1 the right half), with a `payMana` decision (purpose `unlockDoor`), and the permanent is given that unlocked designation.
+   */
+  | { readonly kind: 'unlockDoor'; readonly object: ObjectId; readonly door: number }
   | { readonly kind: 'concede' }
   /** Answer a mulligan decision. */
   | { readonly kind: 'keepHand' }

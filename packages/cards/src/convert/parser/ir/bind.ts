@@ -636,7 +636,8 @@ class Binder {
     }
     // "... exiles a card from their hand at random. If it's a land card, you may put it onto the battlefield" (D-393, group 9): "it" is the card the instruction exiled,
     // which the engine names `moved`. Pushed after the clause's own nouns, so that it is the most recent object of the text.
-    if (clause.verb === 'exileRandomFromHand') {
+    // Death Toll deck group B: "Choose a card at random in your graveyard. If it's a creature card, put it onto the battlefield": "it" is the card picked, which the engine names `moved` too.
+    if (clause.verb === 'exileRandomFromHand' || clause.verb === 'chooseRandomGraveyardCard') {
       this.antecedents.push({
         kind: 'object',
         noun: {

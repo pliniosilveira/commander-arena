@@ -276,7 +276,7 @@ describe('put N cards from your hand on top of your library (CR 401.4)', () => {
     ],
     [
       'Put any number of cards from your hand on top of your library.',
-      'any number of cards from your hand on top of your library.',
+      'cards from your hand on top of your library.',
     ],
     [
       'Put two cards from your graveyard on top of your library in any order.',

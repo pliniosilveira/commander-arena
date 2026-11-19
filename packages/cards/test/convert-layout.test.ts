@@ -140,12 +140,23 @@ describe('what the engine reports about a split card, as the player is told it',
     expect(imported.support.status).toBe('unsupported');
   });
 
-  test('a split card with permanent halves (a Room) is refused (CR 709.5)', () => {
+  test('a split card with permanent halves that share one type line is a Room and is supported (CR 709.5)', () => {
     const room = (name: string) =>
       syntheticFace({ name, manaCost: '{2}{G}', typeLine: 'Enchantment — Room', colors: ['G'] });
     const imported = parse(multi('split', [room('SYNTHETIC Hall'), room('SYNTHETIC Cellar')]));
+    expect(imported.support.status).toBe('supported');
+  });
+
+  test('permanent halves that do not share one type line are refused (CR 709.5a)', () => {
+    const half = (name: string, typeLine: string) =>
+      syntheticFace({ name, manaCost: '{2}{G}', typeLine, colors: ['G'] });
+    const imported = parse(
+      multi('split', [
+        half('SYNTHETIC Hall', 'Enchantment — Room'),
+        half('SYNTHETIC Cellar', 'Artifact — Equipment'),
+      ]),
+    );
     expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.reasons.join('\n')).toMatch(/Room/);
   });
 });
 

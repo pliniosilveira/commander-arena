@@ -55,6 +55,7 @@ import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
 import { readsTriggerDamage, readsTriggerPlayer } from './trigger-subject';
+import { isAbilityOfDoor } from './unlock-legality';
 
 /** Trigger kinds that look back in time (CR 603.10a). */
 const LOOK_BACK: ReadonlySet<Trigger['kind']> = new Set(LOOK_BACK_TRIGGER_KINDS);
@@ -103,6 +104,8 @@ interface Occurrence {
   readonly counter?: string;
   /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-510). */
   readonly attacker?: true;
+  /** For `doorUnlocked`: which half of the Room was unlocked, 0 the left half and 1 the right half (CR 709.5h). */
+  readonly door?: number;
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
@@ -431,6 +434,20 @@ function occurrences(
         event.card !== null
         ? [{ subject: null, seat: state.cards[event.card]?.owner ?? null }]
         : [];
+    case 'doorUnlocked':
+      // CR 709.5h: a half of a Room was given its unlocked designation, by the player who unlocked it; `door` is which half.
+      return event.kind === 'doorUnlocked'
+        ? [{ subject: event.object, seat: event.seat, door: event.door }]
+        : [];
+    case 'putIntoGraveyard':
+      // CR 603.2, 404.1: a card (never a token) put into a graveyard from another zone, by the player who owns it ("your graveyard"); `from` is the zone it came from.
+      return event.kind === 'zoneChanged' &&
+        event.toZone === 'graveyard' &&
+        event.fromZone !== 'graveyard' &&
+        (trigger.from === 'anywhere' || event.fromZone === 'library') &&
+        event.card !== null
+        ? [{ subject: event.to, seat: state.cards[event.card]?.owner ?? null }]
+        : [];
     case 'exiledFromLibraryOrGraveyard':
       // CR 400.7, 603.2c (D-229): a card put into exile from its owner's library or graveyard, by the player who owns it.
       return event.kind === 'zoneChanged' &&
@@ -457,6 +474,11 @@ function occurrences(
         (event.fromBattlefield === true || trigger.anySource === true) &&
         event.stackObject !== null
         ? [{ subject: event.stackObject, seat: event.seat, player: event.seat }]
+        : [];
+    case 'playsCard':
+      // CR 305.1, 601.2: a land played (the land is the subject, as it is on the battlefield) or a spell cast (as it is on the stack), by the player the event names.
+      return event.kind === 'landPlayed' || event.kind === 'spellCast'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
     case 'tokenCreated':
       // CR 111.2 (D-465): a token enters under the control of the player who creates it; one occurrence for each token.
@@ -550,6 +572,24 @@ function occurrences(
       }));
     }
     case 'attackBatch':
+      // CR 508.1b, 508.6, 603.2c (Demonic Covenant): "attack a player": one occurrence for each player attacked as a player, with the creatures that attack that player.
+      if (event.kind === 'attackersDeclared' && trigger.eachAttackedPlayer === true) {
+        const players = [
+          ...new Set(
+            event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+          ),
+        ];
+        return players.map((player) => ({
+          subject: null,
+          seat: event.seat,
+          player: event.seat,
+          attackers: event.attackers
+            .filter((a) => a.target.kind === 'player' && a.target.seat === player)
+            .map((a) => a.object),
+          attacked: [player],
+          attackedAt: [player],
+        }));
+      }
       // CR 508.1, 603.2 (D-149): once for the whole declaration, whoever the creatures attack.
       return event.kind === 'attackersDeclared'
         ? [
@@ -747,6 +787,17 @@ function matches(
     case 'leftGraveyard':
     case 'exiledFromLibraryOrGraveyard':
       return occ.seat === candidate.controller;
+    case 'doorUnlocked':
+      // CR 709.5h: "you unlock this door": the player is the controller of the ability and the Room is its source; whether the half is the ability's own is checked by the caller.
+      return occ.seat === candidate.controller && subject?.id === candidate.id;
+    case 'putIntoGraveyard':
+      // CR 603.2: the card as it is in the graveyard (or as it last was); the filter names card types only.
+      return (
+        occ.seat === candidate.controller &&
+        (trigger.filter === undefined ||
+          (subject !== null &&
+            matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx)))
+      );
     case 'discarded':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -867,6 +918,14 @@ function matches(
         controllerOf(state, subject) === candidate.controller &&
         derive(state, subject).types.includes('land')
       );
+    case 'playsCard':
+      // CR 305.1, 601.2, 205.2a: "you play a card with two or more card types": the player is the controller of the ability, the card types are those of the card as it is played
+      // (the land on the battlefield, the spell on the stack).
+      return (
+        subject !== null &&
+        occ.seat === candidate.controller &&
+        derive(state, subject).types.length >= (trigger.minCardTypes ?? 1)
+      );
     case 'castSpell':
       if (subject === null) return false;
       // CR 702.85a (D-120): "When you cast this spell" is the spell's own ability, for that spell only.
@@ -981,7 +1040,9 @@ function isRelevant(event: GameEvent): boolean {
         event.toZone === 'battlefield' ||
         event.fromZone === 'battlefield' ||
         (event.fromZone === 'graveyard' && event.toZone !== 'graveyard') ||
-        (event.toZone === 'exile' && event.fromZone === 'library')
+        (event.toZone === 'exile' && event.fromZone === 'library') ||
+        // CR 603.2 (Skola Grovedancer): a card put into a graveyard from anywhere.
+        (event.toZone === 'graveyard' && event.fromZone !== 'graveyard')
       );
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
@@ -995,6 +1056,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'attackersDeclared':
     case 'blockersDeclared':
     case 'spellCast':
+    case 'landPlayed': // CR 305.1: "whenever you play a card"
     case 'spellCopied': // D-218: "whenever you cast or copy"
     case 'exerted': // CR 701.43d
     case 'cycled':
@@ -1006,6 +1068,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'becameTarget':
     case 'crimeCommitted':
     case 'abilityActivated':
+    case 'doorUnlocked': // CR 709.5h
     case 'ringTempted':
     case 'classLevelReached':
       return true;
@@ -1065,6 +1128,37 @@ function leavesBattlefield(event: GameEvent): boolean {
   );
 }
 
+/**
+ * Whether no card the filter of `trigger` names was put into the graveyard of `seat` before these events this turn (CR 603.2: "for the first time each turn"). `state` already holds
+ * every entry of these events (`TurnLog.graveyardEntries`), so the ones before them are the log less the cards of these events that went into a graveyard. Only card types are
+ * kept for an earlier entry, which is all a filter of this trigger reads (`validateCard`).
+ */
+function firstGraveyardEntryOfTurn(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'putIntoGraveyard' }>,
+  events: readonly GameEvent[],
+  seat: SeatId,
+): boolean {
+  const inEvents = events.filter(
+    (e) =>
+      e.kind === 'zoneChanged' &&
+      e.toZone === 'graveyard' &&
+      e.fromZone !== 'graveyard' &&
+      e.card !== null,
+  ).length;
+  const log = state.turnLog.graveyardEntries;
+  const types = trigger.filter?.types;
+  const notTypes = trigger.filter?.notTypes;
+  return !log
+    .slice(0, Math.max(0, log.length - inEvents))
+    .some(
+      (entry) =>
+        entry.seat === seat &&
+        (types === undefined || types.every((t) => entry.types.includes(t))) &&
+        (notTypes === undefined || !notTypes.some((t) => entry.types.includes(t))),
+    );
+}
+
 /** The cards (as the objects they became) that left the graveyard of `seat` for another zone in these events (CR 400.7, 603.2c; D-232). */
 function cardsThatLeftGraveyard(
   state: GameState,
@@ -1079,6 +1173,24 @@ function cardsThatLeftGraveyard(
     state.cards[e.card]?.owner === seat
       ? [e.to]
       : [],
+  );
+}
+
+/**
+ * The cards (as the objects they became in the graveyard) that the batch `putIntoGraveyard` trigger `trigger` names in these events (CR 603.2c, 404.1): each `zoneChanged` event
+ * it matches (the cards of its controller's graveyard, from the library or from anywhere, that the filter names), in the order the cards were put there.
+ */
+function putIntoGraveyardCards(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'putIntoGraveyard' }>,
+  events: readonly GameEvent[],
+  candidate: Candidate,
+  lore: { readonly before: number; readonly after: number } | null,
+): ObjectId[] {
+  return events.flatMap((e) =>
+    occurrences(state, trigger, e, lore).flatMap((occ) =>
+      occ.subject !== null && matches(state, trigger, occ, candidate) ? [occ.subject] : [],
+    ),
   );
 }
 
@@ -1187,22 +1299,40 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
           continue;
         }
         // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": every card of these events the trigger names, for "exile one of them".
+        // The same for "Whenever one or more cards are put into your graveyard from your library": "those cards" (`cardTypesAmongTriggerCards`).
         const discardedBatch =
           ability.trigger.kind === 'discarded' && ability.trigger.batch === true
             ? discardedCards(state, ability.trigger, events, candidate, lore)
-            : null;
+            : ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true
+              ? putIntoGraveyardCards(state, ability.trigger, events, candidate, lore)
+              : null;
         for (const occ of occurrences(state, ability.trigger, event, lore, {
           events,
           index: eventIndex,
         })) {
           if (!matches(state, ability.trigger, occ, candidate)) continue;
+          // CR 709.5h: "When you unlock this door" is an ability of one half: it triggers when that half is unlocked and not when the other one is.
+          if (
+            ability.trigger.kind === 'doorUnlocked' &&
+            !isAbilityOfDoor(state, id, ability, occ.door)
+          ) {
+            continue;
+          }
+          if (
+            ability.trigger.kind === 'putIntoGraveyard' &&
+            ability.trigger.firstTimeEachTurn === true &&
+            !firstGraveyardEntryOfTurn(state, ability.trigger, events, candidate.controller)
+          ) {
+            continue;
+          }
           if (
             (ability.trigger.kind === 'discarded' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'leftGraveyard' ||
-            ability.trigger.kind === 'exiledFromLibraryOrGraveyard'
+            ability.trigger.kind === 'exiledFromLibraryOrGraveyard' ||
+            (ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true)
           ) {
             const key = `${id}:${index}`;
             if (batched.has(key)) continue;

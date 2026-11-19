@@ -288,6 +288,11 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'movedTotalManaValue':
       // CR 202.3, 608.2c (D-662): "the total mana value of the cards exiled this way is 13 or less".
       return `the total mana value of the cards exiled this way is ${condition.compare.value} or ${condition.compare.cmp === 'atMost' ? 'less' : 'more'}`;
+    case 'movedShareAllCardTypes':
+      // CR 205.2a, 608.2c (Demonic Covenant): "two cards that share all their card types were milled this way".
+      return negate
+        ? 'no two cards that share all their card types were put there this way'
+        : 'two cards that share all their card types were put there this way';
     case 'didPrevious':
       // CR 608.2c (D-135): "you may discard a card. If you do, draw a card."
       return negate ? "you don't" : 'you do';

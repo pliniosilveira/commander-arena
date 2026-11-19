@@ -504,12 +504,29 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const things = `${core.endsWith('s') ? core : `${core}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
       return `Whenever one or more ${trigger.what.other === true ? 'other ' : ''}${things} die`;
     }
+    case 'doorUnlocked':
+      // CR 709.5h (Room): the half whose text has the ability.
+      return 'When you unlock this door';
     case 'leftGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards leave your graveyard';
     case 'exiledFromLibraryOrGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards are put into exile from your library and/or your graveyard';
+    case 'putIntoGraveyard': {
+      // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere", "one or more land cards ... for the first time each turn".
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const cards =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : base;
+      const verb = trigger.batch === true ? 'are' : 'is';
+      const place = trigger.from === 'library' ? 'from your library' : 'from anywhere';
+      return `Whenever ${cards} ${verb} put into your graveyard ${place}${
+        trigger.firstTimeEachTurn === true ? ' for the first time each turn' : ''
+      }`;
+    }
     case 'entersBatch': {
       // D-218 (CR 603.2c): "Whenever one or more tokens you control enter".
       const core = nounCore(trigger.what, 'permanent');
@@ -594,6 +611,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     }
     case 'landfall':
       return 'Whenever a land enters under your control';
+    case 'playsCard':
+      // CR 305.1, 601.2 (Death Toll deck, group D): a land played or a spell cast, with at least this many card types.
+      return trigger.minCardTypes === undefined || trigger.minCardTypes <= 1
+        ? 'Whenever you play a card'
+        : `Whenever you play a card with ${trigger.minCardTypes} or more card types`;
     case 'cycled':
       // D-179 (CR 702.29c): the card that was cycled.
       return 'When you cycle this card';
@@ -650,6 +672,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         trigger.what === undefined
           ? 'creatures'
           : `${core.endsWith('s') ? core : `${core}s`}${withText(trigger.what)}`;
+      // Death Toll deck group B (CR 508.1b, 508.6): "Whenever one or more Demons you control attack a player", once for each player attacked.
+      if (trigger.eachAttackedPlayer === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1
+          ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
+          : null;
+      }
       // D-187: "Whenever you attack" is one creature or more, said without the count.
       // D-218: "Whenever one or more creatures attack" (any player).
       if (trigger.who === 'any') return `Whenever one or more ${things} attack`;

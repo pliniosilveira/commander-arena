@@ -1,5 +1,5 @@
 {
-  "parserVersion": 163,
+  "parserVersion": 164,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -584,6 +584,22 @@
       "reasons": [],
       "ast": "a535fe90"
     },
+    "0e3246ef-e0b4-49bc-a715-b69c4b6be461": {
+      "name": "Skola Grovedancer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c6593ee5"
+    },
+    "0efb0d7e-dea0-4817-a243-15066e9ef333": {
+      "name": "Grist, the Hunger Tide",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "78bdc35e"
+    },
     "0f1b5cea-2035-444c-9f63-87dcb9782c74": {
       "name": "Gyome, Master Chef",
       "group": "acceptance",
@@ -679,6 +695,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1694b9a4"
+    },
+    "12c03a03-36bf-487e-b8be-e55399525da5": {
+      "name": "Mulch",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2233a8b4"
     },
     "12cc800c-c7be-4811-8207-fd01a99cc892": {
       "name": "Chandra, Torch of Defiance",
@@ -1042,6 +1066,14 @@
       "reasons": [],
       "ast": "34102e76"
     },
+    "1d85eec2-80db-466c-bd48-d2a12866e8bd": {
+      "name": "Old Stickfingers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9ec4ff4a"
+    },
     "1e7bddbd-e448-4aea-9d18-b44bd45837c5": {
       "name": "Vow of Duty",
       "group": "acceptance",
@@ -1106,6 +1138,14 @@
       "reasons": [],
       "ast": "01389bc9"
     },
+    "21254bdb-7b1f-4ac6-8fdd-f0ac2c35f47d": {
+      "name": "Grim Flayer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ee712cf5"
+    },
     "212d058b-69c6-4dc2-8c93-bdfe26dc2ffe": {
       "name": "Hammer of Purphoros",
       "group": "acceptance",
@@ -1121,6 +1161,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2312f4ab"
+    },
+    "2207fb3f-45a1-401b-99e9-f75723495c3f": {
+      "name": "Rendmaw, Creaking Nest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d1481635"
     },
     "223fa044-d387-4884-bf4e-75f1b61c6a46": {
       "name": "Curiosity",
@@ -1298,6 +1346,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "09ed541b"
+    },
+    "26e555f1-e0ed-4b84-8783-1c0c968f462d": {
+      "name": "Deathcap Cultivator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8752c974"
     },
     "270d14b2-07bc-46bc-918f-658102265ccf": {
       "name": "Empyrean Eagle",
@@ -2000,6 +2056,14 @@
       "reasons": [],
       "ast": "6833a9e4"
     },
+    "393b9d9e-9d71-43e7-aede-eac7f85d2365": {
+      "name": "Demonic Covenant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ebff043d"
+    },
     "399cd159-7376-421c-b001-c26f1cbadced": {
       "name": "Mirkwood Meditator",
       "group": "acceptance",
@@ -2112,6 +2176,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b829d1c1"
+    },
+    "3c4d5392-27cf-492e-9ae1-dee330b82223": {
+      "name": "Moldgraf Monstrosity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2651eaec"
     },
     "3c4da169-1e50-4790-abdc-214e7b8a2ad5": {
       "name": "Thorin's Last Stand",
@@ -2336,6 +2408,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "181f9f5e"
+    },
+    "46c3a69a-4984-40b0-905f-4b0762c7ad72": {
+      "name": "Titania, Nature's Force",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "15546865"
     },
     "46cf0e3e-3c3e-4eb8-a71a-4b4b87744ced": {
       "name": "Something Worth Saving",
@@ -2589,18 +2669,10 @@
     "4f819ba4-52ef-4fdd-8e4c-5ae3b2f44db5": {
       "name": "Ramunap Excavator",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "You may play lands from your graveyard.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "dbd4a8a0"
+      "ast": "39cbd7d9"
     },
     "4fb00dbe-1f82-4ba6-b18c-97e816d10d3a": {
       "name": "Patchwork Banner",
@@ -2617,6 +2689,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f32e05c4"
+    },
+    "506667b1-7922-4959-a5b3-0f8abe8c3615": {
+      "name": "Deadbridge Chant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8b811e1b"
     },
     "515c522f-51d5-4f6d-b9b1-ea3c7f6a378e": {
       "name": "Rousing Refrain",
@@ -3281,6 +3361,14 @@
       "reasons": [],
       "ast": "92c24290"
     },
+    "63a509ea-cedc-40e9-b4e8-0ff4fc356485": {
+      "name": "Wrenn and Seven",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4fb91c0b"
+    },
     "63e2cba7-ec1a-44bf-b915-d2ae75851430": {
       "name": "Hermes, Overseer of Elpis",
       "group": "acceptance",
@@ -3296,6 +3384,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8f15458b"
+    },
+    "647feda9-2876-4430-902f-10dc1f4f99a9": {
+      "name": "Ursine Monstrosity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7d1e36f6"
     },
     "64883ef2-c536-42e2-b52f-cfd1984fcdfd": {
       "name": "Fading Hope",
@@ -3336,6 +3432,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9b4c079b"
+    },
+    "65481ae1-54b2-44d2-91e1-20cd486386da": {
+      "name": "Ob Nixilis Reignited",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef08710b"
     },
     "655ee0db-1913-464f-bd06-072c6bf446bd": {
       "name": "Dirgur Focusmage // Braingeyser",
@@ -4266,7 +4370,7 @@
           "text": "+2: Look at the top card of target player's library. You may put that card on the bottom of that player's library.",
           "reason": "unrecognised",
           "slot": "amount",
-          "closestRule": "effect.look-reorder"
+          "closestRule": "effect.look-take-one-graveyard"
         },
         {
           "face": 0,
@@ -4900,6 +5004,14 @@
       "reasons": [],
       "ast": "f41e2416"
     },
+    "98441834-7da0-4d9f-88a4-a342a9b2a4c3": {
+      "name": "Crawling Sensation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4feed674"
+    },
     "98492d7d-3b9e-4ae1-ac45-1b508d6d2670": {
       "name": "Coveted Jewel",
       "group": "acceptance",
@@ -5020,6 +5132,14 @@
       "reasons": [],
       "ast": "7262f39b"
     },
+    "9babcd0a-531f-417d-905e-b916a87112bb": {
+      "name": "Cemetery Tampering",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9e86c094"
+    },
     "9bdc1e63-1cf9-4ddb-a7d5-f2a2eb91bdfd": {
       "name": "Pearl-Ear, Imperial Advisor",
       "group": "acceptance",
@@ -5115,6 +5235,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "204365f9"
+    },
+    "9df2e909-ed13-456a-9636-7398732009a9": {
+      "name": "Professor Onyx",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fa8de13e"
     },
     "9e0461e7-ccc4-413b-be80-83311be46861": {
       "name": "Golden-Tail Trainer",
@@ -5343,7 +5471,7 @@
           "text": "−10: Create a colorless Equipment artifact token named Stoneforged Blade. It has indestructible, \"Equipped creature gets +5/+5 and has double strike,\" and equip {0}.",
           "reason": "unrecognised",
           "slot": "token",
-          "closestRule": "token.predefined"
+          "closestRule": "token.defined-pt"
         }
       ],
       "reasons": [],
@@ -5364,6 +5492,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "aee4fe3b"
+    },
+    "a5e28749-18ea-4a2b-b7d9-905cf2913d4e": {
+      "name": "Inscription of Abundance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "50dba8fd"
     },
     "a6657fcf-f08c-4b03-8ec8-cb0b194eb553": {
       "name": "Adaptive Training Post",
@@ -5397,6 +5533,14 @@
       "reasons": [],
       "ast": "3d2e0fca"
     },
+    "a77b5be2-f361-4135-ba25-670a74d268ac": {
+      "name": "Noxious Gearhulk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9b2fd687"
+    },
     "a7ac5d98-805e-4212-be94-333a0c0c44a7": {
       "name": "Brudiclad, Telchor Engineer",
       "group": "acceptance",
@@ -5420,6 +5564,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "362294f7"
+    },
+    "a81fcdf8-59e7-471d-96ce-f87e656572b1": {
+      "name": "Deluge of Doom",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8e296be1"
     },
     "a8291d04-240e-456b-8c86-1fb4eb460476": {
       "name": "Hylda's Crown of Winter",
@@ -5801,6 +5953,14 @@
       ],
       "ast": "554c1a83"
     },
+    "b26e3596-5b28-4eb6-b3e2-03f63d8c6d49": {
+      "name": "Deathreap Ritual",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1da175e3"
+    },
     "b349f018-c20b-48b0-9e65-d5fd56b24b88": {
       "name": "Entreat the Angels",
       "group": "acceptance",
@@ -5824,6 +5984,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5052b74e"
+    },
+    "b4429e71-434e-480c-a8d1-2ad11de8b2d9": {
+      "name": "Convert to Slime",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "14af731c"
     },
     "b473e293-59e3-4e04-acf2-622604aeb25f": {
       "name": "Path of Ancestry",
@@ -5952,6 +6120,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5cb0396e"
+    },
+    "b978bdfe-a73e-4e99-90d7-4f99182c45ee": {
+      "name": "Formless Genesis",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0b0b11a9"
     },
     "b997a982-09e1-4ae1-a972-3c2e5f101e8c": {
       "name": "Faithful Mending",
@@ -6314,6 +6490,14 @@
       "reasons": [],
       "ast": "672ddfb8"
     },
+    "c54b375d-a456-4886-96f2-8dc7a0024a5b": {
+      "name": "Carrion Grub",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1c5a33f6"
+    },
     "c5abd58f-3e00-447b-a978-64cb88ad501b": {
       "name": "Hellkite Courser",
       "group": "acceptance",
@@ -6611,6 +6795,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a0b5fa11"
+    },
+    "cfcf34ba-b412-447f-b200-d841371c0a1c": {
+      "name": "Polluted Cistern // Dim Oubliette",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c1bcfa17"
     },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
@@ -7213,6 +7405,14 @@
       "reasons": [],
       "ast": "0b6af8f2"
     },
+    "e330412f-46a1-4e7c-8766-f644606049e0": {
+      "name": "Into the Pit",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f14e5723"
+    },
     "e33dec01-c114-436a-befc-dab4e806c10b": {
       "name": "Vessel of Nascency",
       "group": "acceptance",
@@ -7309,6 +7509,14 @@
       "reasons": [],
       "ast": "ca4d6498"
     },
+    "e70a01dd-4dbe-4811-ac93-1c6d0142e06e": {
+      "name": "Winter, Cynical Opportunist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "690e6368"
+    },
     "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7": {
       "name": "Crippling Fear",
       "group": "acceptance",
@@ -7316,6 +7524,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4704e4be"
+    },
+    "e823639f-1308-47f6-9b51-8fd9a682489a": {
+      "name": "Gnarlwood Dryad",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f27efc79"
     },
     "e83a629e-2d74-48e2-ad4d-f390067cc51a": {
       "name": "Transcendent Dragon",
@@ -7680,8 +7896,8 @@
           "ability": 1,
           "text": "Whenever one or more land cards are put into your graveyard from your library, put them onto the battlefield tapped.",
           "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
+          "slot": "amount",
+          "closestRule": "effect.add-counters"
         }
       ],
       "reasons": [],
@@ -8141,7 +8357,7 @@
   },
   "summary": {
     "training": {
-      "supported": 154,
+      "supported": 155,
       "total": 176
     },
     "holdout": {
@@ -8149,8 +8365,8 @@
       "total": 58
     },
     "acceptance": {
-      "supported": 695,
-      "total": 714
+      "supported": 723,
+      "total": 742
     }
   }
 }

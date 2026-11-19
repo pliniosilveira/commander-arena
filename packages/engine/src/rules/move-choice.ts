@@ -11,6 +11,7 @@ import type { GameEvent } from '../state/events';
 import { zoneList } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { withAuraEntries } from './aura-entry';
+import { derive } from './derive';
 import { moveInstructions } from './effect-support';
 import { controlledCandidates } from './sacrifice';
 import { matchesFilter } from './select';
@@ -38,6 +39,7 @@ function cardCandidates(
   filter: ObjectFilter,
   alsoGraveyard = false,
   triggerDamage?: number,
+  among?: readonly ObjectId[],
 ): ObjectId[] {
   // Issue 103: "mana value less than or equal to that damage" reads the damage of the event that caused the trigger.
   const ctx = {
@@ -48,7 +50,13 @@ function cardCandidates(
   // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
   if (filter.zone === 'exile') {
     const { controller: _you, ...described } = filter;
-    const linked = source === null ? [] : (state.objects[source]?.linkedExile ?? []);
+    // `among` ("put a permanent card from among them onto the battlefield" after an exile): the cards the effect before it exiled, not the cards linked to the source.
+    const linked =
+      among !== undefined
+        ? among
+        : source === null
+          ? []
+          : (state.objects[source]?.linkedExile ?? []);
     return linked.filter((id) => {
       const obj = state.objects[id];
       return (
@@ -161,6 +169,7 @@ export function runChooseMove(
             instruction.filter,
             instruction.alsoGraveyard === true,
             res.triggerDamage,
+            instruction.among,
           ).filter(
             // D-411: only the cards the effect before it moved.
             (id) => instruction.among === undefined || instruction.among.includes(id),
@@ -168,8 +177,24 @@ export function runChooseMove(
         : controlledCandidates(state, chooser, res.source, instruction.filter);
   if (legal.length === 0) return { ...done(state), lastMoved: [], ...restart };
   const optional = instruction.optional === true;
-  if (!optional && legal.length <= instruction.count) return run(legal, true);
-  const max = Math.min(instruction.count, legal.length);
+  // CR 205.2a: "any number of cards ... with four or more card types among them": with no way to reach that many card types among the candidates nothing can be chosen,
+  // so nothing is asked (and "if you do" reads that nothing was done).
+  const typesOf: Record<ObjectId, readonly string[]> = {};
+  if (instruction.minCardTypes !== undefined) {
+    const seen = new Set<string>();
+    for (const id of legal) {
+      const obj = state.objects[id];
+      const types = obj === undefined ? [] : derive(state, obj).types;
+      typesOf[id] = types;
+      for (const t of types) seen.add(t);
+    }
+    if (seen.size < instruction.minCardTypes) {
+      return { ...done(state), lastMoved: [], ...restart };
+    }
+  }
+  const anyNumber = instruction.anyNumber === true;
+  if (!anyNumber && !optional && legal.length <= instruction.count) return run(legal, true);
+  const max = anyNumber ? legal.length : Math.min(instruction.count, legal.length);
   const min = optional ? 0 : max;
   if (fromCards) {
     const zone =
@@ -195,16 +220,25 @@ export function runChooseMove(
         min,
         max,
         reveal: zone !== 'hand',
-        prompt: `Choose ${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'} ${
-          instruction.among !== undefined
-            ? 'from among the cards put into your graveyard'
-            : zone === 'exile'
-              ? 'exiled with this permanent'
-              : instruction.alsoGraveyard === true
-                ? 'from your hand or graveyard'
-                : zone === 'command'
-                  ? 'from your command zone'
-                  : `from your ${zone}`
+        ...(instruction.minCardTypes === undefined
+          ? {}
+          : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
+        prompt: `Choose ${
+          instruction.minCardTypes !== undefined
+            ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+            : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+        } ${
+          instruction.among !== undefined && zone === 'exile'
+            ? 'from among the cards exiled this way'
+            : instruction.among !== undefined
+              ? 'from among the cards put into your graveyard'
+              : zone === 'exile'
+                ? 'exiled with this permanent'
+                : instruction.alsoGraveyard === true
+                  ? 'from your hand or graveyard'
+                  : zone === 'command'
+                    ? 'from your command zone'
+                    : `from your ${zone}`
         } to put ${WHERE[instruction.to]}`.replace(
           'from among the cards put into your graveyard',
           instruction.anyOwner === true

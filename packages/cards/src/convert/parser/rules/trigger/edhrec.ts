@@ -30,6 +30,7 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     'one or more creatures attack',
     'one or more artifact creatures you control attack',
     'one or more Angels you control attack',
+    'one or more Demons you control attack a player',
   ],
   rejects: [
     'one or more creatures attack you',
@@ -41,6 +42,11 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     'one creature attacks',
     'one or more creatures you control attacked',
     'one or more',
+    'one or more creatures attack a player',
+    'one or more artifact creatures attack a player',
+    'one or more Demons you control attack a player and',
+    'one or more Demons you control attack a player or',
+    'one or more Demons you control attack a players',
   ],
   parse: (ctx, pos) => {
     const id = 'trigger.attack-one-or-more';
@@ -53,6 +59,11 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
       phrase.pos,
     );
     if (!verb.ok) return verb;
+    // Death Toll deck group B (CR 508.1b, 508.6): "attack a player": once for each player attacked as a player; said only of the creatures of "you control".
+    const player = pattern(/ a player(?![\p{L}\p{N}])(?!\s+(?:and|or)(?![\p{L}\p{N}]))/iu)(
+      ctx,
+      verb.pos,
+    );
     const filter: IrFilter = phrase.value.value;
     if (
       filter.anyOf !== undefined ||
@@ -68,6 +79,9 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
     // "One or more artifact creatures attack" with nobody named would be any player's: the engine's batch is the attackers of one player at a time, so only
     // "creatures" alone is said of every player; a kind of creature is said of "you control".
     if (!yours && !bare) return fail(ctx, pos);
+    if (player.ok && !yours) return fail(ctx, pos);
+    // " a player" followed by more words (" a players") is not read.
+    if (!player.ok && /^ a player/iu.test(ctx.text.slice(verb.pos))) return fail(ctx, pos);
     const actor: IrNoun = yours
       ? makeNoun(id, { start: pos, end: pos }, 'you', { raw: '' })
       : makeNoun(id, { start: pos, end: pos }, 'eachPlayer', { raw: '' });
@@ -80,11 +94,12 @@ export const TRIGGER_ATTACK_ONE_OR_MORE = defineRule<IrTrigger>({
         actor,
         atLeast: 1,
         ...(bare ? {} : { subject }),
+        ...(player.ok ? { eachAttackedPlayer: true as const } : {}),
         args: {},
-        span: { start: pos, end: verb.pos },
+        span: { start: pos, end: player.ok ? player.pos : verb.pos },
         rule: id,
       },
-      pos: verb.pos,
+      pos: player.ok ? player.pos : verb.pos,
     };
   },
 });
