@@ -201,3 +201,54 @@ describe('Kher Keep: a Kobold token named for the land', () => {
     g.expect.invariants();
   });
 });
+
+// ---- Avacyn, Angel of Horror: "Whenever Avacyn or another nontoken creature you control dies, return that card to the battlefield under your control at the beginning of the next end
+// step." (CR 603.7, 603.7c, 603.10a, 400.7: the card that died returns as a new object; a token never reaches the graveyard as a card).
+
+const HORROR = parsed(
+  'SYNTHETIC Parsed Horror Angel',
+  'Legendary Creature — Angel',
+  'Flying, deathtouch\nWhenever ~ or another nontoken creature you control dies, return that card to the battlefield under your control at the beginning of the next end step.',
+  { manaCost: '{3}{W}{W}{W}', colors: ['W'], power: '8', toughness: '8' },
+);
+
+describe('Avacyn: your nontoken creatures come back at the next end step', () => {
+  const board = () =>
+    scenario()
+      .define(HORROR)
+      .seat(0)
+      .life(20)
+      .battlefield(HORROR.name, 'Grizzly Bears')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .hand('Murder')
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+
+  test("a creature that dies returns under its owner's control at the end step, not before", () => {
+    const g = board();
+    g.act(1).cast('Murder', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('Avacyn herself returns too', () => {
+    const g = board();
+    g.act(1).cast('Murder', { targets: [HORROR.name], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.zone(HORROR.name, 'graveyard', { seat: 0 });
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.zone(HORROR.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+});
