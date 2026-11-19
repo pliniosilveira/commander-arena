@@ -483,6 +483,13 @@ const BOTTOM_RIDER =
  */
 const REVEAL_THE_TOP = /^reveal the top [^.]* cards of your library\.$/i;
 const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\.$/i;
+/**
+ * "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped and the rest on the bottom of your library in a random order." (Quandrix
+ * Unlimited deck, group D2, Animist's Awakening, CR 701.20): the second sentence says what is done with the cards the first one reveals, so the two are one instruction
+ * (`effect.reveal-put-all`).
+ */
+const PUT_ALL_FROM_AMONG =
+  /^put all [^.]* cards from among them onto the battlefield tapped and the rest on the bottom of your library in a random order\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
 /**
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
@@ -652,6 +659,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)))

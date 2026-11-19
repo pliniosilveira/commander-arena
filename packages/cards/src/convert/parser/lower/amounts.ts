@@ -420,6 +420,12 @@ export function lowerAmount(
       // CR 903.8 (stage P68, D-229): the times the controller's commanders were cast from the command zone.
       const blocked = needs('commanderCasts');
       if (blocked !== null) return blocked;
+      if (amount.player !== undefined) {
+        // "... for each time they've cast a commander from the command zone this game": the player the effect names (a target), not the controller.
+        const player = playerSelectorOf(amount.player, ctx);
+        if (!player.ok) return player;
+        return { ok: true, value: { kind: 'commanderCasts', player: player.value }, rule };
+      }
       return { ok: true, value: { kind: 'commanderCasts' }, rule };
     }
     case 'lifeTotalOf': {

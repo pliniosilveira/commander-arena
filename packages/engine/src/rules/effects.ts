@@ -647,6 +647,15 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
   return found.length > 0 ? found : [id];
 }
 
+/** The X a resolving spell or ability reads: its own, or, for a triggered ability with none, the X of the spell that is its source (`validateCard` allows that only for "When you cast this spell"). */
+function abilityXOf(state: GameState, res: ResolutionContext): number {
+  const own = state.objects[res.object]?.stack;
+  if (own?.x !== undefined && own.x !== null) return own.x;
+  if (own?.kind !== 'ability' || res.source === null) return 0;
+  const source = state.objects[res.source] ?? state.lki[res.source]?.object;
+  return source?.stack?.kind === 'spell' ? (source.stack.x ?? 0) : 0;
+}
+
 /** The context the selectors and amounts of a resolving spell or ability read: "this" is the spell, or for an ability the permanent it belongs to (which may be gone). */
 function contextOf(state: GameState, res: ResolutionContext): SelectContext {
   return {
@@ -657,7 +666,8 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
       : { sourceChosen: { creatureType: res.chosenCreatureType } }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
-    x: state.objects[res.object]?.stack?.x ?? 0,
+    // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
+    x: abilityXOf(state, res),
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
     ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
@@ -2495,6 +2505,8 @@ function runEffect(
               : { totalManaValue: effect.take.totalManaValue }),
             // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
+            // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
+            ...(effect.take.all === true ? { all: true as const } : {}),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
             ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,

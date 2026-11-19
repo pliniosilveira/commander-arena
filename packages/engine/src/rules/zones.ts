@@ -949,6 +949,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     next = became.state;
     events.push(...became.events);
     copyEvents.push(...became.counterEvents);
+    // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters": the X of the spell it came from, 0 for a permanent that was not cast.
+    if (copyRule.withX !== undefined) {
+      const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
+      if (castX > 0) {
+        const kind = copyRule.withX.counter;
+        counters = { ...counters, [kind]: (counters[kind] ?? 0) + castX };
+        const copy = getObject(next, newId);
+        next = setObject(next, {
+          ...copy,
+          counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + castX },
+        });
+      }
+    }
   }
   if (to === 'battlefield') {
     // CR 614.12, 122.6 (D-149): apply entry counters to the characteristics after an as-entry copy, without the entering group on the battlefield.

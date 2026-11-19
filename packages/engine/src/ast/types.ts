@@ -226,7 +226,15 @@ export type Amount =
    * `of: 'triggerSubject'` (D-229): not the sum over the commanders but the times the one commander that is the trigger's subject (the spell the mana was spent on,
    * "the number of times it's been cast from the command zone") was cast from the command zone.
    */
-  | { readonly kind: 'commanderCasts'; readonly of?: 'triggerSubject' }
+  | {
+      readonly kind: 'commanderCasts';
+      readonly of?: 'triggerSubject';
+      /**
+       * "Target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game" (CR 903.8): the times the commanders of this
+       * player (a target or any player selector, read as the effect runs) were cast from the command zone, instead of the controller's. Not with `of`.
+       */
+      readonly player?: PlayerSelector;
+    }
   /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
   | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
@@ -3259,6 +3267,11 @@ export type Effect =
          * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
          */
         readonly hidden?: true;
+        /**
+         * "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c, Animist's Awakening): every card of the cards looked at that the filter matches is taken, with no
+         * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'`.
+         */
+        readonly all?: true;
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
@@ -5280,6 +5293,12 @@ export type Replacement =
       readonly duration: Duration;
       readonly gains?: readonly Keyword[];
       /**
+       * "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 614.12, 107.3m, 122.6): the permanent that enters as the copy also enters with this many
+       * counters of the kind, the X of the spell it came from (0 when it was not cast). Counters are not copied (CR 707.2), so they come from the exception, and only
+       * when the copy is made. Only on a card whose mana cost has an {X}.
+       */
+      readonly withX?: { readonly counter: string };
+      /**
        * "..., except it's a Dragon in addition to its other types and it has flying" (issue 103, CR 707.9b): the creature types the permanent has besides the ones it copies,
        * part of its copiable values. Never empty.
        */
@@ -6275,6 +6294,11 @@ export interface SpellText {
    * life" as an additional cost (CR 107.3a). X is announced as the spell is cast (D-103).
    */
   readonly x?: boolean;
+  /**
+   * "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the most X that may be announced for the spell, worked out as it is cast (an `Amount` the game reads: a
+   * count, the opponents plus one...). Only with `x`. A spell with no legal X (the limit is below the least) cannot be cast.
+   */
+  readonly xAtMost?: Amount;
 }
 
 /**

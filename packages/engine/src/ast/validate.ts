@@ -1464,7 +1464,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
-        xAllowed: false,
+        // CR 601.2b: "When you cast this spell, ... half X": the spell is still on the stack with the X announced for it (the face checks its cost has an {X}).
+        xAllowed: selfCast,
         ...(subject === undefined ? {} : { triggerSubject: subject }),
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
         ...(a.trigger.kind === 'leftGraveyard' ||
@@ -1893,6 +1894,21 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
   if (!xAllowed && (s.targets ?? []).some((t) => kindOf(t.divide?.total) === 'x')) {
     issue(out, `${path}.x`, 'a division of X needs x: true (the spell announces an X)');
   }
+  // CR 107.3a, 601.2b: "X can't be greater than the number of players in the game": a limit on the X announced, read as the spell is cast.
+  if (s.xAtMost !== undefined) {
+    if (!xAllowed)
+      issue(out, `${path}.xAtMost`, 'a limit on X needs x: true (the spell announces an X)');
+    checkStateAmount(s.xAtMost, `${path}.xAtMost`, out, 'the limit on X');
+  }
+  // CR 107.3a, 202.3: "target creature with mana value X" reads the X announced for the spell.
+  if (
+    !xAllowed &&
+    (s.targets ?? []).some(
+      (t) => t.what?.kind === 'object' && JSON.stringify(t.what.filter).includes('"manaValueX"'),
+    )
+  ) {
+    issue(out, `${path}.x`, 'a target with mana value X needs x: true (the spell announces an X)');
+  }
   if (s.effect !== undefined) {
     checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
   } else if (targets.size > 0) {
@@ -2111,11 +2127,57 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     }
   });
 
+  // CR 601.2b: the X read by "When you cast this spell, ..." is the X announced for that spell, so the mana cost needs an {X}.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      a.trigger?.kind === 'castSpell' &&
+      a.trigger.self === true &&
+      JSON.stringify(a.effect ?? null).includes('"x"') &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(out, `${path}.abilities[${i}].effect`, 'X is read but the mana cost has no {X}');
+    }
+  });
+  // CR 107.3m: the X of a copy's "enters with X additional counters" is the spell's X, so the cost needs an {X}.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'replacement' &&
+      a.replacement?.kind === 'entersAsCopy' &&
+      a.replacement.withX !== undefined &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].replacement.withX`,
+        'enters with X counters but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 107.3m: "destroy up to one target artifact or enchantment with mana value X or less" reads the X of the spell the permanent came from, so only the enters trigger of the permanent itself has it.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      JSON.stringify(a.targets ?? null).includes('"enteredX"') &&
+      !(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].targets`,
+        'enteredX in a target reads the X of the spell the permanent came from: only its own enters trigger has one',
+      );
+    }
+  });
+
   // CR 107.3m (Hylda group 3): "When this creature enters, draw X cards" reads the X of the spell's mana cost; without an {X} there is nothing to read.
   face.abilities.forEach((a, i) => {
     if (
       a?.kind === 'triggered' &&
-      JSON.stringify(a.effect ?? null).includes('"enteredX"') &&
+      (JSON.stringify(a.effect ?? null).includes('"enteredX"') ||
+        JSON.stringify(a.targets ?? null).includes('"enteredX"') ||
+        (a.trigger?.kind === 'entersBattlefield' &&
+          JSON.stringify(a.effect ?? null).includes('"xAtLeast"'))) &&
       !(face.manaCost ?? []).includes('X')
     ) {
       issue(

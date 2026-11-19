@@ -154,7 +154,8 @@ export function evaluateCondition(
     case 'xAtLeast': {
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell as it resolves, or from its last-known information once it has left.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
-      return source !== null && (source.stack?.x ?? 0) >= condition.value;
+      // CR 107.3m: in "When this creature enters, ... If X is 5 or more" the X is the one of the spell the permanent came from, which the permanent remembers (`castX`).
+      return source !== null && (source.stack?.x ?? source.castX ?? 0) >= condition.value;
     }
     case 'castInOwnMainPhase': {
       // CR 601.2, 505.1 (issue 244): "If you cast this spell during your main phase"; read from the spell, or from its last-known information once it has left.

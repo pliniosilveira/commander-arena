@@ -342,6 +342,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-permanent': spell((e) => `Destroy ${e}.`),
   'amount.number': spell((e) => `Draw ${e} cards.`),
   'amount.x': spell((e) => `Draw ${e} cards.`),
+  // Quandrix Unlimited deck, group D2: the rounding of "half X" is written next to the X.
+  'amount.half-x': spell((e) => `You gain ${e} life.`),
   'amount.article': spell((e) => `Draw ${e} card.`),
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.that-spells-mana-value': permanent(
@@ -521,6 +523,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", the trailing "if" of an activated ability) or "As long as"; the nouns are operands of damage.
   'replacement.enters-as-copy': asIs,
   'replacement.enters-as-copy-embalmed': asIs,
+  'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.redirect-damage': asIs,

@@ -372,6 +372,11 @@ export function stateAmountOf(
     case 'commanderManaValue':
       return commandersManaValue(state, ctx.controller);
     case 'commanderCasts': {
+      if (amount.player !== undefined) {
+        // CR 903.8: the player the selector names ("target player ... they've cast").
+        const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+        return seat === undefined ? 0 : commandersCastCount(state, seat);
+      }
       if (amount.of !== 'triggerSubject') return commandersCastCount(state, ctx.controller);
       // D-229: the commander the event is about: the times this card was cast from the command zone.
       const subject =

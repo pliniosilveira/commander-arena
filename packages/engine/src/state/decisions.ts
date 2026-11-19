@@ -1108,6 +1108,11 @@ export interface ChooseXDecision extends DecisionBase {
   readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
   readonly min: number;
   readonly max: number;
+  /**
+   * The values from `min` to `max` that leave the spell a legal target, for a spell whose target is "with mana value X" (CR 601.2b, 601.2c: X is announced before the
+   * targets, and a spell with no legal target cannot be cast). Absent: every value is legal.
+   */
+  readonly values?: readonly number[];
   readonly perX: {
     readonly mana: number;
     readonly life: number;

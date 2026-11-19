@@ -482,7 +482,7 @@ export type IrAmount =
   // "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3)
   | { readonly kind: 'commanderManaValue'; readonly span: Span }
   // "for each time you've cast your commander from the command zone this game" (stage P68, D-229, CR 903.8)
-  | { readonly kind: 'commanderCasts'; readonly span: Span }
+  | { readonly kind: 'commanderCasts'; readonly player?: IrNoun; readonly span: Span }
   // "your life total" or the life total of the player this effect names (CR 119.1)
   | { readonly kind: 'lifeTotalOf'; readonly of: IrNoun; readonly span: Span }
   // "the number of profit votes" (stage P44, D-195, CR 701.38a): the votes for one option of a vote earlier in the text, the option as the card writes it

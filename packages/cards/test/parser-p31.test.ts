@@ -806,7 +806,7 @@ describe("filters: attacking, a count of colors, a union of plural card types, e
     ['Target player sacrifices all creatures they control.', 'sorcery'],
     ['Destroy all artifacts, creatures and enchantments.', 'sorcery'],
     ['Destroy target creature with mana value X or less.', 'sorcery'],
-    ['Destroy target creature with mana value X.', 'sorcery'],
+    ['{T}: Destroy target creature with mana value X.', 'artifact'],
   ] as const)('"%s" is not run', (text, type) => {
     expect(drop(text, type)).toMatchObject({
       reason: expect.stringMatching(/notRunnable|unrecognised/),

@@ -48,6 +48,7 @@ import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
+import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
@@ -56,6 +57,7 @@ import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
 import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
@@ -139,6 +141,7 @@ import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
+import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
@@ -1036,6 +1039,12 @@ export const EFFECT_RULES = [
   ...GALADRIEL_G3_EFFECT_RULES,
   // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
   ...DAMAGE_HAND_EFFECT_RULES,
+  // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
+  ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
+  // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".
+  ...DRAW_COMMANDER_CASTS_EFFECT_RULES,
+  // Quandrix Unlimited deck, group D2: "reveal the top X cards ... put all land cards from among them onto the battlefield tapped", "reveal cards until you reveal X land cards".
+  ...REVEAL_X_CARDS_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
