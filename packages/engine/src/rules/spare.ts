@@ -7,18 +7,13 @@
  * which the player controls no permanent is skipped; with one candidate the engine chooses (and says so); otherwise a `choosePermanent` decision (purpose `spare`)
  * asks. The same permanent may be chosen for more than one type it has (an artifact creature as the artifact and as the creature: the text names no other limit).
  * When every choice is made, each player sacrifices every nonland permanent they control that was not chosen, all at once as one batch in turn order.
- *
- * "Each player puts a vow counter on a creature they control and sacrifices the rest" (Promise of Loyalty; CR 608.2d, 701.21a, 122.1): with `own` and `onlyTypes` only the permanents of
- * the chosen types are sacrificed (the lands stay); with `counter` each permanent kept gets the counter first, put by its controller, in turn order (a permanent that can't have counters of
- * the kind gets none); with `keptAs` the permanents kept are remembered under that name for the instructions after this one ("each of those creatures", `chosen`).
  */
 import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { patchObject, seatsInOrder } from '../state/ops';
+import { seatsInOrder } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
-import { blocks, counterBlockers } from './counter-prevention';
 import { derive } from './derive';
 import { sacrificeInstructions } from './sacrifice-choice';
 import { apnapOrder } from './select';
@@ -46,15 +41,11 @@ export function startSpare(
   state: GameState,
   types: readonly CardType[],
   own?: readonly SeatId[],
-  options: { readonly onlyTypes?: true; readonly counter?: string; readonly keptAs?: string } = {},
 ): SpareInstruction {
   const players = seatsInOrder(state, state.turn.activeSeat);
   return {
     kind: 'spare',
     ...(own === undefined ? {} : { own: true as const }),
-    ...(options.onlyTypes === true ? { onlyTypes: true as const } : {}),
-    ...(options.counter === undefined ? {} : { counter: options.counter }),
-    ...(options.keptAs === undefined ? {} : { keptAs: options.keptAs }),
     players: own === undefined ? players : players.filter((seat) => own.includes(seat)),
     types,
     step: 0,
@@ -71,37 +62,12 @@ export function runSpare(
   const pairs = ins.players.flatMap((player) => ins.types.map((type) => ({ player, type })));
   const pair = pairs[ins.step];
   if (pair === undefined) {
-    // Every choice is made: each player sacrifices all the other nonland permanents they control, or with `own` all the other permanents they control (CR 701.21a, 101.4); with
-    // `onlyTypes` only the ones of the types asked.
+    // Every choice is made: each player sacrifices all the other nonland permanents they control, or with `own` all the other permanents they control (CR 701.21a, 101.4).
     const kept = new Set(ins.spared);
-    // CR 122.1, 101.4: the permanents kept get the counter first, put by the player who controls each, in turn order.
-    let counted = state;
-    const events: GameEvent[] = [];
-    if (ins.counter !== undefined) {
-      const counter = ins.counter;
-      const blockers = counterBlockers(counted);
-      for (const id of [...new Set(ins.spared)]) {
-        const obj = counted.objects[id];
-        if (obj === undefined || obj.zone !== 'battlefield') continue;
-        if (blocks(counted, blockers, obj, counter)) continue;
-        counted = patchObject(counted, id, {
-          counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + 1 },
-        });
-        events.push({
-          kind: 'counterAdded',
-          object: id,
-          counter,
-          count: 1,
-          by: controllerOf(counted, obj),
-        });
-      }
-    }
-    const doomed = permanentsOf(counted).filter(
+    const doomed = permanentsOf(state).filter(
       (p) =>
         ins.players.includes(p.controller) &&
-        (ins.own === true
-          ? ins.onlyTypes !== true || p.types.some((t) => ins.types.includes(t))
-          : !p.types.includes('land')) &&
+        (ins.own === true || !p.types.includes('land')) &&
         !kept.has(p.id),
     );
     const seats = apnapOrder(
@@ -110,7 +76,7 @@ export function runSpare(
     );
     // D-283 (CR 603.10a): all of them are sacrificed at once, so what each was is recorded before the first moves.
     const together = recordTogether(
-      counted,
+      state,
       seats.flatMap((seat) =>
         sacrificeInstructions(
           doomed.filter((p) => p.controller === seat).map((p) => p.id),
@@ -118,10 +84,7 @@ export function runSpare(
         ),
       ),
     );
-    const outcome = done(together.state, events, together.instructions);
-    return ins.keptAs === undefined
-      ? outcome
-      : { ...outcome, chosenObjects: { [ins.keptAs]: [...new Set(ins.spared)] } };
+    return done(together.state, [], together.instructions);
   }
   const candidates = permanentsOf(state)
     .filter((p) => p.controller === pair.player && p.types.includes(pair.type))
@@ -157,8 +120,6 @@ export function runSpare(
         player: pair.player,
         type: pair.type,
         ...(ins.own === true ? { own: true as const } : {}),
-        ...(ins.onlyTypes === true ? { onlyTypes: true as const } : {}),
-        ...(ins.counter === undefined ? {} : { counter: ins.counter }),
       },
       min: 1,
       max: 1,

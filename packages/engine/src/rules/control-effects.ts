@@ -275,15 +275,6 @@ export function endLostControlEffects(
     if (e.until.kind === 'whileOnBattlefield') {
       return state.objects[e.until.source]?.zone !== 'battlefield';
     }
-    // CR 611.2b: "for as long as it has a vow counter on it": the object on the battlefield with a counter of the kind.
-    if (e.until.kind === 'whileCounter') {
-      const holder = state.objects[e.until.object];
-      return (
-        holder === undefined ||
-        holder.zone !== 'battlefield' ||
-        (holder.counters[e.until.counter] ?? 0) <= 0
-      );
-    }
     if (e.until.kind !== 'whileControlling') return false;
     const source = state.objects[e.until.source];
     return (

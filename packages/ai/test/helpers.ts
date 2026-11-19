@@ -4417,9 +4417,6 @@ const RANKED_CARD_NAMES = [
   'SYNTHETIC Greedy Gem',
   'SYNTHETIC Prismatic Growth',
   'SYNTHETIC Verdant Surge',
-  'SYNTHETIC Vow Rite',
-  'SYNTHETIC Vow Breaker',
-  'SYNTHETIC Vow Giver',
 ] as const;
 
 /**

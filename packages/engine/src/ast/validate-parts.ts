@@ -3913,13 +3913,6 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               chosenObjects: new Set([...(after.chosenObjects ?? []), child.id]),
             };
           }
-          // CR 608.2d: "puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures ...": what a `sparePermanents` kept is named for what follows.
-          if (child?.kind === 'sparePermanents' && child.own?.keptAs !== undefined) {
-            after = {
-              ...after,
-              chosenObjects: new Set([...(after.chosenObjects ?? []), child.own.keptAs]),
-            };
-          }
           // D-120: after a `loseLife`, "the total life lost this way" can be read.
           if (child?.kind === 'loseLife' && after.lossAvailable !== true) {
             after = { ...after, lossAvailable: true };
@@ -5359,32 +5352,6 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'the players who choose for themselves are each player or each opponent',
           );
         }
-        // Promise of Loyalty (CR 608.2d, 122.1): only the permanents of the types asked are sacrificed, the ones kept get a counter, and are remembered by name.
-        if (e.own.onlyTypes !== undefined && e.own.onlyTypes !== true) {
-          issue(out, `${path}.own.onlyTypes`, 'onlyTypes must be true when present');
-        }
-        for (const key of ['counter', 'keptAs'] as const) {
-          const v = e.own[key];
-          if (v !== undefined && (typeof v !== 'string' || v === '')) {
-            issue(out, `${path}.own.${key}`, `${key} must be a non-empty name when present`);
-          }
-        }
-      } else {
-        for (const key of ['onlyTypes', 'counter', 'keptAs'] as const) {
-          if ((e as unknown as Record<string, unknown>)[key] !== undefined) {
-            issue(out, `${path}.${key}`, `${key} belongs in own`);
-          }
-        }
-      }
-      break;
-    case 'cantAttackController':
-      // CR 508.1a, 506.3, 611.2b, 611.2c: the creatures an earlier instruction names ("those creatures": `chosen`) or a selector, for as long as they have the counter.
-      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
-      if (typeof e.whileCounter !== 'string' || e.whileCounter === '') {
-        issue(out, `${path}.whileCounter`, 'whileCounter is the name of a counter');
-      }
-      if (e.planeswalkers !== undefined && e.planeswalkers !== true) {
-        issue(out, `${path}.planeswalkers`, 'planeswalkers must be true when present');
       }
       break;
     case 'exileOwnGraveyardCard':

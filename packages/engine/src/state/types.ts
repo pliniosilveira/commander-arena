@@ -1114,12 +1114,6 @@ export type Instruction =
       readonly kind: 'spare';
       /** D-484: each of `players` chooses among their own permanents and sacrifices all the rest, lands too (`sparePermanents.own`); absent: the controller chooses and the lands stay. */
       readonly own?: true;
-      /** "Each player puts a vow counter on a creature they control and sacrifices the rest" (`sparePermanents.own.onlyTypes`): only the permanents of `types` are sacrificed, the others stay. */
-      readonly onlyTypes?: true;
-      /** The counter each permanent kept gets (`sparePermanents.own.counter`, CR 122.1), put by the player who chose it. */
-      readonly counter?: string;
-      /** The name under which the permanents kept are remembered for the rest of the resolution (`sparePermanents.own.keptAs`: `chosenObjects`). */
-      readonly keptAs?: string;
       readonly players: readonly SeatId[];
       readonly types: readonly CardType[];
       readonly step: number;
@@ -1982,12 +1976,6 @@ export type ContinuousChange =
    */
   | { readonly kind: 'restrict'; readonly restriction: Restriction }
   /**
-   * "Each of those creatures can't attack you or planeswalkers you control" (`cantAttackController`, CR 508.1a, 506.3, 611.2c): the creatures of the effect (`objects`) can't be declared
-   * attacking the player `seat` (as a player) nor, with `planeswalkers`, the planeswalkers `seat` controls (a battle is never covered). No layer: read where attackers are declared
-   * (`rules/attack-bans.ts`). Whoever controls the creature does not matter.
-   */
-  | { readonly kind: 'cantAttackSeat'; readonly seat: SeatId; readonly planeswalkers?: true }
-  /**
    * "You gain hexproof until end of turn" (`grantPlayerHexproof`, CR 702.11b, Hylda group 3): the effect's `players` have hexproof while it lasts. No layer: read where a
    * player is targeted (`rules/player-protection.ts`).
    */
@@ -2134,12 +2122,7 @@ export type EffectEnd =
    * "For as long as this Saga remains on the battlefield" (D-207, CR 611.2b): while the object `source` is on the battlefield; it ends, for good, as that stops
    * being so (`endLostControlEffects`, with the state-based actions). Whoever controls it does not matter.
    */
-  | { readonly kind: 'whileOnBattlefield'; readonly source: ObjectId }
-  /**
-   * "For as long as it has a vow counter on it" (CR 611.2b): while the object `object` is on the battlefield and has a counter named `counter`; it ends, for good, as that stops
-   * being so (`endLostControlEffects`, with the state-based actions): a counter put on it again later does not bring the effect back.
-   */
-  | { readonly kind: 'whileCounter'; readonly object: ObjectId; readonly counter: string };
+  | { readonly kind: 'whileOnBattlefield'; readonly source: ObjectId };
 
 /**
  * What happened this turn that some abilities ask about (D-139), kept for the whole game state and emptied as each turn begins

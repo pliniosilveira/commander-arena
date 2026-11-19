@@ -480,10 +480,6 @@ export interface ChoosePermanentDecision extends DecisionBase {
     readonly type: CardType;
     /** D-484: `player` chooses among their own permanents and sacrifices every other one, lands too (Liliana, Dreadhorde General). */
     readonly own?: true;
-    /** Promise of Loyalty: only the permanents of `type` are sacrificed (`sparePermanents.own.onlyTypes`), the lands and the rest stay. */
-    readonly onlyTypes?: true;
-    /** Promise of Loyalty: the permanent kept gets a counter of this name (`sparePermanents.own.counter`). */
-    readonly counter?: string;
   };
   /**
    * For `'proliferate'` (CR 701.34a, D-149): `seat` chooses any number of the permanents in `legal` (those with a counter) and of the

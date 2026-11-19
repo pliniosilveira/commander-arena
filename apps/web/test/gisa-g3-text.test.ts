@@ -108,21 +108,6 @@ describe('the prompts', () => {
     );
   });
 
-  test('Promise of Loyalty: only the creatures are sacrificed, and the one kept gets the counter', () => {
-    const decision = {
-      purpose: 'spare',
-      min: 1,
-      max: 1,
-      source: 's1',
-      legal: [],
-      seat: 1,
-      spare: { player: 1, type: 'creature', own: true, onlyTypes: true, counter: 'vow' },
-    } as never;
-    expect(choosePermanentPrompt(decision, index as never)).toBe(
-      'Choose a creature you control to keep. It gets a vow counter. You sacrifice every other creature you control.',
-    );
-  });
-
   test('Tragic Arrogance keeps its words', () => {
     const decision = {
       purpose: 'spare',

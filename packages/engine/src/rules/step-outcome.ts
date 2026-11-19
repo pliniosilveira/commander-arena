@@ -22,8 +22,6 @@ export interface StepOutcome {
   readonly thisWay?: ThisWayCounts;
   /** The ids of the permanents this instruction sacrificed, added to `ResolutionContext.sacrificed` for `sacrificed` (D-177). */
   readonly sacrificed?: readonly ObjectId[];
-  /** What this instruction chose, added to `ResolutionContext.chosenObjects` under each name (`chosen` of that id, CR 608.2d): the permanents kept by `sparePermanents.own.keptAs`. */
-  readonly chosenObjects?: Readonly<Record<string, readonly ObjectId[]>>;
   /** The tally of a vote this instruction finished, which becomes `ResolutionContext.votes` for the amount `votesFor` (D-194). */
   readonly votes?: Readonly<Record<string, number>>;
   /** How much this instruction did, added to `ResolutionContext.performed` for `didPrevious` and `reflexive` (D-135). */

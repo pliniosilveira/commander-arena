@@ -180,7 +180,6 @@ import { SYNTHETIC_UNTIL_LEAVES_LIST } from './synthetic-until-leaves';
 import { SYNTHETIC_UPKEEP_LIST } from './synthetic-upkeep';
 import { SYNTHETIC_VEHICLE_LIST } from './synthetic-vehicles';
 import { SYNTHETIC_VOTE_LIST } from './synthetic-vote';
-import { SYNTHETIC_VOW_LIST } from './synthetic-vow';
 import { SYNTHETIC_VRASKA_LIST } from './synthetic-vraska';
 import { SYNTHETIC_WARD_LIST } from './synthetic-ward';
 import { SYNTHETIC_X_LIST } from './synthetic-x';
@@ -477,7 +476,6 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_ENCHANTED_LAND_MANA_LIST,
   ...SYNTHETIC_POWER_ABOVE_TARGET_LIST,
   ...SYNTHETIC_UNBLOCKED_LIST,
-  ...SYNTHETIC_VOW_LIST,
   ...SYNTHETIC_RETURN_CONTROL_LIST,
   ...SYNTHETIC_CURSE_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,

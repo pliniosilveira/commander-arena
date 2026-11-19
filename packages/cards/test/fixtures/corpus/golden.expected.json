@@ -6862,10 +6862,19 @@
     "e1d294e8-67b1-4a4a-86b8-f98f28a327d9": {
       "name": "Promise of Loyalty",
       "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "Each player puts a vow counter on a creature they control and sacrifices the rest. Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
       "reasons": [],
-      "ast": "7dadcd96"
+      "ast": "cb0a7c4e"
     },
     "e233cb5b-7237-4271-8157-9179cc897b6c": {
       "name": "Killian, Ink Duelist",
@@ -7812,7 +7821,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 624,
+      "supported": 623,
       "total": 653
     }
   }
