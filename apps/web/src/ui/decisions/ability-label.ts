@@ -331,6 +331,18 @@ export function targetText(spec: TargetSpec | undefined): string {
   }
 }
 
+/** What an enchant ability allows, in the card's words: "creature card in a graveyard", "creature put onto the battlefield with this Aura"; null for any filter these words leave out. */
+function enchantWords(filter: ObjectFilter): string | null {
+  const { zone, types, putWithSource, ...rest } = filter;
+  if (Object.keys(rest).length > 0 || types === undefined || types.length !== 1) return null;
+  if (zone === 'graveyard')
+    return putWithSource === true ? null : `${types[0]} card in a graveyard`;
+  if (zone !== undefined && zone !== 'battlefield') return null;
+  return putWithSource === true
+    ? `${types[0]} put onto the battlefield with this Aura`
+    : `${types[0]}`;
+}
+
 /** What the ability's text calls an object: the card itself, a target slot, or a group. */
 function objectText(what: ObjectSelector, ability: WithTargets, self: string): string {
   switch (what.kind) {
@@ -383,6 +395,9 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
     case 'linkedExile':
       // D-145: the card this permanent exiled with a linked ability (Hideaway).
       return 'the exiled card';
+    case 'putWithThis':
+      // Animate Dead: "that creature", the creature this permanent put onto the battlefield.
+      return 'that creature';
   }
 }
 
@@ -519,6 +534,7 @@ function recipientText(
     case 'sacrificed':
     case 'attached':
     case 'linkedExile':
+    case 'putWithThis':
     case 'each':
       return objectText(to, ability, self);
   }
@@ -795,6 +811,10 @@ function moveText(
     const control =
       effect.controller === 'owner' ? " under its owner's control" : ' under your control';
     return `Put each ${kind} card exiled with this ${self} onto the battlefield${effect.tapped === true ? ' tapped' : ''}${control}${withCounters}`;
+  }
+  // CR 400.7, 303.4 (Animate Dead): "Return enchanted creature card to the battlefield under your control": the card an Aura enchants, which is in a graveyard until it returns.
+  if (objects.kind === 'attached' && effect.to === 'battlefield' && effect.putWithSource === true) {
+    return `Return the enchanted card to the battlefield${effect.controller === 'owner' ? " under its owner's control" : ' under your control'}`;
   }
   // D-394 (CR 110.2a, 400.7): the card an earlier instruction exiled ("it") put onto the battlefield under the control of the player who puts it: it is not returning anywhere.
   if (objects.kind === 'moved' && effect.to === 'battlefield' && effect.controller === 'you') {
@@ -1214,6 +1234,14 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return 'Exile cards from the top of your library until you exile a nonland card with lesser mana value, and you may cast it without paying its mana cost';
     case 'moveToZone':
       return moveText(effect, ability, self, defs);
+    case 'replaceEnchant': {
+      // CR 702.5a, 613.1f (Animate Dead): "This Aura loses "enchant creature card in a graveyard" and gains "enchant creature put onto the battlefield with this Aura"".
+      const lost = enchantWords(effect.loses.filter);
+      const gained = enchantWords(effect.gains.filter);
+      return lost === null || gained === null
+        ? UNSAID
+        : `This ${self} loses "enchant ${lost}" and gains "enchant ${gained}"`;
+    }
     case 'may': {
       // CR 608.2c (D-135): "You may discard a card", "You may exile it".
       const inner = effectText(effect.effect, ability, self, defs);

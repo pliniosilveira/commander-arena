@@ -42,6 +42,7 @@ import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
+import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
@@ -528,6 +529,8 @@ export const CONDITION_RULES = [
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
+  // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
+  ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,

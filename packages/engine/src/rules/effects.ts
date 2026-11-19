@@ -125,6 +125,7 @@ import {
   runProtectionColor,
 } from './protection-choice';
 import { runRegenerate } from './regenerate';
+import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
@@ -454,10 +455,15 @@ export function runInstruction(
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
     // CR 303.4f (D-149): an Aura that entered by an effect enters attached to the object its controller chose.
+    // CR 400.7 (Animate Dead): the permanent it became remembers the permanent it was put onto the battlefield with.
+    const remembered =
+      instruction.putWith !== undefined && result.newObject !== null
+        ? patchObject(result.state, result.newObject, { putWith: instruction.putWith })
+        : result.state;
     const attached =
       instruction.attachTo !== undefined && result.newObject !== null
-        ? attachEntered(result.state, result.newObject, instruction.attachTo)
-        : { state: result.state, events: [] as GameEvent[] };
+        ? attachEntered(remembered, result.newObject, instruction.attachTo)
+        : { state: remembered, events: [] as GameEvent[] };
     // CR 603.6a (D-272): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
     const moveEvents = [
       ...(instruction.together === true
@@ -969,7 +975,7 @@ function runEffect(
       // states otherwise, so an effect with no control named means 'you', not the owner. Every
       // other zone has no controller: the card goes to its owner's zone (CR 108.3, 400.3).
       const controller = effect.to === 'battlefield' ? (effect.controller ?? 'you') : undefined;
-      const moves = moveInstructions(
+      const plainMoves = moveInstructions(
         ids,
         effect.to,
         effect.position ?? 'top',
@@ -977,6 +983,13 @@ function runEffect(
         controller,
         effect.withCounters,
       );
+      // CR 400.7, 303.4 (Animate Dead): "Return enchanted creature card to the battlefield ... attach this Aura to it": the permanent remembers it was put there with this Aura.
+      const moves =
+        effect.putWithSource === true && effect.to === 'battlefield'
+          ? plainMoves.map(
+              (m): Instruction => (m.kind === 'move' ? { ...m, putWith: res.source } : m),
+            )
+          : plainMoves;
       // CR 303.4f (D-149): an Aura card put onto the battlefield chooses what it enchants as it enters.
       // CR 303.4g, 303.4i (D-207): "attached to target creature ...": the effect names the object, so the Aura does not choose; it enters attached to the target
       // when that is still a legal object to enchant, and stays where it is when the target is gone.
@@ -2614,6 +2627,10 @@ function runEffect(
     case 'revealTop':
       // CR 701.20 (D-151): reveal the top card, and put it onto the battlefield if it matches (rules/reveal-top.ts).
       return runRevealTop(state, res, effect, ctx, targets);
+
+    case 'replaceEnchant':
+      // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
+      return runReplaceEnchant(state, effect, ctx, targets);
 
     case 'revealTopDuel':
       // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).

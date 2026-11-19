@@ -39,6 +39,15 @@ const ENCHANT_LINE =
 
 const TYPE_WORDS: ReadonlySet<string> = new Set([...CARD_TYPES, 'permanent']);
 
+/** "Enchant creature card in a graveyard" (CR 303.4a, Animate Dead): an Aura whose spell targets a card of a graveyard, which no permanent on the board is. */
+const ENCHANT_GRAVEYARD_LINE = /^enchant\b[^.]*\bcards? in (?:a|an opponent['’]s|your) graveyard/i;
+
+/** True when the first "Enchant ..." line of the card names a card in a graveyard: there is no permanent to drop it on, and the cast asks for the card. */
+export function enchantsGraveyardCard(card: ObjectView | undefined): boolean {
+  const line = card?.oracleText.split('\n').find((l) => /^enchant\b/i.test(l.trim()));
+  return line !== undefined && ENCHANT_GRAVEYARD_LINE.test(line.trim());
+}
+
 /**
  * The restriction in the first "Enchant ..." sentence of an Aura's Oracle text, as a filter. A line
  * that is missing or not understood gives no restriction (every permanent).

@@ -196,6 +196,13 @@ export function lowerCondition(
       if (ctx?.interveningCondition !== true) return failure(c, []);
       return ok({ kind: 'thisInYourGraveyard' });
     }
+    case 'thisOnBattlefield': {
+      // CR 603.4, 400.7 (issue 89, Animate Dead): "if it's on the battlefield" is read only as the intervening "if" of a trigger about the source itself, where "it" is the source.
+      const blocked = missingFeatures(['condition:thisOnBattlefield']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (!itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'thisOnBattlefield' });
+    }
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (stage P68, D-229): "that player", the controller of the permanent the trigger is about, has more lands than the controller.
       // "That player" of a trigger about a player (the active player of an opponent's end step, CR 102.1, 603.2b) is that player, not the controller of a
@@ -730,6 +737,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:attackedWithCreaturesThisTurn',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
+  'condition:thisOnBattlefield',
   'condition:ownsAndControlsNamed',
   'condition:enteredThisTurn',
   'condition:yourMainPhase',

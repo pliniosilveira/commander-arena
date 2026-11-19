@@ -81,6 +81,24 @@ export function checkDragonsEffect(
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       return true;
+    case 'replaceEnchant':
+      // CR 702.5a, 613.1f (Animate Dead): the Aura with the ability swaps one enchant ability of permanents for another.
+      if (e.objects?.kind !== 'this' || scope.owner !== 'ability') {
+        issue(
+          out,
+          `${path}.objects`,
+          'a replaceEnchant is about the Aura the ability belongs to: this',
+        );
+      }
+      for (const key of ['loses', 'gains'] as const) {
+        const k = e[key];
+        if (k?.kind !== 'enchant' || k.player !== undefined) {
+          issue(out, `${path}.${key}`, `${key} is an enchant ability of permanents or cards`);
+        } else {
+          checkFilter(k.filter, `${path}.${key}.filter`, out);
+        }
+      }
+      return true;
     case 'revealTopDuel':
       // CR 701.20a, 119.3: "the other player" is defined only when exactly two players are named, so the selector is `all` of two members.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);

@@ -980,6 +980,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `When enchanted creature dies, return that card to the battlefield under its owner's control. ${cap(e)}.`,
   ),
+  // Issue 89 (Animate Dead): the Aura that enchants a creature card in a graveyard, swaps its enchant ability, returns the card and has the creature sacrificed when it leaves.
+  'noun.card-in-a-graveyard': permanent((e) => `Enchant ${e}`),
+  'noun.put-onto-with-self': permanent(
+    (e) =>
+      `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
+  ),
+  'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
+  'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
+  'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

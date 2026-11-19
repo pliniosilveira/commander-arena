@@ -294,6 +294,11 @@ function lowerFilterAt(
     if (inner || filter.zone !== 'exile') return bad([]);
     parts.push('selector:exiledWithSource');
   }
+  // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
+  if (filter.putWithSelf === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:putWithSource');
+  }
   // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
   if (filter.modified === true) {
     if (inner && !aimed) return bad([]);
@@ -467,6 +472,7 @@ function lowerFilterAt(
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
+    ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),

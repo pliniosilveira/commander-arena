@@ -23,6 +23,7 @@ import { ADDITIONAL_LAND_LOWERINGS } from './additional-land';
 import { lowerAmount } from './amounts';
 import { ANGEL_LOWERINGS } from './angels';
 import { ARDEN_LOWERINGS } from './arden';
+import { AURA_GRAVEYARD_LOWERINGS } from './aura-graveyard';
 import { lowerAuraToken } from './aura-token';
 import { CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_LOWERINGS } from './chosen-color-mana';
@@ -1993,6 +1994,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DINOSAUR_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...ARDEN_LOWERINGS,
+  // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
+  ...AURA_GRAVEYARD_LOWERINGS,
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,

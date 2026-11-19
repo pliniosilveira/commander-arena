@@ -211,7 +211,12 @@ export function applyAbilityLayer(
   grants: readonly StaticGrant[],
   effects: readonly ContinuousEffect[],
 ): readonly Ability[] {
-  type Step = { readonly timestamp: number; readonly grant: Ability | null };
+  type Step = {
+    readonly timestamp: number;
+    readonly grant: Ability | null;
+    /** CR 613.1f (`replaceEnchant`): the enchant ability taken away at this timestamp, as `grant` is given. */
+    readonly loses?: Ability;
+  };
   const steps: Step[] = grants.map((g) => ({ timestamp: g.timestamp, grant: g.ability }));
   for (const e of effects) {
     if (e.change.kind === 'grantKeyword') {
@@ -223,6 +228,13 @@ export function applyAbilityLayer(
       steps.push({ timestamp: e.timestamp, grant: e.change.ability });
     } else if (e.change.kind === 'loseAllAbilities') {
       steps.push({ timestamp: e.timestamp, grant: null });
+    } else if (e.change.kind === 'replaceEnchant') {
+      // CR 613.1f, 702.5a (Animate Dead): "it loses \"enchant ...\" and gains \"enchant ...\"": one step, the ability goes and the other comes.
+      steps.push({
+        timestamp: e.timestamp,
+        grant: { kind: 'keyword', keyword: e.change.gains },
+        loses: { kind: 'keyword', keyword: e.change.loses },
+      });
     }
   }
   // CR 702.11b, 702.18a, 613.1f (D-649): "can't have hexproof or shroud" holds for every timestamp, so the two are taken out after all the steps.
@@ -232,6 +244,19 @@ export function applyAbilityLayer(
   steps.sort((a, b) => a.timestamp - b.timestamp);
   let abilities = printed;
   for (const step of steps) {
+    if (step.loses !== undefined && step.grant !== null) {
+      // The ability that goes is replaced where it stands, so the abilities after it keep the index they had (triggers and activations refer to indexes).
+      const gone = JSON.stringify(step.loses);
+      const at = abilities.findIndex((a) => JSON.stringify(a) === gone);
+      if (at >= 0) {
+        const given: Ability = step.grant;
+        const rest = abilities.filter((_, i) => i !== at);
+        abilities = hasAbility(rest, given)
+          ? rest
+          : abilities.map((a, i) => (i === at ? given : a));
+        continue;
+      }
+    }
     if (step.grant === null) abilities = [];
     else if (INSTANCE_KEYWORDS.includes(keywordKindOf(step.grant))) {
       // CR 702.83b, 702.108b, 702.130b (D-149, D-472): every instance of exalted, prowess or afflict is its own triggered ability, so each grant adds one,
