@@ -33,7 +33,7 @@ import {
   tierOfAbility,
 } from './mana-abilities';
 import { isCombinationProduction, productionOutcomes, spendRestrictionOf } from './mana-outcomes';
-import { additionalManaFor } from './mana-triggers';
+import { additionalManaOptions } from './mana-triggers';
 import { lifeTotalIsLocked } from './player-lock';
 
 const sourcesBySeat = new WeakMap<GameState, Map<SeatId, readonly PaymentSource[]>>();
@@ -70,10 +70,12 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
       // CR 605.4, D-139: what a triggered mana ability adds ("add an additional {C}") is made with the mana, so the planner counts it.
       const produces = productionOutcomes(state, obj, ability)
         .filter((o) => o.length > 0)
-        .map((o) => {
-          const extra = additionalManaFor(state, obj, ability, o);
-          return extra.length === 0 ? o : [...o, ...extra];
-        });
+        .flatMap((o) =>
+          // CR 605.4, 106.1b: one outcome for each choice of the color of the additional mana of "adds an additional one mana of any color".
+          additionalManaOptions(state, obj, ability, o).map((extra) =>
+            extra.length === 0 ? o : [...o, ...extra],
+          ),
+        );
       if (produces.length === 0) continue;
       const symbols = manaCostSymbols(ability);
       const lifeLoss = lifeLossOfActivating(ability);
@@ -282,6 +284,7 @@ export function payableSources(
   abilityIndex: number;
   colors?: ManaColor[];
   combinations?: ManaColor[][];
+  extraColors?: ManaColor[][];
   sacrifices?: ObjectId[];
   tappables?: ObjectId[];
 }[] {
@@ -295,13 +298,20 @@ export function payableSources(
     const gives = manaSacrificeCandidates(state, seat, s.object, ability);
     // D-625: the permanents a cost "Tap an untapped creature you control" may tap, when there is a choice.
     const taps = manaTapCandidates(state, seat, s.object, ability);
-    const sacrifices = {
-      ...(gives.length > 1 ? { sacrifices: [...gives] } : {}),
-      ...(taps.length > 1 ? { tappables: [...taps] } : {}),
-    };
     // What the player picks is what the ability makes itself, not the mana a triggered mana ability adds to it (D-139).
     const own =
       obj === undefined ? [] : productionOutcomes(state, obj, ability).filter((o) => o.length > 0);
+    // CR 605.1b, 106.1b: the colors "adds an additional one mana of any color" may add to what this makes: the alternatives of the first outcome, when there is a choice.
+    const firstOwn = own[0];
+    const extras =
+      obj === undefined || firstOwn === undefined
+        ? []
+        : additionalManaOptions(state, obj, ability, firstOwn);
+    const sacrifices = {
+      ...(gives.length > 1 ? { sacrifices: [...gives] } : {}),
+      ...(taps.length > 1 ? { tappables: [...taps] } : {}),
+      ...(extras.length > 1 ? { extraColors: extras } : {}),
+    };
     if (isCombinationProduction(ability.production)) {
       return {
         object: s.object,

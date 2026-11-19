@@ -783,6 +783,16 @@ function walkAbility(
         walkModes(a.modes, a.chooseModes, path, out, triggerSubjectFilter(a.trigger));
         return;
       }
+      // CR 605.1b, 106.1b, 605.3b: the triggered mana ability of "adds an additional one mana of any color": the color is named as the mana ability that triggered it is activated
+      // (`Action.extraColors`), so it is the one `addMana` of a choice the engine runs (the shape is checked in `validate.ts`).
+      if (
+        a.trigger.kind === 'tappedForMana' &&
+        a.effect.kind === 'addMana' &&
+        a.effect.mana.kind === 'anyColor' &&
+        (a.effect.mana.count ?? 1) === 1
+      ) {
+        return;
+      }
       walkEffect(
         a.effect,
         `${path}.effect`,

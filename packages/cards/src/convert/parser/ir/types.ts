@@ -384,6 +384,11 @@ export interface IrFilter {
   readonly castTargetsSelf?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
+  /**
+   * "with power greater than target creature's power" (CR 208.1, 608.2c): the engine's `powerGreaterThan` of the target this noun is. A target noun of its own, numbered with
+   * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
+   */
+  readonly powerGreaterThanNoun?: IrNoun;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */
@@ -969,6 +974,8 @@ export interface IrBasePt extends IrNode {
   readonly kind: 'basePt';
   readonly power: number;
   readonly toughness: number;
+  /** "base power and toughness X/X" (CR 107.3, 613.4b): the X of the ability; `power` and `toughness` are 0 and are not read. */
+  readonly x?: true;
 }
 
 /**
@@ -1261,6 +1268,11 @@ export interface IrTrigger extends IrNode {
    * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
    */
   readonly atLeast?: number;
+  /**
+   * 'tappedForMana' "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the permanent the Aura is attached to (the `subject` says its kind) is tapped for mana by whoever
+   * controls it, and the mana is theirs: the engine's `tappedForMana` with `by: 'tapper'` and `hostOfSource`.
+   */
+  readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
   /**

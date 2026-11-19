@@ -101,14 +101,17 @@ export function declareAttackers(
   return { state: { ...state, combat }, events };
 }
 
-/** CR 509.1g-h: blockers become blocking; an attacker with a blocker becomes blocked. */
+/**
+ * CR 509.1g-h: blockers become blocking; an attacker with a blocker becomes blocked. The declaration is an event with no blockers too: the creatures no one blocks are
+ * unblocked (CR 509.1h), which "attack you and aren't blocked" reads.
+ */
 export function declareBlockers(
   state: GameState,
   seat: SeatId,
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
 ): { state: GameState; events: GameEvent[] } {
   const combat = state.combat;
-  if (!combat || blocks.length === 0) return { state, events: [] };
+  if (!combat) return { state, events: [] };
   const blocked = new Set(blocks.map((b) => b.attacker));
   const attackers: AttackerState[] = combat.attackers.map((a) =>
     blocked.has(a.object) ? { ...a, blocked: true } : a,

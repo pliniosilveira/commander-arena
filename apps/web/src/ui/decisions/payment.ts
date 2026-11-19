@@ -15,6 +15,8 @@ export interface Tap {
   readonly color?: ManaColor;
   /** The combination chosen for an ability that makes one of several (a filter land, D-099). */
   readonly combination?: readonly ManaColor[];
+  /** The colors of the additional mana of "adds an additional one mana of any color" on the land (CR 605.1b, 106.1b): chosen when the engine offers more than one. */
+  readonly extraColors?: readonly ManaColor[];
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): chosen when there is more than one to give up. */
   readonly sacrifice?: ObjectId;
   /** The permanent a cost "Tap an untapped creature you control" taps (D-625): chosen when there is more than one to tap. */
@@ -34,6 +36,11 @@ export function asksCombination(source: Source): boolean {
   return (source.combinations?.length ?? 0) > 1;
 }
 
+/** True when the player must say the color of the additional mana of an "adds an additional one mana of any color" on the land (CR 605.1b, 106.1b): the engine offers more than one. */
+export function asksExtra(source: Source): boolean {
+  return (source.extraColors?.length ?? 0) > 1;
+}
+
 /** True when the player must say which permanent the source's cost sacrifices ("Sacrifice a Spirit: Add {R}.", D-222): the engine offers more than one. */
 export function asksSacrifice(source: Source): boolean {
   return (source.sacrifices?.length ?? 0) > 1;
@@ -47,7 +54,11 @@ export function asksTapped(source: Source): boolean {
 /** True when the player must say something before the source is tapped: a color, a combination, what to sacrifice or what to tap. */
 export function asksChoice(source: Source): boolean {
   return (
-    asksColor(source) || asksCombination(source) || asksSacrifice(source) || asksTapped(source)
+    asksColor(source) ||
+    asksCombination(source) ||
+    asksSacrifice(source) ||
+    asksTapped(source) ||
+    asksExtra(source)
   );
 }
 
@@ -165,6 +176,36 @@ export function setTapCombination(
   });
 }
 
+/**
+ * Taps the source's ability with `extraColors` as the additional mana (CR 605.1b, 106.1b), with the other choices already made (a color, a combination, what to sacrifice or tap)
+ * kept. The additional mana must be one the engine offered for that ability; anything else changes nothing.
+ */
+export function setTapExtra(
+  taps: readonly Tap[],
+  sources: Sources,
+  object: ObjectId,
+  abilityIndex: number,
+  extraColors: readonly ManaColor[],
+  chosen: {
+    readonly color?: ManaColor;
+    readonly combination?: readonly ManaColor[];
+    readonly sacrifice?: ObjectId;
+    readonly tapped?: ObjectId;
+  } = {},
+): readonly Tap[] {
+  const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
+  const found = (offered?.extraColors ?? []).find((e) => e.join('') === extraColors.join(''));
+  if (offered === undefined || found === undefined) return taps;
+  return putTap(taps, {
+    ...plainTap(object, offered),
+    ...(chosen.color === undefined ? {} : { color: chosen.color }),
+    ...(chosen.combination === undefined ? {} : { combination: chosen.combination }),
+    ...(chosen.sacrifice === undefined ? {} : { sacrifice: chosen.sacrifice }),
+    ...(chosen.tapped === undefined ? {} : { tapped: chosen.tapped }),
+    extraColors: found,
+  });
+}
+
 /** Takes a source out of the payment. */
 export function untap(taps: readonly Tap[], object: ObjectId): readonly Tap[] {
   return taps.filter((t) => t.object !== object);
@@ -191,8 +232,13 @@ export function clickSource(taps: readonly Tap[], sources: Sources, object: Obje
 
 /** "1", "2", ... in tap order; "1 (B)" for a chosen color and "1 (RW)" for a chosen combination. */
 export function tapBadges(taps: readonly Tap[]): ReadonlyMap<ObjectId, string> {
-  const chosen = (t: Tap): string | null =>
-    t.color !== undefined ? t.color : t.combination !== undefined ? t.combination.join('') : null;
+  const chosen = (t: Tap): string | null => {
+    const own =
+      t.color !== undefined ? t.color : t.combination !== undefined ? t.combination.join('') : null;
+    if (t.extraColors === undefined) return own;
+    // CR 605.1b: the additional mana of the land follows what it makes itself: "G+W".
+    return own === null ? `+${t.extraColors.join('')}` : `${own}+${t.extraColors.join('')}`;
+  };
   return new Map(
     taps.map((t, i) => {
       const what = chosen(t);

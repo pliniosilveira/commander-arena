@@ -487,6 +487,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,
+  'trigger.unblocked-opponent-attackers': whenever,
+  'trigger.enchanted-tapped-for-mana': whenever,
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,
@@ -934,6 +936,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Hylda deck, group 2 (D-517, D-518, D-520, D-521, D-523): the group of a target player, the group "those creatures" says, a target of the player of the event, the card types of
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
+  'noun.all-with-power-above-target': spell((e) => `Destroy ${e}.`),
   'noun.group-of-target-player': spell((e) => `${cap(e)} get +1/+1 until end of turn.`),
   'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
   'noun.those-creatures': spell(

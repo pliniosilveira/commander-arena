@@ -4,9 +4,17 @@
  * needs and is checked before it runs. Every continuous effect here lasts until end of turn, the
  * one duration the engine runs (`duration:untilEndOfTurn`), and the clause must state it.
  */
-import type { CardType, Color, Effect, Keyword, ObjectSelector } from '@commander-arena/engine';
+import type {
+  CardType,
+  Color,
+  Effect,
+  Keyword,
+  ObjectSelector,
+  PtAmount,
+} from '@commander-arena/engine';
 import type { IrClause, IrTypeList } from '../ir/types';
 import { grantedKeyword } from '../rules/keyword/vocabulary';
+import { lowerAmount } from './amounts';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
 import { colorLetter, itemsOf, objectSelectorOf } from './nouns';
@@ -229,16 +237,37 @@ export const SET_PT: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const base = arg(clause, 'basePt');
     if (base?.kind !== 'basePt' || !endsWithTurn(clause)) return failure(clause);
+    // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
+    let power: PtAmount = base.power;
+    let toughness: PtAmount = base.toughness;
+    if (base.x === true) {
+      const x = lowerAmount({ kind: 'x', span: base.span }, ctx, clause.rule);
+      if (!x.ok) return x;
+      power = x.value;
+      toughness = x.value;
+    }
     return eachObject(
       clause,
       ctx,
-      (objects) => ({
-        kind: 'setPt',
-        objects,
-        power: base.power,
-        toughness: base.toughness,
-        duration: END,
-      }),
+      (objects) => ({ kind: 'setPt', objects, power, toughness, duration: END }),
+      'objects',
+      TRIGGER_SUBJECT,
+    );
+  },
+};
+
+/** "Until end of turn, creatures you control ... gain all creature types" (CR 205.3m, 613.1d): every creature type added to the objects, in layer 4. */
+export const GAIN_ALL_CREATURE_TYPES: Lowering<IrClause, Effects> = {
+  head: 'gainAllCreatureTypes',
+  id: 'lower.gain-all-creature-types',
+  needs: ['effect:setTypes', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    if (!endsWithTurn(clause)) return failure(clause);
+    return eachObject(
+      clause,
+      ctx,
+      (objects) => ({ kind: 'setTypes', objects, allCreatureTypes: true, duration: END }),
       'objects',
       TRIGGER_SUBJECT,
     );

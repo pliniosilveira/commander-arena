@@ -429,6 +429,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeLost',
     'countersAdded',
     'attackBatch',
+    // CR 509.1h: "Whenever one or more creatures an opponent controls attack you and aren't blocked".
+    'unblockedAttackBatch',
     // D-648: "Whenever a player attacks one of your opponents" (CR 508.6).
     'playerAttacksOpponent',
     // D-179: "When you cycle this card" (CR 702.29c).
@@ -823,6 +825,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerLessThanSource',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
+    // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
+    'powerGreaterThan',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
     // opponent", `all`) and a creature that deals the damage (`dealDamage.from`, a "bite").
     'attackingYou',
@@ -1541,6 +1545,8 @@ export const SELECTOR_KINDS = [
   'powerLessThanSource',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
   'powerAboveBase',
+  /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
+  'powerGreaterThan',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
   'attackingYou',
   /** "Creatures attacking your opponents and/or planeswalkers they control" (D-218): the engine's `ObjectFilter.attackingOpponents`. */
@@ -2271,6 +2277,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   lifeLost: true,
   countersAdded: true,
   attackBatch: true,
+  unblockedAttackBatch: true,
   playerAttacksOpponent: true,
   cycled: true,
   exerted: true,

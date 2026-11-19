@@ -9,6 +9,7 @@ import type {
   Condition,
   Cost,
   Effect,
+  ManaProduction,
   ObjectFilter,
   Trigger,
   TriggerStep,
@@ -322,6 +323,19 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'tappedForMana': {
       // "Whenever you tap a permanent for {C}" (stage P31, D-140, CR 106.12, 605.1b): a mana ability of a permanent the filter matches,
       // activated with {T} by the controller, and the type of mana it made when the text names one.
+      // "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the land the Aura is attached to, tapped by whoever controls it, who gets the mana.
+      if (t.enchantedTapped === true) {
+        if (t.subject === undefined) return failure(t);
+        const host = lowerFilter(t.subject);
+        if (!host.ok) return host;
+        const missing = missingFeatures(['trigger:tappedForMana', 'selector:hostOfSource']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({
+          kind: 'tappedForMana',
+          what: { ...host.value, hostOfSource: true },
+          by: 'tapper',
+        });
+      }
       if (t.actor?.det !== 'you' || t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
@@ -517,6 +531,13 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (t.actor?.det !== 'eachPlayer') return failure(t);
       return ok({ kind: 'playerAttacksOpponent' });
     }
+    case 'unblockedAttackBatch': {
+      // "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 508.1b): the creatures of an opponent.
+      if (whoOf(t.actor) !== 'opponent') return failure(t);
+      const missing = missingFeatures(['trigger:unblockedAttackBatch']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'unblockedAttackBatch', who: 'opponent' });
+    }
     case 'attackBatch': {
       // "Whenever you attack with two or more creatures" (stage P33, D-150, CR 508.1): once for the declaration; "another player" is
       // an opponent of the controller.
@@ -643,6 +664,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'lifeGained',
       'lifeLost',
       'attackBatch',
+      // CR 509.1h: the opponent whose creatures were not blocked ("that player").
+      'unblockedAttackBatch',
       // D-648: the attacking player ("that attacking player").
       'playerAttacksOpponent',
       'dealtDamage',
@@ -1377,20 +1400,27 @@ function lowerTappedForMana(
     clause.duration !== undefined ||
     clause.args.additional === undefined ||
     spec?.kind !== 'manaSpec' ||
-    spec.what.kind !== 'symbols'
+    (spec.what.kind !== 'symbols' && spec.what.kind !== 'anyColor')
   ) {
+    return failure(ability);
+  }
+  const [trigger] = triggers;
+  if (trigger === undefined || trigger.kind !== 'tappedForMana') return failure(ability);
+  // CR 605.1b, 106.12: "its controller adds" is for the controller of the land tapped (`by: 'tapper'`), and "add" for the controller of the ability (`by: 'you'`).
+  if ((clause.args.controller !== undefined) !== (trigger.by === 'tapper')) return failure(ability);
+  // CR 106.1b, 605.3b: one mana of any color is chosen as the mana ability that triggered this one is activated.
+  if (spec.what.kind === 'anyColor' && (spec.what.count !== undefined || trigger.by !== 'tapper')) {
     return failure(ability);
   }
   const blocked = missingFeatures(['ability:triggered', 'trigger:tappedForMana', 'effect:addMana']);
   if (blocked.length > 0) return failure(ability, blocked);
-  const [trigger] = triggers;
-  if (trigger === undefined) return failure(ability);
-  const mana = spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[];
+  const mana: ManaProduction =
+    spec.what.kind === 'anyColor'
+      ? { kind: 'anyColor' }
+      : { kind: 'fixed', mana: spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[] };
   return {
     ok: true,
-    value: [
-      { kind: 'triggered', trigger, effect: { kind: 'addMana', mana: { kind: 'fixed', mana } } },
-    ],
+    value: [{ kind: 'triggered', trigger, effect: { kind: 'addMana', mana } }],
     rule: ability.trigger.rule,
   };
 }
@@ -1437,6 +1467,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',
+  'trigger:unblockedAttackBatch',
   'trigger:playerAttacksOpponent',
   'trigger:entersBatch',
   'trigger:leftGraveyard',

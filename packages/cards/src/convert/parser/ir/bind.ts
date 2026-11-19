@@ -345,7 +345,7 @@ class Binder {
       members = bound;
     }
     const controller = noun.filter.controller;
-    const filter =
+    const bareFilter =
       typeof controller === 'object'
         ? {
             ...noun.filter,
@@ -360,6 +360,12 @@ class Binder {
               ...noun.filter,
               manaValueAtMostAmount: this.amount(noun.filter.manaValueAtMostAmount),
             };
+    // "with power greater than target creature's power": the target it names is numbered with the others of the text.
+    const powerNoun = noun.filter.powerGreaterThanNoun;
+    const filter =
+      powerNoun === undefined
+        ? bareFilter
+        : { ...bareFilter, powerGreaterThanNoun: this.noun(powerNoun) };
     let out: IrNoun = {
       ...noun,
       filter,

@@ -46,6 +46,8 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'lifeGained':
     case 'lifeLost':
     case 'attackBatch':
+    // CR 509.1h: the player who controls the unblocked attackers.
+    case 'unblockedAttackBatch':
     // D-648: the attacking player ("that attacking player").
     case 'playerAttacksOpponent':
     case 'tapsForMana':

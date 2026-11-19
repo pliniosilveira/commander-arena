@@ -183,12 +183,14 @@ export function tapAction(
     options.tapped === undefined
       ? {}
       : { tapped: resolveObject(ctx, options.tapped, { zones: ['battlefield'], seat }).id };
+  const extra = options.extraColors === undefined ? {} : { extraColors: options.extraColors };
   if (options.color !== undefined) {
     return {
       kind: 'activateAbility',
       source: obj.id,
       abilityIndex,
       color: options.color,
+      ...extra,
       ...sacrifice,
       ...tapped,
     };
@@ -200,6 +202,7 @@ export function tapAction(
       abilityIndex,
       color: null,
       combination: manaList(options.combination),
+      ...extra,
       ...sacrifice,
       ...tapped,
     };
@@ -207,7 +210,7 @@ export function tapAction(
   // No color given: a source with exactly one listed option uses it (including the color a
   // commander-identity source offers); otherwise the engine decides, so rejections stay the engine's.
   const d = state.pending;
-  const listed =
+  const offered =
     d?.kind === 'priority'
       ? d.options.filter(
           (o) =>
@@ -220,6 +223,28 @@ export function tapAction(
               'sacrifice' in sacrifice),
         )
       : [];
+  // The additional mana of "adds an additional one mana of any color" (CR 605.1b): with its colors named, the options that make those; with none named while the land has the choice,
+  // the engine is asked as it is, and refuses.
+  const choosesExtra = offered.some(
+    (o) => o.kind === 'activateAbility' && o.extraColors !== undefined,
+  );
+  if (choosesExtra && options.extraColors === undefined) {
+    return {
+      kind: 'activateAbility',
+      source: obj.id,
+      abilityIndex,
+      color: null,
+      ...sacrifice,
+      ...tapped,
+    };
+  }
+  const wanted = options.extraColors?.join('');
+  const listed =
+    wanted === undefined
+      ? offered
+      : offered.filter(
+          (o) => o.kind === 'activateAbility' && (o.extraColors ?? []).join('') === wanted,
+        );
   const gives = listed.filter((o) => o.kind === 'activateAbility' && o.sacrifice !== undefined);
   if (gives.length > 0 && !('sacrifice' in sacrifice)) {
     // The engine refuses an activation that does not name what it sacrifices: let it say so.
@@ -250,6 +275,9 @@ export function tapAction(
     color: only?.kind === 'activateAbility' ? only.color : null,
     ...(only?.kind === 'activateAbility' && only.combination
       ? { combination: only.combination }
+      : {}),
+    ...(only?.kind === 'activateAbility' && only.extraColors
+      ? { extraColors: only.extraColors }
       : {}),
     ...sacrifice,
     ...tapped,

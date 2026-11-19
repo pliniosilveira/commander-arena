@@ -12,6 +12,7 @@ import { SYNTHETIC_ABILITY_LIST } from './synthetic-abilities';
 import { SYNTHETIC_ABILITY_COSTS_LIST } from './synthetic-ability-costs';
 import { SYNTHETIC_ACTIVATES_ABILITY_LIST } from './synthetic-activates-ability';
 import { SYNTHETIC_ADAMANTOISE_LIST } from './synthetic-adamantoise';
+import { SYNTHETIC_ALL_TYPES_XX_LIST } from './synthetic-all-types-xx';
 import { SYNTHETIC_ALT_COST_LIST } from './synthetic-alt-costs';
 import { SYNTHETIC_AMOUNT_LIST } from './synthetic-amounts';
 import { SYNTHETIC_ANGELS_SHAPES_LIST } from './synthetic-angels-shapes';
@@ -59,6 +60,7 @@ import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
+import { SYNTHETIC_ENCHANTED_LAND_MANA_LIST } from './synthetic-enchanted-land-mana';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
@@ -140,6 +142,7 @@ import { SYNTHETIC_PLAYER_EFFECT_LIST } from './synthetic-player-effects';
 import { SYNTHETIC_PLAYER_MORE_LIST } from './synthetic-player-more';
 import { SYNTHETIC_POLYMORPH_LIST } from './synthetic-polymorph';
 import { SYNTHETIC_POPULATE_LIST } from './synthetic-populate';
+import { SYNTHETIC_POWER_ABOVE_TARGET_LIST } from './synthetic-power-above-target';
 import { SYNTHETIC_PREVENTION_LIST } from './synthetic-prevention';
 import { SYNTHETIC_PREVENTION_BY_LIST } from './synthetic-prevention-by';
 import { SYNTHETIC_PRIDE_WALKER_LIST } from './synthetic-pride-walker';
@@ -174,6 +177,7 @@ import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
 import { SYNTHETIC_TRIGGER_MORE_LIST } from './synthetic-triggers-more';
 import { SYNTHETIC_TURNLOG_LIST } from './synthetic-turnlog';
+import { SYNTHETIC_UNBLOCKED_LIST } from './synthetic-unblocked';
 import { SYNTHETIC_UNTIL_LEAVES_LIST } from './synthetic-until-leaves';
 import { SYNTHETIC_UPKEEP_LIST } from './synthetic-upkeep';
 import { SYNTHETIC_VEHICLE_LIST } from './synthetic-vehicles';
@@ -471,7 +475,11 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,
+  ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
+  ...SYNTHETIC_ENCHANTED_LAND_MANA_LIST,
+  ...SYNTHETIC_POWER_ABOVE_TARGET_LIST,
+  ...SYNTHETIC_UNBLOCKED_LIST,
   ...SYNTHETIC_RETURN_CONTROL_LIST,
   ...SYNTHETIC_CURSE_LIST,
   ...SYNTHETIC_PLAYER_EFFECT_LIST,

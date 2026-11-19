@@ -66,6 +66,7 @@ import { GOAD_EFFECT_RULES } from './goad';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
+import { GROUP_BASE_PT_RULES } from './group-base-pt';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -87,6 +88,7 @@ import {
   EFFECT_ADD_MANA,
   EFFECT_CHOOSE_COLOR,
   EFFECT_CHOOSE_CREATURE_TYPE,
+  EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
@@ -1146,6 +1148,7 @@ export const EFFECT_RULES = [
   EFFECT_TAP,
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
+  EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,
@@ -1169,6 +1172,7 @@ export const EFFECT_RULES = [
   ...GAIN_RULES,
   ...RESTRICT_RULES,
   ...BECOMES_RULES,
+  ...GROUP_BASE_PT_RULES,
   ...SEARCH_RULES,
   ...PREVENT_RULES,
   ...TRANSFORM_RULES,
