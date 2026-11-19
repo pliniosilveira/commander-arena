@@ -49,6 +49,7 @@ export { KEYWORD_COUNTERS } from './rules/keyword-counters';
 export { baseSpecId } from './rules/modes';
 export type { DeckConfig, GameConfig } from './rules/setup';
 export { createGame } from './rules/setup';
+export { coversCardTypes } from './rules/card-types-choice';
 export { sharesLandType } from './rules/share-type';
 export type * from './state/actions';
 export type * from './state/combat-types';
