@@ -61,6 +61,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.cast-in-own-main-phase',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
   'condition.x-at-least',
+  // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
+  'condition.that-object-power',
 ] as const;
 
 /**
