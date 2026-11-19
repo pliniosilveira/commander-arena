@@ -417,8 +417,20 @@
   border-color: var(--accent);
   opacity: 1;
 }
-.scr-deck-search {
-  width: 100%;
-  box-sizing: border-box;
+.scr-deck-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
   margin-bottom: 8px;
+}
+
+.scr-deck-filters .scr-color-filter {
+  margin-bottom: 0;
+}
+
+.scr-deck-search {
+  flex: 0 1 320px;
+  min-width: 180px;
+  box-sizing: border-box;
 }
