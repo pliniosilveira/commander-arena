@@ -66,8 +66,8 @@ describe('"Enchant creature card in a graveyard" (CR 702.5a, 303.4a)', () => {
 
 describe('the enters ability and the leaves ability (CR 603.4, 613.1f, 400.7, 701.21a)', () => {
   test('the sentences of the Oracle text lower to the swap, the return and the attach', () => {
-    const [swap, move, attach] = (aura(ENTERS)[0] as unknown as { effect: { effects: unknown[] } }).effect
-      .effects;
+    const [swap, move, attach] = (aura(ENTERS)[0] as unknown as { effect: { effects: unknown[] } })
+      .effect.effects;
     expect(swap).toMatchObject({ kind: 'replaceEnchant', objects: { kind: 'this' } });
     expect(move).toMatchObject({ kind: 'moveToZone', to: 'battlefield', putWithSource: true });
     expect(attach).toEqual({ kind: 'attach', object: { kind: 'this' }, to: { kind: 'moved' } });
