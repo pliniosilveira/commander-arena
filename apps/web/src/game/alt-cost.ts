@@ -35,6 +35,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   tapPermanents: 'Tap creatures',
   // Issue 159: "cast this from your graveyard by paying {B}{B} and sacrificing two creatures".
   sacrificeFromGraveyard: 'Sacrifice creatures',
+  // Issue 81 (CR 702.176a): enters with time counters and is not a creature until the last is removed.
+  impending: 'Impending',
 };
 
 /** True for the alternatives whose cost the card's view carries: overload, evoke, dash, spectacle, escape. */

@@ -4372,18 +4372,10 @@
     "7e64b1dc-a238-4bff-98ff-2bea44340568": {
       "name": "Overlord of the Mistmoors",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Impending 4—{2}{W}{W}",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "6f9a222a"
+      "ast": "5c6a268e"
     },
     "7f268b15-ac92-4e98-821b-78d15d9285d9": {
       "name": "Loyal Apprentice",
@@ -8367,7 +8359,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 716,
+      "supported": 717,
       "total": 738
     }
   }

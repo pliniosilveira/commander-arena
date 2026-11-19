@@ -292,6 +292,7 @@ const NAMED_ALTERNATIVES = [
   'miracle',
   'foretell',
   'morph',
+  'impending',
 ] as const;
 type NamedAlternative = (typeof NAMED_ALTERNATIVES)[number];
 
@@ -325,6 +326,13 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
       return failure(ability);
     }
     exile = count.value;
+  } else if (kind === 'impending') {
+    // CR 702.176a: the number of time counters is the one parameter.
+    if (count?.kind !== 'number' || rest.length > 0) return failure(ability);
+    if (!Number.isSafeInteger(count.value) || count.value < 1 || count.value > 9) {
+      return failure(ability);
+    }
+    exile = count.value;
   } else if (count !== undefined) {
     return failure(ability);
   }
@@ -334,7 +342,11 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
   const blocked = missingFeatures([`castAlternative:${kind}`, `cost:${cost.value.kind}`]);
   if (blocked.length > 0) return failure(ability, blocked);
   const entry: AlternativeCost =
-    kind === 'escape' ? { kind, cost: [cost.value], exile } : { kind, cost: [cost.value] };
+    kind === 'escape'
+      ? { kind, cost: [cost.value], exile }
+      : kind === 'impending'
+        ? { kind, cost: [cost.value], counters: exile }
+        : { kind, cost: [cost.value] };
   return {
     ok: true,
     value: { ...NONE, alternativeCosts: [entry] },
@@ -355,5 +367,6 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:miracle',
   'castAlternative:foretell',
   'castAlternative:morph',
+  'castAlternative:impending',
   'cost:mana',
 ];

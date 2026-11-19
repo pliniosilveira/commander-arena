@@ -141,6 +141,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 104: Embalm is a line of its own, like Eternalize.
   'keyword.embalm': asIs,
   'keyword.escape': asIs,
+  'keyword.impending': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
   'keyword.cumulative-upkeep': asIs,

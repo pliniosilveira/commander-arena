@@ -17,7 +17,12 @@ import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { definitionOf } from '../state/ops';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
 import { copiableValues, isCopying } from './copiable';
-import { bestowTypeEffects, isBestowedAura } from './derive-alt';
+import {
+  bestowTypeEffects,
+  impendingTypeEffects,
+  isBestowedAura,
+  isImpendingNotCreature,
+} from './derive-alt';
 import { groupTypeEffects } from './derive-group-types';
 import { hasPrintedKeyword } from './derive-keywords';
 import { applyColorLayer, applyTypeLayer, effectsOn } from './derive-layers';
@@ -42,6 +47,10 @@ function withStaticTypes(
     // CR 702.103b, 702.103d (bestow; rules text not available to check): a bestow spell, and a bestow permanent while it is attached, is an Aura enchantment and no
     // longer a creature (its creature types go with the type, CR 205.1a). Layer 4 with the permanent's own timestamp.
     return [...effects, ...bestowTypeEffects(obj)].sort((a, b) => a.timestamp - b.timestamp);
+  }
+  if (isImpendingNotCreature(obj)) {
+    // CR 702.176a: not a creature while it has a time counter; its creature subtypes go with the type (CR 205.1a).
+    return [...effects, ...impendingTypeEffects(obj)].sort((a, b) => a.timestamp - b.timestamp);
   }
   const type = obj.chosen?.creatureType;
   if (type === undefined || obj.zone !== 'battlefield') return effects;

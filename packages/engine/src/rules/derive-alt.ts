@@ -24,7 +24,11 @@ import { controlledSince, controllerOf } from './control';
 export function permanentAlternative(
   alt: NamedAlternativeKind | undefined,
 ): PermanentAlternativeKind | undefined {
-  return alt === 'evoke' || alt === 'dash' || alt === 'escape' || alt === 'bestow'
+  return alt === 'evoke' ||
+    alt === 'dash' ||
+    alt === 'escape' ||
+    alt === 'bestow' ||
+    alt === 'impending'
     ? alt
     : undefined;
 }
@@ -58,6 +62,38 @@ export function bestowTypeEffects(obj: GameObject): readonly ContinuousEffect[] 
     },
   ];
 }
+
+/**
+ * CR 702.176a (Impending): a permanent that entered from a spell cast for its impending cost is not a creature as long as it has a time
+ * counter on it. A layer 4 effect with the permanent's own timestamp.
+ */
+export function isImpendingNotCreature(obj: GameObject): boolean {
+  return obj.zone === 'battlefield' && obj.alt === 'impending' && (obj.counters.time ?? 0) > 0;
+}
+
+export function impendingTypeEffects(obj: GameObject): readonly ContinuousEffect[] {
+  return [
+    {
+      id: `impending:${obj.id}:remove`,
+      timestamp: obj.timestamp,
+      objects: [obj.id],
+      until: 'permanent',
+      change: { kind: 'setTypes', remove: ['creature'] },
+    },
+  ];
+}
+
+/** CR 702.176a: "At the beginning of your end step, if this permanent's impending cost was paid and it has a time counter on it, remove a time counter from it." */
+export const IMPENDING_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'endStep', whose: 'you' },
+  interveningIf: {
+    kind: 'amountIs',
+    amount: { kind: 'countersOn', of: { kind: 'this' }, counter: 'time' },
+    compare: { cmp: 'atLeast', value: 1 },
+  },
+  effect: { kind: 'removeCounters', objects: { kind: 'this' }, counter: 'time', count: 1 },
+};
 
 /** CR 702.103b: a bestowed Aura has "enchant creature" (what its spell targets and what it may stay attached to). */
 export const BESTOW_ENCHANT_ABILITY: Ability = {
@@ -102,6 +138,7 @@ export const UNEARTH_EXILE_ABILITY: TriggeredAbility = {
  */
 export function alternativeAbilitiesOf(state: GameState, obj: GameObject): readonly Ability[] {
   if (isBestowedAura(obj)) return [BESTOW_ENCHANT_ABILITY];
+  if (obj.alt === 'impending') return [IMPENDING_ABILITY];
   if (obj.alt === 'evoke')
     return obj.riotHaste === true ? [EVOKE_ABILITY, DASH_HASTE_ABILITY] : [EVOKE_ABILITY];
   // CR 702.62a (D-128, D-224): a creature cast by its suspend ability has haste "until you lose control of the spell or the permanent it becomes": while

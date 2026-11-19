@@ -1362,7 +1362,8 @@ export type NamedAlternativeKind =
   | 'foretell'
   | 'morph'
   | 'tapPermanents'
-  | 'sacrificeFromGraveyard';
+  | 'sacrificeFromGraveyard'
+  | 'impending';
 
 /**
  * What a permanent remembers about how it got onto the battlefield (D-121, D-124): that its evoke, dash or
@@ -1370,7 +1371,7 @@ export type NamedAlternativeKind =
  * cast). Each is the new object's own: any zone change makes a new object without it (CR 400.7).
  */
 export type PermanentAlternativeKind =
-  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow'>
+  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow' | 'impending'>
   | 'unearth'
   | 'suspend';
 
@@ -1437,6 +1438,9 @@ export type PermanentAlternativeKind =
  *   paying its mana cost": the card is cast from its owner's graveyard, the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also sacrifices
  *   `count` permanents they control that match `filter` as part of it (the sacrifice is chosen with the same question as the sacrifice of an additional cost). The spell is an
  *   ordinary spell otherwise: it goes to the graveyard when it leaves the stack. Not on a land; not with Convoke, Improvise or Delve.
+ * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
+ *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
+ *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
  * The `castSpell` action chooses one with `alternative`; the card is cast from the zones it could be
  * cast from anyway. Additional costs, commander tax and cost reductions still apply to it (CR
  * 118.9d, 601.2f, 903.8). `condition` is read for the player casting, with the card as the source;
@@ -1450,9 +1454,16 @@ export type AlternativeCost =
   | {
       readonly kind: Exclude<
         NamedAlternativeKind,
-        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard'
+        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'impending'
       >;
       readonly cost: readonly Cost[];
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'impending';
+      readonly cost: readonly Cost[];
+      /** The time counters the permanent enters with: at least 1. */
+      readonly counters: number;
       readonly condition?: Condition;
     }
   | {

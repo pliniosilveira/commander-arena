@@ -37,6 +37,7 @@ const ALTERNATIVES = [
   'spectacle',
   'morph',
   'tapPermanents',
+  'impending',
 ] as const;
 
 export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[] {

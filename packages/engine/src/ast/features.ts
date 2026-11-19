@@ -1277,6 +1277,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'escape',
     // CR 702.180: Harmonize.
     'harmonize',
+    // Issue 81 (CR 702.176): Impending.
+    'impending',
     // D-128: Madness (CR 702.35) and Foretell (CR 702.143).
     'madness',
     // D-274: Miracle (CR 702.94).
@@ -2134,6 +2136,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'tapPermanents',
   'retrace',
   'sacrificeFromGraveyard',
+  'impending',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 

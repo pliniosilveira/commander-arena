@@ -1361,3 +1361,40 @@ describe('Jace tax: creatures can not attack Jaces unless their controller pays 
     g.expect.invariants();
   });
 });
+
+// ---- Overlord of the Mistmoors: "Impending 4—{2}{W}{W} ... Whenever this permanent enters or attacks, create two 2/1 white Insect creature tokens with flying." (CR 702.176a, 603.6a).
+
+const OVERLORD = parsed(
+  'SYNTHETIC Parsed Overlord',
+  'Enchantment Creature — Avatar Horror',
+  "Impending 4—{2}{W}{W} (If you cast this spell for its impending cost, it enters with four time counters and isn't a creature until the last is removed. At the beginning of your end step, remove a time counter from it.)\nWhenever this permanent enters or attacks, create two 2/1 white Insect creature tokens with flying.",
+  { manaCost: '{4}{W}{W}', colors: ['W'], power: '5', toughness: '5' },
+);
+
+describe('Overlord of the Mistmoors: impending, then two Insects each time it enters or attacks', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(OVERLORD)
+      .hand(OVERLORD.name)
+      .battlefield('Plains', { count: 4 })
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('cast for the impending cost: four time counters, not a creature, and the Insects still come', () => {
+    const g = start();
+    g.act(0).cast(OVERLORD.name, { alternative: 'impending', pay: true });
+    g.passAll();
+    g.expect.counters(OVERLORD.name, { time: 4 });
+    expect(g.find({ name: 'Insect', zone: 'battlefield' })).toHaveLength(2);
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.counters(OVERLORD.name, { time: 3 });
+    g.expect.invariants();
+  });
+});

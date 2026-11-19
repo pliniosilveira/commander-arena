@@ -348,6 +348,60 @@ export const KEYWORD_ESCAPE = defineRule<readonly IrKeyword[]>({
   ),
 });
 
+/**
+ * `keyword.impending`: "Impending 4—{2}{W}{W}" (CR 702.176a: "You may cast this spell by paying [cost] rather than its mana cost. If you do, it enters with
+ * N time counters and isn't a creature until the last is removed. At the beginning of your end step, remove a time counter from it"). The engine owns all of it (`rules/derive-alt.ts`);
+ * the line has the number of counters (one to nine) and a plain mana cost.
+ */
+export const KEYWORD_IMPENDING = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.impending',
+  family: 'keyword',
+  leading: ['impending'],
+  cites: ['CR 702.176a (Impending)', 'CR 118.9 (Alternative Costs)', 'CR 601.2b (Casting Spells)'],
+  examples: [
+    'Impending 4—{2}{W}{W}',
+    'Impending 5—{1}{U}{U}',
+    'impending 1—{G}',
+    'Impending 9—{B}',
+  ],
+  rejects: [
+    'Impending',
+    'Impending {2}{W}{W}',
+    'Impending 4 {2}{W}{W}',
+    'Impending 4—',
+    'Impending 0—{W}',
+    'Impending 10—{W}',
+    'Impending X—{W}',
+    'Impending 4—{X}{W}',
+    'Impending 4—{W/U}',
+    'Impending 4—{2}{W}{W}.',
+    'Impending 4—Pay 3 life.',
+    'Impending 4—{2}{W}{W}, impending 3—{1}',
+    'Impendings 4—{2}{W}{W}',
+  ],
+  parse: map(
+    node<{ count: { value: number; span: Span }; cost: IrCost }, IrKeyword>(
+      'keyword.impending',
+      map(
+        sequence(
+          literal('impending '),
+          spanned(map(pattern(/[1-9](?![\p{L}\p{N}])/u), (m): number => Number(m[0]))),
+          literal('—'),
+          MANA_COST,
+        ),
+        ([, count, , cost]) => ({ count, cost }),
+      ),
+      ({ count, cost }) => ({
+        kind: 'keyword',
+        name: 'impending',
+        params: [{ kind: 'number', value: count.value, span: count.span }],
+        cost: [cost],
+      }),
+    ),
+    (keyword): readonly IrKeyword[] => [keyword],
+  ),
+});
+
 export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_OVERLOAD,
   KEYWORD_EVOKE,
@@ -359,4 +413,5 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_ETERNALIZE,
   KEYWORD_EMBALM,
   KEYWORD_ESCAPE,
+  KEYWORD_IMPENDING,
 ];

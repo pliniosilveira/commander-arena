@@ -722,6 +722,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
     // CR 702.138b, 702.138c (D-124): "escapes with" counters only for a spell cast for its escape cost.
     const escaped = old.zone === 'stack' && old.stack?.alt === 'escape';
+    // CR 702.176a (issue 81): a permanent whose spell was cast for its impending cost enters with that many time counters.
+    if (old.zone === 'stack' && old.stack?.kind === 'spell' && old.stack.alt === 'impending') {
+      const impending = face?.alternativeCosts?.find((a) => a.kind === 'impending');
+      if (impending?.kind === 'impending') {
+        counters = { ...counters, time: (counters.time ?? 0) + impending.counters };
+      }
+    }
     // D-131: "a +1/+1 counter on it for each Zombie card in your graveyard" counts as it enters, for the player who
     // controls it, looking at the game without it (the card has already left its old zone).
     // D-254, CR 702.33c: "for each time it was kicked" reads the kicks of the spell it resolved from (0 for a card put onto the battlefield by an effect).
