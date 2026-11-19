@@ -26,6 +26,10 @@ export interface PreconInfo {
   readonly colors?: readonly string[];
   /** The decklist exactly as shipped. */
   readonly decklist: string;
+  /** The set the precon was sold in; absent when not recorded. */
+  readonly set?: string;
+  /** The year the precon was released; absent when not recorded. */
+  readonly year?: number;
 }
 
 export interface LoadedSnapshots {
@@ -88,6 +92,8 @@ export function infoOf(snapshot: PreconSnapshot): PreconInfo {
     ...(commanderImage === undefined ? {} : { commanderImage }),
     ...(colors === undefined ? {} : { colors }),
     decklist: snapshot.decklist,
+    ...(snapshot.set === undefined ? {} : { set: snapshot.set }),
+    ...(snapshot.year === undefined ? {} : { year: snapshot.year }),
   };
 }
 
