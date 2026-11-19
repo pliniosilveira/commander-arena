@@ -1097,6 +1097,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return effect.objects.kind === 'choose'
         ? (untapChooseText(effect.objects) ?? UNSAID)
         : `Untap ${object(effect.objects)}`;
+    case 'noMaxHandSizeForGame':
+      // CR 402.2: "You have no maximum hand size for the rest of the game".
+      return 'You have no maximum hand size for the rest of the game';
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
     case 'removeAllPlayerCounters':

@@ -204,10 +204,13 @@ export const TRIGGER_ATTACK_BATCH = defineRule<IrTrigger>({
     'another player attacks with two or more creatures',
     'an opponent attacks with two or more creatures',
     'you attack with two or more artifact creatures',
+    'you attack with one or more creatures',
+    'another player attacks with one or more creatures',
   ],
   rejects: [
     'you attack with a creature',
-    'you attack with one or more creatures',
+    'you attack with one or more Birds',
+    'you attack with one or more creatures you control',
     'you attack with two creatures',
     'you attack with two or more',
     'you attack with two or fewer creatures',
@@ -230,10 +233,15 @@ export const TRIGGER_ATTACK_BATCH = defineRule<IrTrigger>({
       ),
     )(ctx, pos);
     if (!who.ok) return who;
-    const count = sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' or more '))(
-      ctx,
-      who.pos,
-    );
+    // "One or more" (Shriekwood Devourer's "you attack with one or more creatures", CR 508.1): at least one of the creatures declared, so the same as "you attack"; only for
+    // "creatures" with no other word (a group named by a subtype is `trigger.you-attack-with-one-or-more`).
+    const count = choice(
+      map(literal('one or more '), () => 1),
+      map(
+        sequence(spanned(satisfy(quantity, (n) => n >= 2)), literal(' or more ')),
+        (r) => r[0].value,
+      ),
+    )(ctx, who.pos);
     if (!count.ok) return count;
     const phrase = attackersPhrase(id)(ctx, count.pos);
     if (!phrase.ok) return phrase;
@@ -252,13 +260,14 @@ export const TRIGGER_ATTACK_BATCH = defineRule<IrTrigger>({
       phrase.value.filter.types?.length === 1 && phrase.value.filter.types[0] === 'creature';
     const bare =
       plain && Object.keys(phrase.value.filter).every((k) => ['types', 'raw'].includes(k));
+    if (count.value === 1 && !bare) return fail(ctx, pos);
     return {
       ok: true,
       value: {
         kind: 'trigger',
         event: 'attackBatch',
         actor: actor.value,
-        atLeast: count.value[0].value,
+        atLeast: count.value,
         ...(bare ? {} : { subject: phrase.value }),
         args: {},
         span: { start: pos, end: phrase.pos },

@@ -46,6 +46,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FINALE_EFFECT_RULES } from './finale';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
@@ -915,6 +916,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
+  ...FINALE_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".

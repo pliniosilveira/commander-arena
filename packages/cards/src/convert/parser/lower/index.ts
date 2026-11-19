@@ -25,6 +25,7 @@ import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
 import type { FeatureRef } from './features';
+import { FINALE_NEEDS } from './finale';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
 import { MELD_NEEDS } from './meld';
@@ -146,6 +147,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ARDEN_NEEDS,
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
+    ...FINALE_NEEDS,
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,
     ...MELD_NEEDS,

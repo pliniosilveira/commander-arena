@@ -133,6 +133,13 @@ export function lowerCondition(
             ...(test.ofTypes === undefined ? {} : { ofTypes: test.ofTypes as CardType[] }),
           });
     }
+    case 'xIs': {
+      // CR 107.3a, 608.2c: the X of the spell that is resolving against the number; `validateCard` refuses it where nothing has an X.
+      const blocked = missingFeatures(['condition:xIs']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx !== undefined) ctx.usesX = true;
+      return ok({ kind: 'xIs', compare: { cmp: test.compare.cmp, value: test.compare.value } });
+    }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
       // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.

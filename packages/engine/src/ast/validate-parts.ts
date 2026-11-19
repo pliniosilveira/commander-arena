@@ -1439,6 +1439,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'attackersGreatestPower':
+      // CR 508.1: the creatures of the attack event of an `attackBatch` trigger (`scope.triggerAttacked` is set only there).
+      if (scope.triggerAttacked !== true) {
+        issue(
+          out,
+          path,
+          'attackersGreatestPower reads the creatures of an attackBatch trigger: it is only valid in the effect of one',
+        );
+      }
+      break;
     case 'manaValueOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
@@ -2532,6 +2542,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         }
       }
       break;
+    case 'xIs':
+      // CR 107.3: the X of the spell is read in a `conditional` effect (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        'xIs reads the X of the spell or ability that is resolving: it is only valid in a conditional effect',
+      );
+      break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
       issue(
@@ -2749,13 +2767,19 @@ function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Ou
 function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
   if (sel.upTo !== true) issue(out, `${path}.upTo`, 'a choice of what to untap is "up to" a count');
-  if (
-    sel.count === undefined ||
-    typeof sel.count !== 'number' ||
-    !isCount(sel.count) ||
-    sel.count < 1
-  ) {
-    issue(out, `${path}.count`, 'the number of permanents to untap is a positive integer');
+  if (sel.count === undefined) {
+    issue(
+      out,
+      `${path}.count`,
+      'the number of permanents to untap is a positive integer or an amount',
+    );
+  } else if (typeof sel.count === 'number') {
+    if (!isCount(sel.count) || sel.count < 1) {
+      issue(out, `${path}.count`, 'the number of permanents to untap is a positive integer');
+    }
+  } else {
+    // "Untap up to X lands, where X is the greatest power among those creatures": an amount read as the effect runs (0 untaps nothing).
+    checkAmount(sel.count, `${path}.count`, scope, out);
   }
   if (
     sel.anyNumber !== undefined ||
@@ -3375,6 +3399,19 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.count`, 'a count of one or more');
       }
       break;
+    case 'xIs': {
+      // CR 107.3, 608.2c: "If X is 10 or more": a spell or an ability that has an X.
+      if (!scope.xAllowed) {
+        issue(out, path, 'xIs is used but nothing in this ability or spell has an X');
+      }
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      if (!isCount(c.compare?.value)) {
+        issue(out, `${path}.compare.value`, 'X is compared with a non-negative whole number');
+      }
+      break;
+    }
     case 'dieResult': {
       // D-271, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
       const sides = scope.dieSides;
@@ -4970,6 +5007,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'shuffle':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'noMaxHandSizeForGame':
+      // CR 402.2: no parameters; it is the controller's.
       break;
     case 'rollDie':
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.

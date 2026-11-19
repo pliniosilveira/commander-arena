@@ -599,6 +599,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
+    ...(res.triggerAttackers === undefined ? {} : { triggerAttackers: res.triggerAttackers }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
@@ -1843,6 +1844,10 @@ function runEffect(
       );
       return done(state, [], asked);
     }
+
+    case 'noMaxHandSizeForGame':
+      // CR 402.2, 514.1: no maximum hand size for the rest of the game; the cleanup step reads it (`hasNoMaximumHandSize`).
+      return done(patchSeat(state, res.controller, { noMaximumHandSize: true }));
 
     case 'gainEnergy': {
       // CR 107.14, 122.1 (D-209): "You get {E}{E}": the player puts that many energy counters on themselves.

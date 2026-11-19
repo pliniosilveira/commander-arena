@@ -79,6 +79,8 @@ export interface ConditionContext {
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
   readonly dieResult?: number;
+  /** The X announced for the spell that is resolving, for `xIs` (CR 107.3a). Absent where there is none, which fails that condition closed. */
+  readonly x?: number;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
@@ -459,6 +461,14 @@ export function evaluateCondition(
       if (cmp === 'atLeast') return ctx.dieResult >= value;
       if (cmp === 'atMost') return ctx.dieResult <= value;
       return ctx.dieResult === value;
+    }
+    case 'xIs': {
+      // CR 107.3a, 608.2c: the X of the spell or ability that is resolving against the number.
+      if (ctx.x === undefined) return false;
+      const { cmp, value } = condition.compare;
+      if (cmp === 'atLeast') return ctx.x >= value;
+      if (cmp === 'atMost') return ctx.x <= value;
+      return ctx.x === value;
     }
     case 'thisInYourGraveyard': {
       // CR 113.6b, 603.4, 400.7 (D-271): the card itself is in its owner's graveyard, and the owner is the controller of the ability (the card has no

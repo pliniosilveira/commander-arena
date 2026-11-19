@@ -254,12 +254,16 @@ export function tapChooseText(selector: ChooseSelector): string | null {
  */
 export function untapChooseText(selector: ChooseSelector): string | null {
   const count = selector.count ?? 1;
-  if (typeof count !== 'number') return null;
   const things = thingsPhrase(selector.filter, true);
+  if (things === null) return null;
   // Any player's permanents: the place of a filter with no controller is not said ("lands", not "lands on the battlefield").
-  return things === null
-    ? null
-    : `Untap up to ${numberWord(count)} ${things.replace(/ on the battlefield$/, '')}`;
+  const what = things.replace(/ on the battlefield$/, '');
+  // "Untap up to X lands, where X is the greatest power among the creatures that attacked": an amount read as the effect runs.
+  if (typeof count !== 'number') {
+    const amount = amountPhrase(count);
+    return amount === UNKNOWN_AMOUNT ? null : `Untap up to ${amount} ${what}`;
+  }
+  return `Untap up to ${numberWord(count)} ${what}`;
 }
 
 /**

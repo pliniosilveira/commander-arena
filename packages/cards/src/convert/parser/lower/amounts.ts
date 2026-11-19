@@ -251,6 +251,12 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'attackersGreatestPower': {
+      // CR 508.1, 603.2: the creatures the attack declaration of an `attackBatch` trigger held, read as the ability resolves; `validateCard` refuses it in any other ability.
+      const blocked = needs('attackersGreatestPower');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'attackersGreatestPower' }, rule };
+    }
     case 'cardsDrawnThisTurn': {
       // CR 121.1 (D-450): the cards the controller has drawn so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('cardsDrawnThisTurn');
@@ -666,6 +672,7 @@ export const AMOUNT_NEEDS = [
   'amount:toughnessOf',
   'amount:countersOn',
   'amount:aggregate',
+  'amount:attackersGreatestPower',
   'amount:devotion',
   'amount:commanderColors',
   'amount:commanderManaValue',

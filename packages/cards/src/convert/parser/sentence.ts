@@ -34,9 +34,20 @@ const QUOTE_ENDS_SENTENCE: Parser<string> = (ctx, pos) =>
 
 const SENTENCE_END: Parser<string> = choice(literal('.'), QUOTE_ENDS_SENTENCE);
 
+/**
+ * The bare comma between the instructions of a list of three or more ("Shuffle your graveyard into your library, draw X cards, untap up to five lands, and you
+ * have no maximum hand size", CR 608.2c: followed in the order written): only when the sentence goes on to a closing ", and " (the last join of the list), so a
+ * comma that ends an instruction before something else ("..., where X is ...") is not taken for one.
+ */
+const LIST_COMMA: Parser<string> = (ctx, pos) => {
+  const comma = literal(', ')(ctx, pos);
+  if (!comma.ok) return comma;
+  return /^[^.]*, and /u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
+};
+
 const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = listWithJoins(
   family<readonly IrClause[]>('effect'),
-  CLAUSE_JOIN,
+  choice(CLAUSE_JOIN, LIST_COMMA),
 );
 
 /**
@@ -103,6 +114,9 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  */
 const DIE_CONDITIONS = ['condition.die-result'] as const;
 
+/** "If X is 10 or more, instead ..." (Finale of Revelation, issue 337, CR 107.3, 608.2c): the X of the spell against a number. */
+const X_CONDITIONS = ['condition.x-is'] as const;
+
 /**
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
  * cast trigger is about; the lowering reads it in the body of such a trigger only.
@@ -116,6 +130,7 @@ const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,
   ...RESOLUTION_CONDITIONS,
   ...DIE_CONDITIONS,
+  ...X_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.

@@ -150,6 +150,8 @@ describe('the dimensions', () => {
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
       'dieResult',
+      // CR 107.3: "If X is 10 or more".
+      'xIs',
       'thisInYourGraveyard',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.

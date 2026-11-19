@@ -250,6 +250,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return `your devotion to ${colorList(amount.colors)}`;
     case 'commanderColors':
       return "the number of colors in your commander's color identity";
+    case 'attackersGreatestPower':
+      // CR 508.1: "Whenever you attack with one or more creatures, untap up to X lands, where X is the greatest power among those creatures".
+      return 'the greatest power among the creatures that attacked';
     case 'commanderManaValue':
       // D-145 (CR 903.3, 202.3): Equipment that grows with the commander.
       return 'the greatest mana value among your commanders';
