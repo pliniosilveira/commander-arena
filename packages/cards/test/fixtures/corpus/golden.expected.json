@@ -6799,30 +6799,10 @@
     "cfcf34ba-b412-447f-b200-d841371c0a1c": {
       "name": "Polluted Cistern // Dim Oubliette",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life for each card type among those cards.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "amount.for-each-card-type"
-        },
-        {
-          "face": 1,
-          "ability": 0,
-          "text": "When you unlock this door, mill three cards, then return a creature card from your graveyard to the battlefield.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "trigger.cast"
-        }
-      ],
-      "reasons": [
-        "faces[0].types: layout split with a permanent half (a Room, CR 709.5) is not implemented by the engine yet",
-        "faces[1].types: layout split with a permanent half (a Room, CR 709.5) is not implemented by the engine yet"
-      ],
-      "ast": "85635dd0"
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c1bcfa17"
     },
     "cfdd5dc6-593e-495a-8cfe-3a56b3c4c7df": {
       "name": "Temple of the False God",
@@ -8385,7 +8365,7 @@
       "total": 58
     },
     "acceptance": {
-      "supported": 722,
+      "supported": 723,
       "total": 742
     }
   }
