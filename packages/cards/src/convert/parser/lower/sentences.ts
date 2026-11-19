@@ -7,6 +7,7 @@
  * replaced as a whole, so it must be one instruction, and what is dropped when the condition holds
  * must be everything it said.
  */
+
 import type { Condition, Cost, Effect } from '@commander-arena/engine';
 import {
   type IrAmount,
@@ -23,6 +24,7 @@ import { amountArg, arg, type Effects } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
+import { noteExiledOwnGraveyards } from './exile-own-graveyards';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter, playerSelectorOf } from './nouns';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
@@ -213,6 +215,7 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
     noteTokensMade(lowered.value, ctx);
     noteMoved(lowered.value, ctx);
+    noteExiledOwnGraveyards(clause, lowered.value, ctx);
     // Issue 104: the card the player chose from their graveyard and exiled is "that card" of the clause after it.
     ctx.chosenExiled =
       clause.verb === 'exileChosenCard' &&
