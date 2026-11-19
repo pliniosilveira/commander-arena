@@ -30,7 +30,7 @@ export {
 } from './evaluate';
 export { GreedyAgent, type GreedyAgentOptions } from './greedy-agent';
 export { HeuristicAgent, type HeuristicAgentOptions } from './heuristic-agent';
-export { firstSafeAction, preferredActions } from './legal';
+export { firstAcceptedAction, firstSafeAction, preferredActions } from './legal';
 export {
   createRandomHandlers,
   MIN_KEEP_SIZE,
