@@ -260,6 +260,16 @@ export function amountOf(
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
   if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
+  // CR 205.2a, 603.2c: "for each card type among those cards": the types of the cards of the batch that caused the trigger, each once, as they are or as they last were.
+  if (amount.kind === 'cardTypesAmongTriggerCards') {
+    const seen = new Set<string>();
+    for (const id of ctx.triggerCards ?? []) {
+      const obj = objectOrLki(state, id);
+      if (obj === null) continue;
+      for (const type of derive(state, obj).types) seen.add(type);
+    }
+    return seen.size;
+  }
   // CR 107.3, 113.7a (Quandrix Unlimited group E): the X of the spell that caused a cast trigger, as it is on the stack or as it last was.
   if (amount.kind === 'triggerSpellX') {
     const spell = ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);

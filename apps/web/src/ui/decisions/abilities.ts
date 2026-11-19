@@ -7,6 +7,7 @@
 import type { Action, ObjectId, PriorityDecision } from '@commander-arena/engine';
 import { turnUpDetail, turnUpLabel } from '../../game/face-down-text';
 import { specialActionDetail, specialActionLabel } from '../../game/later-text';
+import { unlockDetail, unlockLabel } from '../../game/room-text';
 import { activationLabel } from './ability-label';
 import { castAction, castLabel } from './flashback';
 import { type CastOption, castPlayOptions, faceLabel, playAction } from './layouts';
@@ -50,7 +51,11 @@ export function hasActivation(decision: PriorityDecision, id: ObjectId): boolean
 export function hasSpecialAction(decision: PriorityDecision, id: ObjectId): boolean {
   return decision.options.some(
     (o) =>
-      (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') && o.object === id,
+      (o.kind === 'suspend' ||
+        o.kind === 'foretell' ||
+        o.kind === 'turnFaceUp' ||
+        o.kind === 'unlockDoor') &&
+      o.object === id,
   );
 }
 
@@ -111,6 +116,16 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
       label: turnUpLabel(card),
       detail: turnUpDetail(),
       action: { kind: 'turnFaceUp', object: id },
+    });
+  }
+  // CR 709.5e (Room): unlocking a locked half, "Unlock Dim Oubliette {4}{B}": a special action of the permanent, one item for each half.
+  for (const o of decision.options) {
+    if (o.kind !== 'unlockDoor' || o.object !== id) continue;
+    items.push({
+      key: `unlock-${o.door}`,
+      label: unlockLabel(card, o.door),
+      detail: unlockDetail(),
+      action: { kind: 'unlockDoor', object: id, door: o.door },
     });
   }
   for (const o of decision.options) {

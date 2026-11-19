@@ -113,6 +113,8 @@ describe('amounts that read an object', () => {
       'triggerTargetCount',
       // Quandrix Unlimited group E: the X of the spell that caused a cast trigger.
       'triggerSpellX',
+      // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
+      'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).

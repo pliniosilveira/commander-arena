@@ -733,6 +733,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerDamage',
   'triggerTargetCount',
   'triggerSpellX',
+  'cardTypesAmongTriggerCards',
   'dieResult',
   'votesFor',
   'exiledStillThere',
@@ -2015,6 +2016,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // CR 107.3 (Quandrix Unlimited group E): the X of the spell a "whenever you cast" trigger is about.
       if (scope.triggerSubject !== 'stack') {
         issue(out, path, "'triggerSpellX' needs a trigger about a spell being cast");
+      }
+      break;
+    case 'cardTypesAmongTriggerCards':
+      // CR 603.2c: the cards a batch trigger saw put into a graveyard.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          "'cardTypesAmongTriggerCards' needs a trigger about a batch of cards (a batch putIntoGraveyard, leftGraveyard or batch discarded trigger)",
+        );
       }
       break;
     case 'triggerTargetCount':

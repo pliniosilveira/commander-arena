@@ -18,7 +18,14 @@ import { definitionOf, printedCard } from '../state/ops';
 import type { CopiableValues, GameObject, GameState } from '../state/types';
 import { effectsOn } from './derive-layers';
 import { FACE_DOWN_VALUES, isFaceDown } from './face-down';
-import { combinedValues, hasCombinedFaces } from './layouts';
+import {
+  combinedValues,
+  doorsOfDefinition,
+  hasCombinedFaces,
+  isRoomDefinition,
+  valuesOfPrintedFace,
+} from './layouts';
+import { applyDoors } from './rooms';
 
 const NOTHING: CopiableValues = {
   characteristics: {
@@ -51,12 +58,15 @@ function combinedOf(def: CardDefinition): CopiableValues {
 
 const faceValues = new WeakMap<object, CopiableValues>();
 
-/** The values a card face prints, made once per face: card definitions are never changed (the cache holds nothing the face does not determine). */
-function valuesOfFace(face: CardFace): CopiableValues {
+/**
+ * The values a card face prints, made once per face: card definitions are never changed (the cache holds nothing the face does not determine). A half of a Room has the values
+ * of that half and, as part of its copiable values, both halves (CR 709.5b: also on the stack).
+ */
+function valuesOfFace(def: CardDefinition, face: CardFace): CopiableValues {
   let values = faceValues.get(face);
   if (values === undefined) {
-    const { abilities, spell: _spell, ...characteristics } = face;
-    values = { characteristics, abilities };
+    values = valuesOfPrintedFace(face);
+    if (isRoomDefinition(def)) values = { ...values, doors: doorsOfDefinition(def) };
     faceValues.set(face, values);
   }
   return values;
@@ -68,7 +78,11 @@ const tokenValues = new WeakMap<object, CopiableValues>();
 function valuesOfToken(token: NonNullable<GameObject['token']>): CopiableValues {
   let values = tokenValues.get(token);
   if (values === undefined) {
-    values = { characteristics: token.characteristics, abilities: token.abilities };
+    values = {
+      characteristics: token.characteristics,
+      abilities: token.abilities,
+      ...(token.doors === undefined ? {} : { doors: token.doors }),
+    };
     tokenValues.set(token, values);
   }
   return values;
@@ -89,7 +103,7 @@ function printedValues(state: GameState, obj: GameObject): CopiableValues {
   if (hasCombinedFaces(def, obj)) return combinedOf(def);
   const face = def.faces[obj.face];
   if (!face) throw new Error(`Object ${obj.id} has no face ${obj.face}`);
-  return valuesOfFace(face);
+  return valuesOfFace(def, face);
 }
 
 /**
@@ -104,7 +118,11 @@ export function copiableValues(state: GameState, obj: GameObject): CopiableValue
   // Layer 1b (CR 613.2b, 708.2, 708.10): a face-down permanent has the characteristics of the rules for face-down permanents, applied after the copy effects, so one
   // that became a copy keeps them and one that is copied is copied as it is (CR 707.2).
   if (isFaceDown(obj)) return FACE_DOWN_VALUES;
-  return atStation(atLevel(values, obj.level ?? 1), obj.counters.charge ?? 0);
+  // CR 709.5 (Room): on the battlefield a locked half gives the permanent no name, mana cost or rules text; the designations are the permanent's own, so a copy is locked or
+  // unlocked by its own (they are not copiable values, CR 709.5c).
+  const inPlay = obj.zone === 'battlefield' || obj.zone === 'phased';
+  const doored = inPlay ? applyDoors(values, obj.unlockedDoors ?? []) : values;
+  return atStation(atLevel(doored, obj.level ?? 1), obj.counters.charge ?? 0);
 }
 
 const levelled = new WeakMap<readonly Ability[], Map<number, readonly Ability[]>>();

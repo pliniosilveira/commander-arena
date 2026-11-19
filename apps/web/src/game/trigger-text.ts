@@ -504,6 +504,9 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const things = `${core.endsWith('s') ? core : `${core}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
       return `Whenever one or more ${trigger.what.other === true ? 'other ' : ''}${things} die`;
     }
+    case 'doorUnlocked':
+      // CR 709.5h (Room): the half whose text has the ability.
+      return 'When you unlock this door';
     case 'leftGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards leave your graveyard';

@@ -85,6 +85,8 @@ export type PriorityOption =
   | { readonly kind: 'foretell'; readonly object: ObjectId }
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): a special action, see the `turnFaceUp` action. */
   | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
+  /** Unlock a locked half of a Room you control (CR 709.5e): a special action, see the `unlockDoor` action. */
+  | { readonly kind: 'unlockDoor'; readonly object: ObjectId; readonly door: number }
   | { readonly kind: 'concede' };
 
 export interface PriorityDecision extends DecisionBase {
@@ -254,7 +256,10 @@ export interface PayManaDecision extends DecisionBase {
     | 'blockTax'
     | 'suspend'
     | 'foretell'
-    | 'turnFaceUp';
+    | 'turnFaceUp'
+    | 'unlockDoor';
+  /** For purpose `'unlockDoor'` (CR 709.5e): the half of the Room `source` that is unlocked once the cost is paid (0 the left half, 1 the right half). */
+  readonly door?: number;
   readonly subject?: ObjectId;
   /**
    * For purpose `'unlessPays'` when the payment is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a:
@@ -293,6 +298,9 @@ export interface PayManaDecision extends DecisionBase {
  *
  * For `'turnFaceUp'` (CR 701.40b, 708.8, D-310): the cost of turning a face-down permanent face up, paid before it is turned. `source` is the permanent, `seat` its
  * controller (the only seat that gets the decision), `totalCost` the mana cost of its card. Answered like the cost of a special action.
+ *
+ * For `'unlockDoor'` (CR 709.5e): the unlock cost of a Room, the mana cost of the locked half `door`, paid before the half is unlocked. `source` is the permanent, `seat` its
+ * controller. Answered like the cost of a special action.
  */
 
 /** Cleanup: discard down to maximum hand size (CR 514.1). */

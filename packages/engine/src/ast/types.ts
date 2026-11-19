@@ -289,6 +289,13 @@ export type Amount =
    */
   | { readonly kind: 'triggerSpellX' }
   /**
+   * "Each opponent loses 1 life for each card type among those cards" (Polluted Cistern, CR 205.2a, 603.2c, 608.2c): the number of card types (artifact, battle, creature, enchantment,
+   * instant, kindred, land, planeswalker, sorcery) the cards that caused the trigger have between them, each counted once however many have it; supertypes and subtypes are no card type.
+   * "Those cards" are the cards of the batch (`triggerCards`: the cards put into the graveyard together by a `putIntoGraveyard` trigger with `batch`), as they are now or as they last were.
+   * Valid only in the effect of a triggered ability with such a trigger.
+   */
+  | { readonly kind: 'cardTypesAmongTriggerCards' }
+  /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */
@@ -1465,8 +1472,16 @@ export type AlternativeCost =
 // ---- Tokens (CR 111)
 
 /** A token defined by the effect that creates it (CR 111.3): its characteristics and abilities. */
+/** The values of one half of a Room (CR 709.5b): its printed characteristics and abilities. */
+export interface DoorValues {
+  readonly characteristics: Characteristics;
+  readonly abilities: readonly Ability[];
+}
+
 export interface TokenDefinition extends Characteristics {
   readonly abilities: readonly Ability[];
+  /** The two halves of a token copy of a Room (CR 709.5, 709.5b: part of the copiable values). Only the engine sets it, when it copies. */
+  readonly doors?: readonly [DoorValues, DoorValues];
   /** The card whose prepare spell a token copy of a preparation card has (CR 722.2b, D-225). Only the engine sets it, when it copies. */
   readonly prepareOf?: CardId;
 }
@@ -4140,6 +4155,12 @@ export type Trigger =
       readonly batch?: true;
       readonly firstTimeEachTurn?: true;
     }
+  /**
+   * "When you unlock this door" (CR 709.5h, 709.5f, 709.5e): a half of a Room, the one whose rules text has this ability (`door: 'this'`), is given its unlocked designation by `who`
+   * ("you": the controller of the ability), whether as the permanent enters because that half was cast (CR 709.5d), by the special action (CR 709.5e) or by an effect (CR 709.5f).
+   * The ability is the half's own: unlocking the other half does not trigger it. `triggerSubject` is the Room.
+   */
+  | { readonly kind: 'doorUnlocked'; readonly who: 'you'; readonly door: 'this' }
   /**
    * "Whenever one or more cards are put into exile from your library and/or your graveyard" (CR 603.2c, 400.7, D-229): a batch trigger on the cards of the
    * controller of this ability that are put into exile from their library or from their graveyard in one run of events. Once, however many. A card put

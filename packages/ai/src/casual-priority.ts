@@ -46,6 +46,7 @@ import { chooseSpecialAction } from './casual-later';
 import { hasWorthwhileMode, isModalText } from './casual-modes';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey, worthCastingPrevention } from './casual-prevention';
+import { chooseUnlockDoor } from './casual-rooms';
 import {
   asFace,
   effectiveCost,
@@ -430,6 +431,10 @@ export function choosePriorityAction(
   // 2e. A face-down permanent of ours that is worth turning face up (D-313, `casual-face-down.ts`): with the mana left after the spells.
   const faceUp = chooseTurnFaceUp(view, d);
   if (faceUp !== null) return faceUp;
+
+  // 2f. A locked half of a Room of ours (CR 709.5e, `casual-rooms.ts`): unlocked with the mana left after the spells.
+  const unlock = chooseUnlockDoor(view, d);
+  if (unlock !== null) return unlock;
 
   // 3. A land to cycle, or a pump that changes the combat (see casual-activations.ts).
   const activation = chooseActivation(view, d, activations);

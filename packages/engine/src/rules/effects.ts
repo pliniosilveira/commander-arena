@@ -689,6 +689,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
+    ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
     ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
@@ -2136,6 +2137,7 @@ function runEffect(
             ...values.characteristics,
             abilities: [...values.abilities, ...(effect.abilities ?? [])],
             ...(prepareOf === null ? {} : { prepareOf }),
+            ...(values.doors === undefined ? {} : { doors: values.doors }),
           },
           count: 1,
           original: true,
@@ -2933,6 +2935,7 @@ function runEffect(
         ...values.characteristics,
         abilities: values.abilities,
         ...(prepareOf === null ? {} : { prepareOf }),
+        ...(values.doors === undefined ? {} : { doors: values.doors }),
       };
       const opponents = resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets);
       return {

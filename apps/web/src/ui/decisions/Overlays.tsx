@@ -13,6 +13,7 @@ import {
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
+import { unlockPayDetail } from '../../game/room-text';
 import { ManaCost } from '../mana';
 import { ArrangePanel } from './ArrangePanel';
 import { AttackTargetDialog } from './AttackTargetDialog';
@@ -322,6 +323,11 @@ export function DockPanel(props: OverlayProps): ReactNode {
           {d.purpose === 'turnFaceUp' ? (
             <p className="dec-sub dec-left" data-turn-up-pay>
               {turnUpPayDetail(nameOf(index, d.source))}
+            </p>
+          ) : null}
+          {d.purpose === 'unlockDoor' ? (
+            <p className="dec-sub dec-left" data-unlock-pay>
+              {unlockPayDetail(index.get(d.source), d.door ?? 0)}
             </p>
           ) : null}
           {d.purpose === 'suspend' || d.purpose === 'foretell' ? (

@@ -232,5 +232,7 @@ export function tokenDefinitionOf(
     ...values.characteristics,
     abilities: [...values.abilities],
     ...(prepareOf === null ? {} : { prepareOf }),
+    // CR 709.5b: the halves of a copied Room are part of the copiable values.
+    ...(values.doors === undefined ? {} : { doors: values.doors }),
   };
 }

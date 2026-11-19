@@ -74,6 +74,17 @@ export type GameEvent =
       readonly cost: readonly string[];
     }
   /**
+   * CR 709.5h (Room): `seat` unlocked the half `door` (0 the left half, 1 the right half) of the permanent `object`: it was given the unlocked designation, as it entered the
+   * battlefield because that half was cast (CR 709.5d), by the special action (`cost` is the mana paid, CR 709.5e) or by an effect (CR 709.5f). `cost` is empty when none was paid.
+   */
+  | {
+      readonly kind: 'doorUnlocked';
+      readonly seat: SeatId;
+      readonly object: ObjectId;
+      readonly door: number;
+      readonly cost: readonly string[];
+    }
+  /**
    * `seat` drew a card (CR 121.1): `object` is the card in their hand. `nth` is how many cards they have
    * drawn this turn including this one (D-111), which the `drawn` trigger's `nth` compares.
    */

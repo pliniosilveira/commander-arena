@@ -77,6 +77,7 @@ export function runPopulate(
           ...values.characteristics,
           abilities: values.abilities,
           ...(prepareOf === null ? {} : { prepareOf }),
+          ...(values.doors === undefined ? {} : { doors: values.doors }),
         },
         count: 1,
         original: true,

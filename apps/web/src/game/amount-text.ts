@@ -286,6 +286,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       const cards = thingsPhrase(amount.filter, true);
       return cards === null ? UNKNOWN_AMOUNT : `the number of card types among ${cards}`;
     }
+    case 'cardTypesAmongTriggerCards':
+      // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger (Polluted Cistern).
+      return 'the number of card types among those cards';
     case 'devotion':
       return `your devotion to ${colorList(amount.colors)}`;
     case 'commanderColors':

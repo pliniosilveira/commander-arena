@@ -409,6 +409,12 @@ export function specialAction(
   return { kind, object: obj.id };
 }
 
+/** The `unlockDoor` special action for the half `door` (0 left, 1 right) of a Room on the battlefield (CR 709.5e). */
+export function unlockAction(ctx: RefContext, card: CardRef, door: number): Action {
+  const obj = resolveObject(ctx, card, { zones: ['battlefield'] });
+  return { kind: 'unlockDoor', object: obj.id, door };
+}
+
 export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): Action {
   if (spec === 'pass') return { kind: 'pass' };
   if ('playLand' in spec) return playLandAction(ctx, seat, spec.playLand, spec.face);
@@ -417,6 +423,7 @@ export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): A
   if ('suspend' in spec) return specialAction(ctx, seat, 'suspend', spec.suspend);
   if ('foretell' in spec) return specialAction(ctx, seat, 'foretell', spec.foretell);
   if ('turnFaceUp' in spec) return specialAction(ctx, seat, 'turnFaceUp', spec.turnFaceUp);
+  if ('unlock' in spec) return unlockAction(ctx, spec.unlock, spec.door);
   if ('tap' in spec) {
     return tapAction(ctx, seat, spec.tap, {
       ...(spec.color ? { color: spec.color } : {}),

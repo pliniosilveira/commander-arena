@@ -374,6 +374,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ? failure(t, blocked)
         : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
     }
+    case 'doorUnlocked': {
+      // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
+      if (t.actor?.det !== 'you') return failure(t);
+      const blocked = missingFeatures(['trigger:doorUnlocked']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'doorUnlocked', who: 'you', door: 'this' });
+    }
     case 'cycled': {
       // "When you cycle this card" (stage P37, D-180, CR 702.29c): the card with the ability, which the engine finds in the zone it wound up in.
       if (t.actor?.det !== 'you' || t.subject?.det !== 'self') return failure(t);
@@ -1598,6 +1606,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:discarded',
   'trigger:exerted',
   'trigger:playsCard',
+  'trigger:doorUnlocked',
   'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',

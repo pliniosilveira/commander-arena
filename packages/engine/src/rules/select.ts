@@ -57,6 +57,8 @@ export interface SelectContext {
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
   readonly triggerTargetCount?: number;
+  /** What `cardTypesAmongTriggerCards` ("those cards") reads: the cards a batch trigger saw, as the objects they became (`StackData.triggerCards`, CR 603.2c). */
+  readonly triggerCards?: readonly ObjectId[];
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
