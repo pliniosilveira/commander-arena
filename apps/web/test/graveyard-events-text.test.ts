@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest';
 import { triggerWording } from '../src/game/trigger-text';
 
 const say = (trigger: Trigger) => triggerWording(trigger, { self: 'Syr Konrad' });
-const creature = { types: ['creature'] };
+const creature = { types: ['creature'] } as const;
 
 describe('the triggers of a graveyard', () => {
   test('one or more cards leave your graveyard (a batch, with or without a kind of card)', () => {
