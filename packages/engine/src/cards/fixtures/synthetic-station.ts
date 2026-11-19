@@ -65,8 +65,8 @@ export const SYNTHETIC_STATION_LIST: readonly CardDefinition[] = [
             kind: 'mana',
             cost: [{ kind: 'tap' }],
             production: {
-              kind: 'anyColor',
-              times: { kind: 'countersOn', of: { kind: 'this' }, counter: 'charge' },
+              kind: 'anyColorAmount',
+              amount: { kind: 'countersOn', of: { kind: 'this' }, counter: 'charge' },
             },
           },
         ],

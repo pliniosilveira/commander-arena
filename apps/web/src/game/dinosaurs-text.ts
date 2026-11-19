@@ -64,7 +64,6 @@ export function productionWords(production: ManaProduction): string | null {
       if (production.times !== undefined) return null;
       return production.mana.length === 0 ? null : production.mana.map((m) => `{${m}}`).join('');
     case 'anyColor': {
-      if (production.times !== undefined) return null;
       const count = production.count ?? 1;
       return count === 1 ? 'one mana of any color' : `${numberWord(count)} mana of any one color`;
     }

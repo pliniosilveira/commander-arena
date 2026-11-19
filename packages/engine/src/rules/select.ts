@@ -129,6 +129,9 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
         get manaValue() {
           return manaValueOfCost(c.manaCost, lki.object);
         },
+        get manaCost() {
+          return c.manaCost;
+        },
       };
     }
   }
@@ -142,6 +145,10 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     power: d.power,
     toughness: d.toughness,
     basePower: d.basePower,
+    // Quandrix Unlimited group E: only a filter that says "with {X} in its mana cost" reads it.
+    get manaCost() {
+      return d.manaCost;
+    },
     get keywords() {
       return keywordKindsOf(d.abilities);
     },
@@ -349,9 +356,14 @@ function subjectSubtypesOf(
 }
 
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */
-function xFilterContext(state: GameState, ctx: SelectContext): { x?: number } {
-  const x = ctx.x ?? (ctx.source === null ? null : state.objects[ctx.source]?.stack?.x);
-  return x === null || x === undefined ? {} : { x };
+function xFilterContext(state: GameState, ctx: SelectContext): { x?: number; xUnannounced?: true } {
+  const source = ctx.source === null ? undefined : state.objects[ctx.source];
+  const x = ctx.x ?? source?.stack?.x;
+  if (x !== null && x !== undefined) return { x };
+  // CR 601.2b: a spell still in a zone it can be cast from (its card is checked before it is cast) has announced no X yet.
+  return source !== undefined && source.zone !== 'stack' && source.zone !== 'battlefield'
+    ? { xUnannounced: true }
+    : {};
 }
 
 /** The players the source dealt combat damage to this turn (D-139, CR 510.2). */
@@ -385,6 +397,14 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  // CR 107.3m: the X of the spell the permanent that has the ability came from, which the permanent remembers (`castX`), or its last-known information.
+  if (amount.kind === 'enteredX') {
+    const source =
+      ctx.source === null
+        ? undefined
+        : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
+    return source?.castX ?? 0;
+  }
   // CR 107.3a, 202.3: "a spell with mana value X or less", the X announced for the spell that is resolving.
   if (amount.kind === 'x') return ctx.x ?? 0;
   if (amount.kind === 'countOf') {
@@ -594,6 +614,16 @@ export function legalTargets(
     ) {
       // D-149: a slot with one target for each opponent says whose each target is.
       // Hylda group 3: "with different controllers" says whose each target is as well.
+      // CR 115.1, 608.2b: cards "from their graveyard": the graveyard of the player an earlier slot names. Once the targets are chosen (as the spell or ability
+      // resolves, `stillLegalTargets`) only that player's cards stay legal; while they are being chosen the owner is the group `targetAnswerError` reads.
+      if (spec.ownedByTarget !== undefined) {
+        const named = (ctx.targets ?? []).find(
+          (t) => t.kind === 'player' && t.specId === spec.ownedByTarget,
+        );
+        if (named?.kind === 'player' && named.seat !== obj.owner) continue;
+        out.push({ kind: 'object', id, specId, group: obj.owner });
+        continue;
+      }
       out.push(
         spec.onePerOpponent === true || spec.differentControllers === true
           ? { kind: 'object', id, specId, group: controllerOf(state, obj) }

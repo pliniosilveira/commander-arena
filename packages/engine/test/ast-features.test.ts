@@ -115,6 +115,7 @@ describe('the dimensions', () => {
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
+      'amountIsPrime',
       'playerHasDesignation',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',

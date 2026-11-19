@@ -316,6 +316,8 @@ export function checkFilter(
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'castFromHand',
+    'xInManaCost',
+    'firstXSpellThisTurn',
     'enteredThisTurn',
     'exiledWithSource',
     'putWithSource',
@@ -325,6 +327,10 @@ export function checkFilter(
   ] as const) {
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
+  }
+  // CR 208.4b: "with base power 0" is a whole number of power.
+  if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
+    issue(out, `${path}.basePowerIs`, 'basePowerIs must be a whole number');
   }
   // D-131, CR 508.1b: "attacking you" is a flag; 'orPlaneswalkers' is "attacking you or a planeswalker you control".
   if (
@@ -400,6 +406,8 @@ export function checkFilter(
       // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
       (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
+      // CR 107.3m: "with mana value X or less" in the enters trigger of the permanent itself: the X of the spell it came from (`validateCard` checks the trigger and the cost).
+      a?.kind === 'enteredX' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
@@ -530,13 +538,18 @@ export function checkFilter(
   for (const key of ['manaValueX', 'controllerDealtDamageBySource'] as const) {
     if (f[key] === undefined) continue;
     if (f[key] !== true) issue(out, `${path}.${key}`, `${key} must be true`);
-    else if (ownerScope === undefined) {
+    else if (ownerScope === undefined && key === 'manaValueX' && where.xTarget === true) {
+      // The X of the spell is announced before its targets are chosen (CR 601.2b, 601.2c); the spell checks that it has one.
+    } else if (ownerScope === undefined) {
       issue(out, `${path}.${key}`, `${key} is only read in the 'each' selector of an effect`);
     } else if (key === 'manaValueX' && !ownerScope.xAllowed) {
       issue(out, `${path}.${key}`, 'mana value X is used but nothing in this ability has an X');
     } else if (key === 'controllerDealtDamageBySource' && ownerScope.owner !== 'ability') {
       issue(out, `${path}.${key}`, 'only an ability has a creature that dealt the damage');
     }
+  }
+  if (f.powerParity !== undefined && !isOneOf(f.powerParity, ['odd', 'even'])) {
+    issue(out, `${path}.powerParity`, "powerParity must be 'odd' or 'even'");
   }
   // D-111: power, toughness and mana value comparisons.
   for (const key of ['power', 'toughness', 'manaValue', 'colorCount'] as const) {
@@ -611,6 +624,8 @@ export function checkFilter(
 interface FilterWhere {
   readonly onStack?: boolean;
   readonly inTargets?: boolean;
+  /** CR 107.3a, 202.3: the filter of a target slot of a spell with an {X} in its text: "target creature with mana value X" reads the X announced (D2 group). */
+  readonly xTarget?: boolean;
 }
 
 /** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
@@ -678,6 +693,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.blocking !== undefined ||
   f.powerLessThanSource === true ||
   f.powerAboveBase === true ||
+  f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
@@ -716,6 +732,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'thisWay',
   'triggerDamage',
   'triggerTargetCount',
+  'triggerSpellX',
   'dieResult',
   'votesFor',
   'exiledStillThere',
@@ -754,7 +771,14 @@ export function declareTargets(
     const what = spec.what;
     switch (what?.kind) {
       case 'object':
-        checkFilter(what.filter, `${p}.what.filter`, out);
+        checkFilter(
+          what.filter,
+          `${p}.what.filter`,
+          out,
+          undefined,
+          undefined,
+          countXAllowed ? { xTarget: true } : {},
+        );
         if (
           what.filter.manaValueAtMost !== undefined &&
           typeof what.filter.manaValueAtMost === 'object' &&
@@ -1076,6 +1100,15 @@ export function declareTargets(
         );
       }
     }
+    if (spec.ownedByTarget !== undefined) {
+      // CR 115.1, 608.2b: cards in the graveyard of the player an earlier slot of the ability targets.
+      if (typeof spec.ownedByTarget !== 'string' || declared.get(spec.ownedByTarget) !== 'player') {
+        issue(out, `${p}.ownedByTarget`, 'ownedByTarget names an earlier player target slot');
+      }
+      if (what?.kind !== 'object' || what.filter.zone !== 'graveyard') {
+        issue(out, `${p}.what`, 'ownedByTarget is said of cards in a graveyard');
+      }
+    }
     if (spec.divide !== undefined) {
       // CR 601.2d (D-145): the division is announced as the spell is cast, so the total is an amount that reads the game then.
       if (!divideAllowed) {
@@ -1085,7 +1118,19 @@ export function declareTargets(
           "only the targets of a spell's own text, an activated ability or a triggered ability (not a mode) can have a division",
         );
       }
-      checkStateAmount(spec.divide.total, `${p}.divide.total`, out, 'a division');
+      if (kindOf(spec.divide.total) === 'x') {
+        // CR 107.3a, 601.2b, 601.2d: "Distribute X +1/+1 counters among ...": the X is announced before the targets are chosen and the division, so the total is read as the X
+        // announced for the spell (`validateSpell` checks that the spell announces one). Only a spell's own text announces an X before its targets.
+        if (!countXAllowed) {
+          issue(
+            out,
+            `${p}.divide.total`,
+            "only a slot of a spell's own text (not an ability or a mode) divides the X announced for the spell",
+          );
+        }
+      } else {
+        checkStateAmount(spec.divide.total, `${p}.divide.total`, out, 'a division');
+      }
     }
     if (typeof spec.id === 'string' && spec.id !== '' && what !== undefined) {
       if (!declared.has(spec.id)) declared.set(spec.id, what.kind);
@@ -1449,7 +1494,9 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
+  countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
+  exiledPowerOwn: 'an exile effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1474,6 +1521,9 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
+  if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
+  // Oversimplify: the creatures an exile really exiled, by controller.
+  if (e?.kind === 'exile') return ['exiledPowerOwn'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -1738,7 +1788,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'commanderColors':
     case 'commanderManaValue':
+      break;
     case 'commanderCasts':
+      // CR 903.8: "they've cast": the player a selector names, which may be a target of the effect.
+      if (a.player !== undefined) {
+        if (a.of !== undefined) issue(out, `${path}.player`, 'player and of are two readings');
+        checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      }
       break;
     case 'lifeTotalOf':
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
@@ -1931,6 +1987,12 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           path,
           "'triggerDamage' needs a triggered ability whose trigger is damage being dealt (dealtDamage, dealsCombatDamage or noncombatDamageDealt) or life being gained (lifeGained)",
         );
+      }
+      break;
+    case 'triggerSpellX':
+      // CR 107.3 (Quandrix Unlimited group E): the X of the spell a "whenever you cast" trigger is about.
+      if (scope.triggerSubject !== 'stack') {
+        issue(out, path, "'triggerSpellX' needs a trigger about a spell being cast");
       }
       break;
     case 'triggerTargetCount':
@@ -2928,6 +2990,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.compare.value`, 'a count is compared with a non-negative whole number');
       }
       break;
+    case 'amountIsPrime':
+      // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
+      checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
+      break;
     case 'playerHasDesignation':
       // D-131: whether the designation's holder is one of the players the selector names (so "an opponent is the
       // monarch" is `eachOpponent`). A condition has no targets and reads no trigger subject.
@@ -3787,6 +3853,8 @@ export const MAY_EFFECT_KINDS = [
   'becomeCopyOfCard',
   // Galadriel group 1: "you may reveal the top card of your library. If a land card is revealed this way, ...".
   'revealTop',
+  // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
+  'removeCounters',
 ];
 
 /**
@@ -3974,6 +4042,64 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
   }
 }
 
+/**
+ * What a delayed cast trigger may do (CR 603.7c: nothing of the spell or ability that created it is left to name, so it does something to the spell that was cast, or something
+ * only the controller does): copy the spell that was cast (D-336), or draw cards and gain life, alone or in a sequence (Quandrix Unlimited group E, Brass Infiniscope).
+ */
+function isDelayedCastBody(e: Effect | undefined): boolean {
+  if (e === undefined || e === null) return false;
+  if (e.kind === 'copySpell') return kindOf(e.spell) === 'triggerSubject';
+  if (e.kind === 'draw') return kindOf(e.player) === 'you';
+  if (e.kind === 'gainLife') return kindOf(e.player) === 'you';
+  if (e.kind === 'sequence') {
+    return Array.isArray(e.effects) && e.effects.length > 0 && e.effects.every(isDelayedCastBody);
+  }
+  return false;
+}
+
+/**
+ * The effect `delayedCast` (CR 603.7, D-336): creates a delayed triggered ability on the controller's next cast of a spell the filter names. Shared by a spell or ability and by the
+ * extra effects of a mana ability (Brass Infiniscope).
+ */
+export function checkDelayedCast(
+  e: Extract<Effect, { readonly kind: 'delayedCast' }>,
+  path: string,
+  scope: Scope,
+  out: Out,
+): void {
+  checkFilter(e.filter, `${path}.filter`, out);
+  if (e.filter?.stackKind !== 'spell') {
+    issue(
+      out,
+      `${path}.filter`,
+      'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
+    );
+  }
+  if (!isDelayedCastBody(e.effect)) {
+    issue(
+      out,
+      `${path}.effect`,
+      'a delayed cast trigger copies the spell that was cast, or its controller draws cards and gains life',
+    );
+    return;
+  }
+  checkEffect(
+    e.effect,
+    `${path}.effect`,
+    {
+      owner: 'ability',
+      targets: new Map(),
+      xAllowed: false,
+      triggerSubject: 'stack',
+      triggerPlayer: true,
+      checkAbility: scope.checkAbility,
+      checkContinuous: scope.checkContinuous,
+      checkEffectExt: scope.checkEffectExt,
+    },
+    out,
+  );
+}
+
 export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): void {
   if (
     e !== undefined &&
@@ -3999,11 +4125,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
-      if (e.filter.controller !== 'you') {
+      // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
+      // controller's own permanents.
+      if (
+        e.filter.controller !== 'you' &&
+        !(e.filter.controller === undefined && e.exactly !== true)
+      ) {
         issue(
           out,
           `${path}.filter.controller`,
-          'chooseObjects must select permanents the controller controls',
+          'chooseObjects must select permanents the controller controls (or, with no controller said, any permanent when the choice is not exactly)',
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);
@@ -4319,6 +4450,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'grantCastAsThoughFlash': {
+      // CR 601.3b: players named by a selector, until end of turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          'the permission to cast as though with flash lasts until end of turn',
+        );
+      }
+      break;
+    }
+    case 'grantPlayerManaAbility': {
+      // CR 118.3, 605.1a: a life cost of a whole number from 1, one mana of a color or {C}, until end of turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!Number.isInteger(e.life) || e.life < 1) {
+        issue(out, `${path}.life`, 'the life paid for the mana is a whole number from 1');
+      }
+      if (!['W', 'U', 'B', 'R', 'G', 'C'].includes(e.mana)) {
+        issue(out, `${path}.mana`, 'the mana is W, U, B, R, G or C');
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the mana ability of a player lasts until end of turn');
+      }
+      break;
+    }
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -4611,43 +4768,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
       break;
-    case 'delayedCast': {
-      // CR 603.7 (D-336): an effect that creates a delayed triggered ability on the controller's next cast of a spell the filter names.
-      checkFilter(e.filter, `${path}.filter`, out);
-      if (e.filter?.stackKind !== 'spell') {
-        issue(
-          out,
-          `${path}.filter`,
-          'the filter of a delayed cast trigger is one of spells (stackKind "spell")',
-        );
-      }
-      // CR 603.7c: nothing of the spell or ability that created it is left to name, so it does something to the spell cast, and only that.
-      const inner = e.effect;
-      if (inner?.kind !== 'copySpell' || kindOf(inner.spell) !== 'triggerSubject') {
-        issue(
-          out,
-          `${path}.effect`,
-          'a delayed cast trigger copies the spell that was cast (copySpell of triggerSubject)',
-        );
-        break;
-      }
-      checkEffect(
-        inner,
-        `${path}.effect`,
-        {
-          owner: 'ability',
-          targets: new Map(),
-          xAllowed: false,
-          triggerSubject: 'stack',
-          triggerPlayer: true,
-          checkAbility: scope.checkAbility,
-          checkContinuous: scope.checkContinuous,
-          checkEffectExt: scope.checkEffectExt,
-        },
-        out,
-      );
+    case 'delayedCast':
+      checkDelayedCast(e, path, scope, out);
       break;
-    }
     case 'becomeMonarch':
       // CR 725.3 (D-127): one player becomes the monarch, so the selector names exactly one.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -4774,6 +4897,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.spell`,
           'exileOnResolve names the spell that was cast (triggerSubject)',
         );
+      }
+      break;
+    case 'doubleSpellX':
+      // CR 107.3 (Unbound Flourishing): the spell whose casting caused the trigger.
+      if (kindOf(e.spell) === 'triggerSubject') {
+        checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
+      } else {
+        issue(out, `${path}.spell`, 'doubleSpellX names the spell that was cast (triggerSubject)');
       }
       break;
     case 'exileSpellWithTimeCounters':
@@ -4951,6 +5082,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'removeAllPlayerCounters':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'moveAllCounters':
+      // CR 122.1: both permanents are targets of the ability (or the triggering permanent), as for a copy that names its original.
+      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
     case 'counter':
     case 'removeAllCounters':
@@ -5246,6 +5382,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen', 'topChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
+      }
+      // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield": every matching card goes, in a reveal of the top, onto the battlefield.
+      if (
+        e.take?.all !== undefined &&
+        (e.take.all !== true ||
+          e.revealAll !== true ||
+          e.take.to !== 'battlefield' ||
+          e.take.min !== undefined ||
+          e.take.totalManaValue !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take.all`,
+          'all is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield, with no min or total mana value',
+        );
       }
       break;
     case 'copyCardAndCast':
@@ -5671,6 +5822,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
+      if (e.mana?.kind === 'anyColorAmount') {
+        issue(
+          out,
+          `${path}.mana`,
+          'only a mana ability can ask for the color of an amount of mana',
+        );
+      }
       if (e.player !== undefined) {
         // D-229: the pool of one player a selector names; a fixed production only.
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -5681,14 +5839,6 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.mana?.kind === 'fixed' && e.mana.times !== undefined) {
         checkAmount(e.mana.times, `${path}.mana.times`, scope, out);
       }
-      // CR 605.3b: "Add X mana of any one color" with a count is the production of a mana ability, whose color is chosen as it resolves (`validate-mana-ability.ts`).
-      if (e.mana?.kind === 'anyColor' && e.mana.times !== undefined) {
-        issue(
-          out,
-          `${path}.mana.times`,
-          'only a mana ability adds a counted number of mana of one color',
-        );
-      }
       break;
     case 'addCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
@@ -5696,6 +5846,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       checkAmount(e.count, `${path}.count`, scope, out);
+      // Oversimplify: only an `addCounters` that reads its count for the controller of each object can read one player's total.
+      if (e.perController !== undefined && e.perController !== true) {
+        issue(out, `${path}.perController`, 'perController is true when present');
+      }
+      if (e.perController !== true && JSON.stringify(e.count).includes('exiledPowerOwn')) {
+        issue(
+          out,
+          `${path}.count`,
+          'exiledPowerOwn is read only by an addCounters with perController',
+        );
+      }
       break;
     case 'modifyPt':
     case 'setPt':
@@ -6068,7 +6229,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'proliferate':
-      // CR 701.34a (D-149): no parameters; the controller chooses what to give counters to as it resolves.
+      // CR 701.34a (D-149): the controller chooses what to give counters to as it resolves; `times` repeats it.
+      if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
+      break;
+    case 'distributeCounters':
+      // CR 601.2d: the slot the effect names divides the counters; `checkDinosaursFace` checks that it has a `divide`.
+      if (kindOf(e.to) !== 'target') {
+        issue(
+          out,
+          `${path}.to`,
+          'distributeCounters puts the counters on the targets of a slot: a target reference',
+        );
+      } else {
+        checkRef(e.to, 'any', `${path}.to`, scope, out);
+      }
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      break;
+    case 'doubleCounters':
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
       break;
     case 'scry':
     case 'surveil':

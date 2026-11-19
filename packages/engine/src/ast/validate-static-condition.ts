@@ -137,6 +137,17 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       // D-423: "as long as another Aura is attached to enchanted creature": a count of objects (never a greatest, a total or a devotion: they read power or
       // another layer 7 result), read through layers 1, 4 and 5.
       const amount = c.amount;
+      // CR 613.8: the counters on this permanent belong to no layer, so `countersOn` of `this` may be read.
+      if (typeof amount !== 'number' && amount?.kind === 'countersOn') {
+        if (amount.of?.kind !== 'this') {
+          issue(
+            out,
+            `${path}.amount.of`,
+            "a static ability's condition reads the counters on this permanent only",
+          );
+        }
+        return;
+      }
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,

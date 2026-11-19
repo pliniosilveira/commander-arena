@@ -7,6 +7,7 @@ import type { IrBasePt, IrClause, IrDuration, IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
+import { PLURAL_STARTS } from './pump';
 
 const ID = 'effect.lead-group-base-pt';
 
@@ -84,4 +85,65 @@ export const EFFECT_LEAD_GROUP_BASE_PT = defineRule<Clauses>({
   },
 });
 
-export const GROUP_BASE_PT_RULES = [EFFECT_LEAD_GROUP_BASE_PT];
+/**
+ * `effect.group-base-pt`: "Creatures you control have base power and toughness X/X until end of turn." (Biomass Mutation; CR 613.4b, 611.2c, 107.3a): the same effect as the
+ * leading-duration form with the duration after it and no types. One `setPt` over the group as the effect resolves, in layer 7b, so counters and +N/+N effects still apply
+ * on top (layer 7c). Not read: the singular, a missing duration, a duration other than the ones the family reads, "and gain ...", a power and toughness that are not both numbers
+ * or both X.
+ */
+export const EFFECT_GROUP_BASE_PT = defineRule<Clauses>({
+  id: 'effect.group-base-pt',
+  family: 'effect',
+  leading: PLURAL_STARTS,
+  cites: [
+    'CR 613.4b (Interaction of Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 107.3a (Variables)',
+  ],
+  examples: [
+    'Creatures you control have base power and toughness X/X until end of turn',
+    'Creatures you control have base power and toughness 3/3 until end of turn',
+    'Elves you control have base power and toughness 2/2 until end of turn',
+  ],
+  rejects: [
+    'Creatures you control have base power and toughness X/X',
+    'Creatures you control has base power and toughness X/X until end of turn',
+    'Creatures you control have base power and toughness X/3 until end of turn',
+    'Creatures you control have base power and toughness +X/+X until end of turn',
+    'Creatures you control have base power and toughness X/X and gain all creature types until end of turn',
+    'Creatures you control have base power and toughness X/X until end of turn and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      family<IrNoun>('noun', { only: ['noun.plain-permanents'] }),
+      literal(' have '),
+      spanned(pattern(/base power and toughness (?:(\d+)\/(\d+)|X\/X)(?![\p{L}\p{N}/])/u)),
+      literal(' '),
+      family<IrDuration>('duration'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [subject, , pt, , duration] = r.value;
+    if (!subject.plural) return fail(ctx, pos);
+    const numbers = pt.value[1] !== undefined;
+    const basePt: IrBasePt = {
+      kind: 'basePt',
+      power: numbers ? Number(pt.value[1]) : 0,
+      toughness: numbers ? Number(pt.value[2]) : 0,
+      ...(numbers ? {} : { x: true as const }),
+      span: pt.span,
+      rule: 'effect.group-base-pt',
+    };
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause('effect.group-base-pt', 'setPt', { objects: subject, basePt }, pt.span),
+          duration,
+        },
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const GROUP_BASE_PT_RULES = [EFFECT_LEAD_GROUP_BASE_PT, EFFECT_GROUP_BASE_PT];

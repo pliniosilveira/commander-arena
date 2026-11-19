@@ -109,6 +109,8 @@ describe('amounts that read an object', () => {
       'triggerDamage',
       // D-574: the number of targets on a spell that caused a cast trigger.
       'triggerTargetCount',
+      // Quandrix Unlimited group E: the X of the spell that caused a cast trigger.
+      'triggerSpellX',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).

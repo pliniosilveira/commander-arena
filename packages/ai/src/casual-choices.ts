@@ -113,9 +113,29 @@ function withOtherTargets(d: TargetsDecision, action: Action): Action {
   return { ...action, targets };
 }
 
+/**
+ * "Target player shuffles up to three target cards from their graveyard into their library" (`ownedBy`, CR 115.1): the cards of that slot are cards of the graveyard of the
+ * player chosen for the slot it names. An answer that breaks the rule is refused by the engine, so the agent keeps only the cards of the chosen player's graveyard.
+ */
+function withOwnedTargets(d: TargetsDecision, action: Action): Action {
+  if (action.kind !== 'chooseTargets' || !d.specs.some((s) => s.ownedBy !== undefined)) {
+    return action;
+  }
+  const targets = action.targets.filter((t) => {
+    const spec = d.specs.find((s) => s.specId === t.specId);
+    if (spec?.ownedBy === undefined) return true;
+    const owner = action.targets.find((o) => o.specId === spec.ownedBy);
+    const legal = spec.legal.find(
+      (l) => l.kind === t.kind && l.kind === 'object' && l.id === (t as typeof l).id,
+    );
+    return owner?.kind === 'player' && legal?.kind === 'object' && legal.group === owner.seat;
+  });
+  return { ...action, targets };
+}
+
 /** Fills every slot with the best-scored legal targets: opponent first, any legal one otherwise. */
 export function chooseTargets(view: GameView, d: TargetsDecision): Action {
-  return withOtherTargets(d, chooseTargetsOf(view, d));
+  return withOwnedTargets(d, withOtherTargets(d, chooseTargetsOf(view, d)));
 }
 
 function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
@@ -147,6 +167,12 @@ function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
     const dealer = bite ? strongestOwnCreature(view, spec.legal) : null;
     if (dealer !== null) {
       targets.push(dealer);
+      continue;
+    }
+    // The player whose graveyard another slot takes cards from (`ownedBy`) is the agent: it shuffles its own cards back.
+    const own = spec.legal.find((t) => t.kind === 'player' && t.seat === view.viewer);
+    if (own !== undefined && d.specs.some((s) => s.ownedBy === spec.specId)) {
+      targets.push(own);
       continue;
     }
     // Stable sort: equal scores keep the engine's order, so "first legal" is the fallback.

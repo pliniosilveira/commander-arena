@@ -469,6 +469,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     "Juggernauts you control can't be blocked by Walls.",
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
+    'Commanders you control have hexproof.',
     'Creature tokens you control have haste.',
     'Zombie tokens you control have hexproof and menace.',
     'Zombie tokens you control get +1/+1.',
@@ -510,6 +511,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
       // Issue 104 (Eternal Might deck): "Creatures you control that are Zombies and/or tokens get +1/+1 and have flying."
       'noun.creatures-subtype-and-or-tokens',
       'noun.all-permanents',
+      // Quandrix Unlimited deck, group G: "Commanders you control have hexproof."
+      'noun.commanders-you-control',
       // Stage P64 (D-217): "Creature tokens you control have haste."
       'noun.token-permanents',
       // D-369: "Zombie tokens you control have hexproof and menace."

@@ -141,13 +141,23 @@ describe('the cards are valid', () => {
     const filter = { stackKind: 'spell', types: ['instant'] };
     const copy = { kind: 'copySpell', spell: { kind: 'triggerSubject' }, newTargets: 'may' };
     expect(validateCard(withEffect({ kind: 'delayedCast', filter, effect: copy }))).toEqual([]);
-    // Not a copy: the spell that created it is gone and nothing else of it is named (CR 603.7c).
+    // Its controller may draw cards and gain life instead (Brass Infiniscope, Quandrix Unlimited group E).
     expect(
       validateCard(
         withEffect({
           kind: 'delayedCast',
           filter,
           effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+        }),
+      ),
+    ).toEqual([]);
+    // Not a copy and not a draw or gain of life: the spell that created it is gone and nothing else of it is named (CR 603.7c).
+    expect(
+      validateCard(
+        withEffect({
+          kind: 'delayedCast',
+          filter,
+          effect: { kind: 'discard', player: { kind: 'you' }, count: 1 },
         }),
       ).length,
     ).toBeGreaterThan(0);

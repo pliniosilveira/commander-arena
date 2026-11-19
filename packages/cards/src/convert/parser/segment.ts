@@ -249,7 +249,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
  */
 const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
-  /^you may reveal [^.]* from among them and put (?:it|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
+  /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
 /** "You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost." (Velomachus Lorehold, CR 608.2g): the middle sentence of the same instruction (`effect.look-cast-free`). */
 const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
@@ -304,6 +304,22 @@ const PUT_HAND_OTHER_BOTTOM =
 const ADD_MANA_SENTENCE = /^add [^.]*\.$/i;
 const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
+
+/**
+ * "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel, CR 605.1a, 118.3): the second sentence is what the mana ability
+ * the first gives does, so the two are read as one instruction (`effect.player-mana-ability`).
+ */
+const PLAYER_MANA_ABILITY_SENTENCE =
+  /^until end of turn, any time you could activate a mana ability, you may pay [^.]*\.$/i;
+const IF_YOU_DO_ADD_SENTENCE = /^if you do, add [^.]*\.$/i;
+
+/**
+ * "Then choose odd or even. Return each creature with power of the chosen quality to its owner's hand." (Zimone's Hypothesis, CR 608.2d): the choice and the instruction that reads it are one
+ * instruction, kept together for `effect.choose-parity-return`.
+ */
+const CHOOSE_ODD_OR_EVEN = /^(?:then )?choose odd or even\.$/i;
+const RETURN_CHOSEN_PARITY =
+  /^return each creature with power of the chosen quality to its owner['’]s hand\.$/i;
 
 /**
  * "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying." (CR 615.5):
@@ -498,6 +514,13 @@ const FLASHBACK_COST_IS_MANA_COST = /^the flashback cost is equal to its mana co
  */
 const REVEAL_THE_TOP = /^reveal the top [^.]* cards of your library\.$/i;
 const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\.$/i;
+/**
+ * "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped and the rest on the bottom of your library in a random order." (Quandrix
+ * Unlimited deck, group D2, Animist's Awakening, CR 701.20): the second sentence says what is done with the cards the first one reveals, so the two are one instruction
+ * (`effect.reveal-put-all`).
+ */
+const PUT_ALL_FROM_AMONG =
+  /^put all [^.]* cards from among them onto the battlefield tapped and the rest on the bottom of your library in a random order\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
 /**
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
@@ -664,8 +687,11 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
+        (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
+        (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||

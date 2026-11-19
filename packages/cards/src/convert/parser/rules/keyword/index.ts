@@ -179,10 +179,15 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Flying, protection from black',
     'Protection from white and from blue',
     'Flying, protection from red and from green, haste',
+    // CR 702.16a, 105.2: protection from multicolored sources.
+    'Protection from multicolored',
+    'Reach, trample, protection from multicolored',
   ],
   rejects: [
     'Ward {2}',
     'Protection from monocolored',
+    'Protection from multicolored and from red',
+    'Protection from multicoloredx',
     'Protection from artifacts',
     'Protection from everything',
     'Protection from red and blue',

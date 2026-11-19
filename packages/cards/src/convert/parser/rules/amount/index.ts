@@ -6,6 +6,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
+import { HALF_X_AMOUNT_RULES } from './half-x';
 import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { AMOUNT_FOR_EACH_DIED } from './history';
@@ -14,6 +15,7 @@ import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
 /** The number words of Oracle text: one to twenty (stage P28: "thirteen tapped Zombie tokens"). */
@@ -451,6 +453,8 @@ export const AMOUNT_RULES = [
   ...KORVOLD_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".
   ...HOFRI_AMOUNT_RULES,
+  // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
+  ...QUANDRIX_G_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".
   ...HASHATON_G2_AMOUNT_RULES,
   // CR 402.1: "equal to the number of cards in that player's hand", the amount of damage to each opponent.
@@ -482,6 +486,8 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_MANA_SPENT,
   // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
   ...LOREHOLD_G2_AMOUNT_RULES,
+  // Quandrix Unlimited deck, group D2: "half X, rounded down".
+  ...HALF_X_AMOUNT_RULES,
 ];
 
 /** The amounts of a damage or life clause: a number or X, never an article. */

@@ -519,6 +519,10 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
       }
     }
   }
+  // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
+  if (r.withX !== undefined && (typeof r.withX.counter !== 'string' || r.withX.counter === '')) {
+    issue(out, `${path}.withX.counter`, 'withX names a counter');
+  }
   // Issue 103 (CR 707.9b): "except it's a Dragon in addition to its other types".
   if (
     r.addSubtypes !== undefined &&

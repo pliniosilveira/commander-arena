@@ -86,6 +86,11 @@ interface Antecedent {
    * sentence after it is the token, as "that token" is (CR 707.9: the exceptions are said of "it", the copy).
    */
   readonly itToken?: true;
+  /**
+   * A token an instruction made (Quandrix Unlimited group E, CR 111.2, 400.7j): "it" of "Put a number of +1/+1 counters on it" in the sentence after it is the token. Only that
+   * verb reads it so (the other pronouns after a token keep their meaning: "If that enchantment is an Aura, you may attach it to the token").
+   */
+  readonly plainToken?: true;
   /** A creature token with a power and toughness of its own (issue 100): "it" that gains a keyword in the sentence after it is the token. */
   readonly itTokenGains?: true;
 }
@@ -124,6 +129,8 @@ function classify(raw: string): Pronoun | null {
   }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
+  // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
+  if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
@@ -215,6 +222,18 @@ class Binder {
     this.antecedents.push({ noun: host, kind: 'object' });
   }
 
+  /**
+   * The permanent an intervening "if" of a triggered ability says things of by `~` ("if ~ has no charge counters on it, return it to its owner's hand", CR 603.4): the
+   * "it" of the body is that permanent, as for a cost that names `~`. Read only for a trigger that has no subject of its own ("at the beginning of your upkeep"), which
+   * leaves "it" nothing else to mean, and only where the condition counts the counters of `~`.
+   */
+  seedSelfCondition(trigger: IrTrigger, condition: IrCondition | undefined): void {
+    const test = condition?.test;
+    if (trigger.subject !== undefined || test?.kind !== 'amountIs') return;
+    if (test.amount.kind !== 'countersOn' || test.amount.of.det !== 'self') return;
+    this.seed(test.amount.of, 'triggerSubject', true);
+  }
+
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
   seedLine(noun: IrNoun): void {
     this.antecedents.push({ noun, kind: 'object', previousLine: true });
@@ -284,6 +303,9 @@ class Binder {
               ? a.token === true
               : a.token !== true ||
                 (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim())) ||
+                (this.clauseVerb === 'addCounters' &&
+                  a.plainToken === true &&
+                  /^it$/iu.test(noun.filter.raw.trim())) ||
                 (a.itTokenGains === true &&
                   this.clauseVerb === 'grantKeyword' &&
                   /^it$/iu.test(noun.filter.raw.trim()))) &&
@@ -412,6 +434,11 @@ class Binder {
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
         return { ...amount, of: this.noun(amount.of) };
+      case 'commanderCasts':
+        // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.
+        return amount.player === undefined
+          ? amount
+          : { ...amount, player: this.noun(amount.player) };
       case 'half':
       case 'multiple':
       case 'minus':
@@ -460,7 +487,11 @@ class Binder {
           this.antecedents.push({
             kind: 'object',
             token: true,
-            ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
+            // "Create a 0/0 ... Fractal creature token. Put X +1/+1 counters on it." (Quandrix Unlimited deck, group G): a 0/0 token dies without counters, so "it" of the next sentence is it.
+            ...(arg.copyExcept === undefined && !(arg.power === 0 && arg.toughness === 0)
+              ? {}
+              : { itToken: true as const }),
+            plainToken: true as const,
             // Issue 100 (Baral and Kari Zev): "Create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.": the "it" that
             // GAINS something (the subject of a keyword grant) after the creation of a creature token with a power and toughness of its own is that token. An "it" that is the object
             // of another verb ("create a 2/2 token. If that enchantment is an Aura, you may attach it to the token") is still the permanent the text is about.
@@ -495,7 +526,7 @@ class Binder {
     }
   }
 
-  /** The verb of the clause being bound (issue 100: only the "it" of a keyword grant may mean the token a creature-token instruction made). */
+  /** The verb of the clause being bound: only the "it" of a keyword grant (issue 100) or of a counters clause (Quandrix Unlimited group E, `Antecedent.plainToken`) may mean the token a creature-token instruction made. */
   private clauseVerb = '';
 
   clause(clause: IrClause): IrClause {
@@ -789,6 +820,17 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
     case 'triggered': {
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
+      binder.seedSelfCondition(ability.trigger, ability.interveningIf);
+      // "At the beginning of your upkeep, if ~ has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it." (Quandrix Unlimited deck, group G): the
+      // permanent the intervening "if" names is what "it" means in the body, when the trigger has no subject of its own.
+      const tested = ability.interveningIf;
+      if (
+        tested?.test.kind === 'thisMatches' &&
+        tested.test.who === 'self' &&
+        ability.trigger.subject === undefined
+      ) {
+        binder.seed(selfNoun(tested), 'triggerSubject', true);
+      }
       if (ability.modal !== undefined) {
         // Each mode starts from the antecedents a body would: the trigger's subject and actor.
         const modal = bindModes(ability.modal, scope, verbs, (b) =>

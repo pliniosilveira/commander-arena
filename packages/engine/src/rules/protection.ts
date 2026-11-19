@@ -89,11 +89,23 @@ export function hasProtectionFrom(
       (a) =>
         a.kind === 'keyword' && a.keyword.kind === 'protection' && a.keyword.from === 'ringBearer',
     );
-  if (colors.length === 0 && types.length === 0 && !fromRingBearer) return false;
+  // CR 702.16a, 105.2: protection from multicolored stops a source with two or more colors.
+  const fromMulticolored =
+    obj.zone === 'battlefield' &&
+    derive(state, obj).abilities.some(
+      (a) =>
+        a.kind === 'keyword' &&
+        a.keyword.kind === 'protection' &&
+        a.keyword.from === 'multicolored',
+    );
+  if (colors.length === 0 && types.length === 0 && !fromRingBearer && !fromMulticolored) {
+    return false;
+  }
   const sourceObject = source === null ? undefined : state.objects[source];
   return (
     (colors.length > 0 && sourceColors(state, source).some((c) => colors.includes(c))) ||
     (types.length > 0 && sourceTypes(state, source).some((t) => types.includes(t))) ||
+    (fromMulticolored && sourceColors(state, source).length >= 2) ||
     (fromRingBearer && sourceObject !== undefined && ringBearerSeat(state, sourceObject) !== null)
   );
 }

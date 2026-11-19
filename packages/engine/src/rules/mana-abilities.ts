@@ -259,9 +259,30 @@ export function canPayPhysicalCosts(
   obj: GameObject,
   ability: ManaAbility,
   seat: SeatId,
+  abilityIndex?: number,
 ): boolean {
   if (lifeCostOf(ability) > 0 && lifeTotalIsLocked(state, seat)) return false;
-  return physicalRefusal(state, obj, ability, seat) === null;
+  return physicalRefusal(state, obj, ability, seat, abilityIndex) === null;
+}
+
+/**
+ * CR 602.5b, 605.1a: "Activate only once each turn" of a mana ability: remembers that this object's ability at `abilityIndex` was activated this turn (the same log the
+ * ordinary activated abilities use). Only an ability with the limit is logged, so the log of every other game is as it was.
+ */
+export function recordManaActivation(
+  state: GameState,
+  object: ObjectId,
+  abilityIndex: number,
+  ability: ManaAbility,
+): GameState {
+  if (ability.oncePerTurn !== true) return state;
+  return {
+    ...state,
+    turnLog: {
+      ...state.turnLog,
+      activated: [...state.turnLog.activated, { object, abilityIndex }],
+    },
+  };
 }
 
 /** Why the seat cannot use the ability now for a reason `canPayPhysicalCosts` looks at, or null. */
@@ -270,6 +291,8 @@ export function physicalRefusal(
   obj: GameObject,
   ability: ManaAbility,
   seat: SeatId,
+  /** The index of the ability among the object's abilities: needed to read "Activate only once each turn" (CR 602.5b). */
+  abilityIndex?: number,
 ): string | null {
   const name = derive(state, obj).name;
   if (obj.zone !== 'battlefield' || controllerOf(state, obj) !== seat)
@@ -280,6 +303,14 @@ export function physicalRefusal(
   }
   if (hasCost(ability, 'tap') && !canTapForMana(state, obj, seat)) {
     return `${name} is tapped or summoning sick`;
+  }
+  // CR 602.5b, 605.1a: "Activate only once each turn": this object's ability was not activated yet this turn.
+  if (
+    ability.oncePerTurn === true &&
+    abilityIndex !== undefined &&
+    state.turnLog.activated.some((a) => a.object === obj.id && a.abilityIndex === abilityIndex)
+  ) {
+    return `${name} can be activated only once each turn`;
   }
   const life = lifeCostOf(ability);
   // A cost of no life is always payable, whatever the life total (it may be negative while the player cannot lose the game, CR 104.3b, issue 254).

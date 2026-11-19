@@ -121,6 +121,16 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       return true;
     case 'lifeGainDouble':
       return true;
+    case 'countersPlus':
+      // CR 614.1a, 122.6: the permanents that get more counters of one kind, and how many more.
+      checkEnteringFilter(r.what, `${path}.what`, out);
+      if (typeof r.counter !== 'string' || r.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      if (!isCount(r.extra) || r.extra < 1) {
+        issue(out, `${path}.extra`, 'the extra counters are a positive whole number');
+      }
+      return true;
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
       checkEnteringFilter(r.what, `${path}.what`, out);

@@ -226,7 +226,15 @@ export type Amount =
    * `of: 'triggerSubject'` (D-229): not the sum over the commanders but the times the one commander that is the trigger's subject (the spell the mana was spent on,
    * "the number of times it's been cast from the command zone") was cast from the command zone.
    */
-  | { readonly kind: 'commanderCasts'; readonly of?: 'triggerSubject' }
+  | {
+      readonly kind: 'commanderCasts';
+      readonly of?: 'triggerSubject';
+      /**
+       * "Target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game" (CR 903.8): the times the commanders of this
+       * player (a target or any player selector, read as the effect runs) were cast from the command zone, instead of the controller's. Not with `of`.
+       */
+      readonly player?: PlayerSelector;
+    }
   /** A player's current life total, read when the containing instruction resolves (CR 119.1). */
   | { readonly kind: 'lifeTotalOf'; readonly player: PlayerSelector }
   /**
@@ -274,6 +282,12 @@ export type Amount =
   | { readonly kind: 'triggerDamage' }
   /** Number of targets chosen for the spell that caused a cast trigger (D-574). */
   | { readonly kind: 'triggerTargetCount' }
+  /**
+   * "Put X +1/+1 counters on this creature" in a "whenever you cast a spell with {X} in its mana cost" ability (Quandrix Unlimited deck, group E, CR 107.3, 601.2b, 113.7a): the X announced for
+   * the spell that caused the trigger (its `triggerSubject`), read as the spell is on the stack or as it last was; 0 for a spell that has no X. Valid only in a trigger about a spell
+   * being cast (`castSpell` without `self`).
+   */
+  | { readonly kind: 'triggerSpellX' }
   /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
@@ -368,8 +382,13 @@ export type ThisWayKind =
   | 'discardedMost'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
   | 'searched'
+  // Nexus Mentality: "Draw a card for each counter removed this way": the counters the `removeAllCounters` effects of this resolution took off (CR 122.1, 608.2c).
+  | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
-  | 'damageDealt';
+  | 'damageDealt'
+  // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
+  // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
+  | 'exiledPowerOwn';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -518,6 +537,17 @@ export interface ObjectFilter {
    */
   readonly castFromHand?: true;
   /**
+   * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
+   * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
+   */
+  readonly xInManaCost?: true;
+  /**
+   * "Your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck, group E, CR 601.2i, 603.2): no other spell with an {X} in its mana cost was cast this turn by the
+   * caster of this one, before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Meant with `xInManaCost`. Read from the turn log, so it is read as the spell is cast (a cast
+   * trigger) or as its cost is determined (a cost reduction, where the spell is not yet logged); refused in a static ability that nothing refreshes (a layer effect).
+   */
+  readonly firstXSpellThisTurn?: true;
+  /**
    * "That entered this turn" (group 4 of the Vraska deck, CR 400.7, 110.1): the permanent entered the battlefield during this turn and is still the same
    * object (one that left and came back is a new object). Read from the turn log where the filter is matched against the game (a target slot, an `each`
    * selector); refused in a static ability, as `attacking` is, and for a zone other than the battlefield.
@@ -583,6 +613,11 @@ export interface ObjectFilter {
   readonly power?: NumberComparison;
   readonly toughness?: NumberComparison;
   readonly manaValue?: NumberComparison;
+  /**
+   * "Return each creature with power of the chosen quality" (Zimone's Hypothesis, after "choose odd or even"): the object's power now is an odd number or an even number (zero is even).
+   * An object with no power matches neither.
+   */
+  readonly powerParity?: 'odd' | 'even';
   /** Only objects that are not this ability's source ("another creature"). */
   readonly other?: boolean;
   /**
@@ -702,6 +737,11 @@ export interface ObjectFilter {
    * (a static ability's subject, a count a static ability reads), as `powerLessThanSource` is.
    */
   readonly powerAboveBase?: true;
+  /**
+   * "Creatures you control with base power 0" (CR 208.4b): the object's base power, the power layer 7b leaves before counters and "+N/+N" effects, is this whole number. An object with no power
+   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is.
+   */
+  readonly basePowerIs?: number;
   /**
    * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
    * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
@@ -1052,6 +1092,12 @@ export interface TargetSpec {
    * or `upToThatMany` it is refused. The controllers are read as the targets are chosen; a later change of control does not make a target illegal (CR 608.2b reads only the filter).
    */
   readonly differentControllers?: true;
+  /**
+   * "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the slot's targets are cards in the graveyard of
+   * the player chosen for the earlier player slot this id names (`what` is an `object` filter of `zone` `graveyard`). A target of another player's graveyard is not
+   * legal; as the spell or ability resolves, the cards are legal only while they are still in that player's graveyard.
+   */
+  readonly ownedByTarget?: string;
   /**
    * "Deals 4 damage to any target and 3 damage to each of up to two other targets" (CR 115.3, D-151): none of the targets of this slot may be a target
    * of the slot `differentFrom` names (an earlier slot of the same ability). The word "other" is what makes them different: two slots of an ability may
@@ -1728,6 +1774,17 @@ export type Effect =
       readonly to: { readonly kind: 'target'; readonly id: string };
     }
   /**
+   * "Distribute X +1/+1 counters among any number of target creatures you control" (CR 601.2d, 122.6, 608.2b): the counters of a kind a spell divided as it was cast, put on each
+   * target of the slot `to` names, if it is still legal as the spell resolves, in the share the caster gave it; a target that became illegal gets none, and its share is not given to the
+   * others. The counters are put by the controller through the same placement as `addCounters` (a replacement such as `countersPlus` applies to each target's share). `to` is a `target`
+   * of a slot whose `TargetSpec` has `divide`; with the total `{ kind: 'x' }` the spell announces an X (CR 107.3a).
+   */
+  | {
+      readonly kind: 'distributeCounters';
+      readonly to: { readonly kind: 'target'; readonly id: string };
+      readonly counter: string;
+    }
+  /**
    * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.3a-e, 608.2c; Lorehold group 1): every object `objects` names is a source and its own
    * recipient, and is dealt damage equal to its power as the effect begins. Each is a source of its own damage, so deathtouch, lifelink, infect and wither apply as for any damage
    * (CR 120.3), a prevention effect for that source applies, and the damage is not combat damage. Powers are read before any damage is dealt (CR 608.2h: the information is determined once, when the effect is applied; CR 120.4a speaks of damage dealt at the same time).
@@ -2296,7 +2353,8 @@ export type Effect =
     }
   /**
    * CR 707.10, 707.10c (D-129): "Copy target instant or sorcery spell. You may choose new targets for the copy." Puts
-   * a copy of the spell `spell` names onto the stack under the control of the effect's controller. A copy of a spell
+   * a copy of the spell `spell` names onto the stack (also, with `triggerSubject` of an `activatesAbility` trigger, a copy of the activated ability on the stack, "copy that spell or ability":
+   * it has the ability's text, targets and X, is controlled by the player who has it put on the stack and is not a spell, CR 707.10, 113.7a) under the control of the effect's controller. A copy of a spell
    * is a spell that is not cast (it triggers nothing that watches casting): it copies the characteristics and every
    * choice made for the original (its modes, targets, X, kicker and the alternative cost it was cast for), and
    * ceases to exist if it leaves the stack (CR 707.10a); a permanent spell's copy becomes a token (CR 707.10f).
@@ -2344,6 +2402,13 @@ export type Effect =
    * end step (the one that is exiled; one that left exile since is a new object, CR 400.7). Does nothing when the spell has left the stack as this resolves.
    */
   | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
+  /**
+   * "Double the value of X." (CR 107.3, 107.3a, Unbound Flourishing): the X announced for the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`)
+   * becomes twice its value, as it is on the stack: every X in its text and in the permanent it becomes ("enters with X counters", CR 107.3m) reads the new value, and so does a copy
+   * made after. The cost already paid does not change (CR 601.2f: the total cost was determined as it was cast). Does nothing when the spell has left the stack as this resolves, and for
+   * a spell with no X announced.
+   */
+  | { readonly kind: 'doubleSpellX'; readonly spell: ObjectRef }
   /**
    * "Exile this spell with three time counters on it." (CR 608.2n, 122.1, 702.62b, D-651, Rousing Refrain): the last instruction of an instant or sorcery's own text: as the spell
    * finishes resolving it is exiled, with `count` time counters on it, instead of being put into its owner's graveyard (or its owner's hand, or exile as it would by flashback or as an
@@ -2725,6 +2790,12 @@ export type Effect =
   | { readonly kind: 'removeAllCounters'; readonly objects: ObjectSelector }
   | { readonly kind: 'removeAllPlayerCounters'; readonly player: PlayerSelector }
   /**
+   * "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6): every counter of every kind on the
+   * permanent `from` names is removed from it and put on the permanent `to` names, one `counterRemoved` and one `counterAdded` event for each kind. A kind of counter the
+   * second permanent can't have (CR 122.6) stays where it is. Nothing is moved when either is no longer on the battlefield as the effect runs, or when they are the same permanent.
+   */
+  | { readonly kind: 'moveAllCounters'; readonly from: ObjectRef; readonly to: ObjectRef }
+  /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,
    * 101.4): each player `players` names, in the order CR 101.4 gives, is asked whether to do `effect`; a player who accepts has it done, a player who declines
    * has `otherwise` done, if there is one. `effect` is done by the controller of the ability, or, with `runsAs: 'chooser'`, by the player asked (they are "you" in
@@ -2762,6 +2833,22 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly counter: string;
       readonly count: Amount;
+      /**
+       * "Each player creates a 0/0 ... token and puts a number of +1/+1 counters on it equal to the total power of creatures they controlled that were exiled this way" (Oversimplify,
+       * CR 122.6, 608.2c, 608.2h): `count` is read once for each object, for the player who controls that object, so the `thisWay` count `exiledPowerOwn` is that player's own total.
+       * The only amount that reads the player this way is `exiledPowerOwn` (`validateCard` refuses it elsewhere).
+       */
+      readonly perController?: true;
+    }
+  /**
+   * "Double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, CR 122.6): each object `objects` names that has
+   * `counter` counters, as the effect resolves, gets as many more of them as it has (each its own count). Counters it can't have (CR 122.6,
+   * 101.2) are not put; an object with none gets none.
+   */
+  | {
+      readonly kind: 'doubleCounters';
+      readonly objects: ObjectSelector;
+      readonly counter: string;
     }
   | {
       readonly kind: 'modifyPt';
@@ -2910,6 +2997,28 @@ export type Effect =
   | {
       readonly kind: 'grantPlayerHexproof';
       readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "You may cast spells this turn as though they had flash." (CR 601.3b, 702.8a, 611.2, 514.2; Alchemist's Refuge): each player the selector names may cast any spell at
+   * the timing of an instant until end of turn. The players are fixed as the effect begins (CR 611.2c). It is only a permission about when (the spells get no flash keyword,
+   * as `castAsThoughFlash` does not give it), so it is a "may" by nature and asks nothing.
+   */
+  | {
+      readonly kind: 'grantCastAsThoughFlash';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (CR 605.1a, 605.3a, 118.3, 611.2, 514.2; Channel): each player the
+   * selector names has a mana ability that belongs to no permanent until end of turn: pay `life` life (a positive whole number, a cost, CR 118.3) to add one `mana`. It
+   * may be activated any number of times, whenever the player could activate a mana ability, and uses no stack. The spell that gives it is the source of the mana.
+   */
+  | {
+      readonly kind: 'grantPlayerManaAbility';
+      readonly player: PlayerSelector;
+      readonly life: number;
+      readonly mana: ManaColor;
       readonly duration: 'untilEndOfTurn';
     }
   /** "Target player gains protection from everything until their next turn" (D-607, CR 702.16). */
@@ -3223,6 +3332,11 @@ export type Effect =
          * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
          */
         readonly hidden?: true;
+        /**
+         * "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c, Animist's Awakening): every card of the cards looked at that the filter matches is taken, with no
+         * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'`.
+         */
+        readonly all?: true;
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
@@ -3238,9 +3352,10 @@ export type Effect =
    * engine keeps on players). The permanents are the battlefield's, whoever controls them; the counters are put by the controller of the
    * spell or ability (CR 122.6, so "whenever you put one or more +1/+1 counters" counts them). With nothing to choose from nothing
    * happens and nobody is asked; otherwise a `choosePermanent` decision of purpose `proliferate` asks (`legal`: the permanents with a
-   * counter, `players`: the players with poison counters), and the answer may be empty.
+   * counter, `players`: the players with poison counters), and the answer may be empty. `times` ("Proliferate X times", CR 701.34a): the
+   * whole action is done that many times in a row, each with its own choice; the amount is read once as the effect starts.
    */
-  | { readonly kind: 'proliferate' }
+  | { readonly kind: 'proliferate'; readonly times?: Amount }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that
@@ -3497,7 +3612,7 @@ export type ManaProduction =
       /**
        * "Add {R} for each tapped land your opponents control" (D-151, CR 106.1): the mana listed is added once for each of the amount (an `Amount` read
        * as the effect runs; 0 adds nothing). In a mana ability (CR 605.1a, 605.3b, Uthros, Titanic Godcore: "Add {U} for each artifact you control") it is read as the ability
-       * resolves, which is at once after its costs are paid, so a count of the permanents the cost gives up is refused (`validateCard`) and only a state amount is valid.
+       * is activated and only a state amount is valid; a cost that gives up a permanent or takes counters off is refused with it (`validateCard`).
        */
       readonly times?: Amount;
       /**
@@ -3521,11 +3636,6 @@ export type ManaProduction =
        * ability resolves (2 or more; one mana when left out). Not "in any combination of colors": every mana is the same color.
        */
       readonly count?: number;
-      /**
-       * "Add X mana of any one color, where X is the number of charge counters on this" (CR 106.1b, 605.3b, The Eternity Elevator): the number of mana is the amount, read as the
-       * ability resolves (after its costs are paid); 0 makes none. Replaces `count`: a card gives one or the other. Only in a mana ability (`validateCard`), and a state amount.
-       */
-      readonly times?: Amount;
     }
   /**
    * "Add {U} or {B}" (the types of mana are in CR 106.1b): one mana of a color chosen from a list of at least two distinct
@@ -3554,6 +3664,14 @@ export type ManaProduction =
    * no mana. Only a mana ability (`validateCard`): a spell or a triggered ability has no way to ask the color.
    */
   | { readonly kind: 'anyColorDevotion' }
+  /**
+   * "{T}: Add X mana of any one color, where X is this creature's power." (Kami of Whispered Hopes) and "{T}: Choose a color. Add one mana of that color for each charge
+   * counter on this artifact." (Astral Cornucopia; CR 106.1b, 605.3b): the player chooses one of the five colors as the ability resolves (so the activation names it, like
+   * `anyColor`) and as many mana of it as `amount`, read as the ability is activated for its controller with its permanent as "this" (a mana ability resolves at once). An
+   * amount of 0 or less makes no mana, so no color is on offer. Only a state-reading amount that needs no target, X or earlier instruction (`validateCard`); a cost that gives
+   * the permanent up or takes counters off it is refused where the lowering reads this, as the amount is counted before costs are paid.
+   */
+  | { readonly kind: 'anyColorAmount'; readonly amount: Amount }
   /**
    * "{T}: Add one mana of any color that a land an opponent controls could produce." (Exotic
    * Orchard, Fellwar Stone) and "... of any type that a land you control could produce." (Reflecting
@@ -3747,7 +3865,20 @@ export type Trigger =
    * does an ability of a card in a hand or graveyard (Cycling, Unearth). `triggerSubject` is the ability on the stack and `triggerPlayer` the player who
    * activated it.
    */
-  | { readonly kind: 'activatesAbility'; readonly who: 'you' | 'opponent' | 'any' }
+  | {
+      readonly kind: 'activatesAbility';
+      readonly who: 'you' | 'opponent' | 'any';
+      /**
+       * "Whenever you cast an instant or sorcery spell or activate an ability, if that ability's activation cost contains {X}" (Unbound Flourishing, CR 107.3, 602.2b, 603.4): only an ability
+       * activated with an {X} symbol in the mana of its cost ("Pay X life" and "-X" are no {X}). The condition is about the event itself, so it is read as the ability is activated.
+       */
+      readonly xCost?: true;
+      /**
+       * "Whenever you activate an ability" (CR 602.2, 605.1a): any ability that uses the stack, also one of a card in a hand or a graveyard (cycling, a loyalty ability is included in
+       * both readings), not only an ability of a permanent. Without it only an ability of a permanent counts. A mana ability is never put on the stack and never triggers it.
+       */
+      readonly anySource?: true;
+    }
   | { readonly kind: 'upkeep'; readonly whose: 'you' | 'each' }
   | { readonly kind: 'endStep'; readonly whose: 'you' | 'each' }
   /**
@@ -4259,6 +4390,12 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
+   * "Protection from multicolored" (CR 702.16a, 105.2: a multicolored object is two or more colors): protection from every source that has two or more colors. A
+   * colorless or monocolored source is not stopped by it. Read where protection is read (`rules/protection.ts`). Only a printed keyword or a static `grantKeyword` may
+   * carry it.
+   */
+  | { readonly kind: 'protection'; readonly from: 'multicolored' }
   /**
    * "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (CR 702.16a, 607.2d, D-652; Flickering Ward): protection from the
    * color the permanent that gives the keyword chose as it entered (needs `asEntersChoose` `color`); it chose none: nothing is given. `exceptSource`: the Aura that gives
@@ -4786,6 +4923,12 @@ export type Condition =
    */
   | { readonly kind: 'amountIs'; readonly amount: Amount; readonly compare: NumberComparison }
   /**
+   * "If you control a prime number of lands" (Zimone, All-Questioning): a state-reading amount (as for `amountIs`) is a prime number, a whole number of 2 or more that has no divisor
+   * but 1 and itself (2, 3, 5, 7, 11, ...); 0 and 1 are not prime. Read as it is when the condition is read (CR 603.4: as the ability triggers and as it resolves, for an intervening "if").
+   * There is no comprehensive rule for it: the card says what a prime number is in its reminder text.
+   */
+  | { readonly kind: 'amountIsPrime'; readonly amount: Amount }
+  /**
    * "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the holder of the designation is one of
    * the players `player` names (relative to the controller of the thing that asks: `you`, `eachOpponent`, ...). A
    * designation is something a player has, not a permanent or an emblem (CR 725.1: "the monarch is a designation");
@@ -5152,10 +5295,11 @@ export type Replacement =
       readonly counter: string;
       /**
        * `timesKicked` (D-254, CR 702.33c, 614.1c): "enters with a charge counter on it for each time it was kicked", the kicks of the spell the permanent came from.
+       * `x` with `times` (an integer of 2 or more): "enters with twice X +1/+1 counters on it" (CR 107.3m, 122.6), X multiplied by `times`.
        */
       readonly count:
         | number
-        | { readonly kind: 'x' }
+        | { readonly kind: 'x'; readonly times?: number }
         | { readonly kind: 'timesKicked' }
         | CountAmount
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
@@ -5249,6 +5393,12 @@ export type Replacement =
       readonly duration: Duration;
       readonly gains?: readonly Keyword[];
       /**
+       * "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 614.12, 107.3m, 122.6): the permanent that enters as the copy also enters with this many
+       * counters of the kind, the X of the spell it came from (0 when it was not cast). Counters are not copied (CR 707.2), so they come from the exception, and only
+       * when the copy is made. Only on a card whose mana cost has an {X}.
+       */
+      readonly withX?: { readonly counter: string };
+      /**
        * "..., except it's a Dragon in addition to its other types and it has flying" (issue 103, CR 707.9b): the creature types the permanent has besides the ones it copies,
        * part of its copiable values. Never empty.
        */
@@ -5273,6 +5423,21 @@ export type Replacement =
   | { readonly kind: 'lifeGainBonus'; readonly amount: number }
   /** "If you would gain life, you gain twice that much life instead" (CR 614.1a): applies once to a life-gain event. */
   | { readonly kind: 'lifeGainDouble' }
+  /**
+   * "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (CR 614.1a, 122.6,
+   * 616.1): a replacement effect of a permanent on the battlefield for every putting of counters of the kind `counter` on a permanent that `what` matches
+   * (`controller: 'you'` is the controller of the permanent with the ability, `other` leaves that permanent out; what is read is the permanent as it is, or as it would
+   * be on the battlefield when it enters with the counters). The permanent gets `extra` more counters than would have been put on it. Each such effect applies once to
+   * one putting of counters (CR 614.5) and, as they only add, their order never changes the result. Counters an effect puts, counters a permanent or a token enters
+   * with, proliferate and the like are all covered; moving a counter from one permanent to another is not (docs/ROADMAP.md). It is the ability of the permanent (lost
+   * with "loses all abilities"). `what` names no zone, owner, X, combat or stack kind.
+   */
+  | {
+      readonly kind: 'countersPlus';
+      readonly what: ObjectFilter;
+      readonly counter: string;
+      readonly extra: number;
+    }
   /**
    * "Each other Angel you control enters with an additional +1/+1 counter on it for each Angel you already control", "Each other creature
    * you control of the chosen type enters with an additional +1/+1 counter on it" (D-149, CR 614.1c, 614.12, 122.6): a replacement effect of
@@ -6140,6 +6305,11 @@ export interface ManaAbility {
   /** "Activate only if you control a Swamp." (CR 602.5b, D-099): see the activated ability. */
   readonly activateOnlyIf?: Condition;
   /**
+   * "Activate only once each turn." (CR 602.5b, 605.1a): once this mana ability of this object has been activated in a turn, whether by hand or as part of paying a
+   * cost, it cannot be activated again until the next turn begins. The object's own count, as `ActivatedAbility.oncePerTurn` has it.
+   */
+  readonly oncePerTurn?: true;
+  /**
    * "Spend this mana only to cast an Angel spell." (CR 106.6, D-149): the mana the ability adds can be spent only on a spell (never on an
    * ability's cost) that is of one of `types` (when given) and of one of `subtypes` (when given); until then it stays in the pool as
    * restricted mana, which empties as any mana does (CR 106.4).
@@ -6147,6 +6317,15 @@ export interface ManaAbility {
   readonly spendOnly?: {
     readonly types?: readonly CardType[];
     readonly subtypes?: readonly Subtype[];
+    /**
+     * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of
+     * these qualities, as it is cast: `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
+     * least the number; `hasX` there is an {X} in its mana cost, whatever X is. With `types` or `subtypes`, the spell is of those as well. Not with `chosenType`.
+     */
+    readonly qualities?: readonly (
+      | { readonly kind: 'manaValueAtLeast'; readonly value: number }
+      | { readonly kind: 'hasX' }
+    )[];
     /**
      * "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (D-151): the mana may also be spent on an activated ability of
      * a permanent that has at least one of the card types and at least one of the subtypes (each when given), besides the spells it names.
@@ -6158,6 +6337,11 @@ export interface ManaAbility {
      * on no spell. Replaces `subtypes`: a card gives one or the other, never both.
      */
     readonly chosenType?: true;
+    /**
+     * "Spend this mana only on costs that contain {X}." (Quandrix Unlimited deck, group E, CR 106.6, 107.3; Elementalist's Palette): the mana can pay only the mana cost of a spell
+     * with an {X} in it or the activation cost of an ability with an {X} in it. Alone: no `types`, `subtypes` or `chosenType`.
+     */
+    readonly xCost?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability
@@ -6229,6 +6413,11 @@ export interface SpellText {
    * life" as an additional cost (CR 107.3a). X is announced as the spell is cast (D-103).
    */
   readonly x?: boolean;
+  /**
+   * "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the most X that may be announced for the spell, worked out as it is cast (an `Amount` the game reads: a
+   * count, the opponents plus one...). Only with `x`. A spell with no legal X (the limit is below the least) cannot be cast.
+   */
+  readonly xAtMost?: Amount;
 }
 
 /**

@@ -22,6 +22,7 @@ import {
 } from './legality';
 import { activationChoices, manaSacrificeCandidates, manaTapCandidates } from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
+import { activatablePlayerMana, PLAYER_MANA_ABILITY } from './player-mana';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
@@ -87,7 +88,7 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const id of state.battlefield) {
     const obj = getObject(state, id);
     for (const { abilityIndex, ability } of manaAbilitiesOf(state, obj)) {
-      if (!canActivateManaAbility(state, obj, ability, seat)) continue;
+      if (!canActivateManaAbility(state, obj, ability, seat, abilityIndex)) continue;
       // CR 601.2b, 605.3b (D-222): a cost "Sacrifice a Spirit" is chosen by the player: one option for each permanent they may give up when there are several.
       const gives = manaSacrificeCandidates(state, seat, id, ability);
       // D-625: the same for a cost "Tap an untapped creature you control": one option for each permanent the player may tap when there are several.
@@ -112,6 +113,15 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
         }
       }
     }
+  }
+  // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player is on offer while they can pay its life.
+  for (const g of activatablePlayerMana(state, seat)) {
+    options.push({
+      kind: 'activateAbility',
+      source: g.source,
+      abilityIndex: PLAYER_MANA_ABILITY,
+      color: null,
+    });
   }
   options.push({ kind: 'concede' });
   return options;

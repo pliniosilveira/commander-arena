@@ -61,6 +61,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.cast-in-own-main-phase',
   // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
   'condition.x-at-least',
+  // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
+  'condition.that-object-power',
 ] as const;
 
 /**
@@ -284,13 +286,25 @@ const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
       literal('when you next cast '),
       pattern(/an? /iu),
       map(spellPhrase(), withoutZone),
+      // Quandrix Unlimited group E (Brass Infiniscope, CR 107.3): "a spell with {X} in its mana cost".
+      optional(
+        pattern(
+          / with (?:\{X\} in its mana cost|a mana cost that contains \{X\})(?= this turn, )/iu,
+        ),
+        null,
+      ),
       literal(' this turn, '),
     ),
   ),
   ({ value, span }) => ({
     step: 'nextCast' as const,
     whose: 'you' as const,
-    spell: makeNoun('sentence.delayed-cast', span, 'a', value[2]),
+    spell: makeNoun(
+      'sentence.delayed-cast',
+      span,
+      'a',
+      value[3] === null ? value[2] : { ...value[2], xInManaCost: true },
+    ),
   }),
 );
 
@@ -470,7 +484,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
                 (c, p) => {
                   const ahead = pattern(
                     // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
-                    /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
+                    /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|put an? [+-]\d+\/[+-]\d+ counter on a creature\.|exile up to one other target ))/iu,
                   )(c, p);
                   return ahead.ok ? literal('you may ')(c, p) : ahead;
                 },

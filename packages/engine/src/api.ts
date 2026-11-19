@@ -1039,6 +1039,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (!Number.isInteger(action.value) || action.value < d.min || action.value > d.max) {
         return fail(`X must be a whole number from ${d.min} to ${d.max}`);
       }
+      if (d.values !== undefined && !d.values.includes(action.value)) {
+        return fail('No legal target has that mana value: choose another X');
+      }
       // D-151: how many times to pay in "You may pay any amount of {R}".
       if (d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo') {
         // D-217: how many cards "may draw up to two cards" draws.

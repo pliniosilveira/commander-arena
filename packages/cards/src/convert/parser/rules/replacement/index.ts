@@ -9,11 +9,13 @@ import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
 import { EMBALM_REPLACEMENT_RULES } from './embalm';
+import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
@@ -206,6 +208,7 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with ten -1/-1 counters on it.',
     '~ enters with three charge counters on it.',
     '~ enters with X +1/+1 counters on it.',
+    '~ enters with twice X +1/+1 counters on it.',
     '~ enters with X charge counters on it.',
     '~ enters the battlefield with X +1/+1 counters on it.',
     '~ enters with a +1/+1 counter on it for each Zombie card in your graveyard.',
@@ -224,6 +227,8 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with a +1/+1 counter on it for each creature you control and each.',
     '~ enters with a +1/+1 counter on it for each creature you control and creature cards in your graveyard.',
     '~ enters with Y +1/+1 counters on it.',
+    '~ enters with twice Y +1/+1 counters on it.',
+    '~ enters with twice X +1/+1 counters on it for each creature you control.',
     '~ enters with X on it.',
     '~ enters with up to X +1/+1 counters on it.',
     '~ enters with zero +1/+1 counters on it.',
@@ -313,10 +318,14 @@ export const REPLACEMENT_RULES = [
   ...DIE_REPLACEMENT_RULES,
   // Stage P33 (D-150): "If you would gain life, you gain that much life plus 1 instead."
   ...ANGEL_REPLACEMENT_RULES,
+  // Quandrix Unlimited deck, group A: "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
+  ...COUNTERS_PLUS_REPLACEMENT_RULES,
   // Stage P34 (D-152): "As ~ enters, you may have it become a copy of any creature on the battlefield ...".
   ...DRAGON_REPLACEMENT_RULES,
   // Issue 104: "You may have ~ enter as a copy of any creature on the battlefield, except if ~ was embalmed, ...".
   ...EMBALM_REPLACEMENT_RULES,
+  // Quandrix Unlimited deck, group D2: "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it."
+  ...ENTERS_AS_COPY_COUNTERS_RULES,
   // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
   ...COPY_EXCEPT_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."

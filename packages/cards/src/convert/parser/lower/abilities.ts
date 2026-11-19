@@ -423,6 +423,16 @@ function lowerTypecycling(
 
 /** "Protection from black" (CR 702.16, stage P68, D-229): the colors it names; the engine reads damage, enchanting, blocking and targeting. */
 function lowerProtection(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  if (ability.quality === 'multicolored' && ability.colors === undefined) {
+    // CR 702.16a, 105.2: protection from sources of two or more colors.
+    const blockedQuality = gate(ability, ['ability:keyword', 'keyword:protection']);
+    if (blockedQuality !== null) return blockedQuality;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'protection', from: 'multicolored' } }],
+      rule: 'keyword.line',
+    };
+  }
   const words = ability.colors ?? [];
   const colors = words.map((w) => colorLetter(w));
   if (colors.length === 0 || colors.some((c) => c === undefined) || ability.params.length > 0) {
@@ -568,6 +578,33 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (blocked !== null) return blocked;
     return built({ kind: 'lifeGainBonus', amount: amount.value });
   }
+  if (event.verb === 'countersPlus') {
+    // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
+    // CR 614.1a, 122.6): the engine's `countersPlus` of the permanent. The permanents are the noun's filter as they are on the battlefield (the controller's own, "another"
+    // leaving the permanent out).
+    const objects = event.args.what;
+    const amount = event.args.amount;
+    if (
+      objects?.kind !== 'noun' ||
+      amount?.kind !== 'number' ||
+      amount.value < 1 ||
+      event.condition !== undefined
+    ) {
+      return failure(ability);
+    }
+    const blocked = gate(ability, ['ability:replacement', 'replacement:countersPlus']);
+    if (blocked !== null) return blocked;
+    const what = lowerFilter(objects);
+    if (!what.ok) return what;
+    const { zone, ...filter } = what.value;
+    void zone;
+    return built({
+      kind: 'countersPlus',
+      what: objects.other ? { ...filter, other: true } : filter,
+      counter: '+1/+1',
+      extra: amount.value,
+    });
+  }
   if (event.verb === 'lifeGainDouble') {
     if (event.condition !== undefined || Object.keys(event.args).length > 0)
       return failure(ability);
@@ -665,7 +702,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const until = event.args.duration;
     const gained = event.args.gains;
     if (what?.kind !== 'noun' || until?.kind !== 'flag') return failure(ability);
-    const blocked = gate(ability, ['ability:replacement', 'replacement:entersAsCopy']);
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:entersAsCopy',
+      ...(event.args.withX === undefined ? [] : (['ability:copyEntersWithX'] as const)),
+    ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
@@ -696,6 +737,10 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
+      // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
+      ...(event.args.withX?.kind === 'flag' && event.args.withX.value
+        ? { withX: { counter: '+1/+1' } }
+        : {}),
       // Issue 104 (CR 707.9b, 702.128b): "except if ~ was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
       ...(event.args.embalmed?.kind === 'flag' && event.args.embalmed.value
         ? {
@@ -858,7 +903,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         'amount:x',
       ]);
       if (blockedX !== null) return blockedX;
-      return built({ kind: 'entersWithCounters', counter: counter.name, count: { kind: 'x' } });
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: count.times === undefined ? { kind: 'x' } : { kind: 'x', times: count.times },
+      });
     }
     // "for each Zombie card in your graveyard" (stage P28, D-131): counted as it enters, for its controller (CR 614.12).
     if (count?.kind === 'countOf') {
@@ -1004,6 +1053,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersAsCopy',
   'replacement:skipDraw',
   'replacement:tokensInstead',
+  'replacement:countersPlus',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

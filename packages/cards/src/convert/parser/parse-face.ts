@@ -1,7 +1,15 @@
-import type { Ability, AlternativeCost, Cost, Effect, SpellText } from '@commander-arena/engine';
+import type {
+  Ability,
+  AlternativeCost,
+  Amount,
+  Cost,
+  Effect,
+  SpellText,
+} from '@commander-arena/engine';
 import type { UnparsedAbility } from '../../types';
 import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
+import { missingFeatures } from './lower/features';
 import { finishSpell, type SpellParts } from './lower/index';
 import {
   escapeRegExp,
@@ -94,6 +102,8 @@ export function parseFaceText(
   const alternativeCosts: AlternativeCost[] = [];
   let additionalCostChoice: readonly [readonly Cost[], readonly Cost[]] | null = null;
   let commanderTaxLife: number | null = null;
+  let xAtMost: Amount | null = null;
+  let xAtMostLine: { index: number; text: string } | null = null;
   // The line each ability came from, for a refusal that is found only once every line is read (a linked exile, stage P31).
   const lineOf: { index: number; text: string; ruleId: string }[] = [];
   // CR 721.2, 721.3 (Station): once a station symbol ("12+ | ...") has been read, the lines after it that carry no symbol of their own may be in its striation, which the text does
@@ -119,6 +129,13 @@ export function parseFaceText(
       commanderTaxLife === null
     ) {
       commanderTaxLife = 2;
+      continue;
+    }
+    // CR 107.3a, 601.2b (D-2 group, Open the Way): "X can't be greater than the number of players in the game." limits the X announced for the spell: the opponents
+    // still in the game and the player (`SpellText.xAtMost`). It is applied to the spell the other lines make, below.
+    if (face === 'spell' && X_AT_MOST_PLAYERS.test(text) && xAtMost === null) {
+      xAtMost = { kind: 'sum', of: [{ kind: 'opponentCount' }, 1] };
+      xAtMostLine = { index, text };
       continue;
     }
     const lineOptions: CompileOptions = {
@@ -207,7 +224,24 @@ export function parseFaceText(
     );
   }
   const kept = spellParts.filter((p) => !refused.includes(p)).map((p) => p.parts);
-  const spell = kept.length > 0 ? finishSpell(kept) : null;
+  const finished = kept.length > 0 ? finishSpell(kept) : null;
+  // The limit on X belongs to a spell that announces an X, and only when the engine runs it; otherwise the line is unread as a whole.
+  const limitOk =
+    xAtMost !== null &&
+    finished?.x === true &&
+    missingFeatures(['ability:spellXAtMost']).length === 0;
+  const spell =
+    limitOk && finished !== null && xAtMost !== null ? { ...finished, xAtMost } : finished;
+  if (xAtMost !== null && xAtMostLine !== null && !limitOk) {
+    unparsed.push(
+      unparsedAbility(faceIndex, xAtMostLine.index, xAtMostLine.text, {
+        reason: 'notRunnable',
+        stoppedAt: xAtMostLine.text,
+        closestRule: 'spell.x-at-most',
+        recognised: [],
+      }),
+    );
+  }
   const linked = groupLevels(linkExile(abilities));
   for (const at of linked.refused) {
     const line = lineOf[at];
@@ -242,6 +276,9 @@ const STATION_SYMBOL = /^(\d+)\+ \| (.+)$/su;
  * as "..., instead" does at the end of a sentence in one line. The two lines are one text for the reading, which is what the replacement needs (it replaces one instruction of the
  * same spell); a pair that does not read as one is unread as a whole, as the instead line was alone.
  */
+/** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): a limit on the X of the spell, read as the line of its own it is. */
+const X_AT_MOST_PLAYERS = /^X can['’]t be greater than the number of players in the game\.$/u;
+
 const INSTEAD_LINE = /^If [^\n]+?(?:, instead (?!of\b)|[^\n]* instead\.$)/u;
 
 function joinInsteadLines(lines: readonly string[]): string[] {
@@ -264,7 +301,7 @@ function joinInsteadLines(lines: readonly string[]): string[] {
  * is unread as a whole, as the line was alone.
  */
 const REFERENCE_LINE =
-  /^(?:If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
+  /^(?:If [^\n]+?, untap those lands\.|If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
 
 function joinReferenceLines(lines: readonly string[]): string[] {
   const out: string[] = [];

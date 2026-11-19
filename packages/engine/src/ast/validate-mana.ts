@@ -62,10 +62,6 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
           'count is a whole number of 2 or more (one mana is the plain production)',
         );
       }
-      // CR 605.3b: the number of mana is a count (`times`) or a fixed number (`count`), not both.
-      if (mp.times !== undefined && mp.count !== undefined) {
-        issue(out, `${path}.times`, 'times and count are not given together');
-      }
       break;
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": 2 to 4 mana, each a color chosen on its own.
@@ -78,6 +74,7 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       }
       break;
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
+    case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
     case 'commanderIdentity':
       break;
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)

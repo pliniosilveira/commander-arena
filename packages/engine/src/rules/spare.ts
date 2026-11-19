@@ -14,6 +14,7 @@ import type { GameEvent } from '../state/events';
 import { allocateTimestamp, patchObject, seatsInOrder } from '../state/ops';
 import type { ContinuousEffect, GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { bonusCounters, counterBonuses } from './counter-bonus';
 import { blocks, counterBlockers } from './counter-prevention';
 import { derive } from './derive';
 import { sacrificeInstructions } from './sacrifice-choice';
@@ -48,6 +49,7 @@ function markKept(
   const counter = ins.counter;
   if (counter === undefined) return { state, events: [] };
   const blockers = counterBlockers(state);
+  const bonuses = counterBonuses(state);
   let next = state;
   const events: GameEvent[] = [];
   for (const id of kept) {
@@ -56,10 +58,11 @@ function markKept(
     if (!ins.players.includes(controllerOf(next, obj))) continue;
     if (!derive(next, obj).types.some((t) => ins.types.includes(t))) continue;
     if (blocks(next, blockers, obj, counter)) continue;
+    const put = bonusCounters(next, bonuses, obj, counter, 1);
     next = patchObject(next, id, {
-      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + 1 },
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
     });
-    events.push({ kind: 'counterAdded', object: id, counter, count: 1, by: res.controller });
+    events.push({ kind: 'counterAdded', object: id, counter, count: put, by: res.controller });
     if (ins.cantAttackYou !== true || controllerOf(next, obj) === res.controller) continue;
     const [timestamp, stamped] = allocateTimestamp(next);
     const effect: ContinuousEffect = {

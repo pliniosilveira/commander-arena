@@ -154,7 +154,7 @@ describe('Adaptive Training Post (CR 122.1, 603.4, 603.7, 707.10)', () => {
     'Whenever you cast an instant or sorcery spell, if target artifact has fewer than three charge counters on it, draw a card.',
     'Whenever you cast an instant or sorcery spell, if this artifact has fewer than three counters on it, draw a card.',
     'Remove three charge counters from this artifact: When you next cast an instant or sorcery spell this turn, copy it and you may choose new targets for the copy and draw a card.',
-    'Remove three charge counters from this artifact: When you next cast an instant or sorcery spell this turn, copy it.',
+    'Remove three charge counters from this artifact: When you next cast an instant or sorcery spell this turn, copy it for each creature you control.',
   ])('another wording is dropped, never half read (SYNTHETIC): %s', (text) => {
     const first = dropped(text, 'artifact');
     expect(first.text.length).toBeGreaterThan(0);

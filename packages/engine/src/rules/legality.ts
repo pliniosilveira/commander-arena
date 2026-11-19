@@ -42,6 +42,7 @@ import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
+import { hasGrantedFlashCasting } from './player-flash';
 import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
@@ -93,6 +94,8 @@ export function castTiming(
   if (types.includes('instant') || hasKeyword(state, obj, 'flash')) return free;
   // CR 601.3b (D-139): "You may cast artifact spells as though they had flash": a permanent of the caster's gives the permission.
   if (flashPermitted(state, seat, obj)) return free;
+  // CR 601.3b (Alchemist's Refuge): "You may cast spells this turn as though they had flash": an effect of this turn gives the permission.
+  if (hasGrantedFlashCasting(state, seat)) return free;
   if (hasSorceryTiming(state, seat)) return free;
   return ownFlashPermission(state, seat, obj) ?? { allowed: false, onlyTargets: null };
 }

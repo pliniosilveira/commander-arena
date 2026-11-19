@@ -66,7 +66,7 @@ describe('Station reads as the keyword and a station level', () => {
     });
   });
 
-  test('"X mana of any one color, where X is the number of charge counters on ~" is a counted anyColor production', () => {
+  test('"X mana of any one color, where X is the number of charge counters on ~" is a counted anyColorAmount production', () => {
     const def = ship(
       'SYNTHETIC Parsed Ship',
       '20+ | {T}: Add X mana of any one color, where X is the number of charge counters on ~.',
@@ -80,8 +80,8 @@ describe('Station reads as the keyword and a station level', () => {
           kind: 'mana',
           cost: [{ kind: 'tap' }],
           production: {
-            kind: 'anyColor',
-            times: { kind: 'countersOn', of: { kind: 'this' }, counter: 'charge' },
+            kind: 'anyColorAmount',
+            amount: { kind: 'countersOn', of: { kind: 'this' }, counter: 'charge' },
           },
         },
       ],

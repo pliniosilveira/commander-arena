@@ -21,7 +21,7 @@ import type {
 import type { CardDefinition } from '../cards/definition';
 import type { CardType, Characteristics, Color, Subtype } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
-import type { ManaObject } from '../mana/types';
+import type { ManaColor, ManaObject } from '../mana/types';
 import type { RngState } from '../rng/types';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
@@ -1322,6 +1322,8 @@ export type Instruction =
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
       readonly totalManaValue?: number;
+      /** Every card the filter matches is taken, with no question (`take.all`, Animist's Awakening: "Put all land cards from among them onto the battlefield"). */
+      readonly all?: true;
       /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
       /** Every card of the top is revealed to everyone (`revealAll`, D-396, CR 701.20a): "Reveal the top five cards of your library". */
@@ -1710,6 +1712,8 @@ export type Instruction =
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */
       readonly countsNonland?: true;
+      /** A creature that really goes to exile adds `power` to the total of `seat` in `thisWay` `exiledPowerBy` (Oversimplify; both read before the creatures left, CR 608.2h). */
+      readonly exiledPower?: { readonly seat: SeatId; readonly power: number };
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
       readonly replacers?: readonly ObjectId[];
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
@@ -1897,10 +1901,16 @@ export interface ThisWayCounts {
   readonly discardedMost?: number;
   /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
   readonly damageDealt?: number;
+  /** The counters of every kind that `removeAllCounters` effects took off, for "for each counter removed this way" (CR 122.1). */
+  readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
   readonly searched?: number;
+  /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */
+  readonly exiledPowerBy?: Readonly<Record<number, number>>;
+  /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
+  readonly exiledPowerOwn?: number;
 }
 
 /** An attacking creature (CR 508.1k). `blocked` stays true even if its blockers leave (CR 509.1h). */
@@ -2030,6 +2040,19 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
+  /** "You may cast spells this turn as though they had flash" (`grantCastAsThoughFlash`, CR 601.3b): the effect's `players` may cast any spell at instant timing while it lasts. No layer: read in `castTiming`. */
+  | { readonly kind: 'playerCastAsThoughFlash' }
+  /**
+   * "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}" (`grantPlayerManaAbility`, CR 605.1a, 118.3, 611.2): the effect's
+   * `players` have a mana ability that belongs to no permanent while it lasts. `source` is the spell that gave it (the mana it makes has it as its source), `life` the life
+   * it costs and `mana` what it makes. No layer: read by the payment planner and the legal actions (`rules/player-mana.ts`).
+   */
+  | {
+      readonly kind: 'playerPayLifeForMana';
+      readonly source: ObjectId;
+      readonly life: number;
+      readonly mana: ManaColor;
+    }
   /** Protection from everything granted to a player until their next turn (D-607). */
   | { readonly kind: 'playerProtectionEverything' }
   /** Prevents all increases and decreases to the player's life total (D-607). */
@@ -2305,6 +2328,10 @@ export interface TurnLog {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
     readonly manaValue: number;
+    /** The spell (Quandrix Unlimited group E): "your first spell with {X} in its mana cost each turn" tells it from the others. */
+    readonly object: ObjectId;
+    /** The spell's mana cost has an {X} (CR 107.3). */
+    readonly hasX?: true;
     /** The spell was cast from a graveyard (issue 159, CR 601.2a: "if you've cast a spell from a graveyard this turn"). */
     readonly fromGraveyard?: true;
   }[];
