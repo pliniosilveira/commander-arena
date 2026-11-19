@@ -139,10 +139,10 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
-- "If this spell was kicked, choose any number instead" is read as one mode to all of them: the engine never casts a modal spell with no mode chosen, so choosing none is not offered.
+- "If this spell was kicked, choose any number instead" is read as all modes: choosing none is not offered.
 - The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
 - `putIntoGraveyard` reads your own graveyard only and does not hand its cards to the ability: Hedge Shredder ("put them onto the battlefield tapped") and a Room's "for each card type among those cards" stay unsupported.
-- `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; the scenario DSL has two seats, so the split for three or more players is not exercised by a test.
+- `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; three or more players are untested (the scenario DSL has two seats).
 - The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the payment by hand that holds mana open skips such sources and leaves them to `payAuto`.
 - A spell with a target tax (Skybonder) is offered by `canCast` when the cheapest cost is payable, though no target leaves it payable; the targets decision then lists none. The agents cancel it (CR 601.2c, 601.2f).
 - An Aftermath half that targets "target card from a graveyard" is offered when its own card is the only one there: it is still in the graveyard when the targets are read (CR 601.2a). The agents cancel it.
