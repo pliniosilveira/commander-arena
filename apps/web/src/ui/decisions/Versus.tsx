@@ -1,5 +1,6 @@
 import type { GameView } from '@commander-arena/engine';
 import type { DeckChoice } from '../../precons';
+import { Art } from '../board/art';
 import { ManaCost } from '../mana';
 import { useApp } from '../store-context';
 import { useDeckChoices } from '../use-deck-choices';
@@ -20,27 +21,27 @@ function Side({
   const colors = deck?.colors ?? fallbackColors;
   return (
     <div className="dec-versus-side" data-versus-side={who}>
-      {deck?.commanderImage !== undefined && (
-        <img className="dec-versus-art" src={deck.commanderImage} alt="" />
+      {commander !== '' && (
+        <Art name={commander} isToken={false} version="normal" className="dec-versus-card" />
       )}
       <span className="dec-versus-text">
         <span className="dec-versus-who">{who === 'you' ? 'You' : 'Opponent'}</span>
-        <span className="dec-versus-name">
-          {deck?.name ?? commander}
-          <ManaCost cost={colors.length === 0 ? ['C'] : colors} />
-        </span>
+        <span className="dec-versus-name">{deck?.name ?? commander}</span>
         {deck !== undefined && (
           <span className="dec-versus-commander">
             {commander === '' ? 'No commander' : `Commander: ${commander}`}
           </span>
         )}
       </span>
+      <span className="dec-versus-colors">
+        <ManaCost cost={colors.length === 0 ? ['C'] : colors} />
+      </span>
     </div>
   );
 }
 
 /**
- * "[Your deck] x [Opponent's deck]": both decks as tall cells with the commander art. The decks come
+ * "[Your deck] x [Opponent's deck]": both decks as tall cells with the full commander card. The decks come
  * from the deck picker's list; a deck that is not in it (a hidden test deck) shows its commander
  * from the command zone, without art.
  */

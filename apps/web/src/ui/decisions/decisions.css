@@ -1425,7 +1425,7 @@
   width: 100%;
 }
 .dec-versus-side {
-  flex: 0 1 280px;
+  flex: 0 1 220px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1435,12 +1435,15 @@
   border-radius: var(--radius);
   background: var(--bg-raised);
 }
-.dec-versus-art {
+.dec-versus-card {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 4px;
-  border: 1px solid var(--line);
+  aspect-ratio: 5 / 7;
+  border-radius: 4.5% / 3.2%;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.dec-versus-card.is-loaded {
+  opacity: 1;
 }
 .dec-versus-text {
   display: flex;
@@ -1456,15 +1459,14 @@
   color: var(--text-dim);
 }
 .dec-versus-name {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   font-weight: 700;
   font-size: 15px;
 }
 .dec-versus-commander {
   font-size: 12px;
+}
+.dec-versus-colors {
+  margin-top: auto;
 }
 .dec-versus-x {
   align-self: center;
