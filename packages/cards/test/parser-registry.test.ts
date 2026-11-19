@@ -810,6 +810,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Yavimaya Bloomsage.
+  'condition.that-object-power': spell(
+    (e) => `Put a +1/+1 counter on target creature you control. Then if ${e}, draw a card.`,
+  ),
   // Issue 233 (Martial Coup).
   'condition.x-at-least': spell(
     (e) => `Create X 1/1 white Soldier creature tokens. If ${e}, draw a card.`,

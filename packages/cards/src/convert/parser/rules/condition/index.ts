@@ -57,6 +57,7 @@ import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
+import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
 import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
@@ -603,6 +604,7 @@ export const CONDITION_RULES = [
   CONDITION_KICKED,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_X_AT_LEAST,
+  CONDITION_THAT_OBJECT_POWER,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,
