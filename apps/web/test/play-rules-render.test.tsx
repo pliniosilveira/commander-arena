@@ -97,7 +97,7 @@ test('the preview panel says what a play-rule permanent does', async () => {
     (view) => view.pending?.kind === 'priority' && mine(view, LENS).length > 0,
   );
   const lens = mine(store.getState().snapshot?.view as GameView, LENS)[0];
-  store.setState({ preview: { hovered: lens?.id ?? null, pinned: null } });
+  store.setState({ preview: { hovered: lens?.id ?? null, pinned: null, revealed: [] } });
   const html = render(store, <PreviewPanel />);
   expect(html).toContain('Rules in words');
   expect(html).toContain('You may look at the top card of your library any time.');

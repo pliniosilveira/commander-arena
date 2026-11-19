@@ -39,6 +39,7 @@ import {
   type Snapshot,
   type UnsupportedCard,
 } from './protocol';
+import { revealedCards } from './revealed-cards';
 import { staticNotes } from './static-notes';
 import { roundOf } from './turn-label';
 
@@ -426,12 +427,17 @@ export class GameHost implements GameClient {
     const definedPt = definedPtNotes(state, view);
     const statics = staticNotes(state, view);
     const looked = lookedCards(state, HUMAN);
+    const revealed = revealedCards(
+      state,
+      steps.flatMap((step) => step.events),
+    );
     return {
       revision: this.revision,
       view,
       ...(Object.keys(definedPt).length === 0 ? {} : { definedPt }),
       ...(Object.keys(statics).length === 0 ? {} : { staticNotes: statics }),
       ...(looked.length === 0 ? {} : { lookedCards: looked }),
+      ...(revealed.length === 0 ? {} : { revealed }),
       steps,
       log,
       actionCount: this.actions.length,

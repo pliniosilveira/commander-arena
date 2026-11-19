@@ -2090,3 +2090,22 @@
     display: none;
   }
 }
+
+.board-preview-stack,
+.board-preview-revealed {
+  margin-top: 10px;
+  font-size: calc(12px * var(--text-scale));
+}
+
+.board-preview-revealed ol {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.board-preview-revealed li {
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}

@@ -13,6 +13,7 @@ import type {
   NewGameOptions,
   Snapshot,
 } from './game/protocol';
+import type { RevealedCard } from './game/revealed-cards';
 import type { AnimationGate } from './policy/animation-gate';
 import {
   canPassTurn,
@@ -32,6 +33,11 @@ export interface PreviewState {
   readonly hovered: ObjectId | null;
   /** A pinned object stays until Esc (A19). */
   readonly pinned: ObjectId | null;
+  /**
+   * The cards a reveal showed (CR 701.20), read in the preview panel when nothing is pinned or hovered. The
+   * latest reveal replaces them; Esc (unpin), a new turn or a new game clears them.
+   */
+  readonly revealed: readonly RevealedCard[];
 }
 
 /** A mana ability the player used and the undo depth after it (see `AppState.manaTaps`). */
@@ -199,12 +205,20 @@ export function createAppStore(options: StoreOptions): AppStore {
         const topBefore = s.snapshot?.view.stack.at(-1)?.id;
         const topNow = snapshot.view.stack.at(-1)?.id;
         const grab = topNow !== undefined && topNow !== topBefore && s.preview.hovered !== null;
+        // A reveal takes the panel the same way; a new turn ends the old reveal.
+        const revealed = snapshot.revealed;
+        const newTurn = s.snapshot !== null && s.snapshot.view.turn !== snapshot.view.turn;
+        const preview: PreviewState = {
+          ...s.preview,
+          ...(grab || revealed !== undefined ? { hovered: null } : {}),
+          ...(revealed !== undefined ? { revealed } : newTurn ? { revealed: [] } : {}),
+        };
         return {
           snapshot,
           // After an undo the Worker sends the whole log, because lines were taken back.
           log: snapshot.logReset ?? [...s.log, ...snapshot.log],
           error: null,
-          ...(grab ? { preview: { ...s.preview, hovered: null } } : {}),
+          preview,
         };
       });
     }
@@ -349,7 +363,7 @@ export function createAppStore(options: StoreOptions): AppStore {
       yieldTurn: null,
       busy: false,
       hostCall: null,
-      preview: { hovered: null, pinned: null },
+      preview: { hovered: null, pinned: null, revealed: [] },
       manaTaps: [],
       error: null,
       stats: { humanActions: 0, autoPasses: 0 },
@@ -508,7 +522,10 @@ export function createAppStore(options: StoreOptions): AppStore {
       },
 
       pin(id) {
-        set((s) => ({ preview: { ...s.preview, pinned: id } }));
+        // Esc unpins and also dismisses a reveal.
+        set((s) => ({
+          preview: { ...s.preview, pinned: id, ...(id === null ? { revealed: [] } : {}) },
+        }));
       },
 
       clearError() {
