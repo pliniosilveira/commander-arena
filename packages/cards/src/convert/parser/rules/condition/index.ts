@@ -28,6 +28,7 @@ import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
+import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
@@ -551,6 +552,7 @@ export const CONDITION_RULES = [
   ...GAME_STATE_CONDITION_RULES,
   ...SELF_STATE_CONDITION_RULES,
   ...NO_COUNTERS_CONDITION_RULES,
+  ...COUNTER_COUNT_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
   // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value".
   ...ARTIFACT_CONDITION_RULES,
