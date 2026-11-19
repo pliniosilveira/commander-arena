@@ -136,6 +136,8 @@ describe('the dimensions', () => {
       'cardLeftYourGraveyard',
       'manaSpentAtLeast',
       'castFromZone',
+      // Issue 100: "When this creature enters, if you cast it".
+      'wasCast',
       // D-207: "if it targets a tapped creature".
       'spellTargets',
       'attackersAttackedYou',

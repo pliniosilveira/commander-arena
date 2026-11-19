@@ -1546,13 +1546,6 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
       }
       checkAmount(a, path, NO_SCOPE, out);
       break;
-    // CR 202.3 (Velomachus Lorehold shape): "mana value less than or equal to this creature's power", read as the effect runs.
-    case 'powerOf':
-      if (kindOf(a.of) !== 'this') {
-        issue(out, `${path}.of`, `${label} reads the power of this creature only`);
-      }
-      checkAmount(a, path, NO_SCOPE, out);
-      break;
     case 'half':
     case 'multiple':
       checkAmount({ ...a, of: 0 }, path, NO_SCOPE, out);
@@ -5156,12 +5149,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       if (e.take?.manaValueAtMost !== undefined) {
-        checkStateAmount(
-          e.take.manaValueAtMost,
-          `${path}.take.manaValueAtMost`,
-          out,
-          'a mana value limit',
-        );
+        const limit = e.take.manaValueAtMost;
+        if (typeof limit === 'object' && limit?.kind === 'powerOf') {
+          // CR 202.3 (Velomachus Lorehold shape): "mana value less than or equal to this creature's power", read as the effect runs.
+          if (kindOf(limit.of) !== 'this') {
+            issue(
+              out,
+              `${path}.take.manaValueAtMost.of`,
+              'a mana value limit reads the power of this creature only',
+            );
+          }
+          checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else {
+          checkStateAmount(limit, `${path}.take.manaValueAtMost`, out, 'a mana value limit');
+        }
       }
       if (e.take?.totalManaValue !== undefined) {
         // D-230: a whole number, with the cards put onto the battlefield.
