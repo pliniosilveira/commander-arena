@@ -130,7 +130,6 @@ export const EFFECT_ATTACK_RANDOM_OPPONENT_ANY = defineRule<Clauses>({
   },
 });
 
-
 /**
  * `effect.tokens-goaded`: "the tokens are goaded for the rest of the game" (Death Toll deck, group D, CR 701.15a, 701.15b, 611.2b; Rendmaw, Creaking Nest): the tokens the instruction before it
  * created (each player's, the engine's `moved`) are goaded by the controller of the ability with no end. The engine's `goad` with `forever`. Not read: a goad with an end ("until your next
