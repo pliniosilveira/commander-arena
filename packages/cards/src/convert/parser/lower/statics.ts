@@ -765,6 +765,8 @@ function lowerPart(
         e.kind === 'grantProtection' ||
         e.kind === 'pt' ||
         e.kind === 'ptCount' ||
+        // CR 508.1a (Troyan deck): "Creatures with flying can't attack you or planeswalkers you control." reads the keyword as the attackers are declared, after the layers.
+        e.kind === 'cantAttackYou' ||
         // D-149: a group named by a keyword may be given the cost increase: it gives no keyword, so it cannot change who is in the group (CR 613.8).
         (e.kind === 'grantAbility' && e.ability.ability.kind === 'static'),
     ),

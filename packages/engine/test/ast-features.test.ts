@@ -169,6 +169,7 @@ describe('the dimensions', () => {
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
       'dieResult',
+      // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
       'thisOnBattlefield',
       'chosenOption',

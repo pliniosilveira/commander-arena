@@ -191,6 +191,12 @@ export type Amount =
       readonly filter: ObjectFilter;
     }
   /**
+   * "The greatest power among those creatures" (CR 508.1, 603.2; D-149's attack batch): over the creatures the attack event of this `attackBatch` trigger declared as attackers,
+   * the largest power as the ability resolves (the creature as it last existed if it has left the battlefield, CR 608.2h; a creature put onto the battlefield attacking was never declared and
+   * is not one of them). 0 when none has a power; a negative result is read as 0 (CR 107.1b). Valid only in the effect of an `attackBatch` trigger (`validateCard`).
+   */
+  | { readonly kind: 'attackersGreatestPower' }
+  /**
    * "The number of card types among cards in your graveyard" (CR 205.2a, Delirium, an ability word: CR 207.2c, D-518): how many of the card types (artifact, battle, creature, enchantment,
    * instant, kindred, land, planeswalker, sorcery) the objects `filter` matches have between them, each counted once however many have it; supertypes and subtypes are not
    * card types. The filter names a zone other than the battlefield and the stack ("cards in your graveyard": `zone: 'graveyard'`, `controller: 'you'` for the graveyard of the
@@ -725,6 +731,8 @@ export interface ObjectFilter {
    * `triggerDamage`, a number the game reads (`countOf`, `commanderCasts`...). Not in a static ability or a trigger's subject. "with mana value less than or equal to
    * that spell's mana value" is the amount `manaValueOf` the `triggerSubject` of a `castSpell` trigger, read as the targets are chosen and again as the ability resolves
    * (CR 603.3d, 608.2b); the spell stays on the stack with the ability (`rules/trigger-subject.ts`).
+   * `{ kind: 'x' }` ("put a permanent card with mana value X or less from your hand onto the battlefield", CR 107.3a): the X announced for the spell or ability the effect belongs to,
+   * in the `choose` selector of a `moveToZone` only. The mana value of a card in a hand counts an {X} in its cost as 0 (CR 202.3e).
    */
   readonly manaValueAtMost?: Amount;
   /**
@@ -2394,6 +2402,31 @@ export type Effect =
       readonly rest: 'bottomRandom' | 'stayExiled';
     }
   /**
+   * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9, 611.2a):
+   * until the moment `lasts` names, the controller of this effect may cast, for each card type a spell can have (artifact, battle, creature, enchantment, instant,
+   * kindred, planeswalker, sorcery), one of the cards in exile `objects` names (`moved`: what an earlier `exileTop` exiled) that has that type, without paying its mana cost.
+   * It is cast at the timing of its type, not as this resolves (an instant at any time they have priority, a sorcery only at sorcery timing), with its additional costs
+   * paid and an {X} of 0 (CR 107.3b); no alternative cost can be used. Each type is used once: a card with several types is cast as any one of them, and uses that type's
+   * permission only, so another card of an unused type of it can still be cast. The permission names the cards as they are now: a card that leaves exile is a new object
+   * (CR 400.7), and a land card is not cast.
+   */
+  | {
+      readonly kind: 'mayCastEachType';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      readonly lasts: PlayUntil;
+    }
+  /**
+   * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand"
+   * (CR 701.20a Reveal, 608.2g, 118.9, 107.3b, 202.3e): the controller reveals the top card of their library (nothing happens with an empty library; the card stays on top
+   * while the question is asked). When it is not a land card, its mana value (an {X} in a library counts as 0) is less than `manaValueBelow` and it could be cast now (a legal
+   * target for each of its targets, additional costs payable), they may cast it without paying its mana cost, from the library, as CR 608.2g says: the steps of CR 601.2a-i,
+   * no timing restriction, no player receives priority and the effect goes on resolving (an {X} is 0, CR 107.3b). When they do not, or cannot, it is put into their hand (a land
+   * card too). `manaValueBelow` is read as the effect runs; "lesser mana value" than the spell that caused a cast trigger is `manaValueOf` the `triggerSubject`, which keeps the
+   * spell as it last was on the stack once it has left (CR 113.7a, 608.2h: the spell may have been countered in response to the trigger).
+   */
+  | { readonly kind: 'revealTopCast'; readonly manaValueBelow: Amount }
+
+  /**
    * "Each player exiles cards from the top of their library until they exile a nonland card." (CR 701.13, 101.4, D-660, Plargg and Nassari): each player `players` names, the
    * active player first and then in turn order, exiles cards from the top of their own library one at a time and face up until one that matches `filter` is exiled, or until
    * their library is empty (a library with no such card is exiled to its end). Every card exiled, by every player, is what `moved` names afterwards ("the other cards exiled this
@@ -2924,6 +2957,11 @@ export type Effect =
    * game), one `energyChanged` event. Nothing for an amount of 0 or less.
    */
   | { readonly kind: 'gainEnergy'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
+   * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): the controller of the effect has no maximum hand size from now on, so a cleanup step makes them
+   * discard nothing. Not a static ability: it works for the player, not a permanent, and does not end when a permanent leaves. No event; it stays in `SeatState.noMaximumHandSize`.
+   */
+  | { readonly kind: 'noMaxHandSizeForGame' }
   /**
    * "Up to one target creature you control connives" (CR 701.50a, 701.50b, D-209): each creature the selector names that is still on the battlefield: its
    * controller draws a card, then discards a card (their choice); if the card discarded is a nonland card, they put a +1/+1 counter on it. A creature that left is
@@ -3481,6 +3519,13 @@ export type Effect =
          * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
          */
         readonly hidden?: true;
+        /**
+         * "You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand" (Planar Genesis, CR 608.2c, 608.2d): when
+         * no card was taken above (the player declined, or no card matched), the player must put one card of any kind from among the cards looked at into their hand,
+         * without revealing it. Only with `to: 'battlefield'`, `hidden` and no `min`; the rest then go where `rest` says.
+         */
+        readonly elseAnyToHand?: true;
+
         /**
          * "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c, Animist's Awakening): every card of the cards looked at that the filter matches is taken, with no
          * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'` or `'hand'` ("Put all land cards revealed this way into your hand", Mulch).

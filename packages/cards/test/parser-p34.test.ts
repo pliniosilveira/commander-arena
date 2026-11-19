@@ -1912,7 +1912,8 @@ const REFUSED: readonly (readonly [string, FaceType, readonly string[], string])
     [],
     'unrecognised',
   ],
-  ['Add three mana in any combination of colors.', 'sorcery', [], 'notRunnable'],
+  // Troyan group 1: "in any combination of colors" is now a counted chooseOne as an instruction; "different colors" has no such form.
+  ['Add three mana of different colors.', 'sorcery', [], 'notRunnable'],
 ];
 
 describe('the lines the new rules must not read are flagged', () => {

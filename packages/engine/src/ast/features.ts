@@ -222,6 +222,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
+    // "You have no maximum hand size for the rest of the game" (CR 402.2).
+    'noMaxHandSizeForGame',
     'connive',
     // D-213: "for each creature target player controls, create a token that's a copy of that creature, except ..." (`createCopies`).
     'createCopies',
@@ -416,6 +418,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enterAttacking',
     // D-151: "exile cards until you exile a nonland card. You may cast it ... If you don't, put it into your hand", Discover (CR 701.57).
     'exileUntilCast',
+    // "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand" (CR 701.20a, 608.2g).
+    'revealTopCast',
+    // "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9).
+    'mayCastEachType',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -1062,6 +1068,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackedWithCreaturesThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
+    // "If X is 10 or more" (CR 107.3, 608.2c).
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
     'thisOnBattlefield',
@@ -1231,6 +1238,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'toughnessOf',
     'countersOn',
     'aggregate',
+    // "The greatest power among those creatures" of an attack batch trigger (CR 508.1).
+    'attackersGreatestPower',
     'devotion',
     'commanderColors',
     // D-145: "the greatest mana value among your commanders", "double its power" (`affected`, a power or toughness of the creature affected).
@@ -2076,6 +2085,8 @@ export const AMOUNT_KINDS = [
   'countersOn',
   /** "The greatest power among creatures you control", "the total power of creatures you control" (D-131): the engine's `aggregate`. */
   'aggregate',
+  /** "The greatest power among those creatures" of an attack batch trigger (CR 508.1): the engine's `attackersGreatestPower`. */
+  'attackersGreatestPower',
   /** "Your devotion to black" (CR 700.5, D-131): the engine's `devotion`. */
   'devotion',
   /** "The number of colors in your commander's color identity" (CR 903.4, D-131): the engine's `commanderColors`. */
@@ -2310,6 +2321,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
+  noMaxHandSizeForGame: true,
   connive: true,
   createCopies: true,
   playersMay: true,
@@ -2420,6 +2432,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   extraBeginningPhase: true,
   enterAttacking: true,
   exileUntilCast: true,
+  revealTopCast: true,
+  mayCastEachType: true,
   revealTop: true,
   revealTopDuel: true,
   replaceEnchant: true,

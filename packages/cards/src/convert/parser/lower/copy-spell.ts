@@ -35,6 +35,8 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       if (missing.length > 0) return failure(clause, missing);
       spell = { kind: 'triggerSubject' };
     } else {
+      // "it" is only the spell of a cast trigger (`triggerSubject`): bound to anything else (a card an earlier instruction named) it is not a spell to copy.
+      if (/^it$/iu.test(noun.filter.raw ?? '')) return failure(clause);
       const ref = objectRefOf(noun, ctx);
       if (!ref.ok) return ref;
       if (ref.value.kind !== 'target') return failure(clause);

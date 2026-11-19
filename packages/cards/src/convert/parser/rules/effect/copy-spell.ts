@@ -52,10 +52,10 @@ const TARGET_SPELL = node<{ filter: IrFilter; yours: boolean }, IrNoun>(
   }),
 );
 
-/** "that spell": the spell whose casting triggered the ability, bound by the binding pass. */
+/** "that spell" or "it": the spell whose casting triggered the ability, bound by the binding pass (the lowering reads "it" only there, CR 707.10). */
 const THAT_SPELL = node<RegExpExecArray, IrNoun>(
   'effect.copy-spell',
-  pattern(new RegExp(`that spell${BOUNDARY}`, 'iu')),
+  pattern(new RegExp(`(?:that spell|it)${BOUNDARY}`, 'iu')),
   (m) => ({
     kind: 'noun',
     det: 'anaphor',
@@ -142,6 +142,8 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy target spells',
     'copy that creature',
     'copy that spell for each creature you control',
+    'copy it for each creature you control',
+    'copy items',
     'copy itself',
     'copy it and you may choose new targets for the copy. you may choose new targets for the copy',
     'copy it and you may choose new targets for the copies',

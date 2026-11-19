@@ -61,6 +61,8 @@ export interface SelectContext {
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
+  /** The creatures the attack event of this trigger declared (`attackersGreatestPower`). */
+  readonly triggerAttackers?: readonly ObjectId[];
   /** The permanents that dealt the combat damage of a `combatDamageBatch` trigger (`triggerSources`), or the cards that triggered a batch of cards. */
   readonly triggerCards?: readonly ObjectId[];
   /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-643). */
@@ -408,7 +410,7 @@ function manaValueLimitOf(
     return source?.castX ?? 0;
   }
   // CR 107.3a, 202.3: "a spell with mana value X or less", the X announced for the spell that is resolving.
-  if (amount.kind === 'x') return ctx.x ?? 0;
+  if (amount.kind === 'x') return xFilterContext(state, ctx).x ?? 0;
   if (amount.kind === 'countOf') {
     const owner = amount.filter.owner;
     const countedContext =

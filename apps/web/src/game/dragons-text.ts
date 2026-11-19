@@ -150,6 +150,11 @@ export function exileUntilCastText(effect: Extract<Effect, { kind: 'exileUntilCa
   return `Exile cards from the top of your library until you exile a nonland card. You may cast it without paying its mana cost${limit}. If you don't, put that card into your hand`;
 }
 
+/** "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand" (CR 701.20a, 608.2g). */
+export function revealTopCastText(): string {
+  return "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand";
+}
+
 /** Discover's reminder (CR 701.57a), for the dialog that asks the question. */
 export function discoverReminder(n: number): string {
   return `Exile cards from the top of your library until you exile a nonland card with mana value ${n} or less. Cast it without paying its mana cost if its mana value is ${n} or less, or put it into your hand. Put the rest on the bottom of your library in a random order.`;

@@ -52,6 +52,7 @@ import { sourceInfo } from './source-info';
 import { targetAnswerError, targetChoiceSpecs } from './target-choice';
 import {
   readsTriggerAttacked,
+  readsTriggerAttackers,
   readsTriggerDamage,
   readsTriggerPlayer,
   readsTriggerSubject,
@@ -87,6 +88,7 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       (readsTriggerAttacked(t.ability)
         ? `a${(t.attacked ?? []).join(',')}@${(t.attackedAt ?? []).join(',')}#`
         : '') +
+      (readsTriggerAttackers(t.ability) ? `A${(t.attackers ?? []).join(',')}#` : '') +
       // D-177: a reflexive ability reads the permanents its resolution sacrificed.
       (t.sacrificedBefore === undefined ? '' : `s${t.sacrificedBefore.join(',')}#`) +
       (t.thisWayBefore === undefined ? '' : `w${JSON.stringify(t.thisWayBefore)}#`) +
@@ -129,6 +131,9 @@ function pushTrigger(
     ...(trigger.targetCount === undefined ? {} : { targetCount: trigger.targetCount }),
     ...(trigger.attacked !== undefined && readsTriggerAttacked(trigger.ability)
       ? { attacked: trigger.attacked }
+      : {}),
+    ...(trigger.attackers !== undefined && readsTriggerAttackers(trigger.ability)
+      ? { attackers: trigger.attackers }
       : {}),
     ...(trigger.attackedAt !== undefined && readsTriggerAttacked(trigger.ability)
       ? { attackedAt: trigger.attackedAt }

@@ -489,6 +489,8 @@ export type IrAmount =
       readonly asCast?: true;
       readonly span: Span;
     }
+  // "the greatest power among those creatures" of an attack batch trigger (CR 508.1): the creatures the declaration of the trigger held
+  | { readonly kind: 'attackersGreatestPower'; readonly span: Span }
   // "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3)
   | { readonly kind: 'commanderManaValue'; readonly span: Span }
   // "for each time you've cast your commander from the command zone this game" (stage P68, D-229, CR 903.8)
@@ -674,6 +676,7 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
     // D-271 (CR 706.2, 706.3a): "the result is 1", "the result is 4 or more": the die the roll before it in the same text rolled
     | { readonly kind: 'dieResult'; readonly compare: IrComparison }
+    // "If X is 10 or more" (CR 107.3, 608.2c): the X announced for the spell, against a number
     // D-271 (CR 113.6b, 603.4): "~ is in your graveyard": the card itself, in its owner's graveyard
     | { readonly kind: 'thisInYourGraveyard' }
     // Issue 89 (CR 603.4, Animate Dead): "it's on the battlefield": the permanent the trigger is about, which is the source, is still on the battlefield
@@ -1900,6 +1903,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'toughnessOf',
   'countersOn',
   'aggregate',
+  'attackersGreatestPower',
   'devotion',
   'commanderColors',
   'opponentCount',

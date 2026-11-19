@@ -38,6 +38,8 @@ export interface AbilityObjectRequest {
   readonly targetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly attacked?: readonly SeatId[];
+  /** For an `attackBatch` ability that reads `attackersGreatestPower`: the creatures its attack event declared as attackers. */
+  readonly attackers?: readonly ObjectId[];
   /** For a triggered ability that reads `attackersAtYouAtLeast` (D-643): who each creature of its attack event was declared attacking. */
   readonly attackedAt?: readonly SeatId[];
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed. */
@@ -96,6 +98,7 @@ export function pushAbilityObject(
       ...(request.damage === undefined ? {} : { triggerDamage: request.damage }),
       ...(request.targetCount === undefined ? {} : { triggerTargetCount: request.targetCount }),
       ...(request.attacked === undefined ? {} : { triggerAttacked: request.attacked }),
+      ...(request.attackers === undefined ? {} : { triggerAttackers: request.attackers }),
       ...(request.attackedAt === undefined ? {} : { triggerAttackedAt: request.attackedAt }),
       ...(request.sacrificedBefore === undefined
         ? {}

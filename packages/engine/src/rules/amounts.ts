@@ -38,6 +38,7 @@ type StateAmount = Extract<
       | 'toughnessOf'
       | 'countersOn'
       | 'aggregate'
+      | 'attackersGreatestPower'
       | 'devotion'
       | 'commanderColors'
       | 'commanderManaValue'
@@ -82,6 +83,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'toughnessOf' ||
     amount.kind === 'countersOn' ||
     amount.kind === 'aggregate' ||
+    amount.kind === 'attackersGreatestPower' ||
     amount.kind === 'devotion' ||
     amount.kind === 'commanderColors' ||
     amount.kind === 'commanderManaValue' ||
@@ -387,6 +389,14 @@ export function stateAmountOf(
           ? ctx
           : { ...ctx, controllers: resolvePlayers(state, controlled, ctx, targets) },
       );
+    }
+    case 'attackersGreatestPower': {
+      // CR 508.1, 608.2h: the power of each declared attacker as the ability resolves (as it last existed if it left); CR 107.1b: not below 0.
+      let best = 0;
+      for (const id of ctx.triggerAttackers ?? []) {
+        best = Math.max(best, statOf(state, id, 'power') ?? state.lki[id]?.power ?? 0);
+      }
+      return best;
     }
     case 'cardTypesAmong':
       return cardTypesAmongOf(state, amount.filter, ctx);

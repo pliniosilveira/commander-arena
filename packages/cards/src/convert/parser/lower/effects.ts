@@ -66,6 +66,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
@@ -85,6 +86,7 @@ import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
 import { MELD_LOWERINGS } from './meld';
@@ -119,6 +121,7 @@ import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
+import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
@@ -686,17 +689,24 @@ const UNTAP_CHOSEN: Lowering<IrClause, Effects> = {
   head: 'untapChosen',
   id: 'lower.untap-chosen',
   needs: ['effect:untap', 'selector:choose', 'selector:upTo'],
-  lower(clause) {
+  lower(clause, ctx) {
     const objects = arg(clause, 'objects');
-    if (objects?.kind !== 'noun' || objects.det !== 'a' || objects.count?.kind !== 'number') {
+    if (
+      objects?.kind !== 'noun' ||
+      objects.det !== 'a' ||
+      (objects.count?.kind !== 'number' && objects.count?.kind !== 'x')
+    ) {
       return failure(clause);
     }
     const filter = lowerFilter(objects);
     if (!filter.ok) return filter;
+    // "Untap up to X lands, where X is ..." (CR 107.3c): the amount the sentence defines X as, read as the instruction runs.
+    const count = lowerAmount(objects.count, ctx, clause.rule);
+    if (!count.ok) return count;
     const chosen: ChooseSelector = {
       kind: 'choose',
       filter: filter.value,
-      count: objects.count.value,
+      count: count.value,
       upTo: true,
     };
     return { ok: true, value: [{ kind: 'untap', objects: chosen }], rule: clause.rule };
@@ -751,6 +761,15 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
       const { manaValueAtMostAmount: _amount, ...rest } = named.filter;
       void _amount;
       objects = { ...named, filter: rest };
+    }
+    // CR 107.3a, 202.3: "a permanent card with mana value X or less": the X of the spell, read as the cards are chosen (`ObjectFilter.manaValueAtMost`).
+    if (arg(clause, 'manaValueAtMost') !== undefined) {
+      const blocked = missingFeatures(['selector:manaValueAtMost']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      if (limit !== undefined || to?.zone !== 'battlefield') return failure(clause);
+      const x = amountArg(clause, 'manaValueAtMost', ctx);
+      if (!x.ok) return x;
+      limit = x.value;
     }
     // "You may return a creature card from your graveyard to your hand" (stage P35, D-176, CR 608.2d): a card chosen from the graveyard,
     // none when the player may and does not.
@@ -1051,6 +1070,27 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
     }
     // "Add an additional {C}" (stage P31) is only the effect of a triggered mana ability, which `lowerTriggered` builds itself.
     if (arg(clause, 'additional') !== undefined) return failure(clause);
+    // "Add four mana in any combination of colors." (CR 106.1b, 608.2d): each mana is a color chosen on its own as the instruction resolves, which is the engine's
+    // `chooseOne` of the five colors repeated `count` times, each option adding one mana of that color. "Different colors" cannot be said this way: the
+    // choices would not exclude one another.
+    if (spec.what.kind === 'anyCombination' && spec.what.distinct !== true) {
+      const blocked = missingFeatures(['effect:chooseOne']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseOne',
+            times: spec.what.count,
+            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+              label: `{${color}}`,
+              effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
+            })),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     // The interpreter's addMana effect adds fixed mana only: it has no color decision while a
     // spell or ability resolves (a mana ability chooses while paying instead).
     if (spec.what.kind !== 'symbols') {
@@ -2157,11 +2197,13 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
+  ...LOOK_ELSE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...NIV_LOWERINGS,
@@ -2185,6 +2227,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NIV_GROUP_3_C_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
+  ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

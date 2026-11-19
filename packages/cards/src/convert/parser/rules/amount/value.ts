@@ -165,6 +165,19 @@ const COMMANDER_COLORS: Parser<IrAmount> = (ctx, pos) => {
     : r;
 };
 
+/**
+ * "the greatest power among those creatures" (CR 508.1, 603.2): the creatures an `attackBatch` trigger ("whenever you attack with one or more creatures") declared. Only the
+ * words "those creatures": the group the text names after "among" stays with `AGGREGATE`; whether the ability is such a trigger is the engine's check (`validateCard`).
+ */
+const ATTACKERS_GREATEST_POWER: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(/the greatest power among (?:those|the) creatures(?![\p{L}\p{N}'’])/iu),
+  )(ctx, pos);
+  return r.ok
+    ? { ok: true, value: { kind: 'attackersGreatestPower', span: r.value.span }, pos: r.pos }
+    : r;
+};
+
 /** "the number of opponents you have" (CR 102.2, 102.3: the opponents still in the game; Rot Hulk's "where X is the number of opponents you have"). */
 const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(pattern(/the number of opponents you have(?![\p{L}\p{N}'’])/iu))(ctx, pos);
@@ -296,6 +309,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     NUMBER_OF_COUNTERS(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),
+    ATTACKERS_GREATEST_POWER,
     DEVOTION,
     COMMANDER_COLORS,
     OPPONENT_COUNT,

@@ -797,8 +797,8 @@ describe('attacking with several creatures (CR 508.1, 603.2)', () => {
 
   test.each([
     'Whenever you attack with a creature, draw a card.',
-    'Whenever you attack with one or more creatures, draw a card.',
     'Whenever you attack with two creatures, draw a card.',
+    'Whenever you attack with one or more creatures you control, draw a card.',
     'Whenever you attack with two or more creatures you control, draw a card.',
     'Whenever you attack with two or more creatures or planeswalkers, draw a card.',
     'Whenever a player attacks with two or more creatures, draw a card.',
@@ -807,6 +807,20 @@ describe('attacking with several creatures (CR 508.1, 603.2)', () => {
     'Whenever another player attacks with two or more creatures, you draw a card if none of those creatures attacked you or a planeswalker you control.',
   ])('is not read: %s', (text) => {
     expect(drop(text)).toMatchObject({ reason: 'unrecognised' });
+  });
+
+  // Shriekwood Devourer (issue 337): "one or more" creatures is at least one, as "you attack" is (a group named by a subtype is the rule of "one or more Birds").
+  test('"Whenever you attack with one or more creatures" is a batch of at least one', () => {
+    expect(
+      abilities('Whenever you attack with one or more creatures, draw a card.', 'creature', [
+        'Angel',
+      ]),
+    ).toEqual([
+      triggered(
+        { kind: 'attackBatch', who: 'you', atLeast: 1 },
+        { kind: 'draw', player: YOU, count: 1 },
+      ),
+    ]);
   });
 
   test('"none of those creatures attacked you" says nothing outside the trigger of an attack', () => {

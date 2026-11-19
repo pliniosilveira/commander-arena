@@ -189,3 +189,72 @@ describe('"Each creature that\'s enchanted by an Aura you control can\'t attack 
     );
   });
 });
+
+// "Creatures with flying can't attack you or planeswalkers you control." (Troyan deck group 1, CR 508.1a, 506.3, 101.2): the same static with a keyword filter, with and
+// without the planeswalkers. The cards are SYNTHETIC and defined here; the flyer is the real Serra Angel.
+const FLYER = 'Serra Angel';
+const skyward = (name: string, planeswalkers: boolean) =>
+  singleFaceCard({
+    name,
+    manaCost: ['3', 'G'],
+    types: ['enchantment'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: planeswalkers
+      ? "Creatures with flying can't attack you or planeswalkers you control."
+      : "Creatures with flying can't attack you.",
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'cantAttackYou',
+          creatures: { types: ['creature'], keywords: ['flying'] },
+          ...(planeswalkers ? { planeswalkers: true as const } : {}),
+        },
+      },
+    ],
+  });
+const SKY_WALKERS = 'SYNTHETIC Skyward Ward';
+const SKY_PLAYER = 'SYNTHETIC Skyward Ward Player';
+
+const skyGame = (ward: string, withWalker: boolean) =>
+  scenario()
+    .seat(0)
+    .library(...LIBRARY)
+    .battlefield(FLYER, BEARS)
+    .seat(1)
+    .define(skyward(SKY_WALKERS, true))
+    .define(skyward(SKY_PLAYER, false))
+    .library(...LIBRARY)
+    .battlefield(ward, ...(withWalker ? [WALKER] : []))
+    .at('precombatMain', { active: 0 })
+    .build();
+
+describe('"Creatures with flying can\'t attack you [or planeswalkers you control]."', () => {
+  test('the flyer cannot attack the player; a ground creature can', () => {
+    const g = skyGame(SKY_WALKERS, false);
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(g.act(0).try.declareAttackers([{ attacker: FLYER, target: { player: 1 } }]).ok).toBe(
+      false,
+    );
+    expect(g.act(0).try.declareAttackers([{ attacker: BEARS, target: { player: 1 } }]).ok).toBe(
+      true,
+    );
+  });
+
+  test('the planeswalker form also protects the planeswalker', () => {
+    const g = skyGame(SKY_WALKERS, true);
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(g.act(0).try.declareAttackers([{ attacker: FLYER, target: WALKER }]).ok).toBe(false);
+    expect(g.act(0).try.declareAttackers([{ attacker: BEARS, target: WALKER }]).ok).toBe(true);
+  });
+
+  test('the player-only form leaves the planeswalker open to the flyer', () => {
+    const g = skyGame(SKY_PLAYER, true);
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(g.act(0).try.declareAttackers([{ attacker: FLYER, target: { player: 1 } }]).ok).toBe(
+      false,
+    );
+    expect(g.act(0).try.declareAttackers([{ attacker: FLYER, target: WALKER }]).ok).toBe(true);
+  });
+});

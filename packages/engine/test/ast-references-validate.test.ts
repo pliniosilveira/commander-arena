@@ -86,6 +86,8 @@ describe('amounts that read an object', () => {
       'toughnessOf',
       'countersOn',
       'aggregate',
+      // Issue 337: "the greatest power among those creatures" of an attack batch trigger.
+      'attackersGreatestPower',
       'devotion',
       'commanderColors',
       'commanderManaValue',

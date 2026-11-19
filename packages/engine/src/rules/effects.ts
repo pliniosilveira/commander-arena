@@ -93,6 +93,7 @@ import { runExileUntilFound } from './exile-until-found';
 import { runExplore } from './explore';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGainFlashbackFromManaCost } from './flashback-grant';
+import { runMayCastEachType } from './free-cast-effect';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
@@ -705,6 +706,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
+    ...(res.triggerAttackers === undefined ? {} : { triggerAttackers: res.triggerAttackers }),
     ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
@@ -1761,6 +1763,9 @@ function runEffect(
     case 'mayPlay':
       // D-151: "You may play that card this turn" (rules/impulse.ts).
       return runMayPlay(state, res, effect);
+    case 'mayCastEachType':
+      // CR 601.2, 118.9, 611.2a: "for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (rules/free-cast.ts).
+      return runMayCastEachType(state, res, effect);
     case 'gainActivatedAbilitiesOf':
       // CR 613.1f (issue 159): "this creature gains all activated abilities of that card until end of turn" (rules/may-effects.ts).
       return runGainActivatedAbilitiesOf(state, effect, ctx, targets);
@@ -2346,6 +2351,10 @@ function runEffect(
       return done(state, [], asked);
     }
 
+    case 'noMaxHandSizeForGame':
+      // CR 402.2, 514.1: no maximum hand size for the rest of the game; the cleanup step reads it (`hasNoMaximumHandSize`).
+      return done(patchSeat(state, res.controller, { noMaximumHandSize: true }));
+
     case 'gainEnergy': {
       // CR 107.14, 122.1 (D-209): "You get {E}{E}": the player puts that many energy counters on themselves.
       const amount = amountOf(state, effect.amount, ctx, targets);
@@ -2624,6 +2633,8 @@ function runEffect(
               : { totalManaValue: effect.take.totalManaValue }),
             // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
+            // CR 608.2c: "If you don't, put a card from among them into your hand."
+            ...(effect.take.elseAnyToHand === true ? { elseAnyToHand: true as const } : {}),
             // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
             ...(effect.take.all === true ? { all: true as const } : {}),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
@@ -2976,6 +2987,25 @@ function runEffect(
               ...(effect.foundAtMost === undefined ? {} : { foundAtMost: effect.foundAtMost }),
               ...(effect.castAtMost === undefined ? {} : { castAtMost: effect.castAtMost }),
               rest: effect.rest,
+            },
+          },
+        ],
+      );
+
+    case 'revealTopCast':
+      // CR 701.20a, 608.2g: reveal the top card, may cast it without paying its mana cost when its mana value is less than the limit, else put it into the hand.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'cascade',
+            stage: 'start',
+            exiled: [],
+            found: null,
+            variant: {
+              rest: 'stayExiled',
+              revealTop: { below: amountOf(state, effect.manaValueBelow, ctx, targets) },
             },
           },
         ],

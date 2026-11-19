@@ -61,6 +61,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FINALE_EFFECT_RULES } from './finale';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
@@ -94,6 +95,7 @@ import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
+import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
 import {
@@ -166,6 +168,7 @@ import { SEARCH_PAIR_RULES } from './search-pair';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
+import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
@@ -1105,6 +1108,8 @@ export const EFFECT_RULES = [
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
   ...COUNCIL_EFFECT_RULES,
   ...DINOSAUR_EFFECT_RULES,
+  // Troyan deck, group 4 (issue 337): "Exile the top eight cards of your library. You may put a land card ..." starts like the plain exile of the top cards, and is tried first.
+  ...TROYAN_G4_EFFECT_RULES,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_EFFECT_RULES,
   // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
@@ -1113,6 +1118,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
+  ...FINALE_EFFECT_RULES,
   ...GIDEON_EFFECT_RULES,
   // CR 701.20a, 119.3: 'you and target opponent each reveal the top card of your library. You each lose life ...' starts like the plain player rules, so it is tried first.
   ...REVEAL_TOP_DUEL_EFFECT_RULES,
@@ -1215,6 +1222,7 @@ export const EFFECT_RULES = [
   ...PILES_EFFECT_RULES,
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
+  ...LOOK_ELSE_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,

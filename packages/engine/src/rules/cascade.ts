@@ -78,6 +78,8 @@ function exileUntilFound(
   ins: CascadeInstruction,
 ): StepOutcome {
   const seat = res.controller;
+  if (ins.variant?.revealTop !== undefined)
+    return revealTopCard(state, res, ins, ins.variant.revealTop);
   // "This spell's mana value": read from the spell on the stack, or its last-known information (CR 113.7a). Discover has no source spell
   // to stay under (CR 701.57a, D-151): the card found is the first nonland card, with a mana value of N or less when N is given.
   const variant = ins.variant;
@@ -138,6 +140,39 @@ function exileUntilFound(
   return variant === undefined ? result : { ...result, lastMoved: found === null ? [] : [found] };
 }
 
+/**
+ * CR 701.20a (Reveal), 608.2g: "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you
+ * don't cast it, put it into your hand." The top card is revealed, publicly, and stays in the library while the question is asked. A land card, or a card whose mana value
+ * is not less than the limit (an {X} counts as 0 in a library, CR 202.3e, and is 0 when cast without paying, CR 107.3b), is not offered: it goes into the hand.
+ */
+function revealTopCard(
+  state: GameState,
+  res: ResolutionContext,
+  ins: CascadeInstruction,
+  limit: { readonly below: number },
+): StepOutcome {
+  const seat = res.controller;
+  const top = getSeat(state, seat).library[0];
+  const card = top === undefined ? undefined : state.objects[top];
+  if (top === undefined || card === undefined || card.card === null) {
+    return { ...done(state), lastMoved: [] };
+  }
+  const d = derive(state, card);
+  const events: GameEvent[] = [
+    { kind: 'cardsRevealed', seat, cards: [card.card], names: [d.name], from: 'library' },
+  ];
+  const castable =
+    !d.types.includes('land') &&
+    manaValueOfCost(d.manaCost, card) < limit.below &&
+    canCastDuringResolution(state, seat, card);
+  return {
+    ...done(state, events, [
+      { ...ins, stage: castable ? 'ask' : 'bottom', found: top, exiled: [] },
+    ]),
+    lastMoved: [],
+  };
+}
+
 /** CR 702.85a: the cards that were not cast go on the bottom of the library in a random order. */
 function bottomExiled(
   state: GameState,
@@ -148,8 +183,11 @@ function bottomExiled(
   // A card that was cast is a new object on the stack: its exile object is gone, so it is not here.
   const variant = ins.variant;
   // D-151: a card found that was not cast goes into the hand (the others, per `rest`, stay in exile or go to the bottom).
+  // `revealTopCast`: the card was revealed on top of the library and stays there until it is cast or put into the hand.
   const toHand =
-    variant !== undefined && ins.found !== null && state.objects[ins.found]?.zone === 'exile'
+    variant !== undefined &&
+    ins.found !== null &&
+    state.objects[ins.found]?.zone === (variant.revealTop === undefined ? 'exile' : 'library')
       ? moveInstructions([ins.found], 'hand')
       : [];
   if (variant?.rest === 'stayExiled') return done(state, [], toHand);

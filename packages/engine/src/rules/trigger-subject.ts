@@ -64,6 +64,16 @@ export function readsTriggerDamage(ability: Ability): boolean {
   );
 }
 
+/** Whether the triggered ability reads the creatures its attack event declared (`attackersGreatestPower`, CR 508.1). */
+export function readsTriggerAttackers(ability: Ability): boolean {
+  return (
+    ability.kind === 'triggered' &&
+    JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+      '"attackersGreatestPower"',
+    )
+  );
+}
+
 /** Whether the triggered ability reads whom its attack event was declared at (`attackersAttackedYou`, D-149). */
 export function readsTriggerAttacked(ability: Ability): boolean {
   return (

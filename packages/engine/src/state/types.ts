@@ -510,8 +510,9 @@ export interface StackData {
   readonly exileWithTimeCounters?: number;
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
-   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own. Also (Lorehold group 2) a card in exile cast for no mana cost because an
-   * effect gave a permission to ("You may cast that card this turn without paying its mana cost", `mayCast.free`). Absent otherwise, and for an ability.
+   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own, or by the permission of an effect that lets a card in exile
+   * be cast without paying it (`mayCastEachType`). Also (Lorehold group 2) a card in exile cast for no mana cost because an effect gave a permission to ("You may cast that card
+   * this turn without paying its mana cost", `mayCast.free`). Absent otherwise, and for an ability.
    */
   readonly byEffect?: true;
   /**
@@ -536,6 +537,8 @@ export interface StackData {
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** For an `attackBatch` triggered ability: the creatures its attack event declared as attackers (`attackersGreatestPower`). */
+  readonly triggerAttackers?: readonly ObjectId[];
   /** For a triggered ability that reads `attackersAtYouAtLeast` (D-643): who each creature of its attack event was declared attacking, a player or the controller of a planeswalker. */
   readonly triggerAttackedAt?: readonly SeatId[];
   /**
@@ -637,6 +640,11 @@ export interface SeatState {
    * (a player has none). Public.
    */
   readonly energy?: number;
+  /**
+   * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): set by the `noMaxHandSizeForGame` effect; the player discards nothing in a cleanup step
+   * from then on, as with a permanent that says it (`hasNoMaximumHandSize`). Absent until the first time. Public.
+   */
+  readonly noMaximumHandSize?: true;
   /** The commander cards chosen for this seat, in order. */
   readonly commanders: readonly CardId[];
   readonly handSizeMax: number | null;
@@ -795,6 +803,8 @@ export interface PendingTrigger {
   readonly cards?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
   readonly attacked?: readonly SeatId[];
+  /** For an `attackBatch` trigger that reads `attackersGreatestPower`: the creatures declared as attackers, in the order declared. */
+  readonly attackers?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked (a battle is neither), in the order declared. */
   readonly attackedAt?: readonly SeatId[];
   /** For a chapter ability (CR 714.2): the chapter number that was reached. Absent otherwise. */
@@ -1362,6 +1372,8 @@ export type Instruction =
       readonly all?: true;
       /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
+      /** "If you don't, put a card from among them into your hand" (`take.elseAnyToHand`, CR 608.2c): when nothing was taken, one card of any kind goes to the hand, unrevealed. */
+      readonly elseAnyToHand?: true;
       /** Every card of the top is revealed to everyone (`revealAll`, D-396, CR 701.20a): "Reveal the top five cards of your library". */
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */
@@ -1594,6 +1606,11 @@ export type Instruction =
         readonly foundAtMost?: number;
         readonly castAtMost?: number;
         readonly rest: 'bottomRandom' | 'stayExiled';
+        /**
+         * `revealTopCast` (CR 701.20a, 608.2g): the card is the top card of the library, revealed and not exiled, and may be cast, from the library, only when it
+         * is not a land and its mana value is less than `below` (read as the effect ran); a card that is not cast goes into the hand.
+         */
+        readonly revealTop?: { readonly below: number };
       };
     }
   /**
@@ -1865,6 +1882,8 @@ export interface ResolutionContext {
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** What `attackersGreatestPower` reads: `StackData.triggerAttackers`. */
+  readonly triggerAttackers?: readonly ObjectId[];
   /** What `attackersAtYouAtLeast` reads (D-643): `StackData.triggerAttackedAt`. */
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
@@ -2049,6 +2068,13 @@ export type ContinuousChange =
        */
       readonly bottomInstead?: true;
     }
+  /**
+   * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,
+   * CR 601.2, 118.9, 611.2a): one of these for each card type, each naming the exiled cards (`objects`). `seat` may cast one card in exile it names that has the card type
+   * `type`, without paying its mana cost, at the timing of the spell, and the permission is used up by that cast (`rules/free-cast.ts`: it is removed). No layer: read where
+   * casting is decided (`rules/legality.ts`).
+   */
+  | { readonly kind: 'freeCastPermission'; readonly seat: SeatId; readonly type: CardType }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }

@@ -34,9 +34,20 @@ const QUOTE_ENDS_SENTENCE: Parser<string> = (ctx, pos) =>
 
 const SENTENCE_END: Parser<string> = choice(literal('.'), QUOTE_ENDS_SENTENCE);
 
+/**
+ * The bare comma between the instructions of a list of three or more ("Shuffle your graveyard into your library, draw X cards, untap up to five lands, and you
+ * have no maximum hand size", CR 608.2c: followed in the order written): only when the sentence goes on to a closing ", and " (the last join of the list), so a
+ * comma that ends an instruction before something else ("..., where X is ...") is not taken for one.
+ */
+const LIST_COMMA: Parser<string> = (ctx, pos) => {
+  const comma = literal(', ')(ctx, pos);
+  if (!comma.ok) return comma;
+  return /^[^.]*, and /u.test(ctx.text.slice(comma.pos)) ? comma : fail(ctx, pos);
+};
+
 const CLAUSES: Parser<{ items: (readonly IrClause[])[]; joins: string[] }> = listWithJoins(
   family<readonly IrClause[]>('effect'),
-  CLAUSE_JOIN,
+  choice(CLAUSE_JOIN, LIST_COMMA),
 );
 
 /**

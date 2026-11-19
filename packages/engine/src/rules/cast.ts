@@ -90,6 +90,7 @@ import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
 import { derive } from './derive';
 import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
+import { freeCastSlotToUse } from './free-cast';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import {
@@ -214,6 +215,11 @@ export function beginCast(
     !mayCastFromGraveyard(state, seat, obj)
       ? graveyardPlayPermission(state, seat, obj, false)
       : null;
+  // CR 601.2, 118.9 (`mayCastEachType`): a card in exile cast for free by the permission of an effect uses up the permission of one of its types.
+  const freeUse =
+    !resolving && alternative === 'free' && obj.zone === 'exile' && obj.onAdventure !== true
+      ? freeCastSlotToUse(state, seat, obj, face)
+      : null;
   const moved = moveObject(state, { object: objectId, to: 'stack', face });
   if (moved.kind !== 'done' || moved.newObject === null) return fail('The card could not move');
   const stackId = moved.newObject;
@@ -250,6 +256,7 @@ export function beginCast(
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
+      freeUse !== null ||
       // Lorehold group 2 (CR 118.9): a card in exile cast for no mana cost because an effect said "you may cast that card this turn without paying its mana cost".
       (!resolving &&
         alternative === 'free' &&
@@ -281,6 +288,12 @@ export function beginCast(
     },
   });
   if (graveyardUse !== null) next = markGraveyardPlay(next, graveyardUse.object.id);
+  if (freeUse !== null) {
+    next = {
+      ...next,
+      continuousEffects: next.continuousEffects.filter((e) => e.id !== freeUse.id),
+    };
+  }
   // D-408 (CR 601.3b, 601.3d): a spell cast now only because of its own conditional flash ("if it targets a commander") chooses its targets from what meets it.
   // Read before the spell moves: the timing is that of the state it is cast in.
   const flashTargets = resolving

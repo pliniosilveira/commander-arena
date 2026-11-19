@@ -598,6 +598,23 @@ const IF_REVEALED_CARD =
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
+ * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand."
+ * (CR 701.20a, 608.2g): three sentences that are one instruction (what is revealed, what may be cast and what happens to the card when it is not), kept together so
+ * `effect.reveal-top-cast` reads them as one. Only all three in a row (the first may follow the comma of a trigger).
+ */
+const MAY_CAST_IF_LESSER =
+  /^you may cast it without paying its mana cost if it['’]s a spell with lesser mana value\.$/i;
+const ELSE_CAST_INTO_HAND = /^if you don['’]t cast it, put it into your hand\.$/i;
+/**
+ * "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of
+ * that type from among the exiled cards without paying its mana cost." (CR 701.13, 608.2d, 611.2a): three sentences that are one instruction ("them" and "the exiled cards" are the
+ * cards the first one exiles), kept together so `effect.exile-top-put-cast-each-type` reads them as one. Only all three in a row.
+ */
+const EXILE_TOP_CARDS = /^exile the top [^.]* cards of your library\.$/i;
+const MAY_PUT_FROM_AMONG_ONTO = /^you may put [^.]* from among them onto the battlefield\.$/i;
+const UNTIL_EOT_EACH_TYPE =
+  /^until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost\.$/i;
+/**
  * "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto
  * the battlefield." (Galadriel deck, group 1, CR 401.2): the second sentence of the instruction of `LOOK_AT_TOP_CARD` that puts the card onto the battlefield (`effect.look-top-put`).
  */
@@ -626,6 +643,13 @@ const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 const CREATE_AURA_TOKEN = /^create [^.]* Aura enchantment token [^.]*\.$/i;
 const TOKEN_HAS_ENCHANT = /^the token has enchant creature(?:\.| and ["“].*["”]\.?)$/i;
 
+/**
+ * "Look at the top four cards of your library. You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand. Put
+ * the rest on the bottom of your library in a random order." (Planar Genesis, CR 608.2c): four sentences that are one instruction (the second and third depend on each other and
+ * on the cards the first one looks at), kept together for `effect.look-take-else-hand`. Only all four in a row.
+ */
+const MAY_PUT_AMONG_TAPPED = /^you may put [^.]* from among them onto the battlefield tapped\.$/i;
+const IF_NOT_PUT_AMONG_HAND = /^if you don['’]t, put a card from among them into your hand\.$/i;
 const PLAYER_REVEALS_UNTIL =
   /^target opponent reveals cards from the top of their library until they reveal [^.]*\.$/i;
 const YOU_PUT_AND_LOSE_LIFE =
@@ -670,6 +694,16 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       continue;
     }
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, LOOK_AT_TOP) &&
+      said(b, MAY_PUT_AMONG_TAPPED) &&
+      said(c, IF_NOT_PUT_AMONG_HAND) &&
+      said(d, PUT_THE_REST)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       d !== undefined &&
       said(a, REVEAL_UNTIL) &&
@@ -741,6 +775,24 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EXILE_TOP_CARDS) &&
+      said(b, MAY_PUT_FROM_AMONG_ONTO) &&
+      said(c, UNTIL_EOT_EACH_TYPE)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, MAY_CAST_IF_LESSER) &&
+      said(c, ELSE_CAST_INTO_HAND)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

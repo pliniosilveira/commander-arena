@@ -1420,6 +1420,9 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
+            ...(occ.attackers === undefined || ability.trigger.kind !== 'attackBatch'
+              ? {}
+              : { attackers: occ.attackers }),
             ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'

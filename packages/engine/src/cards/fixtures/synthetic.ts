@@ -182,6 +182,7 @@ import { SYNTHETIC_TARGETING_LIST } from './synthetic-targeting';
 import { SYNTHETIC_TRIGGER_TARGET_LIST } from './synthetic-trigger-targets';
 import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
 import { SYNTHETIC_TRIGGER_MORE_LIST } from './synthetic-triggers-more';
+import { SYNTHETIC_TROYAN_G4_LIST } from './synthetic-troyan-g4';
 import { SYNTHETIC_TURNLOG_LIST } from './synthetic-turnlog';
 import { SYNTHETIC_UNBLOCKED_LIST } from './synthetic-unblocked';
 import { SYNTHETIC_UNBOUND_I_LIST } from './synthetic-unbound-i';
@@ -559,6 +560,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DRAGONS_LIST,
   ...SYNTHETIC_PILES_LIST,
   ...SYNTHETIC_HASHATON_G2_LIST,
+  ...SYNTHETIC_TROYAN_G4_LIST,
   ...SYNTHETIC_PRISMARI_G1_LIST,
   ...SYNTHETIC_PRISMARI_G2_LIST,
   ...SYNTHETIC_PRISMARI_G3_LIST,

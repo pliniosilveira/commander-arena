@@ -276,7 +276,7 @@ describe('Baral and Kari Zev: "Whenever you cast your first instant or sorcery s
     'When ~ enters, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost.',
     // A forced cast is no offer.
     "Whenever you cast your first instant or sorcery spell each turn, cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, draw a card.",
-    'Whenever you cast your first spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost.',
+    // (The same line with "your first spell each turn" is read since Rashmi's trigger: a `castSpell` trigger with `nth: 1`.)
   ])('not read: %s', (text) => {
     expect(dropped(text, 'creature').reason).toBeDefined();
   });

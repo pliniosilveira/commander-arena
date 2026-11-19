@@ -69,6 +69,7 @@ import {
   fixedTimesWords,
   mayPlayText,
   payAnyAmountText,
+  revealTopCastText,
   revealTopTail,
   revealTopText,
 } from '../../game/dragons-text';
@@ -1392,6 +1393,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return effect.objects.kind === 'choose'
         ? (untapChooseText(effect.objects) ?? UNSAID)
         : `Untap ${object(effect.objects)}`;
+    case 'noMaxHandSizeForGame':
+      // CR 402.2: "You have no maximum hand size for the rest of the game".
+      return 'You have no maximum hand size for the rest of the game';
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
     case 'moveAllCounters':
@@ -1541,6 +1545,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'exileUntilCast':
       // D-151 (CR 701.57): "Discover 10" and its kin.
       return exileUntilCastText(effect);
+    case 'revealTopCast':
+      // CR 701.20a, 608.2g: "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value ...".
+      return revealTopCastText();
     case 'behold':
       // D-151 (CR 701.4a): "Behold a Dragon".
       return beholdText(effect) ?? UNSAID;

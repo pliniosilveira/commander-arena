@@ -99,8 +99,10 @@ export const EFFECT_UNTAP_CHOSEN = defineRule<Clauses>({
     'untap up to three lands',
     'untap up to two lands you control',
     'untap up to 2 artifacts',
+    'untap up to X lands',
   ],
   rejects: [
+    'untap up to X',
     'untap up to three target lands',
     'untap three lands',
     'untap up to one lands',
@@ -111,9 +113,16 @@ export const EFFECT_UNTAP_CHOSEN = defineRule<Clauses>({
   parse: single(
     'effect.untap-chosen',
     (ctx, pos) => {
+      // "Untap up to X lands, where X is ..." (CR 107.3c, 701.26a): X is what the sentence defines it as; the lowering reads it.
       const head = sequence(
         literal('untap up to '),
-        satisfy(quantity, (n) => n >= 2),
+        choice(
+          map(
+            satisfy(quantity, (n) => n >= 2),
+            (n): number | 'x' => n,
+          ),
+          map(literal('X'), (): number | 'x' => 'x'),
+        ),
         literal(' '),
       )(ctx, pos);
       if (!head.ok) return head;
@@ -130,7 +139,10 @@ export const EFFECT_UNTAP_CHOSEN = defineRule<Clauses>({
         upTo: true,
         plural: true,
         other: false,
-        count: { kind: 'number', value: count, span: { start: pos, end: head.pos } },
+        count:
+          count === 'x'
+            ? { kind: 'x', span: { start: pos, end: head.pos } }
+            : { kind: 'number', value: count, span: { start: pos, end: head.pos } },
         span: phrase.value.span,
         rule: 'effect.untap-chosen',
       };

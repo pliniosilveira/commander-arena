@@ -27,6 +27,8 @@ export function keepsDamage(state: GameState, obj: GameObject): boolean {
  * discard nothing as cleanup begins (CR 514.1). Several such permanents do the same as one.
  */
 export function hasNoMaximumHandSize(state: GameState, seat: SeatId): boolean {
+  // CR 402.2: an effect that gave the player no maximum hand size for the rest of the game (`noMaxHandSizeForGame`).
+  if (getSeat(state, seat).noMaximumHandSize === true) return true;
   return state.battlefield.some((id) => {
     const obj = getObject(state, id);
     return (

@@ -1779,6 +1779,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'attackersGreatestPower':
+      // CR 508.1: the creatures of the attack event of an `attackBatch` trigger (`scope.triggerAttacked` is set only there).
+      if (scope.triggerAttacked !== true) {
+        issue(
+          out,
+          path,
+          'attackersGreatestPower reads the creatures of an attackBatch trigger: it is only valid in the effect of one',
+        );
+      }
+      break;
     case 'manaValueOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
@@ -3342,13 +3352,19 @@ function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Ou
 function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
   if (sel.upTo !== true) issue(out, `${path}.upTo`, 'a choice of what to untap is "up to" a count');
-  if (
-    sel.count === undefined ||
-    typeof sel.count !== 'number' ||
-    !isCount(sel.count) ||
-    sel.count < 1
-  ) {
-    issue(out, `${path}.count`, 'the number of permanents to untap is a positive integer');
+  if (sel.count === undefined) {
+    issue(
+      out,
+      `${path}.count`,
+      'the number of permanents to untap is a positive integer or an amount',
+    );
+  } else if (typeof sel.count === 'number') {
+    if (!isCount(sel.count) || sel.count < 1) {
+      issue(out, `${path}.count`, 'the number of permanents to untap is a positive integer');
+    }
+  } else {
+    // "Untap up to X lands, where X is the greatest power among those creatures": an amount read as the effect runs (0 untaps nothing).
+    checkAmount(sel.count, `${path}.count`, scope, out);
   }
   if (
     sel.anyNumber !== undefined ||
@@ -3383,6 +3399,17 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
  */
 function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
+  // CR 107.3a: "mana value X or less" of a card chosen reads the X of the spell or ability that has one.
+  if (
+    (sel.filter?.manaValueAtMost as { kind?: string } | undefined)?.kind === 'x' &&
+    !scope.xAllowed
+  ) {
+    issue(
+      out,
+      `${path}.filter.manaValueAtMost`,
+      'the X of the limit is used but nothing in this ability or spell has an X',
+    );
+  }
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
@@ -5611,11 +5638,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
-      if (e.take?.hidden !== undefined && (e.take.hidden !== true || e.take.to === 'battlefield')) {
+      if (
+        e.take?.hidden !== undefined &&
+        (e.take.hidden !== true || (e.take.to === 'battlefield' && e.take.elseAnyToHand !== true))
+      ) {
         issue(
           out,
           `${path}.take.hidden`,
-          'hidden is true, and only for cards put into the hand (a card put onto the battlefield is public)',
+          'hidden is true, and only for cards put into the hand, or onto the battlefield with elseAnyToHand (a card put onto the battlefield is public, but it is not revealed)',
+        );
+      }
+      // CR 608.2c: "If you don't, put a card from among them into your hand": after a take onto the battlefield that reveals nothing, of at most one card the player may decline.
+      if (
+        e.take?.elseAnyToHand !== undefined &&
+        (e.take.elseAnyToHand !== true ||
+          e.take.to !== 'battlefield' ||
+          e.take.hidden !== true ||
+          e.take.max !== 1 ||
+          e.take.min !== undefined ||
+          e.take.totalManaValue !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take.elseAnyToHand`,
+          'elseAnyToHand is true, for one optional card taken onto the battlefield unrevealed (to battlefield, hidden, max 1, no min or totalManaValue)',
         );
       }
       // D-396 (CR 701.20a): "Reveal the top five cards": every card is shown, so nothing about the take can be hidden from anyone.
@@ -6527,6 +6573,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'shuffle':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'noMaxHandSizeForGame':
+      // CR 402.2: no parameters; it is the controller's.
       break;
     case 'rollDie':
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.

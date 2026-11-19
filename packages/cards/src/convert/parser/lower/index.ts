@@ -26,6 +26,7 @@ import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
 import type { FeatureRef } from './features';
+import { FINALE_NEEDS } from './finale';
 import { GIDEON_NEEDS } from './gideon';
 import { KORVOLD_NEEDS } from './korvold';
 import { registerLateLowerers } from './late';
@@ -38,6 +39,7 @@ import { NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
+import { TROYAN_G4_NEEDS } from './troyan-g4';
 import type { FaceCosts, LowerContext, LowerResult, SpellParts } from './types';
 
 // The clause that creates a token with an ability in quotes lowers that ability with these two (stage P35, D-176; `late.ts`).
@@ -152,7 +154,9 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ARDEN_NEEDS,
     ...AURA_GRAVEYARD_NEEDS,
     ...DRAGON_NEEDS,
+    ...TROYAN_G4_NEEDS,
     ...KORVOLD_NEEDS,
+    ...FINALE_NEEDS,
     ...GIDEON_NEEDS,
     ...REVEAL_TOP_DUEL_NEEDS,
     ...PLANESWALKER_NEEDS,
