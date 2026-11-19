@@ -660,6 +660,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.player-or-planeswalker': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),
+  'amount.for-each-card-type': spell((e) => `Target creature gets +1/+1 until end of turn ${e}.`),
   'amount.for-each-color': permanent((e) => `Equipped creature gets +1/+1 ${e}.`),
   'static.opponents-cant-cast': asIs,
   'static.opponents-cant-cast-spells': asIs,

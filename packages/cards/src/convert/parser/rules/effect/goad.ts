@@ -85,4 +85,51 @@ export const EFFECT_ATTACK_RANDOM_OPPONENT = defineRule<Clauses>({
   },
 });
 
-export const GOAD_EFFECT_RULES = [EFFECT_GOAD, EFFECT_ATTACK_RANDOM_OPPONENT];
+/**
+ * `effect.attack-random-opponent-any`: "choose an opponent at random. ~ attacks that player this combat if able." (CR 508.1d, 508.6, 506.1: Ursine Monstrosity). Two sentences that
+ * `segment.ts` keeps together; the creature is the card itself in both. The engine's `attackRandomOpponent` with `anyOpponent`: every opponent is a candidate. Not read: another
+ * creature, "a player at random", "target opponent", "this turn", the exclusion of the last combat (`effect.attack-random-opponent`).
+ */
+export const EFFECT_ATTACK_RANDOM_OPPONENT_ANY = defineRule<Clauses>({
+  id: 'effect.attack-random-opponent-any',
+  family: 'effect',
+  leading: ['choose'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 508.6 (Declare Attackers Step)',
+    'CR 506.1 (Combat Phase)',
+  ],
+  examples: ['choose an opponent at random. ~ attacks that player this combat if able'],
+  rejects: [
+    'choose an opponent at random. ~ attacks that player this turn if able',
+    'choose a player at random. ~ attacks that player this combat if able',
+    'choose target opponent. ~ attacks that player this combat if able',
+    'choose an opponent at random. target creature attacks that player this combat if able',
+    'choose an opponent at random',
+    'choose an opponent at random. ~ attacks that player this combat',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /choose an opponent at random\. ~ attacks that player this combat if able(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          'effect.attack-random-opponent-any',
+          'attackRandomOpponentAny',
+          {},
+          { start: pos, end: r.pos },
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+export const GOAD_EFFECT_RULES = [
+  EFFECT_GOAD,
+  EFFECT_ATTACK_RANDOM_OPPONENT,
+  EFFECT_ATTACK_RANDOM_OPPONENT_ANY,
+];

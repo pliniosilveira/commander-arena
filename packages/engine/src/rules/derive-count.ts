@@ -133,6 +133,33 @@ export function colorsAmongForSource(
 }
 
 /**
+ * CR 205.2a: "the number of card types among cards in your graveyard": how many card types the objects the filter matches have between them, each once (a supertype or
+ * a subtype is no card type). Read through `typeViewOf` like a count; the cards of a graveyard or exile have no effect of layers 1, 4 or 5 on them, and nothing of layer 7 is read.
+ */
+export function cardTypesAmongForSource(
+  state: GameState,
+  filter: ObjectFilter,
+  source: GameObject,
+): number {
+  const zone = filter.zone ?? 'graveyard';
+  const chosen = chosenOf(state, source.id);
+  const ctx = {
+    controller: controllerOf(state, source),
+    source: source.id,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+  };
+  const seen = new Set<string>();
+  for (const id of objectsInZone(state, zone)) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const view = typeViewOf(state, obj);
+    if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
+    for (const type of view.types) seen.add(type);
+  }
+  return seen.size;
+}
+
+/**
  * CR 903.3, 202.3 (D-145): "the greatest mana value among your commanders": the printed mana value of each of the seat's commander cards
  * (the front face of a double-faced card, CR 712.8a, 202.3b), the largest of them; 0 with no commander. It reads the card, not the
  * permanent: no layer can change it, which keeps layer 7 free of loops (CR 613.8).

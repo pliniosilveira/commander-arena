@@ -278,6 +278,11 @@ const CHOOSE_OPPONENT_AT_RANDOM =
   /(?:^|, )choose an opponent at random that ~ didn['’]t attack during your last combat\.$/i;
 const ATTACKS_THAT_PLAYER_THIS_COMBAT = /^~ attacks that player this combat if able\.$/i;
 const CANT_CHOOSE_TAP_IT = /^if you can['’]t choose an opponent this way, tap ~\.$/i;
+/**
+ * "Mill a card and choose an opponent at random. ~ attacks that player this combat if able." (Ursine Monstrosity, CR 508.1d): the choice may follow a comma, "and" or nothing, and
+ * the second sentence says whom the creature must attack, so the two are kept together for `effect.attack-random-opponent-any`.
+ */
+const CHOOSE_ANY_OPPONENT_AT_RANDOM = /(?:^|, |\band )choose an opponent at random\.$/i;
 
 /**
  * "Look at the top three cards of your library. Put one of them into your hand, put one of them on the bottom of your library, and exile one of them."
@@ -688,6 +693,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
+        (said(a, CHOOSE_ANY_OPPONENT_AT_RANDOM) && said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT)) ||
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||

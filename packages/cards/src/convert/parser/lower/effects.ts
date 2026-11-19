@@ -164,6 +164,18 @@ const ATTACK_RANDOM_OPPONENT: Lowering<IrClause, Effects> = {
   }),
 };
 
+/** "Choose an opponent at random. ~ attacks that player this combat if able." (CR 508.1d): the engine's `attackRandomOpponent` with `anyOpponent`. */
+const ATTACK_RANDOM_OPPONENT_ANY: Lowering<IrClause, Effects> = {
+  head: 'attackRandomOpponentAny',
+  id: 'lower.attack-random-opponent-any',
+  needs: ['effect:attackRandomOpponent'],
+  lower: (clause) => ({
+    ok: true,
+    value: [{ kind: 'attackRandomOpponent', creature: { kind: 'this' }, anyOpponent: true }],
+    rule: clause.rule,
+  }),
+};
+
 /** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
@@ -2024,6 +2036,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   simple('untap'),
   GOAD,
   ATTACK_RANDOM_OPPONENT,
+  ATTACK_RANDOM_OPPONENT_ANY,
   simple('transform'),
   REGENERATE,
   ADD_MANA,

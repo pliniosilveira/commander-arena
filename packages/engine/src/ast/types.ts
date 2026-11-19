@@ -3131,8 +3131,14 @@ export type Effect =
    * attacking in the last combat phase of that controller before this one (`GameState.lastCombatAttacks`; the combat of a creature that was not there is a combat it did not attack in),
    * by the game's seeded generator: nobody decides. The creature, when it is on the battlefield, is required to attack that player this combat if able (`mustAttackPlayer`, until the
    * combat ends). When no opponent can be chosen the creature is tapped. Only `this`: the creature of the ability.
+   * `anyOpponent` ("Choose an opponent at random. This creature attacks that player this combat if able."): every opponent still in the game is a candidate, whatever the creature
+   * attacked in the last combat, and nothing is tapped when there is none.
    */
-  | { readonly kind: 'attackRandomOpponent'; readonly creature: { readonly kind: 'this' } }
+  | {
+      readonly kind: 'attackRandomOpponent';
+      readonly creature: { readonly kind: 'this' };
+      readonly anyOpponent?: true;
+    }
   /**
    * "During target opponent's next turn, creatures that player controls attack this planeswalker if able." (CR 508.1d, 508.1a, 611.2a, 611.2c): a requirement on the
    * creatures the player `player` controls, read whenever that player declares attackers, for the creatures they control then (a creature that arrives later is required too,

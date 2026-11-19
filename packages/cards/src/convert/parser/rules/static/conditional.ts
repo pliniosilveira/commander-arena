@@ -34,6 +34,8 @@ const STATIC_CONDITIONS = [
   'condition.attached-to',
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
   'condition.cards-in-graveyard',
+  // CR 205.2a (delirium): "there are four or more card types among cards in your graveyard".
+  'condition.card-types-among',
   // Issue 25 (D-331): "there are no cards in your library".
   'condition.cards-in-library',
   // D-286 (CR 702.95b): "~ is paired with another creature".
