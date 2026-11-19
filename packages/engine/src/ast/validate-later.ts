@@ -22,6 +22,7 @@ export function checkDelayedTrigger(
   out: Out,
   exiledAvailable = false,
   diesTrigger = false,
+  auraDiesTrigger = false,
 ): void {
   if (!isOneOf(e.at?.step, [...TRIGGER_STEPS, 'nextMain'])) {
     issue(out, `${path}.at.step`, `unknown step ${JSON.stringify(e.at?.step)}`);
@@ -55,20 +56,70 @@ export function checkDelayedTrigger(
     }
     return;
   }
+  // D-639 (CR 603.7c, 701.21a): "Sacrifice it / those tokens at the beginning of the next end step", about the permanents an earlier effect of the same sequence made (`moved`: the
+  // tokens of `createToken`, `createCopies` or `populate`), as they are when the ability is created; sacrificed by the controller of the ability.
+  if (kind === 'sacrifice') {
+    const sacrifice = inner as Extract<Effect, { kind: 'sacrifice' }>;
+    if (!exiledAvailable || kindOf(sacrifice.objects) !== 'moved') {
+      issue(
+        out,
+        `${path}.effect.objects`,
+        "a delayed sacrifice names the objects an effect before it made: 'moved' after a token is created",
+      );
+    }
+    if (sacrifice.byController !== undefined || sacrifice.player !== undefined) {
+      issue(out, `${path}.effect`, 'a delayed sacrifice is a plain sacrifice of those objects');
+    }
+    return;
+  }
   if (kind === 'moveToZone') {
     const move = inner as Extract<Effect, { kind: 'moveToZone' }>;
+    // Issue 103 (CR 903.9, 603.7c, 400.7j): "Return it to the command zone at the beginning of the next end step", about the commander an earlier effect of the same
+    // sequence put onto the battlefield (`moved`), as it is when the ability is created.
+    if (move.to === 'command') {
+      if (!exiledAvailable || kindOf(move.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.effect.objects`,
+          "a delayed return to the command zone names the objects an effect before it put onto the battlefield: 'moved'",
+        );
+      }
+      return;
+    }
     const movedObject = exiledAvailable && kindOf(move.objects) === 'moved';
-    const dyingObject = diesTrigger && kindOf(move.objects) === 'triggerCard';
+    // D-657 (Ghoulish Impetus, CR 603.7c, 400.7): "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step": the card the Aura
+    // that has the ability became in the graveyard (`thisCard`).
+    const dyingObject =
+      diesTrigger &&
+      (kindOf(move.objects) === 'triggerCard' ||
+        (auraDiesTrigger && kindOf(move.objects) === 'thisCard'));
     if (!movedObject && !dyingObject) {
       issue(
         out,
         `${path}.effect.objects`,
-        "a delayed move names the object an effect before it exiled: 'moved' after an exile, or 'triggerCard' in a dies trigger",
+        "a delayed move names the object an effect before it exiled: 'moved' after an exile, 'triggerCard' in a dies trigger, or 'thisCard' in the dies trigger of an enchanted creature",
       );
     }
     const handReturn = diesTrigger && kindOf(move.objects) === 'triggerCard' && move.to === 'hand';
     if (move.to !== 'battlefield' && !handReturn) {
       issue(out, `${path}.effect.to`, 'a delayed move puts the object onto the battlefield');
+    }
+    // Issue 89 (Gift of Immortality, CR 603.7c, 400.7, 303.4f): "Return this card to the battlefield attached to that creature at the beginning of the next end step": the Aura's own
+    // card, attached to the object the effect before it returned (`moved`, bound as the ability is created).
+    if (move.attachTo !== undefined) {
+      if (
+        move.attachTo.kind !== 'moved' ||
+        !exiledAvailable ||
+        !dyingObject ||
+        kindOf(move.objects) !== 'thisCard' ||
+        move.to !== 'battlefield'
+      ) {
+        issue(
+          out,
+          `${path}.effect.attachTo`,
+          "a delayed return of the Aura's own card is attached to the object an effect before it returned ('moved')",
+        );
+      }
     }
     return;
   }

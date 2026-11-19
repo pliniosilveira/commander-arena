@@ -52,6 +52,8 @@ export function exiledAsItResolves(
     !permanent &&
     !adventure &&
     stack.flashback !== true &&
+    stack.aftermath !== true &&
+    stack.alt !== 'harmonize' &&
     stack.exileInstead !== true
   );
 }

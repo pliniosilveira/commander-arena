@@ -72,6 +72,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:anyTarget',
   'selector:anyOf',
   'selector:controllerRef',
+  'selector:powerGreaterThan',
   'selector:bound',
   'selector:ownerRef',
   'selector:power',
@@ -86,8 +87,10 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:notSubtypes',
   'selector:notSupertypes',
   'selector:colorless',
+  'selector:notColors',
   'selector:keywords',
   'selector:triggerPlayer',
+  'selector:triggerAttackedPlayer',
   'selector:sacrificedCost',
   'selector:thisCard',
   'selector:anyNumber',
@@ -97,6 +100,8 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:upToThatMany',
   // D-513: "tap up to X target nonland permanents, where X is the number of cards looked at while scrying this way" (`TargetSpec.upToTriggerAmount`).
   'selector:upToTriggerAmount',
+  // CR 107.3c, 603.3d: "return up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (`TargetSpec.upToAmount`).
+  'selector:upToAmount',
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
   'selector:countX',
   'selector:greatest',
@@ -110,14 +115,19 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:commander',
   'selector:enteredThisTurn',
   'selector:modified',
+  // CR 701.15b: "a goaded creature".
+  'selector:goaded',
   // D-426 (Danitha group 3): "Aura attached to it", "creatures that aren't enchanted", "target enchanted creature".
   'selector:attachedTo',
   'selector:enchanted',
+  'selector:enchantedByYou',
   'selector:hostOfSource',
   // D-437 (Feather group 3): "a spell that targets ~" and "that targets only ~" (CR 115.1, 115.9c).
   'selector:isSource',
   'selector:targetsOnly',
   'selector:powerAboveBase',
+  'selector:basePowerIs',
+  'selector:named',
   'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
@@ -144,6 +154,8 @@ function lowerFilterAt(
   inner: boolean,
   /** D-437: a member of a disjunction of spells (the outer filter is on the stack): it may read what the spell targets. */
   stackMember = false,
+  /** D-646: the filter of what a spell targets: matched against the permanent that is the target, so "modified" may be read in it although it is not the filter of the noun itself. */
+  aimed = false,
 ): LowerResult<ObjectFilter> {
   const rule = noun.rule;
   const bad = (needs: readonly FeatureRef[]): LowerResult<ObjectFilter> => ({
@@ -153,6 +165,10 @@ function lowerFilterAt(
     rule,
   });
   if (typeof filter.controller === 'object') return bad(['selector:controllerRef']);
+  // CR 208.1, 608.2c: "with power greater than target creature's power" is read by the group of an effect (`selectorOf`), where the targets are known.
+  if (filter.powerGreaterThanNoun !== undefined) return bad(['selector:powerGreaterThan']);
+  // D-656: "named ~" is read by the group of an effect (`selectorOf`) with the card's own name; anywhere else there is no name to give it.
+  if (filter.namedSelf === true) return bad([]);
   const types = filter.types ?? [];
   const notTypes = filter.notTypes ?? [];
   if (![...types, ...notTypes].every((t) => (CARD_TYPES as readonly string[]).includes(t))) {
@@ -168,6 +184,12 @@ function lowerFilterAt(
     if (letter === undefined) return bad([]);
     colors.push(letter);
   }
+  const notColors: Color[] = [];
+  for (const word of filter.notColors ?? []) {
+    const letter = COLOR_LETTERS[word];
+    if (letter === undefined) return bad([]);
+    notColors.push(letter);
+  }
   let anyOf: ObjectFilter[] | undefined;
   if (filter.anyOf !== undefined) {
     const missing = missingFeatures(['selector:anyOf']);
@@ -179,6 +201,7 @@ function lowerFilterAt(
         noun,
         true,
         filter.zone === 'stack' || filter.stackKind !== undefined,
+        noun.det === 'each' && !inner,
       );
       if (!lowered.ok) return lowered;
       anyOf.push(lowered.value);
@@ -216,6 +239,8 @@ function lowerFilterAt(
   // D-135 (stage P30): "nonbasic land" (CR 205.4), the engine's `notSupertypes`.
   if (filter.notSupertypes !== undefined) parts.push('selector:notSupertypes');
   if (filter.colorless === true) parts.push('selector:colorless');
+  // CR 105.2: "nonblack", the engine's `notColors`.
+  if (notColors.length > 0) parts.push('selector:notColors');
   const keywordsOf = (words: readonly string[] | undefined): Keyword['kind'][] | null => {
     const kinds: Keyword['kind'][] = [];
     for (const word of words ?? []) {
@@ -236,11 +261,19 @@ function lowerFilterAt(
   // D-139 (stage P31): "attacking creatures" (CR 508.1k), a number of colors (CR 105.2).
   if (filter.attacking === true) parts.push('selector:attacking');
   if (filter.notAttacking === true) parts.push('selector:notAttacking');
+  if (filter.blocking === true) parts.push('selector:blocking');
+  if (filter.powerLessThanSource === true) parts.push('selector:powerLessThanSource');
   if (filter.colorCount !== undefined) parts.push('selector:colorCount');
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
   const resolving = filter.manaValueX === true || filter.controllerDamagedBySource === true;
-  if (resolving && (inner || noun.det !== 'each')) return bad([]);
+  // D2 group (CR 107.3a, 601.2b, 601.2c): "target creature with mana value X" reads the X announced before the targets are chosen; the engine reads it in the target
+  // slot of a spell's own text (`validateCard` refuses it anywhere else).
+  const aimedAtX =
+    filter.manaValueX === true &&
+    filter.controllerDamagedBySource !== true &&
+    noun.det === 'target';
+  if (resolving && (inner || (noun.det !== 'each' && !aimedAtX))) return bad([]);
   if (filter.manaValueX === true) parts.push('selector:manaValueX');
   if (filter.controllerDamagedBySource === true) parts.push('selector:controllerDamagedBySource');
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
@@ -257,18 +290,54 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:notCastFromHand');
   }
+  // D-638: "an instant or sorcery spell ... from your hand" (CR 601.2a), a spell on the stack.
+  if (filter.castFromHand === true) {
+    if (inner) return bad([]);
+    parts.push('selector:castFromHand');
+  }
+  // Quandrix Unlimited group E: "a spell with {X} in its mana cost" (CR 107.3), "your first such spell each turn" (CR 601.2i), a spell on the stack.
+  if (filter.xInManaCost === true) {
+    if (inner) return bad([]);
+    parts.push('selector:xInManaCost');
+  }
+  if (filter.firstXSpellThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstXSpellThisTurn');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
     parts.push('selector:enteredThisTurn');
   }
-  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
+  // Lorehold group 2: "target card exiled with ~" (CR 607.2a), read where the filter is matched against the game with the source (a target slot); never a member of a choice, and a card in exile.
+  if (filter.exiledWithSelf === true) {
+    if (inner || filter.zone !== 'exile') return bad([]);
+    parts.push('selector:exiledWithSource');
+  }
+  // Issue 89 (Animate Dead, CR 400.7): "put onto the battlefield with ~", read where the filter is matched against the game with the source (an enchant ability); never a member of a choice.
+  if (filter.putWithSelf === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:putWithSource');
+  }
+  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice,
+  // except of the choice of an `each` selector ("Auras, Equipment, and modified creatures you control"), whose members are matched against the same game.
   if (filter.modified === true) {
-    if (inner) return bad([]);
+    if (inner && !aimed) return bad([]);
     parts.push('selector:modified');
+  }
+  // CR 701.15b: "goaded", read where the filter is matched against the game (a trigger's subject, a target slot, an `each` selector); never a member of a choice.
+  if (filter.goaded === true) {
+    if (inner) return bad([]);
+    parts.push('selector:goaded');
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
+  if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
+  // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
+  if (filter.named !== undefined) {
+    if (inner) return bad([]);
+    parts.push('selector:named');
+  }
   // D-262: "that share a land type" is a condition on the cards found together, which a filter of one card cannot say: the search lowering takes it off first.
   if (filter.sharedLandType === true) return bad([]);
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
@@ -285,7 +354,7 @@ function lowerFilterAt(
   if (filter.targets !== undefined) {
     if (!onStack) return bad([]);
     parts.push('selector:targetsObject');
-    const aimed = lowerFilterAt(filter.targets, noun, true);
+    const aimed = lowerFilterAt(filter.targets, noun, true, false, true);
     if (!aimed.ok) return aimed;
     targetsObject = aimed.value;
   }
@@ -321,6 +390,11 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:enchanted');
   }
+  // D-647 (CR 303.4e): "enchanted by an Aura you control", a permanent on the battlefield, read where the filter is matched against the game.
+  if (filter.enchantedByYou === true) {
+    if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
+    parts.push('selector:enchantedByYou');
+  }
   // D-426 (CR 601.2c, 303.4): "that target enchanted creature", the objects a spell targets are the permanent its source is attached to. Only a spell's filter says it
   // (a cost reduction), as `targets`: not a member of a choice, and not together with it.
   if (filter.targetsHost === true) {
@@ -328,10 +402,24 @@ function lowerFilterAt(
     parts.push('selector:hostOfSource');
     targetsObject = { hostOfSource: true };
   }
+  // D-645 (CR 601.2c, 601.2f, 115.1): what the spell a cost reduction is about targets: the filter of the spells names no zone, so it is not asked to be on the stack.
+  if (filter.castTargets !== undefined) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:targetsObject');
+    const aimed = lowerFilterAt(filter.castTargets, noun, true, false, true);
+    if (!aimed.ok) return aimed;
+    targetsObject = aimed.value;
+  }
+  // D-149 (CR 601.2c, 601.2f, 113.6): "Spells your opponents cast that target ~ cost {2} more": the object the spell targets is the permanent that has the ability.
+  if (filter.castTargetsSelf === true) {
+    if (inner || targetsObject !== undefined) return bad([]);
+    parts.push('selector:isSource', 'selector:targetsObject');
+    targetsObject = { isSource: true };
+  }
   const missingParts = missingFeatures(parts);
   if (missingParts.length > 0) return bad(missingParts);
   // D-131: "creatures attacking you" (CR 508.1b): the attackers whose attack target is the controller as a player.
-  if (filter.attackingYou === true) {
+  if (filter.attackingYou !== undefined) {
     const missing = missingFeatures(['selector:attackingYou']);
     if (missing.length > 0) return bad(missing);
   }
@@ -339,7 +427,7 @@ function lowerFilterAt(
     const missing = missingFeatures(['selector:attackingOrBlocking']);
     if (missing.length > 0) return bad(missing);
   }
-  if (filter.attackingOpponents === true) {
+  if (filter.attackingOpponents !== undefined) {
     const missing = missingFeatures(['selector:attackingOpponents']);
     if (missing.length > 0) return bad(missing);
   }
@@ -363,6 +451,7 @@ function lowerFilterAt(
       ? { subtypes: [...filter.subtypes] }
       : {}),
     ...(colors.length > 0 ? { colors } : {}),
+    ...(notColors.length > 0 ? { notColors } : {}),
     ...(filter.notSubtypes !== undefined && filter.notSubtypes.length > 0
       ? { notSubtypes: [...filter.notSubtypes] }
       : {}),
@@ -380,11 +469,15 @@ function lowerFilterAt(
     ...(filter.targetCountAtLeast !== undefined
       ? { targetCountAtLeast: filter.targetCountAtLeast }
       : {}),
-    ...(filter.attackingYou === true && !inner ? { attackingYou: true as const } : {}),
-    ...(filter.attackingOpponents === true && !inner ? { attackingOpponents: true as const } : {}),
+    ...(filter.attackingYou !== undefined && !inner ? { attackingYou: filter.attackingYou } : {}),
+    ...(filter.attackingOpponents !== undefined && !inner
+      ? { attackingOpponents: filter.attackingOpponents }
+      : {}),
     ...(filter.attackingOrBlocking === true ? { attackingOrBlocking: true as const } : {}),
     ...(filter.attacking === true ? { attacking: true as const } : {}),
     ...(filter.notAttacking === true ? { notAttacking: true as const } : {}),
+    ...(filter.blocking === true ? { blocking: true as const } : {}),
+    ...(filter.powerLessThanSource === true ? { powerLessThanSource: true as const } : {}),
     ...(filter.colorCount === undefined
       ? {}
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
@@ -398,9 +491,17 @@ function lowerFilterAt(
       ? { putFromBattlefieldThisTurn: true as const }
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
+    ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
+    ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
+    ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
+    ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
+    ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
+    ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
+    ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
+    ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
@@ -409,6 +510,7 @@ function lowerFilterAt(
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
     ...(filter.enchanted === undefined ? {} : { enchanted: filter.enchanted }),
+    ...(filter.enchantedByYou === true ? { enchantedByYou: true as const } : {}),
     ...compared,
     ...chosen,
     ...(anyOfFinal === undefined ? {} : { anyOf: anyOfFinal }),
@@ -442,9 +544,9 @@ function boundsOf(noun: IrNoun): { min?: number; max?: number } {
 }
 
 /**
- * Declares the one targets slot of a spell that divides damage as it is cast (stage P32, D-147, CR 601.2d): "any number of target
- * creatures" (no fewest or most: at most as many as the total, each needing 1) or "up to three target creatures", with the total read
- * once as the spell is cast (`divide`). The kind of permanent is an object filter; any other target is not divided.
+ * Declares the one targets slot of a spell or ability that divides damage as it is cast or put on the stack (stage P32, D-147, CR 601.2d, 602.2b, 603.3d):
+ * "any number of target creatures" (no fewest or most: at most as many as the total, each needing 1), "up to three target creatures" or "one or two
+ * targets" (any target, at least one), with the total read once then (`divide`). The kind of permanent is an object filter; any other target is not divided.
  */
 export function declareDividedTarget(
   noun: IrNoun,
@@ -455,8 +557,19 @@ export function declareDividedTarget(
   if (id === undefined || noun.det !== 'target' || noun.filter.player !== undefined) {
     return failure(noun, []);
   }
-  if (noun.filter.anyTarget === true || ctx.targets.some((t) => t.id === id)) {
-    return failure(noun, []);
+  if (ctx.targets.some((t) => t.id === id)) return failure(noun, []);
+  // D-657 (CR 115.4, 601.2d): "divided as you choose among any number of targets": any target, none to as many as the total. "one or two targets": one to two of them.
+  if (noun.filter.anyTarget === true) {
+    const blockedAny = missingFeatures(['selector:anyTarget']);
+    if (blockedAny.length > 0) return failure(noun, blockedAny);
+    if (noun.anyNumber === true) {
+      ctx.targets.push({ id, what: { kind: 'anyTarget' }, divide: { total } });
+    } else if (noun.minTargets !== undefined) {
+      ctx.targets.push({ id, what: { kind: 'anyTarget' }, ...boundsOf(noun), divide: { total } });
+    } else {
+      return failure(noun, []);
+    }
+    return { ok: true, value: id, rule: noun.rule };
   }
   const filter = lowerFilter(noun);
   if (!filter.ok) return filter;
@@ -483,10 +596,39 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   }
   // "Return X target creature cards from your graveyard to your hand" (Hashaton group 10, D-386, CR 601.2b-c): as many targets as the X announced, of a spell's own
   // text and of objects (cards or permanents); the one place the engine's `countX` is read. Anything else about the noun that sets a count refuses it.
-  const countX = noun.det === 'target' && noun.count?.kind === 'x';
+  // "up to X target Zombie cards from your graveyard to the battlefield, where X is the number of opponents you have" (CR 107.3c, 603.3d): when the sentence defines X, the number of
+  // targets is that amount, read as the ability triggers (the engine's `upToAmount`); only in a triggered ability, where the ability is put on the stack with it.
+  const upToDefinedX =
+    noun.det === 'target' &&
+    noun.count?.kind === 'x' &&
+    noun.upTo === true &&
+    noun.rule === 'noun.up-to-x-target-graveyard-cards' &&
+    ctx.xIs !== null &&
+    ctx.owner === 'ability' &&
+    ctx.triggeredBody;
+  const countX = noun.det === 'target' && noun.count?.kind === 'x' && !upToDefinedX;
+  // The new graveyard noun rule reads "up to X" only where the sentence defines X for a triggered ability; elsewhere (a spell's "up to X", an activated ability's) the
+  // announced X is exactly X, never up to it (D-386), so that wording is not read. Every other noun is lowered as it always was.
+  if (noun.rule === 'noun.up-to-x-target-graveyard-cards' && !upToDefinedX) {
+    return failure(noun, []);
+  }
   if (countX) {
     if (
       ctx.owner !== 'spell' ||
+      noun.filter.player !== undefined ||
+      noun.filter.anyTarget === true ||
+      noun.orCard !== undefined ||
+      noun.minTargets !== undefined ||
+      anyNumberTarget ||
+      noun.perOpponent === true ||
+      noun.otherTarget === true ||
+      noun.upToThatMany === true
+    ) {
+      return failure(noun, []);
+    }
+  }
+  if (upToDefinedX) {
+    if (
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
       noun.orCard !== undefined ||
@@ -574,25 +716,44 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         const missing = missingFeatures(['selector:manaValueAtMost']);
         if (missing.length > 0) return failure(noun, missing);
         const dynamic = noun.filter.manaValueAtMostAmount;
-        if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
-          return failure(noun, []);
+        if (dynamic.kind === 'manaValueOf') {
+          // "with mana value less than or equal to that spell's mana value" (CR 202.3, 603.3d): the spell that caused a cast trigger, read as the targets are
+          // chosen and again as the ability resolves (the engine's `manaValueOf` of the `triggerSubject`). No other object is the limit of a filter.
+          if (!ctx.castTrigger) return failure(noun, []);
+          const limit = objectRefOf(dynamic.of, ctx, { triggerSubject: true });
+          if (!limit.ok) return limit;
+          if (limit.value.kind !== 'triggerSubject') return failure(noun, []);
+          atMost = { kind: 'manaValueOf', of: limit.value };
+        } else {
+          if (dynamic.kind !== 'countOf' || typeof dynamic.of.filter.controller !== 'object') {
+            return failure(noun, []);
+          }
+          const ownerNoun = dynamic.of.filter.controller.noun;
+          if (ownerNoun.det !== 'controllerOf' || ownerNoun.of?.ref !== noun.ref) {
+            return failure(noun, []);
+          }
+          const owner = playerSelectorOf(ownerNoun, ctx);
+          if (!owner.ok) return owner;
+          const { controller: _controller, ...countFilter } = dynamic.of.filter;
+          void _controller;
+          const counted = lowerFilter({ ...dynamic.of, filter: countFilter });
+          if (!counted.ok) return counted;
+          atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
         }
-        const ownerNoun = dynamic.of.filter.controller.noun;
-        if (ownerNoun.det !== 'controllerOf' || ownerNoun.of?.ref !== noun.ref) {
-          return failure(noun, []);
-        }
-        const owner = playerSelectorOf(ownerNoun, ctx);
-        if (!owner.ok) return owner;
-        const { controller: _controller, ...countFilter } = dynamic.of.filter;
-        void _controller;
-        const counted = lowerFilter({ ...dynamic.of, filter: countFilter });
-        if (!counted.ok) return counted;
-        atMost = { kind: 'countOf', filter: { ...counted.value, owner: owner.value } };
         const { manaValueAtMostAmount: _amount, ...rest } = noun.filter;
         void _amount;
         subject = { ...noun, filter: rest };
       }
-      if (noun.filter.manaValueAtMostX === true) {
+      if (noun.filter.manaValueAtMostX === true && ctx.xIs === null && ctx.entersX) {
+        // CR 107.3m (D2 group, Kinetic Ooze): "destroy up to one target artifact or enchantment with mana value X or less" in the enters trigger of the permanent itself: the X of the
+        // spell it came from.
+        const missing = missingFeatures(['selector:manaValueAtMost', 'amount:enteredX']);
+        if (missing.length > 0) return failure(noun, missing);
+        atMost = { kind: 'enteredX' };
+        const { manaValueAtMostX: _x, ...rest } = noun.filter;
+        void _x;
+        subject = { ...noun, filter: rest };
+      } else if (noun.filter.manaValueAtMostX === true) {
         const defined = ctx.xIs;
         if (defined === null) return failure(noun, []);
         const missing = missingFeatures(['selector:manaValueAtMost']);
@@ -611,6 +772,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         atMost === undefined
           ? lowered
           : { ...lowered, value: { ...lowered.value, manaValueAtMost: atMost } };
+      // "target creature with mana value X" (CR 107.3a, 601.2b): the spell announces the X its target is read against (`SpellText.x`).
+      if (filter.value.manaValueX === true) ctx.usesX = true;
       // "for each opponent, exile up to one target ... that player controls" (stage P33, D-150, CR 115.1, 601.2c): one slot with at most one
       // target of each opponent, whose bounds are those of the slot ("up to one" for each).
       // "up to that many target creatures" (stage P41, D-188, CR 603.12): as many targets, at most, as the permanents the resolution that created
@@ -639,6 +802,16 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         // Only a slot of any number of objects says "with different controllers".
         if (!anyNumberTarget) return failure(noun, []);
       }
+      let upToAmount: Amount | undefined;
+      if (upToDefinedX) {
+        const blocked = missingFeatures(['selector:upToAmount']);
+        if (blocked.length > 0) return failure(noun, blocked);
+        const defined = ctx.xIs;
+        const lowered = defined?.lower === undefined ? failure(noun, []) : defined.lower();
+        if (!lowered.ok) return lowered;
+        if (defined !== null) defined.used = true;
+        upToAmount = lowered.value;
+      }
       if (countX) {
         const blocked = missingFeatures(['selector:countX']);
         if (blocked.length > 0) return failure(noun, blocked);
@@ -663,16 +836,18 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
             }
           : noun.perOpponent === true
             ? { id, what: { kind: 'object', filter: filter.value }, onePerOpponent: true }
-            : noun.upToTriggerAmount === true
-              ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
-              : noun.upToThatMany === true
-                ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
-                : {
-                    id,
-                    what: { kind: 'object', filter: filter.value },
-                    ...boundsOf(noun),
-                    ...(apart === undefined ? {} : { differentFrom: apart }),
-                  };
+            : upToAmount !== undefined
+              ? { id, what: { kind: 'object', filter: filter.value }, upToAmount }
+              : noun.upToTriggerAmount === true
+                ? { id, what: { kind: 'object', filter: filter.value }, upToTriggerAmount: true }
+                : noun.upToThatMany === true
+                  ? { id, what: { kind: 'object', filter: filter.value }, upToThatMany: true }
+                  : {
+                      id,
+                      what: { kind: 'object', filter: filter.value },
+                      ...boundsOf(noun),
+                      ...(apart === undefined ? {} : { differentFrom: apart }),
+                    };
     }
     ctx.targets.push(spec);
   }
@@ -874,7 +1049,8 @@ export function objectSelectorOf(
   options: RefOptions = {},
 ): LowerResult<ObjectSelector> {
   // D-517: "those creatures" after "tap all creatures target player controls": the group the text named, as it was lowered.
-  if (options.eachMention === true && noun.det === 'anaphor') {
+  // Only the plural pronoun ("those creatures") names the group back: "it" after "each creature" is one of them, which the engine cannot name (issue 160, D-627).
+  if (options.eachMention === true && noun.det === 'anaphor' && noun.plural) {
     const mentioned = noun.ref === undefined ? undefined : ctx.eachMentions.get(noun.ref);
     if (mentioned !== undefined) return { ok: true, value: mentioned, rule: noun.rule };
   }
@@ -895,6 +1071,24 @@ function selectorOf(
     if (blocked !== null) return blocked;
     // "Each creature that player controls" (stage P37, D-180, CR 109.4): the filter names the player by reference, the engine's `controlledBy`, read
     // here where the targets are known (`lowerFilter` alone refuses it).
+    // "Each creature with power greater than target creature's power" (CR 208.1, 608.2c): the filter names the target by reference, the engine's `powerGreaterThan`.
+    const powerNoun = noun.filter.powerGreaterThanNoun;
+    if (powerNoun !== undefined) {
+      const refused = gate(noun, ['selector:powerGreaterThan']);
+      if (refused !== null) return refused;
+      if (typeof noun.filter.controller === 'object') return failure(noun, []);
+      const named = selectorOf(powerNoun, ctx);
+      if (!named.ok) return named;
+      if (named.value.kind !== 'target') return failure(powerNoun, []);
+      const { powerGreaterThanNoun: _bound, ...rest } = noun.filter;
+      const plain = lowerFilterAt(rest, noun, false);
+      if (!plain.ok) return plain;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: { ...plain.value, powerGreaterThan: named.value } },
+        rule: noun.rule,
+      };
+    }
     const controller = noun.filter.controller;
     if (typeof controller === 'object') {
       const refused = gate(noun, ['selector:controllerRef']);
@@ -925,6 +1119,23 @@ function selectorOf(
         rule: noun.rule,
       };
     }
+    // "Creatures named ~" (Prismari deck group 2, D-656, CR 201.2): every creature with the card's own name, whoever controls it, as the effect begins.
+    if (noun.filter.namedSelf === true) {
+      const blockedName = gate(noun, ['selector:named']);
+      if (blockedName !== null) return blockedName;
+      // The tilde is the card's whole name only when the card has no shorter name for it (a legendary "Rootha" is `~` as well): a text that may name either is refused.
+      if (ctx.selfName === '' || ctx.selfName !== ctx.cardName || noun.of !== undefined) {
+        return failure(noun, []);
+      }
+      const { namedSelf: _named, ...rest } = noun.filter;
+      const plain = lowerFilterAt(rest, noun, false);
+      if (!plain.ok) return plain;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: { ...plain.value, named: ctx.selfName } },
+        rule: noun.rule,
+      };
+    }
     const filter = lowerFilter(noun);
     if (!filter.ok) return filter;
     // "Target player's graveyard": the cards in it, selected by their owner (CR 108.3, 404.1).
@@ -936,6 +1147,16 @@ function selectorOf(
       return {
         ok: true,
         value: { kind: 'each', filter: { ...filter.value, owner: owner.value } },
+        rule: noun.rule,
+      };
+    }
+    // D-650 (CR 508.1b): "each other creature that's attacking one of your opponents" in an ability that triggers on a creature: the other is the creature the trigger is
+    // about (the one enchanted, for an Aura), not the source of the ability.
+    if (noun.other && noun.filter.attackingOpponents === 'players' && options.triggerSubject) {
+      const { other: _source, ...rest } = filter.value;
+      return {
+        ok: true,
+        value: { kind: 'each', filter: rest, except: { kind: 'triggerSubject' } },
         rule: noun.rule,
       };
     }
@@ -1031,6 +1252,18 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'anaphor':
     case 'triggerActor': {
+      // Death Toll deck, group C: "If they don't, they lose 3 life" after "Each opponent may discard a card": the player who declined.
+      if (
+        noun.det === 'anaphor' &&
+        ctx.declinedPlayer &&
+        /^(?:they|that player)$/iu.test(noun.filter.raw.trim())
+      ) {
+        return ok({ kind: 'declinedPlayer' });
+      }
+      // D-648: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
+      if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
+        return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);
+      }
       // "That player" in a trigger about a player's action (stage P18): the player the trigger names.
       if (noun.det === 'triggerActor' || noun.ref === 'trigActor') {
         if (ctx.thatPlayer === null)
@@ -1067,7 +1300,7 @@ export function recipientOf(
     noun.det === 'eachOpponent' ||
     noun.det === 'triggerActor' ||
     noun.det === 'controllerOf' ||
-    (noun.det === 'anaphor' && noun.filter.raw.toLowerCase() === 'that player') ||
+    (noun.det === 'anaphor' && /^that (?:player|opponent)$/iu.test(noun.filter.raw)) ||
     (noun.det === 'target' && noun.filter.player !== undefined);
   if (asPlayer) return playerSelectorOf(noun, ctx);
   return objectSelectorOf(noun, ctx);

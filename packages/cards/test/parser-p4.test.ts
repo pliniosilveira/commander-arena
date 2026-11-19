@@ -188,10 +188,6 @@ describe('keyword.flashback: "Flashback {M}" (CR 702.34a)', () => {
       closestRule: 'keyword.flashback',
       recognised: expect.arrayContaining(['keyword.flashback', 'cost.pay-life']),
     });
-    expect(dropped('Flashback—{1}{U}, Pay 3 life.', 'sorcery')).toMatchObject({
-      reason: 'notRunnable',
-      closestRule: 'keyword.flashback',
-    });
     // The backlog's real text: the dash form ends with a period.
     expect(dropped('Flashback—Sacrifice three creatures.', 'sorcery')).toMatchObject({
       reason: 'notRunnable',
@@ -572,7 +568,10 @@ describe('the intervening "if" of a triggered ability (CR 603.4)', () => {
         'creature',
       ),
     ).toMatchObject({ reason: 'unrecognised' });
-    expect(dropped('When ~ enters, if you cast it, you gain 1 life.', 'creature')).toMatchObject({
+    // "if you cast it" is read since issue 100 (`condition.was-cast`); where it was cast from is not.
+    expect(
+      dropped('When ~ enters, if you cast it from your hand, you gain 1 life.', 'creature'),
+    ).toMatchObject({
       reason: 'unrecognised',
     });
   });

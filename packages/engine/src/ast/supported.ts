@@ -76,13 +76,7 @@ function copySourceIssues(filter: ObjectFilter | null, path: string, out: AstIss
     });
     return;
   }
-  if (mightMatchAura(filter)) {
-    out.push({
-      path,
-      message:
-        'a token copy of a permanent that could be an Aura is not implemented by the engine yet (CR 303.4f)',
-    });
-  }
+  // D-668 (CR 303.4f): a token copy of an Aura asks what it enchants as it enters (`rules/enter-token.ts`), so a source that could be an Aura is run.
   // D-211 (CR 614.12): a token that is a copy of a land asks the questions of a shock land and of a land that reveals a card as a permanent does
   // (`rules/enter-token.ts`), so a copy whose source could be a land is run.
 }
@@ -156,7 +150,19 @@ function walkEffect(
       return;
     case 'mayCast': {
       // D-135: the permission is for a card in the graveyard (`runMayCast` skips any other).
-      const zone = selectedFilter(effect.objects, targets)?.zone;
+      const filter = selectedFilter(effect.objects, targets);
+      // Lorehold group 2 (CR 607.2a): `from: 'exile'` is for a card the permanent exiled with its linked ability, which only `exiledWithSource` names.
+      if (effect.from === 'exile') {
+        if (filter?.zone !== 'exile' || filter.exiledWithSource !== true) {
+          out.push({
+            path: `${path}.objects`,
+            message:
+              "a cast permission from exile is for a card exiled with this permanent: the target says zone 'exile' and exiledWithSource",
+          });
+        }
+        return;
+      }
+      const zone = filter?.zone;
       if (zone !== 'graveyard') {
         out.push({
           path: `${path}.objects`,
@@ -195,8 +201,15 @@ function walkEffect(
           : effect.objects.kind === 'choose'
             ? effect.objects.filter
             : selectedFilter(effect.objects, targets);
-      // D-149: an Aura card named by a target, `moved`, `each` or the like chooses what it enchants as it enters (CR 303.4f: `rules/aura-entry.ts`), and so does one
-      // picked by a `choose` selector from the hand or the graveyard (`rules/move-choice.ts`).
+      // D-149: an Aura card named by a target, `moved`, `each` or the like chooses what it enchants as it enters (CR 303.4f: `rules/aura-entry.ts`);
+      // one picked by a `choose` selector from a card zone does too (issue 103: `runChooseMove`); a `choose` among permanents is not a move to the battlefield.
+      if (
+        effect.to === 'battlefield' &&
+        effect.objects.kind === 'choose' &&
+        !['hand', 'graveyard', 'exile', 'command'].includes(effect.objects.filter.zone ?? '')
+      ) {
+        auraEntryIssue(named, `${path}.objects`, out);
+      }
       moved.current = named;
       return;
     }
@@ -218,7 +231,11 @@ function walkEffect(
             message: `putting a searched card into "${d.zone}" is not implemented by the engine yet`,
           });
         }
-        if (d.zone === 'battlefield') auraEntryIssue(effect.filter, `${path}.filter`, out);
+        // Issue 104 (CR 303.4f): a card found by name that is an Aura chooses what it enchants as it enters (`withAuraEntries` in `rules/search.ts`), whatever the
+        // name is; any other search that could find an Aura stays refused.
+        if (d.zone === 'battlefield' && effect.filter.named === undefined) {
+          auraEntryIssue(effect.filter, `${path}.filter`, out);
+        }
       }
       return;
     case 'revealUntil':
@@ -240,9 +257,26 @@ function walkEffect(
       }
       return;
     case 'mayPay':
-      // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana and life, no X.
+      // CR 702.101a (D-120): paid as Ward's cost is (rules/pay-unless.ts): mana, life and (Lorehold group 1, "you may pay {1} and discard a card") discarding cards, no X.
       // D-364: the life may be an amount, worked out as the instruction resolves (`rules/life-amounts.ts`).
-      activationCostIssues(effect.cost, `${path}.cost`, out, ['mana', 'payLife'], false, true);
+      activationCostIssues(
+        effect.cost,
+        `${path}.cost`,
+        out,
+        ['mana', 'payLife', 'discard'],
+        false,
+        true,
+      );
+      // The cards are discarded as Ward's discard is (rules/pay-unless.ts): any cards of the hand, no filter and no name.
+      effect.cost.forEach((c, i) => {
+        if (c.kind === 'discard' && (c.filter !== undefined || c.named !== undefined)) {
+          out.push({
+            path: `${path}.cost[${i}]`,
+            message:
+              'a discard in the payment of a "you may pay" takes any cards: no filter, no name',
+          });
+        }
+      });
       walkEffect(effect.effect, `${path}.effect`, out, targets, moved, subject);
       return;
     case 'regenerate':
@@ -272,7 +306,12 @@ function walkEffect(
       // CR 611.2a: only "until end of turn" has an end the engine runs (CR 514.2). The source must
       // be a permanent on the battlefield (a copy of an Aura or a land is a copy effect on an
       // object that already entered, so nothing is asked, unlike a token).
-      if (!SUPPORTED_FEATURES.durationKinds.includes(effect.duration)) {
+      // D-642 (CR 611.2a, 707.2): and no end at all (`permanent`): "each other token you control becomes a copy of that token" is a layer 1 copy effect that lasts as long as the
+      // permanent does.
+      if (
+        effect.duration !== 'permanent' &&
+        !SUPPORTED_FEATURES.durationKinds.includes(effect.duration)
+      ) {
         out.push({
           path: `${path}.duration`,
           message: `duration "${effect.duration}" is not implemented by the engine yet`,
@@ -299,7 +338,11 @@ function walkEffect(
       // D-230: and no end at all (`permanent`, CR 611.2a) for what an effect gives a permanent it put onto the battlefield: a base power and toughness, types, a keyword.
       if (
         effect.duration === 'permanent' &&
-        (effect.kind === 'setPt' || effect.kind === 'setTypes' || effect.kind === 'grantKeyword')
+        (effect.kind === 'setPt' ||
+          effect.kind === 'setTypes' ||
+          effect.kind === 'grantKeyword' ||
+          // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
+          (effect.kind === 'setColors' && effect.additive === true))
       ) {
         return;
       }
@@ -365,7 +408,13 @@ function walkEffect(
         }
       }
       for (const [i, a] of def.abilities.entries()) {
-        walkAbility(a, `${path}.token.definition.abilities[${i}]`, out, 'token');
+        walkAbility(
+          a,
+          `${path}.token.definition.abilities[${i}]`,
+          out,
+          'token',
+          effect.attachTo !== undefined,
+        );
         if (a.kind === 'static' && 'subject' in a.static && a.static.subject.kind === 'attached') {
           if (!def.subtypes.includes('Equipment')) {
             out.push({
@@ -444,14 +493,14 @@ function activationCostIssues(
   const tappingPermanents = costs.filter((c) => c.kind === 'tapPermanents').length;
   if (
     tappingPermanents > 1 ||
-    (tappingPermanents === 1 && costs.some((c) => c.kind === 'mana' || c.kind === 'tapCreatures'))
+    (tappingPermanents === 1 && costs.some((c) => c.kind === 'tapCreatures'))
   ) {
-    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the sacrifice and the discard and never
-    // with mana: the player could have tapped them for mana first, and nothing promises they are still untapped.
+    // `breakDown` (rules/activate-costs.ts) pays the permanents to tap before the mana, the sacrifice and the discard (D-625: next to a mana
+    // cost too, the player chooses them before paying the mana); it has no place for a second one or for a crew cost.
     out.push({
       path,
       message:
-        'a cost that taps untapped permanents combined with another one, a mana cost or a creature-tapping cost is not implemented by the engine yet',
+        'a cost that taps untapped permanents combined with another one or a creature-tapping cost is not implemented by the engine yet',
     });
   }
   if (
@@ -545,6 +594,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
     case 'dealsCombatDamage':
@@ -596,6 +646,8 @@ function walkAbility(
   path: string,
   out: AstIssue[],
   owner: 'card' | 'token' = 'card',
+  /** An Aura token the effect creates attached to a target (`createToken.attachTo`, CR 303.4f): its enchant ability is the one it is attached by. */
+  attachedAura = false,
 ): void {
   if (!SUPPORTED_FEATURES.abilityKinds.includes(a.kind)) {
     out.push({ path, message: `ability kind "${a.kind}" is not implemented by the engine yet` });
@@ -731,6 +783,16 @@ function walkAbility(
         walkModes(a.modes, a.chooseModes, path, out, triggerSubjectFilter(a.trigger));
         return;
       }
+      // CR 605.1b, 106.1b, 605.3b: the triggered mana ability of "adds an additional one mana of any color": the color is named as the mana ability that triggered it is activated
+      // (`Action.extraColors`), so it is the one `addMana` of a choice the engine runs (the shape is checked in `validate.ts`).
+      if (
+        a.trigger.kind === 'tappedForMana' &&
+        a.effect.kind === 'addMana' &&
+        a.effect.mana.kind === 'anyColor' &&
+        (a.effect.mana.count ?? 1) === 1
+      ) {
+        return;
+      }
       walkEffect(
         a.effect,
         `${path}.effect`,
@@ -781,8 +843,8 @@ function walkAbility(
         // CR 702.29e: paid like any activation cost, as for Cycling.
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'flashback') {
-        // CR 702.34a: an alternative cost; mana only (rules/legality.ts, rules/cast.ts).
-        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+        // CR 702.34a: an alternative cost; mana and life ("Flashback—{1}{U}, Pay 3 life."; rules/cast-cost.ts, rules/cast.ts).
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana', 'payLife']);
       } else if (a.keyword.kind === 'echo') {
         // CR 702.30a: paid as the echo trigger resolves (rules/pay-unless.ts); mana only, no X (D-127).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
@@ -809,11 +871,14 @@ function walkAbility(
       } else if (a.keyword.kind === 'eternalize') {
         // CR 702.129a: paid like any activation cost from the graveyard; mana only (D-384).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
+      } else if (a.keyword.kind === 'embalm') {
+        // CR 702.128a: paid like any activation cost from the graveyard; mana only.
+        activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
       } else if (a.keyword.kind === 'unearth') {
         // CR 702.84a: paid like any activation cost from the graveyard; mana only (D-124).
         activationCostIssues(a.keyword.cost, `${path}.keyword.cost`, out, ['mana']);
-      } else if (a.keyword.kind === 'enchant' && owner === 'token') {
-        // An Aura token would enter the battlefield with no spell to say what it enchants (CR 303.4f).
+      } else if (a.keyword.kind === 'enchant' && owner === 'token' && !attachedAura) {
+        // An Aura token would enter the battlefield with no spell to say what it enchants (CR 303.4f): only `createToken.attachTo` names it.
         out.push({
           path: `${path}.keyword`,
           message: 'an Aura token is not implemented by the engine yet',
@@ -830,6 +895,9 @@ function walkAbility(
       if (a.replacement.kind === 'entersTapped' && a.replacement.unless !== undefined) {
         conditionIssues(a.replacement.unless, `${path}.replacement.unless`, out);
       }
+      if (a.replacement.kind === 'entersTappedUnlessReveals' && a.replacement.orIf !== undefined) {
+        conditionIssues(a.replacement.orIf, `${path}.replacement.orIf`, out);
+      }
       if (
         (a.replacement.kind === 'entersTappedUnlessPays' ||
           a.replacement.kind === 'entersTappedUnlessReveals') &&
@@ -843,7 +911,8 @@ function walkAbility(
       }
       return;
     case 'level':
-      // CR 716.2a (D-235): the abilities of a class level bar are held to the same rules as any other.
+    case 'stationLevel':
+      // CR 716.2a (D-235), 721.2a: the abilities of a class level bar or a station symbol are held to the same rules as any other.
       for (const [i, inner] of a.abilities.entries()) {
         walkAbility(inner, `${path}.abilities[${i}]`, out, owner);
       }
@@ -876,7 +945,7 @@ function copiesThisIssues(face: CardFace, base: string, out: AstIssue[]): void {
     (a) =>
       ((a.kind === 'triggered' || a.kind === 'activated') && copiesThis(a.effect)) ||
       // D-384: Eternalize (CR 702.129a) makes a token copy of this card.
-      (a.kind === 'keyword' && a.keyword.kind === 'eternalize'),
+      (a.kind === 'keyword' && (a.keyword.kind === 'eternalize' || a.keyword.kind === 'embalm')),
   );
   const asks =
     face.types.includes('land') ||

@@ -5,7 +5,7 @@
  *   split (CR 709)          either half is cast (CR 709.3); on the stack only that half exists
  *                           (CR 709.3b); in every other zone the card has both halves combined
  *                           (CR 709.4): both names, the combined mana cost, every type and ability.
- *   adventure (CR 715)      faces[0] is the card, faces[1] its Adventure. The Adventure exists only
+ *   adventure (CR 715)      faces[0] is the card, faces[1] its Adventure (or its Omen, `isOmenFace`: shuffled into the library as it resolves instead of exiled). The Adventure exists only
  *                           on the stack (CR 715.3b, 715.4); everywhere else, and for a card cast
  *                           normally, the card has faces[0] only.
  *   modal_dfc (CR 712.3)    either face is cast or played as a land (CR 712.11b, 712.12); only the
@@ -24,7 +24,13 @@
 
 import type { CardDefinition, CardFace } from '../cards/definition';
 import type { CardType } from '../characteristics';
-import { COLORS, type Color, type Subtype, type Supertype } from '../characteristics';
+import {
+  COLORS,
+  type Color,
+  isPermanentType,
+  type Subtype,
+  type Supertype,
+} from '../characteristics';
 import { definitionOf } from '../state/ops';
 import type { CopiableValues, GameObject, GameState } from '../state/types';
 import { meldedManaCost } from './melded';
@@ -90,7 +96,34 @@ export function combinedValues(def: CardDefinition): CopiableValues {
       oracleText: faces.map((f) => f.oracleText).join('\n//\n'),
     },
     abilities: faces.flatMap((f) => f.abilities),
+    // CR 709.5b: the two halves of a Room are part of its copiable values.
+    ...(isRoomDefinition(def) ? { doors: doorsOfDefinition(def) } : {}),
   };
+}
+
+/**
+ * Whether `def` is a split card with a shared type line, a Room (CR 709.5): both halves are permanent cards. Such a card is cast as either half (CR 709.3) and its permanent has
+ * unlocked designations (CR 709.5c), see `rules/rooms.ts`.
+ */
+export function isRoomDefinition(def: CardDefinition): boolean {
+  return (
+    def.layout === 'split' &&
+    def.faces.length === 2 &&
+    def.faces.every((face) => face.types.some((t) => isPermanentType(t)))
+  );
+}
+
+/** The values of one printed face (CR 707.2): its characteristics and abilities. */
+export function valuesOfPrintedFace(face: CardFace): CopiableValues {
+  const { abilities, spell: _spell, ...characteristics } = face;
+  return { characteristics, abilities };
+}
+
+/** The values of the two halves of a Room (CR 709.5b): part of its copiable values, wherever it is. */
+export function doorsOfDefinition(def: CardDefinition): readonly [CopiableValues, CopiableValues] {
+  const [left, right] = def.faces;
+  if (left === undefined || right === undefined) throw new Error(`${def.name} has no two halves`);
+  return [valuesOfPrintedFace(left), valuesOfPrintedFace(right)];
 }
 
 /** Whether the object, in this zone, has the combined characteristics of a split card. */
@@ -130,8 +163,24 @@ export function backFaceManaCost(
   return front === undefined ? null : { manaCost: front.manaCost };
 }
 
-/** Whether the object is a spell on the stack that was cast as an Adventure (CR 715.3b). */
+/** Whether the second face of an Adventure-layout card is an Omen (a spell face that shuffles into the library as it resolves) rather than an Adventure. */
+export function isOmenFace(def: CardDefinition): boolean {
+  return def.layout === 'adventure' && def.faces[1]?.subtypes.includes('Omen') === true;
+}
+
+/** Whether the object is a spell on the stack that was cast as an Adventure (CR 715.3b): the second face of an Adventure-layout card that is not an Omen. */
 export function isAdventureSpell(state: GameState, obj: GameObject): boolean {
   if (obj.card === null || obj.zone !== 'stack' || obj.stack?.kind !== 'spell') return false;
-  return definitionOf(state, obj.card).layout === 'adventure' && obj.face === 1;
+  const def = definitionOf(state, obj.card);
+  return def.layout === 'adventure' && obj.face === 1 && !isOmenFace(def);
+}
+
+/**
+ * Whether the object is a spell on the stack that was cast as an Omen (Tarkir: Dragonstorm): the Omen half of its card, on the same two-face machinery as an Adventure
+ * (cast from the hand, only that half exists on the stack) but its reminder text, "Then shuffle this card into its owner's library", replaces the exile of an Adventure.
+ */
+export function isOmenSpell(state: GameState, obj: GameObject): boolean {
+  if (obj.card === null || obj.zone !== 'stack' || obj.stack?.kind !== 'spell') return false;
+  const def = definitionOf(state, obj.card);
+  return obj.face === 1 && isOmenFace(def);
 }

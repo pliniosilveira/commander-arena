@@ -1249,18 +1249,42 @@ describe('filter parts: nontoken, non-<type>, colorless, with and without a keyw
       'Destroy target non-Zombie creature.',
       { zone: 'battlefield', types: ['creature'], notSubtypes: ['Zombie'] },
     ],
+    // CR 105.2, 205.4: "nonblack" leaves a color out, "nonartifact" a card type; a comma may join the two.
+    [
+      'Destroy target nonblack creature.',
+      { zone: 'battlefield', types: ['creature'], notColors: ['B'] },
+    ],
+    [
+      'Destroy target nonartifact, nonblack creature.',
+      { zone: 'battlefield', types: ['creature'], notTypes: ['artifact'], notColors: ['B'] },
+    ],
   ])('%s is a target with the part in its filter', (text, filter) => {
     expect(readAll(text, 'sorcery').spell?.targets).toEqual([
       { id: 't1', what: { kind: 'object', filter } },
     ]);
   });
 
-  test('a keyword in the subject of a static ability is read and refused (CR 613.8: layer 6)', () => {
-    for (const text of [
-      'Creatures with flying you control get +1/+1.',
-      'Creatures without flying you control get +1/+1.',
-    ]) {
-      expect(drop(text, 'enchantment')).toMatchObject({ reason: 'notRunnable' });
+  // A keyword in the subject of a pump is read since the First Flight decks (parser-first-flight-flying-statics.test.ts
+  // reads it and the engine scenario tests run it).
+  test('a keyword in the subject of a static pump is read (CR 613.8: layer 7c)', () => {
+    for (const [text, keywords] of [
+      ['Creatures with flying you control get +1/+1.', { keywords: ['flying'] }],
+      ['Creatures without flying you control get +1/+1.', { notKeywords: ['flying'] }],
+    ] as const) {
+      expect(readAll(text, 'enchantment').abilities).toEqual([
+        {
+          kind: 'static',
+          static: {
+            kind: 'modifyPt',
+            subject: {
+              kind: 'filter',
+              filter: { types: ['creature'], ...keywords, controller: 'you' },
+            },
+            power: 1,
+            toughness: 1,
+          },
+        },
+      ]);
     }
   });
 
@@ -1747,13 +1771,15 @@ describe('costs that tap or sacrifice other permanents (CR 118.3, 302.6, 701.21)
     expect(cost(text)).toEqual([{ kind: 'tapPermanents', filter, count }]);
   });
 
-  test('a mana cost or {T} beside it is read and refused: the permanents could have been tapped for mana', () => {
-    for (const text of [
-      '{1}, Tap two untapped artifacts you control: Draw a card.',
-      '{T}, Tap two untapped artifacts you control: Draw a card.',
-    ]) {
-      expect(drop(text)).toMatchObject({ reason: 'notRunnable' });
-    }
+  test('a mana cost or {T} beside it is read and run (D-625): the permanents are chosen before the mana is paid', () => {
+    expect(cost('{1}, Tap two untapped artifacts you control: Draw a card.')).toEqual([
+      { kind: 'mana', symbols: ['1'] },
+      { kind: 'tapPermanents', filter: { types: ['artifact'], controller: 'you' }, count: 2 },
+    ]);
+    expect(cost('{T}, Tap two untapped artifacts you control: Draw a card.')).toEqual([
+      { kind: 'tap' },
+      { kind: 'tapPermanents', filter: { types: ['artifact'], controller: 'you' }, count: 2 },
+    ]);
   });
 
   test('"Sacrifice two artifacts" has a count; "where X is the sacrificed creature\'s power" reads the cost', () => {

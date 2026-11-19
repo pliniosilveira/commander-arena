@@ -13,12 +13,16 @@ import { ADAMANTOISE_STATIC_RULES } from './adamantoise';
 import { ANGEL_PROTECTION_RULES } from './angels';
 import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
+import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
+import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
+import { DEATH_TOLL_C_STATIC_RULES } from './death-toll-c';
 import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
+import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRANT_STATIC_RULES } from './grants';
@@ -26,11 +30,14 @@ import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
 import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
 import { HOFRI_STATIC_RULES } from './hofri';
+import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { MELD_STATIC_RULES } from './meld';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
+import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
+import { SKYBONDER_STATIC_RULES } from './skybonder';
 import { VRASKA_STATIC_RULES } from './vraska';
 
 /**
@@ -81,8 +88,15 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
+  ...DEATH_TOLL_C_STATIC_RULES,
+  // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
+  ...ETERNAL_MIGHT_STATIC_RULES,
+  ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
+  // CR 702.103: "~ and enchanted creature each get +1/+1 for each creature you control ..." (a bestow card).
+  ...BESTOW_PT_STATIC_RULES,
   ...RESTRICTION_STATIC_RULES,
   ...PLAY_RULE_STATIC_RULES,
   ...COST_STATIC_RULES,
@@ -93,6 +107,8 @@ export const STATIC_RULES = [
   ...ARTIFACT_STATIC_RULES,
   // Stage P32 (D-147): can't attack or block unless, an Aura that makes the creature something else, +X/+X for the commanders.
   ...DINOSAUR_STATIC_RULES,
+  // Issue 160 (D-628): "Creatures with power less than ~'s power can't block creatures you control."
+  ...BLOCK_POWER_STATIC_RULES,
   // Stage P33 (D-150): protections of a player, damage prevented to ~, a card that can't be cast early, a tax on blocking, permanents that
   // enter with counters, an alternative cost that taps creatures.
   ...ANGEL_PROTECTION_RULES,
@@ -119,6 +135,10 @@ export const STATIC_RULES = [
   ...DANITHA_G3_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
+  // Prismari deck, group 1 (D-641): "~ costs {2}{R} more to cast for each target beyond the first.".
+  ...PRISMARI_G1_STATIC_RULES,
+  // First Flight deck (D-149): "Spells your opponents cast that target ~ cost {2} more to cast."
+  ...SKYBONDER_STATIC_RULES,
   // Galadriel deck, group 3 (issue 43): "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
   ...GALADRIEL_G3_STATIC_RULES,
 ];

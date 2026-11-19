@@ -20,6 +20,7 @@ import {
 } from './rules/activate';
 import { activationRefusal } from './rules/activate-legality';
 import { isArrangement } from './rules/arrange';
+import { coversCardTypes } from './rules/card-types-choice';
 import { acceptCascade, declineCascade } from './rules/cascade-cast';
 import {
   answerBuyback,
@@ -55,6 +56,7 @@ import {
   answerBlockPayment,
   answerCombatReplacement,
   answerDamage,
+  answerExert,
 } from './rules/combat-flow';
 import { answerCopyTargets } from './rules/copy-spell-answer';
 import { answerDestruction } from './rules/destroy-replacement';
@@ -118,6 +120,7 @@ import {
   answerTriggerOrder,
   answerTriggerTargets,
 } from './rules/trigger-stack';
+import { answerUnlockDoorPayment, beginUnlockDoor } from './rules/unlock-actions';
 import { answerResolutionVote } from './rules/vote-answer';
 import { moveObject } from './rules/zones';
 import type { Action } from './state/actions';
@@ -164,7 +167,9 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         o.abilityIndex === action.abilityIndex &&
         sameColor(o.color, action.color) &&
         sameChoice(o.combination, action.combination) &&
-        o.sacrifice === action.sacrifice
+        sameChoice(o.extraColors, action.extraColors) &&
+        o.sacrifice === action.sacrifice &&
+        o.tapped === action.tapped
       );
     }
     // A cast and a flashback cast of the same object are different plays (CR 118.9a), and so are
@@ -186,6 +191,9 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
     }
     if (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') {
       return action.kind === o.kind && action.object === o.object;
+    }
+    if (o.kind === 'unlockDoor') {
+      return action.kind === 'unlockDoor' && action.object === o.object && action.door === o.door;
     }
     if (o.kind === 'activate') {
       return (
@@ -249,7 +257,8 @@ function playLand(
     landsPlayedThisTurn: getSeat(moved.state, seat).landsPlayedThisTurn + 1,
   });
   if (graveyardUse !== null) {
-    next = markGraveyardPlay(next, graveyardUse.object.id);
+    // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
+    if (graveyardUse.unlimited !== true) next = markGraveyardPlay(next, graveyardUse.object.id);
     next = applyGraveyardRider(next, moved.newObject, riderOf(graveyardUse, true));
   }
   const events: GameEvent[] = [
@@ -413,7 +422,8 @@ function answerConfirm(
     head === 'confirmOptional' ||
     head === 'mayEffect' ||
     head === 'playerMay' ||
-    head === 'graveyardPair'
+    head === 'graveyardPair' ||
+    head === 'exileAnyNumber'
   ) {
     return finishResolutionAnswer(answerResolutionOptional(state, accept));
   }
@@ -519,11 +529,20 @@ function answerChooseOption(
     return ok(played.state, [answered, ...played.events]);
   }
   const chosen = chosenFromOption(d.purpose, option, d.options);
-  if (chosen === null) return fail('That is not one of the options');
+  if (chosen === null || !d.options.includes(option)) return fail('That is not one of the options');
   if (state.resolution !== null) {
     return finishResolutionAnswer(answerResolutionEntersChosen(state, option, chosen));
   }
-  const played = playLand({ ...state, pending: null }, seat, d.source, null, d.face ?? 0, chosen);
+  const played = playLand(
+    { ...state, pending: null },
+    seat,
+    d.source,
+    d.entersSoFar?.paid ?? null,
+    d.face ?? 0,
+    chosen,
+    [],
+    d.entersSoFar?.revealed,
+  );
   if (!played.ok) return played;
   const answered: GameEvent = {
     kind: 'optionChosen',
@@ -675,6 +694,8 @@ function validCardsChoice(
   }
   // CR 205.3i (D-262): "that share a land type": two or more cards need a land type that all of them have.
   if (d.shareLandType !== undefined && !sharesLandType(chosen, d.shareLandType)) return false;
+  // CR 205.2a: "with four or more card types among them": the cards chosen together have that many different card types, or none are chosen.
+  if (d.minCardTypes !== undefined && !coversCardTypes(chosen, d.minCardTypes)) return false;
   // CR 202.3 (D-230): "with total mana value 4 or less": the mana values of the cards chosen add up to no more than the limit.
   if (
     d.totalManaValue !== undefined &&
@@ -740,6 +761,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.color,
             action.combination ?? null,
             action.sacrifice,
+            action.tapped,
+            action.extraColors ?? null,
           );
           if ('error' in why) return fail(`That is not a legal play now. ${why.error}`);
         }
@@ -761,6 +784,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         case 'turnFaceUp':
           // CR 116.2b, 701.40b (D-310): a special action; it asks for its payment, then turns the permanent face up.
           return beginTurnFaceUp(state, seat, action.object);
+        case 'unlockDoor':
+          // CR 709.5e (Room): a special action; it asks for its payment, then gives the permanent the unlocked designation.
+          return beginUnlockDoor(state, seat, action.object, action.door);
         case 'activate':
           return beginActivate(state, seat, action.object, action.abilityIndex);
         case 'activateAbility': {
@@ -772,6 +798,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.color,
             action.combination ?? null,
             action.sacrifice,
+            action.tapped,
+            action.extraColors ?? null,
           );
           if ('error' in r) return fail(r.error);
           const next = {
@@ -843,6 +871,13 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           return fail('Pay the cost or cancel');
         }
         return answerSpecialPayment(state, seat, { ...d, purpose: d.purpose }, action);
+      }
+      // CR 709.5e: the unlock cost of a half of a Room.
+      if (d.purpose === 'unlockDoor') {
+        if (action.kind !== 'payAuto' && action.kind !== 'payManual' && action.kind !== 'cancel') {
+          return fail('Pay the cost or cancel');
+        }
+        return answerUnlockDoorPayment(state, seat, d, action);
       }
       // CR 701.40b (D-310): the cost of turning a face-down permanent face up.
       if (d.purpose === 'turnFaceUp') {
@@ -995,6 +1030,13 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       ) {
         return cancelCast(state);
       }
+      // CR 701.43d, 508.1g: "exert this creature as it attacks?" can be taken back, which asks for the attackers again (CR 733).
+      if (d.purpose === 'exert') {
+        if (action.kind === 'cancel') return answerExert(state, seat, d, 'cancel');
+        if (action.kind === 'acceptOptional') return answerExert(state, seat, d, true);
+        if (action.kind === 'declineOptional') return answerExert(state, seat, d, false);
+        return fail('Accept, decline or cancel');
+      }
       if (action.kind === 'acceptOptional') return answerConfirm(state, seat, d, true);
       if (action.kind === 'declineOptional') return answerConfirm(state, seat, d, false);
       return fail('Accept or decline');
@@ -1014,6 +1056,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       if (action.kind !== 'chooseX') return fail('Choose the value of X or cancel');
       if (!Number.isInteger(action.value) || action.value < d.min || action.value > d.max) {
         return fail(`X must be a whole number from ${d.min} to ${d.max}`);
+      }
+      if (d.values !== undefined && !d.values.includes(action.value)) {
+        return fail('No legal target has that mana value: choose another X');
       }
       // D-151: how many times to pay in "You may pay any amount of {R}".
       if (d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo') {

@@ -12,7 +12,7 @@ import type {
   PlayerSelector,
   TargetSpec,
 } from '../ast/types';
-import type { Subtype } from '../characteristics';
+import type { CardType, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf, seatsInOrder } from '../state/ops';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
@@ -48,6 +48,8 @@ export interface SelectContext {
   readonly triggerSubject?: ObjectId;
   /** What `sacrificedCost` means (D-133): the permanents sacrificed to pay the cost of the ability that is resolving. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What `tappedAsCostPower` means (CR 702.184a): the power of the creatures tapped to pay the cost of the ability that is resolving. */
+  readonly costTappedPower?: number;
   /** What `sacrificed` means (D-177): the permanents the earlier `sacrifice` instructions of this resolution sacrificed. */
   readonly sacrificed?: readonly ObjectId[];
   /** What `triggerPlayer` ("that player") and `triggerDamage` ("that much") mean in this resolution (D-133). */
@@ -55,16 +57,22 @@ export interface SelectContext {
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
   readonly triggerTargetCount?: number;
+  /** What `cardTypesAmongTriggerCards` ("those cards") reads: the cards a batch trigger saw, as the objects they became (`StackData.triggerCards`, CR 603.2c). */
+  readonly triggerCards?: readonly ObjectId[];
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
   /** The creatures the attack event of this trigger declared (`attackersGreatestPower`). */
   readonly triggerAttackers?: readonly ObjectId[];
+  /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-643). */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
   readonly owners?: readonly SeatId[];
   /** The seats a `controlledBy` selector of the filter names (D-179, see `FilterContext.controllers`). */
   readonly controllers?: readonly SeatId[];
+  /** The power `powerGreaterThan` of an `each` filter compares with, read as the effect resolves (see `FilterContext.powerLimit`). */
+  readonly powerLimit?: number | null;
   /**
    * An object a `countOf` does not count: the card of a spell that is not on the stack yet while its
    * cost is looked at beforehand (`canCast`), which the real cast has already moved there (CR 601.2a).
@@ -125,6 +133,9 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
         get manaValue() {
           return manaValueOfCost(c.manaCost, lki.object);
         },
+        get manaCost() {
+          return c.manaCost;
+        },
       };
     }
   }
@@ -138,6 +149,10 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     power: d.power,
     toughness: d.toughness,
     basePower: d.basePower,
+    // Quandrix Unlimited group E: only a filter that says "with {X} in its mana cost" reads it.
+    get manaCost() {
+      return d.manaCost;
+    },
     get keywords() {
       return keywordKindsOf(d.abilities);
     },
@@ -147,6 +162,15 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     // D-416 (CR 700.9): only a filter that says "modified" reads it.
     get modified() {
       return isModified(state, obj);
+    },
+    // CR 701.15b: only a filter that says "goaded" reads it.
+    get goaded() {
+      // The effects of a `goad` (`rules/goad.ts` reads the same ones; select.ts cannot import it, it imports this file) and the static "is goaded" of an Aura (D-639, issue 201).
+      return (
+        state.continuousEffects.some(
+          (e) => e.change.kind === 'goaded' && e.objects.includes(obj.id),
+        ) || d.goadedBy.length > 0
+      );
     },
     // Only a filter that compares mana value reads it.
     get manaValue() {
@@ -175,6 +199,15 @@ export function matchesFilter(
       });
     return aimed && matchesFilter(state, obj, rest, ctx);
   }
+  // CR 115.1, 601.2c: "that targets a player": one of the spell's chosen targets is a player.
+  if (filter.targetsPlayer !== undefined) {
+    const { targetsPlayer: _aimedAtPlayer, ...rest } = filter;
+    const unchosen = (obj.stack?.chosenTargets.length ?? 0) === 0;
+    const aimed =
+      (ctx.spellTargetsMayHold === true && unchosen) ||
+      (obj.stack?.chosenTargets ?? []).some((t) => t.kind === 'player');
+    return aimed && matchesFilter(state, obj, rest, ctx);
+  }
   // CR 115.9c (D-437): "that targets only this creature": the targets chosen are one object (chosen once or more), and the inner filter matches it.
   if (filter.targetsOnly !== undefined) {
     const { targetsOnly, ...rest } = filter;
@@ -194,7 +227,14 @@ export function matchesFilter(
   }
   // D-437: a disjunction one of whose members reads what a spell targets ("an Equipment spell or a spell that targets a creature you control"): the outer filter
   // says where to look, each member is matched as a filter of its own with that.
-  if (filter.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
+  if (
+    filter.anyOf?.some(
+      (m) =>
+        m.targetsObject !== undefined ||
+        m.targetsOnly !== undefined ||
+        m.targetsPlayer !== undefined,
+    )
+  ) {
     const { anyOf, ...outer } = filter;
     const scoped = {
       ...(filter.zone === undefined ? {} : { zone: filter.zone }),
@@ -219,6 +259,9 @@ export function matchesFilter(
   const reading = {
     ...withChoice,
     attackers: attackingCreatures(state),
+    ...(filter.blocking === true || (filter.anyOf?.some((m) => m.blocking === true) ?? false)
+      ? { blockers: (state.combat?.blocks ?? []).map((b) => b.blocker) }
+      : {}),
     ...(filter.attackingOrBlocking === true ||
     (filter.anyOf?.some((m) => m.attackingOrBlocking === true) ?? false)
       ? { inCombat: creaturesInCombat(state) }
@@ -226,10 +269,22 @@ export function matchesFilter(
     ...(filter.manaValueAtMost !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueAtMost, ctx) }
       : {}),
+    // CR 202.3: "with lesser mana value": at most one less than the amount.
+    ...(filter.manaValueBelow !== undefined
+      ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
+      : {}),
     attackersOfYou: attackersOfPlayer(state, ctx.controller),
+    ...(filter.attackingYou === 'orPlaneswalkers' ||
+    (filter.anyOf?.some((m) => m.attackingYou === 'orPlaneswalkers') ?? false)
+      ? { attackersOfYouOrPlaneswalkers: attackersOfPlayerOrPlaneswalkers(state, ctx.controller) }
+      : {}),
     ...(filter.attackingOpponents === true ||
     (filter.anyOf?.some((m) => m.attackingOpponents === true) ?? false)
       ? { attackersOfOpponents: attackersOfOpponents(state, ctx.controller) }
+      : {}),
+    ...(filter.attackingOpponents === 'players' ||
+    (filter.anyOf?.some((m) => m.attackingOpponents === 'players') ?? false)
+      ? { attackersOfOpponentPlayers: attackersOfOpponentPlayers(state, ctx.controller) }
       : {}),
     ...(filter.powerLessThanSource === true && ctx.source !== null
       ? { sourcePower: powerOfObject(state, ctx.source) }
@@ -250,6 +305,10 @@ export function matchesFilter(
     ...(filter.enteredThisTurn === true
       ? { entered: state.turnLog.entered.map((e) => e.object) }
       : {}),
+    // CR 607.2a, 400.7 (Lorehold group 2): the cards the source exiled with its linked ability; a source that left the battlefield is a new object with none.
+    ...(filter.exiledWithSource === true
+      ? { linkedExile: ctx.source === null ? [] : (state.objects[ctx.source]?.linkedExile ?? []) }
+      : {}),
     // D-261: the creature the trigger is about, as it last was (a dies trigger reads the permanent that left, CR 603.10a, 113.7a).
     ...(readsSharedType(filter) ? subjectSubtypesOf(state, ctx.triggerSubject) : {}),
   };
@@ -261,16 +320,20 @@ function readsGame(f: ObjectFilter): boolean {
   return (
     f.attacking === true ||
     f.notAttacking === true ||
-    f.attackingYou === true ||
-    f.attackingOpponents === true ||
+    f.blocking === true ||
+    f.attackingYou !== undefined ||
+    f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.manaValueAtMost !== undefined ||
+    f.manaValueBelow !== undefined ||
     f.powerLessThanSource === true ||
     f.manaValueX === true ||
     f.controllerDealtDamageBySource === true ||
     f.putFromBattlefieldThisTurn === true ||
     f.enteredThisTurn === true ||
+    f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||
+    f.sharesCardTypeWith !== undefined ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );
@@ -278,22 +341,33 @@ function readsGame(f: ObjectFilter): boolean {
 
 /** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the trigger's creature (D-261). */
 function readsSharedType(f: ObjectFilter): boolean {
-  return f.sharesCreatureTypeWith !== undefined || (f.anyOf?.some(readsSharedType) ?? false);
+  return (
+    f.sharesCreatureTypeWith !== undefined ||
+    f.sharesCardTypeWith !== undefined ||
+    (f.anyOf?.some(readsSharedType) ?? false)
+  );
 }
 
 /** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */
 function subjectSubtypesOf(
   state: GameState,
   subject: ObjectId | undefined,
-): { subjectSubtypes?: readonly Subtype[] } {
+): { subjectSubtypes?: readonly Subtype[]; subjectTypes?: readonly CardType[] } {
   const obj = subject === undefined ? null : objectOrLki(state, subject);
-  return obj === null ? {} : { subjectSubtypes: describeObject(state, obj).subtypes };
+  if (obj === null) return {};
+  const described = describeObject(state, obj);
+  return { subjectSubtypes: described.subtypes, subjectTypes: described.types };
 }
 
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */
-function xFilterContext(state: GameState, ctx: SelectContext): { x?: number } {
-  const x = ctx.x ?? (ctx.source === null ? null : state.objects[ctx.source]?.stack?.x);
-  return x === null || x === undefined ? {} : { x };
+function xFilterContext(state: GameState, ctx: SelectContext): { x?: number; xUnannounced?: true } {
+  const source = ctx.source === null ? undefined : state.objects[ctx.source];
+  const x = ctx.x ?? source?.stack?.x;
+  if (x !== null && x !== undefined) return { x };
+  // CR 601.2b: a spell still in a zone it can be cast from (its card is checked before it is cast) has announced no X yet.
+  return source !== undefined && source.zone !== 'stack' && source.zone !== 'battlefield'
+    ? { xUnannounced: true }
+    : {};
 }
 
 /** The players the source dealt combat damage to this turn (D-139, CR 510.2). */
@@ -327,7 +401,15 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
-  // CR 107.3a: the X announced for the spell the effect belongs to (0 when it has none, CR 107.3b).
+  // CR 107.3m: the X of the spell the permanent that has the ability came from, which the permanent remembers (`castX`), or its last-known information.
+  if (amount.kind === 'enteredX') {
+    const source =
+      ctx.source === null
+        ? undefined
+        : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
+    return source?.castX ?? 0;
+  }
+  // CR 107.3a, 202.3: "a spell with mana value X or less", the X announced for the spell that is resolving.
   if (amount.kind === 'x') return xFilterContext(state, ctx).x ?? 0;
   if (amount.kind === 'countOf') {
     const owner = amount.filter.owner;
@@ -339,6 +421,14 @@ function manaValueLimitOf(
   }
   if (amount.kind === 'powerOf' && ctx.source !== null) {
     return Math.max(0, powerOfObject(state, ctx.source) ?? 0);
+  }
+  // CR 603.3d, 202.3: the mana value of the spell that caused the trigger, as it is on the stack (or as it last was).
+  if (amount.kind === 'manaValueOf' && ctx.triggerSubject !== undefined) {
+    const live = state.objects[ctx.triggerSubject];
+    const cost = live
+      ? derive(state, live).manaCost
+      : (state.lki[ctx.triggerSubject]?.characteristics.manaCost ?? null);
+    return manaValueOfCost(cost, live ?? state.lki[ctx.triggerSubject]?.object);
   }
   return 0;
 }
@@ -358,6 +448,25 @@ function attackersOfPlayer(state: GameState, seat: SeatId): readonly ObjectId[] 
 }
 
 /**
+ * The creatures attacking `seat` as a player or a planeswalker `seat` controls (CR 508.1b, 506.3): the attack target is that player, or a planeswalker permanent controlled
+ * by them (a battle is not one). The planeswalker is read through layers (CR 613) and its controller through `controllerOf`.
+ */
+function attackersOfPlayerOrPlaneswalkers(state: GameState, seat: SeatId): readonly ObjectId[] {
+  return (state.combat?.attackers ?? [])
+    .filter((a) => {
+      if (a.targetGone === true) return false;
+      if (a.target.kind === 'player') return a.target.seat === seat;
+      const attacked = state.objects[a.target.object];
+      return (
+        attacked !== undefined &&
+        derive(state, attacked).types.includes('planeswalker') &&
+        controllerOf(state, attacked) === seat
+      );
+    })
+    .map((a) => a.object);
+}
+
+/**
  * The creatures attacking an opponent of `seat` as a player, or a planeswalker or battle controlled or protected by one (CR 508.1b, 506.3, D-218): in combat,
  * whose target is still there.
  */
@@ -370,6 +479,14 @@ function attackersOfOpponents(state: GameState, seat: SeatId): readonly ObjectId
       const attacked = state.objects[a.target.object];
       return attacked !== undefined && a.defender !== undefined && opponents.includes(a.defender);
     })
+    .map((a) => a.object);
+}
+
+/** The creatures attacking an opponent of `seat` as a player (CR 508.1b, D-650): a creature at a planeswalker or battle is not. */
+function attackersOfOpponentPlayers(state: GameState, seat: SeatId): readonly ObjectId[] {
+  const opponents = opponentsOf(state, seat);
+  return (state.combat?.attackers ?? [])
+    .filter((a) => a.target.kind === 'player' && opponents.includes(a.target.seat))
     .map((a) => a.object);
 }
 
@@ -489,7 +606,7 @@ export function legalTargets(
     // A spell or ability on the stack never targets itself while it is being put there.
     if (obj.zone === 'stack' && (id === ctx.source || id === ctx.stackObject)) continue;
     const matchingContext =
-      filter.manaValueAtMost === undefined
+      filter.manaValueAtMost === undefined && filter.manaValueBelow === undefined
         ? ctx
         : {
             ...ctx,
@@ -501,6 +618,16 @@ export function legalTargets(
     ) {
       // D-149: a slot with one target for each opponent says whose each target is.
       // Hylda group 3: "with different controllers" says whose each target is as well.
+      // CR 115.1, 608.2b: cards "from their graveyard": the graveyard of the player an earlier slot names. Once the targets are chosen (as the spell or ability
+      // resolves, `stillLegalTargets`) only that player's cards stay legal; while they are being chosen the owner is the group `targetAnswerError` reads.
+      if (spec.ownedByTarget !== undefined) {
+        const named = (ctx.targets ?? []).find(
+          (t) => t.kind === 'player' && t.specId === spec.ownedByTarget,
+        );
+        if (named?.kind === 'player' && named.seat !== obj.owner) continue;
+        out.push({ kind: 'object', id, specId, group: obj.owner });
+        continue;
+      }
       out.push(
         spec.onePerOpponent === true || spec.differentControllers === true
           ? { kind: 'object', id, specId, group: controllerOf(state, obj) }
@@ -568,6 +695,13 @@ export function resolveObjects(
       return targetObjects(selector.id, targets);
     case 'chosen':
       return [...(ctx.chosenObjects?.[selector.id] ?? [])];
+    case 'boundObjects':
+      // D-639 (CR 603.7c, 400.7): the objects a delayed ability was created about that are still those objects on the battlefield.
+      // D-662 (CR 400.7): a card the ability was made about in exile (`zone` 'exile'), found only while it is still that object there.
+      return selector.ids.filter(
+        (id) =>
+          state.objects[id]?.zone === (selector.zone === undefined ? 'battlefield' : selector.zone),
+      );
     case 'moved':
       // CR 400.7j: the new object, found through the effect that moved the old one (CR 400.7).
       return [...(ctx.moved ?? [])];
@@ -588,6 +722,12 @@ export function resolveObjects(
           : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
       const host = source?.attachedTo ?? null;
       return host !== null && state.objects[host] !== undefined ? [host] : [];
+    }
+    case 'putWithThis': {
+      // CR 400.7, 603.10a (Animate Dead): the permanents on the battlefield that were put there with the object the ability belongs to, which may have left already (its id is what they remember).
+      const from = ctx.source;
+      if (from === null) return [];
+      return state.battlefield.filter((id) => state.objects[id]?.putWith === from);
     }
     case 'linkedExile': {
       // CR 607.2a, 702.75a (D-145): the cards the source exiled with its linked ability that are still in exile, in the order exiled.
@@ -636,13 +776,25 @@ export function resolveObjects(
               ...withOwners,
               controllers: resolvePlayers(state, selector.filter.controlledBy, ctx, targets),
             };
+      // CR 208.1, 608.2c: "with power greater than target creature's power", read now, with the targets and every effect on the creature.
+      const powerRef = selector.filter.powerGreaterThan;
+      const limited =
+        powerRef === undefined
+          ? filterCtx
+          : {
+              ...filterCtx,
+              powerLimit:
+                resolveObjects(state, powerRef, ctx, targets)
+                  .map((id) => powerOfObject(state, id))
+                  .find((p) => p !== null) ?? null,
+            };
       // D-151: "each other creature" besides the one the effect names (`except`), read now, with the targets.
       const left =
         selector.except === undefined ? [] : resolveObjects(state, selector.except, ctx, targets);
       return objectsInZone(state, zone).filter(
         (id) =>
           !left.includes(id) &&
-          matchesFilter(state, getObject(state, id), selector.filter, filterCtx),
+          matchesFilter(state, getObject(state, id), selector.filter, limited),
       );
     }
     default: {
@@ -719,6 +871,21 @@ export function resolvePlayers(
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
         ? []
         : [ctx.triggerPlayer];
+    case 'triggerAttackedPlayer': {
+      // CR 508.6 (D-648): "that opponent": the player the declaration attacked that made the trigger, if still in the game.
+      const attacked = ctx.triggerAttacked?.[0];
+      return attacked === undefined || getSeat(state, attacked).hasLost ? [] : [attacked];
+    }
+    case 'opponentsAttackingTriggerPlayer': {
+      // CR 508.6 (issue 159): the player who declared the attackers of the trigger's declaration (`triggerPlayer` of an `attackBatch` trigger), when they are an opponent of the
+      // controller of the ability and still in the game: an opponent "attacking that player". The controller attacking the enchanted player is not an opponent.
+      const attacker = ctx.triggerPlayer;
+      return attacker !== undefined &&
+        !getSeat(state, attacker).hasLost &&
+        opponentsOf(state, ctx.controller).includes(attacker)
+        ? [attacker]
+        : [];
+    }
     case 'declinedPlayer':
       return ctx.declinedPlayer === undefined || getSeat(state, ctx.declinedPlayer).hasLost
         ? []

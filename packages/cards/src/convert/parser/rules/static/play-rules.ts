@@ -6,9 +6,9 @@
  * step." (CR 502.3). Each is one whole line and one engine `static` ability; the wordings are the real ones of
  * `reports/templates.json`, and a near miss (another subject, another cost, a count in the cost) is not read.
  */
-import { fail, type Parser, pattern, quiet, satisfy } from '../../combinators';
+import { fail, type Parser, pattern, satisfy } from '../../combinators';
 import type { IrCost, IrNoun, IrStatic, IrStaticEffect, Span } from '../../ir/types';
-import { defineRule, family } from '../registry';
+import { defineRule } from '../registry';
 
 type Det = IrNoun['det'];
 
@@ -184,6 +184,81 @@ export const STATIC_LOOK_AT_TOP = defineRule<IrStatic>({
   },
 });
 
+/** The plural words of the basic land types, as the Oracle text of a card names them ("Forests", "Plains"), with the type each is. */
+const BASIC_LAND_PLURALS: ReadonlyMap<string, string> = new Map([
+  ['plains', 'Plains'],
+  ['islands', 'Island'],
+  ['swamps', 'Swamp'],
+  ['mountains', 'Mountain'],
+  ['forests', 'Forest'],
+]);
+
+/**
+ * `static.play-lands-from-graveyard`: "You may play lands from your graveyard." and "You may play Forests from your graveyard." (CR 305.1, 604.1, 305.2: the permission only says where
+ * the land card may come from; when a land may be played, and how many, are those of the turn, which the engine's `playLandsFromGraveyard` leaves as they are). The engine adds the
+ * land cards of the graveyard of the controller that the named basic land type (or any land) matches. Not read: another card kind ("cast creature spells"), a non-basic land type,
+ * another zone, another player's graveyard, a count ("one land"), "once during each of your turns" (`playFromGraveyardOnceEachTurn`), and a line with more text.
+ */
+export const STATIC_PLAY_LANDS_FROM_GRAVEYARD = defineRule<IrStatic>({
+  id: 'static.play-lands-from-graveyard',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 305.1 (Lands)',
+    'CR 305.2 (Lands)',
+    'CR 604.1 (Handling Static Abilities)',
+    'CR 113.6 (Abilities)',
+  ],
+  examples: [
+    'You may play lands from your graveyard.',
+    'You may play Forests from your graveyard.',
+    'You may play Plains from your graveyard.',
+    'You may play Islands from your graveyard.',
+  ],
+  rejects: [
+    'You may play lands from your graveyard',
+    'You may play a land from your graveyard.',
+    'You may play Forest from your graveyard.',
+    'You may play Gates from your graveyard.',
+    'You may play lands from the graveyard.',
+    "You may play lands from an opponent's graveyard.",
+    'You may play lands from your graveyard this turn.',
+    'You may play lands from your graveyard or your hand.',
+    'You may cast creature spells from your graveyard.',
+    'Once during each of your turns, you may play a land from your graveyard.',
+    'You may play lands from your library.',
+    'You may play Forests and Islands from your graveyard.',
+    'You may play lands from your graveyard. You may look at the top card of your library any time.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may play (lands|plains|islands|swamps|mountains|forests) from your graveyard\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const word = (r.value[1] ?? '').toLowerCase();
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.play-lands-from-graveyard',
+    );
+    const span = { start: pos, end: r.pos };
+    const landType = BASIC_LAND_PLURALS.get(word);
+    return {
+      ok: true,
+      value: statement(
+        'static.play-lands-from-graveyard',
+        who,
+        landType === undefined
+          ? { kind: 'playLandsFromGraveyard' }
+          : { kind: 'playLandsFromGraveyard', landType },
+        span,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 /**
  * The mana cost an attacker pays: plain symbols ({2}, {W}, {C}), hybrid ones ({R/W}, {2/W}, {C/W}) and Phyrexian
  * ones ({W/P}, CR 107.4f), which the engine's planner pays as it pays any cost (D-125). Never {X} (nobody announces
@@ -297,62 +372,6 @@ export const STATIC_ATTACK_TAX = defineRule<IrStatic>({
       ...(planeswalkers ? { planeswalkers: true as const } : {}),
     };
     return { ok: true, value: statement('static.attack-tax', who, effect, span), pos: tail.pos };
-  },
-});
-
-/**
- * `static.cant-attack-you`: "Creatures with flying can't attack you or planeswalkers you control." and "Creatures with flying can't attack you." (CR 508.1a: a
- * creature that can't be declared as an attacker; CR 506.3: a player or a planeswalker is what is attacked; CR 101.2: a "can't" wins). The creatures are the
- * plural group the noun names (a keyword, a type, a controller), read as the attackers are declared, and the ability covers its controller and, with the
- * planeswalkers, the planeswalkers that player controls. Not read: a cost to attack anyway ("unless", `static.attack-tax`), "can't attack" alone, another
- * defender ("your opponents", "battles you protect"), "or block", and a condition.
- */
-export const STATIC_CANT_ATTACK_YOU = defineRule<IrStatic>({
-  id: 'static.cant-attack-you',
-  family: 'static',
-  leading: ['creatures'],
-  cites: [
-    'CR 508.1a (Declare Attackers Step)',
-    'CR 506.3 (Attack)',
-    'CR 101.2 (Golden Rules)',
-    'CR 604.1 (Handling Static Abilities)',
-  ],
-  examples: [
-    "Creatures with flying can't attack you or planeswalkers you control.",
-    'Creatures with flying can’t attack you or planeswalkers you control.',
-    "Creatures with flying can't attack you.",
-    "Creatures with haste can't attack you.",
-  ],
-  rejects: [
-    "Creatures with flying can't attack you or planeswalkers you control",
-    "Creatures with flying can't attack you or battles you protect.",
-    "Creatures with flying can't attack your opponents.",
-    "Creatures with flying can't attack or block you.",
-    "Creatures with flying can't attack.",
-    "Creatures with flying can't attack me.",
-    "Creatures with flying can't attack planeswalkers you control.",
-    "Creatures with flying can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
-    "Creatures with flying can't attack you or planeswalkers you control. Draw a card.",
-    "Creature with flying can't attack you.",
-  ],
-  parse: (ctx, pos) => {
-    const who = quiet(family<IrNoun>('noun', { only: ['noun.plain-permanents'] }))(ctx, pos);
-    if (!who.ok) return who;
-    const tail = pattern(/\s+can['’]t attack you( or planeswalkers you control)?\./iy)(
-      ctx,
-      who.pos,
-    );
-    if (!tail.ok) return tail;
-    const planeswalkers = tail.value[1] !== undefined;
-    const effect: IrStaticEffect = {
-      kind: 'cantAttackYou',
-      ...(planeswalkers ? { planeswalkers: true as const } : {}),
-    };
-    return {
-      ok: true,
-      value: statement('static.cant-attack-you', who.value, effect, { start: pos, end: tail.pos }),
-      pos: tail.pos,
-    };
   },
 });
 
@@ -483,11 +502,76 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.attack-tax-counters`: "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the
+ * number of counters on that creature." (CR 508.1d: a creature that can't attack unless a cost is paid; 508.1h: the total cost is paid as the attackers are declared; 122.1:
+ * counters of any kind). Only a creature with a counter is taxed, and it pays {1} for each counter on it: the engine's `attackTax` with `perCounter`. Not read: another count,
+ * a kind of counter, a cost that is not {X}, a subject other than each creature with counters, the form without the planeswalkers.
+ */
+export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
+  id: 'static.attack-tax-counters',
+  family: 'static',
+  leading: ['each'],
+  cites: [
+    'CR 508.1d (Declare Attackers Step)',
+    'CR 508.1h (Declare Attackers Step)',
+    'CR 122.1 (Counters)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    'Each creature with one or more counters on it can’t attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.',
+  ],
+  rejects: [
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature",
+    "Each creature with one or more counters on it can't attack you unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {2}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of creatures you control.",
+    "Each creature with one or more +1/+1 counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}{X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless you pay {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't block you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature. Draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(
+      /each creature with one or more counters on it can['’]t attack you or planeswalkers you control unless its controller pays \{X\}, where X is the number of counters on that creature\./iy,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const costNode: IrCost = {
+      kind: 'mana',
+      symbols: ['1'],
+      span: { start: pos, end: head.pos },
+      rule: 'static.attack-tax-counters',
+    };
+    const who = subject(
+      'each',
+      'creature with one or more counters on it',
+      { start: pos, end: pos + 'each creature'.length },
+      'static.attack-tax-counters',
+      ['creature'],
+    );
+    const effect: IrStaticEffect = {
+      kind: 'attackTax',
+      cost: costNode,
+      planeswalkers: true,
+      perCounter: true,
+    };
+    return {
+      ok: true,
+      value: statement('static.attack-tax-counters', who, effect, { start: pos, end: head.pos }),
+      pos: head.pos,
+    };
+  },
+});
+
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
+  STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_ATTACK_TAX,
-  STATIC_CANT_ATTACK_YOU,
+  STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,
   STATIC_UNTAP_IN_OTHERS_STEP,
 ];

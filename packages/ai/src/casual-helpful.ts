@@ -9,7 +9,7 @@
  * blue Frog with base power and toughness 1/1") reads as hostile and goes on the opponent's creature.
  */
 import type { ChosenTarget, GameView, ObjectView, TargetsDecision } from '@commander-arena/engine';
-import { findObject, isCreature, powerOf } from './casual-view';
+import { findObject, isCreature, powerOf, withoutReminder } from './casual-view';
 
 const HELPS = new RegExp(
   [
@@ -35,7 +35,7 @@ const NOT_HURTING: readonly RegExp[] = [
 
 /** Whether the rules text of a spell reads as helping the creature it targets. */
 export function helpsItsTarget(oracleText: string): boolean {
-  const text = NOT_HURTING.reduce((t, words) => t.replace(words, ''), oracleText);
+  const text = NOT_HURTING.reduce((t, words) => t.replace(words, ''), withoutReminder(oracleText));
   return HELPS.test(text) && !HURTS.test(text);
 }
 

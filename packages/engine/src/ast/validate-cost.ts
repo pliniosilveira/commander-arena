@@ -89,8 +89,12 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
       case 'discard':
         discards += 1;
         // D-207: the cards a filter or a name picks out are for the cost of an activated ability.
-        if (cost.filter !== undefined || cost.named !== undefined) {
-          issue(out, p, 'an additional cost discards any cards: no filter and no name (D-207)');
+        if (cost.filter !== undefined || cost.named !== undefined || cost.hand !== undefined) {
+          issue(
+            out,
+            p,
+            'an additional cost discards any cards: no filter, no name and not the whole hand (D-207, D-626)',
+          );
         }
         break;
       case 'payLife':
@@ -175,12 +179,16 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'overload',
   'evoke',
   'dash',
+  'bestow',
   'spectacle',
   'escape',
+  'harmonize',
   'madness',
   'miracle',
   'foretell',
+  'morph',
   'tapPermanents',
+  'sacrificeFromGraveyard',
 ];
 
 /**
@@ -213,7 +221,12 @@ export function checkAlternativeCosts(
     }
     seen.add(alt.kind);
     if (alt.kind !== 'free') {
-      checkNamedAlternativeCost(alt.cost, `${p}.cost`, out, alt.kind === 'miracle');
+      checkNamedAlternativeCost(
+        alt.cost,
+        `${p}.cost`,
+        out,
+        alt.kind === 'miracle' || alt.kind === 'harmonize',
+      );
     }
     // CR 702.138a (D-124): an escape cost exiles at least one other card; no other kind has the field.
     const exile = (alt as { readonly exile?: unknown }).exile;
@@ -227,11 +240,25 @@ export function checkAlternativeCosts(
     // D-149: the permanents tapped as part of the cost are checked as the tap cost of an ability is (same fields, same rules).
     if (alt.kind === 'tapPermanents') {
       checkCost({ kind: 'tapPermanents', filter: alt.filter, count: alt.count }, p, out);
+    } else if (alt.kind === 'sacrificeFromGraveyard') {
+      // Issue 159: the permanents sacrificed as part of the cost: a filter of the caster's permanents and a number of them (at least 1).
+      checkFilter(alt.filter, `${p}.filter`, out);
+      if (!Number.isSafeInteger(alt.count) || alt.count < 1) {
+        issue(
+          out,
+          `${p}.count`,
+          'sacrificeFromGraveyard sacrifices a positive whole number of permanents',
+        );
+      }
     } else if (
       (alt as { readonly filter?: unknown }).filter !== undefined ||
       (alt as { readonly count?: unknown }).count !== undefined
     ) {
-      issue(out, p, `only tapPermanents taps permanents (${alt.kind} has no filter or count)`);
+      issue(
+        out,
+        p,
+        `only tapPermanents and sacrificeFromGraveyard name permanents (${alt.kind} has no filter or count)`,
+      );
     }
     if (alt.condition !== undefined) checkCondition(alt.condition, `${p}.condition`, out);
   });
@@ -316,6 +343,66 @@ export function checkCostReduction(
     // permanent, ...): worked out at CR 601.2f.
     checkStateAmount(amount, `${path}.amount`, out, 'a cost reduction');
   }
+}
+
+/**
+ * CR 601.2f, 601.2c (D-149): "Spells your opponents cast that target this creature cost {2} more to cast." `spells` describes a spell being cast, as a `costReduction`'s
+ * filter does (zone and stackKind are not set; `targetsObject` may say what it targets, `isSource` being the permanent with the ability); `amount` is a positive number of generic mana.
+ */
+export function checkCostIncrease(
+  s: Extract<StaticEffect, { kind: 'costIncrease' }>,
+  path: string,
+  out: Out,
+): void {
+  const { targetsObject, ...spell } = (s.spells ?? {}) as ObjectFilter;
+  checkFilter(spell, `${path}.spells`, out);
+  if (targetsObject !== undefined) {
+    checkFilter(targetsObject, `${path}.spells.targetsObject`, out, undefined, undefined, {
+      inTargets: true,
+    });
+    if (
+      filterSome(targetsObject, (f) => f.zone !== undefined && f.zone !== 'battlefield') ||
+      filterSome(targetsObject, (f) => f.targetsObject !== undefined)
+    ) {
+      issue(
+        out,
+        `${path}.spells.targetsObject`,
+        'the object a spell targets is a permanent on the battlefield, described without a zone of its own',
+      );
+    }
+  }
+  if (filterSome(spell, (f) => f.zone !== undefined || f.stackKind !== undefined)) {
+    issue(
+      out,
+      `${path}.spells`,
+      'the filter describes a spell being cast: zone and stackKind are not set',
+    );
+  }
+  if (!isCount(s.amount) || s.amount < 1) {
+    issue(out, `${path}.amount`, 'a cost increase must be a positive integer');
+  }
+}
+
+/**
+ * D-641, CR 601.2f: "~ costs {2}{R} more to cast for each target beyond the first": the cost is mana only, with no X (it is paid once for each such target, as the spell is cast).
+ */
+export function checkCostPerExtraTarget(
+  s: Extract<StaticEffect, { kind: 'costPerExtraTarget' }>,
+  path: string,
+  out: Out,
+): void {
+  checkCosts(s.cost, `${path}.cost`, out);
+  if (!Array.isArray(s.cost) || s.cost.length === 0) {
+    issue(out, `${path}.cost`, 'a cost per extra target needs a cost to pay');
+    return;
+  }
+  s.cost.forEach((c, i) => {
+    if (c?.kind !== 'mana') {
+      issue(out, `${path}.cost[${i}]`, 'a cost per extra target may be mana only in this engine');
+    } else if (c.symbols?.includes('X')) {
+      issue(out, `${path}.cost[${i}]`, 'X in a cost per extra target is not supported');
+    }
+  });
 }
 
 /**
@@ -438,5 +525,8 @@ export function checkAttackTax(
   }
   if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
     issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
+  }
+  if (s.perCounter !== undefined && s.perCounter !== true) {
+    issue(out, `${path}.perCounter`, 'perCounter is true or absent');
   }
 }

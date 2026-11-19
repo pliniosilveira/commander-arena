@@ -27,6 +27,7 @@ import {
   wantedKeys,
 } from '../corpus/decks.ts';
 import { readCardObjects } from '../corpus/read-cards.ts';
+import { displayName } from './archidekt.ts';
 import { type Options, parseOptions, USAGE } from './args.ts';
 
 export interface Io {
@@ -171,10 +172,12 @@ export async function run(argv: readonly string[], io: Io, deps: Deps): Promise<
 
   const snapshot: PreconSnapshot = {
     id: options.id,
-    name: options.name,
+    name: displayName(options.name),
     blurb: options.blurb,
     source: path.basename(file),
     decklist,
+    ...(options.set === undefined ? {} : { set: options.set }),
+    ...(options.year === undefined ? {} : { year: options.year }),
     cards: [...resolved.cards.values()]
       .map((card) => card.stored)
       .concat(faces)

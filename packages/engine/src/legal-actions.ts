@@ -8,6 +8,7 @@
 
 import type { ObjectId } from './ids';
 import { arrangementActions, orderedChoices } from './rules/arrange-choices';
+import { cardTypeCovers } from './rules/card-types-choice';
 import { defaultDivision } from './rules/combat-flow';
 import { crewChoices } from './rules/crew-choices';
 import { sharesLandType } from './rules/share-type';
@@ -246,7 +247,11 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           acc = acc.slice(0, MAX_LISTED_CHOICES);
       }
       // CR 115.3 (D-151): "other targets": a slot that must differ from an earlier one lists only the answers that do.
-      if (d.specs.some((spec) => spec.differentFrom !== undefined)) {
+      if (
+        d.specs.some(
+          (spec) => spec.differentFrom !== undefined || spec.differentFromAll !== undefined,
+        )
+      ) {
         acc = acc.filter((targets) => targetAnswerError(d, targets) === null);
       }
       return [
@@ -308,6 +313,17 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           { kind: 'concede' },
         ];
       }
+      // CR 205.2a: "any number of cards with four or more card types among them": every subset cannot be listed (a graveyard holds dozens of cards), so the answers
+      // listed are nothing, the small sets that reach the minimum and everything that qualifies; any other legal set is accepted all the same (see card-types-choice.ts).
+      if (d.minCardTypes !== undefined) {
+        return [
+          ...cardTypeCovers(d.legal, d.minCardTypes, MAX_LISTED_CHOICES).map((objects) => ({
+            kind: 'chooseCards' as const,
+            objects,
+          })),
+          { kind: 'concede' },
+        ];
+      }
       // Every choice of between `min` and `max` of the legal cards (CR 701.23, 701.9), up to a
       // limit, like choosePermanent. A search lists the empty choice (find nothing) first. Putting
       // cards on top of the library is ordered: the first chosen ends up on top, so the order is
@@ -352,7 +368,8 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         ...(d.purpose === 'kicker' ||
         d.purpose === 'gift' ||
         d.purpose === 'costChoice' ||
-        d.purpose === 'buyback'
+        d.purpose === 'buyback' ||
+        d.purpose === 'exert'
           ? [{ kind: 'cancel' as const }]
           : []),
         { kind: 'concede' },
@@ -367,7 +384,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // CR 107.3a: every value from the least to the most the controller could pay, one action each;
       // the announcement can be taken back (CR 733): the cast or activation is rewound.
       return [
-        ...range(d.min, d.max).map((value) => ({ kind: 'chooseX' as const, value })),
+        ...(d.values ?? range(d.min, d.max)).map((value) => ({
+          kind: 'chooseX' as const,
+          value,
+        })),
         // D-151: "pay any amount of {R}" is asked while an ability resolves: there is no cast to rewind.
         ...(d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo'
           ? []

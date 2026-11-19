@@ -23,11 +23,14 @@ export function runRevealUntil(
   state: GameState,
   res: ResolutionContext,
   effect: RevealUntil,
+  wanted = 1,
 ): StepOutcome {
   const seat = res.controller;
   const revealed: ObjectId[] = [];
-  let found: ObjectId | null = null;
+  const found: ObjectId[] = [];
+  // Issue 103 (CR 701.20): "until you reveal a creature card for each wild vote": none are revealed when the number is 0 or less.
   for (const id of getSeat(state, seat).library) {
+    if (found.length >= wanted) break;
     revealed.push(id);
     const card = state.objects[id];
     if (
@@ -44,8 +47,7 @@ export function runRevealUntil(
         },
       )
     ) {
-      found = id;
-      break;
+      found.push(id);
     }
   }
   if (revealed.length === 0) return { ...done(state), lastMoved: [] };
@@ -62,16 +64,20 @@ export function runRevealUntil(
       from: 'library',
     },
   ];
-  const bottom = bottomInRandomOrder(
-    state,
-    seat,
-    revealed.filter((id) => id !== found),
-  );
+  // Issue 103 (CR 701.24): with `rest: 'stay'` the other cards revealed stay in the library for the `shuffle` effect that follows.
+  const bottom =
+    effect.rest === 'stay'
+      ? done(state)
+      : bottomInRandomOrder(
+          state,
+          seat,
+          revealed.filter((id) => !found.includes(id)),
+        );
   const put =
-    found === null
+    found.length === 0 || effect.put === 'none'
       ? []
       : moveInstructions(
-          [found],
+          found,
           effect.put,
           'top',
           effect.put === 'battlefield' && effect.tapped === true,
@@ -79,6 +85,7 @@ export function runRevealUntil(
         );
   return {
     ...done(bottom.state, [...events, ...bottom.events], [...put, ...bottom.front]),
-    lastMoved: [],
+    // D-659: with `put: 'none'` the card found is what the effects after this one move ("You may put that card onto the battlefield").
+    lastMoved: effect.put === 'none' ? found : [],
   };
 }

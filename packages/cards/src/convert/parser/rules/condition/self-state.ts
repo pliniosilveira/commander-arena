@@ -5,7 +5,16 @@
  * condition, after the "if" of an intervening "if" (CR 603.4) and of "Activate only if" (CR 602.5b). The engine reads
  * them where no layer 7 effect can change them (CR 613.8), which is why a condition on a power or a keyword is not here.
  */
-import { choice, literal, map, type Parser, pattern, satisfy, sequence } from '../../combinators';
+import {
+  choice,
+  fail,
+  literal,
+  map,
+  type Parser,
+  pattern,
+  satisfy,
+  sequence,
+} from '../../combinators';
 import type { IrComparison, IrCondition } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, spanned } from '../registry';
@@ -268,10 +277,164 @@ export const CONDITION_PAIRED = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.this-has-counter`: "~ has a +1/+1 counter on it", "it has a counter on it" (CR 122.1: a counter is a marker on an object; a permanent has
+ * a counter of a kind when at least one is on it). The permanent is the one the ability is on: `~`, or "it" in an ability about itself. The engine's
+ * `thisMatches` with `hasCounter` (counters belong to no layer, CR 613.8), read where the condition is read: "Activate only if ~ has a +1/+1 counter on it."
+ * (CR 602.5b). Not read: a number of counters ("two or more"), "no counters", another permanent's counters and a player's counters.
+ */
+export const CONDITION_THIS_HAS_COUNTER = defineRule<IrCondition>({
+  id: 'condition.this-has-counter',
+  family: 'condition',
+  leading: ['~', 'it'],
+  cites: ['CR 122.1 (Counters)', 'CR 602.5b (Activating Activated Abilities)'],
+  examples: [
+    '~ has a +1/+1 counter on it',
+    '~ has a counter on it',
+    'it has a +1/+1 counter on it',
+    '~ has a stun counter on it',
+    '~ has an oil counter on it',
+    '~ has +1/+1 counters on it',
+    // Ingenious Prodigy (Quandrix Unlimited deck, group G): at least one counter of the kind.
+    '~ has one or more +1/+1 counters on it',
+    '~ has one or more counters on it',
+  ],
+  rejects: [
+    '~ has a +1/+1 counter on it.',
+    '~ has no counters on it',
+    '~ has no +1/+1 counters on it',
+    '~ has a +1/+1 counters on it',
+    '~ has one or more +1/+1 counter on it',
+    '~ has one or more no counters on it',
+    '~ has two +1/+1 counters on it',
+    '~ has a +1/+1 counter',
+    '~ has a +1/+1 counter on it and',
+    '~ had a +1/+1 counter on it',
+    'target creature has a +1/+1 counter on it',
+    '~ has flying',
+  ],
+  parse: (ctx, pos) => {
+    const kind = '([+-]\\d+\\/[+-]\\d+|[a-z]+)';
+    const r = spanned(
+      pattern(
+        new RegExp(
+          `(~|it) has (?:an? (?:${kind} )?counter|(?:${kind} )?counters|one or more (?:${kind} )?counters) on it(?![\\p{L}\\p{N}])`,
+          'iu',
+        ),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const match = r.value.value;
+    const counter = (match[2] ?? match[3] ?? match[4])?.toLowerCase();
+    // "it has no counters on it" says the opposite, and "two" is a number: neither is a kind of counter.
+    if (counter === 'no' || counter === 'two') return fail(ctx, pos);
+    const who = (match[1] ?? '').toLowerCase() === '~' ? 'self' : 'it';
+    return {
+      ok: true,
+      value: condition('condition.this-has-counter', pos, r.pos, {
+        kind: 'thisMatches',
+        filter: { hasCounter: counter ?? true, raw: match[0] },
+        who,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `condition.this-counter-count`: "~ has fewer than three charge counters on it", "~ has three or more charge counters on it" (CR 122.1, 603.4: the number of counters of a
+ * kind on the permanent compared with a number, read as the ability triggers and as it resolves). The engine's `amountIs` of `countersOn` of the permanent itself;
+ * "fewer than N" is at most N - 1. Not read: another permanent's counters, "it", an unnamed kind of counter, "no counters", other comparisons.
+ */
+export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
+  id: 'condition.this-counter-count',
+  family: 'condition',
+  leading: ['~'],
+  cites: ['CR 122.1 (Counters)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    '~ has fewer than three charge counters on it',
+    '~ has fewer than 3 charge counters on it',
+    '~ has three or more charge counters on it',
+    '~ has fewer than two +1/+1 counters on it',
+  ],
+  rejects: [
+    '~ has fewer than three charge counters on it.',
+    '~ has fewer than three counters on it',
+    '~ has fewer than zero charge counters on it',
+    '~ has fewer than three charge counters',
+    '~ has fewer than three charge counters on it and',
+    'it has fewer than three charge counters on it',
+    'target artifact has fewer than three charge counters on it',
+    '~ has more than three charge counters on it',
+    '~ had fewer than three charge counters on it',
+    '~ has one or more charge counters on it',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      sequence(
+        literal('~ has '),
+        choice<{ cmp: 'atMost' | 'atLeast'; value: number }>(
+          map(
+            sequence(
+              literal('fewer than '),
+              satisfy(quantity, (n) => n >= 1),
+            ),
+            ([, n]) => ({
+              cmp: 'atMost' as const,
+              value: n - 1,
+            }),
+          ),
+          map(
+            sequence(
+              satisfy(quantity, (n) => n >= 2),
+              literal(' or more'),
+            ),
+            ([n]) => ({ cmp: 'atLeast' as const, value: n }),
+          ),
+        ),
+        literal(' '),
+        pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
+        literal(' counters on it'),
+        pattern(/(?![\p{L}\p{N}])/u),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, compare, , counter] = r.value.value;
+    const name = counter[0].toLowerCase();
+    if (name === 'no') return fail(ctx, pos);
+    const span = r.value.span;
+    return {
+      ok: true,
+      value: condition('condition.this-counter-count', pos, r.pos, {
+        kind: 'amountIs',
+        amount: {
+          kind: 'countersOn',
+          of: {
+            kind: 'noun',
+            det: 'self',
+            filter: { raw: '~' },
+            upTo: false,
+            plural: false,
+            other: false,
+            span,
+            rule: 'condition.this-counter-count',
+          },
+          counter: name,
+          span,
+        },
+        compare,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const SELF_STATE_CONDITION_RULES = [
   CONDITION_CONTROL_YOUR_COMMANDER,
   CONDITION_LIFE_TOTAL,
   CONDITION_THIS_TAPPED,
   CONDITION_ATTACHED_TO,
   CONDITION_PAIRED,
+  CONDITION_THIS_HAS_COUNTER,
+  CONDITION_THIS_COUNTER_COUNT,
 ];

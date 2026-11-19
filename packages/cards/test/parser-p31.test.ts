@@ -806,7 +806,7 @@ describe("filters: attacking, a count of colors, a union of plural card types, e
     ['Target player sacrifices all creatures they control.', 'sorcery'],
     ['Destroy all artifacts, creatures and enchantments.', 'sorcery'],
     ['Destroy target creature with mana value X or less.', 'sorcery'],
-    ['Destroy target creature with mana value X.', 'sorcery'],
+    ['{T}: Destroy target creature with mana value X.', 'artifact'],
   ] as const)('"%s" is not run', (text, type) => {
     expect(drop(text, type)).toMatchObject({
       reason: expect.stringMatching(/notRunnable|unrecognised/),
@@ -865,7 +865,7 @@ describe('costs and restrictions (CR 118.3, 601.2f, 602.5b)', () => {
   });
 
   test.each([
-    ['{T}: Add {G}. Activate only once each turn.', 'land'],
+    ['{T}: Add {G}. Activate only as a sorcery.', 'land'],
     [
       '{T}: Add {G}. This ability costs {1} less to activate for each creature you control.',
       'land',

@@ -6,6 +6,7 @@ import type { ObjectView, Restriction } from '@commander-arena/engine';
 import { JOB_SELECT_REMINDER, LIVING_WEAPON_REMINDER } from '../../game/artifacts-text';
 import { ESCALATE_REMINDER, hideawayReminder } from '../../game/dinosaurs-text';
 import { DETHRONE_REMINDER, MYRIAD_REMINDER, READ_AHEAD_REMINDER } from '../../game/dragons-text';
+import { EMBALM_REMINDER } from '../../game/embalm-text';
 import { DECAYED_REMINDER } from '../../game/gisa-g5-text';
 import { ETERNALIZE_REMINDER } from '../../game/hashaton-g5-text';
 import { devourReminder, ENCORE_REMINDER, RIOT_REMINDER } from '../../game/keywords-text';
@@ -29,6 +30,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   ward: ['Wrd', 'Ward'],
   protection: ['Pro', 'Protection'],
   crew: ['Crew', 'Crew'],
+  station: ['Stn', 'Station'],
   fear: ['Fear', 'Fear'],
   intimidate: ['Int', 'Intimidate'],
   shadow: ['Shd', 'Shadow'],
@@ -64,6 +66,10 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   improvise: ['Imp', 'Improvise'],
   delve: ['Dlv', 'Delve'],
   cascade: ['Csc', 'Cascade'],
+  // Prismari group 3 (D-666, D-667): Demonstrate and Retrace.
+  demonstrate: ['Dem', 'Demonstrate'],
+  retrace: ['Rtr', 'Retrace'],
+  aftermath: ['Aft', 'Aftermath'],
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],
   soulbond: ['Sbd', 'Soulbond'],
@@ -98,6 +104,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   encore: ['Enc', `Encore (${ENCORE_REMINDER})`],
   // Hashaton deck group 5 (D-384): Eternalize (CR 702.129a).
   eternalize: ['Et', `Eternalize (${ETERNALIZE_REMINDER})`],
+  // Issue 104: Embalm (CR 702.128a).
+  embalm: ['Emb', `Embalm (${EMBALM_REMINDER})`],
   devour: ['Dev', 'Devour'],
   riot: ['Riot', `Riot (${RIOT_REMINDER})`],
 };
@@ -168,6 +176,11 @@ const PARAMETERIZED: Readonly<
     [...text.matchAll(/\beternalize\s*((?:\{[^}]+\})+)/gi)].map(
       (m) => ['Et', `${withCost('Eternalize', m[1] ?? '')} (${ETERNALIZE_REMINDER})`] as const,
     ),
+  // "Embalm {5}{W}": one chip per instance (CR 702.128a).
+  embalm: (text) =>
+    [...text.matchAll(/\bembalm\s*((?:\{[^}]+\})+)/gi)].map(
+      (m) => ['Emb', `${withCost('Embalm', m[1] ?? '')} (${EMBALM_REMINDER})`] as const,
+    ),
   // "Hideaway 4": the number of cards looked at (CR 702.75a).
   hideaway: (text) =>
     [...text.matchAll(/\bhideaway\s+(\d+)/gi)].map(
@@ -214,6 +227,8 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   mustBlock: ['Blk!', 'Must block this turn if able'],
   doesntUntap: ['NoUnt', "Doesn't untap"],
   cantBeCountered: ['NoCtr', "Can't be countered"],
+  // Prismari group 2: "This creature can block only creatures with flying" (CR 509.1b).
+  canBlockOnlyFlying: ['BlkFly', 'Can block only creatures with flying'],
   // Galadriel group 3: "Its activated abilities can't be activated this turn" (CR 602.5).
   cantActivateAbilities: ['NoAct', "Its activated abilities can't be activated"],
 };

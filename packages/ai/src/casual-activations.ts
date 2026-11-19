@@ -256,13 +256,13 @@ export function chooseActivation(
   });
   if (whip !== undefined) return act(whip);
 
-  // Eternalize (CR 702.129a, D-384): a creature card of ours in the graveyard becomes a 4/4 black Zombie token that stays (casual-alt-costs.ts).
+  // Eternalize (CR 702.129a, D-384) and Embalm (CR 702.128a): a creature card of ours in the graveyard becomes a Zombie token copy that stays (casual-alt-costs.ts).
   const eternalize = fresh.find((o) => {
     const obj = findObject(view, o.object);
     return (
       obj !== undefined &&
       obj.zone === 'graveyard' &&
-      obj.keywords.includes('eternalize') &&
+      (obj.keywords.includes('eternalize') || obj.keywords.includes('embalm')) &&
       wantsEternalize(view, obj)
     );
   });

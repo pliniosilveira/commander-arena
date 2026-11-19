@@ -70,8 +70,8 @@ const SPELLS: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Destroy target nonblack creature.',
-    expect: no('nonblack creature.', 'noun.target-permanent'),
-    note: 'there is no "not this color" in the filter',
+    expect: OK,
+    note: 'read since issue 310 (Shriekmaw): "nonblack" is the engine\'s notColors (CR 105.2)',
   },
   {
     kind: 'instant',
@@ -399,11 +399,11 @@ const P1_MANA_AND_LANDS: readonly Line[] = [
   },
   {
     kind: 'land',
-    text: '{T}: Add {G}. Activate only once each turn.',
-    expect: no('Activate only once each turn.', 'restriction.once-each-turn', {
+    text: '{T}: Add {G}. Activate only as a sorcery.',
+    expect: no('Activate only as a sorcery.', 'restriction.sorcery', {
       reason: 'notRunnable',
     }),
-    note: 'read and not run (stage P31): the engine limits the activations of an ordinary ability per turn, not of a mana ability',
+    note: 'read and not run (stage P31): a mana ability has no timing of its own (CR 605.3a), only "Activate only once each turn" (Quandrix Unlimited deck, group F) and a condition',
   },
   {
     kind: 'land',
@@ -569,8 +569,8 @@ const P1_EFFECTS: readonly Line[] = [
   },
   {
     kind: 'sorcery',
-    text: 'Create a 1/1 white Soldier creature token with changeling.',
-    expect: no('with changeling.', 'token.custom'),
+    text: 'Create a 1/1 white Soldier creature token with flash.',
+    expect: no('with flash.', 'token.custom'),
     note: 'a token with an ability the engine has no keyword for would be created without it',
   },
   { kind: 'sorcery', text: 'Sacrifice a creature.', expect: OK },

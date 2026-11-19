@@ -419,11 +419,6 @@
   max-height: 100%;
   overflow-y: auto;
 }
-.dec-opponent .mana-cost {
-  display: inline-flex;
-  vertical-align: middle;
-  margin-left: 2px;
-}
 .dec-title {
   margin: 0;
   font-size: calc(18px * var(--text-scale));
@@ -1396,4 +1391,97 @@
   box-shadow: 0 0 14px var(--accent);
   position: relative;
   z-index: 4;
+}
+
+/* The versus card above the opening hand: both decks as tall cells with big commander art. */
+.dec-versus-wrap {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 12px;
+}
+/* In the top left corner of the dialog, over the empty space beside the cells. */
+.dec-versus-cancel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+/* Too narrow for the corner: the button sits above the cells instead. */
+@media (max-width: 760px) {
+  .dec-versus-wrap {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .dec-versus-cancel {
+    position: static;
+    align-self: flex-start;
+  }
+}
+.dec-versus {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+.dec-versus-side {
+  flex: 0 1 264px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+.dec-versus-card {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  border-radius: 4.5% / 3.2%;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.dec-versus-card.is-loaded {
+  opacity: 1;
+}
+.dec-versus-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+}
+.dec-versus-who {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.dec-versus-name {
+  font-weight: 700;
+  font-size: 15px;
+}
+.dec-versus-commander {
+  font-size: 12px;
+}
+.dec-versus-colors {
+  margin-top: auto;
+}
+.dec-versus-x {
+  align-self: center;
+  font-size: 18px;
+  color: var(--text-dim);
+}
+
+/* The screen before the opening hand: the versus cells, then Start game and Cancel below them. */
+.dec-intro {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.dec-intro .dec-buttons {
+  justify-content: center;
 }

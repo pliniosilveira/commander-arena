@@ -53,13 +53,14 @@ import type {
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
-import { withoutBlockedCounters } from './counter-prevention';
+import { entryCounters } from './counter-bonus';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
 import { dieReplacementFor } from './die-replacement';
 import {
   entersAsSaga,
   entersChoice,
+  entersColorExcept,
   entersCopyOf,
   entersOptions,
   entersPayment,
@@ -85,12 +86,14 @@ import {
   riotGivesHaste,
   riotInstances,
 } from './enters-keywords';
-import { canReveal, revealChoices, revealEvents } from './enters-reveal';
+import { canReveal, revealChoices, revealEvents, revealQuestion } from './enters-reveal';
 import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
+import { isRoomDefinition } from './layouts';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
+import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
 import { countMatching } from './select';
@@ -236,8 +239,16 @@ function recordLki(
   departedTogether?: readonly ObjectId[],
 ): GameState {
   const d = derive(state, obj);
+  // CR 113.7a, 303.4e (D-654): the Auras attached to it now, as the state-based action that puts them into the graveyard has not yet run.
+  const auras = state.battlefield.flatMap((id) => {
+    const attachment = state.objects[id];
+    return attachment?.attachedTo === obj.id && derive(state, attachment).subtypes.includes('Aura')
+      ? [{ id, controller: controllerOf(state, attachment) }]
+      : [];
+  });
   const info: LastKnownInfo = {
     ...(departedTogether === undefined ? {} : { departedTogether }),
+    ...(auras.length === 0 ? {} : { auras }),
     // CR 113.7a: what it was just before it left, including who controlled it then (a control-changing effect, CR 613.1b, is not kept).
     object: { ...obj, controller: controllerOf(state, obj) },
     characteristics: {
@@ -373,7 +384,14 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.34a (Flashback): a spell cast for its flashback cost is exiled instead of going anywhere
   // else when it leaves the stack (resolving, being countered, fizzling). It applies before the
   // commander replacement below, whose zones it removes (hand and library).
-  if (old.zone === 'stack' && old.stack?.flashback === true && to !== 'exile') {
+  // CR 702.127a (Aftermath), 702.180a (Harmonize): the same for a half cast from a graveyard with Aftermath and a spell cast for its harmonize cost.
+  if (
+    old.zone === 'stack' &&
+    (old.stack?.flashback === true ||
+      old.stack?.aftermath === true ||
+      old.stack?.alt === 'harmonize') &&
+    to !== 'exile'
+  ) {
     to = 'exile';
     toSeat = null;
   }
@@ -383,6 +401,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   if (old.zone === 'stack' && old.stack?.exileInstead === true && to === 'graveyard') {
     to = 'exile';
     toSeat = null;
+  }
+  // CR 614.1a, 614.6 (Lorehold group 2): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead": a spell an effect let be cast with
+  // that rider goes to the bottom of its owner's library, not to a graveyard, whatever puts it there (resolving, being countered, fizzling). It belongs to the spell, as the exile of
+  // the one above does. It comes before the commander replacement below, which may then send a commander to the command zone instead (CR 903.9b).
+  let position = request.position;
+  if (old.zone === 'stack' && old.stack?.bottomInstead === true && to === 'graveyard') {
+    to = 'library';
+    toSeat = old.owner;
+    position = 'bottom';
   }
   // CR 702.84a (Unearth, D-124): "If it would leave the battlefield, exile it instead of putting it anywhere
   // else." It belongs to the unearthed object, not to its abilities, so it holds when it lost them (CR 614.6).
@@ -481,7 +508,12 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         getSeat(state, enterController).life >= lifeOf(payment)));
   // D-208 (CR 614.12, 701.20, 701.4): "you may reveal a Mountain or Plains card from your hand. If you don't, it enters tapped": the same question as a shock
   // land's, with nothing to pay. Nothing is asked when it enters tapped anyway or when no card (or permanent) qualifies.
-  const revealRule = entering === null ? null : entersReveal(entering.abilities);
+  const revealRule = revealQuestion(
+    before,
+    enterController,
+    entering === null ? null : entersReveal(entering.abilities),
+    old.id,
+  );
   const mayReveal =
     revealRule !== null &&
     entering !== null &&
@@ -554,10 +586,24 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         kind: 'chooseOption',
         seat: enterController,
         purpose: choice,
-        options: optionsFor(choice, entering === null ? [] : entersOptions(entering.abilities)),
+        options: optionsFor(
+          choice,
+          entering === null ? [] : entersOptions(entering.abilities),
+          entering === null ? undefined : entersColorExcept(entering.abilities),
+        ),
         source: old.id,
         sourceName: info?.name ?? '',
         sourceOracleText: info?.oracleText ?? '',
+        ...(request.entersPaid === undefined || request.entersPaid === null
+          ? {}
+          : {
+              entersSoFar: {
+                paid: request.entersPaid,
+                ...(request.entersRevealed === undefined
+                  ? {}
+                  : { revealed: request.entersRevealed }),
+              },
+            }),
       },
     };
   }
@@ -643,7 +689,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // ceases to exist (CR 707.10a, 704.5e), and so does an ability leaving the stack (CR 608.2n).
   const becomesToken = old.copyOf !== undefined && to === 'battlefield';
   // CR 722.3c (D-214): the copy of a prepare spell in exile is cast: it goes to the stack, still a copy of a spell.
-  const castPrepareCopy = old.prepareOf !== undefined && to === 'stack';
+  // D-654 (CR 707.12): so is the copy of a card made in exile to be cast as an effect resolves.
+  const castPrepareCopy = (old.prepareOf !== undefined || old.cardCopy === true) && to === 'stack';
   if (old.card === null && old.token === null && !becomesToken && !castPrepareCopy) {
     return { kind: 'done', state: next, events, newObject: null };
   }
@@ -698,6 +745,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     if (request.withCounters !== undefined) {
       const { counter, count } = request.withCounters;
       counters = { ...counters, [counter]: (counters[counter] ?? 0) + count };
+    }
+    // Issue 241 (CR 903.8, 122.6): mana spent on this commander spell with "it enters with ... +1/+1 counters equal to the number of times it's been cast from the command
+    // zone this game": that many for each such mana, this cast included (`commanderCasts` already counts it).
+    const manaCounters = old.zone === 'stack' ? (old.stack?.commanderCastCounters ?? 0) : 0;
+    if (manaCounters > 0 && old.card !== null) {
+      const extra = manaCounters * (state.commanderCasts[old.card] ?? 0);
+      if (extra > 0) counters = { ...counters, '+1/+1': (counters['+1/+1'] ?? 0) + extra };
     }
     // CR 702.82a, 702.136a (D-185): the counters of devour and of the riot instances that chose the counter.
     counters = addCounterMaps(
@@ -784,6 +838,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     derive(state, old).types.includes('creature')
       ? ('suspend' as const)
       : undefined);
+  const castDoor =
+    to === 'battlefield' &&
+    !becomesToken &&
+    !entersDown &&
+    old.zone === 'stack' &&
+    old.stack?.kind === 'spell' &&
+    old.card !== null &&
+    isRoomDefinition(definitionOf(state, old.card))
+      ? faceIndex
+      : null;
   const created: GameObject = {
     id: newId,
     card: becomesToken ? null : old.card,
@@ -816,6 +880,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     ...(to === 'battlefield' && old.stack?.kind === 'spell' && (old.stack.x ?? 0) > 0
       ? { castX: old.stack.x ?? 0 }
       : {}),
+    // CR 601.2a, 603.4: "if you cast it": a permanent remembers that it was cast, and from where.
+    ...(to === 'battlefield' && old.stack?.kind === 'spell' && old.stack.castFrom !== undefined
+      ? { castFrom: old.stack.castFrom }
+      : {}),
     // CR 702.174 (D-135): a permanent remembers the opponent its spell's gift was promised to.
     ...(to === 'battlefield' && old.stack?.giftTo !== undefined
       ? { giftTo: old.stack.giftTo }
@@ -835,13 +903,15 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     request.toSeat !== old.owner
       ? { adventureBy: request.toSeat }
       : {}),
+    // CR 709.5d (Room): a permanent with a shared type line is given the unlocked designation of the half that was cast as it enters; one that was not cast enters with neither.
+    ...(castDoor === null ? {} : { unlockedDoors: [castDoor] }),
     // CR 614.12a, 607.2d: what the controller chose as it entered (D-100), the new object's own.
     ...(to === 'battlefield' && choice !== null && request.entersChosen != null
       ? { chosen: request.entersChosen }
       : {}),
   };
   next = setObject(next, created);
-  next = addToZone(next, to, toSeat, newId, request.position ?? 'top');
+  next = addToZone(next, to, toSeat, newId, position ?? 'top');
   // CR 712.21 (D-277): a melded permanent that leaves the battlefield is one permanent that leaves and two cards that are put into the zone: the second
   // card becomes an object of its own, with its own new id and timestamp, in the zone its owner's card goes to (the command zone is the first card's alone,
   // CR 903.9c). The first card's object is made above, so what is shared (the replacement effects, the moment) is decided once for both (CR 712.21d).
@@ -896,6 +966,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     next = became.state;
     events.push(...became.events);
     copyEvents.push(...became.counterEvents);
+    // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters": the X of the spell it came from, 0 for a permanent that was not cast.
+    if (copyRule.withX !== undefined) {
+      const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
+      if (castX > 0) {
+        const kind = copyRule.withX.counter;
+        counters = { ...counters, [kind]: (counters[kind] ?? 0) + castX };
+        const copy = getObject(next, newId);
+        next = setObject(next, {
+          ...copy,
+          counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + castX },
+        });
+      }
+    }
   }
   if (to === 'battlefield') {
     // CR 614.12, 122.6 (D-149): apply entry counters to the characteristics after an as-entry copy, without the entering group on the battlefield.
@@ -904,13 +987,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const added = groupEntryCounters(beforeEntry, { ...entering, stack: old.stack });
     counters = addCounterMaps(counters, added);
     // D-380 (CR 122.6, 101.2): counter prohibitions apply to the permanent as it would enter too.
-    const finalCounters = withoutBlockedCounters(
+    const finalCounters = entryCounters(
       beforeEntry,
       { ...entering, counters: addCounterMaps(entering.counters, added) },
       addCounterMaps(entering.counters, added),
     );
     next = setObject(next, { ...entering, counters: finalCounters });
-    counters = withoutBlockedCounters(beforeEntry, entering, counters);
+    counters = entryCounters(beforeEntry, entering, counters);
   }
   // D-151 (CR 702.10): "If that mana is spent on a Dragon creature spell, it gains haste until end of turn": the permanent a spell with that mark becomes
   // has haste until the end of the turn.
@@ -970,6 +1053,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
             controller: sourceInfo(next, old.id)?.controller ?? controllerOf(state, old),
             types: last?.characteristics.types ?? derive(state, old).types,
             token: old.token !== null,
+            // CR 700.9, 603.10a: modified as it left (`state` is still the battlefield with its counters and attachments).
+            modified: isModified(state, old),
           },
         ],
       },
@@ -986,6 +1071,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     next = {
       ...next,
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
+    };
+  }
+  // CR 603.2, 404.1: a card put into a graveyard from anywhere ("whenever a land card is put into your graveyard ... for the first time each turn").
+  if (to === 'graveyard' && created.card !== null) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        graveyardEntries: [
+          ...next.turnLog.graveyardEntries,
+          { seat: old.owner, types: derive(next, getObject(next, newId)).types },
+        ],
+      },
     };
   }
   // CR 400.7 (D-206): a card that left a graveyard ("if a card left your graveyard this turn").
@@ -1054,6 +1152,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     });
   }
   events.push(...copyEvents);
+  // CR 709.5h: a half unlocked as the permanent enters counts as unlocked, for the abilities that trigger when a door is.
+  if (castDoor !== null) {
+    events.push({
+      kind: 'doorUnlocked',
+      seat: controller,
+      object: newId,
+      door: castDoor,
+      cost: [],
+    });
+  }
   for (const [counter, count] of Object.entries(counters)) {
     // CR 122.6a (D-149): the player who controls the object puts the counters it enters with.
     events.push({

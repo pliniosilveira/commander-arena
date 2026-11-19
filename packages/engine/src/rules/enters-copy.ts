@@ -9,6 +9,7 @@ import type { GameEvent } from '../state/events';
 import { allocateTimestamp, patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import { copiableValues } from './copiable';
+import { withCopyExceptions } from './copy-exceptions';
 import { counterBlocked } from './counter-prevention';
 import { matchesFilter } from './select';
 
@@ -46,10 +47,21 @@ export function becomeCopyAsItEnters(
   rule: CopyRule,
   copied: ObjectId,
   controller: SeatId,
+  embalmed = false,
 ): { state: GameState; events: GameEvent[]; counterEvents: GameEvent[] } {
   const original = state.objects[copied];
   if (original?.zone !== 'battlefield') return { state, events: [], counterEvents: [] };
-  const values = copiableValues(state, original);
+  // CR 707.9b, 702.128b: "except if this creature was embalmed, the token has no mana cost, it's white, ...": exceptions only an embalmed token has.
+  const copiedValues = copiableValues(state, original);
+  const withEmbalm =
+    embalmed && rule.ifEmbalmed !== undefined
+      ? withCopyExceptions(copiedValues, rule.ifEmbalmed)
+      : copiedValues;
+  // CR 707.9b (issue 103): "except it's a Dragon in addition to its other types": the creature types of the exception are part of the copiable values.
+  const values =
+    rule.addSubtypes === undefined
+      ? withEmbalm
+      : withCopyExceptions(withEmbalm, { addSubtypes: rule.addSubtypes });
   const [stamp, stamped] = allocateTimestamp(state);
   let next: GameState = {
     ...stamped,
@@ -68,6 +80,7 @@ export function becomeCopyAsItEnters(
               ...values.abilities,
               ...(rule.gains ?? []).map((keyword) => ({ kind: 'keyword' as const, keyword })),
             ],
+            ...(values.doors === undefined ? {} : { doors: values.doors }),
           },
         },
       },

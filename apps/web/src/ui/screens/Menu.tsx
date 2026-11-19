@@ -1,7 +1,7 @@
 /**
- * The start screen (SPEC 10 "Screens", issue 53): two cards, "Play a game" and "Your decks", the
+ * The start screen (SPEC 10 "Screens", issue 53): two cards, "Play a game" and "My decks", the
  * seed and mulligan settings and a short how-to. Start game opens two dialogs in turn, your deck and
- * the opponent's deck; choosing the second starts the game. Your Decks opens the page that lists
+ * the opponent's deck; choosing the second starts the game. My Decks opens the page that lists
  * and imports decks.
  */
 import { useState } from 'react';
@@ -90,15 +90,24 @@ export function Menu() {
       </section>
 
       <section className="scr-card" aria-labelledby="scr-decks-h">
-        <h2 id="scr-decks-h">Your decks</h2>
+        <h2 id="scr-decks-h">My decks</h2>
         <p className="scr-help">Manage your saved decks and import a new decklist.</p>
-        <button
-          type="button"
-          className="scr-btn scr-btn-primary"
-          onClick={() => actions.openImport('decks')}
-        >
-          Your Decks
-        </button>
+        <div className="scr-modal-group">
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            onClick={() => actions.openImport('import')}
+          >
+            Import deck
+          </button>
+          <button
+            type="button"
+            className="scr-btn scr-btn-primary"
+            onClick={() => actions.openImport('decks')}
+          >
+            My Decks
+          </button>
+        </div>
       </section>
 
       <div className="scr-start-row">
@@ -156,8 +165,6 @@ export function Menu() {
               ? "Select the deck you'll play in this game."
               : 'Select the deck your opponent will play.'
           }
-          name={step === 'player' ? 'human-deck' : 'ai-deck'}
-          value={step === 'player' ? form.humanDeck : form.aiDeck}
           decks={choices}
           error={step === 'opponent' ? refused : null}
           busy={starting}
@@ -165,6 +172,7 @@ export function Menu() {
           {...(step === 'opponent' ? { onBack: () => setStep('player') } : {})}
           onCancel={closeFlow}
           onImport={() => actions.openImport('import')}
+          initialTab={step === 'opponent' ? 'precon' : 'saved'}
         />
       )}
     </main>

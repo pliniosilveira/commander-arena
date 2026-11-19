@@ -97,43 +97,48 @@ const drawAction: Action = (subject, you, rule) =>
  * " unless you discard an artifact card" (stage P31, D-140, CR 701.9): the one card of a kind the player may discard instead of the
  * number the instruction names. The kind is card types (or a choice of them) and creature types, as a card in a hand is described.
  */
-const UNLESS_DISCARD: Parser<IrNoun> = map(
-  spanned(
-    sequence(
-      literal(' unless you discard '),
-      pattern(/an? /i),
-      many(
-        map(
-          sequence(
-            satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
-            literal(' '),
+const unlessDiscard = (who: 'you' | 'they'): Parser<IrNoun> =>
+  map(
+    spanned(
+      sequence(
+        literal(` unless ${who} discard `),
+        pattern(/an? /i),
+        many(
+          map(
+            sequence(
+              satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
+              literal(' '),
+            ),
+            ([w]) => w.subtype,
           ),
-          ([w]) => w.subtype,
         ),
+        optional(
+          map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
+          [] as string[],
+        ),
+        pattern(/card(?![\p{L}\p{N}])/iu),
       ),
-      optional(
-        map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
-        [] as string[],
-      ),
-      pattern(/card(?![\p{L}\p{N}])/iu),
     ),
-  ),
-  ({ value: [, , subtypes, types], span }): IrNoun => ({
-    kind: 'noun',
-    det: 'a',
-    filter: {
-      ...(types.length > 0 ? { types } : {}),
-      ...(subtypes.length > 0 ? { subtypes } : {}),
-      card: true,
-      raw: [...subtypes, ...types, 'card'].join(' '),
-    },
-    upTo: false,
-    plural: false,
-    other: false,
-    span,
-    rule: 'effect.discard',
-  }),
-);
+    ({ value: [, , subtypes, types], span }): IrNoun => ({
+      kind: 'noun',
+      det: 'a',
+      filter: {
+        ...(types.length > 0 ? { types } : {}),
+        ...(subtypes.length > 0 ? { subtypes } : {}),
+        card: true,
+        raw: [...subtypes, ...types, 'card'].join(' '),
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: 'effect.discard',
+    }),
+  );
+
+const UNLESS_DISCARD = unlessDiscard('you');
+/** " unless they discard a land card" (CR 701.9, Compulsive Research): said of a player other than the controller, who is the one who chooses what to discard. */
+const UNLESS_THEY_DISCARD = unlessDiscard('they');
 
 /**
  * "discards a card", "discard two cards" (CR 701.9: the player chooses, CR 701.9b); since stage P31 "discard two cards unless you
@@ -148,23 +153,46 @@ const RANDOM_OR_UNLESS: Parser<string | IrNoun> = choice<string | IrNoun>(
   UNLESS_DISCARD,
 );
 
+/**
+ * "discards their hand" (CR 701.9a, 402.1; Lorehold group 3): the whole hand of each player the subject names, nobody chooses. Said of a subject other than plain "you" ("each player discards
+ * their hand", "target opponent discards their hand"); "discard your hand" has no subject and is `effect.discard-hand`'s.
+ */
+const discardHandAction: Action = (subject, you, rule) =>
+  subject.det === 'you'
+    ? never(rule)
+    : map(
+        spanned(sequence(verbWord('discard', you), pattern(/their hand(?![\p{L}\p{N}])/iu))),
+        ({ span }) =>
+          actionClause(
+            rule,
+            'discard',
+            { player: subject, hand: { kind: 'flag', value: true, span, rule } },
+            span,
+          ),
+      );
+
 const discardAction: Action = (subject, you, rule) =>
-  map(
-    spanned(
-      sequence(
-        verbWord('discard', you),
-        family<IrArg>('amount'),
-        CARDS,
-        you ? optional(RANDOM_OR_UNLESS, null) : optional(AT_RANDOM, null),
+  choice(
+    discardHandAction(subject, you, rule),
+    map(
+      spanned(
+        sequence(
+          verbWord('discard', you),
+          family<IrArg>('amount'),
+          CARDS,
+          you
+            ? optional(RANDOM_OR_UNLESS, null)
+            : optional(choice<string | IrNoun>(AT_RANDOM, UNLESS_THEY_DISCARD), null),
+        ),
       ),
+      ({ value, span }) => {
+        const tail = value[3];
+        const args: Record<string, IrArg> = { player: subject, amount: value[1] };
+        if (typeof tail === 'string') args.random = { kind: 'flag', value: true, span, rule };
+        else if (tail !== null && tail !== undefined) args.unless = tail as IrNoun;
+        return actionClause(rule, 'discard', args, span);
+      },
     ),
-    ({ value, span }) => {
-      const tail = value[3];
-      const args: Record<string, IrArg> = { player: subject, amount: value[1] };
-      if (typeof tail === 'string') args.random = { kind: 'flag', value: true, span, rule };
-      else if (tail !== null && tail !== undefined) args.unless = tail as IrNoun;
-      return actionClause(rule, 'discard', args, span);
-    },
   );
 
 /**
@@ -194,6 +222,18 @@ export const lifeAction: Action = (subject, you, rule) => {
       };
     },
   );
+  // "gain half X life, rounded down" (Quandrix Unlimited group E, Brass Infiniscope; CR 107.1a, 107.3): half the X the text names, the life after it, the rounding last.
+  const halfX: Parser<IrAmount> = map(
+    spanned(
+      sequence(verbWord('gain', you), pattern(/half X life, rounded (down|up)(?![\p{L}\p{N}])/u)),
+    ),
+    ({ value, span }) => ({
+      kind: 'half',
+      of: { kind: 'x', span },
+      round: (value[1][1] ?? '').toLowerCase() as 'down' | 'up',
+      span,
+    }),
+  );
   const life = (base: 'gain' | 'lose', verb: 'gainLife' | 'loseLife') =>
     map(
       spanned(
@@ -203,7 +243,9 @@ export const lifeAction: Action = (subject, you, rule) => {
             sequence(
               verbWord(base, you),
               // "gain that much life" (stage P29, D-133): the damage of the event that caused the trigger.
-              family<IrArg>('amount', { only: [...NUMBER_OR_X, 'amount.that-much'] }),
+              family<IrArg>('amount', {
+                only: [...NUMBER_OR_X, 'amount.that-much', 'amount.half-x'],
+              }),
               LIFE,
             ),
             ([, amount]) => amount,
@@ -216,14 +258,18 @@ export const lifeAction: Action = (subject, you, rule) => {
                 only:
                   base === 'gain'
                     ? // CR 702.101a: only a gain can be the life lost by the instruction before it.
-                      [...EQUAL_AMOUNTS, 'amount.life-lost-this-way']
+                      [
+                        ...EQUAL_AMOUNTS,
+                        'amount.life-lost-this-way',
+                        'amount.damage-dealt-this-way',
+                      ]
                     : // D-365: "loses life equal to the life that player lost this turn" (a loss only; the lowering reads it for another player than "you").
                       [...EQUAL_AMOUNTS, 'amount.life-lost-this-turn'],
               }),
             ),
             ([, , amount]) => amount,
           ),
-          ...(base === 'lose' ? [halfTheirLife] : []),
+          ...(base === 'lose' ? [halfTheirLife] : [halfX]),
         ),
       ),
       ({ value, span }) => actionClause(rule, verb, { player: subject, amount: value }, span),
@@ -339,6 +385,22 @@ const monarchAction: Action = (subject, you, rule) =>
       );
 
 /**
+ * "gains control of ~" said of "that player" (CR 613.1b, 611.2a, 110.2: a control-changing effect with no duration lasts until the game ends or another effect changes it; the player
+ * who gains control is the one the subject names): the player the event of a trigger is about, taking the permanent with the ability ("that player draws three cards and gains
+ * control of ~"). The engine's `gainControl` of `this` for that player. Not read: any other subject, another object ("gains control of target creature"), a duration.
+ */
+const gainControlOfSelfAction: Action = (subject, you, rule) =>
+  you || subject.det !== 'anaphor' || subject.filter.raw.toLowerCase() !== 'that player'
+    ? (ctx, pos) => fail(ctx, pos)
+    : map(
+        spanned(
+          sequence(literal('gains control of '), family<IrNoun>('noun', { only: ['noun.self'] })),
+        ),
+        ({ value, span }) =>
+          actionClause(rule, 'gainControl', { player: subject, objects: value[1] }, span),
+      );
+
+/**
  * "loses the game", "lose the game" (CR 104.3e: an effect may state that a player loses the game; D-269): said of one player or of a group the
  * subject names, with nothing after it ("at the end of the turn", "unless ..." and "wins the game" are other words and stay unread). The engine's
  * `loseGame`; a player who can't lose the game does not (CR 101.2), which the engine reads.
@@ -381,7 +443,10 @@ export const PLAYER_SUBJECTS = [
   'noun.defending-player',
   'noun.player',
   'noun.its-controller',
+  'noun.each-exiled-controller',
   'noun.that-player',
+  // D-648: "that attacking player draws a card" (the player of a trigger about a player attacking one of your opponents).
+  'noun.that-attacking-player',
   // Stage P33 (D-150): "they draw a card" (the player the text has just named).
   'noun.they',
 ] as const;
@@ -399,11 +464,12 @@ function never(id: string): Parser<IrClause> {
 export const EFFECT_PLAYER = defineRule<Clauses>({
   id: 'effect.player',
   family: 'effect',
-  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any'],
+  leading: ['you', 'target', 'each', 'its', 'that', 'defending', 'they', 'any', 'for'],
   cites: [
     'CR 119.3 (Life)',
     'CR 121.1 (Drawing a Card)',
     'CR 701.9 (Discard)',
+    'CR 402.1 (Hand)',
     'CR 701.17 (Mill)',
     'CR 701.40a (Manifest)',
     'CR 701.21 (Sacrifice)',
@@ -429,6 +495,12 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw two cards, then lose 2 life',
     'each player discards a card',
     'target player discards two cards',
+    // Compulsive Research (CR 701.9): the player who discards may discard one card of a kind instead.
+    'target player discards two cards unless they discard a land card',
+    // Lorehold group 3 (CR 701.9a): the whole hand of each player the subject names.
+    'each player discards their hand',
+    'each player discards their hand, then draws seven cards',
+    'target opponent discards their hand',
     'you draw a card, then discard a card',
     'target opponent discards a card',
     'its controller gains 4 life',
@@ -454,6 +526,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain life equal to the life lost this way',
     'each opponent loses X life',
     'you draw X cards and lose X life',
+    // CR 613.1b: the player of the trigger takes the permanent with the ability.
+    'that player draws three cards and gains control of ~',
     'you and target opponent each draw two cards',
     'you and target player each discard a card',
     'each player sacrifices a creature of their choice',
@@ -528,9 +602,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain X life for each creature you control',
     'you draw a card for each time',
     'you draw a card for each creature',
-    'you gain life equal to the number of cards in target opponent’s hand',
     'its controller creates a token that’s a copy of it',
-    'its controller creates a 2/2 blue Bird creature token with changeling',
+    'its controller creates a 2/2 blue Bird creature token with flash',
     'its controller creates',
     'its controller create a Treasure token',
     'its controller investigate',
@@ -546,7 +619,11 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you and target creature each draw a card',
     'each other player draw a card',
     'target player mills',
-    'target player discards their hand',
+    'you discard their hand',
+    'each player discards your hand',
+    'each player discards their hands',
+    'each player discards its hand',
+    'target player discards the hand',
     'you may draw a card',
     'you manifests the top card of your library',
     'its controller manifest the top card of their library',
@@ -559,6 +636,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its controller manifests the top card',
     'you and target opponent each manifest the top card of your library',
     'target player discards a card at random unless you discard an artifact card',
+    'target player discards two cards unless you discard a land card',
+    'you discard two cards unless they discard a land card',
     'each creature draws a card',
     'target player discards',
     'its controller',
@@ -572,6 +651,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each opponent becomes the monarch',
     'its controller becomes the monarch',
     'its controller become the monarch',
+    'that player gains control of ~ until end of turn',
+    'that player gains control of target creature',
+    'that player gain control of ~',
+    'you gain control of ~',
   ],
   parse: chain(
     sequence(family<IrNoun>('noun', { only: PLAYER_SUBJECTS }), literal(' ')),
@@ -597,6 +680,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.create-token', createAction),
         alone('effect.player.monarch', monarchAction),
         alone('effect.player.lose-game', loseGameAction),
+        alone('effect.player.gain-control-of-self', gainControlOfSelfAction),
       );
       return map(
         listWithJoins(actions, VERB_LIST_JOIN),
@@ -734,8 +818,18 @@ export const EFFECT_DISCARD_HAND = defineRule<Clauses>({
   family: 'effect',
   leading: ['discard'],
   cites: ['CR 701.9 (Discard)', 'CR 608.2c (Resolving Spells and Abilities)'],
-  examples: ['discard your hand', 'discard their hand', 'Discard your hand'],
+  examples: [
+    'discard your hand',
+    'discard their hand',
+    'Discard your hand',
+    'discard all the cards in your hand',
+    'discard all the cards in their hand',
+  ],
   rejects: [
+    'discard all the cards in your hands',
+    'discard all the cards in a hand',
+    'discard all cards in your hand',
+    'discard all the cards in your hand and draw seven cards',
     'discard a hand',
     'discard its hand',
     'discard hand',
@@ -746,7 +840,7 @@ export const EFFECT_DISCARD_HAND = defineRule<Clauses>({
   ],
   parse: (ctx, pos) =>
     map(
-      spanned(pattern(/discard (?:your|their) hand(?![\p{L}\p{N}])/iu)),
+      spanned(pattern(/discard (?:all the cards in )?(?:your|their) hand(?![\p{L}\p{N}])/iu)),
       ({ span }): Clauses => [
         makeClause(
           'effect.discard-hand',
@@ -754,6 +848,17 @@ export const EFFECT_DISCARD_HAND = defineRule<Clauses>({
           {
             player: impliedYou('effect.discard-hand', pos),
             hand: { kind: 'flag', value: true, span, rule: 'effect.discard-hand' },
+            // "Discard all the cards in your hand" counts as what "that many" reads (CR 608.2c); "discard your hand" keeps its old reading.
+            ...(/all the cards/iu.test(ctx.text.slice(span.start, span.end))
+              ? {
+                  allCards: {
+                    kind: 'flag' as const,
+                    value: true,
+                    span,
+                    rule: 'effect.discard-hand',
+                  },
+                }
+              : {}),
           },
           span,
         ),

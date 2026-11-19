@@ -1229,7 +1229,7 @@ describe('mana spent only on some spells, and mana of the chosen color (CR 106.6
 
   test.each([
     '{T}: Add {G}. Spend this mana only to cast spells.',
-    '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type.',
+    '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type or an Angel spell.',
     '{T}: Add {G}. Spend this mana only to cast a red creature spell.',
     '{T}: Add {G}. Spend this mana only to activate abilities.',
     '{T}: Add {G}. Spend this mana only to cast an Angel spell. Draw a card.',
@@ -1452,13 +1452,15 @@ describe('a grant to the creatures that have a keyword, and an alternative cost 
     ]);
   });
 
-  test('a keyword in the subject is read only for a grant of a keyword', () => {
-    expect(drop('Other creatures you control with flying get +1/+1.')).toMatchObject({
-      reason: 'notRunnable',
-    });
-    expect(drop('Creatures without flying you control get +1/+1.')).toMatchObject({
-      reason: 'notRunnable',
-    });
+  // A keyword in the subject is read for a pump too since the First Flight decks
+  // (parser-first-flight-flying-statics.test.ts).
+  test('a keyword in the subject is read for a pump as for a grant of a keyword', () => {
+    expect(abilities('Other creatures you control with flying get +1/+1.')).toMatchObject([
+      { kind: 'static', static: { kind: 'modifyPt', subject: { other: true } } },
+    ]);
+    expect(abilities('Creatures without flying you control get +1/+1.')).toMatchObject([
+      { kind: 'static', static: { kind: 'modifyPt' } },
+    ]);
   });
 
   test.each([

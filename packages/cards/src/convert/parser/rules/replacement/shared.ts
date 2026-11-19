@@ -10,6 +10,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAbility, IrAmount, IrClause, IrCounterSpec, Span } from '../../ir/types';
+import { countAmount } from '../amount/count';
 import { positiveCount } from '../amount/index';
 import { family, spanned } from '../registry';
 
@@ -36,6 +37,15 @@ export function countersTail(
 ): Parser<{ count: IrAmount; counter: IrCounterSpec }> {
   const count: Parser<IrAmount> = (ctx, pos) => {
     if (allowX) {
+      // "twice X" (CR 107.3m, 122.6): X multiplied by two.
+      const twice = pattern(/twice X(?![\p{L}\p{N}])/u)(ctx, pos);
+      if (twice.ok) {
+        return {
+          ok: true,
+          value: { kind: 'x', times: 2, span: { start: pos, end: twice.pos } },
+          pos: twice.pos,
+        };
+      }
       const x = pattern(/X(?![\p{L}\p{N}])/u)(ctx, pos);
       if (x.ok)
         return { ok: true, value: { kind: 'x', span: { start: pos, end: x.pos } }, pos: x.pos };
@@ -64,8 +74,21 @@ export function countersTail(
                   family<IrAmount>('amount', {
                     only: ['amount.for-each', 'amount.times-kicked'],
                   }),
+                  // Grave Danger (issue 159, Unbreathing Horde): "... for each other Zombie you control and each Zombie
+                  // card in your graveyard": a second count joined by "and each", added to the first (CR 614.12).
+                  optional(
+                    sequence(literal(' and '), countAmount(rule, literal('each '), false)),
+                    null,
+                  ),
                 ),
-                ([, each]) => each,
+                ([, each, more]): IrAmount =>
+                  more === null
+                    ? each
+                    : {
+                        kind: 'sum',
+                        of: [each, more[1]],
+                        span: { start: each.span.start, end: more[1].span.end },
+                      },
               ),
             ),
             null,

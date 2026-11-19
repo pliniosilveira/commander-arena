@@ -240,11 +240,17 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.',
+    expect: OK,
+    note: 'backlog: 1 card; the shield with a token for each 1 damage it prevents (CR 615.5, `effect.prevent-all-create-tokens`)',
+  },
+  {
+    kind: 'instant',
+    text: 'Prevent all combat damage that would be dealt to you this turn. For each 2 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.',
     expect: no(
-      'For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.',
+      'For each 2 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.',
       'spell.effect',
     ),
-    note: 'backlog: 1 card; the first sentence reads, the amount prevented is not a value',
+    note: 'SYNTHETIC; only "for each 1 damage" is read: another number is a different amount of tokens',
   },
   {
     kind: 'instant',

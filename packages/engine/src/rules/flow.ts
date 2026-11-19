@@ -20,9 +20,11 @@ import {
 } from '../state/ops';
 import type { GameState, PhaseId, StepId } from '../state/types';
 import { EMPTY_TURN_LOG } from '../state/types';
+import { beginCombatRecord } from './attack-random-opponent';
 import { endCombat } from './combat';
 import { beginCombatStep, nextCombatStep } from './combat-flow';
 import {
+  expireEndOfCombatEffects,
   expireEndOfTurnEffects,
   expireEndStepEffects,
   expireTurnStartEffects,
@@ -250,6 +252,10 @@ export function beginStep(input: GameState, step: StepId): Outcome {
       events.push(...lore.events);
       break;
     }
+    case 'beginningOfCombat':
+      // CR 506.1: a combat phase begins; the one before it is the "last combat" of the player who had it (`rules/attack-random-opponent.ts`).
+      state = beginCombatRecord(state, active);
+      break;
     case 'end':
       // D-151: "until your next end step": the permission ends as that step begins (nothing it allows can be done in it).
       {
@@ -346,7 +352,13 @@ export function endStep(input: GameState): Outcome {
     return join({ state, events }, beginStep(state, 'cleanup'));
   }
   // The combat phase ends with its end step: everything is removed from combat (CR 511.3).
-  if (step === 'endOfCombat') state = endCombat(state);
+  if (step === 'endOfCombat') {
+    state = endCombat(state);
+    // CR 506.1, 611.2a: "this combat" ends with the combat phase.
+    const expired = expireEndOfCombatEffects(state);
+    state = expired.state;
+    events.push(...expired.events);
+  }
   // CR 500.8 (D-151, D-187): when a phase ends, the phase an effect added directly after it begins; an added phase that ends is followed by the next
   // one added, or else by the phase of the turn's own sequence that comes after the one the added phases follow.
   if (PHASE_LAST_STEP.includes(step)) {
@@ -445,9 +457,12 @@ export function afterDiscard(input: GameState, prior: readonly GameEvent[] = [])
       events: [...expired.events, ...settled.events, ...granted.events],
     };
   }
+  // CR 500.5, 514.2 (D-650): the cleanup step ends and the turn with it: the mana an effect kept "until end of turn" empties now (a turn whose cleanup step gave nobody priority
+  // does not go through `endStep`).
+  const emptied = emptyManaPools(settled.state, true);
   return join(
-    { state: settled.state, events: [...expired.events, ...settled.events] },
-    startNextTurn(settled.state),
+    { state: emptied.state, events: [...expired.events, ...settled.events, ...emptied.events] },
+    startNextTurn(emptied.state),
   );
 }
 

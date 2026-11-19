@@ -47,6 +47,7 @@ const PLAIN_CONDITIONS: readonly Condition['kind'][] = [
   'playerDealtDamage',
   'lifeGainedThisTurn',
   'lifeGainedAndLostThisTurn',
+  'castFromGraveyardThisTurn',
   'cardsInGraveyard',
   'cardsInLibrary',
   'controlCommander',
@@ -136,11 +137,42 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
       // D-423: "as long as another Aura is attached to enchanted creature": a count of objects (never a greatest, a total or a devotion: they read power or
       // another layer 7 result), read through layers 1, 4 and 5.
       const amount = c.amount;
+      // CR 613.8: the counters on this permanent belong to no layer, so `countersOn` of `this` may be read.
+      if (typeof amount !== 'number' && amount?.kind === 'countersOn') {
+        if (amount.of?.kind !== 'this') {
+          issue(
+            out,
+            `${path}.amount.of`,
+            "a static ability's condition reads the counters on this permanent only",
+          );
+        }
+        return;
+      }
+      // CR 205.2a (delirium): the card types among the cards of a graveyard or exile, which no layer changes.
+      if (typeof amount !== 'number' && amount?.kind === 'cardTypesAmong') {
+        const zone = amount.filter?.zone;
+        if (zone === 'battlefield' || zone === 'stack') {
+          issue(
+            out,
+            `${path}.amount.filter`,
+            "a static ability's condition counts the card types of cards outside the battlefield and the stack",
+          );
+        }
+        const problem = amount.filter === undefined ? null : filterProblem(amount.filter);
+        if (problem !== null) {
+          issue(
+            out,
+            `${path}.amount.filter`,
+            `a static ability's condition cannot read ${problem}: it would depend on the layer it applies in (CR 613.8)`,
+          );
+        }
+        return;
+      }
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,
           `${path}.amount`,
-          "a static ability's condition compares a count of objects (countOf) with a number",
+          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong)",
         );
         return;
       }
@@ -164,6 +196,7 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
     case 'playerDealtDamage':
     case 'lifeGainedThisTurn': // D-252: the turn log, which no layer changes
     case 'lifeGainedAndLostThisTurn': // D-593: both turn-log reads
+    case 'castFromGraveyardThisTurn': // Issue 159: the turn log, which no layer changes
     case 'cardsInGraveyard': // D-229: the cards in a zone, which no layer changes
     case 'cardsInLibrary': // D-331: the cards in a zone, which no layer changes
     case 'chosenOption': // D-151: what the permanent chose as it entered

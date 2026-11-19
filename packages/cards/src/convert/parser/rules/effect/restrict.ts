@@ -56,7 +56,7 @@ const TAIL_ALL = tail(true);
  * or two" (D-295, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
  */
 const targetCreatures = refuseAt(
-  family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+  family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.target-creature-token'] }),
   (n) =>
     (!n.plural || n.minTargets !== undefined || n.upTo) &&
     n.upToThatMany !== true &&
@@ -85,6 +85,8 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature you don't control can't block this turn",
     'target creature attacks this turn if able',
     "target creature with power 3 or less can't be blocked this turn",
+    // Quandrix Unlimited deck, group G (Deekah): a creature token.
+    "target creature token can't be blocked this turn",
     // Stage P49 (D-206): "up to one target creature" (Key to the City).
     "up to one target creature can't be blocked this turn",
     // D-295 (CR 601.2c): the creatures of a slot of one to two, or of none to N.
@@ -154,8 +156,13 @@ export const EFFECT_RESTRICT_ALL = defineRule<Clauses>({
     "creatures you control can't be blocked this turn",
     'creatures your opponents control can’t block this turn',
     'creatures you control attack this turn if able',
+    // Prismari deck, group 2 (D-656, CR 201.2): every creature with the card's own name.
+    "creatures named ~ can't be blocked this turn",
+    'creatures named ~ attack this turn if able',
   ],
   rejects: [
+    "creatures named Bob can't be blocked this turn",
+    "creature named ~ can't be blocked this turn",
     'creatures your opponents control attacks this turn if able',
     "creatures you control can't be blocked",
     "creatures you control can't be blocked until end of turn",
@@ -170,7 +177,7 @@ export const EFFECT_RESTRICT_ALL = defineRule<Clauses>({
     `${RULE}-all`,
     sequence(
       refuseAt(
-        family<IrNoun>('noun', { only: ['noun.plain-permanents'] }),
+        family<IrNoun>('noun', { only: ['noun.plain-permanents', 'noun.creatures-named-self'] }),
         (n) =>
           n.plural &&
           n.det === 'each' &&

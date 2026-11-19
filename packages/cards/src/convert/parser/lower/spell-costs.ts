@@ -226,6 +226,38 @@ function lowerTapAlternative(
 }
 
 /**
+ * "You may cast ~ from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost." (issue 159, CR 118.9, 601.2h, 701.21a): the engine's
+ * alternative cost `sacrificeFromGraveyard`: its mana, and the number of permanents of the caster's that match the filter, which the engine asks for as it asks for the sacrifice of
+ * an additional cost. The mana is plain (no X, no hybrid) and the permanents are described by a filter with no zone (the caster's are meant).
+ */
+function lowerGraveyardSacrificeAlternative(
+  ability: Static,
+  effect: Extract<IrAbility, { kind: 'static' }>['statement']['effects'][number] & {
+    kind: 'graveyardSacrificeAlternative';
+  },
+): LowerResult<FaceCosts> {
+  const cost = lowerCost(effect.cost);
+  if (!cost.ok) return cost;
+  const what = lowerFilter({ ...effect.what, filter: withoutZone(effect.what.filter) });
+  if (!what.ok) return what;
+  const { controller, ...filter } = what.value;
+  if (controller !== undefined && controller !== 'you') return failure(ability);
+  if (effect.count < 1) return failure(ability);
+  const blocked = missingFeatures([
+    'castAlternative:sacrificeFromGraveyard',
+    `cost:${cost.value.kind}`,
+  ]);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const entry: AlternativeCost = {
+    kind: 'sacrificeFromGraveyard',
+    cost: [cost.value],
+    filter,
+    count: effect.count,
+  };
+  return { ok: true, value: { ...NONE, alternativeCosts: [entry] }, rule: ability.rule };
+}
+
+/**
  * The face costs of a static statement that says one, or null when the statement is not about the
  * cost of casting (the caller lowers it as an ability).
  */
@@ -238,22 +270,28 @@ export function lowerSpellCosts(ability: Static): SpellCostLowering | null {
   if (effect.kind === 'optionalSacrificeCopies') return lowerSacrificeCopies(ability, effect);
   if (effect.kind === 'freeCast') return lowerFree(ability, effect.condition);
   if (effect.kind === 'tapAlternative') return lowerTapAlternative(ability, effect);
+  if (effect.kind === 'graveyardSacrificeAlternative') {
+    return lowerGraveyardSacrificeAlternative(ability, effect);
+  }
   return null;
 }
 
 /**
  * The keywords that are alternative costs of the engine (stage P22, D-121; Spectacle and Escape: P23, D-124;
- * Madness and Foretell: P26, D-128; Miracle, with an {X} allowed in its cost: D-274).
+ * Madness and Foretell: P26, D-128; Miracle, with an {X} allowed in its cost: D-274; Harmonize, likewise).
  */
 const NAMED_ALTERNATIVES = [
   'overload',
   'evoke',
   'dash',
+  'bestow',
   'spectacle',
   'escape',
+  'harmonize',
   'madness',
   'miracle',
   'foretell',
+  'morph',
 ] as const;
 type NamedAlternative = (typeof NAMED_ALTERNATIVES)[number];
 
@@ -291,7 +329,7 @@ export function lowerAlternativeKeyword(ability: IrKeyword): SpellCostLowering |
     return failure(ability);
   }
   // A hybrid symbol or an {X} is refused here, as the engine's own check would; Miracle's cost may have an {X} (D-274, CR 107.3a).
-  const cost = lowerCost(only, { x: kind === 'miracle' });
+  const cost = lowerCost(only, { x: kind === 'miracle' || kind === 'harmonize' });
   if (!cost.ok) return cost;
   const blocked = missingFeatures([`castAlternative:${kind}`, `cost:${cost.value.kind}`]);
   if (blocked.length > 0) return failure(ability, blocked);
@@ -309,10 +347,13 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:overload',
   'castAlternative:evoke',
   'castAlternative:dash',
+  'castAlternative:bestow',
   'castAlternative:spectacle',
   'castAlternative:escape',
+  'castAlternative:harmonize',
   'castAlternative:madness',
   'castAlternative:miracle',
   'castAlternative:foretell',
+  'castAlternative:morph',
   'cost:mana',
 ];

@@ -6,8 +6,15 @@
  * text says; the engine's `validateCard` refuses a source that could be an Aura or a land (CR
  * 303.4f, 614.12) and a trigger subject it cannot type, and that reason reaches the player.
  */
-import type { Color, ObjectRef } from '@commander-arena/engine';
+import {
+  type Ability,
+  CARD_TYPES,
+  type CardType,
+  type Color,
+  type ObjectRef,
+} from '@commander-arena/engine';
 import type { IrClause, IrNoun, IrToken } from '../ir/types';
+import { isGrantable, keywordKind, plainKeyword } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
 import type { Effects } from './clauses';
 import { missingFeatures } from './features';
@@ -20,6 +27,12 @@ function copySourceOf(noun: IrNoun, ctx: LowerContext): LowerResult<ObjectRef> {
     const missing = missingFeatures(['selector:triggerSubject']);
     if (missing.length > 0) return { ok: false, needs: missing, at: noun.span, rule: noun.rule };
     return { ok: true, value: { kind: 'triggerSubject' }, rule: noun.rule };
+  }
+  // Issue 104 (CR 707.2, 400.7j): "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": the card the exile before it moved.
+  if (noun.det === 'anaphor' && noun.ref === 'moved' && ctx.chosenExiled) {
+    const missing = missingFeatures(['selector:moved']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: noun.span, rule: noun.rule };
+    return { ok: true, value: { kind: 'moved' }, rule: noun.rule };
   }
   return objectRefOf(noun, ctx);
 }
@@ -53,6 +66,27 @@ export function lowerCopyToken(
       setPt: { power: token.copyExcept.power, toughness: token.copyExcept.toughness },
       setColors: colors,
       setCreatureTypes: [...token.copyExcept.subtypes],
+    };
+  }
+  // "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103, CR 707.9b): the values the copy has besides the ones it copies.
+  if (token.copyExceptAdditive !== undefined) {
+    const missing = missingFeatures(['token:copyExceptions']);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    const extra = token.copyExceptAdditive;
+    const abilities: Ability[] = [];
+    for (const word of extra.keywords) {
+      const kind = keywordKind(word);
+      if (kind === undefined || !isGrantable(kind)) return { ok: false, needs: [], ...at };
+      abilities.push({ kind: 'keyword', keyword: plainKeyword(kind) });
+    }
+    const types = extra.cardTypes.filter((t): t is CardType => CARD_TYPES.includes(t as CardType));
+    if (types.length !== extra.cardTypes.length) return { ok: false, needs: [], ...at };
+    exceptions = {
+      ...exceptions,
+      setPt: { power: extra.power, toughness: extra.toughness },
+      addSubtypes: [...extra.subtypes],
+      addTypes: types,
+      ...(abilities.length === 0 ? {} : { abilities }),
     };
   }
   // "..., except it's not legendary and its starting loyalty is 1" (Galadriel deck group 3, CR 707.9b, 205.4a, 306.5b): the supertype and the loyalty of the copy.

@@ -154,8 +154,8 @@ const REORDER: readonly Line[] = [
     kind: 'sorcery',
     text: 'Put any number of cards from your hand on the bottom of your library, then draw that many cards plus one.',
     expect: no(
-      'any number of cards from your hand on the bottom of your library, then draw that many cards plus one.',
-      'effect.add-counters',
+      'cards from your hand on the bottom of your library, then draw that many cards plus one.',
+      'effect.put-any-number-from-hand',
     ),
     note: 'replay: 1 card; a count of "any number" is not in the AST',
   },

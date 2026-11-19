@@ -29,6 +29,7 @@ import { lifeTotalIsLocked } from './player-lock';
 import { playerHasProtectionFrom } from './player-protection';
 import { hasProtectionFrom } from './protection';
 import { commanderDamageKey } from './sba';
+import { createTokens } from './tokens';
 
 interface SourceInfo {
   readonly controller: SeatId;
@@ -197,11 +198,20 @@ export function dealDamageAsking(
   if (shielded.kind === 'asked') return shielded;
   const amount = shielded.remaining;
   const to = shielded.to;
-  if (amount <= 0) return { kind: 'dealt', state: shielded.state, events: [...shielded.events] };
-  const info = sourceInfo(shielded.state, source);
-  let state = shielded.state;
+  // CR 615.5: the additional effect of a prevention effect happens as the damage is prevented ("for each 1 damage prevented this way, create a token").
+  let made: { state: GameState; events: GameEvent[] } = { state: shielded.state, events: [] };
+  for (const rider of shielded.riders) {
+    const tokens = createTokens(made.state, rider.controller, rider.definition, rider.count);
+    made = { state: tokens.state, events: [...made.events, ...tokens.events] };
+  }
+  if (amount <= 0) {
+    return { kind: 'dealt', state: made.state, events: [...shielded.events, ...made.events] };
+  }
+  const info = sourceInfo(made.state, source);
+  let state = made.state;
   const events: GameEvent[] = [
     ...shielded.events,
+    ...made.events,
     { kind: 'damageDealt', source, to, amount, combat },
   ];
 

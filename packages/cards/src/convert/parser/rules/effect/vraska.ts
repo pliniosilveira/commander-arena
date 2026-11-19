@@ -1,7 +1,7 @@
 /**
  * Effect rules of the Vraska deck (stage P50, D-207): "remove all counters from it" (CR 122.1, 122.2).
  */
-import { fail, literal, map, type Parser, pattern, sequence } from '../../combinators';
+import { fail, literal, map, optional, type Parser, pattern, sequence } from '../../combinators';
 import type {
   IrAmount,
   IrClause,
@@ -354,12 +354,17 @@ export const EFFECT_BECOME_COPY = defineRule<Clauses>({
   cites: [
     'CR 707.2 (Copying Objects)',
     'CR 707.9a (Copying Objects)',
+    'CR 707.9b (Copying Objects)',
     'CR 613.2a (Interaction of Continuous Effects)',
     'CR 611.2a (Continuous Effects)',
+    'CR 205.4a (Supertypes)',
   ],
   examples: [
     'have ~ become a copy of another target creature you control until end of turn, except its name is ~',
     'have ~ become a copy of target creature until end of turn, except its name is ~',
+    // Sarkhan, Soul Aflame (issue 103): the permanent whose event caused the trigger, and a supertype in addition.
+    'have ~ become a copy of it until end of turn, except its name is ~',
+    "have ~ become a copy of it until end of turn, except its name is ~ and it's legendary in addition to its other types",
   ],
   rejects: [
     'have ~ become a copy of another target creature you control until end of turn',
@@ -369,6 +374,11 @@ export const EFFECT_BECOME_COPY = defineRule<Clauses>({
     'have ~ become a copy of another target creature you control until end of turn, except its name is Bob',
     'have it become a copy of another target creature you control until end of turn, except its name is ~',
     'have ~ become a copy of any creature until end of turn, except its name is ~',
+    'have ~ become a copy of it until end of turn',
+    'have ~ become a copy of it until your next turn, except its name is ~',
+    "have ~ become a copy of it until end of turn, except its name is ~ and it's legendary",
+    "have ~ become a copy of it until end of turn, except its name is ~ and it's a Dragon in addition to its other types",
+    "have ~ become a copy of it until end of turn, except its name is ~ and it's legendary in addition to its other types.",
   ],
   parse: (ctx, pos) => {
     const id = 'effect.become-copy';
@@ -376,18 +386,28 @@ export const EFFECT_BECOME_COPY = defineRule<Clauses>({
       literal('have '),
       family<IrNoun>('noun', { only: ['noun.self'] }),
       literal(' become a copy of '),
-      family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+      family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.it'] }),
       literal(' '),
       family<IrDuration>('duration'),
       spanned(literal(', except its name is ~')),
+      optional(spanned(literal(" and it's legendary in addition to its other types")), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, objects, , of, , duration, except] = r.value;
-    if (duration.scope !== 'untilEndOfTurn' || of.det !== 'target') return fail(ctx, pos);
+    const [, objects, , of, , duration, except, legendary] = r.value;
+    if (duration.scope !== 'untilEndOfTurn') return fail(ctx, pos);
+    // A target is the "another target creature" of the effect; "it" is the permanent whose event caused the trigger (Sarkhan, Soul Aflame).
+    if (of.det !== 'target' && of.det !== 'triggerSubject' && of.det !== 'anaphor') {
+      return fail(ctx, pos);
+    }
     const clause = makeClause(
       id,
       'becomeCopy',
-      { objects, of, keepName: flag(id, true, except.span) },
+      {
+        objects,
+        of,
+        keepName: flag(id, true, except.span),
+        ...(legendary === null ? {} : { addLegendary: flag(id, true, legendary.span) }),
+      },
       { start: pos, end: r.pos },
     );
     return { ok: true, value: [{ ...clause, duration }], pos: r.pos };

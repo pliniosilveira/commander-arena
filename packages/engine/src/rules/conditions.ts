@@ -8,8 +8,10 @@ import { getObject, getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ThisWayCounts } from '../state/types';
 import { resolutionCount } from './action-taken';
 import { amountOf, playerStatOf, statOf } from './amounts';
+import { castInOwnMainPhase } from './cast-phase';
 import { chosenOf } from './chosen';
 import {
+  aPlayerCardsInHandHolds,
   cardsInGraveyardHolds,
   cardsInLibraryHolds,
   combatDamagedByHolds,
@@ -31,6 +33,13 @@ import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
+/** A prime number: a whole number of 2 or more with no divisor but 1 and itself (`amountIsPrime`); 0, 1 and negative numbers are not. */
+function isPrime(n: number): boolean {
+  if (!Number.isInteger(n) || n < 2) return false;
+  for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+  return true;
+}
+
 function attackingMostLife(state: GameState, source: ObjectId | null): boolean {
   if (source === null) return false;
   const entry = state.combat?.attackers.find((a) => a.object === source);
@@ -79,12 +88,12 @@ export interface ConditionContext {
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
   readonly dieResult?: number;
-  /** The X announced for the spell that is resolving, for `xIs` (CR 107.3a). Absent where there is none, which fails that condition closed. */
-  readonly x?: number;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** For `attackersAtYouAtLeast` (D-643): who each creature of the trigger's attack event was declared attacking (a player, or the controller of a planeswalker). */
+  readonly triggerAttackedAt?: readonly SeatId[];
   /**
    * Whether to assume a target the spell has not chosen yet could satisfy `spellTargets` (D-207): the question "may this spell be cast at all?" asks it before any
    * target is chosen, so a reduction that depends on the target is counted; the cost as it is paid is determined after the targets, without this.
@@ -141,6 +150,17 @@ export function evaluateCondition(
       // last-known information says (CR 113.7a), which also covers a replacement as it enters.
       const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return source !== null && (source.stack?.kicked === true || source.kicked === true);
+    }
+    case 'xAtLeast': {
+      // CR 107.3a, 608.2c (issue 233): the X announced for the spell as it resolves, or from its last-known information once it has left.
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      // CR 107.3m: in "When this creature enters, ... If X is 5 or more" the X is the one of the spell the permanent came from, which the permanent remembers (`castX`).
+      return source !== null && (source.stack?.x ?? source.castX ?? 0) >= condition.value;
+    }
+    case 'castInOwnMainPhase': {
+      // CR 601.2, 505.1 (issue 244): "If you cast this spell during your main phase"; read from the spell, or from its last-known information once it has left.
+      const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return source !== null && castInOwnMainPhase(state, source);
     }
     case 'replicated': {
       // CR 702.56a (D-129): "if a replicate cost was paid for it": the spell carries the count on the stack, or its
@@ -230,10 +250,31 @@ export function evaluateCondition(
     case 'didPrevious':
       // CR 603.12, 608.2c (D-135; Learn, CR 701.48a, reads the same way): "if you do": the nearest `may` effect before this was accepted and did something.
       return (ctx.performed ?? 0) > 0;
+    case 'movedTotalManaValue': {
+      // CR 202.3, 608.2c (D-661): the mana values of the cards the earlier effects of this resolution moved, added up (a card gone from where it was counts 0).
+      const total = (ctx.moved ?? []).reduce((sum, id) => {
+        return sum + (statOf(state, id, 'manaValue') ?? 0);
+      }, 0);
+      if (condition.compare.cmp === 'atLeast') return total >= condition.compare.value;
+      if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
+      return total === condition.compare.value;
+    }
+    case 'movedShareAllCardTypes': {
+      // CR 205.2a, 608.2c (Demonic Covenant): two of the cards an earlier instruction moved have exactly the same card types, as they are (or last were).
+      const seen = new Set<string>();
+      for (const id of ctx.moved ?? []) {
+        const card = objectOrLki(state, id);
+        if (card === null) continue;
+        const key = [...derive(state, card).types].sort().join(',');
+        if (seen.has(key)) return true;
+        seen.add(key);
+      }
+      return false;
+    }
     case 'objectMatches': {
       // D-135, CR 113.7a, 608.2h: the object the reference names, as it is or as it last was (a card an earlier instruction
       // moved is read as it was when it left), against the filter in whatever zone it was in.
-      const [id] = resolveObjects(
+      const ids = resolveObjects(
         state,
         condition.of,
         {
@@ -244,18 +285,22 @@ export function evaluateCondition(
         },
         ctx.targets ?? [],
       );
-      const named = id === undefined ? null : objectOrLki(state, id);
-      return (
-        named !== null &&
-        // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
-        (condition.inZone === undefined || named.zone === condition.inZone) &&
-        matchesFilter(
-          state,
-          named,
-          { ...condition.filter, zone: named.zone },
-          { controller: ctx.controller, source: ctx.source },
-        )
-      );
+      // Issue 159: "If at least one Zombie card is milled this way": any of the objects the instruction before it moved; otherwise the first.
+      const candidates = condition.any === true ? ids : ids.slice(0, 1);
+      return candidates.some((id) => {
+        const named = objectOrLki(state, id);
+        return (
+          named !== null &&
+          // D-412: "If you put a Town card into your hand this way": the card is in the hand it was put into.
+          (condition.inZone === undefined || named.zone === condition.inZone) &&
+          matchesFilter(
+            state,
+            named,
+            { ...condition.filter, zone: named.zone },
+            { controller: ctx.controller, source: ctx.source },
+          )
+        );
+      });
     }
     case 'giftPromised': {
       // CR 702.174k (D-135): the spell carries the chosen player on the stack, the permanent that came from it remembers
@@ -317,6 +362,16 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atMost') return n <= condition.compare.value;
       return n === condition.compare.value;
     }
+    case 'amountIsPrime': {
+      // Zimone, All-Questioning: the state-reading amount as it is now (the validator allows only amounts that need no target, X, trigger subject or earlier instruction).
+      const n = amountOf(
+        state,
+        condition.amount,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      );
+      return isPrime(n);
+    }
     case 'classLevelIs':
       // CR 716.2a, 716.2d (D-235): the level of the permanent the ability belongs to; none is level 1.
       return (
@@ -361,6 +416,21 @@ export function evaluateCondition(
       }
       return [...byName.values()].some((n) => n >= condition.count);
     }
+    case 'attackedHasMoreLifeThanOtherOpponent': {
+      // CR 603.4, 508.6 (D-648): the opponent the declaration attacked against the other opponents of the controller still in the game.
+      const attacked = ctx.triggerAttacked?.[0];
+      if (attacked === undefined) return false;
+      const life = getSeat(state, attacked).life;
+      return opponentsOf(state, ctx.controller).some(
+        (other) => other !== attacked && getSeat(state, other).life < life,
+      );
+    }
+    case 'attackersAtYouAtLeast':
+      // CR 508.1b, 603.4 (D-643): the creatures declared at me or at a planeswalker I control, read from the declaration.
+      return (
+        (ctx.triggerAttackedAt ?? []).filter((seat) => seat === ctx.controller).length >=
+        condition.count
+      );
     case 'attackersAttackedYou':
       // CR 508.1b (D-149): read from the declaration of the attack event this trigger came from.
       return (ctx.triggerAttacked ?? []).includes(ctx.controller);
@@ -397,6 +467,11 @@ export function evaluateCondition(
       const spell = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return spell?.stack?.castFrom === condition.zone;
     }
+    case 'wasCast': {
+      // CR 601.2a, 603.4: the permanent came from a spell that was cast (the spell remembers where from), read from last-known information once it has left.
+      const permanent = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return permanent?.castFrom !== undefined || permanent?.stack?.castFrom !== undefined;
+    }
     case 'yourTurn':
       // CR 611.3a, 613.8 (D-206): it is a turn of the controller.
       return state.turn.activeSeat === ctx.controller;
@@ -425,6 +500,8 @@ export function evaluateCondition(
       return cardsInGraveyardHolds(state, ctx.controller, condition.compare);
     case 'cardsInLibrary':
       return cardsInLibraryHolds(state, ctx.controller, condition.compare);
+    case 'aPlayerCardsInHand':
+      return aPlayerCardsInHandHolds(state, condition.compare);
     case 'playerDealtDamage':
       // D-151, CR 120.3: the damage dealt to the controller, or to an opponent, this turn.
       return playerDealtDamageHolds(state, ctx.controller, condition);
@@ -454,6 +531,20 @@ export function evaluateCondition(
             s.types.some((t) => condition.ofTypes?.includes(t) ?? false),
         ).length >= condition.atLeast
       );
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279, CR 508.1: the different creatures the controller declared as attackers this turn (the turn log keeps the ones that have died).
+      return (
+        new Set(
+          state.turnLog.attackedWith.filter((a) => a.seat === ctx.controller).map((a) => a.object),
+        ).size >= condition.atLeast
+      );
+    case 'castFromGraveyardThisTurn':
+      // Issue 159 (CR 601.2a, 602.2): a spell the controller cast from a graveyard this turn, or an ability of a card in a graveyard they activated this turn.
+      return (
+        state.turnLog.castSpells.some(
+          (s) => s.seat === ctx.controller && s.fromGraveyard === true,
+        ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
+      );
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;
@@ -462,19 +553,16 @@ export function evaluateCondition(
       if (cmp === 'atMost') return ctx.dieResult <= value;
       return ctx.dieResult === value;
     }
-    case 'xIs': {
-      // CR 107.3a, 608.2c: the X of the spell or ability that is resolving against the number.
-      if (ctx.x === undefined) return false;
-      const { cmp, value } = condition.compare;
-      if (cmp === 'atLeast') return ctx.x >= value;
-      if (cmp === 'atMost') return ctx.x <= value;
-      return ctx.x === value;
-    }
     case 'thisInYourGraveyard': {
       // CR 113.6b, 603.4, 400.7 (D-271): the card itself is in its owner's graveyard, and the owner is the controller of the ability (the card has no
       // controller in a graveyard, CR 108.4a). A card that has left is another object, so it is read live, never from last-known information.
       const source = ctx.source === null ? undefined : state.objects[ctx.source];
       return source !== undefined && source.zone === 'graveyard' && source.owner === ctx.controller;
+    }
+    case 'thisOnBattlefield': {
+      // CR 603.4, 400.7 (Animate Dead): "if it's on the battlefield": the live object, which is a new one elsewhere once it has left.
+      const from = ctx.source === null ? undefined : state.objects[ctx.source];
+      return from?.zone === 'battlefield';
     }
     case 'controlsRingBearer':
       // CR 701.54e (D-196): a creature on the battlefield under the controller's control with their Ring-bearer designation.

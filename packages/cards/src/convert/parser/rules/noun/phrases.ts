@@ -29,6 +29,8 @@ export interface FilterParts {
   readonly notTypes: readonly string[];
   readonly supertypes: readonly string[];
   readonly colors: readonly string[];
+  /** "nonblack": none of these colors, as color words (CR 105.2, 205.4). */
+  readonly notColors: readonly string[];
   readonly tapped: boolean | undefined;
   readonly controller: 'you' | 'opponent' | 'triggerPlayer' | 'defendingPlayer' | undefined;
   /** "nontoken" (false), CR 111.1; stage P29. */
@@ -46,10 +48,14 @@ export interface FilterParts {
   readonly attacking: boolean;
   /** "attacking or blocking" (stage P68, D-229, CR 506.4, 509.1g). */
   readonly attackingOrBlocking: boolean;
+  /** "blocking" (CR 509.1g): a creature declared as a blocker that is still in combat. */
+  readonly blocking: boolean;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
   readonly historic: boolean;
   /** "modified" (D-416, CR 700.9): a permanent with a counter, an Equipment or an Aura its controller controls. */
   readonly modified: boolean;
+  /** "goaded" (CR 701.15b): a creature some player's goad effect still holds. */
+  readonly goaded: boolean;
   /** "commander" before a type (D-443, CR 903.3): "commander creatures you control", a card a player designated as a commander. Only `permanentPhrase` reads it. */
   readonly commander: boolean;
   /** "monocolored", "multicolored" (CR 105.2a, 105.2b): the number of colors; stage P31. */
@@ -61,6 +67,7 @@ export const NO_PARTS: FilterParts = {
   notTypes: [],
   supertypes: [],
   colors: [],
+  notColors: [],
   tapped: undefined,
   controller: undefined,
   token: undefined,
@@ -71,8 +78,10 @@ export const NO_PARTS: FilterParts = {
   notSupertypes: [],
   attacking: false,
   attackingOrBlocking: false,
+  blocking: false,
   historic: false,
   modified: false,
+  goaded: false,
   commander: false,
   colorCount: undefined,
 };
@@ -116,15 +125,23 @@ export const MODIFIER: Parser<Modifier> = choice(
   // Stage P68 (D-230): "a nontoken, non-Angel creature": the comma between two modifiers.
   word('nontoken,', (p) => ({ ...p, token: false })),
   word('colorless', (p) => ({ ...p, colorless: true })),
+  // "nonblack creature" (CR 105.2, 205.4), the comma between two modifiers ("nonartifact, nonblack creature"): the engine's `notColors`.
+  ...COLOR_WORDS.map((c) => word(`non${c}`, (p) => ({ ...p, notColors: [...p.notColors, c] }))),
+  ...COLOR_WORDS.map((c) => word(`non${c},`, (p) => ({ ...p, notColors: [...p.notColors, c] }))),
   // Stage P30 (D-135): "nonbasic land" (CR 205.4: basic is a supertype), the engine's `notSupertypes`.
   word('nonbasic', (p) => ({ ...p, notSupertypes: [...p.notSupertypes, 'basic'] })),
+  // D-644 (Prismari deck, group 1; CR 205.4: legendary is a supertype): "up to one target nonlegendary creature you control", the engine's `notSupertypes`.
+  word('nonlegendary', (p) => ({ ...p, notSupertypes: [...p.notSupertypes, 'legendary'] })),
   // Stage P31 (D-140): "attacking creature" (CR 508.1k), "monocolored" and "multicolored" (CR 105.2a, 105.2b: one color, two or more).
   // Stage P68 (D-229): "attacking or blocking creature" (CR 506.4, 509.1g), before "attacking", of which it is the start.
   word('historic', (p) => ({ ...p, historic: true })),
   // D-416 (Danitha deck, CR 700.9): "modified creature".
   word('modified', (p) => ({ ...p, modified: true })),
+  // CR 701.15b (Goad): "goaded creature".
+  word('goaded', (p) => ({ ...p, goaded: true })),
   word('attacking or blocking', (p) => ({ ...p, attackingOrBlocking: true })),
   word('attacking', (p) => ({ ...p, attacking: true })),
+  word('blocking', (p) => ({ ...p, blocking: true })),
   word('monocolored', (p) => ({ ...p, colorCount: { cmp: 'equal', value: 1 } })),
   word('multicolored', (p) => ({ ...p, colorCount: { cmp: 'atLeast', value: 2 } })),
   NON_SUBTYPE,
@@ -212,6 +229,7 @@ export function toFilter(
     ...(p.notTypes.length > 0 ? { notTypes: p.notTypes } : {}),
     ...(p.supertypes.length > 0 ? { supertypes: p.supertypes } : {}),
     ...(p.colors.length > 0 ? { colors: p.colors } : {}),
+    ...(p.notColors.length > 0 ? { notColors: p.notColors } : {}),
     ...(p.tapped !== undefined ? { tapped: p.tapped } : {}),
     ...(p.controller !== undefined ? { controller: p.controller } : {}),
     ...(p.token !== undefined ? { token: p.token } : {}),
@@ -222,8 +240,10 @@ export function toFilter(
     ...(p.notSupertypes.length > 0 ? { notSupertypes: p.notSupertypes } : {}),
     ...(p.attacking ? { attacking: true as const } : {}),
     ...(p.attackingOrBlocking ? { attackingOrBlocking: true as const } : {}),
+    ...(p.blocking ? { blocking: true as const } : {}),
     ...(p.historic ? { historic: true as const } : {}),
     ...(p.modified ? { modified: true as const } : {}),
+    ...(p.goaded ? { goaded: true as const } : {}),
     ...(p.commander ? { commander: true as const } : {}),
     ...(p.colorCount !== undefined ? { colorCount: p.colorCount } : {}),
     raw,
@@ -420,6 +440,15 @@ function powerAboveBase(plural: boolean): Parser<boolean> {
 }
 
 /**
+ * " with base power 0" (CR 208.4b, 208.1: the power the object has before counters and the effects that only modify it), the engine's `basePowerIs`. Only a
+ * whole number is read ("with base power 2", "with base power 0"); "base power or toughness", a comparison and "X" are not.
+ */
+const basePowerSuffix: Parser<number> = map(
+  pattern(new RegExp(` with base power (\\d+)${BOUNDARY}`, 'iu')),
+  (m) => Number(m[1]),
+);
+
+/**
  * " with a counter on it", " with a +1/+1 counter on it", " with a stun counter on it" and, in the plural, " with counters on them",
  * " with +1/+1 counters on them" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or of the kind named.
  */
@@ -519,6 +548,7 @@ export function permanentPhrase(
     damaged: boolean;
     counter: true | string | undefined;
     aboveBase: boolean;
+    basePower: number | undefined;
   }> = (ctx, pos) => {
     const control = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, pos);
     if (!control.ok) return control;
@@ -553,7 +583,10 @@ export function permanentPhrase(
     const aboveBase = optional(quiet(powerAboveBase(plural)), false)(ctx, counter.pos);
     if (!aboveBase.ok) return aboveBase;
     let controller = control.value;
-    let end = aboveBase.pos;
+    // "creatures you control with base power 0" (Quandrix Unlimited deck, group G).
+    const basePower = optional(quiet(basePowerSuffix), undefined)(ctx, aboveBase.pos);
+    if (!basePower.ok) return basePower;
+    let end = basePower.pos;
     // "creature of the chosen type you control", "creature with power 4 or greater you control".
     if (
       controller === undefined &&
@@ -561,7 +594,8 @@ export function permanentPhrase(
         compared.value !== undefined ||
         keyword.value !== undefined ||
         counter.value !== undefined ||
-        aboveBase.value)
+        aboveBase.value ||
+        basePower.value !== undefined)
     ) {
       const late = optional(EVENT_CONTROL_SUFFIX, undefined)(ctx, end);
       if (!late.ok) return late;
@@ -580,6 +614,7 @@ export function permanentPhrase(
         damaged: damaged.value,
         counter: counter.value,
         aboveBase: aboveBase.value,
+        basePower: basePower.value,
       },
       pos: end,
     };
@@ -613,6 +648,7 @@ export function permanentPhrase(
         damaged,
         counter,
         aboveBase,
+        basePower,
       },
     ] = r.value;
     const parts = modifiers.reduce<FilterParts>((acc, m) => m(acc), {
@@ -639,6 +675,7 @@ export function permanentPhrase(
           ...(damaged ? { controllerDamagedBySource: true as const } : {}),
           ...(counter === undefined ? {} : { hasCounter: counter }),
           ...(aboveBase ? { powerAboveBase: true as const } : {}),
+          ...(basePower === undefined ? {} : { basePowerIs: basePower }),
         },
         compared,
       ),
@@ -764,9 +801,22 @@ export function permanentPhrase(
   };
   // A choice of types is read for one object ("target artifact or enchantment"); plurals ("all
   // artifacts and enchantments") join with "and" and are not read.
-  return plural
+  const phrase: Parser<IrFilter> = plural
     ? choice(quiet(pluralAndOr), single)
     : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
+  // "target artifact or enchantment with mana value X or less" (D2 group, Kinetic Ooze, CR 202.3): the mana value is at most the X a "where X is ..." defines, or the X of the spell
+  // the permanent came from; the lowering says which, and refuses a text with neither.
+  return (ctx, pos) => {
+    const r = phrase(ctx, pos);
+    if (!r.ok || plural) return r;
+    const atMost = optional(quiet(MANA_VALUE_X_OR_LESS), false)(ctx, r.pos);
+    if (!atMost.ok || !atMost.value) return r;
+    return {
+      ok: true,
+      value: { ...r.value, manaValueAtMostX: true as const, raw: ctx.text.slice(pos, atMost.pos) },
+      pos: atMost.pos,
+    };
+  };
 }
 
 /**
@@ -831,7 +881,8 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.tapped === undefined &&
           parts.token === undefined &&
           !parts.attacking &&
-          !parts.modified,
+          !parts.modified &&
+          !parts.goaded,
       ),
       optional(
         map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
@@ -876,7 +927,8 @@ export function spellPhrase(plural = false): Parser<IrFilter> {
           parts.tapped !== undefined ||
           parts.token !== undefined ||
           parts.attacking ||
-          parts.modified
+          parts.modified ||
+          parts.goaded
         )
           return fail(c, at);
         const types = optional(typeWords(CARD_TYPES, false), [] as string[])(c, modifiers.pos);
@@ -991,18 +1043,24 @@ interface CardWords {
 export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
-  preposition: 'from' | 'in' = 'from',
+  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' = 'from',
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
-    preposition === 'in'
-      ? map(literal(' in your graveyard'), () => 'you' as const)
-      : choice(
-          map(literal(' from your graveyard'), () => 'you' as const),
-          map(literal(' from a graveyard'), () => undefined),
-          map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-          // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-          ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-        );
+    preposition === 'fromThatPlayer'
+      ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
+        map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
+      : preposition === 'inAny'
+        ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
+          map(literal(' in a graveyard'), () => undefined)
+        : preposition === 'in'
+          ? map(literal(' in your graveyard'), () => 'you' as const)
+          : choice(
+              map(literal(' from your graveyard'), () => 'you' as const),
+              map(literal(' from a graveyard'), () => undefined),
+              map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+              // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+              ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+            );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
@@ -1039,6 +1097,7 @@ export function graveyardPhrase(
     // Only the words that leave a type out: a color, a supertype or a state is more than this reading says.
     const plain =
       parts.colors.length === 0 &&
+      parts.notColors.length === 0 &&
       parts.supertypes.length === 0 &&
       parts.tapped === undefined &&
       parts.token === undefined &&
@@ -1048,6 +1107,7 @@ export function graveyardPhrase(
       !parts.attacking &&
       !parts.historic &&
       !parts.modified &&
+      !parts.goaded &&
       parts.colorCount === undefined;
     const left = PERMANENT_CARD_TYPES.filter((t) => !parts.notTypes.includes(t));
     if (!plain || left.length === 0) return fail(ctx, pos);
@@ -1096,9 +1156,24 @@ export function graveyardPhrase(
       pos: r.pos,
     };
   };
+  // "Aura or Equipment card" (issue 89, Forum Filibuster, CR 205.3g, 205.3h): a card that is an Aura or is an Equipment, one card only (the subtypes of an enchantment and of an
+  // artifact; no type word is said).
+  const auraOrEquipment: Parser<CardWords> = map(literal('Aura or Equipment '), () => ({
+    types: [],
+    anyOf: [],
+    subtypes: [],
+    subtypeAnyOf: ['Aura', 'Equipment'],
+  }));
   const words: Parser<CardWords> = plural
     ? choice(permanentCards, choiceOfTypes, typed)
-    : choice(permanentCards, withNonAura, choiceOfTypes, quiet(subtypeChoiceWords), typed);
+    : choice(
+        permanentCards,
+        withNonAura,
+        choiceOfTypes,
+        quiet(subtypeChoiceWords),
+        auraOrEquipment,
+        typed,
+      );
   // "Dragon creature card or Ugin planeswalker card from your graveyard" (stage P34, D-152, CR 205.2a, 205.3j): one card that is either kind,
   // each kind a creature type and a card type ("Dragon creature card") or a planeswalker type ("Ugin planeswalker card"). Two or more kinds,
   // each with a type or a subtype; the owner follows the last.

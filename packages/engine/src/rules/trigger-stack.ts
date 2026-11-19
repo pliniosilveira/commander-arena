@@ -85,11 +85,14 @@ export function groupIdentical(triggers: readonly PendingTrigger[]): PendingTrig
       (readsTriggerSubject(t.ability) ? `${t.subject}#` : '') +
       (readsTriggerPlayer(t.ability) ? `p${t.player}#` : '') +
       (readsTriggerDamage(t.ability) ? `d${t.damage}#` : '') +
-      (readsTriggerAttacked(t.ability) ? `a${(t.attacked ?? []).join(',')}#` : '') +
+      (readsTriggerAttacked(t.ability)
+        ? `a${(t.attacked ?? []).join(',')}@${(t.attackedAt ?? []).join(',')}#`
+        : '') +
       (readsTriggerAttackers(t.ability) ? `A${(t.attackers ?? []).join(',')}#` : '') +
       // D-177: a reflexive ability reads the permanents its resolution sacrificed.
       (t.sacrificedBefore === undefined ? '' : `s${t.sacrificedBefore.join(',')}#`) +
       (t.thisWayBefore === undefined ? '' : `w${JSON.stringify(t.thisWayBefore)}#`) +
+      (t.movedBefore === undefined ? '' : `m${t.movedBefore.join(',')}#`) +
       (t.cards === undefined ? '' : `c${t.cards.join(',')}#`);
     // Exalted (D-110) reads only the attacking creature, never the permanent with the keyword, and Extort
     // (D-120) only its controller: triggers of different permanents for one event are interchangeable (A18).
@@ -132,11 +135,15 @@ function pushTrigger(
     ...(trigger.attackers !== undefined && readsTriggerAttackers(trigger.ability)
       ? { attackers: trigger.attackers }
       : {}),
+    ...(trigger.attackedAt !== undefined && readsTriggerAttacked(trigger.ability)
+      ? { attackedAt: trigger.attackedAt }
+      : {}),
     ...(trigger.chapter === undefined ? {} : { chapter: trigger.chapter }),
     ...(trigger.sacrificedBefore === undefined
       ? {}
       : { sacrificedBefore: trigger.sacrificedBefore }),
     ...(trigger.thisWayBefore === undefined ? {} : { thisWayBefore: trigger.thisWayBefore }),
+    ...(trigger.movedBefore === undefined ? {} : { movedBefore: trigger.movedBefore }),
     ...(trigger.cards === undefined ? {} : { cards: trigger.cards }),
     ...(targets.length === 0 ? {} : { targets }),
     ...(modes.length === 0 ? {} : { modes }),
@@ -199,7 +206,10 @@ function modesEvents(seat: SeatId, source: ObjectId, modes: readonly number[]): 
 /** Whether the choices need no decision: no legal target and none needed, or exactly as many as needed. */
 function isForced(choices: readonly TargetChoiceSpec[]): boolean {
   return choices.every(
-    (c) => c.legal.length === 0 || (c.min === c.max && c.min === c.legal.length),
+    (c) =>
+      c.legal.length === 0 ||
+      // CR 601.2d, 603.3d: a division is announced with the targets, so a slot that divides something is always asked.
+      (c.divide === undefined && c.min === c.max && c.min === c.legal.length),
   );
 }
 
@@ -232,6 +242,10 @@ function runQueue(input: GameState): PutResult {
       ...(trigger.player === undefined ? {} : { triggerPlayer: trigger.player }),
       ...(trigger.damage === undefined ? {} : { triggerDamage: trigger.damage }),
       ...(trigger.targetCount === undefined ? {} : { triggerTargetCount: trigger.targetCount }),
+      // CR 603.3d: a target filter that reads the object that caused the trigger ("mana value ... that spell's mana value").
+      ...(trigger.subject === null || !readsTriggerSubject(trigger.ability)
+        ? {}
+        : { triggerSubject: trigger.subject }),
     };
     const modal = modalOfAbility(trigger.ability);
     let modes: readonly number[] = [];
@@ -483,6 +497,7 @@ export function answerTriggerModes(
     ...(stack.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: stack.triggerTargetCount }),
+    ...(stack.triggerSubject === undefined ? {} : { triggerSubject: stack.triggerSubject }),
   };
   const patched = patchObject({ ...state, pending: null }, stackObject, {
     stack: { ...stack, chosenModes: chosen },

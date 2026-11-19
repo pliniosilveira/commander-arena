@@ -18,6 +18,6 @@ const NO_MAX_HAND_SIZE_GAME: Lowering<IrClause, Effects> = {
 };
 
 /** Features the lowerings of this file can name, for the dimension test. */
-export const FINALE_NEEDS: readonly FeatureRef[] = ['effect:noMaxHandSizeForGame', 'condition:xIs'];
+export const FINALE_NEEDS: readonly FeatureRef[] = ['effect:noMaxHandSizeForGame'];
 
 export const FINALE_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [NO_MAX_HAND_SIZE_GAME];

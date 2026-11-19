@@ -30,6 +30,7 @@ type ContinuousNode = Extract<
       | 'modifyPt'
       | 'setPt'
       | 'loseAllAbilities'
+      | 'loseHexproofShroud'
       | 'setTypes'
       | 'setColors'
       | 'grantKeyword'
@@ -124,6 +125,23 @@ function checkSetTypes(
   path: string,
   out: AstIssue[],
 ): void {
+  if (e.allCreatureTypes !== undefined) {
+    // CR 205.3m, 702.73a: "gain all creature types" is its own effect: added to what the object has, with nothing else to say.
+    if (e.allCreatureTypes !== true) {
+      issue(out, `${path}.allCreatureTypes`, 'allCreatureTypes must be true when present');
+    }
+    if (e.types !== undefined || e.subtypes !== undefined || e.additive !== undefined) {
+      issue(
+        out,
+        path,
+        'allCreatureTypes adds every creature type alone: no types, subtypes or additive with it',
+      );
+    }
+    if (e.basePt !== undefined) {
+      issue(out, `${path}.basePt`, 'allCreatureTypes does not set base power and toughness');
+    }
+    return;
+  }
   if (e.types === undefined && e.subtypes === undefined) {
     issue(out, path, 'setTypes needs types, subtypes or both');
   }
@@ -193,6 +211,12 @@ function checkSetColors(
     if (!isOneOf(c, COLORS)) issue(out, `${path}.colors[${i}]`, `unknown color ${String(c)}`);
   });
   if (new Set(e.colors).size !== e.colors.length) issue(out, `${path}.colors`, 'duplicate color');
+  // Issue 159: "in addition to its other colors" adds colors, so an empty list would add nothing.
+  if (e.additive !== undefined && e.additive !== true) {
+    issue(out, `${path}.additive`, 'additive is true or absent');
+  } else if (e.additive === true && e.colors.length === 0) {
+    issue(out, `${path}.colors`, 'an additive setColors names at least one color');
+  }
 }
 
 export function checkContinuousEffect(
@@ -219,7 +243,9 @@ export function checkContinuousEffect(
       );
     }
   } else if (
-    e.kind === 'grantKeyword' &&
+    (e.kind === 'grantKeyword' ||
+      e.kind === 'loseAllAbilities' ||
+      (e.kind === 'restrict' && e.duration === 'forAsLongAsThisRemains')) &&
     (e.duration === 'forAsLongAsThisRemains' || e.duration === 'forAsLongAsYouControlThis')
   ) {
     // D-207, CR 611.2b: "for as long as this Saga remains on the battlefield" is a duration of an ability of a permanent.
@@ -259,6 +285,7 @@ export function checkContinuousEffect(
       break;
     }
     case 'loseAllAbilities':
+    case 'loseHexproofShroud':
       break;
     case 'setTypes':
       checkSetTypes(e, path, out);
@@ -270,6 +297,17 @@ export function checkContinuousEffect(
       checkGrantAbility(e, path, scope, out);
       break;
     case 'grantKeyword':
+      // D-653 (CR 604.1): "During your turn, this creature has first strike": only while it is its controller's turn; true or absent, and a keyword without parameters.
+      if (e.duringYourTurn !== undefined && e.duringYourTurn !== true) {
+        issue(out, `${path}.duringYourTurn`, 'duringYourTurn is true or absent');
+      }
+      if (e.duringYourTurn === true && e.keyword?.kind === 'protection') {
+        issue(
+          out,
+          `${path}.duringYourTurn`,
+          'only a keyword without parameters is given on your turn',
+        );
+      }
       if (e.keyword?.kind === 'protection') {
         // D-451 (CR 702.16): an effect gives protection from named colors or card types, or from the color of the controller's choice (asked as it resolves).
         // The qualities that read a permanent's choice or a commander (`chosenCardType`, `colorsNotInCommanderIdentity`) need a static ability.

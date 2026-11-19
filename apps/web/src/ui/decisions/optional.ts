@@ -4,7 +4,13 @@
  * prompt, the button labels and whether Cancel is offered. Six questions share the decision and are
  * told apart by `cost` and `purpose`, so their words live here, away from `model.ts`.
  */
-import type { ConfirmOptionalDecision, Cost, ObjectId, ObjectView } from '@commander-arena/engine';
+import {
+  type ConfirmOptionalDecision,
+  type Cost,
+  manaValue,
+  type ObjectId,
+  type ObjectView,
+} from '@commander-arena/engine';
 import { findEffect } from '../../game/artifacts-text';
 import { castCardOfAbility, castCardPrompt } from '../../game/cast-card-text';
 import {
@@ -461,6 +467,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'exert') {
+    // Exert (CR 701.43d, 508.1g): "You may exert ~ as it attacks", an optional cost of the attack. Accepting keeps the creature from untapping during its next
+    // untap step; Cancel takes the whole declaration back (CR 733).
+    return {
+      prompt: `Exert ${d.sourceName} as it attacks? It won't untap during your next untap step.`,
+      yes: 'Exert',
+      no: "Don't exert",
+      cancellable: true,
+    };
+  }
   if (d.purpose === 'buyback') {
     // Buyback (CR 702.27a, 601.2b; Galadriel group 3): asked as the spell is cast, only when the whole cost with it can be paid. Declining casts the spell without it;
     // Cancel rewinds the cast (CR 733).
@@ -484,6 +500,26 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       yes: 'Gift',
       no: 'No gift',
       cancellable: true,
+    };
+  }
+  if (d.purpose === 'exileMore') {
+    // D-662 (CR 701.13, 608.2d): "As many times as you choose, you may exile the top card of your library": asked again after each card, with what was exiled so far.
+    const exiled = (d.exiled ?? []).flatMap((id) => {
+      const card = index.get(id);
+      return card === undefined ? [] : [card];
+    });
+    const total = exiled.reduce(
+      (sum, c) => sum + (c.manaCost === null ? 0 : manaValue(c.manaCost)),
+      0,
+    );
+    return {
+      prompt:
+        exiled.length === 0
+          ? `${d.sourceName}: exile the top card of your library?`
+          : `${d.sourceName}: ${exiled.map((c) => c.name).join(', ')} exiled (total mana value ${total}). Exile the top card of your library again?`,
+      yes: 'Exile the top card',
+      no: 'Stop',
+      cancellable: false,
     };
   }
   if (d.purpose === 'castCard') {

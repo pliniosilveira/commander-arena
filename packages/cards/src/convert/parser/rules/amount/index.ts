@@ -2,16 +2,21 @@ import { choice, fail, map, type Parser, pattern, satisfy } from '../../combinat
 import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
+import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { COUNT_AMOUNT_RULES } from './count';
-import { AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
+import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
+import { HALF_X_AMOUNT_RULES } from './half-x';
+import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
+import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';
+import { QUANDRIX_G_AMOUNT_RULES } from './quandrix-g';
 import { FOR_EACH_VALUE_RULES, VALUE_AMOUNT_RULES } from './value';
 
 /** The number words of Oracle text: one to twenty (stage P28: "thirteen tapped Zombie tokens"). */
@@ -260,6 +265,40 @@ export const AMOUNT_MANA_VALUE_OF = defineRule<IrAmount>({
 });
 
 /**
+ * `amount.that-spells-mana-value`: "that spell's mana value", the limit of "target nonland permanent an opponent controls with mana value less than or equal to
+ * that spell's mana value" (CR 202.3: the total of the mana cost; CR 601.2i: the spell was cast). "That spell" is the spell that caused a cast trigger, which the
+ * lowering reads as the engine's `triggerSubject`, as for `amount.mana-value-of`. Not read: another possessor ("that card's"), a missing apostrophe and the
+ * "equal to" form, which is `amount.mana-value-of`.
+ */
+export const AMOUNT_THAT_SPELLS_MANA_VALUE = defineRule<IrAmount>({
+  id: 'amount.that-spells-mana-value',
+  family: 'amount',
+  leading: ['that'],
+  cites: ['CR 202.3 (Mana Value)', 'CR 601.2i (Casting Spells)'],
+  examples: ["that spell's mana value", 'that spell’s mana value'],
+  rejects: [
+    "that card's mana value",
+    'that spells mana value',
+    "equal to that spell's mana value",
+    "that spell's power",
+    "that spell's mana values",
+    "that spell's mana",
+    "~'s mana value",
+    'that spell',
+  ],
+  parse: (ctx, pos) => {
+    const m = pattern(/(that spell['’]s) mana value(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!m.ok) return fail(ctx, pos);
+    const of = possessedNoun('amount.that-spells-mana-value', m.value[1] ?? '', pos);
+    return {
+      ok: true,
+      value: { kind: 'manaValueOf', of, span: { start: pos, end: m.pos } },
+      pos: m.pos,
+    };
+  },
+});
+
+/**
  * `amount.life-lost-this-way`: "equal to the life lost this way", "equal to the total life lost this way"
  * (stage P21, CR 702.101a, 119.3: the life lost by the instruction before it in the same text, which is how
  * "Each opponent loses X life. You gain life equal to the life lost this way." counts what was actually
@@ -303,8 +342,18 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
     'CR 701.17a (Mill)',
     'CR 608.2c (Resolving Spells and Abilities)',
   ],
-  examples: ['equal to the total mana value of those cards'],
+  examples: [
+    'equal to the total mana value of those cards',
+    // Lorehold Spirit deck, group 2 (issue 86): the cards "milled this way".
+    'equal to the total mana value of cards milled this way',
+    'equal to the total mana value of the cards milled this way',
+  ],
   rejects: [
+    'equal to the total mana value of cards milled',
+    'equal to the total mana value of cards exiled this way',
+    'equal to the total mana value of cards milled this way plus 1',
+    'the total mana value of cards milled this way',
+    'equal to the total mana value of those cards milled this way',
     'the total mana value of those cards',
     'equal to the mana value of those cards',
     'equal to the total mana value',
@@ -313,10 +362,11 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
     'equal to the greatest mana value of those cards',
   ],
   parse: (ctx, pos) => {
-    const r = spanned(pattern(/equal to the total mana value of those cards(?![\p{L}\p{N}])/iu))(
-      ctx,
-      pos,
-    );
+    const r = spanned(
+      pattern(
+        /equal to the total mana value of (?:those cards|(?:the )?cards milled this way)(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,
@@ -326,14 +376,92 @@ export const AMOUNT_MILLED_VALUE_THIS_WAY = defineRule<IrAmount>({
   },
 });
 
+/**
+ * `amount.discarded-most-this-way`: "equal to the greatest number of cards a player discarded this way" (issue 279, Windfall, CR 608.2c, 701.9a): the most cards any one
+ * player discarded to the instruction before it in the same text ("Each player discards their hand, then draws cards equal to ..."), read as the engine's `thisWay`
+ * `discardedMost`. Read only where the lowering finds a `discard` of the same text before it. Not read: "the total number of cards discarded this way" (a sum), "the least
+ * number", a player named ("a player" is the only word it says: "that player" or "you" name one), a count in front ("twice"), another verb ("exiled").
+ */
+export const AMOUNT_DISCARDED_MOST_THIS_WAY = defineRule<IrAmount>({
+  id: 'amount.discarded-most-this-way',
+  family: 'amount',
+  leading: ['equal'],
+  cites: ['CR 701.9a (Discard)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: ['equal to the greatest number of cards a player discarded this way'],
+  rejects: [
+    'equal to the greatest number of cards a player discarded',
+    'equal to the greatest number of cards you discarded this way',
+    'equal to the greatest number of cards that player discarded this way',
+    'equal to the least number of cards a player discarded this way',
+    'equal to the total number of cards a player discarded this way',
+    'equal to the greatest number of cards a player exiled this way',
+    'equal to the greatest number of creature cards a player discarded this way',
+    'the greatest number of cards a player discarded this way',
+    'equal to the greatest number of cards a player discarded this way plus 1',
+    'equal to twice the greatest number of cards a player discarded this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /equal to the greatest number of cards a player discarded this way(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'thisWay', what: 'discardedMost', words: [], span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `amount.damage-dealt-this-way`: "equal to the damage dealt this way" (issue 159, CR 120.3, 615.6, 608.2c): the damage the instruction
+ * before it in the same text dealt, after prevention. Read only where the lowering finds a `dealDamage` of the same text before it.
+ */
+export const AMOUNT_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
+  id: 'amount.damage-dealt-this-way',
+  family: 'amount',
+  leading: ['equal'],
+  cites: [
+    'CR 120.3 (Damage)',
+    'CR 615.6 (Prevention Effects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['equal to the damage dealt this way'],
+  rejects: [
+    'the damage dealt this way',
+    'equal to the damage dealt',
+    'equal to damage dealt this way',
+    'equal to the damage dealt this turn',
+    'equal to the damage dealt this way plus 1',
+    'equal to the life lost this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(/equal to the damage dealt this way(?![\p{L}\p{N}])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'thisWay', what: 'damageDealt', words: [], span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
 export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_DIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
   ...KORVOLD_AMOUNT_RULES,
+  // CR 205.2a: "for each card type among cards in your graveyard".
+  ...CARD_TYPES_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".
   ...HOFRI_AMOUNT_RULES,
+  // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
+  ...QUANDRIX_G_AMOUNT_RULES,
   // Hashaton deck, group 2 (D-365): "equal to the life that player lost this turn".
   ...HASHATON_G2_AMOUNT_RULES,
+  // CR 402.1: "equal to the number of cards in that player's hand", the amount of damage to each opponent.
+  ...HAND_OF_THAT_PLAYER_AMOUNT_RULES,
   // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
   ...FEATHER_G1_AMOUNT_RULES,
   AMOUNT_NUMBER,
@@ -346,15 +474,23 @@ export const AMOUNT_RULES = [
   ...VALUE_AMOUNT_RULES,
   AMOUNT_POWER_OF,
   AMOUNT_MANA_VALUE_OF,
+  AMOUNT_THAT_SPELLS_MANA_VALUE,
   AMOUNT_LIFE_LOST_THIS_WAY,
   AMOUNT_MILLED_VALUE_THIS_WAY,
+  AMOUNT_DISCARDED_MOST_THIS_WAY,
+  AMOUNT_DAMAGE_DEALT_THIS_WAY,
   // Galadriel deck, group 2 (D-539): two counts added; before `amount.for-each`, which would stop after the first.
   ...GALADRIEL_G2_AMOUNT_RULES,
   ...COUNT_AMOUNT_RULES,
   ...FOR_EACH_VALUE_RULES,
   AMOUNT_TIMES_KICKED,
   AMOUNT_FOR_EACH_STILL_EXILED,
+  AMOUNT_FOR_EACH_AURA_ATTACHED,
   AMOUNT_FOR_EACH_MANA_SPENT,
+  // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
+  ...LOREHOLD_G2_AMOUNT_RULES,
+  // Quandrix Unlimited deck, group D2: "half X, rounded down".
+  ...HALF_X_AMOUNT_RULES,
 ];
 
 /** The amounts of a damage or life clause: a number or X, never an article. */

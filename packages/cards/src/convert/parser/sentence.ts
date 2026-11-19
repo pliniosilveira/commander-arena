@@ -62,10 +62,18 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.gift-promised',
   // Stage P37 (D-180): "If you put a Cave onto the battlefield this way, you gain 4 life."
   'condition.put-this-way',
+  // Issue 159 (Liliana, Untouched by Death): "If at least one Zombie card is milled this way, each opponent loses 2 life."
+  'condition.milled-this-way',
   // D-412 (Danitha deck group 2): "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."
   'condition.control-or-returned',
   // Stage P49 (D-206): "Then if this spell was cast from a graveyard, put two +1/+1 counters on that token."
   'condition.cast-from-graveyard',
+  // Issue 244 (Return to Dust): "If you cast this spell during your main phase, you may exile up to one other target artifact or enchantment."
+  'condition.cast-in-own-main-phase',
+  // Issue 233 (Martial Coup): "If X is 5 or more, destroy all other creatures."
+  'condition.x-at-least',
+  // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
+  'condition.that-object-power',
 ] as const;
 
 /**
@@ -96,9 +104,13 @@ const ATTACKERS_CONDITIONS = ['condition.those-attacked-you'] as const;
 const TURN_CONDITIONS = [
   'condition.creature-died-this-turn',
   'condition.player-dealt-damage',
+  // Issue 279: "You may play the exiled card without paying its mana cost if you attacked with three or more creatures this turn."
+  'condition.attacked-with-creatures',
   // Stage P69 (D-252, D-253): the Bruna deck, "if you gained 3 or more life this turn", "... if your life total is greater than your starting life total".
   'condition.life-gained-this-turn',
   'condition.life-above-starting',
+  // Issue 159 (Laboratory Drudge): "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+  'condition.cast-from-graveyard-this-turn',
 ] as const;
 
 /**
@@ -114,27 +126,44 @@ const LIFE_LEAD_CONDITIONS = ['condition.life-total'] as const;
  */
 const DIE_CONDITIONS = ['condition.die-result'] as const;
 
-/** "If X is 10 or more, instead ..." (Finale of Revelation, issue 337, CR 107.3, 608.2c): the X of the spell against a number. */
-const X_CONDITIONS = ['condition.x-is'] as const;
-
 /**
  * "If five or more mana was spent to cast that spell, ~ deals 3 damage to each opponent instead." (issue 25, CR 601.2h, 608.2c): the mana spent on the spell a
  * cast trigger is about; the lowering reads it in the body of such a trigger only.
  */
-const MANA_SPENT_CONDITIONS = ['condition.mana-spent-or-more'] as const;
+const MANA_SPENT_CONDITIONS = [
+  'condition.mana-spent-or-more',
+  // Prismari deck, group 3 (issue 87, D-661): "If the total mana value of the cards exiled this way is 13 or less, you may cast any number of spells ..." (CR 202.3, 608.2c).
+  'condition.total-mana-value-exiled-this-way',
+  // Prismari deck, group 2 (issue 87, D-646): "If that spell's mana value is 5 or greater, create three of those tokens instead." (CR 202.3).
+  'condition.spell-mana-value-or-more',
+] as const;
+
+/**
+ * "If that spell's power is 4 or greater, draw a card." (CR 208.1, 608.2c): a stat of the spell a cast trigger is about, read as the instruction comes up; the lowering
+ * reads it in the body of such a trigger only.
+ */
+const TRIGGER_SPELL_CONDITIONS = ['condition.that-spells-stat'] as const;
 
 /** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
 const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;
 
 const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,
+  ...TRIGGER_SPELL_CONDITIONS,
   ...RESOLUTION_CONDITIONS,
   ...DIE_CONDITIONS,
-  ...X_CONDITIONS,
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.
   'condition.discarded-spell-this-way',
+  // Lorehold group 1: "If you search your library this way, shuffle." after a search.
+  'condition.searched-this-way',
+  // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.
+  'condition.two-milled-cards-share-all-types',
+  // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
+  'condition.destroyed-this-way',
+  // Death Toll deck: "Delirium — Then if there are four or more card types among cards in your graveyard, create ..." (CR 205.2a, 608.2c).
+  'condition.card-types-among',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
@@ -205,6 +234,8 @@ const TRAILING_CONDITIONS = [
   ...TURN_CONDITIONS,
   ...CONTROL_CONDITIONS,
   ...ATTACKERS_CONDITIONS,
+  // Issue 89: "it gets +2/+0 until end of turn if it's attacking one of your opponents" (CR 508.1b).
+  'condition.it-attacking-opponents',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(
@@ -272,13 +303,25 @@ const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
       literal('when you next cast '),
       pattern(/an? /iu),
       map(spellPhrase(), withoutZone),
+      // Quandrix Unlimited group E (Brass Infiniscope, CR 107.3): "a spell with {X} in its mana cost".
+      optional(
+        pattern(
+          / with (?:\{X\} in its mana cost|a mana cost that contains \{X\})(?= this turn, )/iu,
+        ),
+        null,
+      ),
       literal(' this turn, '),
     ),
   ),
   ({ value, span }) => ({
     step: 'nextCast' as const,
     whose: 'you' as const,
-    spell: makeNoun('sentence.delayed-cast', span, 'a', value[2]),
+    spell: makeNoun(
+      'sentence.delayed-cast',
+      span,
+      'a',
+      value[3] === null ? value[2] : { ...value[2], xInManaCost: true },
+    ),
   }),
 );
 
@@ -322,6 +365,12 @@ const PLAYER_MAY: Parser<NonNullable<IrSentence['mayBy']>> = quiet((ctx, pos) =>
     ([who, , haveYou]) => ({ who, haveYou: haveYou !== null }),
   )(ctx, pos);
 });
+
+/** "Each player may discard ..." at the start of a spell's sentence (CR 608.2d, 101.4): each player is asked whether to discard, and the rest of the sentence is theirs if they do. */
+const EACH_PLAYER_MAY_DISCARD: Parser<NonNullable<IrSentence['mayBy']>> = (ctx, pos) => {
+  const ahead = quiet(pattern(/(?=each player may discard )/iu))(ctx, pos);
+  return ahead.ok ? PLAYER_MAY(ctx, pos) : ahead;
+};
 
 /** " unless you pay {E}{E}" (stage P51, D-209, CR 107.14): the payment of energy only, which a spell's sentence reads (the other costs stay a trigger's). */
 const UNLESS_ENERGY: Parser<IrCondition> = (ctx, pos) => {
@@ -447,14 +496,19 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     const may: Parser<'you' | NonNullable<IrSentence['mayBy']> | null> =
       options.may === 'discard' && !reflexive
         ? optional(
-            map(
-              (c, p) => {
-                const ahead = pattern(
-                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield))/iu,
-                )(c, p);
-                return ahead.ok ? literal('you may ')(c, p) : ahead;
-              },
-              () => 'you' as const,
+            choice<'you' | NonNullable<IrSentence['mayBy']>>(
+              map(
+                (c, p) => {
+                  const ahead = pattern(
+                    // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
+                    /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|put an? [+-]\d+\/[+-]\d+ counter on a creature\.|exile up to one other target ))/iu,
+                  )(c, p);
+                  return ahead.ok ? literal('you may ')(c, p) : ahead;
+                },
+                () => 'you' as const,
+              ),
+              // "Each player may discard their hand and draw five cards." (CR 608.2d, 101.4): the players of a spell are asked in turn order too (`playersMay`).
+              EACH_PLAYER_MAY_DISCARD,
             ),
             null,
           )

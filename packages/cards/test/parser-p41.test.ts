@@ -120,12 +120,22 @@ describe('"Whenever you attack" (CR 508.1, 603.2)', () => {
     ).toMatchObject({ trigger: { kind: 'attackBatch', who: 'you', atLeast: 2 } });
   });
 
-  test.each([
-    'Whenever you attacked, draw a card.',
-    'Whenever an opponent attacks, draw a card.',
-    'Whenever you attack you, draw a card.',
-  ])('%s stays unread', (text) => {
-    expect(dropped(text, 'creature').reason).toBe('unrecognised');
+  test.each(['Whenever you attacked, draw a card.', 'Whenever you attack you, draw a card.'])(
+    '%s stays unread',
+    (text) => {
+      expect(dropped(text, 'creature').reason).toBe('unrecognised');
+    },
+  );
+
+  // Read since the First Flight decks (rule `trigger.opponent-attacks`).
+  test('Whenever an opponent attacks, draw a card. is read', () => {
+    expect(readAll('Whenever an opponent attacks, draw a card.', 'creature').abilities).toEqual([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attackBatch', who: 'opponent', atLeast: 1 },
+        effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    ]);
   });
 });
 

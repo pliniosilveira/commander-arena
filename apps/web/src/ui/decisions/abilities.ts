@@ -7,6 +7,7 @@
 import type { Action, ObjectId, PriorityDecision } from '@commander-arena/engine';
 import { turnUpDetail, turnUpLabel } from '../../game/face-down-text';
 import { specialActionDetail, specialActionLabel } from '../../game/later-text';
+import { unlockDetail, unlockLabel } from '../../game/room-text';
 import { activationLabel } from './ability-label';
 import { castAction, castLabel } from './flashback';
 import { type CastOption, castPlayOptions, faceLabel, playAction } from './layouts';
@@ -35,7 +36,9 @@ export function manaAction(
     abilityIndex: o.abilityIndex,
     color: o.color,
     ...(o.combination === undefined ? {} : { combination: o.combination }),
+    ...(o.extraColors === undefined ? {} : { extraColors: o.extraColors }),
     ...(o.sacrifice === undefined ? {} : { sacrifice: o.sacrifice }),
+    ...(o.tapped === undefined ? {} : { tapped: o.tapped }),
   };
 }
 
@@ -48,7 +51,11 @@ export function hasActivation(decision: PriorityDecision, id: ObjectId): boolean
 export function hasSpecialAction(decision: PriorityDecision, id: ObjectId): boolean {
   return decision.options.some(
     (o) =>
-      (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') && o.object === id,
+      (o.kind === 'suspend' ||
+        o.kind === 'foretell' ||
+        o.kind === 'turnFaceUp' ||
+        o.kind === 'unlockDoor') &&
+      o.object === id,
   );
 }
 
@@ -111,6 +118,16 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
       action: { kind: 'turnFaceUp', object: id },
     });
   }
+  // CR 709.5e (Room): unlocking a locked half, "Unlock Dim Oubliette {4}{B}": a special action of the permanent, one item for each half.
+  for (const o of decision.options) {
+    if (o.kind !== 'unlockDoor' || o.object !== id) continue;
+    items.push({
+      key: `unlock-${o.door}`,
+      label: unlockLabel(card, o.door),
+      detail: unlockDetail(),
+      action: { kind: 'unlockDoor', object: id, door: o.door },
+    });
+  }
   for (const o of decision.options) {
     if (o.kind !== 'activate' || o.object !== id) continue;
     const entry = card?.activated?.find((a) => a.abilityIndex === o.abilityIndex);
@@ -124,16 +141,19 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
     if (o.kind !== 'activateAbility' || o.source !== id) continue;
     const life = lifeNote(lifeCostOf(card, o.color, o.combination));
     const base =
-      o.color === null && o.combination === undefined
+      o.color === null && o.combination === undefined && o.extraColors === undefined
         ? `Mana ability ${o.abilityIndex + 1}`
-        : manaChoiceLabel(o.abilityIndex, o.color, o.combination);
+        : manaChoiceLabel(o.abilityIndex, o.color, o.combination, o.extraColors);
     // D-222: one item for each permanent a cost "Sacrifice a Spirit" may give up.
+    // D-625: one item for each permanent a cost "Tap an untapped creature you control" may tap.
     const what =
-      o.sacrifice === undefined
-        ? base
-        : `${base}, sacrificing ${index === undefined ? 'it' : nameOf(index, o.sacrifice)}`;
+      o.sacrifice !== undefined
+        ? `${base}, sacrificing ${index === undefined ? 'it' : nameOf(index, o.sacrifice)}`
+        : o.tapped !== undefined
+          ? `${base}, tapping ${index === undefined ? 'it' : nameOf(index, o.tapped)}`
+          : base;
     items.push({
-      key: `mana-${o.abilityIndex}-${o.combination?.join('') ?? o.color ?? 'x'}${o.sacrifice === undefined ? '' : `-${o.sacrifice}`}`,
+      key: `mana-${o.abilityIndex}-${o.combination?.join('') ?? o.color ?? 'x'}${o.extraColors === undefined ? '' : `+${o.extraColors.join('')}`}${o.sacrifice === undefined ? '' : `-${o.sacrifice}`}${o.tapped === undefined ? '' : `-t${o.tapped}`}`,
       label: life === '' ? what : `${what} (${life.toLowerCase()})`,
       action: manaAction(id, o),
     });

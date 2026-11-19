@@ -68,8 +68,8 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant player',
-    expect: no('player', 'keyword.enchant'),
-    note: 'backlog: 46 cards; a permanent phrase does not name a player',
+    expect: OK,
+    note: 'backlog: 46 cards; read since D-629 (`keyword.enchant-player`)',
   },
   {
     kind: 'aura',
@@ -80,8 +80,14 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature card in a graveyard',
-    expect: no('card in a graveyard', 'noun.bare-permanent'),
-    note: 'backlog: 2 cards',
+    expect: OK,
+    note: 'issue 89 (Animate Dead): `noun.card-in-a-graveyard`, the enchant ability of a card in a graveyard',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature card in your graveyard',
+    expect: no('card in your graveyard', 'noun.bare-permanent'),
+    note: 'SYNTHETIC; the graveyard of one player is not read (the engine filter has no owner of a card in a graveyard for an Aura)',
   },
   {
     kind: 'aura',
@@ -92,10 +98,30 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature has "{T}: Draw a card."',
-    expect: no('Enchanted creature has "{T}: Draw a card."', 'static.attached', {
+    expect: OK,
+    note: 'SYNTHETIC; run since D-628: an enchanted creature is given an activated ability, as an enchanted land is (D-603)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature has annihilator X.',
+    expect: no('annihilator X.', 'static.attached'),
+    note: 'SYNTHETIC near miss: annihilator is granted only with a number in digits (D-640)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature has "{T}: Foretell the top card."',
+    expect: no('Enchanted creature has "{T}: Foretell the top card."', 'static.attached', {
       ...NOT_RUNNABLE,
     }),
-    note: 'SYNTHETIC; still not run: an attached permanent is given a triggered ability (stage P49, D-206) and a mana ability, no activated one',
+    note: 'SYNTHETIC; the activated ability is read and not run: no rule for foretelling a card as an effect',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant permanent\nEnchanted permanent has "{T}: Draw a card."',
+    expect: no('Enchanted permanent has "{T}: Draw a card."', 'static.attached', {
+      ...NOT_RUNNABLE,
+    }),
+    note: 'SYNTHETIC; still not run: an untyped attached permanent is given an activated ability (only an enchanted creature or land is, D-603, D-628)',
   },
   {
     kind: 'aura',
@@ -124,8 +150,20 @@ const AURAS: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded.',
-    expect: no('and is goaded.', 'static.attached'),
-    note: 'backlog: 7 cards',
+    expect: OK,
+    note: 'backlog: 7 cards; the engine runs it since PR #280 (issue 201, CR 701.15)',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded twice.',
+    expect: no('twice.', 'static.attached'),
+    note: 'SYNTHETIC near miss: "goaded" is read only as the last words of the sentence',
+  },
+  {
+    kind: 'aura',
+    text: 'Enchant creature\nEnchanted creature gets +1/+1 and is goaded until end of turn.',
+    expect: no('until end of turn.', 'static.attached'),
+    note: 'SYNTHETIC; goad is built as a static ability only (PR #280), not for a length of time',
   },
   {
     kind: 'aura',
@@ -284,10 +322,11 @@ const EQUIPMENT: readonly Line[] = [
     kind: 'equipment',
     text: 'Equipped creature gets +1/+1 and has trample and "Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."\nEquip {3}',
     expect: no(
-      '"Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."',
+      'Equipped creature gets +1/+1 and has trample and "Whenever ~ deals combat damage to a player or planeswalker, create that many Treasure tokens."',
       'static.attached',
+      { ...NOT_RUNNABLE },
     ),
-    note: 'backlog: 1 card',
+    note: 'backlog: 1 card; the quoted ability is read since D-641 and not run (no rule for "create that many Treasure tokens")',
   },
   {
     kind: 'equipment',
@@ -501,7 +540,7 @@ test('the P3 corpus has unique lines, and supported, unparsed and not-runnable e
   expect(CORPUS.filter((l) => 'supported' in l.expect).length).toBeGreaterThanOrEqual(35);
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === undefined).length,
-  ).toBeGreaterThanOrEqual(15);
+  ).toBeGreaterThanOrEqual(14); // 15 before "Enchant player" was read (D-629)
   expect(
     CORPUS.filter((l) => 'unparsed' in l.expect && l.expect.unparsed.reason === 'notRunnable')
       .length,

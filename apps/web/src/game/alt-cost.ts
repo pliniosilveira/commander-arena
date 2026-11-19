@@ -1,5 +1,5 @@
 /**
- * The named alternative costs Overload (CR 702.96), Evoke (CR 702.74), Dash (CR 702.109),
+ * The named alternative costs Overload (CR 702.96), Evoke (CR 702.74), Dash (CR 702.109), Bestow (CR 702.103),
  * Spectacle (CR 702.137) and Escape (CR 702.138) in the UI and the log (D-121, D-124), and the
  * unearth mark of a permanent (CR 702.84a). The engine lists one `castSpell { object, alternative }`
  * option for each cost that can be paid, `ObjectView.alternativeCosts` says what each costs now
@@ -19,13 +19,22 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   overload: 'Overload',
   evoke: 'Evoke',
   dash: 'Dash',
+  // CR 702.103: cast as an Aura spell that enchants a creature.
+  bestow: 'Bestow',
   spectacle: 'Spectacle',
   escape: 'Escape',
+  harmonize: 'Harmonize',
   madness: 'Madness',
   miracle: 'Miracle',
   foretell: 'Foretell',
+  // CR 702.37c: cast face down as a 2/2 creature for {3}.
+  morph: 'Morph',
+  // D-667 (CR 702.81a): cast from the graveyard by discarding a land card.
+  retrace: 'Retrace',
   // D-149: "pay {W} and tap four untapped creatures ... rather than pay this spell's mana cost".
   tapPermanents: 'Tap creatures',
+  // Issue 159: "cast this from your graveyard by paying {B}{B} and sacrificing two creatures".
+  sacrificeFromGraveyard: 'Sacrifice creatures',
 };
 
 /** True for the alternatives whose cost the card's view carries: overload, evoke, dash, spectacle, escape. */
@@ -39,6 +48,9 @@ export function isNamedAlternative(
 export function alternativeLogWords(kind: NamedAlternative): string {
   // D-149 (CR 118.9): the cost taps creatures; it has no keyword to name.
   if (kind === 'tapPermanents') return 'by tapping creatures';
+  if (kind === 'sacrificeFromGraveyard') return 'from the graveyard by sacrificing creatures';
+  // CR 702.37c, 708.4: the card is the face-down spell; it pays {3}, not its morph cost (that turns it face up).
+  if (kind === 'morph') return 'face down';
   return `for its ${kind} cost`;
 }
 
@@ -68,6 +80,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
       'Cast for its dash cost. It has haste and returns to its owner’s hand at the beginning of the next end step.',
     fact: 'Cast for its dash cost: haste, returns to its owner’s hand at the next end step',
   },
+  bestow: {
+    text: 'bestowed',
+    title:
+      'Cast for its bestow cost: an Aura spell with enchant creature. If its target is illegal as it resolves, it resolves as a creature.',
+    fact: 'Cast for its bestow cost: an Aura spell that targets a creature',
+  },
   spectacle: {
     text: 'spectacle',
     title: 'Cast for its spectacle cost: an opponent lost life this turn.',
@@ -78,6 +96,12 @@ const STACK_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBadge>
     title:
       'Cast from the graveyard for its escape cost, exiling other cards from the graveyard. It goes to the graveyard, not exile, when it leaves the stack.',
     fact: 'Cast from the graveyard for its escape cost',
+  },
+  harmonize: {
+    text: 'harmonize',
+    title:
+      'Cast from the graveyard for its harmonize cost; a tapped creature’s power reduced the cost. It is exiled when it leaves the stack.',
+    fact: 'Cast from the graveyard for its harmonize cost: exiled when it leaves the stack',
   },
   madness: {
     text: 'madness',
@@ -116,6 +140,11 @@ const PERMANENT_BADGES: Readonly<Partial<Record<MarkedAlternative, AlternativeBa
     title:
       'Dashed: it has haste and returns to its owner’s hand at the beginning of the next end step.',
     fact: 'Dashed: returns to its owner’s hand at the next end step',
+  },
+  bestow: {
+    text: 'bestowed',
+    title: 'Bestowed: an Aura while it is attached to a creature; a creature again once it is not.',
+    fact: 'Bestowed: an Aura while attached, a creature once unattached',
   },
   escape: {
     text: 'escaped',

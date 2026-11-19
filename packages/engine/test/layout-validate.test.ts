@@ -1,7 +1,7 @@
 // What validateCard says about the multi-face layouts (SPEC 17.2 A7, D-007): the face count of each
 // layout (CR 709, 712, 715), the Adventure being an instant or sorcery (CR 715.2), and the layouts
 // and features of them the engine does not run, each refused with a reason that names the layout:
-// Fuse (CR 702.102), Aftermath (CR 702.127), the permanent split cards of CR 709.5 (Rooms), a
+// Fuse (CR 702.102), an Aftermath line not read as the keyword (CR 702.127), the permanent split cards of CR 709.5 (Rooms), a
 // transforming card with a planeswalker or battle back face, flashback away from the front face,
 // and the layouts flip and meld. Cards are SYNTHETIC.
 import { describe, expect, test } from 'vitest';
@@ -16,6 +16,7 @@ import {
 } from '../src/index';
 
 const SPLIT = syntheticCard('SYNTHETIC Singe // Mend');
+const AFTERMATH = syntheticCard('SYNTHETIC Rite // Toll');
 const ADVENTURE = syntheticCard('SYNTHETIC Brawler Bear // Chop');
 const MODAL = syntheticCard('SYNTHETIC Ridge Drake // Ridge Pass');
 const TRANSFORM = syntheticCard('SYNTHETIC Moon Cub // Moon Beast');
@@ -117,18 +118,24 @@ describe('what is refused, naming the layout', () => {
     const aftermath = withFace(SPLIT, 1, {
       oracleText: 'Aftermath (Cast this spell only from your graveyard.)',
     });
+    // The line without the keyword: text the engine did not read.
     expect(messages(aftermath)).toEqual([
-      'layout split with Aftermath (CR 702.127) is not implemented by the engine yet',
+      'layout split with an Aftermath line that is not the keyword (CR 702.127)',
     ]);
+    // With the keyword on the half, the card validates clean (CR 702.127a).
+    expect(messages(AFTERMATH)).toEqual([]);
+    // The keyword is a half of a split card, nothing else.
+    const elsewhere = asLayout(AFTERMATH, 'modal_dfc');
+    expect(messages(elsewhere).some((m) => m.includes('aftermath on layout modal_dfc'))).toBe(true);
     // Reminder text in the middle of a line is not the keyword.
     expect(
       validateCard(withFace(SPLIT, 0, { oracleText: 'Draw a card. Aftermath is fun.' })),
     ).toEqual([]);
   });
 
-  test('a split card that is a permanent (a Room, CR 709.5)', () => {
-    const room = withFace(SPLIT, 0, { types: ['enchantment'], spell: null });
-    expect(messages(room)[0]).toContain('layout split with a permanent half');
+  test('a split card with one permanent half is not a Room (CR 709.5)', () => {
+    const half = withFace(SPLIT, 0, { types: ['enchantment'], spell: null });
+    expect(messages(half)[0]).toContain('a split card is a Room (both halves permanents)');
   });
 
   test('a transforming card whose back face is a planeswalker or a battle', () => {

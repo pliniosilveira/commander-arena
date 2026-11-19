@@ -96,6 +96,10 @@ describe('the dimensions', () => {
       // D-599: corrupted checks an opponent's poison counters.
       'opponentPoisonAtLeast',
       'kicked',
+      // Issue 244: "If you cast this spell during your main phase".
+      'castInOwnMainPhase',
+      // Issue 233: "If X is 5 or more".
+      'xAtLeast',
       'replicated',
       'sacrificedAsCost',
       'controlCommander',
@@ -106,15 +110,20 @@ describe('the dimensions', () => {
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".
       'cardsInLibrary',
+      // Lorehold group 3: "if a player has one or fewer cards in hand".
+      'aPlayerCardsInHand',
       'escaped',
       'cameUnderControlSinceLastUpkeep',
       'amountIs',
+      'amountIsPrime',
       'playerHasDesignation',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',
       'lifeTotal',
       'thisMatches',
       'didPrevious',
+      'movedTotalManaValue',
+      'movedShareAllCardTypes',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',
@@ -129,9 +138,15 @@ describe('the dimensions', () => {
       'cardLeftYourGraveyard',
       'manaSpentAtLeast',
       'castFromZone',
+      // Issue 100: "When this creature enters, if you cast it".
+      'wasCast',
       // D-207: "if it targets a tapped creature".
       'spellTargets',
       'attackersAttackedYou',
+      // D-643: "if two or more of those creatures are attacking you and/or planeswalkers you control".
+      'attackersAtYouAtLeast',
+      // D-648: "if that opponent has more life than another of your opponents".
+      'attackedHasMoreLifeThanOtherOpponent',
       // Galadriel group 1: "if this is the second time this ability has resolved this turn", "if you chose a creature other than ~ as your Ring-bearer".
       'abilityResolvedTimes',
       'ringBearerChosen',
@@ -147,12 +162,16 @@ describe('the dimensions', () => {
       'lifeGainedThisTurn',
       // D-591: life gain and life loss are both recorded this turn.
       'lifeGainedAndLostThisTurn',
+      // Issue 159: "if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn".
+      'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
+      // Issue 279: "if you attacked with three or more creatures this turn".
+      'attackedWithCreaturesThisTurn',
       'dieResult',
       // CR 107.3: "If X is 10 or more".
-      'xIs',
       'thisInYourGraveyard',
+      'thisOnBattlefield',
       'chosenOption',
       // D-151: Dethrone's "attacking the player with the most life", Pack tactics' total power.
       'attackingMostLife',
@@ -169,12 +188,20 @@ describe('the dimensions', () => {
     ]);
     expect(SUPPORTED_FEATURES.staticKinds).toEqual([
       'allCreatureTypes',
+      // Issue 104: "Each creature card in your hand has cycling {1}{U}."
+      'grantKeywordToHandCards',
+      // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
+      'grantFlashbackToGraveyardCards',
       'noMaximumHandSize',
+      // Issue 201: "Enchanted creature ... is goaded".
+      'goaded',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',
+      // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
       'optionalUntap',
+      'exertOnAttack',
       'crewSaddleBonus',
       'untapInOthersUntapStep',
       'modifyPt',
@@ -183,6 +210,9 @@ describe('the dimensions', () => {
       'grantAbility',
       'restriction',
       'costReduction',
+      'costIncrease',
+      // D-641 (CR 601.2f): strive, "costs {2}{R} more to cast for each target beyond the first".
+      'costPerExtraTarget',
       // D-425: "Equip abilities you activate that target enchanted creature cost {3} less to activate".
       'abilityCostReduction',
       'setTypes',
@@ -193,6 +223,8 @@ describe('the dimensions', () => {
       'cantBeBlockedBy',
       'takeFromLinkedExile',
       'castAsThoughFlash',
+      // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
+      'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',
@@ -212,6 +244,8 @@ describe('the dimensions', () => {
       'unspentManaStays',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      // CR 305.1: "You may play Forests from your graveyard."
+      'playLandsFromGraveyard',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
       // D-282: "Your opponents can't cast spells with mana value 3 or less."

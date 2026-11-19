@@ -166,11 +166,11 @@ describe('mana abilities the engine cannot represent are never built as activati
 
   test('a cost the engine does not pay for mana names the `manaCost:` feature', () => {
     // "Pay N life" was this test's example until the engine learned to pay life for a mana ability
-    // (D-099, `manaCost:payLife`; it is a mana ability now, see parser-p14.test.ts). Removing a counter
-    // is still a cost the engine pays only for an ordinary activation.
-    expect(failure('Remove a charge counter from ~: Add {G}.')).toMatchObject({
+    // (D-099, `manaCost:payLife`; it is a mana ability now, see parser-p14.test.ts). Removing a counter is paid for mana too since issue 245 (PR #280, `manaCost:removeCounters`);
+    // discarding a card is still a cost the engine pays only for an ordinary activation.
+    expect(failure('Discard a card: Add {G}.')).toMatchObject({
       reason: 'notRunnable',
-      needs: ['manaCost:removeCounters'],
+      needs: ['manaCost:discard'],
     });
   });
 

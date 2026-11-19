@@ -23,7 +23,12 @@ export function playableObjects(decision: PriorityDecision): ReadonlySet<ObjectI
     if (o.kind === 'castSpell' || o.kind === 'playLand') ids.add(o.object);
     else if (o.kind === 'activateAbility') ids.add(o.source);
     else if (o.kind === 'activate') ids.add(o.object);
-    else if (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') {
+    else if (
+      o.kind === 'suspend' ||
+      o.kind === 'foretell' ||
+      o.kind === 'turnFaceUp' ||
+      o.kind === 'unlockDoor'
+    ) {
       ids.add(o.object);
     }
   }
@@ -48,12 +53,17 @@ export interface AbilityChoice {
   readonly color: ManaColor | null;
   /** The combination this choice makes, for a mana ability with several (a filter land, D-099). */
   readonly combination?: readonly ManaColor[];
+  /** The additional mana this choice makes, for a land with "adds an additional one mana of any color" on it (CR 605.1b, 106.1b). */
+  readonly extraColors?: readonly ManaColor[];
   readonly label: string;
   /** The life the ability costs, when the card's text says so: shown beside the label. */
   readonly life: number;
   /** The permanent this choice sacrifices ("Sacrifice a Spirit: Add {R}.", D-222), and its name for the button. */
   readonly sacrifice?: ObjectId;
   readonly sacrificeName?: string;
+  /** The permanent this choice taps besides the source ("{T}, Tap an untapped creature you control: Add ...", D-625), and its name for the button. */
+  readonly tapped?: ObjectId;
+  readonly tappedName?: string;
 }
 
 export type ClickOutcome =
@@ -128,13 +138,20 @@ export function clickOutcome(
       action: manaAction(id, o),
       color: o.color,
       ...(o.combination === undefined ? {} : { combination: o.combination }),
-      label: manaChoiceLabel(o.abilityIndex, o.color, o.combination),
+      ...(o.extraColors === undefined ? {} : { extraColors: o.extraColors }),
+      label: manaChoiceLabel(o.abilityIndex, o.color, o.combination, o.extraColors),
       life: lifeCostOf(index?.get(id), o.color, o.combination),
       ...(o.sacrifice === undefined
         ? {}
         : {
             sacrifice: o.sacrifice,
             sacrificeName: index === undefined ? 'it' : nameOf(index, o.sacrifice),
+          }),
+      ...(o.tapped === undefined
+        ? {}
+        : {
+            tapped: o.tapped,
+            tappedName: index === undefined ? 'it' : nameOf(index, o.tapped),
           }),
     });
   }

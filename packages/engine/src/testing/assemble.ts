@@ -160,10 +160,18 @@ export function assemble(
       ...(o.onAdventure === true ? { onAdventure: true as const } : {}),
       ...(onBattlefield && o.ringBearer === true ? { ringBearer: controller } : {}),
       ...(onBattlefield && o.level !== undefined ? { level: o.level } : {}),
+      ...(onBattlefield && o.unlocked !== undefined && o.unlocked.length > 0
+        ? { unlockedDoors: [...o.unlocked].sort((a, b) => a - b) }
+        : {}),
       ...(onBattlefield && o.chosen !== undefined ? { chosen: o.chosen } : {}),
       // D-308: a face-down permanent, labelled in the order the scenario places them.
-      ...(onBattlefield && o.faceDown === true
-        ? { faceDown: { by: 'manifest' as const, n: ++faceDownCount } }
+      ...(onBattlefield && o.faceDown !== undefined
+        ? {
+            faceDown: {
+              by: o.faceDown === 'morph' ? ('morph' as const) : ('manifest' as const),
+              n: ++faceDownCount,
+            },
+          }
         : {}),
     };
     if (e.zone === 'battlefield') battlefield.push(oid);

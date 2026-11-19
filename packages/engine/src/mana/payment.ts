@@ -89,6 +89,8 @@ export interface PaymentPlan {
   readonly spentTypes: readonly (readonly string[])[];
   /** D-260: how many of the mana in `spentTypes` was made by a snow source (CR 107.4h: "for each {S} spent to cast this spell"). */
   readonly spentSnow: number;
+  /** Issue 310 (Converge, CR 105.1, 106.1): the color of each mana in `spentTypes`, in the same order (`C` for colorless mana, which is no color). */
+  readonly spentColors: readonly ManaColor[];
 }
 
 // Objective vector components (lower is better, compared lexicographically).
@@ -339,7 +341,12 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
         vec[C_RESERVE] = reserveColors.size;
         vec[C_FLEX] = flexColors.size;
         vec[C_PAYOPT] = source.abilityIndex < 0 && source.tier === 'artifact' ? 1 : 0;
-        vec[C_EXTRA] = source.extraEffect === true || (source.lifeLoss ?? 0) > 0 ? 1 : 0;
+        vec[C_EXTRA] =
+          source.weighExtraByLife === true
+            ? (source.lifeLoss ?? 0)
+            : source.extraEffect === true || (source.lifeLoss ?? 0) > 0
+              ? 1
+              : 0;
         entries.push({
           abilityIndex: source.abilityIndex,
           outcome,
@@ -565,12 +572,14 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
   const taps: { object: ObjectId; abilityIndex: number; outcome: number }[] = [];
   const leftover: ManaObject[] = [];
   const spentTypes: (readonly string[])[] = [];
+  const spentColors: ManaColor[] = [];
   let spentSnow = 0;
   for (const { item, entry, usedMask, actMask } of best.solution.picks) {
     // D-183: a unit that is used and does not pay the activation cost of a costed ability is spent on the cost of the spell.
-    entry.colors.forEach((_, j) => {
+    entry.colors.forEach((color, j) => {
       if ((usedMask & (1 << j)) === 0 || (actMask & (1 << j)) !== 0) return;
       spentTypes.push(entry.types);
+      spentColors.push(color);
       if (entry.snow) spentSnow += 1;
     });
     if (item.poolIndex >= 0) {
@@ -591,5 +600,5 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
     });
   }
   fromPool.sort((a, b) => a - b);
-  return { fromPool, taps, lifePaid: best.life, leftover, spentTypes, spentSnow };
+  return { fromPool, taps, lifePaid: best.life, leftover, spentTypes, spentSnow, spentColors };
 }

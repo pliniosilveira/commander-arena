@@ -15,6 +15,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrNoun, IrToken } from '../../ir/types';
+import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
 
 type Bare = Omit<IrToken, 'span' | 'rule'>;
@@ -105,6 +106,81 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
           toughness: Number(pt[2]),
           colors,
           subtypes,
+        },
+      }),
+    ),
+    (b) => b,
+  ),
+});
+
+/**
+ * `token.copy-except-additive`: "a token that's a copy of target permanent, except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103; CR 707.9b:
+ * the final set of values of each characteristic is part of the copiable values of the copy; CR 707.9d: a characteristic-defining ability of the original that defines the power
+ * and toughness the exception gives is not copied, but one that defines a type "in addition to its other types" is). The copy has the power and toughness, the creature types
+ * and the card type besides the ones it copies, and the keywords besides its abilities. The engine's `createToken` of a `copyOf` with `setPt`, `addSubtypes`, `addTypes`
+ * and `abilities`. Read apart from `token.copy-except`, which says what the copy is instead of what it copies.
+ */
+export const TOKEN_COPY_EXCEPT_ADDITIVE = defineRule<IrToken>({
+  id: 'token.copy-except-additive',
+  family: 'token',
+  leading: [],
+  cites: [
+    'CR 707.9b (Copying Objects)',
+    'CR 707.9d (Copying Objects)',
+    'CR 707.9a (Copying Objects)',
+    'CR 111.4 (Tokens)',
+  ],
+  examples: [
+    'a token that’s a copy of target permanent, except it’s a 4/4 Dragon creature with flying in addition to its other types',
+    'a token that’s a copy of ~, except it’s a 2/2 Elf Wizard creature in addition to its other types',
+    'a token that’s a copy of that card, except it’s a 1/1 Spirit creature with flying and haste in addition to its other types',
+  ],
+  rejects: [
+    'a token that’s a copy of target permanent, except it’s a 4/4 Dragon creature with flying',
+    'a token that’s a copy of target permanent, except it’s a 4/4 Dragon with flying in addition to its other types',
+    'a token that’s a copy of target permanent, except it’s a 4/4 black Dragon creature in addition to its other types',
+    'a token that’s a copy of target permanent, except it’s a Dragon creature in addition to its other types',
+    'a token that’s a copy of target permanent, except it’s a 4/4 dragon creature in addition to its other types',
+    'a token that’s a copy of target permanent, except it’s a 4/4 Dragon creature with flash in addition to its other types',
+    'a token that’s a copy of target permanent, except it’s a 4/4 Dragon creature with flying in addition to its other types and it has haste',
+    'a token that’s a copy of those cards, except it’s a 4/4 Dragon creature in addition to its other types',
+    'two tokens that are copies of target permanent, except they’re 4/4 Dragon creatures in addition to their other types',
+    'a tapped tapped token that’s a copy of target permanent, except it’s a 4/4 Dragon creature in addition to its other types',
+  ],
+  parse: node<Bare, IrToken>(
+    'token.copy-except-additive',
+    map(
+      sequence(
+        map(
+          spanned(pattern(/an? /i)),
+          ({ span }): IrAmount => ({ kind: 'number', value: 1, span }),
+        ),
+        optional(
+          map(literal('tapped '), () => true as const),
+          null,
+        ),
+        pattern(/token that['’]s a copy of /i),
+        COPY_SOURCE,
+        pattern(/, except it['’]s an? (\d+)\/(\d+) /i),
+        SUBTYPES,
+        literal(' creature'),
+        optional(
+          map(sequence(literal(' with '), keywordWordsOf(KEYWORD_WORD)), ([, words]) => words),
+          null,
+        ),
+        literal(' in addition to its other types'),
+      ),
+      ([count, tapped, , copyOf, pt, subtypes, , keywords]): Bare => ({
+        kind: 'token',
+        copyOf,
+        count,
+        ...(tapped === null ? {} : { tapped }),
+        copyExceptAdditive: {
+          power: Number(pt[1]),
+          toughness: Number(pt[2]),
+          subtypes,
+          cardTypes: ['creature'],
+          keywords: keywords ?? [],
         },
       }),
     ),

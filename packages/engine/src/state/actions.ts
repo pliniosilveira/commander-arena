@@ -35,8 +35,15 @@ export type Action =
       readonly color: ManaColor | null;
       /** The combination chosen for a mana ability that makes one of several (D-099); `color` is null. */
       readonly combination?: readonly ManaColor[];
+      /**
+       * The colors of the additional mana that triggered mana abilities of "adds an additional one mana of any color" make as this one is activated, in the order of those abilities
+       * (CR 605.1b, 106.1b, 605.3b): named when there is a choice to make, left out when the additional mana is of fixed types or there is none.
+       */
+      readonly extraColors?: readonly ManaColor[];
       /** The permanent a cost "Sacrifice a Spirit" gives up (D-222, CR 601.2b): named when the player has more than one to give up. */
       readonly sacrifice?: ObjectId;
+      /** The permanent a cost "Tap an untapped creature you control" taps (D-625, CR 601.2b): named when the player has more than one to tap. */
+      readonly tapped?: ObjectId;
     }
   /**
    * Suspend a card from the hand (CR 702.62a, 116.2f, D-128): pay its suspend cost and exile it with time counters.
@@ -54,6 +61,11 @@ export type Action =
    * mana cost.
    */
   | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
+  /**
+   * Unlock a half of a Room you control (CR 709.5e, 116): a special action, taken any time you have priority and the stack is empty during a main phase of your turn. You pay the
+   * mana cost of the locked half `door` (0 the left half, 1 the right half), with a `payMana` decision (purpose `unlockDoor`), and the permanent is given that unlocked designation.
+   */
+  | { readonly kind: 'unlockDoor'; readonly object: ObjectId; readonly door: number }
   | { readonly kind: 'concede' }
   /** Answer a mulligan decision. */
   | { readonly kind: 'keepHand' }
@@ -84,8 +96,12 @@ export type Action =
         readonly color?: ManaColor | null;
         /** For a source that makes one of several combinations of mana (a filter land, D-099). */
         readonly combination?: readonly ManaColor[] | null;
+        /** For a land with "adds an additional one mana of any color" on it (CR 605.1b, 106.1b): the colors of the additional mana, as `manaSources` offers them. */
+        readonly extraColors?: readonly ManaColor[] | null;
         /** For a source whose cost sacrifices another permanent ("Sacrifice a Spirit: Add {R}.", D-216): the one given up; the engine chooses when left out. */
         readonly sacrifice?: ObjectId;
+        /** For a source whose cost taps another permanent ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-625): the one tapped; the engine chooses when left out. */
+        readonly tapped?: ObjectId;
       }[];
     }
   | { readonly kind: 'cancel' }

@@ -11,7 +11,7 @@
  */
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageAssignment, DamageChoice } from '../state/combat-types';
-import type { DamageResume, NewDecision } from '../state/decisions';
+import type { DamageResume, NewDecision, PendingDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getObject, opponentsOf } from '../state/ops';
 import type { GameState, StepId } from '../state/types';
@@ -40,6 +40,7 @@ import {
   validateBlocks,
 } from './combat-legality';
 import { askingFlow } from './damage-order';
+import { applyExerts, canExert, type ExertAttack } from './exert';
 import { hasKeyword } from './keywords';
 import { applyPaymentPlan, payableSources, planFor } from './mana-engine';
 import { type ManualTap, payByTapping } from './pay-manual';
@@ -47,6 +48,7 @@ import { grantPriority, type Outcome } from './priority';
 import { hasRestriction } from './restrictions';
 import { fail, ok, type Result } from './result';
 import { setPending } from './set-pending';
+import { sourceInfo } from './source-info';
 
 /** The player who declares blockers: the opponent being attacked (two seats today). */
 export function defendingSeat(state: GameState): SeatId | null {
@@ -119,7 +121,12 @@ export function beginCombatStep(
                 : {}),
             }));
       if (defender === null || candidates.length === 0) {
-        return grantPriority(state, active, stepEvents);
+        // CR 509.1h: no one can block, so every attacker is unblocked; the declaration is an event with no blockers (`unblockedAttackBatch` reads it).
+        const none: GameEvent[] =
+          defender === null || state.combat === null
+            ? []
+            : [{ kind: 'blockersDeclared', seat: defender, blocks: [] }];
+        return grantPriority(state, active, [...stepEvents, ...none]);
       }
       // An attacker that left the battlefield (a trigger of the declare attackers step can remove
       // one) is no longer in combat (CR 506.4) and cannot be blocked.
@@ -232,6 +239,65 @@ export function answerAttackers(
 ): Result {
   const error = validateAttacks(state, seat, attacks);
   if (error) return fail(error);
+  return askExerts(state, seat, attacks);
+}
+
+/**
+ * CR 701.43d, 508.1g: "You may exert ~ as it attacks" is an optional cost to attack, chosen as the attackers are, before the cost of attacking is determined and
+ * paid (CR 508.1h). Each attacker with the ability is asked in turn (a `confirmOptional` of purpose 'exert' that carries the declaration); with none left to ask
+ * the declaration goes on.
+ */
+function askExerts(state: GameState, seat: SeatId, attacks: readonly ExertAttack[]): Result {
+  const next = attacks.find((a) => a.exert === undefined && canExert(state, seat, a.attacker));
+  if (next === undefined) return finishAttackers(state, seat, attacks);
+  const info = sourceInfo(state, next.attacker);
+  return ok(
+    setPending(
+      { ...state, pending: null },
+      {
+        kind: 'confirmOptional',
+        seat,
+        source: next.attacker,
+        sourceName: info?.name ?? '',
+        sourceOracleText: info?.oracleText ?? '',
+        purpose: 'exert',
+        exertAttacks: attacks.map((a) => ({
+          attacker: a.attacker,
+          target: a.target,
+          ...(a.exert === undefined ? {} : { exert: a.exert }),
+        })),
+      },
+    ),
+    [],
+  );
+}
+
+/**
+ * The answer to "exert this creature as it attacks?" (CR 701.43d, 508.1g): the answer is kept with the declaration, then the next attacker with the ability is asked,
+ * or the declaration goes on. `cancel` takes the declaration back and asks `declareAttackers` again (CR 733).
+ */
+export function answerExert(
+  state: GameState,
+  seat: SeatId,
+  d: Extract<PendingDecision, { kind: 'confirmOptional' }>,
+  answer: boolean | 'cancel',
+): Result {
+  if (answer === 'cancel') {
+    const asked = declareAttackersDecision({ ...state, pending: null }, seat);
+    if (asked === null) return fail('Nothing can attack');
+    return ok(setPending({ ...state, pending: null }, asked), []);
+  }
+  const attacks = d.exertAttacks;
+  if (attacks === undefined) return fail('No attack is being declared');
+  return askExerts(
+    { ...state, pending: null },
+    seat,
+    attacks.map((a) => (a.attacker === d.source ? { ...a, exert: answer } : a)),
+  );
+}
+
+/** The cost of attacking and the declaration, once every exert question has been answered (CR 508.1h, 508.1k). */
+function finishAttackers(state: GameState, seat: SeatId, attacks: readonly ExertAttack[]): Result {
   const symbols = attackTaxSymbols(state, attacks);
   // CR 508.1h: the creatures are chosen, so the total cost is determined; it is paid before they are declared.
   const source = symbols.length === 0 ? null : firstTaxSource(state, attacks);
@@ -245,14 +311,21 @@ export function answerAttackers(
         totalCost: symbols,
         manaSources: payableSources(tapped, seat),
         purpose: 'attackTax',
-        attacks: attacks.map((a) => ({ attacker: a.attacker, target: a.target })),
+        attacks: attacks.map((a) => ({
+          attacker: a.attacker,
+          target: a.target,
+          ...(a.exert === true ? { exert: true as const } : {}),
+        })),
       }),
       [],
     );
   }
   const declared = declareAttackers({ ...state, pending: null }, seat, attacks);
-  const granted = grantPriority(declared.state, seat, declared.events); // CR 508.2
-  return ok(granted.state, [...declared.events, ...granted.events]);
+  // CR 701.43a, 508.1g: the exerted attackers do not untap next turn, and the abilities linked to the exert ability trigger with the declaration.
+  const exerted = applyExerts(declared.state, seat, attacks);
+  const events = [...declared.events, ...exerted.events];
+  const granted = grantPriority(exerted.state, seat, events); // CR 508.2
+  return ok(granted.state, [...events, ...granted.events]);
 }
 
 /**
@@ -264,7 +337,7 @@ export function answerAttackers(
 export function answerAttackPayment(
   state: GameState,
   seat: SeatId,
-  attacks: readonly { attacker: ObjectId; target: AttackTarget }[],
+  attacks: readonly ExertAttack[],
   action:
     | { readonly kind: 'cancel' }
     | { readonly kind: 'payAuto' }
@@ -289,12 +362,15 @@ export function answerAttackPayment(
   }
   // The attackers tapped, the mana paid, then the attackers are declared (CR 508.1f, 508.1h, 508.1k).
   const declaration = declared.events.filter((e) => e.kind === 'attackersDeclared');
+  // CR 701.43a, 508.1g: the exerted attackers (chosen before the cost was determined) do not untap next turn, and the abilities linked to exert trigger.
+  const exerted = applyExerts(paid.state, seat, attacks);
   const events = [
     ...declared.events.filter((e) => e.kind !== 'attackersDeclared'),
     ...paid.events,
     ...declaration,
+    ...exerted.events,
   ];
-  const granted = grantPriority(paid.state, seat, events); // CR 508.2
+  const granted = grantPriority(exerted.state, seat, events); // CR 508.2
   return ok(granted.state, [...events, ...granted.events]);
 }
 

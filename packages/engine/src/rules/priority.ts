@@ -15,16 +15,30 @@ import {
   escapeObjects,
   flashbackObjects,
   foretellCastObjects,
+  harmonizeObjects,
   playableLands,
+  retraceObjects,
+  sacrificeFromGraveyardObjects,
 } from './legality';
-import { activationChoices, manaSacrificeCandidates } from './mana-abilities';
+import { activationChoices, manaSacrificeCandidates, manaTapCandidates } from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
+import { activatablePlayerMana, PLAYER_MANA_ABILITY } from './player-mana';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
+import { unlockableDoors } from './unlock-legality';
 
 /** The alternative costs listed on a face, in the order their options are offered (D-121). */
-const ALTERNATIVES = ['free', 'overload', 'evoke', 'dash', 'spectacle', 'tapPermanents'] as const;
+const ALTERNATIVES = [
+  'free',
+  'overload',
+  'evoke',
+  'dash',
+  'bestow',
+  'spectacle',
+  'morph',
+  'tapPermanents',
+] as const;
 
 export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[] {
   const options: PriorityOption[] = [{ kind: 'pass' }];
@@ -42,9 +56,21 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const object of flashbackObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'flashback' });
   }
+  // CR 702.81a (Retrace, D-667): a card with retrace in the graveyard is cast by discarding a land card, one option for each.
+  for (const object of retraceObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'retrace' });
+  }
   // CR 702.138a (Escape, D-124): a card in the graveyard is cast for its escape cost, one option for each.
   for (const object of escapeObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'escape' });
+  }
+  // Issue 159: a card in the graveyard is cast for its "pay {B}{B} and sacrifice two creatures" cost, one option for each.
+  for (const object of sacrificeFromGraveyardObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'sacrificeFromGraveyard' });
+  }
+  // CR 702.180a (Harmonize): a card in the graveyard is cast for its harmonize cost, one option for each.
+  for (const object of harmonizeObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'harmonize' });
   }
   // CR 702.143a (Foretell, D-128): a foretold card in exile is cast for its foretell cost, in a later turn.
   for (const object of foretellCastObjects(state, seat)) {
@@ -55,6 +81,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const object of foretellableObjects(state, seat)) options.push({ kind: 'foretell', object });
   // CR 116.2b, 701.40b (D-310): turning a face-down permanent face up is a special action too, with priority and no other timing.
   for (const object of turnableObjects(state, seat)) options.push({ kind: 'turnFaceUp', object });
+  // CR 709.5e, 116: unlocking a locked half of a Room you control is a special action in a main phase of your turn with an empty stack.
+  for (const { object, door } of unlockableDoors(state, seat)) {
+    options.push({ kind: 'unlockDoor', object, door });
+  }
   // Activated abilities that are not mana abilities (CR 602): from the battlefield and from the hand.
   for (const { object, abilityIndex } of activatableAbilities(state, seat)) {
     options.push({ kind: 'activate', object, abilityIndex });
@@ -63,19 +93,40 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const id of state.battlefield) {
     const obj = getObject(state, id);
     for (const { abilityIndex, ability } of manaAbilitiesOf(state, obj)) {
-      if (!canActivateManaAbility(state, obj, ability, seat)) continue;
+      if (!canActivateManaAbility(state, obj, ability, seat, abilityIndex)) continue;
       // CR 601.2b, 605.3b (D-222): a cost "Sacrifice a Spirit" is chosen by the player: one option for each permanent they may give up when there are several.
       const gives = manaSacrificeCandidates(state, seat, id, ability);
+      // D-625: the same for a cost "Tap an untapped creature you control": one option for each permanent the player may tap when there are several.
+      const taps = manaTapCandidates(state, seat, id, ability);
       for (const choice of activationChoices(state, obj, ability)) {
-        if (gives.length < 2) {
+        if (gives.length >= 2) {
+          for (const sacrifice of gives) {
+            options.push({
+              kind: 'activateAbility',
+              source: id,
+              abilityIndex,
+              ...choice,
+              sacrifice,
+            });
+          }
+        } else if (taps.length >= 2) {
+          for (const tapped of taps) {
+            options.push({ kind: 'activateAbility', source: id, abilityIndex, ...choice, tapped });
+          }
+        } else {
           options.push({ kind: 'activateAbility', source: id, abilityIndex, ...choice });
-          continue;
-        }
-        for (const sacrifice of gives) {
-          options.push({ kind: 'activateAbility', source: id, abilityIndex, ...choice, sacrifice });
         }
       }
     }
+  }
+  // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player is on offer while they can pay its life.
+  for (const g of activatablePlayerMana(state, seat)) {
+    options.push({
+      kind: 'activateAbility',
+      source: g.source,
+      abilityIndex: PLAYER_MANA_ABILITY,
+      color: null,
+    });
   }
   options.push({ kind: 'concede' });
   return options;

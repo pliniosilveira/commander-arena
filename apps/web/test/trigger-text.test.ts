@@ -164,6 +164,17 @@ describe('the other new kinds', () => {
     expect(say(dies)).toBe('Whenever the permanent this is attached to dies');
   });
 
+  test('whenever enchanted land is tapped for mana, said of the land the Aura is attached to', () => {
+    const tapper: Trigger = {
+      kind: 'tappedForMana',
+      what: { types: ['land'], hostOfSource: true },
+      by: 'tapper',
+    };
+    expect(say(tapper)).toBe('Whenever enchanted land is tapped for mana');
+    // Any other permanent a player may tap has no words: null, never a guess.
+    expect(say({ ...tapper, what: { types: ['land'] } } as Trigger)).toBeNull();
+  });
+
   test('a shape the words do not cover gives null, never a guess', () => {
     expect(say({ kind: 'futureKind' } as unknown as Trigger)).toBeNull();
     const owned = { kind: 'dies', what: { owner: { kind: 'you' } } } as unknown as Trigger;
@@ -181,11 +192,16 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   castSpell: { kind: 'castSpell', filter: {}, by: 'you' },
   landfall: { kind: 'landfall' },
   cycled: { kind: 'cycled' },
+  exerted: { kind: 'exerted' },
   leftGraveyard: { kind: 'leftGraveyard', who: 'you' },
   exiledFromLibraryOrGraveyard: { kind: 'exiledFromLibraryOrGraveyard', who: 'you' },
+  putIntoGraveyard: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
   ringTempted: { kind: 'ringTempted' },
+  doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
+  playsCard: { kind: 'playsCard', minCardTypes: 2 },
+  activatesAbility: { kind: 'activatesAbility', who: 'you' },
   scries: { kind: 'scries', who: 'you' },
   surveils: { kind: 'surveils', who: 'you' },
   rollsHighest: { kind: 'rollsHighest', who: 'you' },
@@ -200,6 +216,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   permanentSacrificed: { kind: 'permanentSacrificed', by: 'you' },
   becomesTapped: { kind: 'becomesTapped', what: { kind: 'this' } },
   becomesUntapped: { kind: 'becomesUntapped', what: { kind: 'this' } },
+  becomesMonstrous: { kind: 'becomesMonstrous', what: { kind: 'this' } },
   discarded: { kind: 'discarded', who: 'you' },
   diesBatch: { kind: 'diesBatch', what: { types: ['creature'], controller: 'you', other: true } },
   entersBatch: { kind: 'entersBatch', what: { token: true, controller: 'you' } },
@@ -212,8 +229,11 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
     to: 'player',
   },
   lifeGained: { kind: 'lifeGained', who: 'you', firstEachTurn: true },
+  lifeLost: { kind: 'lifeLost', who: 'you', firstEachTurn: true },
   countersAdded: { kind: 'countersAdded', what: { kind: 'this' }, counter: '+1/+1', by: 'you' },
   attackBatch: { kind: 'attackBatch', who: 'you', atLeast: 2 },
+  playerAttacksOpponent: { kind: 'playerAttacksOpponent' },
+  unblockedAttackBatch: { kind: 'unblockedAttackBatch', who: 'opponent' },
   tappedForMana: {
     kind: 'tappedForMana',
     what: { types: ['creature'], controller: 'you' },
@@ -264,5 +284,37 @@ describe('coverage', () => {
       }
     }
     expect(checked).toBeGreaterThan(50);
+  });
+});
+
+describe('spells with {X} in their mana cost (Quandrix Unlimited group E)', () => {
+  const xSpell = { stackKind: 'spell', xInManaCost: true } as const;
+
+  test('a cast trigger on a spell with {X} in its mana cost', () => {
+    expect(triggerWording({ kind: 'castSpell', filter: xSpell, by: 'you' }, ctx)).toBe(
+      'Whenever you cast a spell with {X} in its mana cost',
+    );
+  });
+
+  test('"your first spell with {X} in its mana cost each turn"', () => {
+    expect(
+      triggerWording(
+        { kind: 'castSpell', filter: { ...xSpell, firstXSpellThisTurn: true }, by: 'you' },
+        ctx,
+      ),
+    ).toBe('Whenever you cast your first spell with {X} in its mana cost each turn');
+  });
+
+  test('a first spell with more words than that is not said (it would leave something out)', () => {
+    expect(
+      triggerWording(
+        {
+          kind: 'castSpell',
+          filter: { ...xSpell, firstXSpellThisTurn: true, types: ['creature'] },
+          by: 'you',
+        },
+        ctx,
+      ),
+    ).toBeNull();
   });
 });

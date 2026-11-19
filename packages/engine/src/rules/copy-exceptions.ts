@@ -14,6 +14,7 @@ type CopyToken = Extract<Extract<Effect, { kind: 'createToken' }>['token'], { ki
 export type CopyExceptions = Pick<
   CopyToken,
   | 'addSubtypes'
+  | 'addTypes'
   | 'setCreatureTypes'
   | 'setColors'
   | 'setPt'
@@ -68,10 +69,13 @@ export function withCopyExceptions(
           ]),
         ]
       : [...new Set([...original.subtypes, ...(exceptions.addSubtypes ?? [])])];
+  // CR 707.9b (issue 103): "except it's a 4/4 Dragon creature ... in addition to its other types": the card types the exception adds.
+  const addedTypes = (exceptions.addTypes ?? []).filter((t) => !original.types.includes(t));
   return {
     characteristics: {
       ...original,
       subtypes,
+      ...(addedTypes.length === 0 ? {} : { types: [...original.types, ...addedTypes] }),
       ...(exceptions.setColors === undefined ? {} : { colors: [...exceptions.setColors] }),
       ...(exceptions.setPt === undefined
         ? {}
@@ -87,5 +91,7 @@ export function withCopyExceptions(
         : {}),
     },
     abilities: [...copiedAbilities(values.abilities, exceptions), ...(exceptions.abilities ?? [])],
+    // CR 709.5b: the halves of a copied Room are part of the copiable values.
+    ...(values.doors === undefined ? {} : { doors: values.doors }),
   };
 }

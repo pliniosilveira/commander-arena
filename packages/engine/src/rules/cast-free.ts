@@ -11,6 +11,10 @@
  *     onto the battlefield with a `move` that counts the land play.
  *
  * A card that could not be cast or played is not offered; with none the effect does nothing. Choosing no card does nothing.
+ *
+ * D-660 (CR 608.2g, 601.2): with `remaining` ("up to two spells", "any number of spells") the question comes again after each spell is cast, among the cards still there that
+ * can be cast now (the card cast is on the stack, a new object, so it is not offered again), until the controller chooses no card, the number is reached or nothing can be cast.
+ * Every spell is cast during this resolution (CR 608.2g: "which may include casting other spells this way"), so they are all on the stack when it ends.
  */
 import type { ObjectRef } from '../ast/types';
 import type { ObjectId } from '../ids';
@@ -32,28 +36,43 @@ export function isLandCard(state: GameState, id: ObjectId): boolean {
 export function freeCandidates(
   state: GameState,
   res: ResolutionContext,
-  ins: Pick<CastFreeInstruction, 'objects' | 'play'>,
+  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards' | 'seat'>,
 ): ObjectId[] {
-  const seat = res.controller;
+  // "... then they may cast that card": the player the effect names casts it, not always its controller.
+  const seat = ins.seat ?? res.controller;
   const ctx: SelectContext = {
     controller: seat,
     source: res.source,
+    // CR 107.3a: "mana value X or less" reads the X announced for the spell that is resolving.
+    x: state.objects[res.object]?.stack?.x ?? 0,
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
+    // CR 603.3d: "with lesser mana value that shares a card type with it": the spell a cast trigger is about.
+    ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
   };
   const named: readonly ObjectId[] =
-    ins.objects.kind === 'choose'
-      ? (state.seats[seat]?.hand.filter((id) => {
-          const card = state.objects[id];
-          return (
-            card !== undefined &&
-            ins.objects.kind === 'choose' &&
-            matchesFilter(state, card, { ...ins.objects.filter, zone: 'hand' }, ctx)
-          );
-        }) ?? [])
-      : resolveObjects(state, ins.objects as ObjectRef, ctx, []);
+    // CR 608.2g: "from among them": the effect named the cards itself (those looked at), which are still where they were.
+    ins.cards !== undefined
+      ? ins.cards.filter((id) => state.objects[id]?.zone === 'library')
+      : ins.objects.kind === 'choose'
+        ? (state.seats[seat]?.hand.filter((id) => {
+            const card = state.objects[id];
+            return (
+              card !== undefined &&
+              ins.objects.kind === 'choose' &&
+              matchesFilter(state, card, { ...ins.objects.filter, zone: 'hand' }, ctx)
+            );
+          }) ?? [])
+        : resolveObjects(state, ins.objects as ObjectRef, ctx, []);
   return named.filter((id) => {
     const card = state.objects[id];
     if (card === undefined) return false;
+    // D-655: "an Aura spell from among them": the filter reads the card as it is in exile.
+    if (
+      ins.filter !== undefined &&
+      !matchesFilter(state, card, { ...ins.filter, zone: card.zone }, ctx)
+    ) {
+      return false;
+    }
     if (isLandCard(state, id)) return ins.play === true && canPlayLandByEffect(state, seat, card);
     return canCastDuringResolution(state, seat, card);
   });
@@ -86,15 +105,18 @@ export function runCastFree(
     );
   }
   const legal = freeCandidates(state, res, ins);
-  if (legal.length === 0) return done(state);
-  const zone = state.objects[legal[0] as ObjectId]?.zone === 'exile' ? 'exile' : 'hand';
+  // CR 608.2c (issue 100): "If you don't": nothing is done until a spell is cast, so what "if you do" reads starts again at 0 (`resetPerformed`).
+  if (legal.length === 0) return { ...done(state), resetPerformed: true };
+  const first = state.objects[legal[0] as ObjectId]?.zone;
+  const zone = first === 'exile' ? 'exile' : first === 'library' ? 'library' : 'hand';
   return {
     state,
     events: [],
     front: [],
+    resetPerformed: true,
     needs: {
       kind: 'chooseCards',
-      seat: res.controller,
+      seat: ins.seat ?? res.controller,
       source: res.object,
       purpose: 'cast',
       zone,
@@ -102,9 +124,21 @@ export function runCastFree(
       min: 0,
       max: 1,
       reveal: false,
-      prompt: `You may ${ins.play ? 'play' : 'cast'} ${
-        ins.objects.kind === 'choose' ? 'a card from your hand' : 'the exiled card'
-      } without paying its mana cost`,
+      prompt:
+        ins.remaining === undefined
+          ? `You may ${ins.play ? 'play' : 'cast'} ${
+              ins.cards !== undefined
+                ? 'a card from among those you looked at'
+                : ins.objects.kind === 'choose'
+                  ? 'a card from your hand'
+                  : 'the exiled card'
+            } without paying its mana cost`
+          : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
+            `You may cast ${
+              ins.remaining === 'any'
+                ? 'any number of spells'
+                : `up to ${ins.remaining === 1 ? 'one more spell' : `${ins.remaining} spells`}`
+            } from among the exiled cards without paying their mana costs`,
     },
   };
 }

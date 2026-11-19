@@ -14,6 +14,7 @@ const SERGEANT = 'SYNTHETIC Muster Sergeant'; // other nontoken creatures you co
 const HERALD = 'SYNTHETIC Token Herald'; // creature tokens you control get +1/+1
 const RAISE = 'SYNTHETIC Raise Zombie'; // create a 2/2 Zombie token
 const DECAY = 'SYNTHETIC Mass Decay'; // all non-Zombie creatures get -1/-1 until end of turn
+const FADE = 'SYNTHETIC Nonblack Fade'; // nonblack creatures get -1/-1 until end of turn
 const GOLEM = 'SYNTHETIC Plain Golem'; // colorless 2/2 artifact creature
 const BANNER = 'SYNTHETIC Colorless Banner'; // colorless creatures you control get +1/+1
 const CLIP = 'SYNTHETIC Clip Wings'; // creatures with flying get -2/-0 until end of turn
@@ -102,6 +103,34 @@ describe('"non-Zombie": a subtype the object must not have (CR 205.3d)', () => {
   });
 });
 
+describe('nonblack (CR 105.2, 205.4: a color the object must not have)', () => {
+  test('"nonblack creatures get -1/-1" reaches a green and a colorless creature, not a black one', () => {
+    const g = twoSeatGame(
+      (b) =>
+        b
+          .hand(FADE)
+          .battlefield('Swamp', { count: 2 })
+          .battlefield(ZOMBIE)
+          .battlefield(BEARS)
+          .battlefield(GOLEM),
+      (b) => b.battlefield(BEARS).battlefield(ZOMBIE),
+    );
+    g.act(0).cast(FADE, { pay: true });
+    g.passAll();
+    g.expect.pt({ name: ZOMBIE, seat: 0 }, 2, 2);
+    g.expect.pt({ name: ZOMBIE, seat: 1 }, 2, 2);
+    g.expect.pt({ name: BEARS, seat: 0 }, 1, 1);
+    g.expect.pt({ name: BEARS, seat: 1 }, 1, 1);
+    // Colorless is not black (CR 105.2c): the Golem is nonblack too.
+    g.expect.pt(GOLEM, 1, 1);
+  });
+
+  test('validateCard accepts a filter with notColors', () => {
+    const card = syntheticCard(FADE);
+    expect(validateCard(card)).toEqual([]);
+  });
+});
+
 describe('colorless (CR 105.2c)', () => {
   test('"colorless creatures you control get +1/+1": an artifact creature with no color, not a black one', () => {
     const g = twoSeatGame((b) => b.battlefield(BANNER).battlefield(GOLEM).battlefield(BEARS));
@@ -161,7 +190,7 @@ describe('with and without a keyword (CR 702)', () => {
 });
 
 describe('what a card may say', () => {
-  test('a static ability may not use a keyword in its subject: it would depend on layer 6 itself (CR 613.8)', () => {
+  test('a static ability may use a keyword in its subject (CR 613.8: layer 7 reads layer 6)', () => {
     const base = syntheticCard(CAPTAIN);
     const face = base.faces[0];
     if (face === undefined) throw new Error('no face');
@@ -187,9 +216,9 @@ describe('what a card may say', () => {
         },
       ],
     };
-    const issues = validateCard(bad);
-    expect(issues.length).toBeGreaterThan(0);
-    expect(issues.map((i) => i.message).join(' ')).toMatch(/keyword/);
+    // Allowed since the First Flight statics: layer 7 depends on layer 6, never the other way round (CR 613.8),
+    // pinned by scenario-xx-flying-statics.test.ts.
+    expect(validateCard(bad)).toEqual([]);
   });
 
   test('a keyword in a filter must be one without parameters', () => {
@@ -206,7 +235,7 @@ describe('what a card may say', () => {
               ...face.spell.effect,
               objects: {
                 kind: 'each' as const,
-                filter: { types: ['creature' as const], keywords: ['ward' as const] },
+                filter: { types: ['creature' as const], keywords: ['cycling' as const] },
               },
             },
           },

@@ -58,4 +58,48 @@ export const NOUN_ONE_OR_TWO_TARGETS = defineRule<IrNoun>({
   },
 });
 
-export const ONE_OR_TWO_NOUN_RULES = [NOUN_ONE_OR_TWO_TARGETS].map(quietly);
+/**
+ * `noun.one-or-two-targets-bare`: "one or two targets", the targets of "~ deals 2 damage divided as you choose among one or two targets" (CR 601.2c, 601.2d):
+ * one slot of any target with one to two targets. Read only where the instruction that names it takes it (`effect.damage-divided`); "each of" has its own
+ * rule above.
+ */
+export const NOUN_ONE_OR_TWO_TARGETS_BARE = defineRule<IrNoun>({
+  id: 'noun.one-or-two-targets-bare',
+  family: 'noun',
+  leading: ['one'],
+  cites: ['CR 115.1 (Targets)', 'CR 601.2c (Casting Spells)', 'CR 601.2d (Casting Spells)'],
+  examples: ['one or two targets'],
+  rejects: [
+    'one or two target',
+    'one or two other targets',
+    'one or three targets',
+    'one or two creatures',
+    'two targets',
+    'each of one or two targets',
+    'one or two targets you control',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(new RegExp(`one or two targets${END}`, 'iu')))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'noun',
+        det: 'target',
+        filter: { anyTarget: true, raw: 'any target' },
+        count: { kind: 'number', value: 2, span: r.value.span },
+        minTargets: 1,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: r.value.span,
+        rule: 'noun.one-or-two-targets-bare',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const ONE_OR_TWO_NOUN_RULES = [NOUN_ONE_OR_TWO_TARGETS, NOUN_ONE_OR_TWO_TARGETS_BARE].map(
+  quietly,
+);

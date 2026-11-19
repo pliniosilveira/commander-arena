@@ -162,18 +162,22 @@ export const EFFECT_UNTAP_THOSE = defineRule<Clauses>({
   family: 'effect',
   leading: ['untap'],
   cites: ['CR 701.26a (Tap and Untap)', 'CR 611.2c (Continuous Effects)'],
-  examples: ['untap those creatures'],
+  examples: ['untap those creatures', 'untap them'],
   rejects: [
     'untap those',
     'untap those lands',
-    'untap them',
+    'untap them all',
     'untap those creature',
     'untap those creatures you control',
   ],
-  parse: single('effect.untap-those', literal('untap those creatures'), () => ({
-    verb: 'untapThose',
-    args: {},
-  })),
+  parse: single(
+    'effect.untap-those',
+    pattern(/untap (?:those creatures|them)(?![\p{L}\p{N}])/iu),
+    () => ({
+      verb: 'untapThose',
+      args: {},
+    }),
+  ),
 });
 
 /**

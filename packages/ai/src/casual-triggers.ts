@@ -45,6 +45,8 @@ export interface SlotPlan {
    * even ask about it).
    */
   readonly cast?: true;
+  /** "... without paying its mana cost" (`castCard.free`): the card is cast for nothing, so the mana at hand is no limit, and the dearest card is the best. */
+  readonly free?: true;
 }
 
 /** The triggered ability on the stack that this targets decision is for, when it is one. */
@@ -132,7 +134,13 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
     case 'castCard':
       // The mana is read from the view where the slot is scored (`manaAvailable`), as the ability goes on the stack.
       return isTarget(effect.object, id)
-        ? { stance: 'help', damage: null, untap: false, cast: true }
+        ? {
+            stance: 'help',
+            damage: null,
+            untap: false,
+            cast: true,
+            ...(effect.free === true ? { free: true as const } : {}),
+          }
         : null;
     default:
       return null;
@@ -141,7 +149,7 @@ export function planFor(effect: Effect, id: string): SlotPlan | null {
 
 /** How much the agent wants to choose `t` for a slot with this plan; below 0 means "avoid". */
 function score(view: GameView, t: ChosenTarget, plan: SlotPlan): number {
-  if (plan.cast !== undefined) return scoreCast(view, t);
+  if (plan.cast !== undefined) return scoreCast(view, t, plan.free === true);
   const wantsOpponent = plan.stance === 'harm';
   if (t.kind === 'player') return (t.seat !== view.viewer) === wantsOpponent ? 3 : -1;
   const o = findObject(view, t.id);
@@ -171,12 +179,12 @@ function manaAvailable(view: GameView): number {
 }
 
 /** D-350: the card to cast from a graveyard: the most expensive one that fits the mana at hand scores highest (whoever owns it); one that does not fit scores 0. */
-function scoreCast(view: GameView, t: ChosenTarget): number {
+function scoreCast(view: GameView, t: ChosenTarget, free: boolean): number {
   if (t.kind !== 'object') return -1;
   const o = findObject(view, t.id);
   if (o === undefined) return -1;
   const value = manaValueOf(o);
-  return value <= manaAvailable(view) ? 1 + value / 100 : 0;
+  return free || value <= manaAvailable(view) ? 1 + value / 100 : 0;
 }
 
 /**
@@ -192,9 +200,21 @@ export function chooseSlot(
   const ranked = slot.legal
     .map((t, index) => ({ t, index, score: score(view, t, plan) }))
     .sort((a, b) => b.score - a.score || a.index - b.index);
-  const wanted = ranked.filter((r) => r.score >= 0).length;
-  const count = Math.min(slot.max, slot.legal.length, Math.max(slot.min, wanted));
-  return ranked.slice(0, count).map((r) => r.t);
+  // D-149, CR 601.2c: "for each opponent" takes at most one target of each controller, the best-scored first.
+  const seen = new Set<unknown>();
+  const pool =
+    slot.onePerGroup === true
+      ? ranked.filter((r) => {
+          const group = r.t.kind === 'object' ? r.t.group : undefined;
+          if (group === undefined) return true;
+          if (seen.has(group)) return false;
+          seen.add(group);
+          return true;
+        })
+      : ranked;
+  const wanted = pool.filter((r) => r.score >= 0).length;
+  const count = Math.min(slot.max, pool.length, Math.max(slot.min, wanted));
+  return pool.slice(0, count).map((r) => r.t);
 }
 
 /** The plan a slot gets when no effect names it: harm, the default. */

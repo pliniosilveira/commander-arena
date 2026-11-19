@@ -257,9 +257,10 @@ describe('"another target ...", "each of up to two target creatures", "all other
   });
 
   test('"all other creatures" and "each other creature you control" are every one but the source', () => {
-    expect(spell('Destroy all other creatures.').effect).toEqual({
-      kind: 'destroy',
-      objects: { kind: 'each', filter: { zone: 'battlefield', types: ['creature'], other: true } },
+    // Issue 233 (PR #280): in a spell "other" has no source to leave out (a spell is no permanent); only the tokens an instruction before it created can be meant, so a spell
+    // that says it with nothing before it is refused, not run as "every creature".
+    expect(dropped('Destroy all other creatures.', 'instant')).toMatchObject({
+      reason: 'notRunnable',
     });
     expect(abilities('{T}: Put a +1/+1 counter on each other creature you control.')).toEqual([
       {
@@ -456,13 +457,11 @@ describe('token.custom: a token with the keywords of the engine (CR 111.4, 702)'
   });
 
   test.each([
-    ['Create a 1/1 white Soldier creature token with changeling.', 'with changeling.'],
     ['Create a 1/1 white Soldier creature token with flash.', 'with flash.'],
     [
       'Create a 1/1 white Soldier creature token with flying and flying.',
       'with flying and flying.',
     ],
-    ['Create a 1/1 white Soldier creature token with ward {2}.', 'with ward {2}.'],
     [
       'Create a 1/1 white Soldier creature token with "Sacrifice this creature: You gain 1 life".',
       'with "Sacrifice ~: You gain 1 life".',
@@ -477,6 +476,15 @@ describe('token.custom: a token with the keywords of the engine (CR 111.4, 702)'
     ],
   ])('%s stops at "%s": a token is never made without an ability it has', (text, stoppedAt) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised', stoppedAt });
+  });
+
+  test("a token with ward {2} is read but not run: the token's keywords go through keywordKind, which has no cost (D-638)", () => {
+    expect(
+      dropped('Create a 1/1 white Soldier creature token with ward {2}.', 'sorcery'),
+    ).toMatchObject({
+      reason: 'notRunnable',
+      stoppedAt: 'a 1/1 white Soldier creature token with ward {2}.',
+    });
   });
 
   test('"its controller creates a ... token with flying" gives it to the controller of the target', () => {
@@ -603,7 +611,7 @@ describe('effect.tap and effect.untap: "it" (CR 701.26)', () => {
     ['Exile target creature. Tap it.', 'notRunnable'],
     ['Destroy target creature. Untap it.', 'notRunnable'],
     ["Return target creature to its owner's hand. Untap it.", 'notRunnable'],
-    ['Untap target land. Untap them.', 'unrecognised'],
+    ['Untap target land. Untap them.', 'notRunnable'],
     ['Untap itself.', 'unrecognised'],
   ])('%s is %s', (text, reason) => {
     expect(dropped(text)).toMatchObject({ reason });
@@ -761,15 +769,15 @@ describe('the choice made as a permanent enters and what reads it (D-100; CR 614
   });
 
   test.each([
-    ['As ~ enters, choose a color other than white.', ', choose a color other than white.'],
+    ['As ~ enters, choose a color other than gold.', ', choose a color other than gold.'],
     ['As ~ enters, choose two colors.', ', choose two colors.'],
     ['As ~ enters, choose a basic land type.', ', choose a basic land type.'],
     ['As ~ enters, choose a card name.', ', choose a card name.'],
     // Group 4 of the Vraska deck reads "you may" as the lead of the reveal replacement.
     ['As ~ enters, you may choose a color.', 'choose a color.'],
     [
-      '~ enters tapped. As it enters, choose a color other than white.',
-      'As it enters, choose a color other than white.',
+      '~ enters tapped. As it enters, choose a color other than gold.',
+      'As it enters, choose a color other than gold.',
     ],
     ['~ enters tapped. Draw a card.', 'Draw a card.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {

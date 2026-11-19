@@ -6,16 +6,25 @@ import { pattern } from '../../combinators';
 import type { IrCondition } from '../../ir/types';
 import { defineRule } from '../registry';
 
-/** `condition.player-declines`: "the player doesn't", after the "if" the sentence parser reads: the player a "may have you" sentence asked said no. */
+/**
+ * `condition.player-declines`: "the player doesn't" and "they don't", after the "if" the sentence parser reads: the player a "may" sentence asked said no ("Each opponent may discard
+ * a card. If they don't, they lose 3 life", Death Toll deck, group C, Professor Onyx; CR 608.2d).
+ */
 export const CONDITION_PLAYER_DECLINES = defineRule<IrCondition>({
   id: 'condition.player-declines',
   family: 'condition',
-  leading: ['the'],
+  leading: ['the', 'they'],
   cites: [
     'CR 608.2d (Resolving Spells and Abilities)',
     'CR 608.2c (Resolving Spells and Abilities)',
   ],
-  examples: ["the player doesn't", 'the player doesn’t', "The player doesn't"],
+  examples: [
+    "the player doesn't",
+    'the player doesn’t',
+    "The player doesn't",
+    "they don't",
+    'they don’t',
+  ],
   rejects: [
     'the player does',
     "the player didn't",
@@ -24,9 +33,14 @@ export const CONDITION_PLAYER_DECLINES = defineRule<IrCondition>({
     'the player does not',
     "an opponent doesn't",
     "the player doesn'ts",
+    'they do',
+    "they didn't",
+    "they don'ts",
+    "they doesn't",
+    "the player don't",
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/the player doesn['’]t(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    const r = pattern(/(?:the player doesn['’]t|they don['’]t)(?![\p{L}\p{N}'’])/iu)(ctx, pos);
     if (!r.ok) return r;
     return {
       ok: true,

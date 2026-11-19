@@ -2,6 +2,7 @@
 import type { ManaColor, ObjectId, ObjectView, PayManaDecision } from '@commander-arena/engine';
 import { turnUpPayPrompt } from '../../game/face-down-text';
 import { SPECIAL_CANCEL, specialPayPrompt } from '../../game/later-text';
+import { unlockPayPrompt } from '../../game/room-text';
 import { ATTACK_TAX_CANCEL, attackTaxPrompt } from './attack-tax';
 import { BLOCK_TAX_CANCEL, blockTaxPrompt } from './block-tax';
 import { type Index, nameOf, stackName } from './lookup';
@@ -15,8 +16,12 @@ export interface Tap {
   readonly color?: ManaColor;
   /** The combination chosen for an ability that makes one of several (a filter land, D-099). */
   readonly combination?: readonly ManaColor[];
+  /** The colors of the additional mana of "adds an additional one mana of any color" on the land (CR 605.1b, 106.1b): chosen when the engine offers more than one. */
+  readonly extraColors?: readonly ManaColor[];
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): chosen when there is more than one to give up. */
   readonly sacrifice?: ObjectId;
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-625): chosen when there is more than one to tap. */
+  readonly tapped?: ObjectId;
 }
 
 type Sources = PayManaDecision['manaSources'];
@@ -32,14 +37,30 @@ export function asksCombination(source: Source): boolean {
   return (source.combinations?.length ?? 0) > 1;
 }
 
+/** True when the player must say the color of the additional mana of an "adds an additional one mana of any color" on the land (CR 605.1b, 106.1b): the engine offers more than one. */
+export function asksExtra(source: Source): boolean {
+  return (source.extraColors?.length ?? 0) > 1;
+}
+
 /** True when the player must say which permanent the source's cost sacrifices ("Sacrifice a Spirit: Add {R}.", D-222): the engine offers more than one. */
 export function asksSacrifice(source: Source): boolean {
   return (source.sacrifices?.length ?? 0) > 1;
 }
 
-/** True when the player must say something before the source is tapped: a color, a combination or what to sacrifice. */
+/** True when the player must say which permanent the source's cost taps ("{T}, Tap an untapped creature you control: Add ...", D-625): the engine offers more than one. */
+export function asksTapped(source: Source): boolean {
+  return (source.tappables?.length ?? 0) > 1;
+}
+
+/** True when the player must say something before the source is tapped: a color, a combination, what to sacrifice or what to tap. */
 export function asksChoice(source: Source): boolean {
-  return asksColor(source) || asksCombination(source) || asksSacrifice(source);
+  return (
+    asksColor(source) ||
+    asksCombination(source) ||
+    asksSacrifice(source) ||
+    asksTapped(source) ||
+    asksExtra(source)
+  );
 }
 
 /**
@@ -74,6 +95,7 @@ export function setTapColor(
   abilityIndex: number,
   color: ManaColor,
   sacrifice?: ObjectId,
+  tapped?: ObjectId,
 ): readonly Tap[] {
   const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
   if (offered === undefined || !(offered.colors ?? []).includes(color)) return taps;
@@ -82,6 +104,7 @@ export function setTapColor(
     abilityIndex,
     color,
     ...(sacrifice === undefined ? {} : { sacrifice }),
+    ...(tapped === undefined ? {} : { tapped }),
   });
 }
 
@@ -99,6 +122,22 @@ export function setTapSacrifice(
   const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
   if (offered === undefined || !(offered.sacrifices ?? []).includes(sacrifice)) return taps;
   return putTap(taps, { ...plainTap(object, offered), sacrifice });
+}
+
+/**
+ * Taps the source's ability tapping `tapped` too (D-625: "{T}, Tap an untapped creature you control: Add ..."). The permanent must be one the engine offered for that ability;
+ * anything else changes nothing.
+ */
+export function setTapTapped(
+  taps: readonly Tap[],
+  sources: Sources,
+  object: ObjectId,
+  abilityIndex: number,
+  tapped: ObjectId,
+): readonly Tap[] {
+  const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
+  if (offered === undefined || !(offered.tappables ?? []).includes(tapped)) return taps;
+  return putTap(taps, { ...plainTap(object, offered), tapped });
 }
 
 /** Puts the tap in the payment: it replaces an earlier tap of the source and keeps its place. */
@@ -124,6 +163,7 @@ export function setTapCombination(
   abilityIndex: number,
   combination: readonly ManaColor[],
   sacrifice?: ObjectId,
+  tapped?: ObjectId,
 ): readonly Tap[] {
   const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
   const found = (offered?.combinations ?? []).find((c) => sameCombination(c, combination));
@@ -133,6 +173,37 @@ export function setTapCombination(
     abilityIndex,
     combination: found,
     ...(sacrifice === undefined ? {} : { sacrifice }),
+    ...(tapped === undefined ? {} : { tapped }),
+  });
+}
+
+/**
+ * Taps the source's ability with `extraColors` as the additional mana (CR 605.1b, 106.1b), with the other choices already made (a color, a combination, what to sacrifice or tap)
+ * kept. The additional mana must be one the engine offered for that ability; anything else changes nothing.
+ */
+export function setTapExtra(
+  taps: readonly Tap[],
+  sources: Sources,
+  object: ObjectId,
+  abilityIndex: number,
+  extraColors: readonly ManaColor[],
+  chosen: {
+    readonly color?: ManaColor;
+    readonly combination?: readonly ManaColor[];
+    readonly sacrifice?: ObjectId;
+    readonly tapped?: ObjectId;
+  } = {},
+): readonly Tap[] {
+  const offered = sources.find((s) => s.object === object && s.abilityIndex === abilityIndex);
+  const found = (offered?.extraColors ?? []).find((e) => e.join('') === extraColors.join(''));
+  if (offered === undefined || found === undefined) return taps;
+  return putTap(taps, {
+    ...plainTap(object, offered),
+    ...(chosen.color === undefined ? {} : { color: chosen.color }),
+    ...(chosen.combination === undefined ? {} : { combination: chosen.combination }),
+    ...(chosen.sacrifice === undefined ? {} : { sacrifice: chosen.sacrifice }),
+    ...(chosen.tapped === undefined ? {} : { tapped: chosen.tapped }),
+    extraColors: found,
   });
 }
 
@@ -162,8 +233,13 @@ export function clickSource(taps: readonly Tap[], sources: Sources, object: Obje
 
 /** "1", "2", ... in tap order; "1 (B)" for a chosen color and "1 (RW)" for a chosen combination. */
 export function tapBadges(taps: readonly Tap[]): ReadonlyMap<ObjectId, string> {
-  const chosen = (t: Tap): string | null =>
-    t.color !== undefined ? t.color : t.combination !== undefined ? t.combination.join('') : null;
+  const chosen = (t: Tap): string | null => {
+    const own =
+      t.color !== undefined ? t.color : t.combination !== undefined ? t.combination.join('') : null;
+    if (t.extraColors === undefined) return own;
+    // CR 605.1b: the additional mana of the land follows what it makes itself: "G+W".
+    return own === null ? `+${t.extraColors.join('')}` : `${own}+${t.extraColors.join('')}`;
+  };
   return new Map(
     taps.map((t, i) => {
       const what = chosen(t);
@@ -202,6 +278,10 @@ export function payBarPrompt(d: PayManaDecision, index: Index): string {
   // Turning a face-down permanent face up (D-310, CR 701.40b): its cost, paid before it is turned.
   if (d.purpose === 'turnFaceUp') {
     return `${turnUpPayPrompt(d.totalCost, nameOf(index, d.source))}: tap your mana sources.`;
+  }
+  // Unlocking a half of a Room (CR 709.5e): its cost, paid before the half is unlocked.
+  if (d.purpose === 'unlockDoor') {
+    return `${unlockPayPrompt(d.totalCost, index.get(d.source), d.door ?? 0)}: tap your mana sources.`;
   }
   if (d.purpose === 'suspend' || d.purpose === 'foretell') {
     const prompt = specialPayPrompt(
@@ -255,7 +335,12 @@ export function payCancelLabel(d: Pick<PayManaDecision, 'purpose' | 'upkeep'>): 
   // The cost of blocking (CR 509.1d, D-149): `cancel` asks for the blockers again, nothing is countered.
   if (d.purpose === 'blockTax') return BLOCK_TAX_CANCEL;
   // Suspend and Foretell (D-128): nothing has happened yet; priority comes back.
-  if (d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'turnFaceUp') {
+  if (
+    d.purpose === 'suspend' ||
+    d.purpose === 'foretell' ||
+    d.purpose === 'turnFaceUp' ||
+    d.purpose === 'unlockDoor'
+  ) {
     return SPECIAL_CANCEL;
   }
   // Echo and Cumulative upkeep (D-127): not paying sacrifices the permanent.

@@ -9,11 +9,26 @@ import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type { GameState } from '../state/types';
+import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { matchesFilter } from './select';
 
 type Reveal = Extract<Replacement, { kind: 'entersTappedUnlessReveals' }>;
+
+/**
+ * The question of `rule` when it is still to be asked: null when its second way to enter untapped (`orIf`, "or you control a Dragon") holds, as the land enters
+ * and without it on the battlefield (CR 614.12), so nothing is asked and it enters untapped.
+ */
+export function revealQuestion(
+  state: GameState,
+  seat: SeatId,
+  rule: Reveal | null,
+  entering: ObjectId,
+): Reveal | null {
+  if (rule === null || rule.orIf === undefined) return rule;
+  return evaluateCondition(state, rule.orIf, { controller: seat, source: entering }) ? null : rule;
+}
 
 /** The cards of `seat`'s hand and, for behold, the permanents they control that qualify (the land that enters is not one of them). */
 export function revealCandidates(

@@ -32,6 +32,7 @@ import type { Ability, Trigger, TriggerStep, TriggerSubject, Zone } from '../ast
 import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget, DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
+import { getSeat } from '../state/ops';
 import type {
   DelayedTrigger,
   GameObject,
@@ -40,6 +41,7 @@ import type {
   StepId,
   TriggeredAbility,
 } from '../state/types';
+import { amountOf } from './amounts';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
@@ -48,11 +50,12 @@ import { findLaterTriggers } from './later-triggers';
 import { findMonarchTriggers } from './monarch';
 import { findRingTriggers } from './ring';
 import { chaptersReached, loreChange, readAheadBlocks } from './saga';
-import { matchesFilter } from './select';
+import { matchesFilter, type SelectContext } from './select';
 import { objectOrLki } from './source-info';
 import { findStateTriggers } from './state-triggers';
 import { withDoubledTriggers } from './trigger-doubling';
-import { readsTriggerPlayer } from './trigger-subject';
+import { readsTriggerDamage, readsTriggerPlayer } from './trigger-subject';
+import { isAbilityOfDoor } from './unlock-legality';
 
 /** Trigger kinds that look back in time (CR 603.10a). */
 const LOOK_BACK: ReadonlySet<Trigger['kind']> = new Set(LOOK_BACK_TRIGGER_KINDS);
@@ -95,13 +98,19 @@ interface Occurrence {
   readonly targetCount?: number;
   /** For `lifeGained`: how many times the player has gained life this turn, this one included (D-149). */
   readonly gainNth?: number;
+  /** For `lifeLost`: whether this is the first time the player lost life this turn (CR 119.3, 603.2). */
+  readonly firstLoss?: boolean;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
   readonly counter?: string;
   /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-510). */
   readonly attacker?: true;
+  /** For `doorUnlocked`: which half of the Room was unlocked, 0 the left half and 1 the right half (CR 709.5h). */
+  readonly door?: number;
   /** For `attackBatch`: the creatures declared as attackers and the players they were declared as attacking (D-149). */
   readonly attackers?: readonly ObjectId[];
   readonly attacked?: readonly SeatId[];
+  /** For `attackBatch` (D-643): for each creature declared, the player it attacked or the controller of the planeswalker it attacked. */
+  readonly attackedAt?: readonly SeatId[];
 }
 
 /** The controller of a damage source, as it is or as it last was (CR 113.7a); null when unknown. */
@@ -127,17 +136,53 @@ function eventPlayer(ability: Ability, occ: Occurrence): { readonly player?: Sea
  * CR 603.3d (D-513): a target slot that takes "up to X" targets, X being the number the trigger event carries (`TargetSpec.upToTriggerAmount`), is written as
  * the bounds it has this time (none to `amount`). Null when `amount` is 0: an ability with up to 0 targets and nothing else to do does nothing, so it is not put on the stack.
  */
-function withTriggerAmount(ability: TriggeredAbility, amount: number): TriggeredAbility | null {
-  if (!ability.targets?.some((spec) => spec.upToTriggerAmount === true)) return ability;
-  if (amount <= 0) return null;
+function withTriggerAmount(
+  state: GameState,
+  ability: TriggeredAbility,
+  amount: number,
+  ctx: SelectContext,
+): TriggeredAbility | null {
+  if (
+    !ability.targets?.some(
+      (spec) => spec.upToTriggerAmount === true || spec.upToAmount !== undefined,
+    )
+  ) {
+    return ability;
+  }
+  // CR 107.3c, 603.3d: "up to X target ..., where X is the number of opponents you have": X is what the text says, as the ability is put on the stack.
+  const counts = ability.targets.map((spec) =>
+    spec.upToTriggerAmount === true
+      ? amount
+      : spec.upToAmount === undefined
+        ? null
+        : amountOf(state, spec.upToAmount, ctx, []),
+  );
+  if (counts.some((n) => n !== null && n <= 0)) return null;
   return {
     ...ability,
-    targets: ability.targets.map((spec) => {
-      if (spec.upToTriggerAmount !== true) return spec;
-      const { upToTriggerAmount: _fixed, ...rest } = spec;
-      return { ...rest, min: 0, max: amount };
+    targets: ability.targets.map((spec, i) => {
+      const n = counts[i];
+      if (n === null || n === undefined) return spec;
+      const { upToTriggerAmount: _fixed, upToAmount: _amount, ...rest } = spec;
+      return { ...rest, min: 0, max: n };
     }),
   };
+}
+
+/**
+ * Whether the loss of life that `events[index]` (a `lifeChanged` downward) tells of is the first of its player in the turn (CR 603.2: "for the first time each turn"
+ * counts the player's losses). `state` already holds every loss of these events, so the life lost before them is what it records less their total; the losses
+ * of these events that come before this one count as earlier ones.
+ */
+function isFirstLifeLoss(state: GameState, events: readonly GameEvent[], index: number): boolean {
+  const event = events[index];
+  if (event?.kind !== 'lifeChanged') return false;
+  const lostIn = (e: GameEvent): number =>
+    e.kind === 'lifeChanged' && e.seat === event.seat && e.to < e.from ? e.from - e.to : 0;
+  const inBatch = events.reduce((sum, e) => sum + lostIn(e), 0);
+  const earlierInBatch = events.slice(0, index).reduce((sum, e) => sum + lostIn(e), 0);
+  const before = getSeat(state, event.seat).lifeLostThisTurn - inBatch;
+  return before + earlierInBatch <= 0;
 }
 
 /** The trigger occurrences an event contains for a trigger kind. */
@@ -146,6 +191,10 @@ function occurrences(
   trigger: Trigger,
   event: GameEvent,
   lore: { readonly before: number; readonly after: number } | null,
+  batch: { readonly events: readonly GameEvent[]; readonly index: number } = {
+    events: [event],
+    index: 0,
+  },
 ): Occurrence[] {
   switch (trigger.kind) {
     case 'entersBattlefield':
@@ -194,7 +243,12 @@ function occurrences(
       }));
     case 'castSpell':
       // D-218 (CR 707.10): a copy put onto the stack is not cast, but "cast or copy" counts it, under the control of the player who has it.
-      if (trigger.orCopy === true && event.kind === 'spellCopied') {
+      // A copy of an ability (`spellCopied` of an ability, Unbound Flourishing) is no spell: "cast or copy a spell" does not see it.
+      if (
+        trigger.orCopy === true &&
+        event.kind === 'spellCopied' &&
+        state.objects[event.copy]?.stack?.kind === 'spell'
+      ) {
         return [
           {
             subject: event.copy,
@@ -220,6 +274,11 @@ function occurrences(
       return event.kind === 'cycled'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
+    case 'exerted':
+      // CR 701.43d, 603.12: the creature that was exerted as it attacked, with the ability linked to its exert ability.
+      return event.kind === 'exerted'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'blocks':
       // CR 509.1g, 702.45a: one occurrence for each creature declared as a blocker.
       return event.kind === 'blockersDeclared'
@@ -235,7 +294,9 @@ function occurrences(
         : [];
     case 'step':
       // CR 500.2, 603.2: as the step begins; the active player is the one whose turn it is.
-      return event.kind === 'stepBegan' && event.step === STEP_OF[trigger.step]
+      return event.kind === 'stepBegan' &&
+        (event.step === STEP_OF[trigger.step] ||
+          (trigger.alsoStep !== undefined && event.step === STEP_OF[trigger.alsoStep]))
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
     case 'drawn':
@@ -351,6 +412,9 @@ function occurrences(
       return event.kind === 'dieRolled' && event.result === event.sides
         ? [{ subject: null, seat: event.seat, player: event.seat }]
         : [];
+    case 'becomesMonstrous':
+      // CR 701.37a, 701.37b: the permanent that became monstrous.
+      return event.kind === 'becameMonstrous' ? [{ subject: event.object, seat: null }] : [];
     case 'becomesUntapped':
       // CR 603.2e (D-206): a permanent that untaps (the untap step or an effect); a stun counter that stops it (CR 122.1d) makes no `untapped` event.
       return event.kind === 'untapped' ? [{ subject: event.object, seat: null }] : [];
@@ -370,6 +434,20 @@ function occurrences(
         event.card !== null
         ? [{ subject: null, seat: state.cards[event.card]?.owner ?? null }]
         : [];
+    case 'doorUnlocked':
+      // CR 709.5h: a half of a Room was given its unlocked designation, by the player who unlocked it; `door` is which half.
+      return event.kind === 'doorUnlocked'
+        ? [{ subject: event.object, seat: event.seat, door: event.door }]
+        : [];
+    case 'putIntoGraveyard':
+      // CR 603.2, 404.1: a card (never a token) put into a graveyard from another zone, by the player who owns it ("your graveyard"); `from` is the zone it came from.
+      return event.kind === 'zoneChanged' &&
+        event.toZone === 'graveyard' &&
+        event.fromZone !== 'graveyard' &&
+        (trigger.from === 'anywhere' || event.fromZone === 'library') &&
+        event.card !== null
+        ? [{ subject: event.to, seat: state.cards[event.card]?.owner ?? null }]
+        : [];
     case 'exiledFromLibraryOrGraveyard':
       // CR 400.7, 603.2c (D-229): a card put into exile from its owner's library or graveyard, by the player who owns it.
       return event.kind === 'zoneChanged' &&
@@ -387,6 +465,19 @@ function occurrences(
     case 'crimeCommitted':
       // CR 700.13 (D-464): the spell or ability that committed the crime is the subject, the player who put it on the stack the player.
       return event.kind === 'crimeCommitted'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
+    case 'activatesAbility':
+      // CR 602.2, 605.1a: an activated ability of a permanent that uses the stack (a mana ability is no such event); the ability on the stack is the subject.
+      // `anySource` (Unbound Flourishing, "activate an ability"): an ability of a card in a hand or a graveyard counts as well.
+      return event.kind === 'abilityActivated' &&
+        (event.fromBattlefield === true || trigger.anySource === true) &&
+        event.stackObject !== null
+        ? [{ subject: event.stackObject, seat: event.seat, player: event.seat }]
+        : [];
+    case 'playsCard':
+      // CR 305.1, 601.2: a land played (the land is the subject, as it is on the battlefield) or a spell cast (as it is on the stack), by the player the event names.
+      return event.kind === 'landPlayed' || event.kind === 'spellCast'
         ? [{ subject: event.object, seat: event.seat, player: event.seat }]
         : [];
     case 'tokenCreated':
@@ -422,6 +513,18 @@ function occurrences(
             },
           ]
         : [];
+    case 'lifeLost':
+      // CR 119.3: one occurrence for each reduction of a life total (`lifeChanged` downward).
+      return event.kind === 'lifeChanged' && event.to < event.from
+        ? [
+            {
+              subject: null,
+              seat: event.seat,
+              player: event.seat,
+              firstLoss: isFirstLifeLoss(state, batch.events, batch.index),
+            },
+          ]
+        : [];
     case 'countersAdded':
       // CR 122.6, 122.6a (D-149): counters put on a permanent, by the player who put them.
       return event.kind === 'counterAdded'
@@ -433,7 +536,60 @@ function occurrences(
             },
           ]
         : [];
+    case 'playerAttacksOpponent': {
+      // CR 508.1, 508.6, 603.2c (D-648): once for each player the declaration attacks (a planeswalker or a battle attacked is no player), however many creatures attack them.
+      if (event.kind !== 'attackersDeclared') return [];
+      const seats = [
+        ...new Set(
+          event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+        ),
+      ];
+      return seats.map((seat) => ({
+        subject: null,
+        seat: event.seat,
+        player: event.seat,
+        attacked: [seat],
+      }));
+    }
+    case 'unblockedAttackBatch': {
+      // CR 509.1h, 603.2: as the blockers are declared (the event is made with none declared too), once for each player whose attacking creatures attack the
+      // declaring player and have no blocker; the creatures are read from the combat after the declaration.
+      if (event.kind !== 'blockersDeclared') return [];
+      const byController = new Map<SeatId, ObjectId[]>();
+      for (const a of state.combat?.attackers ?? []) {
+        if (a.blocked || a.target.kind !== 'player' || a.target.seat !== event.seat) continue;
+        const creature = state.objects[a.object];
+        if (creature === undefined || creature.zone !== 'battlefield') continue;
+        const controller = controllerOf(state, creature);
+        byController.set(controller, [...(byController.get(controller) ?? []), a.object]);
+      }
+      return [...byController].map(([controller, attackers]) => ({
+        subject: null,
+        seat: controller,
+        player: controller,
+        attackers,
+        attacked: [event.seat],
+      }));
+    }
     case 'attackBatch':
+      // CR 508.1b, 508.6, 603.2c (Demonic Covenant): "attack a player": one occurrence for each player attacked as a player, with the creatures that attack that player.
+      if (event.kind === 'attackersDeclared' && trigger.eachAttackedPlayer === true) {
+        const players = [
+          ...new Set(
+            event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+          ),
+        ];
+        return players.map((player) => ({
+          subject: null,
+          seat: event.seat,
+          player: event.seat,
+          attackers: event.attackers
+            .filter((a) => a.target.kind === 'player' && a.target.seat === player)
+            .map((a) => a.object),
+          attacked: [player],
+          attackedAt: [player],
+        }));
+      }
       // CR 508.1, 603.2 (D-149): once for the whole declaration, whoever the creatures attack.
       return event.kind === 'attackersDeclared'
         ? [
@@ -445,6 +601,15 @@ function occurrences(
               attacked: event.attackers.flatMap((a) =>
                 a.target.kind === 'player' ? [a.target.seat] : [],
               ),
+              // CR 508.1b (D-643): a planeswalker attacked counts for its controller as the declaration is made; a battle is neither a player nor a planeswalker.
+              attackedAt: event.attackers.flatMap((a) => {
+                if (a.target.kind === 'player') return [a.target.seat];
+                const attacked = state.objects[a.target.object];
+                return attacked !== undefined &&
+                  derive(state, attacked).types.includes('planeswalker')
+                  ? [controllerOf(state, attacked)]
+                  : [];
+              }),
             },
           ]
         : [];
@@ -486,6 +651,8 @@ interface Candidate {
   readonly controller: SeatId;
   /** What it is attached to, as it was when the event happened (D-111, `attached` subjects). */
   readonly attachedTo: ObjectId | null;
+  /** The player an Aura that enchants a player is attached to (D-629). */
+  readonly attachedToPlayer?: SeatId;
   /** Triggered abilities with their index among the object's abilities. */
   readonly triggered: readonly { readonly index: number; readonly ability: TriggeredAbility }[];
 }
@@ -530,6 +697,7 @@ function candidateFor(state: GameState, id: ObjectId): Candidate | null {
       id,
       controller: controllerOf(state, live),
       attachedTo: live.attachedTo,
+      ...(live.attachedToPlayer === undefined ? {} : { attachedToPlayer: live.attachedToPlayer }),
       triggered: triggeredOf(derive(state, live).abilities, live.zone === 'graveyard'),
     };
   }
@@ -540,6 +708,9 @@ function candidateFor(state: GameState, id: ObjectId): Candidate | null {
     id,
     controller: lki.object.controller, // stored controller
     attachedTo: lki.object.attachedTo,
+    ...(lki.object.attachedToPlayer === undefined
+      ? {}
+      : { attachedToPlayer: lki.object.attachedToPlayer }),
     triggered: triggeredOf(lki.abilities),
   };
 }
@@ -616,6 +787,17 @@ function matches(
     case 'leftGraveyard':
     case 'exiledFromLibraryOrGraveyard':
       return occ.seat === candidate.controller;
+    case 'doorUnlocked':
+      // CR 709.5h: "you unlock this door": the player is the controller of the ability and the Room is its source; whether the half is the ability's own is checked by the caller.
+      return occ.seat === candidate.controller && subject?.id === candidate.id;
+    case 'putIntoGraveyard':
+      // CR 603.2: the card as it is in the graveyard (or as it last was); the filter names card types only.
+      return (
+        occ.seat === candidate.controller &&
+        (trigger.filter === undefined ||
+          (subject !== null &&
+            matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx)))
+      );
     case 'discarded':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -647,6 +829,7 @@ function matches(
       return true;
     case 'dealtDamage':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
       return matchesWhat(state, trigger.what, subject, candidate);
@@ -656,7 +839,19 @@ function matches(
       return false;
     case 'crimeCommitted':
     case 'tokenCreated':
-      // CR 700.13, 111.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
+    case 'activatesAbility':
+      // CR 107.3, 602.2b, 603.4: "if that ability's activation cost contains {X}": an {X} symbol in the mana of its cost ("Pay X life" and "-X" are not an {X}).
+      if (
+        trigger.kind === 'activatesAbility' &&
+        trigger.xCost === true &&
+        !(
+          subject?.stack?.ability?.kind === 'activated' &&
+          subject.stack.ability.cost.some((c) => c.kind === 'mana' && c.symbols.includes('X'))
+        )
+      ) {
+        return false;
+      }
+      // CR 700.13, 111.2, 602.2 (D-464, D-465): the player who committed the crime or created the token, relative to the controller of this ability.
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return true;
@@ -664,13 +859,33 @@ function matches(
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
       return trigger.firstEachTurn !== true || occ.gainNth === 1;
+    case 'lifeLost':
+      if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
+      if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      return trigger.firstEachTurn !== true || occ.firstLoss === true;
     case 'countersAdded':
       if (trigger.counter !== undefined && occ.counter !== trigger.counter) return false;
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
       return matchesWhat(state, trigger.what, subject, candidate);
+    case 'playerAttacksOpponent': {
+      // "One of your opponents": a player other than the controller of the ability (D-648).
+      const attacked = occ.attacked?.[0];
+      return attacked !== undefined && attacked !== candidate.controller;
+    }
+    case 'unblockedAttackBatch':
+      // CR 509.1h: the unblocked creatures are an opponent's and attack the controller of this ability.
+      return occ.seat !== candidate.controller && occ.attacked?.[0] === candidate.controller;
     case 'attackBatch': {
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // D-629 (CR 303.4m, 508.1b): "Whenever enchanted player is attacked": the Aura's player was declared as attacked, as a player and not through a planeswalker.
+      if (
+        trigger.attackedEnchantedPlayer === true &&
+        (candidate.attachedToPlayer === undefined ||
+          !(occ.attacked ?? []).includes(candidate.attachedToPlayer))
+      ) {
+        return false;
+      }
       const attackers = occ.attackers ?? [];
       const counted =
         trigger.what === undefined
@@ -690,6 +905,9 @@ function matches(
     case 'cycled':
       // CR 702.29c: "when you cycle this card": the card with the ability is the one that was cycled.
       return subject !== null && subject.id === candidate.id;
+    case 'exerted':
+      // CR 607.2h: the ability is linked to the exert ability of the creature itself: only that creature's exert triggers it.
+      return subject !== null && subject.id === candidate.id;
     case 'ringTempted':
       // CR 701.54d: "Whenever the Ring tempts you": the player the Ring tempted controls the ability.
       return occ.seat === candidate.controller;
@@ -700,6 +918,14 @@ function matches(
         controllerOf(state, subject) === candidate.controller &&
         derive(state, subject).types.includes('land')
       );
+    case 'playsCard':
+      // CR 305.1, 601.2, 205.2a: "you play a card with two or more card types": the player is the controller of the ability, the card types are those of the card as it is played
+      // (the land on the battlefield, the spell on the stack).
+      return (
+        subject !== null &&
+        occ.seat === candidate.controller &&
+        derive(state, subject).types.length >= (trigger.minCardTypes ?? 1)
+      );
     case 'castSpell':
       if (subject === null) return false;
       // CR 702.85a (D-120): "When you cast this spell" is the spell's own ability, for that spell only.
@@ -708,6 +934,17 @@ function matches(
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       // D-229: "their second spell each turn": the caster's nth spell of the turn.
       if (trigger.nth !== undefined && occ.nth !== trigger.nth) return false;
+      // CR 601.2i, 603.2: "your first instant or sorcery spell each turn": no other spell of those card types was cast by the caster before it this turn (this one is in the log).
+      if (trigger.firstOfKind === true) {
+        const wanted = [
+          ...(trigger.filter.types ?? []),
+          ...(trigger.filter.anyOf ?? []).flatMap((m) => m.types ?? []),
+        ];
+        const same = state.turnLog.castSpells.filter(
+          (s) => s.seat === occ.seat && s.types.some((t) => wanted.includes(t)),
+        );
+        if (same.length !== 1) return false;
+      }
       // D-565: "during each opponent's turn" is relative to the controller of this ability.
       if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
         return false;
@@ -803,7 +1040,9 @@ function isRelevant(event: GameEvent): boolean {
         event.toZone === 'battlefield' ||
         event.fromZone === 'battlefield' ||
         (event.fromZone === 'graveyard' && event.toZone !== 'graveyard') ||
-        (event.toZone === 'exile' && event.fromZone === 'library')
+        (event.toZone === 'exile' && event.fromZone === 'library') ||
+        // CR 603.2 (Skola Grovedancer): a card put into a graveyard from anywhere.
+        (event.toZone === 'graveyard' && event.fromZone !== 'graveyard')
       );
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
@@ -817,14 +1056,19 @@ function isRelevant(event: GameEvent): boolean {
     case 'attackersDeclared':
     case 'blockersDeclared':
     case 'spellCast':
+    case 'landPlayed': // CR 305.1: "whenever you play a card"
     case 'spellCopied': // D-218: "whenever you cast or copy"
+    case 'exerted': // CR 701.43d
     case 'cycled':
     case 'discarded':
     case 'tapped':
     case 'untapped':
+    case 'becameMonstrous': // CR 701.37: "When this creature becomes monstrous"
     case 'tappedForMana':
     case 'becameTarget':
     case 'crimeCommitted':
+    case 'abilityActivated':
+    case 'doorUnlocked': // CR 709.5h
     case 'ringTempted':
     case 'classLevelReached':
       return true;
@@ -832,6 +1076,8 @@ function isRelevant(event: GameEvent): boolean {
       return true; // CR 714.2b (lore counters), CR 122.6 (D-149: counters put on a permanent)
     case 'lifeGained':
       return true; // CR 119.9 (D-149)
+    case 'lifeChanged':
+      return true; // CR 119.3: a reduction of a life total is a loss ("whenever you lose life")
     case 'stepBegan':
       return TRIGGER_STEP_IDS.has(event.step); // includes upkeep and end
     default:
@@ -882,6 +1128,37 @@ function leavesBattlefield(event: GameEvent): boolean {
   );
 }
 
+/**
+ * Whether no card the filter of `trigger` names was put into the graveyard of `seat` before these events this turn (CR 603.2: "for the first time each turn"). `state` already holds
+ * every entry of these events (`TurnLog.graveyardEntries`), so the ones before them are the log less the cards of these events that went into a graveyard. Only card types are
+ * kept for an earlier entry, which is all a filter of this trigger reads (`validateCard`).
+ */
+function firstGraveyardEntryOfTurn(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'putIntoGraveyard' }>,
+  events: readonly GameEvent[],
+  seat: SeatId,
+): boolean {
+  const inEvents = events.filter(
+    (e) =>
+      e.kind === 'zoneChanged' &&
+      e.toZone === 'graveyard' &&
+      e.fromZone !== 'graveyard' &&
+      e.card !== null,
+  ).length;
+  const log = state.turnLog.graveyardEntries;
+  const types = trigger.filter?.types;
+  const notTypes = trigger.filter?.notTypes;
+  return !log
+    .slice(0, Math.max(0, log.length - inEvents))
+    .some(
+      (entry) =>
+        entry.seat === seat &&
+        (types === undefined || types.every((t) => entry.types.includes(t))) &&
+        (notTypes === undefined || !notTypes.some((t) => entry.types.includes(t))),
+    );
+}
+
 /** The cards (as the objects they became) that left the graveyard of `seat` for another zone in these events (CR 400.7, 603.2c; D-232). */
 function cardsThatLeftGraveyard(
   state: GameState,
@@ -896,6 +1173,42 @@ function cardsThatLeftGraveyard(
     state.cards[e.card]?.owner === seat
       ? [e.to]
       : [],
+  );
+}
+
+/**
+ * The cards (as the objects they became in the graveyard) that the batch `putIntoGraveyard` trigger `trigger` names in these events (CR 603.2c, 404.1): each `zoneChanged` event
+ * it matches (the cards of its controller's graveyard, from the library or from anywhere, that the filter names), in the order the cards were put there.
+ */
+function putIntoGraveyardCards(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'putIntoGraveyard' }>,
+  events: readonly GameEvent[],
+  candidate: Candidate,
+  lore: { readonly before: number; readonly after: number } | null,
+): ObjectId[] {
+  return events.flatMap((e) =>
+    occurrences(state, trigger, e, lore).flatMap((occ) =>
+      occ.subject !== null && matches(state, trigger, occ, candidate) ? [occ.subject] : [],
+    ),
+  );
+}
+
+/**
+ * The cards (as the objects they became) that the batch `discarded` trigger `trigger` names in these events (CR 603.2c, 701.9a; Lorehold group 1): each `discarded` event it
+ * matches (whose discard, `another`, the filter), in the order the cards were discarded.
+ */
+function discardedCards(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'discarded' }>,
+  events: readonly GameEvent[],
+  candidate: Candidate,
+  lore: { readonly before: number; readonly after: number } | null,
+): ObjectId[] {
+  return events.flatMap((e) =>
+    occurrences(state, trigger, e, lore).flatMap((occ) =>
+      occ.subject !== null && matches(state, trigger, occ, candidate) ? [occ.subject] : [],
+    ),
   );
 }
 
@@ -985,14 +1298,41 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
         ) {
           continue;
         }
-        for (const occ of occurrences(state, ability.trigger, event, lore)) {
+        // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": every card of these events the trigger names, for "exile one of them".
+        // The same for "Whenever one or more cards are put into your graveyard from your library": "those cards" (`cardTypesAmongTriggerCards`).
+        const discardedBatch =
+          ability.trigger.kind === 'discarded' && ability.trigger.batch === true
+            ? discardedCards(state, ability.trigger, events, candidate, lore)
+            : ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true
+              ? putIntoGraveyardCards(state, ability.trigger, events, candidate, lore)
+              : null;
+        for (const occ of occurrences(state, ability.trigger, event, lore, {
+          events,
+          index: eventIndex,
+        })) {
           if (!matches(state, ability.trigger, occ, candidate)) continue;
+          // CR 709.5h: "When you unlock this door" is an ability of one half: it triggers when that half is unlocked and not when the other one is.
           if (
+            ability.trigger.kind === 'doorUnlocked' &&
+            !isAbilityOfDoor(state, id, ability, occ.door)
+          ) {
+            continue;
+          }
+          if (
+            ability.trigger.kind === 'putIntoGraveyard' &&
+            ability.trigger.firstTimeEachTurn === true &&
+            !firstGraveyardEntryOfTurn(state, ability.trigger, events, candidate.controller)
+          ) {
+            continue;
+          }
+          if (
+            (ability.trigger.kind === 'discarded' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'leftGraveyard' ||
-            ability.trigger.kind === 'exiledFromLibraryOrGraveyard'
+            ability.trigger.kind === 'exiledFromLibraryOrGraveyard' ||
+            (ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true)
           ) {
             const key = `${id}:${index}`;
             if (batched.has(key)) continue;
@@ -1016,6 +1356,8 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
               source: id,
               ...(occ.subject === null ? {} : { triggerSubject: occ.subject }),
               ...(occ.player === undefined ? {} : { triggerPlayer: occ.player }),
+              ...(occ.attackedAt === undefined ? {} : { triggerAttackedAt: occ.attackedAt }),
+              ...(occ.attacked === undefined ? {} : { triggerAttacked: occ.attacked }),
             })
           ) {
             continue;
@@ -1033,7 +1375,10 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             continue;
           }
           // CR 603.3d, 701.22 (D-513): "tap up to X target nonland permanents, where X is the number of cards looked at": fixed as the ability triggers.
-          const fixed = withTriggerAmount(ability, occ.damage ?? 0);
+          const fixed = withTriggerAmount(state, ability, occ.damage ?? 0, {
+            controller: candidate.controller,
+            source: id,
+          });
           if (fixed === null) continue;
           found.push({
             source: id,
@@ -1049,10 +1394,12 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             ...(occ.attackers === undefined || ability.trigger.kind !== 'attackBatch'
               ? {}
               : { attackers: occ.attackers }),
+            ...(occ.attackedAt === undefined ? {} : { attackedAt: occ.attackedAt }),
             // D-232: "become a copy of an artifact or creature card from among those cards": every card of the player that left the graveyard in these events.
             ...(ability.trigger.kind === 'leftGraveyard'
               ? { cards: cardsThatLeftGraveyard(state, events, candidate.controller) }
               : {}),
+            ...(discardedBatch === null ? {} : { cards: discardedBatch }),
           });
         }
       }
@@ -1076,7 +1423,7 @@ function batchTriggers(
 ): PendingTrigger[] {
   const damage = events.flatMap((e) =>
     e.kind === 'damageDealt' && e.combat && e.to.kind === 'player' && e.amount > 0
-      ? [{ source: e.source, seat: e.to.seat }]
+      ? [{ source: e.source, seat: e.to.seat, amount: e.amount }]
       : [],
   );
   if (damage.length === 0) return [];
@@ -1103,6 +1450,10 @@ function batchTriggers(
           );
         });
         if (sources.length < (trigger.atLeast ?? 1)) continue;
+        // "that damage" (issue 103, CR 603.2c, 510.2): all the combat damage the sources the trigger names dealt to that player in these events.
+        const dealt = damage
+          .filter((d) => d.seat === seat && sources.includes(d.source))
+          .reduce((sum, d) => sum + d.amount, 0);
         if (
           ability.interveningIf !== undefined &&
           !evaluateCondition(state, ability.interveningIf, {
@@ -1130,6 +1481,7 @@ function batchTriggers(
           ability,
           subject: null,
           player: seat,
+          ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
         });
       }
     }
@@ -1166,6 +1518,9 @@ function findDelayedTriggers(
       .filter(
         (occ) =>
           (delayed.watched === undefined || occ.subject === delayed.watched) &&
+          // Issue 159: "When you cast it this turn": only a spell cast from that card.
+          (delayed.watchedCard === undefined ||
+            (occ.subject !== null && state.objects[occ.subject]?.card === delayed.watchedCard)) &&
           matches(state, trigger, occ, candidate),
       );
     if (matched.length === 0) {

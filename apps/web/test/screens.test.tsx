@@ -17,7 +17,13 @@ import { lossReason, outcomeFor } from '../src/ui/screens/game-over-model';
 import { HonestyBanner } from '../src/ui/screens/HonestyBanner';
 import { honestyLines } from '../src/ui/screens/honesty-model';
 import { Menu } from '../src/ui/screens/Menu';
-import { defaultDecks, parseSeed, pickRandomDeck } from '../src/ui/screens/menu-model';
+import {
+  defaultDecks,
+  matchesColorFilter,
+  parseSeed,
+  pickRandomDeck,
+  toggleColorFilter,
+} from '../src/ui/screens/menu-model';
 import { StoreProvider } from '../src/ui/store-context';
 import { playableSnapshot, preconsOf } from './precons-helpers';
 
@@ -85,7 +91,7 @@ describe('Menu', () => {
     expect(out).toContain('unofficial');
     expect(out).toContain('Play a game');
     expect(out).toContain('Start game');
-    expect(out).toContain('Your Decks');
+    expect(out).toContain('My Decks');
     expect(out).toContain('Seed');
     expect(out).toContain('Free first mulligan');
     expect(out).not.toContain('Import a deck');
@@ -109,7 +115,7 @@ describe('Menu', () => {
     ]) {
       expect(out).toContain('No precon is installed yet');
       expect(out).toMatch(/<button[^>]*disabled=""[^>]*>Start game/);
-      expect(out).toContain('Your Decks');
+      expect(out).toContain('My Decks');
     }
   });
 
@@ -125,14 +131,16 @@ describe('Menu', () => {
       },
       { id: 's1', kind: 'saved', name: 'Saved One', blurb: 'b', commander: '', edited: false },
     ] as const;
-    const dialog = (list: typeof decks | readonly [(typeof decks)[0]], value: string) =>
+    const dialog = (
+      list: typeof decks | readonly [(typeof decks)[0]],
+      initialTab?: 'saved' | 'precon',
+    ) =>
       renderToStaticMarkup(
         <DeckDialog
           title="Choose your deck"
-          name="human-deck"
-          value={value}
           prompt="Select the deck you'll play in this game."
           decks={list}
+          {...(initialTab === undefined ? {} : { initialTab })}
           error={null}
           busy={false}
           onChoose={() => undefined}
@@ -141,23 +149,24 @@ describe('Menu', () => {
         />,
       );
     // The dialog opens on the tab of the marked deck.
-    const withSaved = dialog(decks, 's1');
+    const withSaved = dialog(decks);
     expect(withSaved).toContain('role="dialog"');
     expect(withSaved).toContain('Choose your deck');
     expect(withSaved).toContain('Saved One');
     expect(withSaved).toContain('No commander marked');
     expect(withSaved).not.toContain('Precon One');
-    const onlyPrecons = dialog([decks[0]], 'p1');
+    const onlyPrecons = dialog([decks[0]], 'precon');
     expect(onlyPrecons).toContain('Precon One');
     expect(onlyPrecons).toContain('Commander: Cmd One');
     expect(onlyPrecons).not.toContain('Back');
-    expect(onlyPrecons).toContain('>Select<');
+    expect(onlyPrecons).not.toContain('>Select<');
+    expect(onlyPrecons).toContain('aria-label="Search decks"');
     for (const label of ['Random all', 'Random precon', 'Random mine'])
       expect(onlyPrecons).toContain(label);
     // No deck was saved: its random button is disabled.
     expect(onlyPrecons).toMatch(/<button[^>]*disabled=""[^>]*>Random mine/);
     expect(onlyPrecons).not.toMatch(/<button[^>]*disabled=""[^>]*>Random precon/);
-    expect(onlyPrecons).toContain('name="human-deck"');
+    expect(onlyPrecons).toContain('data-deck-id="p1"');
   });
 
   test('the random buttons pick from the whole list, the precons or the saved decks', () => {
@@ -242,5 +251,23 @@ describe('HonestyBanner (A28)', () => {
     expect(out).toContain('1× Synthetic Marvel (Opponent)');
     expect(out).toContain('Dismiss');
     expect(honestyLines(null, 0)).toEqual([]);
+  });
+});
+
+describe('the deck color filter', () => {
+  test('matches the exact color identity', () => {
+    expect(matchesColorFilter(['R'], [])).toBe(true);
+    expect(matchesColorFilter(['R'], ['R'])).toBe(true);
+    expect(matchesColorFilter(['U', 'R'], ['R'])).toBe(false);
+    expect(matchesColorFilter(['U', 'R'], ['R', 'U'])).toBe(true);
+    expect(matchesColorFilter([], ['C'])).toBe(true);
+    expect(matchesColorFilter(['G'], ['C'])).toBe(false);
+    expect(matchesColorFilter(undefined, ['R'])).toBe(false);
+  });
+
+  test('colorless and the colors exclude each other', () => {
+    expect(toggleColorFilter(['R'], 'C')).toEqual(['C']);
+    expect(toggleColorFilter(['C'], 'U')).toEqual(['U']);
+    expect(toggleColorFilter(['R', 'U'], 'R')).toEqual(['U']);
   });
 });

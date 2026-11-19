@@ -11,8 +11,13 @@ import type { Ability } from '../ast/types';
 export function readsTriggerSubject(ability: Ability): boolean {
   if (ability.kind !== 'triggered') return false;
   // A modal ability keeps its effects in the modes (D-114).
-  const effects = JSON.stringify([ability.effect, ability.modes ?? []]);
+  // CR 603.3d: so does a target filter that reads the triggering object ("with mana value less than or equal to that spell's mana value").
+  const effects = JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
+  // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
+  if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;
+  // CR 107.3, 113.7a (Quandrix Unlimited group E): "put X +1/+1 counters" of a cast trigger reads the X of the spell that was cast, as the ability resolves.
+  if (effects.includes('"triggerSpellX"')) return true;
   // CR 601.2h, 608.2c: "If five or more mana was spent to cast that spell, ... instead" is a condition of the effect, read as the effect resolves from the spell that
   // caused the trigger, so the subject stays on the stack as it does for the intervening "if" below.
   if (effects.includes('"manaSpentAtLeast"')) return true;
@@ -40,6 +45,8 @@ export function readsTriggerPlayer(ability: Ability): boolean {
     (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"triggerPlayer"',
     ) ||
+      // Issue 159: "each opponent attacking that player" reads the player the trigger is about.
+      JSON.stringify(ability.effect).includes('"opponentsAttackingTriggerPlayer"') ||
       JSON.stringify(ability.interveningIf ?? null).includes('"triggerPlayerHasMore"'))
   );
 }
@@ -68,8 +75,18 @@ export function readsTriggerAttackers(ability: Ability): boolean {
 export function readsTriggerAttacked(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.interveningIf ?? null]).includes(
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.interveningIf ?? null]).includes(
       '"attackersAttackedYou"',
-    )
+    ) ||
+      // D-648: "that opponent", the player the declaration attacked: kept with the trigger as it goes on the stack.
+      JSON.stringify([ability.effect, ability.modes ?? [], ability.interveningIf ?? null]).includes(
+        '"triggerAttackedPlayer"',
+      ) ||
+      // D-643: the intervening "if" reads whom each creature attacked, as the ability triggers and again as it resolves.
+      JSON.stringify(ability.interveningIf ?? null).includes('"attackersAtYouAtLeast"') ||
+      // D-648: the intervening "if" reads the player attacked, as the ability triggers and again as it resolves.
+      JSON.stringify(ability.interveningIf ?? null).includes(
+        '"attackedHasMoreLifeThanOtherOpponent"',
+      ))
   );
 }

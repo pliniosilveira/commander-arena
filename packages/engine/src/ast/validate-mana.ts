@@ -33,6 +33,10 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
           }
         });
       }
+      // D-650 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn: true or absent.
+      if (mp.staysUntilEndOfTurn !== undefined && mp.staysUntilEndOfTurn !== true) {
+        issue(out, `${path}.staysUntilEndOfTurn`, 'staysUntilEndOfTurn is true or absent');
+      }
       break;
     case 'oneOf':
       // "Add {U} or {B}" is a choice among at least two different types of mana (CR 106.1b).
@@ -70,8 +74,14 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       }
       break;
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
+    case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
     case 'commanderIdentity':
+      break;
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)
+      // Issue 184: "Add {U} or one mana of the chosen color".
+      if (mp.or !== undefined && !isOneOf(mp.or, MANA_COLORS)) {
+        issue(out, `${path}.or`, `unknown mana color ${JSON.stringify(mp.or)}`);
+      }
       break;
     case 'couldProduce':
       // The `lands` filter is checked with the mana ability (validate-mana-ability.ts).

@@ -10,7 +10,15 @@ import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
 import type { GameEvent } from '../state/events';
-import { getObject, getSeat, objectsInZone, patchObject, patchSeat, setSeat } from '../state/ops';
+import {
+  getObject,
+  getSeat,
+  objectsInZone,
+  opponentsOf,
+  patchObject,
+  patchSeat,
+  setSeat,
+} from '../state/ops';
 import type {
   ChosenTarget,
   GameState,
@@ -22,20 +30,36 @@ import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
-import { runAuraEntry, withAuraEntries } from './aura-entry';
+import { runAttackRandomOpponent } from './attack-random-opponent';
+import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
+import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
+import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runChooseOne } from './choose-one';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
-import { runBecomeCopy, runContinuous, runEntersTappedGroup, runRequireAttack } from './continuous';
+import {
+  runBecomeCopy,
+  runContinuous,
+  runEntersTappedGroup,
+  runRequireAttack,
+  runRequireAttackSource,
+} from './continuous';
 import { controllerOf } from './control';
-import { runExchangeControl, runGainControl } from './control-effects';
+import { runExchangeControl, runGainControl, runReturnControl } from './control-effects';
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
+import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
-import { asking, runDealDamage, runDealDividedDamage } from './damage-effects';
+import {
+  asking,
+  runDealDamage,
+  runDealDamageToController,
+  runDealDamageToSelf,
+  runDealDividedDamage,
+} from './damage-effects';
 import { askingFlow, type OrderFlow, quietFlow } from './damage-order';
 import { derive } from './derive';
 import { UNEARTH_EXILE_ABILITY } from './derive-alt';
@@ -54,12 +78,18 @@ import {
 } from './effect-support';
 import { createEmblem } from './emblem';
 import { runEmpowerJace } from './empower';
+import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
-import { runEnterToken } from './enter-token';
+import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
+import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
+import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
+import { runExileUntilFound } from './exile-until-found';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runMayCastEachType } from './free-cast-effect';
+import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
@@ -68,18 +98,28 @@ import { runLookTake } from './look-take';
 import { loseTheGame } from './lose-game';
 import { manaValueOfCost } from './mana-value';
 import { runManifest } from './manifest';
-import { runMayCast, runPaidReflexive, runReflexive } from './may-effects';
+import {
+  runGainActivatedAbilitiesOf,
+  runMayCast,
+  runMayCastSpells,
+  runPaidReflexive,
+  runReflexive,
+} from './may-effects';
 import { runMeld } from './meld';
 import { successorsOf } from './melded';
 import { millCards } from './mill';
 import { runMiracleReveal } from './miracle';
 import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
+import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
+import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerLock } from './player-lock';
+import { runGrantPlayerManaAbility } from './player-mana';
+import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
 import { runProliferate } from './proliferate';
@@ -90,9 +130,11 @@ import {
   runProtectionColor,
 } from './protection-choice';
 import { runRegenerate } from './regenerate';
+import { runReplaceEnchant } from './replace-enchant';
 import { runReselectAttack } from './reselect-attack';
 import { canBeCountered } from './restrictions';
 import { runRevealTop } from './reveal-top';
+import { runRevealTopDuel } from './reveal-top-duel';
 import { runRevealUntil } from './reveal-until';
 import { runRingTempts } from './ring';
 import { rollDie } from './roll-die';
@@ -179,7 +221,7 @@ export function runInstruction(
         seat: res.controller,
         source: res.object,
         purpose: 'effect',
-        min: 0,
+        min: instruction.exactly === true ? max : 0,
         max,
         legal: candidates,
       },
@@ -226,6 +268,8 @@ export function runInstruction(
   if (instruction.kind === 'pair') return runPair(state, res, instruction);
   if (instruction.kind === 'empowerJace') return runEmpowerJace(state, res, instruction);
   if (instruction.kind === 'amass') return runAmass(state, res, instruction, flow);
+  if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
+  if (instruction.kind === 'moveCounters') return runMoveCounters(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -242,6 +286,11 @@ export function runInstruction(
   if (instruction.kind === 'lookTake') return runLookTake(state, res, instruction);
   if (instruction.kind === 'lookSplit') return runLookSplit(state, res, instruction);
   if (instruction.kind === 'pileSeparate') return runPileSeparate(state, res, instruction);
+  if (instruction.kind === 'exilePiles') return runExilePiles(state, res, instruction);
+  if (instruction.kind === 'exileAnyNumber') return runExileAnyNumber(state, res, instruction);
+  if (instruction.kind === 'opponentChoosesCard') {
+    return runOpponentChoosesCard(state, res, instruction);
+  }
   if (instruction.kind === 'behold') return runBehold(state, res, instruction);
   if (instruction.kind === 'putOnTop') return runPutOnTop(state, res, instruction);
   if (instruction.kind === 'confirmOptional') {
@@ -267,10 +316,20 @@ export function runInstruction(
       const offered = instruction.effect;
       const player = instruction.as ?? res.controller;
       if (
-        offered.kind === 'sacrifice' &&
-        offered.objects.kind === 'choose' &&
-        offered.player === undefined &&
-        sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0
+        (offered.kind === 'sacrifice' &&
+          offered.objects.kind === 'choose' &&
+          offered.player === undefined &&
+          sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0) ||
+        // CR 701.9 (Discard): a player with no card in hand cannot discard one, so they do not and the "if they don't" instruction is done for them (Professor Onyx's last
+        // loyalty ability rules: an opponent with an empty hand loses the life). Nobody is asked about a discard of nothing when "if they don't" follows; without it the question is
+        // asked as it always was (it is what the players who did the thing are counted from, Mog, Moogle Warrior).
+        (offered.kind === 'discard' &&
+          instruction.otherwise !== undefined &&
+          offered.player.kind === 'you' &&
+          offered.random !== true &&
+          offered.hand !== true &&
+          offered.anyNumber !== true &&
+          getSeat(state, player).hand.length === 0)
       ) {
         return instruction.otherwise === undefined
           ? done(state)
@@ -411,10 +470,15 @@ export function runInstruction(
     // returned at the beginning of the next end step; it belongs to the controller of the ability (CR 603.7d) and
     // names that permanent (CR 603.7c).
     // CR 303.4f (D-149): an Aura that entered by an effect enters attached to the object its controller chose.
+    // CR 400.7 (Animate Dead): the permanent it became remembers the permanent it was put onto the battlefield with.
+    const remembered =
+      instruction.putWith !== undefined && result.newObject !== null
+        ? patchObject(result.state, result.newObject, { putWith: instruction.putWith })
+        : result.state;
     const attached =
       instruction.attachTo !== undefined && result.newObject !== null
-        ? attachEntered(result.state, result.newObject, instruction.attachTo)
-        : { state: result.state, events: [] as GameEvent[] };
+        ? attachEntered(remembered, result.newObject, instruction.attachTo)
+        : { state: remembered, events: [] as GameEvent[] };
     // CR 603.6a (D-272): the cards of a `together` run enter as one event, which `findTriggers` reads from this mark.
     const moveEvents = [
       ...(instruction.together === true
@@ -504,12 +568,28 @@ export function runInstruction(
       result.newObject !== null &&
       hidden.objects[result.newObject]?.zone === 'exile' &&
       !derive(state, subject).types.includes('land');
+    // Oversimplify (CR 608.2h): a creature that really went to exile adds its power, as it was before any of them left, to what its controller lost "this way".
+    const exiledPower =
+      instruction.exiledPower !== undefined &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'exile'
+        ? instruction.exiledPower
+        : undefined;
     // D-135: an object that moved is something done, for "if you do".
     return {
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland ? { thisWay: { exiledNonland: 1 } } : {}),
+      ...(countedNonland || exiledPower !== undefined
+        ? {
+            thisWay: {
+              ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(exiledPower === undefined
+                ? {}
+                : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),
+            },
+          }
+        : {}),
     };
   }
   // D-210: an effect run "as" another player (the one a `playersMay` asked): that player is "you" in it, and what it queues next is run as them too.
@@ -580,6 +660,15 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
   return found.length > 0 ? found : [id];
 }
 
+/** The X a resolving spell or ability reads: its own, or, for a triggered ability with none, the X of the spell that is its source (`validateCard` allows that only for "When you cast this spell"). */
+function abilityXOf(state: GameState, res: ResolutionContext): number {
+  const own = state.objects[res.object]?.stack;
+  if (own?.x !== undefined && own.x !== null) return own.x;
+  if (own?.kind !== 'ability' || res.source === null) return 0;
+  const source = state.objects[res.source] ?? state.lki[res.source]?.object;
+  return source?.stack?.kind === 'spell' ? (source.stack.x ?? 0) : 0;
+}
+
 /** The context the selectors and amounts of a resolving spell or ability read: "this" is the spell, or for an ability the permanent it belongs to (which may be gone). */
 function contextOf(state: GameState, res: ResolutionContext): SelectContext {
   return {
@@ -590,17 +679,21 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
       : { sourceChosen: { creatureType: res.chosenCreatureType } }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
-    x: state.objects[res.object]?.stack?.x ?? 0,
+    // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
+    x: abilityXOf(state, res),
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
     ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
+    ...(res.costTappedPower === undefined ? {} : { costTappedPower: res.costTappedPower }),
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
+    ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
     ...(res.triggerAttackers === undefined ? {} : { triggerAttackers: res.triggerAttackers }),
+    ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
     ...(res.votes === undefined ? {} : { votes: res.votes }),
@@ -630,6 +723,7 @@ function runEffect(
             id: effect.id,
             filter: effect.filter,
             count: effect.count,
+            ...(effect.exactly === true ? { exactly: true as const } : {}),
             chosen: null,
           },
         ],
@@ -648,6 +742,14 @@ function runEffect(
 
     case 'dealDividedDamage':
       return runDealDividedDamage(state, res, effect, targets, flow);
+
+    case 'dealDamageToSelf':
+      // CR 120.3 (Lorehold group 1): "Each creature deals damage to itself equal to its power."
+      return runDealDamageToSelf(state, effect, ctx, targets, flow);
+
+    case 'dealDamageToController':
+      // CR 120.3, 109.4 (issue 279): "Each creature deals 1 damage to its controller."
+      return runDealDamageToController(state, effect, ctx, targets, flow);
 
     case 'destroy': {
       // CR 701.8 (Destroy): indestructible permanents are not destroyed (CR 702.12b).
@@ -695,8 +797,18 @@ function runEffect(
       return {
         ...done(together.state, events, together.instructions),
         lastMoved: [],
+        // CR 608.2c, 701.8: "you may destroy ...": doing it is destroying at least one permanent, which "if you do" reads.
+        performed: destroyed.size > 0 ? 1 : 0,
         thisWay: {
           destroyed: destroyed.size,
+          // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way": each as it last existed on the battlefield (before it moved); a token has the value its copiable
+          // mana cost gives it (a token that is no copy has none: 0).
+          destroyedValue: [...destroyed].reduce((total, id) => {
+            const obj = state.objects[id];
+            return obj === undefined
+              ? total
+              : total + manaValueOfCost(derive(state, obj).manaCost, obj);
+          }, 0),
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
           destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
@@ -839,7 +951,23 @@ function runEffect(
       // D-283 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
       const together = recordTogether(
         state,
-        moveInstructions(ids, 'exile').map((i) => (i.kind === 'move' ? { ...i, ...link } : i)),
+        moveInstructions(ids, 'exile').map((i) => {
+          if (i.kind !== 'move') return i;
+          // Oversimplify (CR 608.2h): the power and the controller of each creature as it is before any of them leaves, for "the total power of creatures they controlled that were exiled this way".
+          const obj = state.objects[i.object];
+          const lost =
+            obj !== undefined &&
+            obj.zone === 'battlefield' &&
+            derive(state, obj).types.includes('creature')
+              ? {
+                  exiledPower: {
+                    seat: controllerOf(state, obj),
+                    power: Math.max(0, derive(state, obj).power ?? 0),
+                  },
+                }
+              : {};
+          return { ...i, ...link, ...lost };
+        }),
       );
       return moving(together.state, together.instructions);
     }
@@ -870,6 +998,11 @@ function runEffect(
                 ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
+                ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
+                // CR 205.2a: "any number of cards ... with four or more card types among them".
+                ...(effect.objects.minCardTypes === undefined
+                  ? {}
+                  : { anyNumber: true as const, minCardTypes: effect.objects.minCardTypes }),
                 ...(effect.objects.exceptSacrificed === true
                   ? {
                       among: Object.keys(state.objects).filter(
@@ -901,15 +1034,22 @@ function runEffect(
           lastMoved: [],
         };
       }
-      const ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
+      let ids = resolveObjects(state, effect.objects as ObjectSelector, ctx, targets).filter(
         (id) => state.objects[id] !== undefined,
       );
+      // D-655 (CR 401.4): "put the rest on the bottom of your library in a random order": the order is the seeded generator's, one after the other.
+      let shuffledState = state;
+      if (effect.random === true && ids.length > 1) {
+        const [order, rng] = shuffle(ids, state.rng);
+        ids = order;
+        shuffledState = { ...state, rng };
+      }
       // CR 110.2a: an object an effect puts onto the battlefield enters under the control of the
       // player performing the effect (the controller of the spell or ability) unless the effect
       // states otherwise, so an effect with no control named means 'you', not the owner. Every
       // other zone has no controller: the card goes to its owner's zone (CR 108.3, 400.3).
       const controller = effect.to === 'battlefield' ? (effect.controller ?? 'you') : undefined;
-      const moves = moveInstructions(
+      const plainMoves = moveInstructions(
         ids,
         effect.to,
         effect.position ?? 'top',
@@ -917,6 +1057,13 @@ function runEffect(
         controller,
         effect.withCounters,
       );
+      // CR 400.7, 303.4 (Animate Dead): "Return enchanted creature card to the battlefield ... attach this Aura to it": the permanent remembers it was put there with this Aura.
+      const moves =
+        effect.putWithSource === true && effect.to === 'battlefield'
+          ? plainMoves.map(
+              (m): Instruction => (m.kind === 'move' ? { ...m, putWith: res.source } : m),
+            )
+          : plainMoves;
       // CR 303.4f (D-149): an Aura card put onto the battlefield chooses what it enchants as it enters.
       // CR 303.4g, 303.4i (D-207): "attached to target creature ...": the effect names the object, so the Aura does not choose; it enters attached to the target
       // when that is still a legal object to enchant, and stays where it is when the target is gone.
@@ -924,15 +1071,30 @@ function runEffect(
         const [host] = resolveObjects(state, effect.attachTo, ctx, targets).filter(
           (id) => state.objects[id]?.zone === 'battlefield',
         );
-        if (host === undefined) return { ...done(state), lastMoved: [] };
+        const hostObject = host === undefined ? undefined : state.objects[host];
+        if (host === undefined || hostObject === undefined) {
+          return { ...done(state), lastMoved: [] };
+        }
+        // Issue 89 (CR 303.4g, 303.4i): an Aura the object cannot be enchanted by stays where it is; an Equipment enters unattached when it is no creature (`rules/aura-entry.ts`).
         return moving(
           state,
-          moves.map((m) => (m.kind === 'move' ? { ...m, attachTo: host } : m)),
+          moves.flatMap((m): Instruction[] => {
+            if (m.kind !== 'move') return [m];
+            const card = state.objects[m.object];
+            if (card === undefined) return [m];
+            const how = entryAttachment(
+              state,
+              card,
+              hostObject,
+              m.controller === 'owner' ? card.owner : res.controller,
+            );
+            return how === 'stay' ? [] : how === 'attach' ? [{ ...m, attachTo: host }] : [m];
+          }),
         );
       }
       if (effect.to === 'battlefield') return moving(state, withAuraEntries(state, moves));
       // D-283 (CR 603.10a): "return all creatures to their owners' hands" and the like: what each was is recorded before the first moves.
-      const together = recordTogether(state, moves);
+      const together = recordTogether(shuffledState, moves);
       return moving(together.state, together.instructions);
     }
 
@@ -944,6 +1106,10 @@ function runEffect(
         canBeCountered(state, id),
       );
       for (const id of ids) events.push({ kind: 'countered', object: id });
+      // CR 701.6a, 614.1a: "exile it instead of putting it into its owner's graveyard": the card exiled is `moved` for the instructions after this one.
+      if (effect.exileInstead === true) {
+        return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 
@@ -1074,11 +1240,15 @@ function runEffect(
           performed: spells.length,
         };
       }
+      // D-665 (CR 702.144a): "choose an opponent. That player copies the spell and may choose new targets": the first opponent in turn order still in the game; the copy is theirs.
+      const opponent =
+        effect.copier === 'opponent' ? opponentsOf(state, res.controller)[0] : undefined;
+      if (effect.copier === 'opponent' && opponent === undefined) return done(state);
       return {
         ...done(
           state,
           [],
-          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets)),
+          spells.flatMap((id) => copyInstructions(id, copies, effect.newTargets, opponent)),
         ),
         performed: copies > 0 ? spells.length : 0,
       };
@@ -1088,6 +1258,30 @@ function runEffect(
       // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
       const spells = resolveObjects(state, effect.spell, ctx, targets);
       return done(markExileOnResolve(state, spells, res.controller, res.source));
+    }
+
+    case 'doubleSpellX': {
+      // CR 107.3 (Unbound Flourishing): the X announced for each spell the effect names, still on the stack, becomes twice its value. A spell that left the stack, a copy
+      // of an ability and a spell with no X announced are not changed. The cost paid stays what it was (CR 601.2f).
+      let after = state;
+      for (const id of resolveObjects(state, effect.spell, ctx, targets)) {
+        const spell = after.objects[id];
+        const x = spell?.stack?.x ?? null;
+        if (spell?.zone !== 'stack' || spell.stack?.kind !== 'spell' || x === null) continue;
+        after = patchObject(after, id, { stack: { ...spell.stack, x: x * 2 } });
+      }
+      return done(after);
+    }
+
+    case 'exileSpellWithTimeCounters': {
+      // CR 608.2n, 122.1 (D-651): the resolving spell carries the exile until it finishes resolving (`rules/stack.ts`, `finish`).
+      const spell = state.objects[res.object];
+      if (spell?.zone !== 'stack' || spell.stack?.kind !== 'spell') return done(state);
+      return done(
+        patchObject(state, res.object, {
+          stack: { ...spell.stack, exileWithTimeCounters: effect.count },
+        }),
+      );
     }
 
     case 'changeTarget': {
@@ -1142,6 +1336,22 @@ function runEffect(
           effect: effect.effect,
         })),
       );
+    case 'copyCardAndCast': {
+      // CR 707.12 (D-654): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
+      // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
+      const [id] = resolveObjects(state, effect.objects, ctx, targets);
+      const card = id === undefined ? undefined : state.objects[id];
+      if (card === undefined || card.zone !== 'exile' || card.card === null) return done(state);
+      const made = makeCardCopy(state, card.card, res.controller);
+      return {
+        ...done(
+          made.state,
+          [],
+          [{ kind: 'castFree', objects: { kind: 'moved' }, play: false, chosen: null }],
+        ),
+        lastMoved: [made.copy],
+      };
+    }
     case 'prepare': {
       let next = state;
       const events: GameEvent[] = [];
@@ -1171,6 +1381,43 @@ function runEffect(
           })),
         ],
       });
+    case 'delayedCombatDamageTurn': {
+      // CR 603.7, 603.7c, 603.7d, 510.3a, 514.2 (D-662): "Whenever a creature you control deals combat damage to a player this turn, copy the exiled card": a delayed ability of the
+      // controller that triggers each time such a creature damages a player until the end of the turn. The card an earlier effect of this sequence exiled is written into it as
+      // it is made (CR 603.7c: nothing of the spell is left to name later); a card that left exile since is a new object and is not found (CR 400.7).
+      const exiled = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'exile');
+      // With no card to copy (the target was gone as the spell resolved) the ability would have nothing to do: none is made.
+      if (exiled.length === 0) return done(state);
+      const inner = effect.effect;
+      const baked: Effect =
+        inner.kind === 'copyCardAndCast' && inner.objects.kind === 'moved'
+          ? {
+              ...inner,
+              objects: { kind: 'boundObjects', ids: exiled, zone: 'exile' },
+            }
+          : inner;
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: {
+                kind: 'dealsCombatDamage' as const,
+                what: effect.filter,
+                to: 'player' as const,
+              },
+              effect: baked,
+            },
+          },
+        ],
+      });
+    }
     case 'delayedTrigger': {
       // CR 603.7, 603.7d, 603.7e (D-128): a delayed triggered ability, created as the spell or ability resolves. It
       // belongs to its controller and refers to the source only as the thing that created it (CR 603.7c: the source
@@ -1191,27 +1438,50 @@ function runEffect(
       // D-459 (CR 603.7c, 400.7j): "Exile it at the beginning of the next end step", about the permanents the effect before it put onto the battlefield (`moved`): one
       // delayed ability for each, named by the permanent as it is now (the ability is about that object: once it has changed zones it is a new object and nothing happens,
       // CR 603.7c, 400.7), as Unearth's is.
-      if (effect.effect.kind === 'exile' && effect.effect.objects.kind === 'moved') {
+      // D-643 (CR 603.7, 603.7c, 603.7e, 701.21a): "Sacrifice it / those tokens" or "Exile them at the beginning of the next end step", about the permanents the effects before it
+      // made or put onto the battlefield (`moved`, only those): ONE delayed ability for the whole group, as the text says, so a player never has to order the permanents of one effect
+      // (this replaces D-459's one ability for each: the ability is now the source's, CR 603.7e, not the permanent's). Its objects are bound as they are now (`boundObjects`); one that has
+      // left since is a new object and nothing happens to it (CR 603.7c, 400.7). A permanent whose control changed is not sacrificed by the controller of the ability (CR 701.21a).
+      if (
+        (effect.effect.kind === 'exile' ||
+          effect.effect.kind === 'sacrifice' ||
+          // Issue 103 (CR 903.9, 603.7c): "Return it to the command zone at the beginning of the next end step", bound to the permanent as it is now.
+          (effect.effect.kind === 'moveToZone' && effect.effect.to === 'command')) &&
+        effect.effect.objects.kind === 'moved'
+      ) {
+        const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+        // One delayed ability for all of them, as the text says (CR 603.7, "Exile them ..."): a player never has to order the tokens of one effect. It is the ability of the
+        // source of the ability that created it (CR 603.7e), about those objects only (CR 603.7c). With none there is nothing to wait for.
+        if (ids.length === 0) return done(state);
         const ability: TriggeredAbility = {
           kind: 'triggered',
           trigger,
-          effect: { kind: 'exile', objects: { kind: 'this' } },
+          effect:
+            effect.effect.kind === 'moveToZone'
+              ? { ...effect.effect, objects: { kind: 'boundObjects', ids } }
+              : { kind: effect.effect.kind, objects: { kind: 'boundObjects', ids } },
         };
         return done({
           ...state,
           delayedTriggers: [
             ...state.delayedTriggers,
-            ...(res.lastMoved ?? [])
-              .filter((id) => state.objects[id]?.zone === 'battlefield')
-              .map((id) => ({ source: id, controller: res.controller, ability })),
+            { source: res.source, controller: res.controller, ability },
           ],
         });
       }
       if (effect.effect.kind === 'moveToZone') {
-        const back: Effect = { ...effect.effect, objects: { kind: 'triggerSubject' } };
+        // Issue 89 (CR 603.7c, 400.7): "Return this card to the battlefield attached to that creature at the beginning of the next end step": the creature is the object
+        // the effect before it returned, bound as it is now (`boundObjects`: found later only if it is still that object on the battlefield, else the Aura stays, CR 303.4g).
+        const back: Effect = {
+          ...effect.effect,
+          objects: { kind: 'triggerSubject' },
+          ...(effect.effect.attachTo?.kind === 'moved'
+            ? { attachTo: { kind: 'boundObjects' as const, ids: res.lastMoved ?? [] } }
+            : {}),
+        };
         const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: back };
         const cards =
-          effect.effect.objects.kind === 'triggerCard'
+          effect.effect.objects.kind === 'triggerCard' || effect.effect.objects.kind === 'thisCard'
             ? resolveObjects(state, effect.effect.objects, ctx, targets)
             : (res.lastMoved ?? []);
         return done({
@@ -1281,14 +1551,47 @@ function runEffect(
     }
 
     case 'createEmblem': {
-      // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem.
-      const r = createEmblem(state, res.controller, effect.abilities, effect.text);
-      return done(r.state, r.events);
+      // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem, or each player the effect names ("Target opponent gets an emblem with ...": they own and control it).
+      let withEmblems = state;
+      const emblemEvents: GameEvent[] = [];
+      const getting =
+        effect.player === undefined
+          ? [res.controller]
+          : resolvePlayers(state, effect.player, ctx, targets);
+      for (const seat of getting) {
+        const r = createEmblem(withEmblems, seat, effect.abilities, effect.text);
+        withEmblems = r.state;
+        emblemEvents.push(...r.events);
+      }
+      return done(withEmblems, emblemEvents);
     }
 
     case 'empowerJace':
       // CR 701.71a (D-201): the token, the choice and the counters come up as the instruction runs (rules/empower.ts).
       return done(state, [], [{ kind: 'empowerJace', amount: effect.amount, chosen: null }]);
+
+    case 'additionalLandDropThisTurn':
+      // CR 305.2, 305.3: only the active player plays lands, so the extra land plays count for the active player's turn only.
+      return done(
+        res.controller === state.turn.activeSeat
+          ? {
+              ...state,
+              turn: { ...state.turn, extraLandDrops: state.turn.extraLandDrops + effect.count },
+            }
+          : state,
+      );
+
+    case 'moveCountersOnto':
+      // CR 122.1 (issue 230): the counters move one at a time, each a choice of the controller, as the instruction runs (rules/move-counters.ts).
+      return done(
+        state,
+        [],
+        [{ kind: 'moveCounters', counter: effect.counter, to: effect.to, chosen: null }],
+      );
+
+    case 'populate':
+      // CR 701.36 (D-627): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
+      return done(state, [], [{ kind: 'populate', chosen: null }]);
 
     case 'amass':
       // CR 701.47a (D-367): N is read now (CR 608.2h); the token, the choice of the Army and the counters come up as the instruction runs (rules/amass.ts).
@@ -1444,6 +1747,15 @@ function runEffect(
     case 'mayCastEachType':
       // CR 601.2, 118.9, 611.2a: "for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (rules/free-cast.ts).
       return runMayCastEachType(state, res, effect);
+    case 'gainActivatedAbilitiesOf':
+      // CR 613.1f (issue 159): "this creature gains all activated abilities of that card until end of turn" (rules/may-effects.ts).
+      return runGainActivatedAbilitiesOf(state, effect, ctx, targets);
+    case 'gainFlashbackFromManaCost':
+      // CR 702.34a, 611.2c: "Each instant and sorcery card in your graveyard gains flashback until end of turn" (rules/flashback-grant.ts).
+      return runGainFlashbackFromManaCost(state, res, effect);
+    case 'mayCastSpells':
+      // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
+      return runMayCastSpells(state, res, effect);
     case 'mayCast':
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);
@@ -1531,11 +1843,23 @@ function runEffect(
       );
       // D-327 (CR 400.7j): the cards milled are what `moved` names afterwards ("Mill a card. You may play that card this turn."): new objects in the graveyard.
       const cardsMilled = events.flatMap((e) => (e.kind === 'milled' ? e.objects : []));
+      // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards of the cards milled, as they are in the graveyard.
+      const milledCreatures = cardsMilled.filter((id) => {
+        const card = next.objects[id];
+        return card !== undefined && derive(next, card).types.includes('creature');
+      }).length;
       return {
         ...done(next, events),
         performed: milled,
         lastMoved: cardsMilled,
-        ...(value > 0 ? { thisWay: { milledValue: value } } : {}),
+        ...(value > 0 || milledCreatures > 0
+          ? {
+              thisWay: {
+                ...(value > 0 ? { milledValue: value } : {}),
+                ...(milledCreatures > 0 ? { milledCreature: milledCreatures } : {}),
+              },
+            }
+          : {}),
       };
     }
 
@@ -1708,6 +2032,8 @@ function runEffect(
           source: res.source,
           restriction: null,
           ...(sourceTypes.length === 0 ? {} : { sourceTypes }),
+          // D-650 (CR 500.5): "you don't lose this mana as steps and phases end" until end of turn.
+          ...(production.staysUntilEndOfTurn === true ? { stays: true as const } : {}),
         })),
       ).flat();
       if (added.length === 0) return done(state);
@@ -1717,26 +2043,87 @@ function runEffect(
 
     case 'addCounters': {
       const count = amountOf(state, effect.count, ctx, targets);
-      if (count <= 0) return done(state);
-      // CR 122.6, 101.2 (D-380): a permanent that can't have counters of the kind gets none, and nothing happens to it.
+      if (count <= 0 && effect.perController !== true) return done(state);
       const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
-        const obj = next.objects[id];
-        if (!obj) continue;
-        if (blocks(state, blockers, obj, effect.counter)) continue;
-        next = patchObject(next, id, {
-          counters: {
-            ...obj.counters,
-            [effect.counter]: (obj.counters[effect.counter] ?? 0) + count,
-          },
-        });
-        events.push({
-          kind: 'counterAdded',
-          object: id,
-          counter: effect.counter,
+        // Oversimplify (CR 608.2c, 608.2h): the count is read for the player who controls each object, "the total power of creatures they controlled that were exiled this way".
+        const obj = state.objects[id];
+        const own =
+          effect.perController === true && obj !== undefined
+            ? amountOf(
+                state,
+                effect.count,
+                {
+                  ...ctx,
+                  thisWay: {
+                    ...ctx.thisWay,
+                    exiledPowerOwn: ctx.thisWay?.exiledPowerBy?.[controllerOf(state, obj)] ?? 0,
+                  },
+                },
+                targets,
+              )
+            : count;
+        if (own <= 0) continue;
+        const put = putCountersOn(
+          state,
+          next,
+          id,
+          effect.counter,
+          own,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
+    case 'distributeCounters': {
+      // CR 601.2d, 608.2b, 122.6: the counters a spell divided as it was cast go on each target of the slot that is still legal, in the share the caster gave it. Each share is
+      // its own placement, so a replacement of counters put on a permanent applies to each (CR 616.1).
+      const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
+      for (const t of targets) {
+        if (t.specId !== effect.to.id || t.share === undefined || t.kind !== 'object') continue;
+        const put = putCountersOn(
+          state,
+          next,
+          t.id,
+          effect.counter,
+          t.share,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
+    case 'doubleCounters': {
+      // CR 701.10 (Double): "double the number of +1/+1 counters on it" puts that many more counters on each object, read as the effect
+      // resolves, each its own, through the same placement as `addCounters` (counters put by the controller, CR 122.6).
+      const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        const count = next.objects[id]?.counters[effect.counter] ?? 0;
+        if (count <= 0) continue;
+        const put = putCountersOn(
+          state,
+          next,
+          id,
+          effect.counter,
           count,
-          by: ctx.controller,
-        });
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
       }
       return done(next, events);
     }
@@ -1755,12 +2142,14 @@ function runEffect(
             ...values.characteristics,
             abilities: [...values.abilities, ...(effect.abilities ?? [])],
             ...(prepareOf === null ? {} : { prepareOf }),
+            ...(values.doors === undefined ? {} : { doors: values.doors }),
           },
           count: 1,
           original: true,
         });
       }
-      const made = makeSettled(state, res, res.controller, wanted, false, flow);
+      // D-639 (CR 110.5b): "create a tapped and attacking token that's a copy of that token": the tokens enter tapped.
+      const made = makeSettled(state, res, res.controller, wanted, effect.tapped === true, flow);
       if (made.kind === 'asked') return asking(state, made);
       return { ...done(made.state, made.events, made.front), lastMoved: made.created };
     }
@@ -1789,6 +2178,44 @@ function runEffect(
       // the resolution stopping for each answer.
       const front: Instruction[] = [];
       let created: ObjectId[] = [];
+      // CR 111.2, 508.1d, 101.4 (D-652): "For each opponent, create two 3/3 tokens that attack that opponent this turn if able": the controller makes them for each opponent, in
+      // turn order, the replacement effects of each creation settled for that opponent's tokens, each of which is required to attack the player it was made for.
+      if (effect.forEachOpponent !== undefined) {
+        for (const opponent of resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets)) {
+          const made = makeSettled(
+            next,
+            res,
+            res.controller,
+            [{ definition, count, original: true }],
+            effect.tapped === true,
+            flow,
+          );
+          if (made.kind === 'asked') return asking(state, made);
+          next = requireAttackingPlayer(made.state, made.created, opponent);
+          events.push(...made.events);
+          front.push(...made.front);
+          created = [...created, ...made.created];
+        }
+        return { ...done(next, events, front), lastMoved: created, performed: created.length };
+      }
+      // CR 303.4f, 303.4g (issue 89): "create an Aura token attached to target creature": the Aura enters attached to the object the effect names, which is not a choice of its
+      // controller; when that object is not one its enchant ability allows (or is gone) the Aura does not enter, and a token that never was in a zone is not created.
+      let attachHost: ObjectId | undefined;
+      if (effect.attachTo !== undefined) {
+        attachHost = resolveObjects(state, effect.attachTo, ctx, targets)[0];
+        if (
+          attachHost === undefined ||
+          !auraTokenCanEnterAttached(
+            state,
+            creators[0] ?? res.controller,
+            described,
+            res.object,
+            attachHost,
+          )
+        ) {
+          return done(state);
+        }
+      }
       for (const seat of creators) {
         // D-221 (CR 616.1): the replacement effects of the creation are settled with the creator's answers; then the tokens are made, those that ask (D-185:
         // a choice, riot, devour, a land copy's question) one instruction each.
@@ -1799,6 +2226,8 @@ function runEffect(
           [{ definition, count, original: true }],
           effect.tapped === true,
           flow,
+          effect.token.kind === 'copyOf' && effect.token.embalmed === true,
+          attachHost,
         );
         if (made.kind === 'asked') return asking(state, made);
         next = made.state;
@@ -1811,9 +2240,41 @@ function runEffect(
         const exiled = (ctx.moved ?? []).filter((id) => next.objects[id]?.zone === 'exile');
         for (const id of created) next = patchObject(next, id, { linkedExile: exiled });
       }
+      // CR 508.4 (D-648): "tapped and attacking that opponent": the creature tokens just created start attacking the player the selector names, while a combat is on. They were
+      // never declared as attackers.
+      if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
+        const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
+        const combat = next.combat;
+        if (defender !== undefined) {
+          const entering = created.filter((id) => {
+            const obj = next.objects[id];
+            return (
+              obj !== undefined &&
+              obj.zone === 'battlefield' &&
+              derive(next, obj).types.includes('creature') &&
+              !combat.attackers.some((a) => a.object === id)
+            );
+          });
+          next = {
+            ...next,
+            combat: {
+              ...combat,
+              attackers: [
+                ...combat.attackers,
+                ...entering.map((object) => ({
+                  object,
+                  target: { kind: 'player' as const, seat: defender },
+                  blocked: false,
+                })),
+              ],
+            },
+          };
+        }
+      }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).
-      return { ...done(next, events, front), lastMoved: created };
+      // Issue 89 (CR 603.12): the tokens made are something done, for "create a token. When you do, ...".
+      return { ...done(next, events, front), lastMoved: created, performed: created.length };
     }
 
     case 'shuffle': {
@@ -1832,6 +2293,21 @@ function runEffect(
       // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
       const rolled = rollDie(next, res.controller, effect.sides);
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
+    }
+
+    case 'repeatWhile': {
+      // CR 608.2c (Grist, the Hunger Tide): the effects, then the test as an instruction of its own (read after them, so `moved` is what the last of them moved); when it holds
+      // `then` is done and this effect comes up again. The test is a `conditional`, so it ends the repeat when nothing was milled (the library ran out) or no card matches.
+      const again: Effect = {
+        kind: 'conditional',
+        condition: effect.condition,
+        effect: { kind: 'sequence', effects: [...(effect.beforeAgain ?? []), effect] },
+      };
+      return done(
+        state,
+        [],
+        [...effect.effects, again].map((e) => ({ kind: 'effect' as const, effect: e })),
+      );
     }
 
     case 'playersMay': {
@@ -1877,8 +2353,10 @@ function runEffect(
     case 'discard': {
       // CR 701.9: each player named discards that many cards, choosing which (CR 701.9b).
       const anyNumber = effect.anyNumber === true;
-      const count = anyNumber ? 0 : amountOf(state, effect.count, ctx, targets);
-      if (count <= 0 && !anyNumber) return done(state);
+      // CR 701.9a: "discards their hand" is read for each player as their instruction runs (`runDiscard`), so there is no count here.
+      const wholeHand = effect.hand === true;
+      const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
+      if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);
       return done(
         state,
@@ -1888,6 +2366,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
           chosen: null,
@@ -1919,14 +2398,15 @@ function runEffect(
       let afterCounters = state;
       const monstrousEvents: GameEvent[] = [];
       if (count > 0 && !blocks(state, counterBlockers(state), source, '+1/+1')) {
+        const put = counterCountOn(state, source, '+1/+1', count);
         afterCounters = patchObject(afterCounters, source.id, {
-          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + count },
+          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + put },
         });
         monstrousEvents.push({
           kind: 'counterAdded',
           object: source.id,
           counter: '+1/+1',
-          count,
+          count: put,
           by: ctx.controller,
         });
       }
@@ -1945,6 +2425,25 @@ function runEffect(
       const [picked] = shuffled;
       if (picked === undefined) return done(state);
       return moving({ ...state, rng }, moveInstructions([picked], 'exile'));
+    }
+
+    case 'chooseRandomFromGraveyard': {
+      // CR 608.2c, 400.7 (Death Toll deck group B): `count` cards of the controller's graveyard that match, picked by the game's random number generator; they are what `moved` names.
+      const candidates = getSeat(state, res.controller).graveyard.filter((id) => {
+        const card = state.objects[id];
+        return (
+          card !== undefined &&
+          (effect.filter === undefined ||
+            matchesFilter(
+              state,
+              card,
+              { ...effect.filter, zone: 'graveyard' },
+              { controller: res.controller, source: res.source },
+            ))
+        );
+      });
+      const [shuffled, rng] = shuffle(candidates, state.rng);
+      return { ...done({ ...state, rng }), lastMoved: shuffled.slice(0, effect.count) };
     }
 
     case 'exileRandomFromHand':
@@ -1982,9 +2481,37 @@ function runEffect(
             effect.own === undefined
               ? undefined
               : resolvePlayers(state, effect.own.players, ctx, targets),
+            effect.own === undefined
+              ? {}
+              : {
+                  ...(effect.own.typesOnly === true ? { typesOnly: true as const } : {}),
+                  ...(effect.own.counter === undefined ? {} : { counter: effect.own.counter }),
+                  ...(effect.own.cantAttackYou === true ? { cantAttackYou: true as const } : {}),
+                },
           ),
         ],
       );
+
+    case 'exileFromTriggerCards': {
+      // CR 603.2c, 608.2d, 400.7 (Lorehold group 1): "you may exile one of them from your graveyard": the controller chooses none or one of the cards that triggered this ability
+      // that are still in their graveyard, which the choice's own question offers; with none there nothing is asked and nothing is done.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'graveyard' as const },
+            count: 1,
+            to: 'exile' as const,
+            position: 'top' as const,
+            optional: true as const,
+            among: res.triggerCards ?? [],
+            chosen: null,
+          },
+        ],
+      );
+    }
 
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
@@ -2082,6 +2609,8 @@ function runEffect(
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
             // CR 608.2c: "If you don't, put a card from among them into your hand."
             ...(effect.take.elseAnyToHand === true ? { elseAnyToHand: true as const } : {}),
+            // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
+            ...(effect.take.all === true ? { all: true as const } : {}),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
             ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,
@@ -2093,30 +2622,45 @@ function runEffect(
 
     case 'castCard': {
       // CR 608.2g, 608.2b (D-350): "you may cast target [card] from a graveyard": the target, if it is still a legal one (rules/cast-card.ts).
-      const [card] = resolveObjects(state, effect.object, ctx, targets);
-      if (card === undefined) return done(state);
+      // A slot of several targets (one for each opponent) is asked about card by card, in the order the targets were chosen (CR 608.2g).
+      const cards = resolveObjects(state, effect.object, ctx, targets);
+      if (cards.length === 0) return done(state);
+      return done(
+        state,
+        [],
+        cards.map((card) => ({
+          kind: 'castCard' as const,
+          stage: 'start' as const,
+          card,
+          anyManaType: effect.anyManaType === true,
+          exileInstead: effect.exileInstead === true,
+          ...(effect.free === true ? { free: true } : {}),
+        })),
+      );
+    }
+
+    case 'castFree': {
+      // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
+      // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
+      const [caster] =
+        effect.player === undefined ? [] : resolvePlayers(state, effect.player, ctx, targets);
+      if (effect.player !== undefined && caster === undefined) return done(state);
       return done(
         state,
         [],
         [
           {
-            kind: 'castCard',
-            stage: 'start',
-            card,
-            anyManaType: effect.anyManaType === true,
-            exileInstead: effect.exileInstead === true,
+            kind: 'castFree',
+            objects: effect.objects,
+            play: effect.play === true,
+            ...(caster === undefined ? {} : { seat: caster }),
+            ...(effect.filter === undefined ? {} : { filter: effect.filter }),
+            ...(effect.max === undefined ? {} : { remaining: effect.max }),
+            chosen: null,
           },
         ],
       );
     }
-
-    case 'castFree':
-      // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
-      return done(
-        state,
-        [],
-        [{ kind: 'castFree', objects: effect.objects, play: effect.play === true, chosen: null }],
-      );
 
     case 'fight': {
       // CR 701.14 (D-145): creatures fight. The creatures are read as the effect begins.
@@ -2142,7 +2686,28 @@ function runEffect(
 
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
-      return runRevealUntil(state, res, effect);
+      return runRevealUntil(
+        state,
+        res,
+        effect,
+        effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets),
+      );
+
+    case 'exileUntilFound':
+      // CR 701.13, 101.4 (D-660): each player exiles from the top of their library until a card matches (rules/exile-until-found.ts).
+      return runExileUntilFound(state, res, effect, ctx, targets);
+
+    case 'opponentChoosesCard':
+      // CR 608.2d (D-660): an opponent chooses one of the cards moved; the others are `moved` afterwards (rules/choose-aside.ts).
+      return startOpponentChoosesCard(state, res, effect, ctx);
+
+    case 'exilePiles':
+      // CR 700.3, 406.3 (D-663): a face-down pile and a face-up pile of exiled cards; an opponent chooses one (rules/exile-piles.ts).
+      return startExilePiles(state, res, effect, ctx);
+
+    case 'exileTopAnyNumber':
+      // CR 701.13, 608.2d (D-661): "As many times as you choose, you may exile the top card of your library" (rules/exile-any-number.ts).
+      return moving(state, [{ kind: 'exileAnyNumber', answer: null }]);
 
     case 'lookAndReorder': {
       const count = amountOf(state, effect.count, ctx, targets);
@@ -2171,7 +2736,11 @@ function runEffect(
           [],
           resolvePlayers(state, effect.player, ctx, targets).map((seat) => ({
             kind: 'search' as const,
-            search: effect,
+            // D-626 (CR 608.2c): "up to X" is read as the search begins.
+            search:
+              effect.maxAmount === undefined
+                ? effect
+                : { ...effect, max: Math.max(0, amountOf(state, effect.maxAmount, ctx, targets)) },
             seat,
             accepted: effect.optional === true ? null : true,
             chosen: null,
@@ -2194,6 +2763,34 @@ function runEffect(
       }
       // D-206 (CR 701.3b): "you may attach it to target creature you control. If you do, ...": it was done when something was attached.
       return { ...done(next, events), performed: attached };
+    }
+
+    case 'moveAllCounters': {
+      // CR 122.1, 122.6: each counter comes off the first permanent and goes onto the second, except a kind the second can't have.
+      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
+      const toId = resolveObjects(state, effect.to, ctx, targets)[0];
+      const from = fromId === undefined ? undefined : next.objects[fromId];
+      const to = toId === undefined ? undefined : next.objects[toId];
+      if (from?.zone !== 'battlefield' || to?.zone !== 'battlefield' || from.id === to.id) {
+        return done(next);
+      }
+      let moved: GameState = next;
+      const events: GameEvent[] = [];
+      const fromCounters = { ...from.counters };
+      let toCounters = { ...to.counters };
+      for (const [counter, count] of Object.entries(from.counters)) {
+        if (count <= 0 || counterBlocked(state, to, counter)) continue;
+        delete fromCounters[counter];
+        toCounters = { ...toCounters, [counter]: (toCounters[counter] ?? 0) + count };
+        events.push(
+          { kind: 'counterRemoved', object: from.id, counter, count },
+          { kind: 'counterAdded', object: to.id, counter, count, by: res.controller },
+        );
+      }
+      if (events.length === 0) return done(next);
+      moved = patchObject(moved, from.id, { counters: fromCounters });
+      moved = patchObject(moved, to.id, { counters: toCounters });
+      return done(moved, events);
     }
 
     case 'removeAllPlayerCounters': {
@@ -2224,12 +2821,25 @@ function runEffect(
         if (Object.keys(obj.counters).length > 0)
           cleared = patchObject(cleared, id, { counters: {} });
       }
-      return done(cleared, removed);
+      // Nexus Mentality: "for each counter removed this way" counts every counter that came off.
+      const total = removed.reduce((n, e) => (e.kind === 'counterRemoved' ? n + e.count : n), 0);
+      return {
+        ...done(cleared, removed),
+        ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
+      };
     }
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
-      return done(state, [], [{ kind: 'proliferate', chosen: null, players: [] }]);
+      // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      return done(
+        state,
+        [],
+        Array.from(
+          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
+        ),
+      );
 
     case 'conditional': {
       // CR 608.2c: the condition is read now, as this instruction comes up, after everything
@@ -2276,6 +2886,14 @@ function runEffect(
     case 'revealTop':
       // CR 701.20 (D-151): reveal the top card, and put it onto the battlefield if it matches (rules/reveal-top.ts).
       return runRevealTop(state, res, effect, ctx, targets);
+
+    case 'replaceEnchant':
+      // CR 613.1f, 702.5a: "it loses \"enchant ...\" and gains \"enchant ...\"" (rules/replace-enchant.ts).
+      return runReplaceEnchant(state, effect, ctx, targets);
+
+    case 'revealTopDuel':
+      // CR 701.20a, 119.3: two players reveal, lose life equal to the other's card, and take their card (rules/reveal-top-duel.ts).
+      return runRevealTopDuel(state, res, effect, ctx, targets);
 
     case 'exileUntilCast':
       // CR 701.57 (D-151): Discover and "exile until you exile a nonland card; you may cast it, else put it into your hand".
@@ -2347,6 +2965,7 @@ function runEffect(
         ...values.characteristics,
         abilities: values.abilities,
         ...(prepareOf === null ? {} : { prepareOf }),
+        ...(values.doors === undefined ? {} : { doors: values.doors }),
       };
       const opponents = resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets);
       return {
@@ -2377,6 +2996,22 @@ function runEffect(
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
 
+    case 'grantCastAsThoughFlash':
+      // CR 601.3b (Alchemist's Refuge): the players may cast spells as though they had flash until end of turn (`rules/player-flash.ts`).
+      return runGrantCastAsThoughFlash(state, effect, ctx, targets);
+
+    case 'grantPlayerManaAbility':
+      // CR 605.1a, 118.3 (Channel): the players have a mana ability of their own until end of turn (`rules/player-mana.ts`).
+      return runGrantPlayerManaAbility(state, effect, ctx, targets);
+
+    case 'attackRandomOpponent':
+      // CR 508.1d, 701.26a: an opponent at random that was not attacked in the last combat must be attacked this combat, or the creature is tapped (`rules/attack-random-opponent.ts`).
+      return runAttackRandomOpponent(state, effect, ctx.source, res.controller);
+
+    case 'goad':
+      // CR 701.15a-d (D-639): the creatures are goaded until the controller's next turn (`rules/goad.ts`).
+      return runGoad(state, effect, ctx, targets);
+
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':
       return runPlayerLock(state, effect, ctx, targets);
@@ -2384,6 +3019,10 @@ function runEffect(
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
+
+    case 'requireAttackSource':
+      // CR 508.1d, 611.2c: creatures of the named player attack this permanent if able, during that player's next turn.
+      return runRequireAttackSource(state, effect, ctx, targets);
 
     case 'permanentsEnterTapped':
       // CR 614.1c, 614.12 (D-519): "creatures your opponents control enter tapped", read as a permanent enters.
@@ -2393,6 +3032,10 @@ function runEffect(
       // CR 613.1b, 611.2 (D-189): a layer 2 effect (`rules/control-effects.ts`).
       return runGainControl(state, effect, ctx, targets);
 
+    case 'returnControlToOwners':
+      // CR 613.1b, 611.2a (D-628): one layer 2 effect for each owner (`rules/control-effects.ts`).
+      return runReturnControl(state, effect, ctx, targets);
+
     case 'exchangeControl':
       // CR 701.12a, 701.12b (Galadriel group 3): two layer 2 effects made together, or nothing (`rules/control-effects.ts`).
       return runExchangeControl(state, effect, ctx, targets);
@@ -2401,12 +3044,14 @@ function runEffect(
       // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
       const wanted = amountOf(state, effect.count, ctx, targets);
       if (wanted <= 0) return done(state);
+      let anyRemoved = false;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (obj?.zone !== 'battlefield') continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;
+        anyRemoved = true;
         const left = had - removed;
         const { [effect.counter]: _gone, ...rest } = obj.counters;
         next = patchObject(next, id, {
@@ -2419,12 +3064,14 @@ function runEffect(
           count: removed,
         });
       }
-      return done(next, events);
+      // CR 608.2c: removing a counter is something done, which "if you do" reads.
+      return { ...done(next, events), performed: anyRemoved ? 1 : 0 };
     }
 
     case 'modifyPt':
     case 'setPt':
     case 'loseAllAbilities':
+    case 'loseHexproofShroud':
     case 'setTypes':
     case 'setColors':
     case 'grantAbility':
@@ -2447,4 +3094,30 @@ function runEffect(
       return unreachable;
     }
   }
+}
+
+/**
+ * Puts `count` counters of a kind on one object as the effect of a spell or ability (CR 122.6, 101.2, D-380): nothing if the object is gone
+ * or can't have counters of the kind. `read` is the state the counter blockers were read from.
+ */
+function putCountersOn(
+  read: GameState,
+  state: GameState,
+  id: ObjectId,
+  counter: string,
+  count: number,
+  by: SeatId,
+  blockers: ReturnType<typeof counterBlockers>,
+  bonuses: ReturnType<typeof counterBonuses>,
+): { readonly state: GameState; readonly events: readonly GameEvent[] } {
+  const obj = state.objects[id];
+  if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
+  // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
+  const put = bonusCounters(read, bonuses, obj, counter, count);
+  return {
+    state: patchObject(state, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
+    }),
+    events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
+  };
 }

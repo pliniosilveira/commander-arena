@@ -99,7 +99,7 @@ describe('what the engine reports about a split card, as the player is told it',
 
   test('a half the grammar cannot read makes the card unsupported, naming the face', () => {
     const imported = parse(
-      multi('split', [singe, { ...mend, oracleText: 'Populate, then draw a card.' }], ['W', 'R']),
+      multi('split', [singe, { ...mend, oracleText: 'Learn, then draw a card.' }], ['W', 'R']),
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed.map((u) => u.face)).toEqual([1]);
@@ -115,7 +115,7 @@ describe('what the engine reports about a split card, as the player is told it',
     expect(imported.support.reasons.join('\n')).toMatch(/Fuse/);
   });
 
-  test('Aftermath is refused, by its line (CR 702.127)', () => {
+  test('Aftermath is read as the keyword of its half (CR 702.127a)', () => {
     const aftermath = {
       ...mend,
       typeLine: 'Sorcery',
@@ -123,16 +123,40 @@ describe('what the engine reports about a split card, as the player is told it',
         'Aftermath (Cast this spell only from your graveyard. Then exile it.)\nYou gain 4 life.',
     };
     const imported = parse(multi('split', [singe, aftermath], ['W', 'R']));
-    expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.reasons.join('\n')).toMatch(/Aftermath/);
+    expect(imported.support.status).toBe('supported');
+    expect(imported.definition.faces[0]?.abilities).toEqual([]);
+    expect(imported.definition.faces[1]?.abilities).toEqual([
+      { kind: 'keyword', keyword: { kind: 'aftermath' } },
+    ]);
   });
 
-  test('a split card with permanent halves (a Room) is refused (CR 709.5)', () => {
+  test('an Aftermath line with a cost is not the keyword and the card stays unsupported', () => {
+    const aftermath = {
+      ...mend,
+      typeLine: 'Sorcery',
+      oracleText: 'Aftermath {1}{W}\nYou gain 4 life.',
+    };
+    const imported = parse(multi('split', [singe, aftermath], ['W', 'R']));
+    expect(imported.support.status).toBe('unsupported');
+  });
+
+  test('a split card with permanent halves that share one type line is a Room and is supported (CR 709.5)', () => {
     const room = (name: string) =>
       syntheticFace({ name, manaCost: '{2}{G}', typeLine: 'Enchantment — Room', colors: ['G'] });
     const imported = parse(multi('split', [room('SYNTHETIC Hall'), room('SYNTHETIC Cellar')]));
+    expect(imported.support.status).toBe('supported');
+  });
+
+  test('permanent halves that do not share one type line are refused (CR 709.5a)', () => {
+    const half = (name: string, typeLine: string) =>
+      syntheticFace({ name, manaCost: '{2}{G}', typeLine, colors: ['G'] });
+    const imported = parse(
+      multi('split', [
+        half('SYNTHETIC Hall', 'Enchantment — Room'),
+        half('SYNTHETIC Cellar', 'Artifact — Equipment'),
+      ]),
+    );
     expect(imported.support.status).toBe('unsupported');
-    expect(imported.support.reasons.join('\n')).toMatch(/Room/);
   });
 });
 
@@ -158,7 +182,7 @@ describe('the Adventure face (CR 715.2)', () => {
     const imported = parse(multi('adventure', [bear, creature('SYNTHETIC Other')]));
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.reasons).toEqual([
-      'layout "adventure": face 1 (SYNTHETIC Other) must be an instant or sorcery with the Adventure subtype',
+      'layout "adventure": face 1 (SYNTHETIC Other) must be an instant or sorcery with the Adventure or Omen subtype',
     ]);
   });
 
@@ -166,7 +190,7 @@ describe('the Adventure face (CR 715.2)', () => {
     const imported = parse(multi('adventure', [bear, { ...chop, typeLine: 'Instant' }]));
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.reasons).toEqual([
-      'layout "adventure": face 1 (SYNTHETIC Chop) must be an instant or sorcery with the Adventure subtype',
+      'layout "adventure": face 1 (SYNTHETIC Chop) must be an instant or sorcery with the Adventure or Omen subtype',
     ]);
   });
 });

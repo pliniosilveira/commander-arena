@@ -14,6 +14,7 @@
  * - CR 514.2: the cleanup step removes the ones that last until end of turn.
  */
 import type { Ability, Effect, PtAmount } from '../ast/types';
+import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { allocateTimestamp } from '../state/ops';
@@ -29,7 +30,7 @@ import { dropEffects, endOf } from './control-effects';
 import { copiableValues } from './copiable';
 import { derive } from './derive';
 import { ptAmountOf } from './effect-support';
-import { resolveObjects, type SelectContext } from './select';
+import { resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** The effect nodes that make a continuous effect. */
@@ -40,6 +41,7 @@ export type ContinuousNode = Extract<
       | 'modifyPt'
       | 'setPt'
       | 'loseAllAbilities'
+      | 'loseHexproofShroud'
       | 'setTypes'
       | 'setColors'
       | 'grantKeyword'
@@ -71,7 +73,13 @@ function changeOf(
     }
     case 'loseAllAbilities':
       return { kind: 'loseAllAbilities' };
+    case 'loseHexproofShroud':
+      return { kind: 'loseHexproofShroud' };
     case 'setTypes':
+      // CR 205.3m, 613.1d: "gain all creature types" adds every creature type to what the objects have.
+      if (node.allCreatureTypes === true) {
+        return { kind: 'setTypes', subtypes: CREATURE_TYPES, additive: true };
+      }
       return {
         kind: 'setTypes',
         ...(node.types === undefined ? {} : { types: node.types }),
@@ -79,9 +87,17 @@ function changeOf(
         ...(node.additive === true ? { additive: true as const } : {}),
       };
     case 'setColors':
-      return { kind: 'setColors', colors: node.colors };
+      return {
+        kind: 'setColors',
+        colors: node.colors,
+        ...(node.additive === true ? { additive: true as const } : {}),
+      };
     case 'grantKeyword':
-      return { kind: 'grantKeyword', keyword: node.keyword };
+      return {
+        kind: 'grantKeyword',
+        keyword: node.keyword,
+        ...(node.duringYourTurn === true ? { duringYourTurn: true as const } : {}),
+      };
     case 'grantAbility':
       // D-230 (Backup): one change for each ability; `runContinuous` makes a continuous effect of each.
       return { kind: 'grantAbility', ability: node.abilities[0] as Ability };
@@ -207,7 +223,10 @@ export function runBecomeCopy(
  */
 export function copyEffect(
   state: GameState,
-  node: Pick<Extract<Effect, { kind: 'becomeCopy' }>, 'duration' | 'keepName' | 'addTypes'>,
+  node: Pick<
+    Extract<Effect, { kind: 'becomeCopy' }>,
+    'duration' | 'keepName' | 'addTypes' | 'addSupertypes' | 'abilities'
+  >,
   source: GameObject,
   affected: readonly ObjectId[],
 ): StepOutcome {
@@ -215,16 +234,26 @@ export function copyEffect(
   const original = copiableValues(state, source);
   // D-217 (CR 707.9b): "except it's an artifact in addition to its other types" changes the copiable values the copy effect gives.
   const added = (node.addTypes ?? []).filter((t) => !original.characteristics.types.includes(t));
-  const copied =
-    added.length === 0
+  // Issue 103 (CR 707.9b, 205.4a): "except it's legendary in addition to its other types": the supertypes the exception adds.
+  const addedSupertypes = (node.addSupertypes ?? []).filter(
+    (t) => !original.characteristics.supertypes.includes(t),
+  );
+  const typed =
+    added.length === 0 && addedSupertypes.length === 0
       ? original
       : {
           ...original,
           characteristics: {
             ...original.characteristics,
             types: [...original.characteristics.types, ...added],
+            supertypes: [...original.characteristics.supertypes, ...addedSupertypes],
           },
         };
+  // D-640 (CR 707.9b): "..., except it has myriad": the abilities of the exception are part of the copiable values the effect gives, after the ones it copies.
+  const copied =
+    node.abilities === undefined || node.abilities.length === 0
+      ? typed
+      : { ...typed, abilities: [...typed.abilities, ...node.abilities] };
   // D-212 (CR 707.9a): "except its name is ~": each permanent keeps the name it has, so there is one effect for each.
   const groups: readonly (readonly ObjectId[])[] =
     node.keepName === true ? affected.map((id) => [id]) : [affected];
@@ -290,6 +319,40 @@ export function runRequireAttack(
     },
   };
   return done({ ...stamped, continuousEffects: [...stamped.continuousEffects, created] });
+}
+
+/**
+ * "During target opponent's next turn, creatures that player controls attack this planeswalker if able" (CR 508.1d, 611.2a, 611.2c): for each player the effect names, one
+ * continuous effect with no set of objects, read where that player declares attackers, for the creatures they control then. It ends with the cleanup step of that player's next
+ * turn (`turnEnd`, the one after this moment: a turn of theirs that has begun already is not counted), so it covers the whole turn. It does nothing when the permanent with the
+ * ability is no longer on the battlefield (CR 608.2b).
+ */
+export function runRequireAttackSource(
+  state: GameState,
+  node: Extract<Effect, { kind: 'requireAttackSource' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+): StepOutcome {
+  const source = ctx.source;
+  if (source === null || state.objects[source]?.zone !== 'battlefield') return done(state);
+  let next = state;
+  const made: ContinuousEffect[] = [];
+  for (const seat of resolvePlayers(state, node.player, ctx, targets)) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    made.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: [],
+      until: {
+        kind: 'turnEnd',
+        seat,
+        turnsTaken: (next.seats[seat]?.turnsTaken ?? 0) + 1,
+      },
+      change: { kind: 'mustAttackPermanent', seat, permanent: source },
+    });
+  }
+  return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
 }
 
 /**
@@ -377,6 +440,14 @@ export function expireEndOfTurnEffects(state: GameState): {
         e.until.seat === active &&
         e.until.turnsTaken <= taken),
   );
+}
+
+/** "This combat" (CR 506.1, 611.2a): the effects that last for the combat phase end as it does. */
+export function expireEndOfCombatEffects(state: GameState): {
+  state: GameState;
+  events: GameEvent[];
+} {
+  return dropEffects(state, (e) => e.until === 'endOfCombat');
 }
 
 /**

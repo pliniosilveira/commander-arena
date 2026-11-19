@@ -6,6 +6,7 @@ import type {
   DeckValidation,
   ImportedCard,
   ParsedDecklist,
+  ScryfallClient,
   StoredCard,
   SupportReport,
 } from '@commander-arena/cards';
@@ -127,6 +128,8 @@ export interface ImportService {
 export interface ImportEnvironment {
   readonly service: ImportService;
   readonly decks: DeckStoreApi;
+  /** Reads cards (with the page's cache): the deck lists use it for the commander art of saved decks. */
+  readonly client?: ScryfallClient;
 }
 
 export type { SupportReport };

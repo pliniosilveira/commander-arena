@@ -20,6 +20,7 @@ import type {
 } from '@commander-arena/engine';
 import { amountPhrase, UNKNOWN_AMOUNT } from './amount-text';
 import { asCreatures, cardNoun, isPermanentCard, numberWord } from './artifacts-text';
+import { embalmedExceptionText } from './embalm-text';
 import { pluralSubtype, thingsPhrase } from './filter-text';
 import { triggerWording, withText } from './trigger-text';
 import { COLOR_NAMES } from './words';
@@ -36,6 +37,10 @@ export function exileTopText(
   const { count } = effect;
   const down = effect.faceDown === true ? ' face down' : '';
   if (count === 1) return `Exile the top card of ${library}${down}`;
+  // Lorehold group 2 (CR 701.38a): "Exile the top card of your library for each present vote".
+  if (typeof count === 'object' && count.kind === 'votesFor') {
+    return `Exile the top card of ${library}${down} for each ${count.option} vote`;
+  }
   const n = typeof count === 'number' ? numberWord(count) : say(count);
   return `Exile the top ${n} cards of ${library}${down}`;
 }
@@ -55,14 +60,16 @@ const PLAY_UNTIL: Readonly<Record<PlayUntil, string>> = {
  */
 export function mayPlayText(effect: Extract<Effect, { kind: 'mayPlay' }>, many: boolean): string {
   const what = many ? 'those cards' : 'that card';
+  // Lorehold group 1 (CR 601.2, 305.1): "You may cast that card this turn" is a permission to cast, never to play a land.
+  const verb = effect.castOnly === true ? 'cast' : 'play';
   if (effect.lasts === 'endOfYourNextTurn') {
-    return `Until the end of your next turn, you may play ${what}`;
+    return `Until the end of your next turn, you may ${verb} ${what}`;
   }
   if (effect.lasts === 'whileExiled') {
     const look = effect.lookAt === true ? 'look at and ' : '';
-    return `You may ${look}play ${what} for as long as ${many ? 'they remain' : 'it remains'} exiled`;
+    return `You may ${look}${verb} ${what} for as long as ${many ? 'they remain' : 'it remains'} exiled`;
   }
-  return `You may play ${what} ${PLAY_UNTIL[effect.lasts]}`;
+  return `You may ${verb} ${what} ${PLAY_UNTIL[effect.lasts]}`;
 }
 
 /** "After this phase, there is an additional combat phase" (CR 500.8, 500.10). */
@@ -255,8 +262,10 @@ export function entersAsCopyText(
     replacement.gains === undefined || replacement.gains.length === 0
       ? ''
       : `, except it has ${keywordList(replacement.gains.map((k) => k.kind))}`;
+  const embalmed =
+    replacement.ifEmbalmed === undefined ? '' : embalmedExceptionText(replacement.ifEmbalmed);
   const become = replacement.optional === true ? 'you may have it become' : 'it becomes';
-  return `As this ${noun} enters, ${become} a copy of any ${what} on the battlefield${copyDuration(replacement.duration)}${except}`;
+  return `As this ${noun} enters, ${become} a copy of any ${what} on the battlefield${copyDuration(replacement.duration)}${except}${embalmed}`;
 }
 
 /** "As this enchantment enters, choose Khans or Dragons" (CR 614.12a, 607.2d): a choice among names the card gives. */
@@ -361,6 +370,7 @@ export function spentRiderText(rider: {
     | 'haste'
     | { readonly scry: number }
     | { readonly scryCommanderCasts: true }
+    | { readonly countersCommanderCasts: true }
     | { readonly copySpell: 'may' | 'no' };
 }): string | null {
   const { spells, grants } = rider;
@@ -374,6 +384,10 @@ export function spentRiderText(rider: {
   // D-229 (CR 903.8): Study Hall's "When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game".
   if (typeof grants === 'object' && 'scryCommanderCasts' in grants) {
     return "When you spend this mana to cast your commander, scry X, where X is the number of times it's been cast from the command zone this game";
+  }
+  // Issue 241 (CR 122.6, 903.8): Opal Palace's "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game".
+  if (typeof grants === 'object' && 'countersCommanderCasts' in grants) {
+    return "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game";
   }
   const nouns = [...(spells.subtypes ?? []), ...(spells.types ?? [])];
   if (nouns.length === 0) return null;

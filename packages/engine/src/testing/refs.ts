@@ -179,13 +179,20 @@ export function tapAction(
     options.sacrifice === undefined
       ? {}
       : { sacrifice: resolveObject(ctx, options.sacrifice, { zones: ['battlefield'], seat }).id };
+  const tapped =
+    options.tapped === undefined
+      ? {}
+      : { tapped: resolveObject(ctx, options.tapped, { zones: ['battlefield'], seat }).id };
+  const extra = options.extraColors === undefined ? {} : { extraColors: options.extraColors };
   if (options.color !== undefined) {
     return {
       kind: 'activateAbility',
       source: obj.id,
       abilityIndex,
       color: options.color,
+      ...extra,
       ...sacrifice,
+      ...tapped,
     };
   }
   if (options.combination !== undefined) {
@@ -195,13 +202,15 @@ export function tapAction(
       abilityIndex,
       color: null,
       combination: manaList(options.combination),
+      ...extra,
       ...sacrifice,
+      ...tapped,
     };
   }
   // No color given: a source with exactly one listed option uses it (including the color a
   // commander-identity source offers); otherwise the engine decides, so rejections stay the engine's.
   const d = state.pending;
-  const listed =
+  const offered =
     d?.kind === 'priority'
       ? d.options.filter(
           (o) =>
@@ -214,6 +223,28 @@ export function tapAction(
               'sacrifice' in sacrifice),
         )
       : [];
+  // The additional mana of "adds an additional one mana of any color" (CR 605.1b): with its colors named, the options that make those; with none named while the land has the choice,
+  // the engine is asked as it is, and refuses.
+  const choosesExtra = offered.some(
+    (o) => o.kind === 'activateAbility' && o.extraColors !== undefined,
+  );
+  if (choosesExtra && options.extraColors === undefined) {
+    return {
+      kind: 'activateAbility',
+      source: obj.id,
+      abilityIndex,
+      color: null,
+      ...sacrifice,
+      ...tapped,
+    };
+  }
+  const wanted = options.extraColors?.join('');
+  const listed =
+    wanted === undefined
+      ? offered
+      : offered.filter(
+          (o) => o.kind === 'activateAbility' && (o.extraColors ?? []).join('') === wanted,
+        );
   const gives = listed.filter((o) => o.kind === 'activateAbility' && o.sacrifice !== undefined);
   if (gives.length > 0 && !('sacrifice' in sacrifice)) {
     // The engine refuses an activation that does not name what it sacrifices: let it say so.
@@ -245,7 +276,11 @@ export function tapAction(
     ...(only?.kind === 'activateAbility' && only.combination
       ? { combination: only.combination }
       : {}),
+    ...(only?.kind === 'activateAbility' && only.extraColors
+      ? { extraColors: only.extraColors }
+      : {}),
     ...sacrifice,
+    ...tapped,
   };
 }
 
@@ -273,7 +308,7 @@ export function activateAction(
 
 /**
  * The `castSpell` action for a card in `seat`'s hand or command zone, or in its graveyard when cast
- * with flashback (CR 702.34a) or escape (CR 702.138a). The keys are in the order the engine lists its options in, which
+ * with flashback (CR 702.34a), escape (CR 702.138a) or harmonize (CR 702.180a). The keys are in the order the engine lists its options in, which
  * `legal` and `illegal` compare as text.
  */
 export function castAction(
@@ -284,7 +319,11 @@ export function castAction(
   face?: number,
 ): Action {
   const zones: readonly Zone[] =
-    alternative === 'flashback' || alternative === 'escape'
+    alternative === 'flashback' ||
+    alternative === 'escape' ||
+    alternative === 'harmonize' ||
+    alternative === 'retrace' ||
+    alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
       : ['hand', 'command', 'exile'];
   let obj: GameObject;
@@ -370,6 +409,12 @@ export function specialAction(
   return { kind, object: obj.id };
 }
 
+/** The `unlockDoor` special action for the half `door` (0 left, 1 right) of a Room on the battlefield (CR 709.5e). */
+export function unlockAction(ctx: RefContext, card: CardRef, door: number): Action {
+  const obj = resolveObject(ctx, card, { zones: ['battlefield'] });
+  return { kind: 'unlockDoor', object: obj.id, door };
+}
+
 export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): Action {
   if (spec === 'pass') return { kind: 'pass' };
   if ('playLand' in spec) return playLandAction(ctx, seat, spec.playLand, spec.face);
@@ -378,6 +423,7 @@ export function specToAction(ctx: RefContext, seat: SeatId, spec: ActionSpec): A
   if ('suspend' in spec) return specialAction(ctx, seat, 'suspend', spec.suspend);
   if ('foretell' in spec) return specialAction(ctx, seat, 'foretell', spec.foretell);
   if ('turnFaceUp' in spec) return specialAction(ctx, seat, 'turnFaceUp', spec.turnFaceUp);
+  if ('unlock' in spec) return unlockAction(ctx, spec.unlock, spec.door);
   if ('tap' in spec) {
     return tapAction(ctx, seat, spec.tap, {
       ...(spec.color ? { color: spec.color } : {}),

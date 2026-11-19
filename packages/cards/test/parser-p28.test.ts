@@ -569,7 +569,7 @@ describe('quantities above one multiply the count; the count phrases are one fam
     'You gain X life for each creature you control.',
     'All creatures get -X/-X until end of turn for each Swamp you control.',
     'Draw a card for each creature you control with flying or reach.',
-    'Draw a card for each opponent who has fewer cards in hand than you.',
+    'Draw a card for each opponent who has fewer lands than you.',
     'Draw a card for each creature you control attacking you.',
     'Draw a card for each artifact and creature and land you control.',
     'Draw a card for each creature card in your opponent’s graveyard.',

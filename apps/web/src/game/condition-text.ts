@@ -127,8 +127,24 @@ function opponentControlsWords(
 function matchesWords(
   condition: Extract<Condition, { kind: 'objectMatches' }>,
   negate: boolean,
+  ctx: AmountContext = {},
 ): string | null {
   const { filter } = condition;
+  // D-646 (CR 202.3, 601.2i): "that spell's mana value is 5 or greater": the spell a cast trigger names, only its mana value compared.
+  if (
+    condition.of.kind === 'triggerSubject' &&
+    ctx.spell === true &&
+    filter.manaValue !== undefined &&
+    Object.keys(filter).length === 1
+  ) {
+    const { cmp, value } = filter.manaValue;
+    const bound = {
+      atLeast: negate ? `less than ${value}` : `${value} or greater`,
+      atMost: negate ? `greater than ${value}` : `${value} or less`,
+      equal: negate ? `not ${value}` : `${value}`,
+    }[cmp];
+    return `that spell's mana value is ${bound}`;
+  }
   // D-179: "as long as this Equipment is attached to a creature": the permanent the ability belongs to.
   if (condition.of.kind === 'attached') {
     const host = filterPhrase(filter, 'permanent');
@@ -246,6 +262,11 @@ const THIS_WAY_WORDS: Readonly<Record<string, { readonly yes: string; readonly n
     yes: 'you sacrificed a permanent this way',
     not: "you didn't sacrifice a permanent this way",
   },
+  // Lorehold group 1 (CR 701.23a): "If you search your library this way, shuffle."
+  searched: {
+    yes: 'you search your library this way',
+    not: "you don't search your library this way",
+  },
 };
 
 function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): string | null {
@@ -263,7 +284,15 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'opponentControlsAtLeast':
       return opponentControlsWords(condition, negate);
     case 'objectMatches':
-      return matchesWords(condition, negate);
+      return matchesWords(condition, negate, ctx);
+    case 'movedTotalManaValue':
+      // CR 202.3, 608.2c (D-662): "the total mana value of the cards exiled this way is 13 or less".
+      return `the total mana value of the cards exiled this way is ${condition.compare.value} or ${condition.compare.cmp === 'atMost' ? 'less' : 'more'}`;
+    case 'movedShareAllCardTypes':
+      // CR 205.2a, 608.2c (Demonic Covenant): "two cards that share all their card types were milled this way".
+      return negate
+        ? 'no two cards that share all their card types were put there this way'
+        : 'two cards that share all their card types were put there this way';
     case 'didPrevious':
       // CR 608.2c (D-135): "you may discard a card. If you do, draw a card."
       return negate ? "you don't" : 'you do';
@@ -332,6 +361,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           : `you ${have} cast ${condition.atLeast} or more ${kinds} spells this turn`;
       }
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
+    case 'attackedWithCreaturesThisTurn':
+      // Issue 279 (CR 508.1): "you attacked with three or more creatures this turn".
+      return `you ${negate ? "haven't" : 'have'} attacked with ${condition.atLeast} or more creatures this turn`;
     case 'lifeGainedThisTurn':
       // D-252, D-363 (CR 119.3, 603.4): "if you gained life this turn" (at least 1), "if you gained 3 or more life this turn".
       if (condition.atLeast <= 1) return `you ${negate ? "didn't gain" : 'gained'} life this turn`;
@@ -391,23 +423,23 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
             : `there are exactly ${value} cards in your library`;
       return negate ? `it's not true that ${text}` : text;
     }
+    case 'aPlayerCardsInHand': {
+      // Lorehold group 3 (CR 402.1, 603.4): "a player has one or fewer cards in hand".
+      const { cmp, value } = condition.compare;
+      const text =
+        cmp === 'atMost'
+          ? `a player has ${value} or fewer cards in hand`
+          : cmp === 'atLeast'
+            ? `a player has ${value} or more cards in hand`
+            : `a player has exactly ${value} cards in hand`;
+      return negate ? `it's not true that ${text}` : text;
+    }
     case 'yourTurn':
       // D-206 (CR 611.3a): "during your turn".
       return negate ? "it's not your turn" : "it's your turn";
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;
-    case 'xIs': {
-      // CR 107.3 (Finale of Revelation): "if X is 10 or more".
-      const { cmp, value } = condition.compare;
-      const text =
-        cmp === 'atLeast'
-          ? `X is ${value} or more`
-          : cmp === 'atMost'
-            ? `X is ${value} or less`
-            : `X is ${value}`;
-      return negate ? `it's not true that ${text}` : text;
-    }
     case 'dieResult': {
       // D-271 (CR 706.2, 706.3a): "if the result is 1", "if the result is 4 or more".
       const { cmp, value } = condition.compare;
@@ -427,6 +459,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'thisInYourGraveyard':
       // D-271 (CR 113.6b, 603.4): "if this card is in your graveyard".
       return `this card is ${negate ? 'not ' : ''}in your graveyard`;
+    case 'thisOnBattlefield':
+      // CR 603.4 (Animate Dead): "if it's on the battlefield".
+      return `this permanent is ${negate ? 'not ' : ''}on the battlefield`;
     case 'cardLeftYourGraveyard':
       // D-206 (CR 400.7): "if a card left your graveyard this turn".
       return negate

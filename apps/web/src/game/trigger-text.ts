@@ -83,15 +83,21 @@ const SAYABLE: ReadonlySet<string> = new Set([
   'powerLessThanSource',
   // D-431: "with power greater than its base power".
   'powerAboveBase',
+  // D-638 (CR 601.2a): "from your hand", said by `withText`.
+  'castFromHand',
   // D-133: nontoken, non-Zombie, colorless, with and without a keyword.
   'token',
   'notSubtypes',
   'colorless',
+  'notColors',
   'keywords',
   'notKeywords',
   // D-139: "with two or more colors", "with mana value X", "whose controller was dealt combat damage by this creature this turn".
   'colorCount',
   'manaValueX',
+  // Quandrix Unlimited group E (CR 107.3, 601.2i): "a spell with {X} in its mana cost" and "your first such spell each turn", said by `withText` and the cast trigger.
+  'xInManaCost',
+  'firstXSpellThisTurn',
   'controllerDealtDamageBySource',
   // D-145: "a commander", "a creature with a counter on it".
   'commander',
@@ -130,6 +136,7 @@ function nounCore(filter: ObjectFilter, base: string): string | null {
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
     filter.colorless === true ? 'colorless' : '',
+    (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),
     (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' and '),
     (filter.supertypes ?? []).join(' '),
     (bare ? subtypes.slice(0, -1) : subtypes).join(' '),
@@ -177,6 +184,7 @@ export function withText(filter: ObjectFilter): string {
     filter.toughness === undefined ? '' : comparisonText('toughness', filter.toughness),
     filter.manaValue === undefined ? '' : comparisonText('mana value', filter.manaValue),
     filter.manaValueX === true ? 'mana value X' : '',
+    filter.xInManaCost === true ? '{X} in its mana cost' : '',
     filter.colorCount === undefined ? '' : colorCountText(filter.colorCount),
     // D-145 (CR 122.1): "with a counter on it", "with a stun counter on it".
     filter.hasCounter === undefined ? '' : counterOnIt(filter.hasCounter),
@@ -192,7 +200,9 @@ export function withText(filter: ObjectFilter): string {
     filter.controllerDealtDamageBySource === true
       ? ' whose controller was dealt combat damage by this creature this turn'
       : '';
-  return `${parts.length === 0 ? '' : ` with ${parts.join(' and ')}`}${without === '' ? '' : ` without ${without}`}${whose}`;
+  // CR 601.2a (D-638): "an instant or sorcery spell with mana value 5 or greater from your hand".
+  const hand = filter.castFromHand === true ? ' from your hand' : '';
+  return `${parts.length === 0 ? '' : ` with ${parts.join(' and ')}`}${without === '' ? '' : ` without ${without}`}${whose}${hand}`;
 }
 
 /** "a counter on it" for any counter, "a stun counter on it" for a named kind (D-145, CR 122.1). */
@@ -259,10 +269,23 @@ export function filterPhrase(
   self?: string,
 ): string | null {
   // D-437 (CR 115.1): "an Equipment spell or a spell that targets a creature you control": a disjunction with a member that says what the spell targets is said member by member.
-  if (given.anyOf?.some((m) => m.targetsObject !== undefined || m.targetsOnly !== undefined)) {
+  if (
+    given.anyOf?.some(
+      (m) =>
+        m.targetsObject !== undefined ||
+        m.targetsOnly !== undefined ||
+        m.targetsPlayer !== undefined,
+    )
+  ) {
     const { anyOf, ...outer } = given;
     const parts = anyOf.map((member) => filterPhrase({ ...outer, ...member }, base, self));
     return parts.includes(null) ? null : parts.join(' or ');
+  }
+  // CR 115.1, 601.2c: "a spell that targets a player".
+  if (given.targetsPlayer !== undefined) {
+    const { targetsPlayer: _aimedAtPlayer, ...rest } = given;
+    const spell = filterPhrase(rest, base, self);
+    return spell === null ? null : `${spell} that targets a player`;
   }
   // D-206, D-400, D-437 (CR 115.1, 115.9c, 601.2c): "a spell that targets a creature you control", "a spell that targets only this creature": what the spell targets is a phrase of its own.
   if (given.targetsObject !== undefined || given.targetsOnly !== undefined) {
@@ -453,6 +476,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const what = subjectPhrase(trigger.what, ctx);
       return what === null ? null : `Whenever ${what} becomes untapped`;
     }
+    case 'becomesMonstrous': {
+      // CR 701.37a, 701.37b: "Whenever this creature becomes monstrous".
+      const what = subjectPhrase(trigger.what, ctx);
+      return what === null ? null : `Whenever ${what} becomes monstrous`;
+    }
     case 'discarded': {
       // D-206 (CR 701.9a): "Whenever you discard a card".
       const who =
@@ -462,7 +490,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const base = discardedCardWords(trigger.filter);
       if (base === null) return null;
       const card = trigger.another === true ? base.replace(/^an? /u, 'another ') : base;
-      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${card}`;
+      // CR 603.2c (Lorehold group 1): "Whenever you discard one or more nonland cards": one trigger for the cards discarded together.
+      const said =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : card;
+      return `Whenever ${who} discard${trigger.who === 'you' ? '' : 's'} ${said}`;
     }
     case 'diesBatch': {
       // D-206 (CR 603.2c): "Whenever one or more other creatures and/or artifacts you control die".
@@ -471,12 +504,29 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const things = `${core.endsWith('s') ? core : `${core}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
       return `Whenever one or more ${trigger.what.other === true ? 'other ' : ''}${things} die`;
     }
+    case 'doorUnlocked':
+      // CR 709.5h (Room): the half whose text has the ability.
+      return 'When you unlock this door';
     case 'leftGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards leave your graveyard';
     case 'exiledFromLibraryOrGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards are put into exile from your library and/or your graveyard';
+    case 'putIntoGraveyard': {
+      // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere", "one or more land cards ... for the first time each turn".
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const cards =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : base;
+      const verb = trigger.batch === true ? 'are' : 'is';
+      const place = trigger.from === 'library' ? 'from your library' : 'from anywhere';
+      return `Whenever ${cards} ${verb} put into your graveyard ${place}${
+        trigger.firstTimeEachTurn === true ? ' for the first time each turn' : ''
+      }`;
+    }
     case 'entersBatch': {
       // D-218 (CR 603.2c): "Whenever one or more tokens you control enter".
       const core = nounCore(trigger.what, 'permanent');
@@ -538,6 +588,15 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'castSpell': {
       // CR 601.2i, 603.2 (D-183): the spell's own ability, "When you cast this spell".
       if (trigger.self === true) return 'When you cast this spell';
+      // Quandrix Unlimited group E (CR 601.2i): "your first spell with {X} in its mana cost each turn" says nothing else about the spell; with more words it cannot be said here.
+      if (trigger.filter.firstXSpellThisTurn === true) {
+        const { firstXSpellThisTurn: _first, ...rest } = trigger.filter;
+        const onlyX = Object.keys(rest).every((k) => k === 'stackKind' || k === 'xInManaCost');
+        if (!onlyX || rest.xInManaCost !== true || trigger.nth !== undefined) return null;
+        const caster =
+          trigger.by === 'you' ? 'you cast your' : `${BY_WORDS[trigger.by]} casts their`;
+        return `Whenever ${caster} first spell with {X} in its mana cost each turn`;
+      }
       const spell = filterPhrase(trigger.filter, 'spell', ctx.self);
       if (spell === null) return null;
       // D-218 (CR 707.10): Magecraft's "cast or copy".
@@ -552,15 +611,26 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     }
     case 'landfall':
       return 'Whenever a land enters under your control';
+    case 'playsCard':
+      // CR 305.1, 601.2 (Death Toll deck, group D): a land played or a spell cast, with at least this many card types.
+      return trigger.minCardTypes === undefined || trigger.minCardTypes <= 1
+        ? 'Whenever you play a card'
+        : `Whenever you play a card with ${trigger.minCardTypes} or more card types`;
     case 'cycled':
       // D-179 (CR 702.29c): the card that was cycled.
       return 'When you cycle this card';
+    case 'exerted':
+      // CR 701.43d, 607.2h: "You may exert ~ as it attacks. When you do, ...": the creature was exerted.
+      return 'When you exert this creature as it attacks';
     case 'ringTempted':
       // D-196 (CR 701.54d): each time the Ring tempts you, whatever you could choose.
       return 'Whenever the Ring tempts you';
     case 'crimeCommitted':
       // D-464 (CR 700.13): a spell or ability of the player that targets an opponent, what an opponent controls or a card in an opponent's graveyard.
       return `Whenever ${trigger.who === 'you' ? 'you commit' : `${BY_WORDS[trigger.who]} commits`} a crime`;
+    case 'activatesAbility':
+      // CR 602.2, 605.1a: an activated ability of a permanent that is not a mana ability.
+      return `Whenever ${trigger.who === 'you' ? 'you activate' : `${BY_WORDS[trigger.who]} activates`} an ability${trigger.anySource === true ? '' : " of a permanent that isn't a mana ability"}${trigger.xCost === true ? ', if its activation cost contains {X}' : ''}`;
     case 'tokenCreated':
       // D-465 (CR 111.2): once for each token the player creates.
       return `Whenever ${trigger.who === 'you' ? 'you create' : `${BY_WORDS[trigger.who]} creates`} a token`;
@@ -574,6 +644,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const who = trigger.who === 'you' ? 'you gain' : `${BY_WORDS[trigger.who]} gains`;
       return `Whenever ${who} life${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
     }
+    case 'lifeLost': {
+      // CR 119.3: "Whenever you lose life", once for each loss; with "for the first time each turn" only the first.
+      const who = trigger.who === 'you' ? 'you lose' : `${BY_WORDS[trigger.who]} loses`;
+      return `Whenever ${who} life${trigger.firstEachTurn === true ? ' for the first time each turn' : ''}`;
+    }
     case 'countersAdded': {
       // D-149 (CR 122.6): "Whenever you put one or more +1/+1 counters on this creature".
       const what = subjectPhrase(trigger.what, ctx);
@@ -583,6 +658,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         ? `Whenever you put one or more ${kind}counters on ${what}`
         : `Whenever one or more ${kind}counters are put on ${what}`;
     }
+    case 'unblockedAttackBatch':
+      // CR 509.1h, 508.1b: the creatures of an opponent that attack you and have no blocker.
+      return "Whenever one or more creatures an opponent controls attack you and aren't blocked";
+    case 'playerAttacksOpponent':
+      // D-648 (CR 508.1, 508.6): once for each opponent of the controller that the declaration attacks.
+      return 'Whenever a player attacks one of your opponents';
     case 'attackBatch': {
       // D-149 (CR 508.1): "Whenever you attack with two or more creatures", "Whenever another player attacks with two or more creatures".
       const core = trigger.what === undefined ? 'creature' : nounCore(trigger.what, 'creature');
@@ -591,6 +672,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         trigger.what === undefined
           ? 'creatures'
           : `${core.endsWith('s') ? core : `${core}s`}${withText(trigger.what)}`;
+      // Death Toll deck group B (CR 508.1b, 508.6): "Whenever one or more Demons you control attack a player", once for each player attacked.
+      if (trigger.eachAttackedPlayer === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1
+          ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
+          : null;
+      }
       // D-187: "Whenever you attack" is one creature or more, said without the count.
       // D-218: "Whenever one or more creatures attack" (any player).
       if (trigger.who === 'any') return `Whenever one or more ${things} attack`;
@@ -609,6 +696,13 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return `Whenever ${words} or more ${things} deal combat damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
     }
     case 'tappedForMana': {
+      // CR 106.12, 605.1b, 303.4: "Whenever enchanted land is tapped for mana", for whoever taps the land the Aura is attached to; any other permanent a player may tap has no words yet.
+      if (trigger.by === 'tapper') {
+        if (trigger.what.hostOfSource !== true || trigger.mana !== undefined) return null;
+        const { hostOfSource: _host, ...kind } = trigger.what;
+        const core = nounCore(kind, 'permanent');
+        return core === null ? null : `Whenever enchanted ${core} is tapped for mana`;
+      }
       // D-139 (CR 605.1b): "Whenever you tap a creature for mana".
       // "a Forest", not "a Forest land": a land type names its type (CR 205.3i), as on the cards. `nounCore`
       // leaves the type noun out after a subtype for a creature only, so the land's subtype is worded as one.

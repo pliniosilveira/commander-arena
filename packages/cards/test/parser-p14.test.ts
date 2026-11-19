@@ -241,8 +241,9 @@ describe('restriction.if: "Activate only if <condition>." (CR 602.5b)', () => {
       'with power greater than 3.',
     ],
     [
-      '{1}{W}, {T}: Draw a card. Activate only if you attacked with two or more creatures this turn.',
-      'you attacked with two or more creatures this turn.',
+      // Issue 279 read "you attacked with two or more creatures this turn"; a kind of creature is still not a count the engine reads.
+      '{1}{W}, {T}: Draw a card. Activate only if you attacked with two or more Dragons this turn.',
+      'or more Dragons this turn.',
     ],
   ])('%s stays unread', (text, stoppedAt) => {
     expect(dropped(text, 'artifact').stoppedAt).toBe(stoppedAt);
@@ -253,9 +254,11 @@ describe('restriction.if: "Activate only if <condition>." (CR 602.5b)', () => {
       reason: 'notRunnable',
       stoppedAt: 'Activate only as a sorcery.',
     });
-    expect(dropped('{T}: Add {G}. Activate only once each turn.', 'artifact').stoppedAt).toBe(
-      'Activate only once each turn.',
-    );
+    // "Activate only once each turn." is the one limit a mana ability has (Quandrix Unlimited deck, group F), and it is not the limit of two sentences.
+    expect(
+      dropped('{T}: Add {G}. Activate only as a sorcery. Activate only once each turn.', 'artifact')
+        .stoppedAt,
+    ).toBe('Activate only as a sorcery. Activate only once each turn.');
     // An ordinary ability keeps its "as a sorcery" next to a condition in one sentence (stage P29), and no other limit.
     expect(
       dropped('{T}: Draw a card. Activate only if you control a Swamp and only once each turn.')

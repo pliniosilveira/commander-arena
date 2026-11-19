@@ -10,17 +10,14 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'instant',
     text: "Choose one. If you control a commander as you cast ~, you may choose both instead.\n• Add {R} for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
-    expect: no(
-      "for each card in target opponent's hand.\n• Exile the top three cards of your library. You may play them this turn.",
-      'effect.add-mana',
-    ),
-    note: 'replay: 1 card; the widening is read, the first mode ("Add {R} for each card ...") is not',
+    expect: OK,
+    note: 'replay: 1 card; the widening and both modes are read ("Add {R} for each card in target opponent\'s hand" since D-646: a count of the cards in a target player\'s hand)',
   },
   {
     kind: 'creature',
-    text: 'At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life.',
+    text: 'At the beginning of your first main phase, choose one or more —\n• Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with flash. You lose 3 life.',
     expect: no(
-      'Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life.',
+      'Sell Contraband — Fly away. You lose 1 life.\n• Buy Information — Draw a card. You lose 2 life.\n• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with flash. You lose 3 life.',
       'modal.choose',
     ),
     note: 'SYNTHETIC variant of a replay line (the real one reads since Hylda group 3, D-506: a name before the dash is a flavor word, CR 207.2d): a label does not make an unread mode read',
@@ -78,9 +75,9 @@ const REPLAY: readonly Line[] = [
   },
   {
     kind: 'instant',
-    text: "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its controller.",
-    expect: no('deals 1 damage to its controller.', 'effect.gain-keyword-each'),
-    note: 'replay: 1 card; the third mode is read by no effect rule (an "each" that deals damage)',
+    text: "Choose one —\n• Exile target player's graveyard.\n• Destroy target artifact.\n• Each creature deals 1 damage to its owner.",
+    expect: no('deals 1 damage to its owner.', 'effect.gain-keyword-each'),
+    note: 'the replay line said "to its controller", which issue 279 reads (`effect.deal-damage-to-its-controller`); "to its owner" is still read by no effect rule (an "each" that deals damage)',
   },
   {
     kind: 'instant',
@@ -97,8 +94,8 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'creature',
     text: 'Whenever a land you control enters, choose one —\n• Create a 2/2 white Cat Beast creature token.\n• Put a +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn.',
-    expect: no('gain vigilance until end of turn.', 'effect.doesnt-untap-next'),
-    note: 'replay: 1 card; the second mode says "Those creatures gain vigilance": "those creatures" is a noun since D-517, but no gain-keyword rule takes it as its subject',
+    expect: OK,
+    note: 'replay: 1 card; the second mode says "Those creatures gain vigilance": read since D-627 (`effect.gain-keyword-those`)',
   },
   {
     kind: 'instant',

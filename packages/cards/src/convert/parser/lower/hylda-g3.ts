@@ -27,7 +27,8 @@ const SHUFFLE_INTO_LIBRARIES: Lowering<IrClause, Effects> = {
       // One object each: the permanent with the ability (which must still be there to be moved) or a single target of the ability.
       const single =
         item.det === 'self'
-          ? ctx.owner === 'ability' && !ctx.selfGone
+          ? // D-626 (CR 608.2n, 701.24): a resolving spell may shuffle itself into its owner's library; it has left the stack when the resolution ends, so it goes to no graveyard.
+            (ctx.owner === 'ability' && !ctx.selfGone) || ctx.owner === 'spell'
           : item.det === 'target' &&
             item.filter.player === undefined &&
             item.filter.anyTarget !== true &&
@@ -38,7 +39,11 @@ const SHUFFLE_INTO_LIBRARIES: Lowering<IrClause, Effects> = {
       if (!single) return failure(clause);
       const selector = objectSelectorOf(item, ctx);
       if (!selector.ok) return selector;
-      if (selector.value.kind !== 'this' && selector.value.kind !== 'target') {
+      if (
+        selector.value.kind !== 'this' &&
+        selector.value.kind !== 'thisSpell' &&
+        selector.value.kind !== 'target'
+      ) {
         return failure(clause);
       }
       moves.push({ kind: 'moveToZone', objects: selector.value, to: 'library' });

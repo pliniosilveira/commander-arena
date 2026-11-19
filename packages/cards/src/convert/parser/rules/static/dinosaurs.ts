@@ -17,6 +17,7 @@ import {
 import type { IrAmount, IrCondition, IrNoun, IrStatic, IrStaticEffect } from '../../ir/types';
 import { UNLESS_CONDITIONS } from '../condition/dinosaurs';
 import { BASE_PT, COLOR, CREATURE_TYPE_LIST } from '../effect/becomes';
+import { KEYWORD_WORDS } from '../keyword/list';
 import { CARD_TYPES, typeWords } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
 import { restrictionPhrase } from './restriction-words';
@@ -188,8 +189,15 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
     'Enchanted creature loses all abilities and is a Frog creature.',
     // Stage P50 (D-207): and a restriction.
     "Enchanted creature loses all abilities and doesn't untap during its controller's untap step.",
+    // Issue 89 (D-642): what the effect gives is kept, everything else is lost.
+    'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types.',
   ],
   rejects: [
+    'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types',
+    'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible and it loses all other abilities, card types, and creature types.',
+    'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has indestructible, and it loses all other abilities.',
+    'Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has, and it loses all other abilities, card types, and creature types.',
+    'Enchanted creature loses all abilities and is an Insect artifact creature and has indestructible, and it loses all other abilities, card types, and creature types.',
     'Enchanted creature loses all abilities and is a green Elk creature with base power and toughness 3/3',
     'Enchanted creature loses all abilities and is a green Elk.',
     'Enchanted creature loses all abilities and is a green creature.',
@@ -242,12 +250,29 @@ export const STATIC_ATTACHED_BECOMES = defineRule<IrStatic>({
       what = parsed.value;
       end = parsed.pos;
     }
+    // D-642 (CR 613.1f, 613.1d): "... and has indestructible, and it loses all other abilities, card types, and creature types.": what the effect gives is kept and
+    // everything else is lost, so the abilities are lost first and then the keywords given, in the order written (the layers keep that order for one permanent).
+    let given: readonly string[] = [];
+    let loseOthers = false;
+    if (what !== null && !lose.ok) {
+      const tail = sequence(
+        literal(' and has '),
+        KEYWORD_WORDS,
+        literal(', and it loses all other abilities, card types, and creature types'),
+      )(ctx, end);
+      if (tail.ok) {
+        given = tail.value[1];
+        loseOthers = true;
+        end = tail.pos;
+      }
+    }
     const finish = PERIOD(ctx, end);
     if (!finish.ok) return finish;
     const effects: IrStaticEffect[] = [];
-    if (lose.ok) effects.push({ kind: 'loseAllAbilities' });
+    if (lose.ok || loseOthers) effects.push({ kind: 'loseAllAbilities' });
     if (what !== null) {
       effects.push({ kind: 'replaceTypes', cardTypes: what.cardTypes, subtypes: what.subtypes });
+      for (const keyword of given) effects.push({ kind: 'grantKeyword', keyword });
       if (what.colors !== null) effects.push({ kind: 'setColors', colors: what.colors });
       if (what.basePt !== null) {
         effects.push({

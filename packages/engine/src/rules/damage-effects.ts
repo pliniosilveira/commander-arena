@@ -12,6 +12,7 @@ import type { Effect, ObjectSelector, PlayerSelector } from '../ast/types';
 import type { DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
 import type { ChosenTarget, GameObject, GameState, ResolutionContext } from '../state/types';
+import { controllerOf } from './control';
 import { dealDamageAsking, dealDamageWithExcess } from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget } from './defending';
@@ -43,8 +44,11 @@ export function runDealDamage(
   targets: readonly ChosenTarget[],
   flow: OrderFlow,
 ): StepOutcome {
-  const amount = amountOf(state, effect.amount, ctx, targets);
-  if (amount <= 0) return done(state);
+  // CR 402.1: "equal to the number of cards in that player's hand" is each recipient's own hand size (`validateCard` allows it only for damage to players).
+  const perHand =
+    typeof effect.amount === 'object' && effect.amount.kind === 'cardsInHandOfAffected';
+  const amount = perHand ? 0 : amountOf(state, effect.amount, ctx, targets);
+  if (!perHand && amount <= 0) return done(state);
   // CR 120.3, 701.14 (D-131): the damage is dealt by the spell or ability, or by the creature `from` names ("Target
   // creature you control deals damage equal to its power ..."). A creature that is no longer a legal target, or no
   // longer known, deals none (CR 608.2b); one that left since is read from last-known information (CR 113.7a).
@@ -80,7 +84,9 @@ export function runDealDamage(
   let next = state;
   const events: GameEvent[] = [];
   for (const seat of seats) {
-    const r = dealDamageAsking(next, damageSource, { kind: 'player', seat }, amount, false, flow);
+    const dealt = perHand ? (next.seats[seat]?.hand.length ?? 0) : amount;
+    if (dealt <= 0) continue;
+    const r = dealDamageAsking(next, damageSource, { kind: 'player', seat }, dealt, false, flow);
     if (r.kind === 'asked') return asking(state, r);
     next = r.state;
     events.push(...r.events);
@@ -103,6 +109,67 @@ export function runDealDamage(
       tramples && recipient !== undefined && isCreature
         ? dealDamageWithExcess(next, damageSource, recipient, amount, flow)
         : dealDamageAsking(next, damageSource, { kind: 'object', id }, amount, false, flow);
+    if (r.kind === 'asked') return asking(state, r);
+    next = r.state;
+    events.push(...r.events);
+  }
+  // Issue 159: "you gain life equal to the damage dealt this way" reads the damage that was dealt, after prevention (CR 615.6).
+  const dealt = events.reduce((n, e) => (e.kind === 'damageDealt' ? n + e.amount : n), 0);
+  return { ...done(next, events), ...(dealt > 0 ? { thisWay: { damageDealt: dealt } } : {}) };
+}
+
+/**
+ * "Each creature deals damage to itself equal to its power" (CR 120.2b, 120.3, 608.2h; Lorehold group 1): every object the selector names on the battlefield is the source and the recipient
+ * of one damage event of its own, as much as its power was as the effect began. All the powers are read first, from the state the instruction began with, so no damage dealt by an
+ * earlier object of the list changes what a later one deals. An object with power 0 or less deals none (CR 120.8). Like every damage instruction it returns the question of a
+ * replacement effect (CR 616.1) with nothing dealt, and runs again with the answer.
+ */
+export function runDealDamageToSelf(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'dealDamageToSelf' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const sources = resolveObjects(state, effect.objects, ctx, targets).flatMap((id) => {
+    const obj = state.objects[id];
+    if (obj?.zone !== 'battlefield') return [];
+    const power = derive(state, obj).power;
+    return power === null || power <= 0 ? [] : [{ id, power }];
+  });
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const { id, power } of sources) {
+    const r = dealDamageAsking(next, id, { kind: 'object', id }, power, false, flow);
+    if (r.kind === 'asked') return asking(state, r);
+    next = r.state;
+    events.push(...r.events);
+  }
+  return done(next, events);
+}
+
+/**
+ * "Each creature deals 1 damage to its controller" (CR 120.3, 109.4, 608.2h; issue 279, Rakdos Charm): every object the selector names on the battlefield is the source of one
+ * damage event of its own to the player who controls it, the controllers read from the state the instruction began with (so a change of control in the middle of the list changes
+ * nothing). Like every damage instruction it returns the question of a replacement effect (CR 616.1) with nothing dealt, and runs again with the answer.
+ */
+export function runDealDamageToController(
+  state: GameState,
+  effect: Extract<Effect, { kind: 'dealDamageToController' }>,
+  ctx: SelectContext,
+  targets: readonly ChosenTarget[],
+  flow: OrderFlow,
+): StepOutcome {
+  const amount = amountOf(state, effect.amount, ctx, targets);
+  if (amount <= 0) return done(state);
+  const sources = resolveObjects(state, effect.objects, ctx, targets).flatMap((id) => {
+    const obj = state.objects[id];
+    return obj?.zone === 'battlefield' ? [{ id, seat: controllerOf(state, obj) }] : [];
+  });
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const { id, seat } of sources) {
+    const r = dealDamageAsking(next, id, { kind: 'player', seat }, amount, false, flow);
     if (r.kind === 'asked') return asking(state, r);
     next = r.state;
     events.push(...r.events);

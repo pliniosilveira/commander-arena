@@ -54,6 +54,22 @@ export function chooseSeparation(view: GameView, d: ChooseCardsDecision): Action
   return { kind: 'chooseCards', objects: d.legal.filter((id) => first.includes(id)) };
 }
 
+/**
+ * "An opponent chooses a nonland card exiled this way" (`opponentChoosesCard`, D-661): the cards not chosen may be cast for free by the other player, so the agent sets aside the card
+ * worth most to them (ties by the engine's order).
+ */
+export function chooseCardToSetAside(view: GameView, d: ChooseCardsDecision): Action {
+  const seen = seenBy(view);
+  const ranked = d.legal
+    .map((id, index) => {
+      const o = seen(id);
+      return { id, index, worth: o === undefined ? 0 : pileCardWorth(o) };
+    })
+    .sort((a, b) => b.worth - a.worth || a.index - b.index);
+  const [best] = ranked;
+  return { kind: 'chooseCards', objects: best === undefined ? [] : [best.id] };
+}
+
 /** Which pile goes where: the better pile where the agent wants the better cards. */
 export function choosePile(view: GameView, d: ChooseOptionDecision): Action {
   const [pile1, pile2] = d.options;

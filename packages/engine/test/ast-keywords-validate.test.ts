@@ -109,12 +109,11 @@ describe('the batch is supported and valid', () => {
     }
   });
 
-  test('only infect and wither of the batch can be granted: the others are parametric or are not read after layer 6', () => {
+  test('only infect and wither (and, since D-640, annihilator) of the batch can be granted: the others are parametric or are not read after layer 6', () => {
     expect(GRANTABLE_KEYWORDS).toContain('infect');
     expect(GRANTABLE_KEYWORDS).toContain('wither');
     for (const kind of [
       'toxic',
-      'annihilator',
       'changeling',
       'devoid',
       'persist',

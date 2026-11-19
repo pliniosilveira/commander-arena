@@ -28,11 +28,14 @@ import {
   manaAbilitiesOf,
   manaCostSymbols,
   manaSacrificeCandidates,
+  manaTapCandidates,
   outcomeColor,
   payManaAbilityCosts,
   physicalRefusal,
+  recordManaActivation,
   sacrificeFilterOf,
   showCost,
+  tapFilterOf,
 } from './mana-abilities';
 import {
   isCombinationProduction,
@@ -41,7 +44,14 @@ import {
   spendRestrictionOf,
   spentRiderOf,
 } from './mana-outcomes';
-import { additionalManaFor } from './mana-triggers';
+import { additionalManaOptions } from './mana-triggers';
+import {
+  activatePlayerMana,
+  isPlayerManaAbility,
+  payGrantLife,
+  playerManaGrants,
+  usesOfPlanned,
+} from './player-mana';
 
 export {
   canTapForMana,
@@ -84,8 +94,9 @@ export function canActivateManaAbility(
   obj: GameObject,
   ability: ManaAbility,
   seat: SeatId,
+  abilityIndex?: number,
 ): boolean {
-  if (!canPayPhysicalCosts(state, obj, ability, seat)) return false;
+  if (!canPayPhysicalCosts(state, obj, ability, seat, abilityIndex)) return false;
   const symbols = manaCostSymbols(ability);
   return symbols.length === 0 || poolPayment(state, seat, symbols) !== null;
 }
@@ -185,7 +196,13 @@ export function activateManaAbility(
   combination: readonly ManaColor[] | null = null,
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-216, D-222): required when the player has more than one to give up. */
   sacrifice?: ObjectId,
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-625): required when the player has more than one to tap. */
+  tapped?: ObjectId,
+  /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b, 605.3b): required when the land has such an ability on it. */
+  extraColors: readonly ManaColor[] | null = null,
 ): ActivationResult {
+  // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player belongs to no permanent.
+  if (isPlayerManaAbility(abilityIndex)) return activatePlayerMana(state, seat, source);
   // A source that does not exist (a stale or invented id in a payManual action) is an illegal
   // action, which the caller answers with an error; it must not throw.
   const obj = state.objects[source];
@@ -193,7 +210,7 @@ export function activateManaAbility(
   const found = manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === abilityIndex);
   if (!found) return refuse('that permanent has no such mana ability');
   const name = derive(state, obj).name;
-  const stuck = physicalRefusal(state, obj, found.ability, seat);
+  const stuck = physicalRefusal(state, obj, found.ability, seat, abilityIndex);
   if (stuck !== null) return refuse(stuck);
   // CR 601.2b, 605.3b (D-222): the player chooses the permanent a cost "Sacrifice a Spirit" gives up. With one candidate there is no choice; with more the
   // activation must name one of them (the engine never picks for a player who is paying by hand).
@@ -204,6 +221,16 @@ export function activateManaAbility(
     }
     if (sacrifice === undefined && legal.length > 1) {
       return refuse(`Choose which permanent to sacrifice for ${name}`);
+    }
+  }
+  // CR 601.2b, 605.3b (D-625): the player chooses the permanent a cost "Tap an untapped creature you control" taps, as for a sacrifice.
+  if (tapFilterOf(found.ability) !== null) {
+    const legal = manaTapCandidates(state, seat, source, found.ability);
+    if (tapped !== undefined && !legal.includes(tapped)) {
+      return refuse(`${name} cannot tap that permanent`);
+    }
+    if (tapped === undefined && legal.length > 1) {
+      return refuse(`Choose which permanent to tap for ${name}`);
     }
   }
   const picked = pickOutcome(
@@ -231,23 +258,45 @@ export function activateManaAbility(
       manaPool: getSeat(working, seat).manaPool.filter((_, i) => !spent.has(i)),
     });
   }
-  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice);
+  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice, tapped);
   // CR 605.4a (D-139): the triggered mana abilities of "whenever you tap a permanent for {C}" resolve at once, into the same pool.
-  const extra = additionalManaFor(working, obj, found.ability, chosen);
+  const alternatives = additionalManaOptions(working, obj, found.ability, chosen);
+  const only = alternatives[0];
+  let extra: ManaColor[];
+  if (alternatives.length === 1 && only !== undefined) {
+    if (extraColors !== null && extraColors.length > 0) {
+      return refuse(`${name} adds no additional mana of a color you choose`);
+    }
+    extra = only;
+  } else if (extraColors === null || extraColors.length === 0) {
+    return refuse(`Choose the color of the additional mana ${name} makes (W, U, B, R or G)`);
+  } else {
+    const named = alternatives.find((a) => a.join('') === extraColors.join(''));
+    if (named === undefined) {
+      return refuse(
+        `${name} cannot add ${extraColors.join('')} as the additional mana: it is one mana of each of W, U, B, R or G (colorless is not a color)`,
+      );
+    }
+    extra = named;
+  }
   const made = [...chosen, ...extra];
-  let next = patchSeat(paid.state, seat, {
-    manaPool: addToPool(
-      getSeat(paid.state, seat).manaPool,
-      toManaObjects(
-        source,
-        snow,
-        made,
-        spendRestrictionOf(found.ability),
-        spentRiderOf(found.ability, source),
-        derive(state, obj).types,
+  let next = patchSeat(
+    recordManaActivation(paid.state, source, abilityIndex, found.ability),
+    seat,
+    {
+      manaPool: addToPool(
+        getSeat(paid.state, seat).manaPool,
+        toManaObjects(
+          source,
+          snow,
+          made,
+          spendRestrictionOf(found.ability, obj),
+          spentRiderOf(found.ability, source),
+          derive(state, obj).types,
+        ),
       ),
-    ),
-  });
+    },
+  );
   const events: GameEvent[] = [...paid.events];
   if (made.length > 0) events.push({ kind: 'manaAdded', seat, count: made.length });
   const also = found.ability.also ?? [];
@@ -276,6 +325,8 @@ export function applyPaymentPlan(
   spent: readonly (readonly string[])[];
   /** How many of that mana was from a snow source (`PaymentPlan.spentSnow`, D-260). */
   spentSnow: number;
+  /** The color of each of that mana (`PaymentPlan.spentColors`, issue 310). */
+  spentColors: readonly ManaColor[];
 } {
   const events: GameEvent[] = [];
   const riders: ManaRider[] = [];
@@ -287,13 +338,32 @@ export function applyPaymentPlan(
   const pool = getSeat(next, seat).manaPool.filter((_, i) => !spent.has(i));
   next = patchSeat(next, seat, { manaPool: addToPool(pool, plan.leftover) });
   for (const tap of plan.taps) {
+    if (isPlayerManaAbility(tap.abilityIndex)) {
+      // CR 605.1a, 118.3 (Channel): the life of the ability a player was given is paid; its mana was spent as it was made, or is left over below.
+      const grant = playerManaGrants(next, seat).find((g) => g.source === tap.object);
+      if (grant !== undefined) {
+        const paid = payGrantLife(next, seat, grant, usesOfPlanned(tap.abilityIndex));
+        next = paid.state;
+        events.push(...paid.events);
+      }
+      continue;
+    }
     const obj = next.objects[tap.object];
     const ability = obj
       ? manaAbilitiesOf(next, obj).find((m) => m.abilityIndex === tap.abilityIndex)?.ability
       : undefined;
     if (!ability) continue;
-    const paid = payManaAbilityCosts(next, seat, tap.object, ability);
-    next = paid.state;
+    // D-625: a cost "Tap an untapped creature you control" leaves alone the other sources of the plan, which are tapped for their mana.
+    const paid = payManaAbilityCosts(
+      next,
+      seat,
+      tap.object,
+      ability,
+      undefined,
+      undefined,
+      new Set(plan.taps.map((t) => t.object)),
+    );
+    next = recordManaActivation(paid.state, tap.object, tap.abilityIndex, ability);
     events.push(...paid.events);
     // D-151: mana of a source that was tapped for this payment and not left over was spent on it, with what it carries.
     const rider = spentRiderOf(ability, tap.object);
@@ -310,7 +380,14 @@ export function applyPaymentPlan(
     next = loseLifeBy(next, seat, lifeToPay);
     events.push({ kind: 'lifeChanged', seat, from: s.life, to: s.life - lifeToPay });
   }
-  return { state: next, events, riders, spent: plan.spentTypes, spentSnow: plan.spentSnow };
+  return {
+    state: next,
+    events,
+    riders,
+    spent: plan.spentTypes,
+    spentSnow: plan.spentSnow,
+    spentColors: plan.spentColors,
+  };
 }
 
 /** The colors of mana that stay in the pool of `seat` as a step or phase ends (D-151: "You don't lose unspent red mana as steps and phases end"). */
@@ -328,14 +405,20 @@ function colorsThatStay(state: GameState, seat: SeatId): ReadonlySet<ManaColor> 
   return keep;
 }
 
-/** Empties every mana pool (CR 500.5, 106.4), but for the colors a static ability keeps (D-151). */
-export function emptyManaPools(state: GameState): { state: GameState; events: GameEvent[] } {
+/**
+ * Empties every mana pool (CR 500.5, 106.4), but for the colors a static ability keeps (D-151) and the mana an effect said you don't lose as steps and phases end
+ * (D-650: kept until the cleanup step ends, where the "until end of turn" effect that kept it is over).
+ */
+export function emptyManaPools(
+  state: GameState,
+  endOfTurn = state.turn.step === 'cleanup',
+): { state: GameState; events: GameEvent[] } {
   let next = state;
   const events: GameEvent[] = [];
   for (const seat of state.seats) {
     if (seat.manaPool.length === 0) continue;
     const keep = colorsThatStay(state, seat.id);
-    const kept = seat.manaPool.filter((m) => keep.has(m.color));
+    const kept = seat.manaPool.filter((m) => keep.has(m.color) || (m.stays === true && !endOfTurn));
     const lost = seat.manaPool.length - kept.length;
     if (lost === 0) continue;
     events.push({ kind: 'manaEmptied', seat: seat.id, count: lost });

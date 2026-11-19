@@ -24,13 +24,20 @@ export function checkKickerCost(cost: readonly Cost[], path: string, out: AstIss
   });
 }
 
-/** CR 702.34a: the flashback cost is a mana cost (other flashback costs are not supported). */
+/**
+ * CR 702.34a: the flashback cost is a mana cost, or a mana cost and a payment of life ("Flashback—{1}{U}, Pay 3 life.",
+ * Deep Analysis); a flashback cost with another cost is not supported.
+ */
 export function checkFlashbackCost(cost: readonly Cost[], path: string, out: AstIssue[]): void {
   checkCosts(cost, path, out);
   if (!Array.isArray(cost)) return;
   cost.forEach((c, i) => {
-    if (c?.kind !== 'mana') {
-      issue(out, `${path}[${i}]`, 'a flashback cost may be mana only');
+    if (c?.kind === 'payLife') {
+      if (!Number.isSafeInteger(c.amount) || c.amount < 1) {
+        issue(out, `${path}[${i}].amount`, 'life paid must be at least 1');
+      }
+    } else if (c?.kind !== 'mana') {
+      issue(out, `${path}[${i}]`, 'a flashback cost may be mana or life only');
     } else if (c.symbols?.includes('X')) {
       issue(out, `${path}[${i}]`, 'X in a flashback cost is not supported');
     }
@@ -62,6 +69,15 @@ function mentionsEscaped(node: unknown): boolean {
   const record = node as Record<string, unknown>;
   if (record.kind === 'escaped' || record.ifEscaped === true) return true;
   return Object.values(record).some(mentionsEscaped);
+}
+
+/** True when `node` (any JSON) holds a target slot that exists only if the spell was cast during its controller's main phase (issue 244). */
+function mentionsCastPhaseTarget(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(mentionsCastPhaseTarget);
+  if (node === null || typeof node !== 'object') return false;
+  const record = node as Record<string, unknown>;
+  if (record.ifCastInOwnMain === true) return true;
+  return Object.values(record).some(mentionsCastPhaseTarget);
 }
 
 /** True when `node` (any JSON) holds a target slot that exists only if the spell was kicked, or only if it was not (D-181). */
@@ -128,6 +144,10 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'dash') && !face.types.includes('creature')) {
     issue(out, `${path}.alternativeCosts`, 'dash is on a creature card (CR 702.109a)');
   }
+  // CR 702.103a: bestow is on a creature card (the spell is an Aura spell with "enchant creature" when cast for it).
+  if (alternatives.some((a) => a?.kind === 'bestow') && !face.types.includes('creature')) {
+    issue(out, `${path}.alternativeCosts`, 'bestow is on a creature card (CR 702.103a)');
+  }
   // CR 702.137a: spectacle is a way to cast a spell, so it is on a card that is not a land.
   if (alternatives.some((a) => a?.kind === 'spectacle') && face.types.includes('land')) {
     issue(out, `${path}.alternativeCosts`, 'spectacle is on a spell, not on a land (CR 702.137a)');
@@ -144,6 +164,32 @@ export function checkCastFace(
   } else if (mentionsEscaped(abilities) || mentionsEscaped(spell)) {
     // CR 702.138b: without an escape cost nothing can have escaped; the condition would never hold.
     issue(out, path, 'the escaped condition and "escapes with" need an escape cost (CR 702.138b)');
+  }
+  // CR 702.180a: harmonize casts the card from the graveyard and exiles it as it leaves the stack, so it is on an instant or a sorcery (a permanent
+  // spell would be exiled instead of entering); the engine does not combine it with the other ways of paying part of the cost.
+  if (alternatives.some((a) => a?.kind === 'harmonize')) {
+    if (!face.types.includes('instant') && !face.types.includes('sorcery')) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'harmonize is on an instant or a sorcery (CR 702.180a)',
+      );
+    }
+    const combined = abilities.some(
+      (a) =>
+        a.kind === 'keyword' &&
+        (a.keyword.kind === 'convoke' ||
+          a.keyword.kind === 'improvise' ||
+          a.keyword.kind === 'delve' ||
+          a.keyword.kind === 'flashback'),
+    );
+    if (combined || alternatives.some((a) => a?.kind === 'escape')) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'harmonize with convoke, improvise, delve, flashback or escape is not supported',
+      );
+    }
   }
   // CR 118.9, 601.2h (D-149): "pay {W} and tap four untapped creatures" is a way to cast a spell, so it is on a card that is not a
   // land; the creatures Convoke, Improvise or Delve use are tapped or exiled for the same cost, which the engine does not combine.
@@ -167,12 +213,37 @@ export function checkCastFace(
       );
     }
   }
+  // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
+  if (alternatives.some((a) => a?.kind === 'sacrificeFromGraveyard')) {
+    if (face.types.includes('land')) {
+      issue(out, `${path}.alternativeCosts`, 'sacrificeFromGraveyard is on a spell, not on a land');
+    }
+    if (
+      abilities.some(
+        (a) =>
+          a.kind === 'keyword' &&
+          (a.keyword.kind === 'convoke' ||
+            a.keyword.kind === 'improvise' ||
+            a.keyword.kind === 'delve'),
+      )
+    ) {
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'sacrificeFromGraveyard with convoke, improvise or delve is not supported',
+      );
+    }
+  }
   // CR 702.35a, 702.94a, 702.143a (D-128, D-274): madness, miracle and foretell are ways to cast a card, so they are on a
   // card that is not a land (a land is played, never cast).
-  for (const kind of ['madness', 'miracle', 'foretell'] as const) {
+  for (const kind of ['madness', 'miracle', 'foretell', 'morph'] as const) {
     if (alternatives.some((a) => a?.kind === kind) && face.types.includes('land')) {
       issue(out, `${path}.alternativeCosts`, `${kind} is on a spell, not on a land`);
     }
+  }
+  // CR 702.37a, 701.40b: a card cast face down is a creature (a 2/2), and a face-down permanent is turned face up as a creature card: morph is on a creature card.
+  if (alternatives.some((a) => a?.kind === 'morph') && !face.types.includes('creature')) {
+    issue(out, `${path}.alternativeCosts`, 'morph is on a creature card (CR 702.37a)');
   }
   // CR 702.62a (D-128): suspend exiles the card to cast it later, so it is on a card that is not a land, and a face
   // has at most one.
@@ -206,6 +277,14 @@ export function checkCastFace(
   if (eternalizes.length > 1) {
     issue(out, `${path}.abilities`, 'more than one eternalize ability on a face is not supported');
   }
+  // CR 702.128a: embalm makes a token copy of "this card" from the graveyard, so it is on a permanent card; a face has at most one.
+  const embalms = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'embalm');
+  if (embalms.length > 0 && !permanent) {
+    issue(out, `${path}.abilities`, 'embalm is on a permanent card (CR 702.128a)');
+  }
+  if (embalms.length > 1) {
+    issue(out, `${path}.abilities`, 'more than one embalm ability on a face is not supported');
+  }
   // CR 702.82a (D-185): devour is applied as a permanent enters, and only a permanent card enters; one instance (CR 702.82c's variant is not supported).
   const devours = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'devour');
   if (devours.length > 0 && (!permanent || face.types.includes('land'))) {
@@ -218,10 +297,14 @@ export function checkCastFace(
   if (devours.length > 1) {
     issue(out, `${path}.abilities`, 'more than one devour ability on a face is not supported');
   }
-  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback') =>
+  const has = (kind: 'kicker' | 'flashback' | 'multikicker' | 'buyback' | 'retrace') =>
     abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === kind);
   if (has('flashback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
     issue(out, `${path}.abilities`, 'flashback is on an instant or a sorcery (CR 702.34a)');
+  }
+  // D-667 (CR 702.81a): "You may cast this card from your graveyard by discarding a land card": a land is played, never cast, so it has no retrace.
+  if (has('retrace') && face.types.includes('land')) {
+    issue(out, `${path}.abilities`, 'retrace is on a card that is cast, not a land (CR 702.81a)');
   }
   // Galadriel group 3, CR 702.27a: "put this spell into its owner's hand as it resolves" is said of an instant or a sorcery.
   if (has('buyback') && !face.types.includes('instant') && !face.types.includes('sorcery')) {
@@ -258,6 +341,13 @@ export function checkCastFace(
       out,
       `${path}.abilities`,
       "a target that exists only if the gift was promised is a spell's (CR 702.174m)",
+    );
+  }
+  if (mentionsCastPhaseTarget(abilities)) {
+    issue(
+      out,
+      `${path}.abilities`,
+      "a target chosen only if the spell was cast during its controller's main phase is a spell's",
     );
   }
   // D-181, CR 702.33g: the slots that depend on the kicker are a spell's own, with one kicker cost (not Multikicker) and no modes.
@@ -324,6 +414,33 @@ export function giftTargetsUsedUnguarded(spell: SpellText): string[] {
   };
   return slots
     .filter((slot) => unguarded(spell.effect, slot.id, slot.ifGiftPromised === true, null))
+    .map((slot) => slot.id);
+}
+
+/**
+ * The target slots of a spell that exist only if it was cast during its controller's main phase (`TargetSpec.ifCastInOwnMain`, issue 244) and that the effect uses
+ * anywhere but the `effect` of a `castInOwnMainPhase` conditional: elsewhere the slot would be empty. Also true of a slot in a modal spell, which this does not run.
+ */
+export function castPhaseTargetsUsedUnguarded(spell: SpellText): string[] {
+  const slots = (spell.targets ?? []).filter((t) => t.ifCastInOwnMain === true);
+  const unguarded = (node: unknown, id: string, guarded: boolean): boolean => {
+    if (Array.isArray(node)) return node.some((n) => unguarded(n, id, guarded));
+    if (node === null || typeof node !== 'object') return false;
+    const record = node as Record<string, unknown>;
+    if (record.kind === 'target' && record.id === id) return !guarded;
+    if (record.kind === 'conditional') {
+      const phase = (record.condition as { kind?: unknown } | null)?.kind === 'castInOwnMainPhase';
+      return (
+        unguarded(record.condition, id, guarded) ||
+        unguarded(record.effect, id, guarded || phase) ||
+        unguarded(record.else, id, guarded)
+      );
+    }
+    return Object.values(record).some((n) => unguarded(n, id, guarded));
+  };
+  const modal = spell.modes !== undefined || spell.chooseModes !== undefined;
+  return slots
+    .filter((slot) => modal || unguarded(spell.effect, slot.id, false))
     .map((slot) => slot.id);
 }
 

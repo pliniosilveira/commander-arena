@@ -283,9 +283,12 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
     'a permanent with the greatest mana value among permanents they control',
     'an artifact with the greatest mana value among artifacts they control',
     'a nonland permanent with the greatest mana value among nonland permanents they control',
+    'a creature with the greatest power among creatures that player controls',
   ],
   rejects: [
     'a creature with the greatest power among creatures you control',
+    'a creature with the greatest power among creatures that player',
+    'a creature with the greatest power among creatures that players control',
     'a creature with the greatest power among artifacts they control',
     'a creature with the greatest power among creatures',
     'a creature with the greatest power among creature they control',
@@ -309,7 +312,7 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
           map(permanentPhrase(true, 'all'), withoutZone),
           (filter) => filter.controller === undefined,
         ),
-        literal(' they control'),
+        choice(literal(' they control'), literal(' that player controls')),
       )(ctx, pos);
       if (!head.ok) return head;
       const [, once, word, among] = head.value;
@@ -439,6 +442,58 @@ export const NOUN_ALL_NONLAND_THEY_CONTROL = defineRule<IrNoun>({
   },
 });
 
+/**
+ * `noun.each-permanent-they-control`: "each creature they control", "each artifact they control" (CR 109.4, 110.1, 608.2c): every permanent of the kind that the player the
+ * sentence names controls ("they" is the last player the text names, as for `noun.all-nonland-they-control`; the engine's `controlledBy` of that player). Not read: "all", "other",
+ * a plural, a controller said twice ("each creature you control they control").
+ */
+export const NOUN_EACH_PERMANENT_THEY_CONTROL = defineRule<IrNoun>({
+  id: 'noun.each-permanent-they-control',
+  family: 'noun',
+  leading: ['each'],
+  cites: [
+    'CR 109.4 (Objects)',
+    'CR 110.1 (Permanents)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['each creature they control', 'each artifact they control'],
+  rejects: [
+    'each creature',
+    'each creature you control',
+    'each creatures they control',
+    'all creatures they control',
+    'each other creature they control',
+    'each creature you control they control',
+    'each creature that player controls',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('each '),
+      permanentPhrase(false, 'all'),
+      literal(' '),
+      family<IrNoun>('noun', { only: ['noun.they'] }),
+      literal(' control'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter, , player] = r.value;
+    if (filter.controller !== undefined) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: {
+        kind: 'noun',
+        det: 'each',
+        filter: { ...filter, controller: { noun: player }, raw: ctx.text.slice(pos, r.pos) },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: { start: pos, end: r.pos },
+        rule: 'noun.each-permanent-they-control',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const CHOOSE_NOUN_RULES = [
   NOUN_SELF,
   NOUN_A_GREATEST_PERMANENT,
@@ -447,4 +502,5 @@ export const CHOOSE_NOUN_RULES = [
   NOUN_ONE_OR_MORE_PERMANENTS,
   NOUN_ALL_NONLAND_THEY_CONTROL,
   NOUN_ALL_THEY_CONTROL,
+  NOUN_EACH_PERMANENT_THEY_CONTROL,
 ];

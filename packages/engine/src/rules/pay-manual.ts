@@ -22,8 +22,12 @@ export interface ManualTap {
   readonly abilityIndex: number;
   readonly color?: ManaColor | null;
   readonly combination?: readonly ManaColor[] | null;
+  /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b): needed when the land has such an ability on it. */
+  readonly extraColors?: readonly ManaColor[] | null;
   /** "Sacrifice a Spirit: Add {R}." (D-216): the permanent given up; the engine chooses when it is left out. */
   readonly sacrifice?: ObjectId;
+  /** "{T}, Tap an untapped creature you control: Add ..." (D-625): the permanent tapped; the engine chooses when it is left out and there is one candidate. */
+  readonly tapped?: ObjectId;
 }
 
 /** The state after the payment, or why the taps do not pay the cost (nothing changes then). */
@@ -40,6 +44,7 @@ export function payByTapping(
       riders: ManaRider[];
       spent: readonly (readonly string[])[];
       spentSnow: number;
+      spentColors: readonly ManaColor[];
     }
   | { error: string } {
   let working = state;
@@ -53,6 +58,8 @@ export function payByTapping(
       tap.color ?? null,
       tap.combination ?? null,
       tap.sacrifice,
+      tap.tapped,
+      tap.extraColors ?? null,
     );
     if ('error' in r) return { error: r.error };
     working = r.state;
@@ -76,5 +83,6 @@ export function payByTapping(
     riders: applied.riders,
     spent: applied.spent,
     spentSnow: applied.spentSnow,
+    spentColors: applied.spentColors,
   };
 }

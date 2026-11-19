@@ -30,6 +30,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   if (o.kind === 'chosenColor') found.add('color');
   // D-376: "protection from the chosen card type", on a keyword or a player's protection, reads the card type the permanent chose.
   if (o.from === 'chosenCardType') found.add('cardType');
+  // D-652: "protection from the chosen color" reads the color the permanent chose.
+  if (o.from === 'chosenColor') found.add('color');
   // D-151: "Khans — ..." reads the option the permanent chose.
   if (o.kind === 'chosenOption') found.add('option');
   for (const [key, v] of Object.entries(o)) {
@@ -78,12 +80,16 @@ export function chosenIssues(
   if (!Array.isArray(abilities)) return;
   const asked: Choice[] = [];
   let questions = 0;
+  // D-208: "you may reveal a Dragon card" and "choose a color" are two questions a land asks one after the other (the reveal first); any other pair is refused.
+  let reveals = 0;
+  let choices = 0;
   for (const a of abilities) {
     // CR 702.155b (D-151): a Saga with read ahead chooses its first chapter as it enters: one more question.
     if (a?.kind === 'keyword' && a.keyword?.kind === 'readAhead') questions += 1;
     if (a?.kind !== 'replacement') continue;
     if (a.replacement?.kind === 'asEntersChoose') {
       questions += 1;
+      choices += 1;
       if (
         a.replacement.what === 'creatureType' ||
         a.replacement.what === 'color' ||
@@ -91,6 +97,17 @@ export function chosenIssues(
         a.replacement.what === 'cardType'
       ) {
         asked.push(a.replacement.what);
+      }
+      // Issue 184: "choose a color other than blue": the excluded color is a color, and only a choice of a color has one.
+      const except = (a.replacement as { except?: unknown }).except;
+      if (
+        except !== undefined &&
+        (a.replacement.what !== 'color' || !['W', 'U', 'B', 'R', 'G'].includes(except as string))
+      ) {
+        out.push({
+          path: `${path}.abilities`,
+          message: 'only a choice of a color has a color it leaves out, and it is one of the five',
+        });
       }
       // D-151: "choose Khans or Dragons": at least two different names, and only that kind of choice has them.
       const named = a.replacement.options;
@@ -112,15 +129,18 @@ export function chosenIssues(
           message: 'only a choice among options (what: "option") lists options',
         });
       }
+    } else if (a.replacement?.kind === 'entersTappedUnlessReveals') {
+      questions += 1;
+      reveals += 1;
     } else if (
       a.replacement?.kind === 'entersTappedUnlessPays' ||
-      a.replacement?.kind === 'entersTappedUnlessReveals' ||
       a.replacement?.kind === 'entersAsCopy'
     ) {
       questions += 1;
     }
   }
-  if (questions > 1) {
+  const revealWithChoice = questions === 2 && reveals === 1 && choices === 1;
+  if (questions > 1 && !revealWithChoice) {
     out.push({
       path: `${path}.abilities`,
       message:

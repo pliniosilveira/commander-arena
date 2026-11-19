@@ -30,6 +30,9 @@ export function makeSettled(
   parts: readonly TokenBatch[],
   tapped: boolean,
   flow: OrderFlow,
+  embalmed = false,
+  /** CR 303.4f (issue 89): the permanent the Aura tokens the effect itself creates enter attached to, named by the effect (not chosen). */
+  attachHost?: ObjectId,
 ): MadeTokens | TokensAsked {
   const settled = settleTokens(state, seat, res.source, parts, flow);
   if (settled.kind === 'asked') return settled;
@@ -39,7 +42,23 @@ export function makeSettled(
   for (const part of settled.parts) {
     const partTapped = part.original && tapped;
     if (tokenAsks(next, seat, part.definition)) {
-      front.push(...enterTokenInstructions(seat, part.definition, part.count, partTapped, true));
+      // CR 702.128b: the token a resolving embalm ability creates is embalmed (a token a replacement effect made in its place is not).
+      const instructions = enterTokenInstructions(
+        seat,
+        part.definition,
+        part.count,
+        partTapped,
+        true,
+      );
+      const embalmedToo =
+        embalmed && part.original
+          ? instructions.map((one) => ({ ...one, embalmed: true as const }))
+          : instructions;
+      front.push(
+        ...(attachHost !== undefined && part.original
+          ? embalmedToo.map((one) => ({ ...one, host: attachHost }))
+          : embalmedToo),
+      );
       continue;
     }
     const r = makeTokens(next, seat, part.definition, part.count, undefined, partTapped);

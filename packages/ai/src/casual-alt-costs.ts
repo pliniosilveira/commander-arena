@@ -1,6 +1,6 @@
 /**
  * CasualAgent choices among the named alternative costs of a card (D-121, D-124): Overload (CR 702.96), Evoke
- * (CR 702.74), Dash (CR 702.109) and Spectacle (CR 702.137). The engine lists one `castSpell` option for each alternative the
+ * (CR 702.74), Dash (CR 702.109), Bestow (CR 702.103) and Spectacle (CR 702.137). The engine lists one `castSpell` option for each alternative the
  * caster can pay, beside the ordinary cast, so the agent only decides which of the options of one card to
  * take. It reads the card's text from the view, like the rest of the heuristics:
  * - Overload ("each" for "target") is chosen when the text only names the opponent's objects ("you don't
@@ -72,6 +72,15 @@ function wantsDash(view: GameView, card: ObjectView, ordinary: boolean): boolean
 }
 
 /**
+ * Bestow (CR 702.103): an Aura on the agent's own creature when the ordinary cast cannot be paid; with the ordinary cast on offer the card is
+ * cast as the creature it is. It needs a creature of its own to enchant (the host is chosen as for any Aura, `chooseAuraHost`): an Aura on an
+ * opponent's creature is never what it wants.
+ */
+function wantsBestow(view: GameView, ordinary: boolean): boolean {
+  return !ordinary && view.battlefield.some((o) => isCreature(o) && o.controller === view.viewer);
+}
+
+/**
  * Which named alternative cost to cast the card for, among `offered` (the alternatives the engine lists
  * for it), or undefined for the ordinary cast. `ordinary` says whether the ordinary cast is on offer (and
  * worth making); with none of the alternatives wanted and no ordinary cast the card is not cast.
@@ -88,9 +97,12 @@ export function chooseNamedAlternative(
   if (offered.has('overload') && wantsOverload(view, card, ordinary)) return 'overload';
   if (offered.has('dash') && wantsDash(view, card, ordinary)) return 'dash';
   if (offered.has('evoke') && wantsEvoke(view, card, ordinary)) return 'evoke';
+  if (offered.has('bestow') && wantsBestow(view, ordinary)) return 'bestow';
   // D-149: "pay {W} and tap four untapped creatures with flying": chosen when the ordinary cast cannot be paid; the creatures it
   // taps are chosen like any permanents tapped for a cost (`choosePermanentToTap`).
   if (offered.has('tapPermanents') && !ordinary) return 'tapPermanents';
+  // CR 702.37c (Morph): a face-down 2/2 for {3} when the ordinary cast cannot be paid; it is turned face up later for its morph cost (`casual-face-down.ts`).
+  if (offered.has('morph') && !ordinary) return 'morph';
   return undefined;
 }
 
@@ -106,7 +118,8 @@ export function alternativeSpend(card: ObjectView, kind: NamedAlternativeKind): 
  * come back from the graveyard (flashback, escape, unearth, eternalize) is kept longest, since exiling it ends that.
  */
 function graveyardKeepValue(o: ObjectView): number {
-  if (/\b(flashback|escape|unearth|eternalize)\b/i.test(o.oracleText)) return 20 + manaValueOf(o);
+  if (/\b(flashback|escape|unearth|eternalize|embalm)\b/i.test(o.oracleText))
+    return 20 + manaValueOf(o);
   if (isLand(o)) return 0;
   if (o.types.includes('instant') || o.types.includes('sorcery')) return 1;
   return 2 + manaValueOf(o) / 10;

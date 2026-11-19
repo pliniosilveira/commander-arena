@@ -4,9 +4,17 @@
  * needs and is checked before it runs. Every continuous effect here lasts until end of turn, the
  * one duration the engine runs (`duration:untilEndOfTurn`), and the clause must state it.
  */
-import type { CardType, Color, Effect, Keyword, ObjectSelector } from '@commander-arena/engine';
+import type {
+  CardType,
+  Color,
+  Effect,
+  Keyword,
+  ObjectSelector,
+  PtAmount,
+} from '@commander-arena/engine';
 import type { IrClause, IrTypeList } from '../ir/types';
 import { grantedKeyword } from '../rules/keyword/vocabulary';
+import { lowerAmount } from './amounts';
 import { arg, type Effects, eachObject, failure, operand } from './clauses';
 import { missingFeatures } from './features';
 import { colorLetter, itemsOf, objectSelectorOf } from './nouns';
@@ -73,7 +81,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
         ctx,
         (objects) => ({ kind: 'grantKeyword', objects, keyword, duration: END }),
         'objects',
-        { ...TRIGGER_SUBJECT, token: true },
+        { ...TRIGGER_SUBJECT, token: true, eachMention: true },
       );
     }
     // D-472, D-473: a keyword without parameters, "afflict 3" or a landwalk; each word is one node of the engine's.
@@ -98,7 +106,7 @@ export const GRANT_KEYWORD: Lowering<IrClause, Effects> = {
             : END,
       }),
       'objects',
-      { ...TRIGGER_SUBJECT, token: true },
+      { ...TRIGGER_SUBJECT, token: true, eachMention: true },
     );
   },
 };
@@ -120,17 +128,22 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     if (given?.kind !== 'restrictionKind') return failure(clause);
     // "for as long as you control ~" (stage P45, D-197, CR 611.2b): the duration of an ability of a permanent.
     const whileControlling = scope === 'whileYouControlSelf';
-    if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn' && !whileControlling) {
+    // "for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): "it can't attack or block" with the duration of the effect that took the permanent.
+    const whileRemains = scope === 'whileSelfRemains';
+    if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn' && !whileControlling && !whileRemains) {
       return failure(clause);
     }
-    if (whileControlling) {
-      const blocked = missingFeatures(['duration:forAsLongAsYouControlThis']);
+    if (whileControlling || whileRemains) {
+      const blocked = missingFeatures([
+        whileRemains ? 'duration:forAsLongAsThisRemains' : 'duration:forAsLongAsYouControlThis',
+      ]);
       if (blocked.length > 0)
         return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     const { restriction } = given;
     if (
       restriction !== 'cantBlock' &&
+      (restriction !== 'cantAttack' || !whileRemains) &&
       restriction !== 'cantBeBlocked' &&
       restriction !== 'attacksEachCombat' &&
       restriction !== 'mustBeBlocked' &&
@@ -156,7 +169,11 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
         kind: 'restrict',
         objects,
         restriction,
-        duration: whileControlling ? 'forAsLongAsYouControlThis' : END,
+        duration: whileControlling
+          ? 'forAsLongAsYouControlThis'
+          : whileRemains
+            ? 'forAsLongAsThisRemains'
+            : END,
       }),
       'objects',
       TRIGGER_SUBJECT,
@@ -171,15 +188,40 @@ export const LOSE_ALL_ABILITIES: Lowering<IrClause, Effects> = {
   needs: ['effect:loseAllAbilities', 'duration:untilEndOfTurn'],
   takesDuration: true,
   lower(clause, ctx) {
-    if (!endsWithTurn(clause)) return failure(clause);
+    // "... for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): the duration of an ability of a permanent.
+    const whileRemains = clause.duration?.scope === 'whileSelfRemains';
+    if (!endsWithTurn(clause) && !whileRemains) return failure(clause);
+    if (whileRemains) {
+      const blocked = missingFeatures(['duration:forAsLongAsThisRemains']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    }
     return eachObject(
       clause,
       ctx,
       (objects) => ({
         kind: 'loseAllAbilities',
         objects,
-        duration: END,
+        duration: whileRemains ? ('forAsLongAsThisRemains' as const) : END,
       }),
+      'objects',
+      TRIGGER_SUBJECT,
+    );
+  },
+};
+
+/** "Until end of turn, creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a, D-649). */
+export const LOSE_HEXPROOF_SHROUD: Lowering<IrClause, Effects> = {
+  head: 'loseHexproofShroud',
+  id: 'lower.lose-hexproof-shroud',
+  needs: ['effect:loseHexproofShroud', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    if (!endsWithTurn(clause)) return failure(clause);
+    return eachObject(
+      clause,
+      ctx,
+      (objects) => ({ kind: 'loseHexproofShroud', objects, duration: END }),
       'objects',
       TRIGGER_SUBJECT,
     );
@@ -195,16 +237,46 @@ export const SET_PT: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const base = arg(clause, 'basePt');
     if (base?.kind !== 'basePt' || !endsWithTurn(clause)) return failure(clause);
+    // "base power and toughness X/X" (CR 107.3a, 613.4b): the X the ability announced, read as the effect resolves.
+    let power: PtAmount = base.power;
+    let toughness: PtAmount = base.toughness;
+    if (base.x === true) {
+      const x = lowerAmount({ kind: 'x', span: base.span }, ctx, clause.rule);
+      if (!x.ok) return x;
+      power = x.value;
+      toughness = x.value;
+    }
+    // "become equal to ~'s power and toughness" (CR 613.4b, 611.2c): read from the source as the effect resolves, then fixed.
+    if (base.fromSource === true) {
+      const missing = missingFeatures(['amount:powerOf', 'amount:toughnessOf']);
+      if (missing.length > 0) {
+        return { ok: false, needs: missing, at: clause.span, rule: clause.rule };
+      }
+      power = { kind: 'powerOf', of: { kind: 'this' } };
+      toughness = { kind: 'toughnessOf', of: { kind: 'this' } };
+    }
     return eachObject(
       clause,
       ctx,
-      (objects) => ({
-        kind: 'setPt',
-        objects,
-        power: base.power,
-        toughness: base.toughness,
-        duration: END,
-      }),
+      (objects) => ({ kind: 'setPt', objects, power, toughness, duration: END }),
+      'objects',
+      TRIGGER_SUBJECT,
+    );
+  },
+};
+
+/** "Until end of turn, creatures you control ... gain all creature types" (CR 205.3m, 613.1d): every creature type added to the objects, in layer 4. */
+export const GAIN_ALL_CREATURE_TYPES: Lowering<IrClause, Effects> = {
+  head: 'gainAllCreatureTypes',
+  id: 'lower.gain-all-creature-types',
+  needs: ['effect:setTypes', 'duration:untilEndOfTurn'],
+  takesDuration: true,
+  lower(clause, ctx) {
+    if (!endsWithTurn(clause)) return failure(clause);
+    return eachObject(
+      clause,
+      ctx,
+      (objects) => ({ kind: 'setTypes', objects, allCreatureTypes: true, duration: END }),
       'objects',
       TRIGGER_SUBJECT,
     );
@@ -398,6 +470,63 @@ export const DELAYED_RETURN: Lowering<IrClause, Effects> = {
       to: 'battlefield',
       ...(to.tapped === true ? { tapped: true } : {}),
       controller: to.whose,
+    };
+    return {
+      ok: true,
+      value: [{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "When enchanted creature dies, return this card to the battlefield at the beginning of the next end step." (D-657, CR 603.7, 603.7c, 400.7, 303.4f): the engine's `delayedTrigger`
+ * at the end step of each turn whose effect puts the card of the Aura that has the ability (`thisCard`, in the graveyard by then) onto the battlefield under the control of the
+ * controller of the ability, where it chooses what it enchants (`rules/aura-entry.ts`). Refused anywhere but the "dies" trigger of the attached creature.
+ */
+export const DELAYED_RETURN_THIS_CARD: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnThisCard',
+  id: 'lower.delayed-return-this-card',
+  needs: ['effect:delayedTrigger', 'effect:moveToZone', 'selector:thisCard'],
+  lower(clause, ctx): LowerResult<Effects> {
+    if (!ctx.auraDies) return failure(clause);
+    const back: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'thisCard' },
+      to: 'battlefield',
+      controller: 'you',
+    };
+    return {
+      ok: true,
+      value: [{ kind: 'delayedTrigger', at: { step: 'endStep', whose: 'each' }, effect: back }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "When enchanted creature dies, return that card to the battlefield under its owner's control. Return this card to the battlefield attached to that creature at the beginning of the next
+ * end step." (issue 89, Gift of Immortality; CR 603.7, 603.7c, 400.7, 303.4f, 303.4g): the engine's `delayedTrigger` at the end step of each turn whose effect puts the card of the Aura that
+ * has the ability (`thisCard`) onto the battlefield attached to the creature the return before it put there (`moved`, bound as the delayed ability is created). Refused anywhere but right
+ * after that return, in the "dies" trigger of the attached creature.
+ */
+export const DELAYED_RETURN_THIS_CARD_ATTACHED: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnThisCardAttached',
+  id: 'lower.delayed-return-this-card-attached',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:thisCard',
+    'ability:delayedReturnAttached',
+  ],
+  lower(clause, ctx): LowerResult<Effects> {
+    if (!ctx.auraDies || !ctx.returnedDyingCard) return failure(clause);
+    const back: Effect = {
+      kind: 'moveToZone',
+      objects: { kind: 'thisCard' },
+      to: 'battlefield',
+      controller: 'you',
+      attachTo: { kind: 'moved' },
     };
     return {
       ok: true,

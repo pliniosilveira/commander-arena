@@ -5,6 +5,7 @@
  */
 
 import type { CardFace } from '../cards/definition';
+import { isNonCreatureSubtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
 import type { Ability, Effect, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
@@ -37,8 +38,13 @@ export function checkDragonsEffect(
       // D-187: "the top two cards of target opponent's library": one player, a target (CR 115.1).
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
-        if (kindOf(e.from) !== 'target') {
-          issue(out, `${path}.from`, 'the library whose top cards are exiled is a target');
+        // Issue 279: or "each player's library" (`eachPlayer`).
+        if (kindOf(e.from) !== 'target' && kindOf(e.from) !== 'eachPlayer') {
+          issue(
+            out,
+            `${path}.from`,
+            "the library whose top cards are exiled is a target or each player's ('eachPlayer')",
+          );
         }
       }
       if (e.faceDown !== undefined && e.faceDown !== true) {
@@ -57,6 +63,10 @@ export function checkDragonsEffect(
       }
       if (e.lookAt !== undefined && e.lookAt !== true) {
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
+      }
+      // Lorehold group 1: "you may cast it this turn".
+      if (e.castOnly !== undefined && e.castOnly !== true) {
+        issue(out, `${path}.castOnly`, 'castOnly must be true when present');
       }
       return true;
     case 'mayCastEachType':
@@ -89,6 +99,35 @@ export function checkDragonsEffect(
     case 'revealTopCast':
       // CR 701.20a, 608.2g: the limit on the mana value of the card revealed, an amount read as the effect runs.
       checkAmount(e.manaValueBelow, `${path}.manaValueBelow`, scope, out);
+      return true;
+    case 'replaceEnchant':
+      // CR 702.5a, 613.1f (Animate Dead): the Aura with the ability swaps one enchant ability of permanents for another.
+      if (e.objects?.kind !== 'this' || scope.owner !== 'ability') {
+        issue(
+          out,
+          `${path}.objects`,
+          'a replaceEnchant is about the Aura the ability belongs to: this',
+        );
+      }
+      for (const key of ['loses', 'gains'] as const) {
+        const k = e[key];
+        if (k?.kind !== 'enchant' || k.player !== undefined) {
+          issue(out, `${path}.${key}`, `${key} is an enchant ability of permanents or cards`);
+        } else {
+          checkFilter(k.filter, `${path}.${key}.filter`, out);
+        }
+      }
+      return true;
+    case 'revealTopDuel':
+      // CR 701.20a, 119.3: "the other player" is defined only when exactly two players are named, so the selector is `all` of two members.
+      checkPlayerSelector(e.players, `${path}.players`, scope, out);
+      if (e.players?.kind !== 'all' || e.players.of.length !== 2) {
+        issue(
+          out,
+          `${path}.players`,
+          'a revealTopDuel names two players, { kind: "all", of: [a, b] }, so that "the other player" is defined',
+        );
+      }
       return true;
     case 'revealTop':
       // CR 701.20 (D-151): the players who reveal, the cards in the library that go on, and where they go.
@@ -125,6 +164,13 @@ export function checkDragonsEffect(
       if (e.onMatch !== undefined) {
         // Galadriel group 1: what is done when the card revealed matches. It reads nothing of the card (the engine does not name it), so no target and no "it".
         checkEffect(e.onMatch, `${path}.onMatch`, { ...scope, xAllowed: false }, out);
+      }
+      if (e.otherwiseTo !== undefined && (e.otherwiseTo !== 'hand' || e.to === undefined)) {
+        issue(
+          out,
+          `${path}.otherwiseTo`,
+          'otherwiseTo is "hand", and only with `to` (a card that matches onMatch stays on top)',
+        );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.to !== 'battlefield')) {
         issue(
@@ -375,6 +421,50 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       if (s.gainsHaste !== undefined && s.gainsHaste !== true) {
         issue(out, `${path}.gainsHaste`, 'gainsHaste must be true when present');
       }
+      // CR 601.2b, 118.8: the permanent sacrificed as an additional cost, a filter of permanents the caster controls.
+      if (s.sacrifice !== undefined) {
+        checkFilter(s.sacrifice, `${path}.sacrifice`, out);
+        if (
+          filterSome(
+            s.sacrifice,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.controller !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.sacrifice`,
+            'the permanent sacrificed is one the caster controls: no zone, owner, controller, stackKind, or anything read from the game',
+          );
+        }
+      }
+      return true;
+    case 'playLandsFromGraveyard':
+      // CR 305.1: the land cards that may be played from the graveyard, as the card in the graveyard is.
+      if (s.lands !== undefined) {
+        checkFilter(s.lands, `${path}.lands`, out);
+        if (
+          filterSome(
+            s.lands,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.controller !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.lands`,
+            'the land is a card in your graveyard: no zone, owner, controller, stackKind, or anything read from the game',
+          );
+        }
+      }
       return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.
@@ -461,6 +551,49 @@ export function checkDragonsReplacement(r: Replacement, path: string, out: AstIs
         }
       });
     }
+  }
+  // CR 707.9b, 702.128b: "except if this creature was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
+  if (r.ifEmbalmed !== undefined) {
+    const x = r.ifEmbalmed;
+    if (typeof x !== 'object' || x === null) {
+      issue(out, `${path}.ifEmbalmed`, 'ifEmbalmed is a set of exceptions');
+    } else {
+      if (
+        x.setColors !== undefined &&
+        (!Array.isArray(x.setColors) ||
+          x.setColors.some((c) => !isOneOf(c, ['W', 'U', 'B', 'R', 'G'])))
+      ) {
+        issue(out, `${path}.ifEmbalmed.setColors`, 'setColors is a list of colors');
+      }
+      if (x.noManaCost !== undefined && x.noManaCost !== true) {
+        issue(out, `${path}.ifEmbalmed.noManaCost`, 'noManaCost must be true when present');
+      }
+      if (
+        x.addSubtypes !== undefined &&
+        (!Array.isArray(x.addSubtypes) ||
+          x.addSubtypes.length === 0 ||
+          x.addSubtypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t)))
+      ) {
+        issue(
+          out,
+          `${path}.ifEmbalmed.addSubtypes`,
+          'addSubtypes is a non-empty list of creature types',
+        );
+      }
+    }
+  }
+  // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
+  if (r.withX !== undefined && (typeof r.withX.counter !== 'string' || r.withX.counter === '')) {
+    issue(out, `${path}.withX.counter`, 'withX names a counter');
+  }
+  // Issue 103 (CR 707.9b): "except it's a Dragon in addition to its other types".
+  if (
+    r.addSubtypes !== undefined &&
+    (!Array.isArray(r.addSubtypes) ||
+      r.addSubtypes.length === 0 ||
+      r.addSubtypes.some((t) => typeof t !== 'string' || isNonCreatureSubtype(t)))
+  ) {
+    issue(out, `${path}.addSubtypes`, 'addSubtypes is a non-empty list of creature types');
   }
   return true;
 }

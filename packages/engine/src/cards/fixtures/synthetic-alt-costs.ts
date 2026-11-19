@@ -350,6 +350,44 @@ export const SYNTHETIC_ALT_COST_LIST: readonly CardDefinition[] = [
     spell: { effect: { kind: 'loseLife', player: { kind: 'eachOpponent' }, amount: 2 } },
   }),
 
+  // ---- Harmonize (CR 702.180): cast from the graveyard, optionally tapping a creature to reduce the cost; exiled as it leaves the stack.
+  singleFace({
+    name: 'SYNTHETIC Harmonize Surge',
+    manaCost: ['X', 'R', 'R'],
+    types: ['sorcery'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Each opponent loses X life. Harmonize {X}{R}{R}.',
+    alternativeCosts: [{ kind: 'harmonize', cost: mana('X', 'R', 'R') }],
+    spell: {
+      x: true,
+      effect: { kind: 'loseLife', player: { kind: 'eachOpponent' }, amount: { kind: 'x' } },
+    },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Harmonize Drain',
+    manaCost: ['1', 'B'],
+    types: ['sorcery'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText: 'Each opponent loses 3 life. Harmonize {3}{B}.',
+    alternativeCosts: [{ kind: 'harmonize', cost: mana('3', 'B') }],
+    spell: { effect: { kind: 'loseLife', player: { kind: 'eachOpponent' }, amount: 3 } },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Harmonize Bolt',
+    manaCost: ['R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText: 'Harmonize {R}: deals 1 damage to target creature an opponent controls.',
+    alternativeCosts: [{ kind: 'harmonize', cost: mana('R') }],
+    spell: {
+      targets: [OPPONENT_CREATURE],
+      effect: { kind: 'dealDamage', amount: 1, to: T1 },
+    },
+  }),
+
   // ---- Unearth (CR 702.84): an activated ability from the graveyard; the rest is the engine's.
   singleFace({
     name: 'SYNTHETIC Unearth Gnoll',
@@ -382,6 +420,54 @@ export const SYNTHETIC_ALT_COST_LIST: readonly CardDefinition[] = [
         kind: 'triggered',
         trigger: { kind: 'dies', what: { kind: 'this' } },
         effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+      },
+    ],
+  }),
+  // ---- Bestow (CR 702.103)
+  // "Bestow {3}{W}. Enchanted creature gets +2/+2." The Aura half is the engine's; the card writes its own creature text and the static ability the bestowed permanent has.
+  singleFace({
+    name: 'SYNTHETIC Bestow Spirit',
+    manaCost: ['1', 'W', 'W'],
+    types: ['enchantment', 'creature'],
+    subtypes: ['Spirit'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 2,
+    toughness: 2,
+    oracleText: 'Bestow {3}{W}. Enchanted creature gets +2/+2.',
+    alternativeCosts: [{ kind: 'bestow', cost: mana('3', 'W') }],
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'modifyPt',
+          subject: { kind: 'attached', types: ['creature'] },
+          power: 2,
+          toughness: 2,
+        },
+      },
+    ],
+  }),
+  // A plain creature card with bestow: its permanent is a vanilla 1/1 and an Aura that gives flying.
+  singleFace({
+    name: 'SYNTHETIC Bestow Wisp',
+    manaCost: ['W'],
+    types: ['creature'],
+    subtypes: ['Spirit'],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    power: 1,
+    toughness: 1,
+    oracleText: 'Bestow {2}{W}. Enchanted creature has flying.',
+    alternativeCosts: [{ kind: 'bestow', cost: mana('2', 'W') }],
+    abilities: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'grantKeyword',
+          subject: { kind: 'attached', types: ['creature'] },
+          keyword: { kind: 'flying' },
+        },
       },
     ],
   }),

@@ -20,6 +20,11 @@ export type ManaRestriction =
   /** May be spent only on activated abilities. */
   | { readonly kind: 'abilitiesOnly' }
   /**
+   * May be spent only on a cost that contains {X} (CR 106.6, 107.3; "Spend this mana only on costs that contain {X}", Elementalist's Palette): the mana cost of a spell or the
+   * activation cost of an ability with an {X} in it.
+   */
+  | { readonly kind: 'xCost' }
+  /**
    * May be spent only on spells (never on abilities) that match (CR 106.6; D-149: "Spend this mana only to cast an Angel spell"): the spell
    * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
    */
@@ -32,6 +37,14 @@ export type ManaRestriction =
        * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
        */
       readonly alsoAbilities?: true;
+      /**
+       * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs" (CR 106.6, 202.3, 107.3): the spell has at least one of these
+       * qualities. Never with `alsoAbilities`: an ability has no mana value.
+       */
+      readonly qualities?: readonly (
+        | { readonly kind: 'manaValueAtLeast'; readonly value: number }
+        | { readonly kind: 'hasX' }
+      )[];
     };
 
 /**
@@ -41,9 +54,10 @@ export type ManaRestriction =
 export interface ManaRider {
   /**
    * `haste`: the spell's permanent has haste until end of turn. `scry`: its controller scries `count` (a triggered ability of `source`, group 4 of the Vraska deck).
+   * `counters` (issue 241): the commander spell it was spent on enters with as many more +1/+1 counters as the times it has been cast from the command zone (`countCommanderCasts`).
    * `copy` (D-328): a triggered ability of `source` copies the spell (`newTargets`: whether its controller may choose new targets for the copy).
    */
-  readonly kind: 'haste' | 'scry' | 'copy';
+  readonly kind: 'haste' | 'scry' | 'copy' | 'counters';
   readonly types?: readonly string[];
   /** D-328: "a red instant or sorcery spell": the spell has one of these colors (`W`, `U`, `B`, `R`, `G`). */
   readonly colors?: readonly string[];
@@ -73,6 +87,11 @@ export interface ManaObject {
    * Treasure is sacrificed to make its mana, so the permanent is gone when the mana is spent). Absent when unknown (mana a test adds).
    */
   readonly sourceTypes?: readonly string[];
+  /**
+   * D-650 (CR 500.5, 106.4): "Until end of turn, you don't lose this mana as steps and phases end": it does not empty as a step or a phase ends, but it does when the cleanup step
+   * of the turn ends (the effect that kept it ends with the turn). Absent for most mana.
+   */
+  readonly stays?: true;
 }
 
 /** A parsed mana cost: how many of each colored symbol, generic, and the special symbols. */

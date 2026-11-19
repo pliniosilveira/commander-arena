@@ -165,7 +165,7 @@ export interface StepOutcomeLike {
 
 export function moveInstructions(
   ids: readonly ObjectId[],
-  to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile',
+  to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command',
   position: 'top' | 'bottom' | number = 'top',
   tapped = false,
   controller?: 'owner' | 'you',
@@ -232,5 +232,7 @@ export function tokenDefinitionOf(
     ...values.characteristics,
     abilities: [...values.abilities],
     ...(prepareOf === null ? {} : { prepareOf }),
+    // CR 709.5b: the halves of a copied Room are part of the copiable values.
+    ...(values.doors === undefined ? {} : { doors: values.doors }),
   };
 }

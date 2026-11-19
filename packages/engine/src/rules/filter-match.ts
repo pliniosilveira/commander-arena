@@ -14,6 +14,7 @@ import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
 import { isCommanderObject } from './melded';
+import { xSymbolCount } from './x-value';
 
 /** The characteristics a filter looks at. `Derived` has all of them. */
 export interface FilterSubject {
@@ -32,6 +33,8 @@ export interface FilterSubject {
   /** The base power (CR 208.4b), read by `powerAboveBase` (D-431); left out where the caller does not know it, which fails that test closed. */
   readonly basePower?: number | null;
   readonly manaValue?: number;
+  /** The mana cost symbols, read by `xInManaCost`; left out where the caller does not know it, which fails that test closed. */
+  readonly manaCost?: readonly string[] | null;
   /**
    * The keywords without parameters the object has (`keywords`, `notKeywords`, D-133); left out where the caller does
    * not know them, which fails a `keywords` test closed and passes a `notKeywords` one (`validateCard` refuses both
@@ -45,6 +48,8 @@ export interface FilterSubject {
   readonly commander?: boolean;
   /** Whether the permanent is modified (`modified`, D-416, CR 700.9); left out where the caller does not know, which fails the test closed. */
   readonly modified?: boolean;
+  /** Whether the permanent is goaded (`goaded`, CR 701.15b); left out where the caller does not know, which fails the test closed. */
+  readonly goaded?: boolean;
 }
 
 /** D-111: whether `value` satisfies the comparison; an object with no such value satisfies none. */
@@ -83,15 +88,19 @@ export interface FilterContext {
    * the current combat through `subjectAffects`, independently of the cached static-ability index.
    */
   readonly attackers?: readonly ObjectId[];
-  /** The zone a spell that is being cast comes from, for `notCastFromHand` while the card has not moved to the stack yet (D-235): the cost code passes it. */
+  /** The zone a spell that is being cast comes from, for `notCastFromHand` and `castFromHand` while the card has not moved to the stack yet (D-235): the cost code passes it. */
   readonly castFrom?: 'hand' | 'command' | 'graveyard' | 'exile' | 'library';
   /**
    * The creatures attacking the controller of the ability as a player, for `attackingYou` (D-131): read from the
    * combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfYou?: readonly ObjectId[];
+  /** The creatures attacking the controller as a player or a planeswalker the controller controls, for `attackingYou: 'orPlaneswalkers'` (CR 508.1b, 506.3). */
+  readonly attackersOfYouOrPlaneswalkers?: readonly ObjectId[];
   /** The number `manaValueAtMost` stands for (D-230), worked out by the caller that has the state. */
   readonly manaValueLimit?: number;
+  /** The creatures declared as blockers that are still in combat, for `blocking` (CR 509.1g): read from the combat in progress by the caller. */
+  readonly blockers?: readonly ObjectId[];
   /** The creatures that are attacking or blocking, for `attackingOrBlocking` (D-229): read from the combat in progress by the caller. */
   readonly inCombat?: readonly ObjectId[];
   /**
@@ -99,13 +108,25 @@ export interface FilterContext {
    * from the combat in progress by the caller, like `attackers`; without it the flag matches nothing.
    */
   readonly attackersOfOpponents?: readonly ObjectId[];
+  /** The creatures attacking an opponent of the controller as a player, for `attackingOpponents: 'players'` (D-650). */
+  readonly attackersOfOpponentPlayers?: readonly ObjectId[];
   /**
    * The power of this ability's source (`powerLessThanSource`, CR 702.134a, D-120), null when the source
    * has none or is not known; absent fails the comparison closed.
    */
   readonly sourcePower?: number | null;
+  /**
+   * The power of the object `powerGreaterThan` names, read by the caller as the effect resolves (CR 208.1, 608.2c); null when it names nothing or has no power.
+   * Absent fails the comparison closed.
+   */
+  readonly powerLimit?: number | null;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
+  /**
+   * The spell is looked at before its X is announced (CR 601.2b: X comes before the targets), so "with mana value X" may hold for any mana value: the question "can it be cast
+   * at all?" asks it, and the X offered is limited to those that leave a legal target (`rules/cast.ts`).
+   */
+  readonly xUnannounced?: true;
   /**
    * The players this ability's source dealt combat damage to this turn, for `controllerDealtDamageBySource` (D-139): read from the turn
    * log by the caller; without it the flag matches nothing.
@@ -115,10 +136,14 @@ export interface FilterContext {
   readonly graveyarded?: readonly ObjectId[];
   /** The permanents that entered the battlefield this turn (`enteredThisTurn`, group 4 of the Vraska deck): the turn log, read by the caller; absent fails the flag closed. */
   readonly entered?: readonly ObjectId[];
+  /** The cards the source exiled with its linked ability (`exiledWithSource`, Lorehold group 2, CR 607.2a): read from the source by the caller; absent fails the flag closed. */
+  readonly linkedExile?: readonly ObjectId[];
   /**
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
+  /** The card types of the spell the trigger is about (`sharesCardTypeWith`, CR 205.2a): read by the caller; absent fails the flag closed. */
+  readonly subjectTypes?: readonly CardType[];
   /**
    * What another object is, for the filters that read objects attached to this one or the one this is attached to (`attachedTo`, `enchanted`, D-422): the caller says how
    * (`derive` for a rule that reads the game, the view after layers 1, 4 and 5 for `derive` itself). Absent fails those filters closed.
@@ -152,8 +177,16 @@ function attachedToHolds(
   );
 }
 
-/** CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). Fails closed without `describeOther`. */
-function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext): boolean | null {
+/**
+ * CR 303.4: "enchanted": at least one Aura is attached to the permanent (an Equipment or a Fortification is not an Aura). With `by`, an Aura that player controls (CR 303.4e, D-647).
+ * Fails closed without `describeOther`.
+ */
+function hasAuraAttached(
+  state: GameState,
+  obj: GameObject,
+  ctx: FilterContext,
+  by?: SeatId,
+): boolean | null {
   const describeOther = ctx.describeOther;
   if (describeOther === undefined) return null;
   return state.battlefield.some((id) => {
@@ -161,7 +194,8 @@ function hasAuraAttached(state: GameState, obj: GameObject, ctx: FilterContext):
     return (
       other !== undefined &&
       other.attachedTo === obj.id &&
-      describeOther(other).subtypes.includes('Aura')
+      describeOther(other).subtypes.includes('Aura') &&
+      (by === undefined || controllerOf(state, other) === by)
     );
   });
 }
@@ -211,6 +245,10 @@ export function matchesFilterWith(
   if (filter.enchanted !== undefined && hasAuraAttached(state, obj, ctx) !== filter.enchanted) {
     return false;
   }
+  // CR 303.4e (D-647): "enchanted by an Aura you control".
+  if (filter.enchantedByYou === true && hasAuraAttached(state, obj, ctx, ctx.controller) !== true) {
+    return false;
+  }
   // CR 122.1 (D-145): "with a counter on it": a counter of any kind, or of the named kind.
   if (filter.hasCounter !== undefined) {
     const has =
@@ -222,12 +260,27 @@ export function matchesFilterWith(
   // CR 506.4 (D-120): an attacking creature is one declared as an attacker that is still in combat.
   if (filter.attacking === true && !(ctx.attackers ?? []).includes(obj.id)) return false;
   if (filter.notAttacking === true && (ctx.attackers ?? []).includes(obj.id)) return false;
+  // CR 509.1g: a blocking creature is one declared as a blocker that is still in combat.
+  if (filter.blocking === true && !(ctx.blockers ?? []).includes(obj.id)) return false;
   // CR 506.4, 509.1g (D-229): "attacking or blocking" is a creature declared as an attacker or a blocker that is still in combat.
   if (filter.attackingOrBlocking === true && !(ctx.inCombat ?? []).includes(obj.id)) return false;
   // D-131: "attacking you" is an attacker whose attack target is the controller as a player.
   if (filter.attackingYou === true && !(ctx.attackersOfYou ?? []).includes(obj.id)) return false;
+  if (
+    filter.attackingYou === 'orPlaneswalkers' &&
+    !(ctx.attackersOfYouOrPlaneswalkers ?? []).includes(obj.id)
+  ) {
+    return false;
+  }
   // D-218: "attacking your opponents and/or planeswalkers they control".
   if (filter.attackingOpponents === true && !(ctx.attackersOfOpponents ?? []).includes(obj.id)) {
+    return false;
+  }
+  // D-650 (CR 508.1b): "attacking one of your opponents" is an attacker whose target is an opponent as a player.
+  if (
+    filter.attackingOpponents === 'players' &&
+    !(ctx.attackersOfOpponentPlayers ?? []).includes(obj.id)
+  ) {
     return false;
   }
   if (filter.stackKind) {
@@ -254,6 +307,8 @@ export function matchesFilterWith(
   if (filter.subtypes && !filter.subtypes.every((t) => d.subtypes.includes(t))) return false;
   if (filter.notSubtypes?.some((t) => d.subtypes.includes(t))) return false;
   if (filter.colorless === true && d.colors.length > 0) return false;
+  // CR 105.2c: a colorless object has no color, so it is "nonblack" like any object that lacks black.
+  if (filter.notColors?.some((c) => d.colors.includes(c))) return false;
   // CR 105.2 (D-139): "two or more colors", "monocolored": how many colors the object has now.
   if (!compares(filter.colorCount, d.colors.length)) return false;
   // CR 111.1 (D-133): a token is a permanent that is not represented by a card.
@@ -265,23 +320,37 @@ export function matchesFilterWith(
   if (filter.commander === 'yours' && obj.owner !== ctx.controller) return false;
   // CR 700.9 (D-416): "modified": a counter, an Equipment, or an Aura its controller controls.
   if (filter.modified === true && d.modified !== true) return false;
+  // CR 701.15b: "goaded": a creature some player's goad effect still holds.
+  if (filter.goaded === true && d.goaded !== true) return false;
   if (filter.keywords && !filter.keywords.every((k) => d.keywords?.includes(k) === true)) {
     return false;
   }
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;
   if (filter.colors && !filter.colors.every((c) => d.colors.includes(c))) return false;
   if (!compares(filter.power, d.power)) return false;
+  // "Each creature with power of the chosen quality" (Zimone's Hypothesis): the power now is odd or even; 0 is even and so is any multiple of 2, negative or not.
+  if (filter.powerParity !== undefined) {
+    if (d.power === null || d.power === undefined) return false;
+    const odd = Math.abs(d.power) % 2 === 1;
+    if (odd !== (filter.powerParity === 'odd')) return false;
+  }
   if (!compares(filter.toughness, d.toughness)) return false;
   if (!compares(filter.manaValue, d.manaValue)) return false;
   // CR 202.3 (D-230): "mana value X or less, where X is ...": the limit is worked out by the caller (`select.ts`); without it the filter fails closed.
-  if (filter.manaValueAtMost !== undefined) {
+  if (filter.manaValueAtMost !== undefined || filter.manaValueBelow !== undefined) {
     if (ctx.manaValueLimit === undefined || d.manaValue === null || d.manaValue === undefined) {
       return false;
     }
     if (d.manaValue > ctx.manaValueLimit) return false;
   }
   // CR 107.3a, 202.3 (D-139): "with mana value X", the X of the ability that is resolving.
-  if (filter.manaValueX === true && (ctx.x === undefined || d.manaValue !== ctx.x)) return false;
+  if (filter.manaValueX === true) {
+    if (ctx.x !== undefined) {
+      if (d.manaValue !== ctx.x) return false;
+    } else if (ctx.xUnannounced !== true || d.manaValue === null || d.manaValue === undefined) {
+      return false;
+    }
+  }
   // CR 510.2 (D-139): "whose controller was dealt combat damage by this creature this turn".
   if (
     filter.controllerDealtDamageBySource === true &&
@@ -300,8 +369,36 @@ export function matchesFilterWith(
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from === undefined || from === 'hand') return false;
   }
+  // CR 601.2a (D-638): "Spells you cast from your hand": a spell on the stack that was cast from the hand.
+  if (filter.castFromHand === true) {
+    const from =
+      ctx.castFrom ??
+      (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
+    if (from !== 'hand') return false;
+  }
+  // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
+  if (
+    filter.xInManaCost === true &&
+    (d.manaCost === undefined || xSymbolCount(d.manaCost ?? []) === 0)
+  )
+    return false;
+  // CR 601.2i (Quandrix Unlimited group E): "your first spell with {X} in its mana cost each turn": no earlier one cast this turn by the caster.
+  if (
+    filter.firstXSpellThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) => e.hasX === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
+  }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
+  // CR 607.2a (Lorehold group 2): "card exiled with this creature": one of the cards the source exiled with its linked ability.
+  if (filter.exiledWithSource === true && !(ctx.linkedExile ?? []).includes(obj.id)) return false;
+  // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura": the object remembers the source, as the same object.
+  if (filter.putWithSource === true && (ctx.source === null || obj.putWith !== ctx.source)) {
+    return false;
+  }
   // CR 702.134a (D-120): "with power less than this creature's power".
   if (filter.powerLessThanSource === true) {
     const power = ctx.sourcePower;
@@ -310,6 +407,14 @@ export function matchesFilterWith(
     }
     if (!(d.power < power)) return false;
   }
+  // CR 208.1, 608.2c: "with power greater than target creature's power": more than the power of the object the effect names.
+  if (filter.powerGreaterThan !== undefined) {
+    const limit = ctx.powerLimit;
+    if (limit === null || limit === undefined || d.power === null || d.power === undefined) {
+      return false;
+    }
+    if (!(d.power > limit)) return false;
+  }
   // CR 208.4b (D-431): "with power greater than its base power": the power the object has now is more than its base power.
   if (filter.powerAboveBase === true) {
     const base = d.basePower;
@@ -317,6 +422,11 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power > base)) return false;
+  }
+  // CR 208.4b: "with base power 0": the base power the object has before counters and effects that only modify it.
+  if (filter.basePowerIs !== undefined) {
+    const base = d.basePower;
+    if (base === null || base === undefined || base !== filter.basePowerIs) return false;
   }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
   if (filter.chosenType === true) {
@@ -342,6 +452,11 @@ export function matchesFilterWith(
           theirs.some((t) => sameCreatureType(t, s)),
       );
     if (!shared) return false;
+  }
+  // CR 205.2a, 603.3d: "that shares a card type with it": a card type that both have.
+  if (filter.sharesCardTypeWith !== undefined) {
+    const theirs = ctx.subjectTypes;
+    if (theirs === undefined || !d.types.some((t) => theirs.includes(t))) return false;
   }
   if (filter.anyOf !== undefined) {
     // A disjunction (CR 115.1: "artifact or enchantment" names one set of legal targets). The

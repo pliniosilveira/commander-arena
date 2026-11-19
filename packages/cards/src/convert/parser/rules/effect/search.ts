@@ -18,7 +18,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrDestinationList, IrFlag, IrNoun, IrZoneSpec, Span } from '../../ir/types';
+import type { IrAmount, IrDestinationList, IrFlag, IrNoun, IrZoneSpec, Span } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
@@ -50,6 +50,35 @@ const referTo = (plural: boolean): Parser<string> =>
     : choice(literal('that card'), literal('it'));
 
 const RULE = 'effect.search';
+
+/** "search your library for " and, for issue 104 (CR 701.23a), "search your graveyard, hand, and/or library for ": two or three of the zones, "and/or" before the last. */
+const ZONE_WORD = '(?:graveyard|hand|library)';
+const WHERE = new RegExp(
+  `search your (library|${ZONE_WORD}(?:, ${ZONE_WORD})?,? and/or ${ZONE_WORD}) for `,
+  'iu',
+);
+
+/** The zones said, as the list the lowering reads; null for the library alone, 'bad' for a zone said twice or the wrong punctuation ("graveyard and/or hand and/or library"). */
+function zonesOf(words: string, span: Span): IrDestinationList | null | 'bad' {
+  if (words.toLowerCase() === 'library') return null;
+  const names = words.toLowerCase().split(/, and\/or |,? and\/or |, /u);
+  const three = names.length === 3;
+  // "A and/or B" (two) or "A, B, and/or C" (three, with the comma before "and/or", as Oracle text writes a list).
+  if (three ? !/^[a-z]+, [a-z]+, and\/or [a-z]+$/u.test(words.toLowerCase()) : names.length !== 2) {
+    return 'bad';
+  }
+  if (new Set(names).size !== names.length) return 'bad';
+  const items = names.map(
+    (zone): IrZoneSpec => ({
+      kind: 'zoneSpec',
+      zone: zone as 'graveyard' | 'hand' | 'library',
+      whose: 'you',
+      span,
+      rule: RULE,
+    }),
+  );
+  return { kind: 'destinations', items, span, rule: RULE };
+}
 
 function flag(value: boolean, span: Span): IrFlag {
   return { kind: 'flag', value, span, rule: RULE };
@@ -129,7 +158,30 @@ function tailFor(cards: IrNoun, yours = true): Parser<Tail> {
       };
     }
     const placed = spanned(sequence(literal(', put '), put))(ctx, afterReveal);
-    if (!placed.ok) return placed;
+    if (!placed.ok) {
+      // Lorehold group 1 (CR 701.23): "search your library for a Plains card and put it onto the battlefield tapped": one card put at once, with no reveal and no shuffle in the same
+      // sentence (a shuffle after it is a sentence of its own: "If you search your library this way, shuffle.").
+      const andPut =
+        yours && !plural && !reveal.ok
+          ? spanned(sequence(literal(' and put '), all))(ctx, afterReveal)
+          : fail(ctx, afterReveal);
+      if (!andPut.ok) return placed;
+      const [, zones] = andPut.value.value;
+      return {
+        ok: true,
+        value: {
+          reveal: revealFlag,
+          destinations: {
+            kind: 'destinations',
+            items: zones,
+            span: andPut.value.span,
+            rule: RULE,
+          },
+          shuffle: flag(false, { start: andPut.pos, end: andPut.pos }),
+        },
+        pos: andPut.pos,
+      };
+    }
     const items = placed.value.value[1];
     const destinations: IrDestinationList = {
       kind: 'destinations',
@@ -166,11 +218,20 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put that card into your graveyard, then shuffle',
     'search your library for an artifact card, reveal that card, put it into your hand, then shuffle',
     'search your library for a basic land card, put it into your hand',
+    // Lorehold group 1 (Claim Jumper): the put is joined with "and", and a shuffle is another sentence.
+    'search your library for a Plains card and put it onto the battlefield tapped',
+    'search your library for a basic land card and put it into your hand',
     // D-405 (CR 701.24b): the found card is left out of the shuffle and put on top.
     'search your library for an enchantment card, reveal it, then shuffle and put that card on top',
     'search your library for an instant or sorcery card, reveal it, then shuffle and put it on top of your library',
     'search your library for a card, then shuffle and put that card on top',
+    // Issue 160 (D-626): "up to X", with X defined right after the noun.
+    'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle',
     'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
+    // Issue 104 (Gate to the Afterlife, CR 701.23a): several zones of the searcher, and a card of a given name.
+    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
+    'search your hand and/or library for a creature card and put it onto the battlefield',
+    'search your graveyard, hand, and/or library for a creature card and put it into your hand',
   ],
   rejects: [
     'search your library for a basic land card, put them onto the battlefield tapped, then shuffle',
@@ -183,26 +244,68 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, put it into your hand, discard a card at random, then shuffle',
     'search your library for up to three basic land cards, put one onto the battlefield and the other into your hand, then shuffle',
     'search your library for a basic land card and put it onto the battlefield tapped, then shuffle',
+    'search your library for a basic land card and put them onto the battlefield tapped',
+    'search your library for up to two basic land cards and put them onto the battlefield tapped',
+    'search your library for a creature card, reveal it and put it into your hand',
+    'search their library for a basic land card and put it onto the battlefield',
     'search their library for a basic land card, put it onto the battlefield, then shuffle',
     'search your library for a creature card with mana value 3 or less, put it onto the battlefield, then shuffle',
     'search your library for a card, reveal those cards, put it into your hand, then shuffle',
+    'search your library for up to X basic land cards, put those cards onto the battlefield tapped, then shuffle',
+    'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put it onto the battlefield tapped, then shuffle',
+    // Issue 104: with several zones the shuffle is another sentence ("If you search your library this way, shuffle."), and nothing is revealed.
+    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, put it onto the battlefield, then shuffle",
+    "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield",
+    "search your graveyard, hand, and library for a card named God-Pharaoh's Gift and put it onto the battlefield",
+    "search your graveyard and/or hand and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
+    "search your hand, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
+    "search your graveyard, hand, and/or library for up to two cards named God-Pharaoh's Gift and put them onto the battlefield",
+    "search their graveyard, hand, and/or library for a card named God-Pharaoh's Gift and put it onto the battlefield",
   ],
   parse: single(
     RULE,
     (ctx, pos) => {
-      const head = sequence(
-        literal('search your library for '),
-        family<IrNoun>('noun', { only: [NOUN] }),
-      )(ctx, pos);
-      if (!head.ok) return head;
-      const cards = head.value[1];
-      const tail = tailFor(cards)(ctx, head.pos);
+      // Issue 104 (CR 701.23a): "search your graveyard, hand, and/or library for ...": the player searches the zones they choose, and finds one card among them.
+      const where = pattern(WHERE)(ctx, pos);
+      if (!where.ok) return where;
+      const zones = zonesOf(where.value[1] ?? '', { start: pos, end: where.pos });
+      if (zones === 'bad') return fail(ctx, pos);
+      const noun = family<IrNoun>('noun', { only: [NOUN] })(ctx, where.pos);
+      if (!noun.ok) return noun;
+      const cards = noun.value;
+      // Issue 160 (D-626, CR 107.3c): "up to X ... cards, where X is the number of tapped creatures you control": the definition comes right after the noun.
+      let after = noun.pos;
+      let amount: IrAmount | null = null;
+      if (cards.count?.kind === 'x') {
+        const defined = sequence(
+          literal(', '),
+          family<IrAmount>('amount', { only: ['amount.where-x'] }),
+        )(ctx, after);
+        if (!defined.ok) return defined;
+        amount = defined.value[1];
+        after = defined.pos;
+      }
+      const tail = tailFor(cards)(ctx, after);
       if (!tail.ok) return tail;
-      return { ok: true, value: { cards, ...tail.value }, pos: tail.pos };
+      // Issue 104: with several zones the card is put at once, one card, with nothing revealed and no shuffle in the sentence.
+      if (
+        zones !== null &&
+        (tail.value.reveal.value || tail.value.shuffle.value || cards.plural || amount !== null)
+      ) {
+        return fail(ctx, pos);
+      }
+      return { ok: true, value: { cards, amount, zones, ...tail.value }, pos: tail.pos };
     },
-    ({ cards, reveal, destinations, shuffle }) => ({
+    ({ cards, amount, zones, reveal, destinations, shuffle }) => ({
       verb: 'search',
-      args: { cards, destinations, reveal, shuffle },
+      args: {
+        cards,
+        destinations,
+        reveal,
+        shuffle,
+        ...(amount === null ? {} : { maxAmount: amount }),
+        ...(zones === null ? {} : { zones }),
+      },
     }),
   ),
 });

@@ -58,10 +58,11 @@ export function runExileTop(
   const n = amountOf(state, effect.count, ctx, []);
   // D-187: "the top two cards of target opponent's library": the library of the one player the selector names, a target that is gone (or no longer
   // legal) exiles nothing (CR 608.2b).
-  const [owner] =
+  // Issue 279 (Etali, Primal Storm): "the top card of each player's library": every player the selector names (`eachPlayer`), in the order it gives, has their own top cards exiled.
+  const owners =
     effect.from === undefined ? [res.controller] : resolvePlayers(state, effect.from, ctx, targets);
-  if (owner === undefined) return moving(state, []);
-  const top = getSeat(state, owner).library.slice(0, Math.max(0, n));
+  if (owners.length === 0) return moving(state, []);
+  const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
   const moves = moveInstructions(top, 'exile');
   // CR 406.3 (D-187): "face down": no one may look at the cards.
   return moving(
@@ -101,7 +102,12 @@ export function runMayPlay(
       timestamp,
       objects: [id],
       until,
-      change: { kind: 'playPermission', seat: res.controller },
+      change: {
+        kind: 'playPermission',
+        seat: res.controller,
+        // Lorehold group 1: "you may cast it this turn" is no permission to play a land.
+        ...(effect.castOnly === true ? { castOnly: true as const } : {}),
+      },
     });
   }
   return done({ ...next, continuousEffects: [...next.continuousEffects, ...created] });
@@ -119,6 +125,7 @@ function bakeAmount(amount: Amount, ids: readonly ObjectId[]): Amount {
       return { ...amount, of: bakeAmount(amount.of, ids) };
     case 'minus':
       return { ...amount, of: bakeAmount(amount.of, ids) };
+    case 'extreme':
     case 'sum':
       return { ...amount, of: amount.of.map((a) => bakeAmount(a, ids)) };
     default:

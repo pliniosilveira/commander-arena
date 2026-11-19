@@ -6,6 +6,7 @@
  */
 import type { CardDefinition, CardFace } from '../cards/definition';
 import { isPermanentType } from '../characteristics';
+import { isRoomDefinition } from '../rules/layouts';
 import type { AstIssue } from './validate-parts';
 
 const isSpellFace = (face: CardFace): boolean =>
@@ -14,6 +15,11 @@ const isSpellFace = (face: CardFace): boolean =>
 /** Whether the face's rules text starts a line with the keyword (Fuse, Aftermath). */
 function hasKeywordLine(face: CardFace, keyword: string): boolean {
   return face.oracleText.split('\n').some((line) => new RegExp(`^${keyword}\\b`, 'i').test(line));
+}
+
+/** Whether the face carries the aftermath keyword (CR 702.127a). */
+function hasAftermath(face: CardFace): boolean {
+  return face.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'aftermath');
 }
 
 /** The chapter abilities of a face: the trigger's range and where the ability is. */
@@ -243,12 +249,59 @@ function meldStructureIssues(def: CardDefinition, out: AstIssue[]): void {
   }
 }
 
+/** Whether the trigger of a triggered ability is "When you unlock this door" (CR 709.5h). */
+function unlocksDoor(face: CardFace): { index: number }[] {
+  return face.abilities.flatMap((a, index) =>
+    a.kind === 'triggered' && a.trigger.kind === 'doorUnlocked' ? [{ index }] : [],
+  );
+}
+
+/**
+ * CR 709.5, 709.5a, 709.5h: a split card whose halves are permanents has a shared type line (the two halves have the same card types and subtypes, a Room); its halves are
+ * both permanents or neither; and only a Room has the abilities of "unlocking this door".
+ */
+function roomStructureIssues(def: CardDefinition, out: AstIssue[]): void {
+  const isRoom = isRoomDefinition(def);
+  if (def.layout === 'split') {
+    const permanents = def.faces.filter((face) => face.types.some((t) => isPermanentType(t)));
+    if (permanents.length > 0 && !isRoom) {
+      out.push({
+        path: 'faces',
+        message:
+          'a split card is a Room (both halves permanents) or has no permanent half (CR 709.5)',
+      });
+    }
+    const [left, right] = def.faces;
+    if (
+      isRoom &&
+      left !== undefined &&
+      right !== undefined &&
+      (left.types.join() !== right.types.join() || left.subtypes.join() !== right.subtypes.join())
+    ) {
+      out.push({
+        path: 'faces[1].types',
+        message: 'the halves of a Room share one type line (CR 709.5a)',
+      });
+    }
+  }
+  def.faces.forEach((face, i) => {
+    if (isRoom) return;
+    for (const { index } of unlocksDoor(face)) {
+      out.push({
+        path: `faces[${i}].abilities[${index}].trigger`,
+        message: 'only a Room (a split card with permanent halves) has doors to unlock (CR 709.5h)',
+      });
+    }
+  });
+}
+
 /** Structural rules of a layout that depend on what the faces are. */
 export function layoutStructureIssues(def: CardDefinition): AstIssue[] {
   const out: AstIssue[] = [];
   sagaStructureIssues(def, out);
   meldStructureIssues(def, out);
   classStructureIssues(def, out);
+  roomStructureIssues(def, out);
   // CR 715.2: the Adventure is an instant or sorcery card face; it resolves to exile, never onto
   // the battlefield (CR 715.3d).
   if (def.layout === 'adventure') {
@@ -299,30 +352,23 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
   const out: AstIssue[] = [];
   sagaSupportIssues(def, out);
   if (def.layout === 'split') {
-    // CR 709.5: a split card that is a permanent (a Room) has a shared type line and unlocked
-    // designations on the battlefield.
+    // CR 702.102 (Fuse) casts both halves at once: not run.
+    if (def.faces.some((face) => hasKeywordLine(face, 'Fuse'))) {
+      out.push({
+        path: 'layout',
+        message: 'layout split with Fuse (CR 702.102) is not implemented by the engine yet',
+      });
+    }
+    // CR 702.127a (Aftermath) is run when its keyword is on the half; a line of that name that the
+    // card does not carry as the keyword is text the engine did not read.
     def.faces.forEach((face, i) => {
-      if (face.types.some((t) => isPermanentType(t))) {
+      if (hasKeywordLine(face, 'Aftermath') && !hasAftermath(face)) {
         out.push({
-          path: `faces[${i}].types`,
-          message:
-            'layout split with a permanent half (a Room, CR 709.5) is not implemented by the engine yet',
+          path: `faces[${i}].abilities`,
+          message: 'layout split with an Aftermath line that is not the keyword (CR 702.127)',
         });
       }
     });
-    // CR 702.102 (Fuse) casts both halves at once; CR 702.127 (Aftermath) casts one half from the
-    // graveyard. Neither is run.
-    for (const [keyword, rule] of [
-      ['Fuse', '702.102'],
-      ['Aftermath', '702.127'],
-    ] as const) {
-      if (def.faces.some((face) => hasKeywordLine(face, keyword))) {
-        out.push({
-          path: 'layout',
-          message: `layout split with ${keyword} (CR ${rule}) is not implemented by the engine yet`,
-        });
-      }
-    }
   }
   if (def.layout === 'meld') {
     // CR 712.14c (D-278): the two cards enter as one permanent as the ability resolves, which does not stop to ask a question; a combined face with a
@@ -365,6 +411,23 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
       out.push({
         path: `faces[${i}].abilities`,
         message: `flashback on this face of layout ${def.layout} is not implemented by the engine yet`,
+      });
+    }
+    // CR 702.127a: aftermath is a half of a split card.
+    if (hasAftermath(face) && def.layout !== 'split') {
+      out.push({
+        path: `faces[${i}].abilities`,
+        message: `aftermath on layout ${def.layout} (it is a half of a split card, CR 702.127a)`,
+      });
+    }
+    // D-667 (CR 702.81a): retrace is read from the front face of a card that is not split, as the flashback cost is.
+    const retrace = face.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'retrace',
+    );
+    if (retrace && (i > 0 || def.layout === 'split')) {
+      out.push({
+        path: `faces[${i}].abilities`,
+        message: `retrace on this face of layout ${def.layout} is not implemented by the engine yet`,
       });
     }
   });

@@ -36,7 +36,9 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
+import { CARD_TYPES_AMONG_THOSE_VALUE, CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
+import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
 import { MANA_SPENT_AMOUNT } from './mana-spent';
@@ -176,6 +178,12 @@ const ATTACKERS_GREATEST_POWER: Parser<IrAmount> = (ctx, pos) => {
     : r;
 };
 
+/** "the number of opponents you have" (CR 102.2, 102.3: the opponents still in the game; Rot Hulk's "where X is the number of opponents you have"). */
+const OPPONENT_COUNT: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the number of opponents you have(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+  return r.ok ? { ok: true, value: { kind: 'opponentCount', span: r.value.span }, pos: r.pos } : r;
+};
+
 /** "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3): the controller's commanders, in any zone. */
 const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(pattern(/the greatest mana value among your commanders(?![\p{L}\p{N}'’])/iu))(
@@ -254,7 +262,7 @@ const STAT_OF =
   };
 
 const MANA_VALUE_OF_HEAD =
-  /(its|that (?:creature|permanent|card)['’]s) mana value(?![\p{L}\p{N}])/iu;
+  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s) mana value(?![\p{L}\p{N}])/iu;
 
 /** "its mana value", "that card's mana value" (CR 202.3). */
 const MANA_VALUE_OF =
@@ -270,27 +278,53 @@ const MANA_VALUE_OF =
     };
   };
 
+/** "your life total" (CR 119.1: a player's life total, read as the instruction runs; D-626). */
+const LIFE_TOTAL =
+  (rule: string): Parser<IrAmount> =>
+  (ctx, pos) => {
+    const r = spanned(pattern(/your life total(?![\p{L}\p{N}'’])/iu))(ctx, pos);
+    if (!r.ok) return r;
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'you',
+      filter: { raw: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: r.value.span,
+      rule,
+    };
+    return { ok: true, value: { kind: 'lifeTotalOf', of, span: r.value.span }, pos: r.pos };
+  };
+
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
     HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
     VOTES_AMOUNT,
+    // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
+    CARD_TYPES_AMONG_VALUE,
+    CARD_TYPES_AMONG_THOSE_VALUE,
     NUMBER_OF_COUNTERS(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),
     ATTACKERS_GREATEST_POWER,
     DEVOTION,
     COMMANDER_COLORS,
+    OPPONENT_COUNT,
     COMMANDER_MANA_VALUE,
     STAT_OF(rule),
     MANA_VALUE_OF(rule),
+    LIFE_TOTAL(rule),
     // Stage P39 (D-184): "the amount of mana spent to cast it".
     MANA_SPENT_AMOUNT,
     // Stage P68 (D-230): "the amount of damage ~ dealt to that player".
     DAMAGE_DEALT_AMOUNT,
     // Galadriel deck group 3 (CR 706.2): "the result" of a die rolled earlier in the text.
     DIE_RESULT,
+    // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way".
+    DESTROYED_VALUE_AMOUNT,
   );
 
 /** "half <atom>, rounded down" (CR 107.1a: the text always says how it rounds). */
@@ -341,9 +375,13 @@ const MULTIPLE = (rule: string): Parser<IrAmount> => {
 const SUM_OR_ATOM = (rule: string): Parser<IrAmount> => {
   const atom = ATOM(rule);
   return (ctx, pos) => {
-    const first = atom(ctx, pos);
+    // D-638 (Prismari deck group 1): "one plus the number of instant and sorcery spells you've cast this turn": a plain 1 more than the amount that follows.
+    const one = literal('one plus ')(ctx, pos);
+    const first = atom(ctx, one.ok ? one.pos : pos);
     if (!first.ok) return first;
-    const parts: IrAmount[] = [first.value];
+    const parts: IrAmount[] = one.ok
+      ? [{ kind: 'number', value: 1, span: { start: pos, end: one.pos } }, first.value]
+      : [first.value];
     let at = first.pos;
     for (;;) {
       const plus = literal(' plus ')(ctx, at);
@@ -386,9 +424,38 @@ const MINUS_OR_SUM = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * "<value> or <value>, whichever is greater" (CR 608.2c, 107.1: both are worked out as the instruction runs and the greater, or with "less" the lesser, is
+ * used): two amounts of the kinds `MINUS_OR_SUM` reads, joined by "or" and closed by the "whichever" clause the text always carries. Without the clause
+ * the words are not read (an "or" alone chooses between things, not numbers).
+ */
+const EXTREME = (rule: string): Parser<IrAmount> => {
+  const part = MINUS_OR_SUM(rule);
+  return (ctx, pos) => {
+    const first = part(ctx, pos);
+    if (!first.ok) return first;
+    const or = literal(' or ')(ctx, first.pos);
+    if (!or.ok) return or;
+    const second = part(ctx, or.pos);
+    if (!second.ok) return second;
+    const tail = pattern(/, whichever is (greater|less)(?![\p{L}\p{N}])/u)(ctx, second.pos);
+    if (!tail.ok) return tail;
+    return {
+      ok: true,
+      value: {
+        kind: 'extreme',
+        pick: tail.value[1] === 'greater' ? 'greater' : 'lesser',
+        of: [first.value, second.value],
+        span: { start: pos, end: tail.pos },
+      },
+      pos: tail.pos,
+    };
+  };
+};
+
 /** Any value phrase: arithmetic first, then the atoms (and their sums, less a number). */
 export const VALUE = (rule: string): Parser<IrAmount> =>
-  choice(HALF(rule), MULTIPLE(rule), MINUS_OR_SUM(rule));
+  choice(HALF(rule), MULTIPLE(rule), EXTREME(rule), MINUS_OR_SUM(rule));
 
 /** The kinds the older "equal to ..." rules read, which `amount.equal-to` leaves to them. */
 const OLDER_EQUAL_KINDS: ReadonlySet<string> = new Set([
@@ -432,6 +499,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to half the number of cards in your hand, rounded up',
     'equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'equal to the number of colors in your commanders’ color identity',
+    'equal to the number of opponents you have',
     'equal to twice the number of creatures you control',
     'equal to the number of +1/+1 counters on ~',
     // Stage P44 (D-195, CR 701.38a): the votes for one option of the vote earlier in the text.
@@ -439,9 +507,18 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to twice the number of security votes',
     'equal to the number of profit votes plus the number of security votes',
     'equal to half the number of gold votes, rounded down',
+    // CR 608.2c: the greater (or the lesser) of two amounts.
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
+    'equal to the number of creatures you control or the number of cards in your hand, whichever is less',
   ],
   rejects: [
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard',
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is smaller',
+    'equal to the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater and',
+    'equal to the number of Zombies you control, whichever is greater',
     'equal to the number of lands you control',
+    'equal to the number of opponents',
+    'equal to the number of opponents you control',
     'equal to its power',
     "equal to that creature's power",
     'equal to its mana value',
@@ -498,6 +575,9 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
   ],
   examples: [
     'where X is the number of Zombies you control',
+    // CR 102.2: the opponents still in the game.
+    'where X is the number of opponents you have',
+    'where X is the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater',
     'where X is the number of creatures on the battlefield',
     'where X is the number of creatures attacking you',
     'where X is the greatest power among creatures you control',
@@ -513,8 +593,15 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards',
     'where X is the number of +1/+1 counters on ~',
     'where X is that card’s mana value',
+    // Prismari deck, group 2 (D-646, CR 202.3): the spell that caused a cast trigger.
+    "where X is that spell's mana value",
+    'where X is the amount of mana spent to cast that spell',
+    "where X is the greatest mana value among instant and sorcery spells you've cast this turn",
     // Stage P39 (D-184, CR 601.2h): the mana spent to cast the spell the ability is on.
     'where X is the amount of mana spent to cast it',
+    // Issue 310 (Converge, CR 105.1): how many of the five colors the mana spent had.
+    'where X is the number of colors of mana spent to cast it',
+    'where X is the number of colors of mana spent to cast ~',
     // Stage P37 (D-180): the card an earlier instruction exiled.
     "where X is the exiled card's power",
     // Stage P32 (D-147): the commanders' mana value, and a total read as the spell is cast.
@@ -522,13 +609,24 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures you control as you cast ~',
     // Galadriel deck group 3 (CR 706.2): the die rolled before.
     'where X is the result',
+    // CR 205.2a: the card types of the cards of a graveyard.
+    'where X is the number of card types among cards in your graveyard',
+    // Death Toll deck, group D (CR 202.3, 608.2h): what a destroy before it in the text destroyed.
+    'where X is the total mana value of permanents destroyed this way',
+    // CR 109.4, 608.2c: the permanents of the player a target before it names.
+    'where X is the greatest power among creatures they control',
   ],
   rejects: [
+    'where X is the total mana value of creatures destroyed this way',
+    'where X is the total mana value of permanents destroyed',
+    'where X is the greatest mana value of permanents destroyed this way',
     'where X is the results',
     'where X is the result of',
     'where X is',
     'where X is 3',
     'where X is the number of creatures',
+    'where X is the number of opponents',
+    'where X is the number of opponents you control',
     'where Y is the number of Zombies you control',
     'where x is the number of Zombies you control',
     'where X is half the number of Zombies you control',
@@ -541,8 +639,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the number of cards in your hand minus X',
     'X is the number of Zombies you control',
     'where X is the amount of mana spent',
-    'where X is the amount of mana spent to cast that spell',
     'where X is the mana spent to cast it',
+    'where X is your life',
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);
@@ -594,28 +692,42 @@ export const AMOUNT_FOR_EACH_OPPONENT = defineRule<IrAmount>({
     'for each opponent who has more cards in hand than you',
     'for each opponent who has more life than you',
     'for each opponent who controls more creatures than you',
+    // Issue 160 (D-626): the opponents with less.
+    'for each opponent who controls fewer creatures than you',
+    'for each opponent who has fewer cards in hand than you',
   ],
   rejects: [
     'for each opponent',
     'for each opponent who has more cards in hand',
     'for each opponent who has more cards in hand than each other player',
-    'for each opponent who has fewer cards in hand than you',
     'for each opponent who has more lands than you',
+    'for each opponent who has fewer lands than you',
     'for each player who has more life than you',
     'for each opponent who controls more creatures',
+    'for each opponent who has more creatures than you',
+    'for each opponent who controls more life than you',
   ],
   parse: (ctx, pos) => {
     const r = spanned(
       pattern(
-        /for each opponent who (?:has more (life|cards in hand)|controls more (creatures)) than you(?![\p{L}\p{N}])/iu,
+        /for each opponent who (?:(?:has|controls) (more|fewer) (life|cards in hand|creatures)) than you(?![\p{L}\p{N}])/iu,
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const word = (r.value.value[1] ?? r.value.value[2] ?? '').toLowerCase();
+    const word = (r.value.value[2] ?? '').toLowerCase();
+    const fewer = (r.value.value[1] ?? '').toLowerCase() === 'fewer';
+    // "has more life", "has more cards in hand", "controls more creatures" (and "fewer"): the verb goes with its stat.
+    const verb = /(has|controls)/i.exec(r.value.value[0] ?? '')?.[1]?.toLowerCase();
+    if ((word === 'creatures') !== (verb === 'controls')) return fail(ctx, pos);
     const stat = word === 'life' ? 'life' : word === 'creatures' ? 'creatures' : 'cardsInHand';
     return {
       ok: true,
-      value: { kind: 'opponentsWithMore', stat, span: r.value.span },
+      value: {
+        kind: 'opponentsWithMore',
+        stat,
+        ...(fewer ? { fewer: true as const } : {}),
+        span: r.value.span,
+      },
       pos: r.pos,
     };
   },
@@ -639,17 +751,30 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creature sacrificed this way',
     'for each permanent sacrificed this way',
     'for each card exiled this way',
+    'for each card discarded this way',
+    'for each counter removed this way',
     'for each creature destroyed this way',
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
+    'for each creature card put into a graveyard this way',
   ],
   rejects: [
+    'for each card put into a graveyard this way',
+    'for each land card put into a graveyard this way',
+    'for each creature put into a graveyard this way',
+    'for each creature cards put into a graveyard this way',
+    'for each creature card put into a graveyard',
     'for each creature sacrificed',
     'for each creature exiled this way',
     'for each opponent who drew this way',
     'for each opponent who drew a card',
     'for each creatures sacrificed this way',
     'for each card drawn this way',
+    'for each card discarded',
+    'for each counter removed',
+    'for each counters removed this way',
+    'for each cards discarded this way',
+    'for each creature card discarded this way',
     'for each opponent who discarded a card this way',
   ],
   parse: (ctx, pos) => {
@@ -659,6 +784,50 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
         ok: true,
         value: { kind: 'exiledAsCost', span: { start: pos, end: exiled.pos } },
         pos: exiled.pos,
+      };
+    }
+    // Issue 244 (Syphon Mind, CR 701.9, 608.2c): "for each card discarded this way": the cards the discard before it made players discard.
+    const discarded = pattern(/for each card discarded this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (discarded.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'discarded',
+          words: ['card'],
+          span: { start: pos, end: discarded.pos },
+        },
+        pos: discarded.pos,
+      };
+    }
+    // Nexus Mentality (CR 122.1, 608.2c): "for each counter removed this way": the counters the `remove all counters` before it took off.
+    const removed = pattern(/for each counter removed this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (removed.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'countersRemoved',
+          words: ['counter'],
+          span: { start: pos, end: removed.pos },
+        },
+        pos: removed.pos,
+      };
+    }
+    // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards the mill before it put there.
+    const milled = pattern(
+      /for each creature card put into a graveyard this way(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (milled.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'milledCreature',
+          words: ['creature'],
+          span: { start: pos, end: milled.pos },
+        },
+        pos: milled.pos,
       };
     }
     const r = spanned(

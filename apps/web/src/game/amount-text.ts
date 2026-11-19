@@ -27,6 +27,8 @@ export interface AmountContext {
   readonly self?: string;
   /** The object an effect already names as its subject, so "its power" says it ("it deals damage equal to its power"). */
   readonly same?: ObjectRef;
+  /** The ability is the trigger of a spell being cast (CR 601.2i): the trigger's subject is a spell, "that spell's mana value" (D-646). */
+  readonly spell?: true;
 }
 
 /**
@@ -50,10 +52,13 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return "this spell's";
     case 'target':
     case 'triggerSubject':
-      return "that creature's";
+      return ctx.spell === true && ref.kind === 'triggerSubject'
+        ? "that spell's"
+        : "that creature's";
     case 'chosen':
       return "the chosen creature's";
     case 'moved':
+    case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
       return 'its';
@@ -69,6 +74,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'linkedExile':
       // D-145: the card a permanent exiled with a linked ability (Hideaway).
       return "the exiled card's";
+    case 'putWithThis':
+      // Animate Dead: the creature this permanent put onto the battlefield.
+      return "that creature's";
   }
 }
 
@@ -85,6 +93,7 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'chosen':
       return 'the chosen creature';
     case 'moved':
+    case 'boundObjects':
     case 'thisCard':
     case 'triggerCard':
       return 'it';
@@ -95,6 +104,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return attachedText(ctx.self);
     case 'linkedExile':
       return 'the exiled card';
+    case 'putWithThis':
+      return 'that creature';
   }
 }
 
@@ -112,17 +123,18 @@ const STAT_WORDS: Readonly<Record<'power' | 'toughness' | 'manaValue', string>> 
   manaValue: 'mana value',
 };
 
-/** "opponents with more life than you": what `opponentsWithMore` counts. */
-function opponentsWithMore(stat: PlayerStat): string {
+/** "opponents with more life than you": what `opponentsWithMore` counts (D-626: `fewer`, with less). */
+function opponentsWithMore(stat: PlayerStat, fewer: boolean): string {
+  const more = fewer ? 'fewer' : 'more';
   switch (stat) {
     case 'life':
-      return 'the number of opponents with more life than you';
+      return `the number of opponents with ${fewer ? 'less' : 'more'} life than you`;
     case 'cardsInHand':
-      return 'the number of opponents with more cards in hand than you';
+      return `the number of opponents with ${more} cards in hand than you`;
     case 'creatures':
-      return 'the number of opponents who control more creatures than you';
+      return `the number of opponents who control ${more} creatures than you`;
     case 'lands':
-      return 'the number of opponents who control more lands than you';
+      return `the number of opponents who control ${more} lands than you`;
   }
 }
 
@@ -138,6 +150,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'destroyedValue':
+      // Convert to Slime: "the total mana value of permanents destroyed this way".
+      return 'the total mana value of the permanents destroyed this way';
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
@@ -152,12 +167,29 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'milledValue':
       // D-210 (CR 202.3): "equal to the total mana value of those cards".
       return 'the total mana value of the cards milled this way';
+    case 'milledCreature':
+      return 'the number of creature cards milled this way';
     case 'discardedCreature':
       return 'the number of creature cards discarded this way';
     case 'discardedNoncreature':
       return 'the number of noncreature cards discarded this way';
     case 'discardedInstantOrSorcery':
       return 'the number of instant and sorcery cards discarded this way';
+    case 'discardedMost':
+      // Issue 279 (Windfall).
+      return 'the greatest number of cards a player discarded this way';
+    case 'searched':
+      // Lorehold group 1: "If you search your library this way".
+      return 'the number of times you searched your library this way';
+    case 'damageDealt':
+      // Issue 159: "equal to the damage dealt this way".
+      return 'the damage dealt this way';
+    case 'countersRemoved':
+      // Nexus Mentality: "for each counter removed this way".
+      return 'the number of counters removed this way';
+    case 'exiledPowerOwn':
+      // Oversimplify: "the total power of creatures they controlled that were exiled this way".
+      return 'the total power of the creatures they controlled that were exiled this way';
   }
 }
 
@@ -207,7 +239,15 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the number of times it was kicked';
     case 'manaSpent':
       // D-183 (CR 601.2h): the mana spent to cast the spell, in all or from sources of a card type.
-      return `the amount of ${manaSpentWords(amount.fromType)}`;
+      // D-646 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell", the spell a cast trigger names.
+      // Issue 310 (Converge, CR 105.1): "the number of colors of mana spent to cast it".
+      if (amount.colors === true) return 'the number of colors of mana spent to cast it';
+      return `the amount of ${manaSpentWords(amount.fromType, amount.of?.kind === 'triggerSubject' ? 'that spell' : 'it')}`;
+    case 'greatestManaValueCast':
+      // D-646 (CR 202.3, 601.2i): "the greatest mana value among instant and sorcery spells you've cast this turn".
+      return amount.ofTypes === undefined
+        ? "the greatest mana value among spells you've cast this turn"
+        : `the greatest mana value among ${amount.ofTypes.join(' and ')} spells you've cast this turn`;
     case 'lifeLostThisWay':
       return 'the total life lost this way';
     case 'lifeLostThisTurn':
@@ -246,6 +286,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       const cards = thingsPhrase(amount.filter, true);
       return cards === null ? UNKNOWN_AMOUNT : `the number of card types among ${cards}`;
     }
+    case 'cardTypesAmongTriggerCards':
+      // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger (Polluted Cistern).
+      return 'the number of card types among those cards';
     case 'devotion':
       return `your devotion to ${colorList(amount.colors)}`;
     case 'commanderColors':
@@ -272,10 +315,16 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return `${amountPhrase(amount.of, ctx)} minus ${amount.by}`;
     case 'sum':
       return amount.of.map((part) => amountPhrase(part, ctx)).join(' plus ');
+    case 'extreme':
+      // CR 608.2c: "the number of Zombies you control or the number of Zombie cards in your graveyard, whichever is greater".
+      return `${amount.of.map((part) => amountPhrase(part, ctx)).join(' or ')}, whichever is ${amount.pick === 'greater' ? 'greater' : 'less'}`;
+    case 'opponentCount':
+      // CR 102.2: Rot Hulk's "where X is the number of opponents you have".
+      return 'the number of opponents you have';
     case 'thisWay':
       return thisWayPhrase(amount.what);
     case 'opponentsWithMore':
-      return opponentsWithMore(amount.stat);
+      return opponentsWithMore(amount.stat, amount.fewer === true);
     case 'triggerDamage':
       // D-133: "that much" for the damage that caused the trigger.
       return 'that much';
@@ -288,6 +337,11 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
+    case 'spellsCastThisTurn':
+      // D-638 (CR 601.2i): "the number of instant and sorcery spells you've cast this turn".
+      return amount.ofTypes === undefined
+        ? "the number of spells you've cast this turn"
+        : `the number of ${amount.ofTypes.join(' and ')} spells you've cast this turn`;
     case 'sacrificedAsCost':
       // D-491 (CR 118.8), D-584 (CR 602.2b): "for each creature sacrificed this way": the additional cost of the spell or the cost of the activated ability.
       return 'the number of permanents sacrificed as a cost';
@@ -314,10 +368,11 @@ export interface Definitions {
   readonly tail: () => string;
 }
 
-export function createDefinitions(): Definitions {
+export function createDefinitions(base: AmountContext = {}): Definitions {
   const phrases: string[] = [];
   return {
-    say(amount, ctx = {}) {
+    say(amount, given = {}) {
+      const ctx = { ...base, ...given };
       if (typeof amount === 'number') return String(amount);
       if (amount.kind === 'x' || amount.kind === 'enteredX') return 'X';
       // D-151: "deals that much damage": the number the reflexive ability reads is said as it is, never as a letter.

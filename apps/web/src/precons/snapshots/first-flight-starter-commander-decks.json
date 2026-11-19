@@ -1,0 +1,2889 @@
+{
+  "id": "first-flight-starter-commander-decks",
+  "name": "First Flight",
+  "blurb": "A Commander precon led by Isperia, Supreme Judge.",
+  "source": "oracle_cards-2026-11-18T10-01-54-467-00-00.jsonl.gz",
+  "decklist": "Commander\n1x Isperia, Supreme Judge\n\nMainboard\n15x Island\n15x Plains\n1x Absorb\n1x Aetherize\n1x Angler Turtle\n1x Arcane Signet\n1x Archon of Redemption\n1x Aven Gagglemaster\n1x Azorius Signet\n1x Banishing Light\n1x Bident of Thassa\n1x Cartographer's Hawk\n1x Cleansing Nova\n1x Cloudblazer\n1x Coastal Tower\n1x Command Tower\n1x Commander's Sphere\n1x Condemn\n1x Counterspell\n1x Crush Contraband\n1x Diluvian Primordial\n1x Disenchant\n1x Emeria Angel\n1x Empyrean Eagle\n1x Ever-Watching Threshold\n1x Faerie Formation\n1x Favorable Winds\n1x Generous Gift\n1x Gideon Jura\n1x Gravitational Shift\n1x Hanged Executioner\n1x Hedron Archive\n1x Inspired Sphinx\n1x Jubilant Skybonder\n1x Kangee's Lieutenant\n1x Kangee, Sky Warden\n1x Meandering River\n1x Migratory Route\n1x Moorland Haunt\n1x Negate\n1x Pilgrim's Eye\n1x Port Town\n1x Prairie Stream\n1x Rally of Wings\n1x Remorseful Cleric\n1x Sejiri Refuge\n1x Sephara, Sky's Blade\n1x Sharding Sphinx\n1x Sky Diamond\n1x Skycat Sovereign\n1x Skyscanner\n1x Sol Ring\n1x Soul Snare\n1x Sphinx of Enlightenment\n1x Sphinx's Revelation\n1x Staggering Insight\n1x Steel-Plume Marshal\n1x Storm Herd\n1x Swords to Plowshares\n1x Talisman of Progress\n1x Temple of Enlightenment\n1x Thought Vessel\n1x Thunderclap Wyvern\n1x Tide Skimmer\n1x Time Wipe\n1x Tranquil Cove\n1x True Conviction\n1x Vow of Duty\n1x Warden of Evos Isle\n1x Windreader Sphinx\n1x Winged Words\n",
+  "set": "Starter Commander Decks",
+  "year": 2022,
+  "cards": [
+    {
+      "oracleId": "132ca99a-a3c7-4ed6-b4d0-0edcd7140ca2",
+      "scryfallId": "21892cbc-1af2-4ea1-8907-cec514b53004",
+      "name": "Absorb",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Absorb",
+          "manaCost": "{W}{U}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target spell. You gain 3 life.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/1/21892cbc-1af2-4ea1-8907-cec514b53004.jpg?1783918431",
+            "large": "https://cards.scryfall.io/large/front/2/1/21892cbc-1af2-4ea1-8907-cec514b53004.jpg?1783918431",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/1/21892cbc-1af2-4ea1-8907-cec514b53004.jpg?1783918431"
+          },
+          "artist": "Andrew Goldhawk"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3661,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "7c779721-cd1b-4696-9ae9-68ccc284ed2a",
+      "scryfallId": "1e5530fc-0291-4a17-b048-c5d24e6f51d8",
+      "name": "Aetherize",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Aetherize",
+          "manaCost": "{3}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Return all attacking creatures to their owner's hand.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/e/1e5530fc-0291-4a17-b048-c5d24e6f51d8.jpg?1783909087",
+            "large": "https://cards.scryfall.io/large/front/1/e/1e5530fc-0291-4a17-b048-c5d24e6f51d8.jpg?1783909087",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1e5530fc-0291-4a17-b048-c5d24e6f51d8.jpg?1783909087"
+          },
+          "artist": "Alexandre Honoré"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 285,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a09da13e-f8a3-410e-941a-9912d2cfe7de",
+      "scryfallId": "9c8d57fc-9695-45df-8b88-0048330608bd",
+      "name": "Angler Turtle",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Angler Turtle",
+          "manaCost": "{5}{U}{U}",
+          "typeLine": "Creature — Turtle",
+          "oracleText": "Hexproof\nCreatures your opponents control attack each combat if able.",
+          "power": "5",
+          "toughness": "7",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/c/9c8d57fc-9695-45df-8b88-0048330608bd.jpg?1783922476",
+            "large": "https://cards.scryfall.io/large/front/9/c/9c8d57fc-9695-45df-8b88-0048330608bd.jpg?1783922476",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9c8d57fc-9695-45df-8b88-0048330608bd.jpg?1783922476"
+          },
+          "artist": "Alex Konstad"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Hexproof"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 14150,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0bc7f093-bef0-4f1a-852c-4b75ebf54838",
+      "scryfallId": "795df2ee-fbfc-4961-852c-e3ec50cc52da",
+      "name": "Arcane Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Arcane Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/9/795df2ee-fbfc-4961-852c-e3ec50cc52da.jpg?1793021117",
+            "large": "https://cards.scryfall.io/large/front/7/9/795df2ee-fbfc-4961-852c-e3ec50cc52da.jpg?1793021117",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/9/795df2ee-fbfc-4961-852c-e3ec50cc52da.jpg?1793021117"
+          },
+          "artist": "Tomáš Honz"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 3,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "434e58f4-4237-454f-a2d0-61885c9aafaa",
+      "scryfallId": "a9e8eb41-3800-4553-843b-ec27a44e8d55",
+      "name": "Archon of Redemption",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Archon of Redemption",
+          "manaCost": "{3}{W}{W}",
+          "typeLine": "Creature — Archon",
+          "oracleText": "Flying\nWhenever this creature or another creature you control with flying enters, you may gain life equal to that creature's power.",
+          "power": "3",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/9/a9e8eb41-3800-4553-843b-ec27a44e8d55.jpg?1783930477",
+            "large": "https://cards.scryfall.io/large/front/a/9/a9e8eb41-3800-4553-843b-ec27a44e8d55.jpg?1783930477",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9e8eb41-3800-4553-843b-ec27a44e8d55.jpg?1783930477"
+          },
+          "artist": "Steven Belledin"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 14968,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8c601628-b1ed-467b-ba92-8572343147f8",
+      "scryfallId": "c5b57247-81cc-44ec-b5a9-0702111a98a8",
+      "name": "Aven Gagglemaster",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Aven Gagglemaster",
+          "manaCost": "{3}{W}{W}",
+          "typeLine": "Creature — Bird Warrior",
+          "oracleText": "Flying\nWhen this creature enters, you gain 2 life for each creature you control with flying.",
+          "power": "4",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/5/c5b57247-81cc-44ec-b5a9-0702111a98a8.jpg?1783930746",
+            "large": "https://cards.scryfall.io/large/front/c/5/c5b57247-81cc-44ec-b5a9-0702111a98a8.jpg?1783930746",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/5/c5b57247-81cc-44ec-b5a9-0702111a98a8.jpg?1783930746"
+          },
+          "artist": "Mike Bierek"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 14114,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e018773f-95b3-49a3-9674-6f04ddef2092",
+      "scryfallId": "af690536-b0bc-4d85-8bb8-f6856b9f927b",
+      "name": "Azorius Signet",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Azorius Signet",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{1}, {T}: Add {W}{U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829",
+            "large": "https://cards.scryfall.io/large/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/f/af690536-b0bc-4d85-8bb8-f6856b9f927b.jpg?1789599829"
+          },
+          "artist": "Raoul Vitale"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 210,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f28b21a6-f7ce-437a-8c5b-0423cb55cefb",
+      "scryfallId": "d53c7e49-745d-48ba-bc50-240472a4f039",
+      "name": "Banishing Light",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Banishing Light",
+          "manaCost": "{2}{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "When this enchantment enters, exile target nonland permanent an opponent controls until this enchantment leaves the battlefield.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/5/d53c7e49-745d-48ba-bc50-240472a4f039.jpg?1785497352",
+            "large": "https://cards.scryfall.io/large/front/d/5/d53c7e49-745d-48ba-bc50-240472a4f039.jpg?1785497352",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/5/d53c7e49-745d-48ba-bc50-240472a4f039.jpg?1785497352"
+          },
+          "artist": "Joseph Meehan"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2386,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e1afaef7-9fa3-4662-a95f-adfb0da9fd11",
+      "scryfallId": "94751d5e-7693-44af-b1b5-e440677dc7a2",
+      "name": "Bident of Thassa",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Bident of Thassa",
+          "manaCost": "{2}{U}{U}",
+          "typeLine": "Legendary Enchantment Artifact",
+          "oracleText": "Whenever a creature you control deals combat damage to a player, you may draw a card.\n{1}{U}, {T}: Creatures your opponents control attack this turn if able.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/4/94751d5e-7693-44af-b1b5-e440677dc7a2.jpg?1783913890",
+            "large": "https://cards.scryfall.io/large/front/9/4/94751d5e-7693-44af-b1b5-e440677dc7a2.jpg?1783913890",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/4/94751d5e-7693-44af-b1b5-e440677dc7a2.jpg?1783913890"
+          },
+          "artist": "Yeong-Hao Han"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 447,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ac8cf699-f67b-44da-bb79-eb95cfc0026d",
+      "scryfallId": "12d0b07f-9823-45b7-89bb-0a2a71833d46",
+      "name": "Cartographer's Hawk",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Cartographer's Hawk",
+          "manaCost": "{1}{W}",
+          "typeLine": "Creature — Bird",
+          "oracleText": "Flying\nWhen this creature deals combat damage to a player who controls more lands than you, return it to its owner's hand. If you do, you may search your library for a Plains card, put it onto the battlefield tapped, then shuffle.",
+          "power": "2",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/2/12d0b07f-9823-45b7-89bb-0a2a71833d46.jpg?1783915726",
+            "large": "https://cards.scryfall.io/large/front/1/2/12d0b07f-9823-45b7-89bb-0a2a71833d46.jpg?1783915726",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/2/12d0b07f-9823-45b7-89bb-0a2a71833d46.jpg?1783915726"
+          },
+          "artist": "Donato Giancola"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4777,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "aff34f28-f707-4458-8af3-1bd5b13a6b10",
+      "scryfallId": "670e4457-927e-42ed-a36f-28b60c2f7566",
+      "name": "Cleansing Nova",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Cleansing Nova",
+          "manaCost": "{3}{W}{W}",
+          "typeLine": "Sorcery",
+          "oracleText": "Choose one —\n• Destroy all creatures.\n• Destroy all artifacts and enchantments.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/7/670e4457-927e-42ed-a36f-28b60c2f7566.jpg?1783903251",
+            "large": "https://cards.scryfall.io/large/front/6/7/670e4457-927e-42ed-a36f-28b60c2f7566.jpg?1783903251",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/7/670e4457-927e-42ed-a36f-28b60c2f7566.jpg?1783903251"
+          },
+          "artist": "Vlad Petruchik"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1273,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f84d1291-1f82-4b67-a26e-b79624b4ce1d",
+      "scryfallId": "a9c966ab-0d92-4fa7-8a91-1f77089d8fc7",
+      "name": "Cloudblazer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Cloudblazer",
+          "manaCost": "{3}{W}{U}",
+          "typeLine": "Creature — Human Scout",
+          "oracleText": "Flying\nWhen this creature enters, you gain 2 life and draw two cards.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/9/a9c966ab-0d92-4fa7-8a91-1f77089d8fc7.jpg?1783908913",
+            "large": "https://cards.scryfall.io/large/front/a/9/a9c966ab-0d92-4fa7-8a91-1f77089d8fc7.jpg?1783908913",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/9/a9c966ab-0d92-4fa7-8a91-1f77089d8fc7.jpg?1783908913"
+          },
+          "artist": "Dan Murayama Scott"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3647,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f0367926-4380-4d22-8cb8-46c2076f102a",
+      "scryfallId": "4febfcf0-6537-4e30-a963-9859314d0657",
+      "name": "Coastal Tower",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Coastal Tower",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/f/4febfcf0-6537-4e30-a963-9859314d0657.jpg?1783941275",
+            "large": "https://cards.scryfall.io/large/front/4/f/4febfcf0-6537-4e30-a963-9859314d0657.jpg?1783941275",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4febfcf0-6537-4e30-a963-9859314d0657.jpg?1783941275"
+          },
+          "artist": "Don Hazeltine"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 12255,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0895c9b7-ae7d-4bb3-af17-3b75deb50a25",
+      "scryfallId": "a73297d2-580c-4174-a427-265f6916d09f",
+      "name": "Command Tower",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Command Tower",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/7/a73297d2-580c-4174-a427-265f6916d09f.jpg?1793021256",
+            "large": "https://cards.scryfall.io/large/front/a/7/a73297d2-580c-4174-a427-265f6916d09f.jpg?1793021256",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/7/a73297d2-580c-4174-a427-265f6916d09f.jpg?1793021256"
+          },
+          "artist": "Arthur Yuan"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 2,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Command Tower",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Tower Winder",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "0b67c4e2-f88b-4e01-85a1-9d5f5b8db13b",
+      "scryfallId": "a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13",
+      "name": "Commander's Sphere",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Commander's Sphere",
+          "manaCost": "{3}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add one mana of any color in your commander's color identity.\nSacrifice this artifact: Draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/1/a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13.jpg?1793021131",
+            "large": "https://cards.scryfall.io/large/front/a/1/a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13.jpg?1793021131",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/1/a145fe99-1cca-45c6-aa7e-ec5d8a7bcd13.jpg?1793021131"
+          },
+          "artist": "Eric Wilkerson"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "B",
+        "G",
+        "R",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 57,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "377d31b5-0a48-4d5b-91bd-b5a62d4f7899",
+      "scryfallId": "0c93201b-7664-4bfd-a462-f1c684ebedf6",
+      "name": "Condemn",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Condemn",
+          "manaCost": "{W}",
+          "typeLine": "Instant",
+          "oracleText": "Put target attacking creature on the bottom of its owner's library. Its controller gains life equal to its toughness.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/c/0c93201b-7664-4bfd-a462-f1c684ebedf6.jpg?1783913348",
+            "large": "https://cards.scryfall.io/large/front/0/c/0c93201b-7664-4bfd-a462-f1c684ebedf6.jpg?1783913348",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/c/0c93201b-7664-4bfd-a462-f1c684ebedf6.jpg?1783913348"
+          },
+          "artist": "Daren Bader"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4709,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "cc187110-1148-4090-bbb8-e205694a39f5",
+      "scryfallId": "4f616706-ec97-4923-bb1e-11a69fbaa1f8",
+      "name": "Counterspell",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Counterspell",
+          "manaCost": "{U}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target spell.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630",
+            "large": "https://cards.scryfall.io/large/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630"
+          },
+          "artist": "Zack Stella"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 16,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ecbc234d-e1d3-4bcc-81d4-fffc2c7ea16a",
+      "scryfallId": "08c5cdbe-2142-4ddc-b9b5-35ca60eb9970",
+      "name": "Crush Contraband",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Crush Contraband",
+          "manaCost": "{3}{W}",
+          "typeLine": "Instant",
+          "oracleText": "Choose one or both —\n• Exile target artifact.\n• Exile target enchantment.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/8/08c5cdbe-2142-4ddc-b9b5-35ca60eb9970.jpg?1783923967",
+            "large": "https://cards.scryfall.io/large/front/0/8/08c5cdbe-2142-4ddc-b9b5-35ca60eb9970.jpg?1783923967",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/8/08c5cdbe-2142-4ddc-b9b5-35ca60eb9970.jpg?1783923967"
+          },
+          "artist": "Jason A. Engle"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 4521,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f21ce158-2925-4658-ab7b-b73718d31965",
+      "scryfallId": "eb14cd77-d37e-4849-816f-cd36e2a37765",
+      "name": "Diluvian Primordial",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Diluvian Primordial",
+          "manaCost": "{5}{U}{U}",
+          "typeLine": "Creature — Avatar",
+          "oracleText": "Flying\nWhen this creature enters, for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost. If a spell cast this way would be put into a graveyard, exile it instead.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/b/eb14cd77-d37e-4849-816f-cd36e2a37765.jpg?1783911942",
+            "large": "https://cards.scryfall.io/large/front/e/b/eb14cd77-d37e-4849-816f-cd36e2a37765.jpg?1783911942",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/eb14cd77-d37e-4849-816f-cd36e2a37765.jpg?1783911942"
+          },
+          "artist": "Stephan Martiniere"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3795,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "a7e97fa9-4b72-4548-b854-5be5f18a6f1a",
+      "scryfallId": "7ac43e16-8b14-46f2-877a-600ea918766b",
+      "name": "Disenchant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Disenchant",
+          "manaCost": "{1}{W}",
+          "typeLine": "Instant",
+          "oracleText": "Destroy target artifact or enchantment.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/a/7ac43e16-8b14-46f2-877a-600ea918766b.jpg?1783908940",
+            "large": "https://cards.scryfall.io/large/front/7/a/7ac43e16-8b14-46f2-877a-600ea918766b.jpg?1783908940",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/a/7ac43e16-8b14-46f2-877a-600ea918766b.jpg?1783908940"
+          },
+          "artist": "Richard Kane Ferguson"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1119,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ea6616e4-db8d-4905-80f8-cb0162906850",
+      "scryfallId": "2406ab7c-c6be-421a-a92c-048441a01acd",
+      "name": "Emeria Angel",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Emeria Angel",
+          "manaCost": "{2}{W}{W}",
+          "typeLine": "Creature — Angel",
+          "oracleText": "Flying\nLandfall — Whenever a land you control enters, you may create a 1/1 white Bird creature token with flying.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/4/2406ab7c-c6be-421a-a92c-048441a01acd.jpg?1783907128",
+            "large": "https://cards.scryfall.io/large/front/2/4/2406ab7c-c6be-421a-a92c-048441a01acd.jpg?1783907128",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/4/2406ab7c-c6be-421a-a92c-048441a01acd.jpg?1783907128"
+          },
+          "artist": "Jim Murray"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Landfall",
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2026,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Bird",
+          "component": "token"
+        },
+        {
+          "name": "Emeria Angel",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "270d14b2-07bc-46bc-918f-658102265ccf",
+      "scryfallId": "577e99a7-4a55-4314-8f08-2ae0c33b85c7",
+      "name": "Empyrean Eagle",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Empyrean Eagle",
+          "manaCost": "{1}{W}{U}",
+          "typeLine": "Creature — Bird Spirit",
+          "oracleText": "Flying\nOther creatures you control with flying get +1/+1.",
+          "power": "2",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/7/577e99a7-4a55-4314-8f08-2ae0c33b85c7.jpg?1783909053",
+            "large": "https://cards.scryfall.io/large/front/5/7/577e99a7-4a55-4314-8f08-2ae0c33b85c7.jpg?1783909053",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/7/577e99a7-4a55-4314-8f08-2ae0c33b85c7.jpg?1783909053"
+          },
+          "artist": "Jason A. Engle"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3127,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c6639b52-b51d-46e7-a83c-c4621b1cecaa",
+      "scryfallId": "b711a0aa-90e5-4f16-9dc3-9cc331fc3101",
+      "name": "Ever-Watching Threshold",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Ever-Watching Threshold",
+          "manaCost": "{2}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "Whenever an opponent attacks, if they attacked you and/or a planeswalker you control, draw a card.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/7/b711a0aa-90e5-4f16-9dc3-9cc331fc3101.jpg?1783934344",
+            "large": "https://cards.scryfall.io/large/front/b/7/b711a0aa-90e5-4f16-9dc3-9cc331fc3101.jpg?1783934344",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/7/b711a0aa-90e5-4f16-9dc3-9cc331fc3101.jpg?1783934344"
+          },
+          "artist": "Ravenna Tran"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 8905,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0366c2f6-6e78-4526-808c-fa7bace6006e",
+      "scryfallId": "15709316-7382-46b9-9b70-53a5147e7051",
+      "name": "Faerie Formation",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Faerie Formation",
+          "manaCost": "{4}{U}",
+          "typeLine": "Creature — Faerie",
+          "oracleText": "Flying\n{3}{U}: Create a 1/1 blue Faerie creature token with flying. Draw a card.",
+          "power": "5",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/5/15709316-7382-46b9-9b70-53a5147e7051.jpg?1783932552",
+            "large": "https://cards.scryfall.io/large/front/1/5/15709316-7382-46b9-9b70-53a5147e7051.jpg?1783932552",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/5/15709316-7382-46b9-9b70-53a5147e7051.jpg?1783932552"
+          },
+          "artist": "Ryan Yee"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7328,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Faerie Formation",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Faerie",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "2361ca87-6352-4ba3-8d91-b3d71242914d",
+      "scryfallId": "1de89026-13a6-4ae3-9059-460bdd657285",
+      "name": "Favorable Winds",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Favorable Winds",
+          "manaCost": "{1}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "Creatures you control with flying get +1/+1.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/d/1de89026-13a6-4ae3-9059-460bdd657285.jpg?1783933985",
+            "large": "https://cards.scryfall.io/large/front/1/d/1de89026-13a6-4ae3-9059-460bdd657285.jpg?1783933985",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/d/1de89026-13a6-4ae3-9059-460bdd657285.jpg?1783933985"
+          },
+          "artist": "Shreya Shetty"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3231,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "fae37e28-e137-4177-b973-fa8b4dd8f409",
+      "scryfallId": "c3f9b454-97e9-4c77-b37a-e974221ae385",
+      "name": "Generous Gift",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Generous Gift",
+          "manaCost": "{2}{W}",
+          "typeLine": "Instant",
+          "oracleText": "Destroy target permanent. Its controller creates a 3/3 green Elephant creature token.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/3/c3f9b454-97e9-4c77-b37a-e974221ae385.jpg?1783903247",
+            "large": "https://cards.scryfall.io/large/front/c/3/c3f9b454-97e9-4c77-b37a-e974221ae385.jpg?1783903247",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/3/c3f9b454-97e9-4c77-b37a-e974221ae385.jpg?1783903247"
+          },
+          "artist": "David Álvarez"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 63,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Elephant",
+          "component": "token"
+        },
+        {
+          "name": "Generous Gift",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "7340dbcb-4b26-4038-be8c-a89e76294221",
+      "scryfallId": "d608df31-bcc6-4fec-89f1-5cefe5c2ec99",
+      "name": "Gideon Jura",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Gideon Jura",
+          "manaCost": "{3}{W}{W}",
+          "typeLine": "Legendary Planeswalker — Gideon",
+          "oracleText": "+2: During target opponent's next turn, creatures that player controls attack Gideon Jura if able.\n−2: Destroy target tapped creature.\n0: Until end of turn, Gideon Jura becomes a 6/6 Human Soldier creature that's still a planeswalker. Prevent all damage that would be dealt to him this turn.",
+          "power": null,
+          "toughness": null,
+          "loyalty": "6",
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/6/d608df31-bcc6-4fec-89f1-5cefe5c2ec99.jpg?1783915451",
+            "large": "https://cards.scryfall.io/large/front/d/6/d608df31-bcc6-4fec-89f1-5cefe5c2ec99.jpg?1783915451",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/6/d608df31-bcc6-4fec-89f1-5cefe5c2ec99.jpg?1783915451"
+          },
+          "artist": "Aleksi Briclot"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 11343,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "0411aead-9f77-435d-a343-635f23221cf7",
+      "scryfallId": "bad32b9f-0aa4-4036-90e6-c087cffd52e7",
+      "name": "Gravitational Shift",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Gravitational Shift",
+          "manaCost": "{3}{U}{U}",
+          "typeLine": "Enchantment",
+          "oracleText": "Creatures with flying get +2/+0.\nCreatures without flying get -2/-0.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/a/bad32b9f-0aa4-4036-90e6-c087cffd52e7.jpg?1783941996",
+            "large": "https://cards.scryfall.io/large/front/b/a/bad32b9f-0aa4-4036-90e6-c087cffd52e7.jpg?1783941996",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/a/bad32b9f-0aa4-4036-90e6-c087cffd52e7.jpg?1783941996"
+          },
+          "artist": "Svetlin Velinov"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6403,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "6ff4ff67-ad08-447f-a112-1a071c1474a4",
+      "scryfallId": "7676deeb-b80d-49c9-b810-5ed0a68fa618",
+      "name": "Hanged Executioner",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hanged Executioner",
+          "manaCost": "{2}{W}",
+          "typeLine": "Creature — Spirit",
+          "oracleText": "Flying\nWhen this creature enters, create a 1/1 white Spirit creature token with flying.\n{3}{W}, Exile this creature: Exile target creature.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/6/7676deeb-b80d-49c9-b810-5ed0a68fa618.jpg?1783924973",
+            "large": "https://cards.scryfall.io/large/front/7/6/7676deeb-b80d-49c9-b810-5ed0a68fa618.jpg?1783924973",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/6/7676deeb-b80d-49c9-b810-5ed0a68fa618.jpg?1783924973"
+          },
+          "artist": "Johann Bodin"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6934,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Hanged Executioner",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Spirit",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "32263baa-d3f0-463f-92b3-4e9938476add",
+      "scryfallId": "713ceecc-a3b0-4734-87a8-c235923a8d92",
+      "name": "Hedron Archive",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Hedron Archive",
+          "manaCost": "{4}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}{C}.\n{2}, {T}, Sacrifice this artifact: Draw two cards.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/1/713ceecc-a3b0-4734-87a8-c235923a8d92.jpg?1793111937",
+            "large": "https://cards.scryfall.io/large/front/7/1/713ceecc-a3b0-4734-87a8-c235923a8d92.jpg?1793111937",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/1/713ceecc-a3b0-4734-87a8-c235923a8d92.jpg?1793111937"
+          },
+          "artist": "Paolo Puggioni"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 544,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "61cceb14-9568-4a5e-9b56-07afa6407df2",
+      "scryfallId": "7f58d798-9b99-45a9-9015-f689145018a8",
+      "name": "Inspired Sphinx",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Inspired Sphinx",
+          "manaCost": "{5}{U}{U}",
+          "typeLine": "Creature — Sphinx",
+          "oracleText": "Flying\nWhen this creature enters, draw cards equal to the number of opponents you have.\n{3}{U}: Create a 1/1 colorless Thopter artifact creature token with flying.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/f/7f58d798-9b99-45a9-9015-f689145018a8.jpg?1783928324",
+            "large": "https://cards.scryfall.io/large/front/7/f/7f58d798-9b99-45a9-9015-f689145018a8.jpg?1783928324",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f58d798-9b99-45a9-9015-f689145018a8.jpg?1783928324"
+          },
+          "artist": "Jesper Ejsing"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 12736,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Inspired Sphinx",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "b2c6aa39-2d2a-459c-a555-fb48ba993373",
+      "scryfallId": "1335d293-3dd2-4f13-bd2c-22181f4528ee",
+      "name": "Island",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Island",
+          "manaCost": "",
+          "typeLine": "Basic Land — Island",
+          "oracleText": "({T}: Add {U}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424",
+            "large": "https://cards.scryfall.io/large/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/3/1335d293-3dd2-4f13-bd2c-22181f4528ee.jpg?1791578424"
+          },
+          "artist": "Eren Arik"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c46718dc-24dc-4b77-b455-aa4c89570b8d",
+      "scryfallId": "1e3b82a7-ebef-4190-9f50-40b992ba89c9",
+      "name": "Isperia, Supreme Judge",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Isperia, Supreme Judge",
+          "manaCost": "{2}{W}{W}{U}{U}",
+          "typeLine": "Legendary Creature — Sphinx",
+          "oracleText": "Flying\nWhenever a creature attacks you or a planeswalker you control, you may draw a card.",
+          "power": "6",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/e/1e3b82a7-ebef-4190-9f50-40b992ba89c9.jpg?1783931147",
+            "large": "https://cards.scryfall.io/large/front/1/e/1e3b82a7-ebef-4190-9f50-40b992ba89c9.jpg?1783931147",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/e/1e3b82a7-ebef-4190-9f50-40b992ba89c9.jpg?1783931147"
+          },
+          "artist": "Scott M. Fischer"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 8491,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "aab55af7-8084-47b6-910f-75a75a6313a4",
+      "scryfallId": "7f8f2d69-fba9-40e5-8ef7-75e14ef4070a",
+      "name": "Jubilant Skybonder",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Jubilant Skybonder",
+          "manaCost": "{1}{W/U}{W/U}",
+          "typeLine": "Creature — Human Wizard",
+          "oracleText": "Flying\nCreatures you control with flying have \"Spells your opponents cast that target this creature cost {2} more to cast.\"",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/f/7f8f2d69-fba9-40e5-8ef7-75e14ef4070a.jpg?1783931012",
+            "large": "https://cards.scryfall.io/large/front/7/f/7f8f2d69-fba9-40e5-8ef7-75e14ef4070a.jpg?1783931012",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7f8f2d69-fba9-40e5-8ef7-75e14ef4070a.jpg?1783931012"
+          },
+          "artist": "Jesper Ejsing"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6231,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5a040363-dba5-49d2-9756-e14af61cf818",
+      "scryfallId": "a0f431b3-6f4e-40a5-b9d1-f2c67b70544d",
+      "name": "Kangee's Lieutenant",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Kangee's Lieutenant",
+          "manaCost": "{2}{W}",
+          "typeLine": "Creature — Bird Soldier",
+          "oracleText": "Flying\nWhenever this creature attacks, attacking creatures with flying get +1/+1 until end of turn.\nEncore {5}{W} ({5}{W}, Exile this card from your graveyard: For each opponent, create a token copy that attacks that opponent this turn if able. They gain haste. Sacrifice them at the beginning of the next end step. Activate only as a sorcery.)",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/0/a0f431b3-6f4e-40a5-b9d1-f2c67b70544d.jpg?1783928882",
+            "large": "https://cards.scryfall.io/large/front/a/0/a0f431b3-6f4e-40a5-b9d1-f2c67b70544d.jpg?1783928882",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/0/a0f431b3-6f4e-40a5-b9d1-f2c67b70544d.jpg?1783928882"
+          },
+          "artist": "Randy Vargas"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying",
+        "Encore"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 9288,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Kangee's Lieutenant",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Copy",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "6a344d2e-fbd7-4ff9-9e2a-97ae69d60c66",
+      "scryfallId": "99988f41-99b4-4423-be5f-9dc4ec7d813b",
+      "name": "Kangee, Sky Warden",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Kangee, Sky Warden",
+          "manaCost": "{3}{W}{U}",
+          "typeLine": "Legendary Creature — Bird Wizard",
+          "oracleText": "Flying, vigilance\nWhenever Kangee attacks, attacking creatures with flying get +2/+0 until end of turn.\nWhenever Kangee blocks, blocking creatures with flying get +0/+2 until end of turn.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/9/99988f41-99b4-4423-be5f-9dc4ec7d813b.jpg?1783928773",
+            "large": "https://cards.scryfall.io/large/front/9/9/99988f41-99b4-4423-be5f-9dc4ec7d813b.jpg?1783928773",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/9/99988f41-99b4-4423-be5f-9dc4ec7d813b.jpg?1783928773"
+          },
+          "artist": "Dan Murayama Scott"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying",
+        "Vigilance"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5614,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "2d9663be-c466-4191-85e2-a69ce0965432",
+      "scryfallId": "e283db9e-6a51-4b28-9f6c-0c040a9d6d8c",
+      "name": "Meandering River",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Meandering River",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/2/e283db9e-6a51-4b28-9f6c-0c040a9d6d8c.jpg?1783928292",
+            "large": "https://cards.scryfall.io/large/front/e/2/e283db9e-6a51-4b28-9f6c-0c040a9d6d8c.jpg?1783928292",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/2/e283db9e-6a51-4b28-9f6c-0c040a9d6d8c.jpg?1783928292"
+          },
+          "artist": "Cliff Childs"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 7651,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f6a74582-62b6-48d1-89d6-e26059229840",
+      "scryfallId": "e8c8f35e-faa8-4537-b320-c84ebe8e71e4",
+      "name": "Migratory Route",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Migratory Route",
+          "manaCost": "{3}{W}{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Create four 1/1 white Bird creature tokens with flying.\nBasic landcycling {2} ({2}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/8/e8c8f35e-faa8-4537-b320-c84ebe8e71e4.jpg?1783917125",
+            "large": "https://cards.scryfall.io/large/front/e/8/e8c8f35e-faa8-4537-b320-c84ebe8e71e4.jpg?1783917125",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/8/e8c8f35e-faa8-4537-b320-c84ebe8e71e4.jpg?1783917125"
+          },
+          "artist": "Winona Nelson"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Landcycling",
+        "Basic landcycling",
+        "Typecycling",
+        "Cycling"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7293,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Bird",
+          "component": "token"
+        },
+        {
+          "name": "Migratory Route",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "5324192b-6687-41e4-8e56-326b21a5dbf3",
+      "scryfallId": "74deeeaa-95e9-42c9-89e3-e317ea63e216",
+      "name": "Moorland Haunt",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Moorland Haunt",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "{T}: Add {C}.\n{W}{U}, {T}, Exile a creature card from your graveyard: Create a 1/1 white Spirit creature token with flying.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/4/74deeeaa-95e9-42c9-89e3-e317ea63e216.jpg?1783924935",
+            "large": "https://cards.scryfall.io/large/front/7/4/74deeeaa-95e9-42c9-89e3-e317ea63e216.jpg?1783924935",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/4/74deeeaa-95e9-42c9-89e3-e317ea63e216.jpg?1783924935"
+          },
+          "artist": "James Paick"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 8946,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Moorland Haunt",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Spirit",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "3407fe41-fdd3-4119-8f70-4bc4590a379f",
+      "scryfallId": "c57ee875-5ce7-4c47-841c-9639d622fe00",
+      "name": "Negate",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Negate",
+          "manaCost": "{1}{U}",
+          "typeLine": "Instant",
+          "oracleText": "Counter target noncreature spell.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/5/c57ee875-5ce7-4c47-841c-9639d622fe00.jpg?1793111882",
+            "large": "https://cards.scryfall.io/large/front/c/5/c57ee875-5ce7-4c47-841c-9639d622fe00.jpg?1793111882",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/5/c57ee875-5ce7-4c47-841c-9639d622fe00.jpg?1793111882"
+          },
+          "artist": "Jetfreak-7"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 56,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "66155010-cc2c-449a-85d5-92c95aade514",
+      "scryfallId": "48bfc25b-f73c-431c-b173-adcd65c5d491",
+      "name": "Pilgrim's Eye",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Pilgrim's Eye",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Thopter",
+          "oracleText": "Flying\nWhen this creature enters, you may search your library for a basic land card, reveal it, put it into your hand, then shuffle.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/8/48bfc25b-f73c-431c-b173-adcd65c5d491.jpg?1783915593",
+            "large": "https://cards.scryfall.io/large/front/4/8/48bfc25b-f73c-431c-b173-adcd65c5d491.jpg?1783915593",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/8/48bfc25b-f73c-431c-b173-adcd65c5d491.jpg?1783915593"
+          },
+          "artist": "Dan Murayama Scott"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5026,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "bc71ebf6-2056-41f7-be35-b2e5c34afa99",
+      "scryfallId": "09ac862f-0a51-44dd-b86f-9412b8218b13",
+      "name": "Plains",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Plains",
+          "manaCost": "",
+          "typeLine": "Basic Land — Plains",
+          "oracleText": "({T}: Add {W}.)",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/0/9/09ac862f-0a51-44dd-b86f-9412b8218b13.jpg?1791578423",
+            "large": "https://cards.scryfall.io/large/front/0/9/09ac862f-0a51-44dd-b86f-9412b8218b13.jpg?1791578423",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/0/9/09ac862f-0a51-44dd-b86f-9412b8218b13.jpg?1791578423"
+          },
+          "artist": "Shahab Alizadeh"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": null,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "458d2b12-f578-4392-98d3-c3bc83f316c4",
+      "scryfallId": "33cdd576-d115-48c0-a903-dcd0ed8ee5ab",
+      "name": "Port Town",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Port Town",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "As this land enters, you may reveal a Plains or Island card from your hand. If you don't, this land enters tapped.\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/3/3/33cdd576-d115-48c0-a903-dcd0ed8ee5ab.jpg?1793021344",
+            "large": "https://cards.scryfall.io/large/front/3/3/33cdd576-d115-48c0-a903-dcd0ed8ee5ab.jpg?1793021344",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/3/3/33cdd576-d115-48c0-a903-dcd0ed8ee5ab.jpg?1793021344"
+          },
+          "artist": "Edouard"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 335,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5330e24a-8568-446e-840a-594cd08bd1bc",
+      "scryfallId": "dd3d841f-9bac-4b4d-bf21-2dfadd1397fc",
+      "name": "Prairie Stream",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Prairie Stream",
+          "manaCost": "",
+          "typeLine": "Land — Plains Island",
+          "oracleText": "({T}: Add {W} or {U}.)\nThis land enters tapped unless you control two or more basic lands.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/d/dd3d841f-9bac-4b4d-bf21-2dfadd1397fc.jpg?1793021358",
+            "large": "https://cards.scryfall.io/large/front/d/d/dd3d841f-9bac-4b4d-bf21-2dfadd1397fc.jpg?1793021358",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/dd3d841f-9bac-4b4d-bf21-2dfadd1397fc.jpg?1793021358"
+          },
+          "artist": "Carlos Dattoli"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 101,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "984336a7-85bd-4549-9771-03a0c2367db0",
+      "scryfallId": "a88827db-a52a-44ef-8e49-8c32bb37cbfe",
+      "name": "Rally of Wings",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Rally of Wings",
+          "manaCost": "{1}{W}",
+          "typeLine": "Instant",
+          "oracleText": "Untap all creatures you control. Creatures you control with flying get +2/+2 until end of turn.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/8/a88827db-a52a-44ef-8e49-8c32bb37cbfe.jpg?1783908794",
+            "large": "https://cards.scryfall.io/large/front/a/8/a88827db-a52a-44ef-8e49-8c32bb37cbfe.jpg?1783908794",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/8/a88827db-a52a-44ef-8e49-8c32bb37cbfe.jpg?1783908794"
+          },
+          "artist": "Magali Villeneuve"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7382,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c40bc9f6-2b72-4ae1-b912-50075af59628",
+      "scryfallId": "665a1bd1-db82-4db9-af7d-af161d31a696",
+      "name": "Remorseful Cleric",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Remorseful Cleric",
+          "manaCost": "{1}{W}",
+          "typeLine": "Creature — Spirit Cleric",
+          "oracleText": "Flying\nSacrifice this creature: Exile target player's graveyard.",
+          "power": "2",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/6/665a1bd1-db82-4db9-af7d-af161d31a696.jpg?1783903803",
+            "large": "https://cards.scryfall.io/large/front/6/6/665a1bd1-db82-4db9-af7d-af161d31a696.jpg?1783903803",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/6/665a1bd1-db82-4db9-af7d-af161d31a696.jpg?1783903803"
+          },
+          "artist": "Grzegorz Rutkowski"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5257,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "73b3e242-075d-4c4d-9b09-6fef1633c348",
+      "scryfallId": "b474bfdd-e0b2-4b96-b8eb-84ced9ac5a06",
+      "name": "Sejiri Refuge",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sejiri Refuge",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/b/4/b474bfdd-e0b2-4b96-b8eb-84ced9ac5a06.jpg?1783928291",
+            "large": "https://cards.scryfall.io/large/front/b/4/b474bfdd-e0b2-4b96-b8eb-84ced9ac5a06.jpg?1783928291",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/b/4/b474bfdd-e0b2-4b96-b8eb-84ced9ac5a06.jpg?1783928291"
+          },
+          "artist": "Ryan Pancoast"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 4893,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "ac8952c9-bd30-48cd-b964-7e6271f9cbc8",
+      "scryfallId": "729ee848-6c27-4202-b2bc-605f45209468",
+      "name": "Sephara, Sky's Blade",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sephara, Sky's Blade",
+          "manaCost": "{4}{W}{W}{W}",
+          "typeLine": "Legendary Creature — Angel",
+          "oracleText": "You may pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost.\nFlying, lifelink\nOther creatures you control with flying have indestructible. (Damage and effects that say \"destroy\" don't destroy them.)",
+          "power": "7",
+          "toughness": "7",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/2/729ee848-6c27-4202-b2bc-605f45209468.jpg?1783915714",
+            "large": "https://cards.scryfall.io/large/front/7/2/729ee848-6c27-4202-b2bc-605f45209468.jpg?1783915714",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/2/729ee848-6c27-4202-b2bc-605f45209468.jpg?1783915714"
+          },
+          "artist": "Livia Prima"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying",
+        "Lifelink"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1353,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "9ebc0144-fc45-4de7-b3d8-ef8cf2e211ae",
+      "scryfallId": "1d93d905-cc36-4a78-b07c-07f8bbf39a47",
+      "name": "Sharding Sphinx",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sharding Sphinx",
+          "manaCost": "{4}{U}{U}",
+          "typeLine": "Artifact Creature — Sphinx",
+          "oracleText": "Flying\nWhenever an artifact creature you control deals combat damage to a player, you may create a 1/1 blue Thopter artifact creature token with flying.",
+          "power": "4",
+          "toughness": "4",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/d/1d93d905-cc36-4a78-b07c-07f8bbf39a47.jpg?1783917166",
+            "large": "https://cards.scryfall.io/large/front/1/d/1d93d905-cc36-4a78-b07c-07f8bbf39a47.jpg?1783917166",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/d/1d93d905-cc36-4a78-b07c-07f8bbf39a47.jpg?1783917166"
+          },
+          "artist": "Michael Bruinsma"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3725,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Sharding Sphinx",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Thopter",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "2224b6e0-c5ff-45d0-84e3-83758c5fc99f",
+      "scryfallId": "d47abfb2-9bcf-485c-9bd4-2c09b714eb32",
+      "name": "Sky Diamond",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sky Diamond",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "This artifact enters tapped.\n{T}: Add {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/4/d47abfb2-9bcf-485c-9bd4-2c09b714eb32.jpg?1783922666",
+            "large": "https://cards.scryfall.io/large/front/d/4/d47abfb2-9bcf-485c-9bd4-2c09b714eb32.jpg?1783922666",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/4/d47abfb2-9bcf-485c-9bd4-2c09b714eb32.jpg?1783922666"
+          },
+          "artist": "Gaboleps"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 830,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "84adce5c-39c7-425e-b163-4a1a3977364b",
+      "scryfallId": "6209dbfd-b765-44c5-b3ad-94f6e0705926",
+      "name": "Skycat Sovereign",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Skycat Sovereign",
+          "manaCost": "{W}{U}",
+          "typeLine": "Creature — Elemental Cat",
+          "oracleText": "Flying\nThis creature gets +1/+1 for each other creature you control with flying.\n{2}{W}{U}: Create a 1/1 white Cat Bird creature token with flying.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/2/6209dbfd-b765-44c5-b3ad-94f6e0705926.jpg?1783931018",
+            "large": "https://cards.scryfall.io/large/front/6/2/6209dbfd-b765-44c5-b3ad-94f6e0705926.jpg?1783931018",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/2/6209dbfd-b765-44c5-b3ad-94f6e0705926.jpg?1783931018"
+          },
+          "artist": "Slawomir Maniak"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7704,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Skycat Sovereign",
+          "component": "combo_piece"
+        },
+        {
+          "name": "Cat Bird",
+          "component": "token"
+        }
+      ]
+    },
+    {
+      "oracleId": "974f788a-039f-4310-a2fe-16b14a1e2d35",
+      "scryfallId": "cab69fbd-0179-4b02-adba-71d2a0eeea5c",
+      "name": "Skyscanner",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Skyscanner",
+          "manaCost": "{3}",
+          "typeLine": "Artifact Creature — Thopter",
+          "oracleText": "Flying\nWhen this creature enters, draw a card.",
+          "power": "1",
+          "toughness": "1",
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/c/a/cab69fbd-0179-4b02-adba-71d2a0eeea5c.jpg?1783930654",
+            "large": "https://cards.scryfall.io/large/front/c/a/cab69fbd-0179-4b02-adba-71d2a0eeea5c.jpg?1783930654",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/c/a/cab69fbd-0179-4b02-adba-71d2a0eeea5c.jpg?1783930654"
+          },
+          "artist": "Adam Paquette"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6120,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "6ad8011d-3471-4369-9d68-b264cc027487",
+      "scryfallId": "fc817e07-c1f3-469f-9cf7-0945dea7400f",
+      "name": "Sol Ring",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sol Ring",
+          "manaCost": "{1}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}{C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/c/fc817e07-c1f3-469f-9cf7-0945dea7400f.jpg?1793021181",
+            "large": "https://cards.scryfall.io/large/front/f/c/fc817e07-c1f3-469f-9cf7-0945dea7400f.jpg?1793021181",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/c/fc817e07-c1f3-469f-9cf7-0945dea7400f.jpg?1793021181"
+          },
+          "artist": "Hector Ortiz"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "52bd4331-67b6-4eb8-9566-e00359889fc6",
+      "scryfallId": "18f3a850-b2e1-4970-9971-5f662fb3df31",
+      "name": "Soul Snare",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Soul Snare",
+          "manaCost": "{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "{W}, Sacrifice this enchantment: Exile target creature that's attacking you or a planeswalker you control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/8/18f3a850-b2e1-4970-9971-5f662fb3df31.jpg?1783913024",
+            "large": "https://cards.scryfall.io/large/front/1/8/18f3a850-b2e1-4970-9971-5f662fb3df31.jpg?1783913024",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/8/18f3a850-b2e1-4970-9971-5f662fb3df31.jpg?1783913024"
+          },
+          "artist": "Carl Critchlow"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6759,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e6284fb3-7cf8-4730-b156-10085b70b0e8",
+      "scryfallId": "9ccfe045-26cf-4813-ba9d-0b234fe9342f",
+      "name": "Sphinx of Enlightenment",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sphinx of Enlightenment",
+          "manaCost": "{4}{U}{U}",
+          "typeLine": "Creature — Sphinx",
+          "oracleText": "Flying\nWhen this creature enters, target opponent draws a card and you draw three cards.",
+          "power": "5",
+          "toughness": "5",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/c/9ccfe045-26cf-4813-ba9d-0b234fe9342f.jpg?1783908753",
+            "large": "https://cards.scryfall.io/large/front/9/c/9ccfe045-26cf-4813-ba9d-0b234fe9342f.jpg?1783908753",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/c/9ccfe045-26cf-4813-ba9d-0b234fe9342f.jpg?1783908753"
+          },
+          "artist": "Johan Grenier"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 8878,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "71d83fca-e40e-4d0e-956d-d0d6da9cc472",
+      "scryfallId": "6350b216-4a11-4e33-89ac-ffaf6315ab7d",
+      "name": "Sphinx's Revelation",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Sphinx's Revelation",
+          "manaCost": "{X}{W}{U}{U}",
+          "typeLine": "Instant",
+          "oracleText": "You gain X life and draw X cards.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/6/3/6350b216-4a11-4e33-89ac-ffaf6315ab7d.jpg?1783908482",
+            "large": "https://cards.scryfall.io/large/front/6/3/6350b216-4a11-4e33-89ac-ffaf6315ab7d.jpg?1783908482",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/6/3/6350b216-4a11-4e33-89ac-ffaf6315ab7d.jpg?1783908482"
+          },
+          "artist": "Slawomir Maniak"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3384,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "09071f5f-c9cb-43a9-b41d-faf6caf3beff",
+      "scryfallId": "125b8be1-76b9-434e-a505-5099d950767c",
+      "name": "Staggering Insight",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Staggering Insight",
+          "manaCost": "{W}{U}",
+          "typeLine": "Enchantment — Aura",
+          "oracleText": "Enchant creature\nEnchanted creature gets +1/+1 and has lifelink and \"Whenever this creature deals combat damage to a player, draw a card.\"",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/2/125b8be1-76b9-434e-a505-5099d950767c.jpg?1783931517",
+            "large": "https://cards.scryfall.io/large/front/1/2/125b8be1-76b9-434e-a505-5099d950767c.jpg?1783931517",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/2/125b8be1-76b9-434e-a505-5099d950767c.jpg?1783931517"
+          },
+          "artist": "Dmitry Burmak"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Enchant"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 5559,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "e7ed9c56-c388-4188-98e2-307d35ca3088",
+      "scryfallId": "ddbcb165-0a60-493a-8cbb-ba8b36c527da",
+      "name": "Steel-Plume Marshal",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Steel-Plume Marshal",
+          "manaCost": "{3}{W}{W}",
+          "typeLine": "Creature — Bird Soldier",
+          "oracleText": "Flying\nWhenever this creature attacks, other attacking creatures you control with flying get +2/+2 until end of turn.",
+          "power": "3",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/d/ddbcb165-0a60-493a-8cbb-ba8b36c527da.jpg?1783930509",
+            "large": "https://cards.scryfall.io/large/front/d/d/ddbcb165-0a60-493a-8cbb-ba8b36c527da.jpg?1783930509",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/d/ddbcb165-0a60-493a-8cbb-ba8b36c527da.jpg?1783930509"
+          },
+          "artist": "Cristi Balanescu"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7690,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "30aa362b-7ab1-486e-9802-1171e0dc2416",
+      "scryfallId": "2345331c-a14f-4b4b-a9a4-88c5beb48242",
+      "name": "Storm Herd",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Storm Herd",
+          "manaCost": "{8}{W}{W}",
+          "typeLine": "Sorcery",
+          "oracleText": "Create X 1/1 white Pegasus creature tokens with flying, where X is your life total.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/3/2345331c-a14f-4b4b-a9a4-88c5beb48242.jpg?1783928328",
+            "large": "https://cards.scryfall.io/large/front/2/3/2345331c-a14f-4b4b-a9a4-88c5beb48242.jpg?1783928328",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/3/2345331c-a14f-4b4b-a9a4-88c5beb48242.jpg?1783928328"
+          },
+          "artist": "Jim Nelson"
+        }
+      ],
+      "cmc": 10,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 2846,
+      "gameChanger": false,
+      "relatedParts": [
+        {
+          "name": "Pegasus",
+          "component": "token"
+        },
+        {
+          "name": "Storm Herd",
+          "component": "combo_piece"
+        }
+      ]
+    },
+    {
+      "oracleId": "b1544f21-7e98-461b-aed5-e748b0168c52",
+      "scryfallId": "4645eebf-c9fc-4ee7-b646-61dc1205b4b0",
+      "name": "Swords to Plowshares",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Swords to Plowshares",
+          "manaCost": "{W}",
+          "typeLine": "Instant",
+          "oracleText": "Exile target creature. Its controller gains life equal to its power.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/6/4645eebf-c9fc-4ee7-b646-61dc1205b4b0.jpg?1793111861",
+            "large": "https://cards.scryfall.io/large/front/4/6/4645eebf-c9fc-4ee7-b646-61dc1205b4b0.jpg?1793111861",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/6/4645eebf-c9fc-4ee7-b646-61dc1205b4b0.jpg?1793111861"
+          },
+          "artist": "Pablo Mendoza"
+        }
+      ],
+      "cmc": 1,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 11,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "00e35322-1a9a-41e3-9ce1-359c8eaa3bc7",
+      "scryfallId": "5fd601c4-44a9-45d0-a2a4-03a2eca700c7",
+      "name": "Talisman of Progress",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Talisman of Progress",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "{T}: Add {C}.\n{T}: Add {W} or {U}. This artifact deals 1 damage to you.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/5/f/5fd601c4-44a9-45d0-a2a4-03a2eca700c7.jpg?1793021219",
+            "large": "https://cards.scryfall.io/large/front/5/f/5fd601c4-44a9-45d0-a2a4-03a2eca700c7.jpg?1793021219",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/5/f/5fd601c4-44a9-45d0-a2a4-03a2eca700c7.jpg?1793021219"
+          },
+          "artist": "Racrufi"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "C",
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 135,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "89f43e27-790b-4ca1-8ba7-0882b31e0783",
+      "scryfallId": "f8509382-b2f1-4b1d-98e5-4f622bebd9a4",
+      "name": "Temple of Enlightenment",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Temple of Enlightenment",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/f/8/f8509382-b2f1-4b1d-98e5-4f622bebd9a4.jpg?1793281510",
+            "large": "https://cards.scryfall.io/large/front/f/8/f8509382-b2f1-4b1d-98e5-4f622bebd9a4.jpg?1793281510",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/f/8/f8509382-b2f1-4b1d-98e5-4f622bebd9a4.jpg?1793281510"
+          },
+          "artist": "David Álvarez"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Scry"
+      ],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 320,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "9965d9c5-2ebf-4a6c-930e-55c5890979be",
+      "scryfallId": "df44b703-e025-480d-9c7b-55873407bdf4",
+      "name": "Thought Vessel",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thought Vessel",
+          "manaCost": "{2}",
+          "typeLine": "Artifact",
+          "oracleText": "You have no maximum hand size.\n{T}: Add {C}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/d/f/df44b703-e025-480d-9c7b-55873407bdf4.jpg?1793111967",
+            "large": "https://cards.scryfall.io/large/front/d/f/df44b703-e025-480d-9c7b-55873407bdf4.jpg?1793111967",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/d/f/df44b703-e025-480d-9c7b-55873407bdf4.jpg?1793111967"
+          },
+          "artist": "Leesha Hannigan"
+        }
+      ],
+      "cmc": 2,
+      "colorIdentity": [],
+      "keywords": [],
+      "producedMana": [
+        "C"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 21,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "15276d3b-a117-44bf-87c3-c17e032e4a26",
+      "scryfallId": "7fc3c21f-99d5-48dc-b36e-8db597da44bf",
+      "name": "Thunderclap Wyvern",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Thunderclap Wyvern",
+          "manaCost": "{2}{W}{U}",
+          "typeLine": "Creature — Drake",
+          "oracleText": "Flash (You may cast this spell any time you could cast an instant.)\nFlying\nOther creatures you control with flying get +1/+1.",
+          "power": "2",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/7/f/7fc3c21f-99d5-48dc-b36e-8db597da44bf.jpg?1783928302",
+            "large": "https://cards.scryfall.io/large/front/7/f/7fc3c21f-99d5-48dc-b36e-8db597da44bf.jpg?1783928302",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/7/f/7fc3c21f-99d5-48dc-b36e-8db597da44bf.jpg?1783928302"
+          },
+          "artist": "Jason Felix"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [
+        "Flying",
+        "Flash"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 9930,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "8d83dfb3-5662-4109-b465-bf5f257e58a5",
+      "scryfallId": "ac70fcc7-893f-4a08-88a3-2f0655de18fc",
+      "name": "Tide Skimmer",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Tide Skimmer",
+          "manaCost": "{3}{U}",
+          "typeLine": "Creature — Drake",
+          "oracleText": "Flying\nWhenever you attack with two or more creatures with flying, draw a card.",
+          "power": "2",
+          "toughness": "3",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/a/c/ac70fcc7-893f-4a08-88a3-2f0655de18fc.jpg?1783908749",
+            "large": "https://cards.scryfall.io/large/front/a/c/ac70fcc7-893f-4a08-88a3-2f0655de18fc.jpg?1783908749",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/a/c/ac70fcc7-893f-4a08-88a3-2f0655de18fc.jpg?1783908749"
+          },
+          "artist": "Joseph Meehan"
+        }
+      ],
+      "cmc": 4,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 11836,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "36c78a5f-0148-4596-a346-f8e35037b694",
+      "scryfallId": "eb4b75e6-3080-412b-bf40-b6029ea8bbfe",
+      "name": "Time Wipe",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Time Wipe",
+          "manaCost": "{2}{W}{W}{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "Return a creature you control to its owner's hand, then destroy all creatures.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U",
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/e/b/eb4b75e6-3080-412b-bf40-b6029ea8bbfe.jpg?1783907017",
+            "large": "https://cards.scryfall.io/large/front/e/b/eb4b75e6-3080-412b-bf40-b6029ea8bbfe.jpg?1783907017",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/e/b/eb4b75e6-3080-412b-bf40-b6029ea8bbfe.jpg?1783907017"
+          },
+          "artist": "Svetlin Velinov"
+        }
+      ],
+      "cmc": 5,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1490,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5d641bf6-0f93-4189-8dc1-ec7ea446dade",
+      "scryfallId": "1c4efa6c-4f29-41cd-a728-bf0e479ace05",
+      "name": "Tranquil Cove",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Tranquil Cove",
+          "manaCost": "",
+          "typeLine": "Land",
+          "oracleText": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {U}.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/c/1c4efa6c-4f29-41cd-a728-bf0e479ace05.jpg?1783907271",
+            "large": "https://cards.scryfall.io/large/front/1/c/1c4efa6c-4f29-41cd-a728-bf0e479ace05.jpg?1783907271",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/c/1c4efa6c-4f29-41cd-a728-bf0e479ace05.jpg?1783907271"
+          },
+          "artist": "Kevin Sidharta"
+        }
+      ],
+      "cmc": 0,
+      "colorIdentity": [
+        "U",
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [
+        "U",
+        "W"
+      ],
+      "commanderLegality": "legal",
+      "edhrecRank": 1107,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "fc299c1c-50f3-492a-b6b8-a3664bb72ab7",
+      "scryfallId": "9e5dc58b-f486-4b9f-9138-33efa31a05e4",
+      "name": "True Conviction",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "True Conviction",
+          "manaCost": "{3}{W}{W}{W}",
+          "typeLine": "Enchantment",
+          "oracleText": "Creatures you control have double strike and lifelink.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/9/e/9e5dc58b-f486-4b9f-9138-33efa31a05e4.jpg?1783938854",
+            "large": "https://cards.scryfall.io/large/front/9/e/9e5dc58b-f486-4b9f-9138-33efa31a05e4.jpg?1783938854",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/9/e/9e5dc58b-f486-4b9f-9138-33efa31a05e4.jpg?1783938854"
+          },
+          "artist": "Svetlin Velinov"
+        }
+      ],
+      "cmc": 6,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 1859,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "1e7bddbd-e448-4aea-9d18-b44bd45837c5",
+      "scryfallId": "210920ef-917b-4e2c-a5da-1180baa37959",
+      "name": "Vow of Duty",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Vow of Duty",
+          "manaCost": "{2}{W}",
+          "typeLine": "Enchantment — Aura",
+          "oracleText": "Enchant creature\nEnchanted creature gets +2/+2, has vigilance, and can't attack you or planeswalkers you control.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "W"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/2/1/210920ef-917b-4e2c-a5da-1180baa37959.jpg?1783913022",
+            "large": "https://cards.scryfall.io/large/front/2/1/210920ef-917b-4e2c-a5da-1180baa37959.jpg?1783913022",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/1/210920ef-917b-4e2c-a5da-1180baa37959.jpg?1783913022"
+          },
+          "artist": "Wayne Reynolds"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "W"
+      ],
+      "keywords": [
+        "Enchant"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 7448,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "f424b5e9-8f02-4491-a7d8-c7e088611c6a",
+      "scryfallId": "40d26ee1-5264-4f5a-ac01-8304888589aa",
+      "name": "Warden of Evos Isle",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Warden of Evos Isle",
+          "manaCost": "{2}{U}",
+          "typeLine": "Creature — Bird Wizard",
+          "oracleText": "Flying\nCreature spells with flying you cast cost {1} less to cast.",
+          "power": "2",
+          "toughness": "2",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/0/40d26ee1-5264-4f5a-ac01-8304888589aa.jpg?1783908746",
+            "large": "https://cards.scryfall.io/large/front/4/0/40d26ee1-5264-4f5a-ac01-8304888589aa.jpg?1783908746",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/0/40d26ee1-5264-4f5a-ac01-8304888589aa.jpg?1783908746"
+          },
+          "artist": "Nils Hamm"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3773,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "5e038a3a-fbab-46c2-8773-1327d953da16",
+      "scryfallId": "11fac13f-bb14-48d5-90c2-0b70b252287c",
+      "name": "Windreader Sphinx",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Windreader Sphinx",
+          "manaCost": "{5}{U}{U}",
+          "typeLine": "Creature — Sphinx",
+          "oracleText": "Flying\nWhenever a creature with flying attacks, you may draw a card.",
+          "power": "3",
+          "toughness": "7",
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/1/1/11fac13f-bb14-48d5-90c2-0b70b252287c.jpg?1783908744",
+            "large": "https://cards.scryfall.io/large/front/1/1/11fac13f-bb14-48d5-90c2-0b70b252287c.jpg?1783908744",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/1/1/11fac13f-bb14-48d5-90c2-0b70b252287c.jpg?1783908744"
+          },
+          "artist": "Min Yum"
+        }
+      ],
+      "cmc": 7,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [
+        "Flying"
+      ],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 6525,
+      "gameChanger": false,
+      "relatedParts": []
+    },
+    {
+      "oracleId": "c623aeb1-e6d4-48fe-bd2a-a7a6729aa4df",
+      "scryfallId": "4b1ec48d-46d6-4921-9937-ae7ac7154adf",
+      "name": "Winged Words",
+      "layout": "normal",
+      "faces": [
+        {
+          "name": "Winged Words",
+          "manaCost": "{2}{U}",
+          "typeLine": "Sorcery",
+          "oracleText": "This spell costs {1} less to cast if you control a creature with flying.\nDraw two cards.",
+          "power": null,
+          "toughness": null,
+          "loyalty": null,
+          "defense": null,
+          "colors": [
+            "U"
+          ],
+          "imageUris": {
+            "normal": "https://cards.scryfall.io/normal/front/4/b/4b1ec48d-46d6-4921-9937-ae7ac7154adf.jpg?1783908743",
+            "large": "https://cards.scryfall.io/large/front/4/b/4b1ec48d-46d6-4921-9937-ae7ac7154adf.jpg?1783908743",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/4/b/4b1ec48d-46d6-4921-9937-ae7ac7154adf.jpg?1783908743"
+          },
+          "artist": "Chris Seaman"
+        }
+      ],
+      "cmc": 3,
+      "colorIdentity": [
+        "U"
+      ],
+      "keywords": [],
+      "producedMana": [],
+      "commanderLegality": "legal",
+      "edhrecRank": 3623,
+      "gameChanger": false,
+      "relatedParts": []
+    }
+  ]
+}

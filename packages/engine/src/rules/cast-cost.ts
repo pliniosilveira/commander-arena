@@ -34,9 +34,12 @@ import type { GameObject, GameState, StackData } from '../state/types';
 import {
   alternativeOf,
   buybackCostOf,
+  costPerExtraTargetOf,
   escalateCostOf,
   flashbackCostOf,
+  graveyardCostOf,
   kickerLikeCostOf,
+  manaCostAsFlashbackCost,
   manaSymbolsOf,
   modeCostsOf,
   namedAlternativeCostOf,
@@ -45,18 +48,23 @@ import {
 import { beholdCandidates } from './behold';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
+import { costIncreaseFor } from './cost-increase';
 import { derive } from './derive';
 import { expandKeywords } from './derive-keywords';
 import { costReductionSources } from './derive-statics';
 import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
+import { faceDownSpellFields, isFaceDown } from './face-down';
+import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
+import { libraryCastSacrificeOf } from './library-cast-cost';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { payMechanismsOf, payOptionSources } from './pay-options';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
+import { spellSpendTarget } from './spend-target';
 import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
 
 /** How a spell is cast instead of from the hand or the command zone: see `PriorityOption`. */
@@ -86,6 +94,8 @@ export interface SpellCost {
   readonly sacrificeAny?: ObjectFilter | null;
   /** How many cards to discard. */
   readonly discard: number;
+  /** D-667 (CR 702.81a): the cards that may be discarded are those this filter matches ("a land card"); absent when any card may be. */
+  readonly discardFilter?: ObjectFilter;
   /** The filter of the single Behold cost, or null. */
   readonly behold: ObjectFilter | null;
   /** How many other cards of the caster's graveyard are exiled (Escape, CR 702.138a, D-124). */
@@ -112,12 +122,16 @@ export function isNamedAlternative(
     alternative === 'overload' ||
     alternative === 'evoke' ||
     alternative === 'dash' ||
+    alternative === 'bestow' ||
     alternative === 'spectacle' ||
     alternative === 'escape' ||
+    alternative === 'harmonize' ||
     alternative === 'madness' ||
     alternative === 'miracle' ||
     alternative === 'foretell' ||
-    alternative === 'tapPermanents'
+    alternative === 'morph' ||
+    alternative === 'tapPermanents' ||
+    alternative === 'sacrificeFromGraveyard'
   );
 }
 
@@ -126,6 +140,7 @@ export function alternativeOfStack(
   stack: StackData | null | undefined,
 ): CastAlternative | undefined {
   if (stack?.flashback === true) return 'flashback';
+  if (stack?.retrace === true) return 'retrace';
   if (stack?.free === true) return 'free';
   return stack?.alt;
 }
@@ -141,8 +156,15 @@ function faceOfSpell(state: GameState, spell: GameObject): CardFace | null {
  * The card `obj` as `face` of it as the spell it would be on the stack, cast by `seat`: what the
  * cost code looks at before the card has moved (`canCast`); the real cast passes the stack object.
  */
-export function castAs(obj: GameObject, seat: SeatId, face: number): GameObject {
-  return { ...asFace(obj, face), controller: seat };
+export function castAs(
+  obj: GameObject,
+  seat: SeatId,
+  face: number,
+  alternative?: CastAlternative,
+): GameObject {
+  const spell = { ...asFace(obj, face), controller: seat };
+  // CR 702.37c, 708.4: a card cast with its morph ability is turned face down before it is cast: every effect and cost that reads the spell sees a 2/2 face-down creature.
+  return alternative === 'morph' ? { ...spell, ...faceDownSpellFields('morph', 1) } : spell;
 }
 
 const NUMERIC = /^[0-9]+$/;
@@ -247,6 +269,11 @@ export interface CostRequest {
    */
   readonly modes?: number;
   /**
+   * How many targets the spell has (CR 601.2c), for the cost "for each target beyond the first" (D-641): left out, the targets the spell on the stack has chosen
+   * (`StackData.chosenTargets`); 0 for a spell that is not on the stack yet.
+   */
+  readonly targets?: number;
+  /**
    * Which modes were chosen (their indexes, CR 700.2, 700.2h, D-433), for the costs a mode lists before its effect: left out, the modes the spell on the stack has chosen. Where
    * a caller has `modes` for the escalate cost it passes the set too.
    */
@@ -256,6 +283,11 @@ export interface CostRequest {
    * has chosen (`StackData.costOption`); with none chosen yet the cost has neither (`canPayRequest` asks about both).
    */
   readonly costOption?: 0 | 1;
+  /**
+   * The creature a harmonize cost taps (CR 702.180a), or null for none: left out, what the spell on the stack says (`StackData.harmonizeTap`) and, while nothing is
+   * chosen yet, the most any creature could take off when `optimistic`.
+   */
+  readonly harmonizeTap?: ObjectId | null;
   /** Whether a reduction that depends on the spell's targets is counted although none is chosen yet (D-207): the check that a spell may be cast at all. */
   readonly optimistic?: boolean;
   /**
@@ -298,22 +330,41 @@ export function canPayRequest(
 
 /** CR 601.2f: the total cost of the spell, from the state as it is now. */
 export function spellCost(state: GameState, request: CostRequest): SpellCost {
-  const { seat, spell, zone, alternative } = request;
+  const { seat, zone, alternative } = request;
+  // CR 702.37c, 708.4: a card cast face down is turned face down before it is cast, so every effect that reads the spell (a cost reduction, a restriction) sees the 2/2 creature
+  // with no mana cost it is; the card behind it still names the costs (`faceOfSpell` reads the card, not the characteristics).
+  const spell =
+    alternative === 'morph' && !isFaceDown(request.spell)
+      ? { ...request.spell, ...faceDownSpellFields('morph', 1) }
+      : request.spell;
   const face = faceOfSpell(state, spell);
-  const flashback = alternative === 'flashback' ? flashbackCostOf(face) : null;
+  // CR 702.34a: the printed flashback cost, or (the card was given flashback with the cost equal to its mana cost) its mana cost.
+  const flashback =
+    alternative === 'flashback' ? (flashbackCostOf(face) ?? manaCostAsFlashbackCost(face)) : null;
   // D-121: a named alternative cost (overload, ...) is paid instead of the mana cost.
   const named = isNamedAlternative(alternative) ? namedAlternativeCostOf(face, alternative) : null;
   const perX = spellXCost(face, alternative);
   const x = hasX(perX) ? (request.x ?? 0) : 0;
+  // CR 118.9 (D-656): "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost": the alternative cost of the card's own ability.
+  const fromGraveyard =
+    zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
   const symbols: string[] =
     alternative === 'free'
       ? []
       : flashback !== null
-        ? manaSymbolsOf(flashback)
-        : named !== null
-          ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
-            withX(manaSymbolsOf(named), x)
-          : withX(face?.manaCost ?? [], x);
+        ? // CR 107.3a: a cost equal to the mana cost has the X of it; a printed flashback cost is paid as it is.
+          flashbackCostOf(face) === null
+          ? withX(manaSymbolsOf(flashback), x)
+          : manaSymbolsOf(flashback)
+        : alternative === 'morph' && named !== null
+          ? // CR 702.37a, 702.37c: a card cast face down pays {3} rather than its mana cost; the morph cost on the card is what turns it face up.
+            ['3']
+          : named !== null
+            ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
+              withX(manaSymbolsOf(named), x)
+            : fromGraveyard !== null
+              ? manaSymbolsOf(fromGraveyard)
+              : withX(face?.manaCost ?? [], x);
   let tax = 0;
   let taxLife = 0;
   if (zone === 'command' && spell.card !== null) {
@@ -344,15 +395,30 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     const modes = request.modes ?? spell.stack?.chosenModes.length ?? 0;
     for (let i = 1; i < modes; i += 1) symbols.push(...manaSymbolsOf(escalate));
   }
+  // CR 601.2f (D-641): "costs {2}{R} more to cast for each target beyond the first": an increase of the total cost, counted from the targets chosen at CR 601.2c.
+  const perTarget = costPerExtraTargetOf(face);
+  if (perTarget !== null) {
+    const targets = request.targets ?? spell.stack?.chosenTargets.length ?? 0;
+    for (let i = 1; i < targets; i += 1) symbols.push(...manaSymbolsOf(perTarget));
+  }
+  // CR 601.2f (D-149): "Spells your opponents cast that target this creature cost {2} more to cast": an increase of the total cost, from the targets chosen at CR 601.2c (before any reduction).
+  const taxed = costIncreaseFor(state, spell, {
+    ...(request.excluded === undefined ? {} : { excluded: request.excluded }),
+    ...{ castFrom: zone },
+  });
+  for (let i = 0; i < taxed; i += 1) symbols.push('1');
   // CR 700.2h, 702.183a (D-433): a mode with a cost before its effect is an additional cost if the mode is chosen; all the costs of the modes chosen are paid.
   symbols.push(
     ...manaSymbolsOf(modeCostsOf(face, request.modeSet ?? spell.stack?.chosenModes ?? [])),
   );
   // CR 118.8, 601.2b (D-181): one of the two ways of the additional cost choice, the one the caster announced.
   const option = request.costOption ?? spell.stack?.costOption;
+  // CR 601.2b, 118.8: "You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs."
+  const librarySacrifice = zone === 'library' ? libraryCastSacrificeOf(state, seat, spell) : null;
   const additional: readonly Cost[] = [
     ...(face?.additionalCosts ?? []),
     ...(option === undefined ? [] : (face?.additionalCostChoice?.[option] ?? [])),
+    ...(librarySacrifice === null ? [] : [{ kind: 'sacrifice' as const, what: librarySacrifice }]),
   ];
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;
@@ -373,10 +439,17 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     else if (c.kind === 'behold') behold = c.filter;
     else if (c.kind === 'exileFromHand') exileFromHand = c.filter;
   }
+  // CR 702.34a, 118.9: the life of a flashback cost ("Flashback—{1}{U}, Pay 3 life.") is part of the alternative cost.
   const life =
-    taxLife + lifeOf(additional) + (kicker === null ? 0 : lifeOf(kicker) * kicks) + perX.life * x;
+    taxLife +
+    lifeOf(additional) +
+    (kicker === null ? 0 : lifeOf(kicker) * kicks) +
+    (flashback === null ? 0 : lifeOf(flashback)) +
+    perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
+  // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
+  if (alternative === 'retrace') discard += 1;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(
@@ -387,13 +460,29 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
       request.excluded,
       request.optimistic === true,
       request.zone,
-    ),
+    ) +
+      // CR 702.180a (Harmonize): the tapped creature's power in generic mana off the total cost.
+      (alternative === 'harmonize'
+        ? harmonizeReduction(
+            state,
+            seat,
+            request.harmonizeTap === undefined ? spell.stack?.harmonizeTap : request.harmonizeTap,
+            request.optimistic === true,
+          )
+        : 0),
   );
   // CR 702.138a: an escape cost also exiles that many other cards from the caster's graveyard.
   const exile = alternative === 'escape' ? (alternativeOf(face, 'escape')?.exile ?? 0) : 0;
   // D-149: a `tapPermanents` alternative cost also taps that many untapped permanents the caster controls.
   const tapAlt = alternative === 'tapPermanents' ? alternativeOf(face, 'tapPermanents') : null;
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
+  // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
+  const sacAlt =
+    alternative === 'sacrificeFromGraveyard' ? alternativeOf(face, 'sacrificeFromGraveyard') : null;
+  if (sacAlt !== null) {
+    sacrifice = sacAlt.filter;
+    sacrificeCount = sacAlt.count;
+  }
   const anyType = request.anyType === true || spell.stack?.anyManaType === true;
   return {
     symbols: reduced,
@@ -404,6 +493,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     ...(sacrificeCount === 1 ? {} : { sacrificeCount }),
     ...(sacrificeAny === null ? {} : { sacrificeAny }),
     discard,
+    ...(alternative === 'retrace' ? { discardFilter: RETRACE_DISCARD } : {}),
     behold,
     exile,
     exileFromHand,
@@ -447,6 +537,30 @@ export function discardable(state: GameState, seat: SeatId, spell: ObjectId): Ob
   return getSeat(state, seat).hand.filter((id) => id !== spell);
 }
 
+/** D-667 (CR 702.81a): the card discarded for retrace is a land card. */
+export const RETRACE_DISCARD: ObjectFilter = { types: ['land'] };
+
+/**
+ * The cards of the hand that can be discarded for the cost of `spell` when the cost names a kind of card (`filter`: "a land card", CR 702.81a, D-666); any card but the spell
+ * without one.
+ */
+export function discardableFor(
+  state: GameState,
+  seat: SeatId,
+  spell: ObjectId,
+  filter: ObjectFilter | undefined,
+): ObjectId[] {
+  const hand = discardable(state, seat, spell);
+  if (filter === undefined) return hand;
+  return hand.filter((id) => {
+    const card = state.objects[id];
+    return (
+      card !== undefined &&
+      matchesFilter(state, card, { ...filter, zone: 'hand' }, { controller: seat, source: spell })
+    );
+  });
+}
+
 /**
  * A payment plan for the mana of a spell that leaves what a sacrifice cost needs (CR 601.2g-h): the
  * mana is paid first, so a plan that sacrificed the only permanent the cost could sacrifice (a
@@ -467,13 +581,8 @@ export function castManaPlan(
   anyType: boolean = spell.stack?.anyManaType === true,
   sacrificeCount = 1,
 ): PaymentPlan | null {
-  const derived = derive(state, spell);
-  // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes.
-  const target = {
-    types: derived.types,
-    subtypes: derived.subtypes,
-    ...(anyType ? { anyType: true as const } : {}),
-  };
+  // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes; CR 106.6: or its mana value and {X}.
+  const target = spellSpendTarget(state, spell, anyType);
   const options = extraSources === undefined ? {} : { extraSources };
   const reserve = handReserve(state, seat, spell);
   const plan = planFor(state, seat, symbols, target, reserve, options);
@@ -535,7 +644,7 @@ export function canPaySpellCost(
   // CR 119.4: life can be paid only if the life total is at least the payment; paying all of it is allowed (the player then has 0 life and
   // loses when state-based actions are next checked, CR 704.5a).
   if (cost.life > 0 && (lifeTotalIsLocked(state, seat) || life < cost.life)) return false;
-  if (cost.discard > discardable(state, seat, spell.id).length) return false;
+  if (cost.discard > discardableFor(state, seat, spell.id, cost.discardFilter).length) return false;
   if (cost.exile > exilable(state, seat, spell.id).length) return false;
   // An optional exile cost can always be paid by choosing zero cards.
   if (cost.behold !== null && beholdCandidates(state, seat, spell.id, cost.behold).length === 0) {
@@ -605,6 +714,8 @@ export interface AlternativeCostInfo {
   readonly exile?: number;
   /** For `tapPermanents` (D-149): the untapped permanents tapped too. */
   readonly tap?: TapRequirement;
+  /** For `sacrificeFromGraveyard` (issue 159): the permanents sacrificed too. */
+  readonly sacrifice?: TapRequirement;
 }
 
 /**
@@ -631,9 +742,14 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
     // Madness and miracle are cast only as their ability resolves (CR 702.35a, 702.94a), never from a hand: no cast option, so no cost to show.
     if (!isNamedAlternative(alt.kind) || alt.kind === 'madness' || alt.kind === 'miracle') continue;
     // Where each is cast from: escape from a graveyard, foretell from exile, the others from a hand or a command zone.
-    const home = alt.kind === 'escape' ? 'graveyard' : alt.kind === 'foretell' ? 'exile' : 'hand';
+    const home =
+      alt.kind === 'escape' || alt.kind === 'harmonize' || alt.kind === 'sacrificeFromGraveyard'
+        ? 'graveyard'
+        : alt.kind === 'foretell'
+          ? 'exile'
+          : 'hand';
     if (home !== (zone === 'command' ? 'hand' : zone)) continue;
-    const { symbols, exile, tap } = spellCost(state, {
+    const { symbols, exile, tap, sacrifice, sacrificeCount } = spellCost(state, {
       seat: obj.owner,
       spell,
       zone,
@@ -646,6 +762,9 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
       cost: symbols,
       ...(exile > 0 ? { exile } : {}),
       ...(tap === null ? {} : { tap }),
+      ...(alt.kind === 'sacrificeFromGraveyard' && sacrifice !== null
+        ? { sacrifice: { filter: sacrifice, count: sacrificeCount ?? 1 } }
+        : {}),
     });
   }
   return out;

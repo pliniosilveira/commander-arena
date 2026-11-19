@@ -31,9 +31,19 @@ export function graveyardCardTarget(
 const PUT_IT_INTO_HAND: Lowering<IrClause, Effects> = {
   head: 'putItIntoHand',
   id: 'lower.put-it-into-hand',
-  needs: ['effect:moveToZone', 'selector:target'],
+  needs: ['effect:moveToZone', 'selector:target', 'selector:moved'],
   lower(clause, ctx) {
-    const id = graveyardCardTarget(operand(clause, 'objects'), ctx, true);
+    // Death Toll deck group B (CR 400.3, 608.2c): "Choose a card at random in your graveyard. ... Otherwise, put it into your hand": the card picked is `moved`, one of your own graveyard.
+    const what = operand(clause, 'objects');
+    if (what?.kind === 'noun' && what.det === 'anaphor' && what.ref === 'moved') {
+      if (!ctx.randomYardCard) return failure(clause);
+      return {
+        ok: true,
+        value: [{ kind: 'moveToZone', objects: { kind: 'moved' }, to: 'hand' }],
+        rule: clause.rule,
+      };
+    }
+    const id = graveyardCardTarget(what, ctx, true);
     if (id === null) return failure(clause);
     return {
       ok: true,

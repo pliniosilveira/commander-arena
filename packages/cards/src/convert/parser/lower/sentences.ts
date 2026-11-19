@@ -19,7 +19,7 @@ import {
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { isCostSacrificeCount, lowerAmount } from './amounts';
 import { lowerChooseColorMana } from './chosen-color-mana';
-import { amountArg, type Effects } from './clauses';
+import { amountArg, arg, type Effects } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
@@ -95,15 +95,45 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
     if (effect.kind !== 'moveToZone' && effect.kind !== 'destroy' && effect.kind !== 'exile') {
       continue;
     }
-    ctx.searched = null;
+    // Issue 103: the commander "put onto the battlefield" from the command zone is what "it" of the next sentences is (the lowering of that clause set `ctx.searched`).
+    const fromCommandZone =
+      effect.kind === 'moveToZone' &&
+      effect.objects.kind === 'choose' &&
+      effect.objects.filter.zone === 'command';
+    if (!fromCommandZone) ctx.searched = null;
+    // Lorehold group 1: "that card" of "you may play that card this turn" after "exile that card from your graveyard": the card the exile moved.
+    if (effect.kind === 'exile') ctx.exiled = 'cards';
     ctx.exiledRef =
       effect.kind === 'exile' && effect.objects.kind === 'target' ? effect.objects.id : null;
+    // `'*'` (issue 159): the instruction put objects onto the battlefield that no target names ("Put all creature cards from all graveyards onto the battlefield"): "they"
+    // are `moved`, as no target id can be '*'.
     ctx.movedOnto =
-      effect.kind === 'moveToZone' &&
-      effect.to === 'battlefield' &&
-      effect.objects.kind === 'target'
-        ? effect.objects.id
+      effect.kind === 'moveToZone' && effect.to === 'battlefield'
+        ? effect.objects.kind === 'target'
+          ? effect.objects.id
+          : '*'
         : null;
+  }
+}
+
+/**
+ * What "they", "them", "those tokens" and "the token created this way" mean after an instruction that created tokens (D-643, Prismari group 1): the tokens that instruction made,
+ * the engine's `moved`, until an instruction that moves, destroys, exiles or sacrifices other objects is lowered. A token made is also remembered (`lastToken`), which
+ * "create five of those tokens instead" makes more of.
+ */
+function noteTokensMade(effects: readonly Effect[], ctx: LowerContext): void {
+  const MAKES = ['createToken', 'createCopies', 'populate'];
+  if (effects.some((e) => MAKES.includes(e.kind))) {
+    ctx.tokensMade = true;
+    const [only] = effects;
+    // D-646: a token of any kind (the copy of "create five of those tokens instead", the 1/1 Elemental of "create three of those tokens instead").
+    ctx.lastToken = effects.length === 1 && only?.kind === 'createToken' ? only : null;
+    return;
+  }
+  const MOVES = ['moveToZone', 'destroy', 'exile', 'sacrifice'];
+  if (effects.some((e) => MOVES.includes(e.kind))) {
+    ctx.tokensMade = false;
+    ctx.lastToken = null;
   }
 }
 
@@ -176,9 +206,18 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     if (!lowered.ok) return lowered;
     effects.push(...lowered.value);
     ctx.lowered += 1;
+    ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
+      ctx.randomYardCard = true;
     noteRemoved(lowered.value, ctx);
     if (lowered.value.some((e) => e.kind === 'createToken')) ctx.madeAToken = true;
+    noteTokensMade(lowered.value, ctx);
     noteMoved(lowered.value, ctx);
+    // Issue 104: the card the player chose from their graveyard and exiled is "that card" of the clause after it.
+    ctx.chosenExiled =
+      clause.verb === 'exileChosenCard' &&
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'moveToZone';
     noteCreated(lowered.value, ctx);
     noteMadeToken(clause, lowered.value, ctx);
     // D-411: "them" of a choice from among the cards milled: the clause before it was one mill of the controller's own library.
@@ -186,6 +225,17 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
       lowered.value.length === 1 &&
       lowered.value[0]?.kind === 'mill' &&
       lowered.value[0].player.kind === 'you';
+    // Issue 159: "Each opponent attacking that player does the same": the clause before it was one `createToken` for the controller.
+    const only = lowered.value.length === 1 ? lowered.value[0] : undefined;
+    ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
+    // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
+    ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
+    // Death Toll deck (Winter): "put a permanent card from among them onto the battlefield" after the exile of any number of cards with a card type minimum.
+    ctx.exiledAnyCardTypes =
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'moveToZone' &&
+      lowered.value[0].objects.kind === 'choose' &&
+      lowered.value[0].objects.minCardTypes !== undefined;
     // D-412: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
     ctx.movedToHand =
       lowered.value.length === 1 &&
@@ -443,6 +493,49 @@ function lossReadsAreOrdered(effects: readonly Effect[]): boolean {
 }
 
 /**
+ * "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-642, CR 608.2d, 707.2): the offer and the sentence
+ * after it are the engine's `chooseObjects` of one token (choosing none is declining it) and a `becomeCopy` of the others of the one chosen, which does nothing when none was chosen, so
+ * "if you do" needs no test of its own. Null when the sentence is not the offer; a pair of another shape is refused, never guessed.
+ */
+function lowerChooseTokenPair(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'chooseTokenYouControl') return null;
+  const next = sentences[i + 1];
+  const [second, ...rest] = next?.clauses ?? [];
+  if (
+    more.length > 0 ||
+    !clause.optional ||
+    clause.condition !== undefined ||
+    clause.duration !== undefined ||
+    sentence.condition !== undefined ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.delayed !== undefined ||
+    next === undefined ||
+    next.condition?.test.kind !== 'didPrevious' ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.reflexive === true ||
+    next.delayed !== undefined ||
+    second?.verb !== 'eachOtherTokenBecomesCopy' ||
+    second.optional ||
+    rest.length > 0
+  ) {
+    return refuse(sentence);
+  }
+  const offered = lowerClauses([{ ...clause, optional: false }], ctx);
+  if (!offered.ok) return offered;
+  const copied = lowerClauses([second], ctx);
+  if (!copied.ok) return copied;
+  return { ok: true, value: [...offered.value, ...copied.value], rule: clause.rule };
+}
+
+/**
  * "You may pay {4}. If you do, untap ~." (CR 118.3, 608.2c, stage P21): the offer and the sentence after it
  * are one engine `mayPay`, the question asked as the ability resolves and the effect run only when the cost was
  * paid. The offer is one `pay` clause that "you may" made optional, followed by a sentence whose condition is
@@ -661,6 +754,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'behold',
   // D-212: "you may have ~ become a copy of ... If you do, ..." (CR 707.2).
   'becomeCopy',
+  // Quandrix Unlimited deck, group G (CR 122.1, 608.2c): "you may remove a +1/+1 counter from ~. If you do, ...".
+  'removeCounters',
 ]);
 
 /**
@@ -702,7 +797,153 @@ function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerR
 }
 
 /** The instructions a spell may offer with "you may" and nothing after it (stage P63, D-216). */
-const LONE_MAY_KINDS: ReadonlySet<string> = new Set(['shuffle']);
+const LONE_MAY_KINDS: ReadonlySet<string> = new Set(['shuffle', 'mill']);
+
+/**
+ * "You may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1,
+ * CR 608.2d, 701.23): a "you may" search that a later "repeat this process" does again. Each search asks for itself (the engine's `search` with `optional`: a declined search is not a search,
+ * CR 701.23a), so the offer is on the search and not on the ability. Null when the sentence is not one offered search or no sentence of the text repeats; a search that is more than that is
+ * refused, never guessed.
+ */
+function lowerOfferedSearch(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'search' || !clause.optional) return null;
+  if (!sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'))) return null;
+  if (
+    more.length > 0 ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined
+  ) {
+    return refuse(sentence);
+  }
+  const lowered = lowerClauses([{ ...clause, optional: false }], ctx);
+  if (!lowered.ok) return lowered;
+  const [only, ...rest] = lowered.value;
+  // The search of another player has its own "may" (`optional` already); only the controller's own is offered here.
+  if (
+    only?.kind !== 'search' ||
+    rest.length > 0 ||
+    only.optional === true ||
+    only.player.kind !== 'you'
+  ) {
+    return refuse(sentence);
+  }
+  return { ok: true, value: [{ ...only, optional: true }], rule: clause.rule };
+}
+
+/**
+ * "Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1, CR 608.2c): the instruction before it is done again, once, when the test holds. The
+ * process is the one sentence before it, which is not a choice of targets (a second choice of targets would be another question); a text that repeats more than one sentence is refused,
+ * as the words do not say how far back "this process" goes. The test is read as the instruction comes up (the engine's `conditional`). Only "once".
+ */
+function lowerRepeatProcess(
+  sentence: IrSentence,
+  steps: readonly Step[],
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const [clause, ...more] = sentence.clauses;
+  if (
+    clause === undefined ||
+    more.length > 0 ||
+    clause.optional ||
+    clause.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    steps.length !== 1
+  ) {
+    return refuse(sentence);
+  }
+  const [process] = steps;
+  // A choice of targets in the process would be asked again, which no text says; the process is without any.
+  if (process === undefined || process.effects.length === 0 || ctx.targets.length > 0) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:conditional']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const again = oneEffect(process.effects);
+  // "Repeat this process six more times." (Death Toll deck, group C, Professor Onyx): the process is done again that many more times, one after the other.
+  const times = arg(clause, 'times');
+  if (times !== undefined && (times.kind !== 'number' || sentence.condition !== undefined)) {
+    return refuse(sentence);
+  }
+  if (sentence.condition === undefined) {
+    return {
+      ok: true,
+      value: Array.from({ length: times?.kind === 'number' ? times.value : 1 }, () => again),
+      rule: clause.rule,
+    };
+  }
+  const condition = lowerCondition(sentence.condition, false, ctx);
+  if (!condition.ok) return condition;
+  return {
+    ok: true,
+    value: [{ kind: 'conditional', condition: condition.value, effect: again }],
+    rule: clause.rule,
+  };
+}
+
+/**
+ * "Create a 1/1 black and green Insect creature token, then mill a card. If an Insect card was milled this way, put a loyalty counter on ~ and repeat this process." (Death Toll deck,
+ * group C, Grist, the Hunger Tide; CR 608.2c): the sentence before it is the process, the test of this sentence is when it is done again, after what is put before "repeat". The
+ * engine's `repeatWhile`. The process is the one sentence before it, ending in a mill of the controller's library (so that it ends), with no choice of targets; a sentence with no test, or
+ * one that repeats more than one sentence, is refused.
+ */
+function lowerRepeatWhile(
+  sentence: IrSentence,
+  steps: readonly Step[],
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const clauses = sentence.clauses;
+  const last = clauses[clauses.length - 1];
+  const [process] = steps;
+  if (
+    last === undefined ||
+    sentence.condition === undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    clauses.some((c) => c.optional || c.condition !== undefined) ||
+    steps.length !== 1 ||
+    process === undefined ||
+    ctx.targets.length > 0 ||
+    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same).
+    process.effects[process.effects.length - 1]?.kind !== 'mill'
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:repeatWhile']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  // The condition is read as the clause before it was lowered, which is the mill of the process (`ctx.milled`).
+  const condition = lowerCondition(sentence.condition, false, ctx);
+  if (!condition.ok) return condition;
+  const beforeClauses = clauses.slice(0, -1);
+  const before =
+    beforeClauses.length === 0
+      ? { ok: true as const, value: [], rule: last.rule }
+      : lowerClauses(beforeClauses, ctx);
+  if (!before.ok) return before;
+  const effect: Effect = {
+    kind: 'repeatWhile',
+    effects: process.effects,
+    condition: condition.value,
+    ...(before.value.length === 0 ? {} : { beforeAgain: before.value }),
+  };
+  return { ok: true, value: [effect], rule: last.rule };
+}
 
 /**
  * "You may shuffle." (Ponder, stage P63, D-216, CR 608.2d, 701.24): a sentence of one optional instruction, with no "if you do" after it, is the engine's `may`
@@ -710,7 +951,54 @@ const LONE_MAY_KINDS: ReadonlySet<string> = new Set(['shuffle']);
  */
 function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> | null {
   const [clause, ...more] = sentence.clauses;
-  if (clause === undefined || more.length > 0 || !clause.optional || clause.verb !== 'shuffle') {
+  // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
+  // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
+  if (clause?.verb === 'castFree' && clause.optional && more.length === 0) {
+    // Death Toll deck, group D (CR 608.2c): "Then if there are twenty or more cards in your graveyard, you may play the exiled card without paying its mana cost.": a test of the
+    // game the sentence starts with, which the engine's `conditional` runs the free cast under (the cast is the controller's to decline, as with no test). Any other test (what an
+    // offer before it did, a kicker) is still refused here, never guessed.
+    const test = sentence.condition?.test.kind;
+    const stateTest = test === 'cardsInGraveyard' || test === 'amountIs' || test === 'control';
+    if (
+      (sentence.condition !== undefined && !stateTest) ||
+      sentence.instead === true ||
+      sentence.where !== undefined
+    ) {
+      return refuse(sentence);
+    }
+    let guard: Condition | null = null;
+    if (sentence.condition !== undefined) {
+      const blocked = missingFeatures(['effect:conditional']);
+      if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+      const lowered = lowerCondition(sentence.condition, false, ctx);
+      if (!lowered.ok) return lowered;
+      guard = lowered.value;
+    }
+    const play = clause.args.play;
+    const offered =
+      play?.kind !== 'flag'
+        ? clause
+        : {
+            ...clause,
+            args: {
+              ...clause.args,
+              mayWritten: { kind: 'flag' as const, value: true, span: play.span, rule: play.rule },
+            },
+          };
+    const cast = lowerClauses([{ ...offered, optional: false }], ctx);
+    if (!cast.ok || guard === null) return cast;
+    return {
+      ok: true,
+      value: [{ kind: 'conditional', condition: guard, effect: oneEffect(cast.value) }],
+      rule: cast.rule,
+    };
+  }
+  if (
+    clause === undefined ||
+    more.length > 0 ||
+    !clause.optional ||
+    (clause.verb !== 'shuffle' && clause.verb !== 'mill')
+  ) {
     return null;
   }
   const blocked = missingFeatures(['effect:may']);
@@ -746,13 +1034,31 @@ function lowerMay(
   ctx: LowerContext,
 ): LowerResult<Effects> | null {
   const next = sentences[i + 1];
-  const follows = next?.condition?.test.kind === 'didPrevious' || next?.reflexive === true;
+  // Death Toll deck, group D (CR 608.2c, 701.8): "you may destroy another target creature. If a creature is destroyed this way, ...": the sentence after the offer runs when
+  // the destroy really destroyed a permanent.
+  const destroyed = next?.condition?.test.kind === 'destroyedThisWay';
+  const follows =
+    next?.condition?.test.kind === 'didPrevious' || next?.reflexive === true || destroyed;
   if (next === undefined || !follows) return null;
   if (
     !sentence.clauses.every((c) => c.optional) ||
     sentence.clauses.some((c) => c.verb === 'pay')
   ) {
     return null;
+  }
+  if (destroyed) {
+    // The condition says "a creature": the engine counts every permanent the destroy destroyed, so the offer must name creatures only (anything else is refused, never guessed).
+    const [only] = sentence.clauses;
+    const objects = only?.args.objects;
+    if (
+      sentence.clauses.length !== 1 ||
+      only?.verb !== 'destroy' ||
+      objects?.kind !== 'noun' ||
+      objects.filter.types?.join() !== 'creature' ||
+      objects.filter.anyOf !== undefined
+    ) {
+      return refuse(sentence);
+    }
   }
   const reflexive = next.reflexive === true;
   const blocked = missingFeatures([
@@ -769,7 +1075,17 @@ function lowerMay(
   // A reflexive ability is the last effect of its sequence (`validateCard`).
   if (reflexive && i + 2 < sentences.length) return refuse(next);
   const offered = lowerClauses(
-    sentence.clauses.map((c) => ({ ...c, optional: false })),
+    // Lorehold group 1: "you may exile one of them from your graveyard" keeps its "you may": the engine's choice of none or one card is that offer.
+    sentence.clauses.map((c) => ({
+      ...c,
+      // Issue 104: "you may exile a creature card from your graveyard" is a choice of none or one card, the offer itself.
+      // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them" is the same kind of offer (none, or the cards chosen).
+      optional:
+        (c.verb === 'exileOneOfThem' ||
+          c.verb === 'exileChosenCard' ||
+          c.verb === 'exileGraveyardCardTypes') &&
+        c.optional,
+    })),
     ctx,
   );
   if (!offered.ok) return offered;
@@ -777,8 +1093,19 @@ function lowerMay(
   // "You may tap X untapped Myr you control. If you do, ..." (stage P31, D-140, CR 701.26a): the choice of any number of them is the
   // offer itself (tapping none is declining it, and is not "doing it"), so the tap is not wrapped in a question of its own.
   const chooseAny =
-    only?.kind === 'tap' && only.objects.kind === 'choose' && only.objects.anyNumber;
-  if (only === undefined || more.length > 0 || (!MAY_KINDS.has(only.kind) && !chooseAny)) {
+    (only?.kind === 'tap' && only.objects.kind === 'choose' && only.objects.anyNumber) ||
+    only?.kind === 'exileFromTriggerCards' ||
+    (only?.kind === 'moveToZone' &&
+      only.to === 'exile' &&
+      only.objects.kind === 'choose' &&
+      only.objects.optional === true);
+  // "you may destroy ... If a creature is destroyed this way": checked above to be a destroy of creatures, which is the offer here, and not an offer "if you do" may read.
+  const mayDestroy = destroyed && only?.kind === 'destroy';
+  if (
+    only === undefined ||
+    more.length > 0 ||
+    (!MAY_KINDS.has(only.kind) && !chooseAny && !mayDestroy)
+  ) {
     return refuse(sentence);
   }
   const may: Effect = chooseAny ? only : { kind: 'may', effect: only };
@@ -800,9 +1127,12 @@ function lowerMay(
     const after = lowerClauses(next.clauses, ctx);
     ctx.xIs = outer;
     if (!after.ok) return after;
+    // "If a creature is destroyed this way": what the destroy counted, not whether the offer was accepted (an indestructible target is accepted and not destroyed).
+    const test = next.condition === undefined ? null : lowerCondition(next.condition, false, ctx);
+    if (destroyed && (test === null || !test.ok)) return test ?? refuse(next);
     const conditional: Effect = {
       kind: 'conditional',
-      condition: { kind: 'didPrevious' },
+      condition: destroyed && test?.ok === true ? test.value : { kind: 'didPrevious' },
       effect: oneEffect(after.value),
     };
     return {
@@ -928,8 +1258,12 @@ function lowerYouDont(
     last.objects.kind === 'choose' &&
     last.objects.fromMoved === true &&
     last.objects.optional === true;
+  // Issue 100 (Baral and Kari Zev, CR 608.2c, 608.2g): "You may cast a spell ... without paying its mana cost. If you don't, ...": the free cast is the offer (it starts what "if you do" reads
+  // again, `rules/cast-free.ts`), and "you don't" is that no spell was cast: declined, or none could be.
+  const afterFreeCast =
+    previous?.effects.length === 1 && last?.kind === 'castFree' && last.max === undefined;
   if (
-    !afterChoice ||
+    !(afterChoice || afterFreeCast) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -943,6 +1277,10 @@ function lowerYouDont(
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
   const after = lowerClauses(sentence.clauses, ctx);
   if (!after.ok) return after;
+  // "... create a token. It gains haste until end of turn.": the tokens made inside the conditional are what "it" of the next sentence names (the engine's `moved`, empty when none was made).
+  if (after.value.some((e) => e.kind === 'createToken' || e.kind === 'createCopies')) {
+    ctx.tokensMade = true;
+  }
   return {
     ok: true,
     value: [
@@ -953,6 +1291,45 @@ function lowerYouDont(
       },
     ],
     rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
+}
+
+/**
+ * "If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn." (issue 100, CR 608.2c, 611.2a): the sentence after the
+ * "If you don't" conditional that makes a token and says what the token gains. The tokens exist only inside that conditional, so what they gain is done there (the engine's `moved`
+ * means the tokens made). Null when the sentence is not such a rider; one that does not fit is refused, never guessed.
+ */
+function lowerTokenRiderOfYouDont(
+  sentence: IrSentence,
+  previous: Step | undefined,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [only] = previous?.effects ?? [];
+  if (
+    previous?.effects.length !== 1 ||
+    only?.kind !== 'conditional' ||
+    only.condition.kind !== 'not' ||
+    only.condition.term.kind !== 'didPrevious' ||
+    !ctx.tokensMade ||
+    sentence.condition !== undefined ||
+    sentence.clauses.some((c) => c.optional) ||
+    !sentence.clauses.every((c) => c.verb === 'grantKeywordToMade' || c.verb === 'grantKeyword')
+  ) {
+    return null;
+  }
+  const lowered = lowerClauses(sentence.clauses, ctx);
+  if (!lowered.ok) return lowered;
+  // Only what the tokens made gain: a keyword granted to `moved`, which is those tokens here.
+  if (!lowered.value.every((e) => e.kind === 'grantKeyword' && e.objects.kind === 'moved')) {
+    return refuse(sentence);
+  }
+  const inner = only.effect;
+  const effects =
+    inner.kind === 'sequence' ? [...inner.effects, ...lowered.value] : [inner, ...lowered.value];
+  return {
+    ok: true,
+    value: [{ ...only, effect: { kind: 'sequence', effects } }],
+    rule: lowered.rule,
   };
 }
 
@@ -1013,9 +1390,29 @@ function lowerDoneReflexive(
   const done = lowerClauses(sentence.clauses, ctx);
   if (!done.ok) return done;
   const [only, ...rest] = done.value;
-  if (only === undefined || rest.length > 0 || !MAY_KINDS.has(only.kind)) return refuse(sentence);
+  // Issue 89 (Forum Filibuster, CR 603.12): "Create a 2/1 token. When you do, ...": a token created is something done.
+  const madeToken = only?.kind === 'createToken';
+  if (only === undefined || rest.length > 0 || !(MAY_KINDS.has(only.kind) || madeToken)) {
+    return refuse(sentence);
+  }
   const effect = lowerReflexive(next, ctx);
   if (!effect.ok) return effect;
+  // "... attached to that token" in the reflexive ability is the token made before it: the ability carries what that resolution made (`moved`).
+  if (
+    madeToken &&
+    effect.value.kind === 'reflexive' &&
+    JSON.stringify(effect.value).includes('"moved"')
+  ) {
+    const blockedMoved = missingFeatures(['ability:reflexiveMoved']);
+    if (blockedMoved.length > 0) return { ...refuse(next), needs: blockedMoved };
+    return {
+      ok: true,
+      value: [only, { ...effect.value, carriesMoved: true }],
+      rule: clause.rule,
+    };
+  }
+  // A reflexive ability that does not read the token knows nothing of it: only an effect that reads it follows a token.
+  if (madeToken) return refuse(next);
   return { ok: true, value: [only, effect.value], rule: clause.rule };
 }
 
@@ -1052,9 +1449,40 @@ function lowerIfDone(
     return null;
   }
   if (sentence.instead === true || sentence.where !== undefined) return refuse(sentence);
-  if (sentence.clauses.some((c) => c.optional)) return refuse(sentence);
+  // "Return it to its owner's hand. If you do, you may search your library for a Plains card, ..." (CR 608.2c, 701.23a): the offer is the engine's `search` with `optional`
+  // (a declined search is not a search), asked only when the instruction before was done. Any other optional clause is refused.
+  const [only, ...others] = sentence.clauses;
+  const offeredSearch =
+    only?.verb === 'search' && only.optional && others.length === 0 ? only : undefined;
+  if (offeredSearch === undefined && sentence.clauses.some((c) => c.optional)) {
+    return refuse(sentence);
+  }
   const blocked = missingFeatures(['condition:didPrevious', 'effect:conditional']);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  if (offeredSearch !== undefined) {
+    const searched = lowerClauses([{ ...offeredSearch, optional: false }], ctx);
+    if (!searched.ok) return searched;
+    const [search, ...extra] = searched.value;
+    if (
+      search?.kind !== 'search' ||
+      extra.length > 0 ||
+      search.optional === true ||
+      search.player.kind !== 'you'
+    ) {
+      return refuse(sentence);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'conditional',
+          condition: { kind: 'didPrevious' },
+          effect: { ...search, optional: true },
+        },
+      ],
+      rule: offeredSearch.rule,
+    };
+  }
   const after = lowerClauses(sentence.clauses, ctx);
   if (!after.ok) return after;
   return {
@@ -1099,6 +1527,7 @@ function thisWaysOf(clause: IrClause): Extract<IrAmount, { kind: 'thisWay' }>[] 
       case 'minus':
         visit(amount.of);
         break;
+      case 'extreme':
       case 'sum':
         amount.of.forEach(visit);
         break;
@@ -1138,7 +1567,8 @@ function countsWhatHappened(
   if (amount.thatMany === true) {
     return (
       earlier.verb === 'sacrifice' ||
-      (earlier.verb === 'discard' && earlier.args.anyNumber !== undefined)
+      (earlier.verb === 'discard' &&
+        (earlier.args.anyNumber !== undefined || earlier.args.allCards !== undefined))
     );
   }
   const [word] = amount.words;
@@ -1151,6 +1581,9 @@ function countsWhatHappened(
         (word === 'permanent' || names(earlier.args.objects).every((n) => n === word))
       );
     }
+    case 'destroyedValue':
+      // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way": every permanent a `destroy` before it destroyed.
+      return earlier.verb === 'destroy';
     case 'destroyedOwnNontoken':
       // Stage P68 (D-230): "for each nontoken creature you controlled that was destroyed this way": a `destroy` of creatures before it.
       return (
@@ -1164,6 +1597,18 @@ function countsWhatHappened(
     case 'tapped':
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
+    case 'discardedMost':
+    // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": a `discard` before it in the same text.
+    case 'discarded':
+      // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
+      return earlier.verb === 'discard';
+    case 'countersRemoved':
+      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
+      return earlier.verb === 'removeAllCounters';
+    case 'damageDealt':
+      // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
+      return earlier.verb === 'dealDamage';
+    case 'milledCreature':
     case 'milledValue':
       // Stage P52 (D-210): "equal to the total mana value of those cards": the cards a mill before it milled.
       return earlier.verb === 'mill';
@@ -1195,9 +1640,15 @@ function thisWaysAreSupported(
     // "If the player doesn't, you mill three cards, then ... equal to the total mana value of those cards" (stage P52, D-210): the sentence is what a
     // "may have you" sentence does otherwise, run whole, so its own instructions count each other.
     const otherwise = sentence.condition?.test.kind === 'declined';
+    // "You may discard all the cards in your hand. If you do, draw that many cards." (CR 608.2c): the sentence of "if you do" runs only when the offer before it was done,
+    // and then counts what that offer did (a declined offer leaves the counts at 0).
+    const afterOffer = sentence.condition?.test.kind === 'didPrevious';
     for (const clause of sentence.clauses) {
       for (const amount of thisWaysOf(clause)) {
-        if ((sentence.condition !== undefined && !otherwise) || clause.condition !== undefined) {
+        if (
+          (sentence.condition !== undefined && !otherwise && !afterOffer) ||
+          clause.condition !== undefined
+        ) {
           return sentence;
         }
         // D-586 (CR 602.2b, 701.21a): "for each artifact sacrificed this way" in an ability whose cost sacrifices one or more artifacts counts that cost. An instruction
@@ -1208,7 +1659,10 @@ function thisWaysAreSupported(
         }
         if (!before.some((earlier) => countsWhatHappened(amount, earlier))) return sentence;
       }
-      if ((sentence.condition === undefined || otherwise) && clause.condition === undefined) {
+      if (
+        (sentence.condition === undefined || otherwise || afterOffer) &&
+        clause.condition === undefined
+      ) {
         before.push(clause);
       }
     }
@@ -1293,19 +1747,48 @@ function lowerNextCast(
   ) {
     return stop(refuse(sentence));
   }
-  const filter = lowerFilter(spell);
-  if (!filter.ok) return stop(filter);
-  const inner = lowerClauses(sentence.clauses, ctx);
-  if (!inner.ok) return stop(inner);
-  const effect = oneEffect(inner.value);
-  if (effect.kind !== 'copySpell' || effect.spell.kind !== 'triggerSubject') {
-    return stop(refuse(sentence));
-  }
-  steps.push({
-    effects: [{ kind: 'delayedCast', filter: filter.value, effect }],
-    replaceable: false,
-  });
+  const lowered = lowerDelayedCast(sentence, spell, ctx);
+  if (!lowered.ok) return stop(lowered);
+  steps.push({ effects: [lowered.value], replaceable: false });
   return { last: i };
+}
+
+/**
+ * The `delayedCast` of a "When you next cast ..." sentence (D-336, Quandrix Unlimited group E): what it does is copying the spell that was cast, or the controller's own
+ * instructions (draw, gain life) with an X that is the X of the spell cast ("a spell with {X} in its mana cost": "gain half X life, rounded down"). Also the extra effect of a mana ability.
+ */
+export function lowerDelayedCast(
+  sentence: IrSentence,
+  spell: NonNullable<IrSentence['delayed']>['spell'],
+  ctx: LowerContext,
+): LowerResult<Effect> {
+  if (
+    spell === undefined ||
+    sentence.condition !== undefined ||
+    sentence.where !== undefined ||
+    sentence.reflexive === true ||
+    sentence.instead === true ||
+    sentence.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refuse(sentence);
+  }
+  const filter = lowerFilter(spell);
+  if (!filter.ok) return filter;
+  // An X in what the spell does is the X of the spell cast (CR 107.3), only when the spell is one with an {X} in its mana cost.
+  const before = ctx.castTriggerX;
+  ctx.castTriggerX = filter.value.xInManaCost === true;
+  const inner = lowerClauses(sentence.clauses, ctx);
+  ctx.castTriggerX = before;
+  if (!inner.ok) return inner;
+  const effect = oneEffect(inner.value);
+  const onlyCopy = effect.kind === 'copySpell' && effect.spell.kind === 'triggerSubject';
+  const onlyOwn = inner.value.every((e) => e.kind === 'draw' || e.kind === 'gainLife');
+  if (!(onlyCopy || onlyOwn)) return refuse(sentence);
+  return {
+    ok: true,
+    value: { kind: 'delayedCast', filter: filter.value, effect },
+    rule: sentence.rule,
+  };
 }
 
 /**
@@ -1433,6 +1916,29 @@ function lowerStep(
     steps.push({ effects: [effect], replaceable: false });
     return { last: i };
   }
+  // "You may search your library for a Plains card and put it onto the battlefield tapped. Then if an opponent controls more lands than you, repeat this process once." (Lorehold group 1).
+  const offeredSearch = lowerOfferedSearch(sentence, sentences, ctx);
+  if (offeredSearch !== null) {
+    if (!offeredSearch.ok) return stop(offeredSearch);
+    steps.push({ effects: offeredSearch.value, replaceable: false });
+    return { last: i };
+  }
+  // "..., put a loyalty counter on ~ and repeat this process." (Death Toll deck, group C, Grist, the Hunger Tide).
+  if (sentence.clauses.some((c) => c.verb === 'repeatProcessAgain')) {
+    const last = sentence.clauses[sentence.clauses.length - 1];
+    if (last?.verb !== 'repeatProcessAgain') return stop(refuse(sentence));
+    const repeated = lowerRepeatWhile(sentence, steps, ctx);
+    if (!repeated.ok) return stop(repeated);
+    steps.pop();
+    steps.push({ effects: repeated.value, replaceable: false });
+    return { last: i };
+  }
+  if (first.verb === 'repeatProcess') {
+    const repeated = lowerRepeatProcess(sentence, steps, ctx);
+    if (!repeated.ok) return stop(repeated);
+    steps.push({ effects: repeated.value, replaceable: false });
+    return { last: i };
+  }
   // "You may pay any amount of {R}. When you do, it deals that much damage to any target." (stage P34, D-152, CR 603.12, 118.1).
   const payX = lowerPayXAtMost(sentence, sentences, i, ctx);
   if (payX !== null) {
@@ -1475,12 +1981,27 @@ function lowerStep(
     steps.push({ effects: putOrElse.value, replaceable: false });
     return { last: i + 1 };
   }
+  // Issue 100: "... If you don't, create a token. It gains haste until end of turn.": the rider is about the token, which is made only when the player did not, so it joins that instruction.
+  const rider = lowerTokenRiderOfYouDont(sentence, steps[steps.length - 1], ctx);
+  if (rider !== null) {
+    if (!rider.ok) return stop(rider);
+    steps.pop();
+    steps.push({ effects: rider.value, replaceable: false });
+    return { last: i };
+  }
   // "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (D-411, CR 608.2c).
   const notTaken = lowerYouDont(sentence, steps[steps.length - 1], ctx);
   if (notTaken !== null) {
     if (!notTaken.ok) return stop(notTaken);
     steps.push({ effects: notTaken.value, replaceable: false });
     return { last: i };
+  }
+  // "Then you may choose a token you control. If you do, each other token you control becomes a copy of that token." (Prismari group 1, D-642).
+  const chosenToken = lowerChooseTokenPair(sentence, sentences, i, ctx);
+  if (chosenToken !== null) {
+    if (!chosenToken.ok) return stop(chosenToken);
+    steps.push({ effects: chosenToken.value, replaceable: false });
+    return { last: i + 1 };
   }
   const offered = lowerMayPay(sentence, sentences[i + 1], ctx);
   if (offered !== null) {
@@ -1568,8 +2089,29 @@ function lowerStep(
   const previous = steps[steps.length - 1];
   if (sentence.instead !== true) {
     const targetsBefore = ctx.targets.length;
-    const lowered = lowerClauses(sentence.clauses, ctx);
-    if (!lowered.ok) return stop(lowered);
+    // "If you cast ~ during your main phase, you may exile up to one other target ...": one optional exile of a target; the question is asked as it resolves (the engine's
+    // `may`, CR 608.2d) and the target is chosen as the spell is cast (CR 601.2c).
+    const [only] = sentence.clauses;
+    const mayExile =
+      sentence.clauses.length === 1 && only?.optional === true && only.verb === 'exile';
+    if (mayExile) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+    }
+    const lowerOnce = lowerClauses(
+      mayExile && only !== undefined ? [{ ...only, optional: false }] : sentence.clauses,
+      ctx,
+    );
+    if (!lowerOnce.ok) return stop(lowerOnce);
+    const [exiled, ...others] = lowerOnce.value;
+    if (mayExile && (exiled === undefined || others.length > 0)) return stop(refuse(sentence));
+    const lowered = {
+      ...lowerOnce,
+      value:
+        mayExile && exiled !== undefined
+          ? [{ kind: 'may' as const, effect: exiled }]
+          : lowerOnce.value,
+    };
     // "If the gift was promised, return target creature card ...": the slot exists only if the gift was promised (CR 702.174m).
     if (sentence.condition.test.kind === 'giftPromised') {
       for (let k = targetsBefore; k < ctx.targets.length; k += 1) {
@@ -1584,6 +2126,16 @@ function lowerStep(
     ) {
       const blocked = missingFeatures(['ability:ifKicked']);
       if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+    }
+    // "If you cast ~ during your main phase, you may exile up to one other target ...": the slot exists only if the spell was cast in its controller's main phase (CR 601.2c).
+    if (sentence.condition.test.kind === 'castInOwnMainPhase') {
+      if (ctx.owner !== 'spell') return stop(refuse(sentence));
+      const blocked = missingFeatures(['ability:ifCastInOwnMain']);
+      if (blocked.length > 0) return stop({ ...refuse(sentence), needs: blocked });
+      for (let k = targetsBefore; k < ctx.targets.length; k += 1) {
+        const spec = ctx.targets[k];
+        if (spec !== undefined) ctx.targets[k] = { ...spec, ifCastInOwnMain: true };
+      }
     }
     const effect: Effect = {
       kind: 'conditional',
@@ -1706,7 +2258,12 @@ function lowerPlayersMay(
     ) {
       return refused(refuse(next));
     }
+    // Death Toll deck, group C (Professor Onyx): "Each opponent may discard a card. If they don't, they lose 3 life.": "they" is the player who declined, not every player asked
+    // (the engine's `declinedPlayer`, D-576), which is who "they" and "that player" name while the sentence of "if they don't" is lowered.
+    const wasDeclined = ctx.declinedPlayer;
+    ctx.declinedPlayer = !by.haveYou;
     const other = lowerClauses(next.clauses, ctx);
+    ctx.declinedPlayer = wasDeclined;
     if (!other.ok) return refused(other);
     otherwise = oneEffect(other.value);
   }
@@ -1879,6 +2436,45 @@ function lowerDieTable(
   return { ok: true, value: effects, rule: 'body.sentence' };
 }
 
+/**
+ * "Create X 1/1 white Soldier creature tokens. If X is 5 or more, destroy all other creatures." (issue 233, CR 608.2c): in a spell, "other" in "destroy all other creatures" names
+ * nothing of the spell itself (it is no permanent), so it can only mean the tokens an instruction before it created; the engine's `each` with `except` of `moved` says so. A
+ * spell that has no such instruction before it leaves "other" without an antecedent, and the whole text is refused (null), never guessed.
+ */
+function otherThanCreated(effects: readonly Effect[]): Effect[] | null {
+  let created = false;
+  let broken = false;
+  const rewrite = (effect: Effect): Effect => {
+    if (effect.kind === 'createToken') {
+      created = true;
+      return effect;
+    }
+    if (effect.kind === 'conditional') {
+      return {
+        ...effect,
+        effect: rewrite(effect.effect),
+        ...(effect.else === undefined ? {} : { else: rewrite(effect.else) }),
+      };
+    }
+    if (
+      effect.kind === 'destroy' &&
+      'filter' in effect.objects &&
+      effect.objects.filter.other === true
+    ) {
+      if (!created) {
+        broken = true;
+        return effect;
+      }
+      const { other: _other, ...filter } = effect.objects.filter;
+      void _other;
+      return { ...effect, objects: { kind: 'each', filter, except: { kind: 'moved' } } };
+    }
+    return effect;
+  };
+  const out = effects.map(rewrite);
+  return broken ? null : out;
+}
+
 export function lowerSentences(
   sentences: readonly IrSentence[],
   ctx: LowerContext,
@@ -1929,8 +2525,12 @@ export function lowerSentences(
     if (result.last > i && sentences[result.last]?.where !== undefined) return refuse(sentence);
     i = result.last;
   }
-  const effects = steps.flatMap((s) => s.effects);
+  const flat = steps.flatMap((s) => s.effects);
   const last = sentences[sentences.length - 1];
-  if (last !== undefined && !lossReadsAreOrdered(effects)) return refuse(last);
-  return { ok: true, value: effects, rule: 'body.sentence' };
+  // Issue 233 (Martial Coup): "destroy all other creatures" in a spell leaves out the tokens an instruction before it created, not the spell.
+  const effects = ctx.owner === 'spell' ? otherThanCreated(flat) : flat;
+  if (last !== undefined && (effects === null || !lossReadsAreOrdered(effects))) {
+    return refuse(last);
+  }
+  return { ok: true, value: effects ?? [], rule: 'body.sentence' };
 }

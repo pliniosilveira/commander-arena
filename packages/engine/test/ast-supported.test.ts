@@ -9,6 +9,7 @@ import { FIXTURE_CARDS, fixtureCard, syntheticCard } from '../src/cards/fixtures
 /** The executable keywords (CR 702), each proven by a scenario test (see the list below). */
 const EXECUTABLE_KEYWORDS = [
   'crew', // scenario-xx-crew
+  'station', // scenario-xx-station
   'deathtouch', // scenario-05, scenario-xx-combat-deathtouch
   'defender', // scenario-xx-combat-attack-restrictions
   'doubleStrike', // scenario-06
@@ -70,9 +71,13 @@ const EXECUTABLE_KEYWORDS = [
   'improvise', // scenario-xx-pay-options
   'delve', // scenario-xx-pay-options
   'cascade', // scenario-xx-cascade
+  'demonstrate', // scenario-xx-prismari-g3-demonstrate (D-665)
+  'retrace', // scenario-xx-prismari-g3-retrace (D-667)
+  'aftermath', // scenario-xx-aftermath
   'unearth', // scenario-xx-unearth
   'encore', // scenario-xx-encore
   'eternalize', // scenario-xx-hashaton-g5
+  'embalm', // scenario-xx-embalm
   'devour', // scenario-xx-devour-riot
   'riot', // scenario-xx-devour-riot
   'echo', // scenario-xx-echo
@@ -128,6 +133,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   flashback: { kind: 'flashback', cost: [{ kind: 'mana', symbols: ['2'] }] },
   ward: { kind: 'ward', cost: [{ kind: 'mana', symbols: ['2'] }] },
   crew: { kind: 'crew', power: 2 },
+  station: { kind: 'station' },
   landwalk: { kind: 'landwalk', landType: 'Island' },
   fear: { kind: 'fear' },
   intimidate: { kind: 'intimidate' },
@@ -168,9 +174,13 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   improvise: { kind: 'improvise' },
   delve: { kind: 'delve' },
   cascade: { kind: 'cascade' },
+  demonstrate: { kind: 'demonstrate' },
+  retrace: { kind: 'retrace' },
+  aftermath: { kind: 'aftermath' },
   unearth: { kind: 'unearth', cost: [{ kind: 'mana', symbols: ['R'] }] },
   encore: { kind: 'encore', cost: [{ kind: 'mana', symbols: ['3', 'R'] }] },
   eternalize: { kind: 'eternalize', cost: [{ kind: 'mana', symbols: ['5', 'U', 'U'] }] },
+  embalm: { kind: 'embalm', cost: [{ kind: 'mana', symbols: ['5', 'W'] }] },
   devour: { kind: 'devour', count: 2 },
   riot: { kind: 'riot' },
   echo: { kind: 'echo', cost: [{ kind: 'mana', symbols: ['1', 'R'] }] },
@@ -252,9 +262,11 @@ describe('supported feature gate', () => {
                     : kind === 'hideaway'
                       ? syntheticCard('SYNTHETIC Hidden Cache')
                       : // D-151: read ahead belongs to a Saga with chapter abilities (CR 702.155b).
-                        kind === 'readAhead'
-                        ? syntheticCard('SYNTHETIC Reading Rite')
-                        : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                        kind === 'aftermath'
+                        ? syntheticCard('SYNTHETIC Rite // Toll')
+                        : kind === 'readAhead'
+                          ? syntheticCard('SYNTHETIC Reading Rite')
+                          : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
@@ -289,9 +301,11 @@ describe('supported feature gate', () => {
   test('the registry matches what the engine implements today', () => {
     expect([...SUPPORTED_FEATURES.triggerKinds].sort()).toEqual(
       [
+        'activatesAbility',
         'attackBatch',
         'attacks',
         'becomesBlocked',
+        'becomesMonstrous',
         'becomesTapped',
         'becomesUntapped',
         'becomesTarget',
@@ -309,17 +323,25 @@ describe('supported feature gate', () => {
         'dies',
         'diesBatch',
         'discarded',
+        // CR 709.5h: "When you unlock this door".
+        'doorUnlocked',
         'drawn',
         'endStep',
         'entersBatch',
         'entersBattlefield',
+        // Glorybringer: "When you do" after exerting.
+        'exerted',
         'exiledFromLibraryOrGraveyard',
         'landfall',
         'leavesBattlefield',
         'leftGraveyard',
         'lifeGained',
+        'lifeLost',
         'noncombatDamageDealt',
         'permanentSacrificed',
+        'putIntoGraveyard',
+        // D-648: "Whenever a player attacks one of your opponents".
+        'playerAttacksOpponent',
         'ringTempted',
         // Galadriel group 3: "Whenever you roll a die's highest natural result".
         'rollsHighest',
@@ -332,14 +354,22 @@ describe('supported feature gate', () => {
         'tappedForMana',
         'tapsForMana',
         'tokenCreated',
+        'playsCard',
+        'unblockedAttackBatch',
         'upkeep',
       ].sort(),
     );
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('triggered');
     expect(SUPPORTED_FEATURES.abilityKinds).toContain('activated');
     expect(SUPPORTED_FEATURES.effectKinds).toContain('createToken');
-    expect(SUPPORTED_FEATURES.sacrificeSelectors).toEqual(['this', 'choose', 'each']);
-    expect(SUPPORTED_FEATURES.tokenPresets).toEqual(['Treasure', 'Food', 'Clue']);
+    expect(SUPPORTED_FEATURES.sacrificeSelectors).toEqual([
+      'this',
+      'choose',
+      'each',
+      'moved',
+      'putWithThis',
+    ]);
+    expect(SUPPORTED_FEATURES.tokenPresets).toEqual(['Treasure', 'Food', 'Clue', 'Gold']);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',
       'alone',
@@ -352,11 +382,15 @@ describe('supported feature gate', () => {
       // D-177: "becomes the target of a spell".
       'becomesTargetSpell',
       'castNth',
+      // Issue 100: "whenever you cast your first instant or sorcery spell each turn".
+      'castFirstOfKind',
       'castDuringOpponentTurn',
       // D-510: "Whenever you tap an untapped creature an opponent controls", "if it isn't being declared as an attacker", "one or more".
       'tappedBy',
       'notAsAttacker',
       'tapBatch',
+      // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}".
+      'activatesAbilityX',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',
@@ -365,6 +399,10 @@ describe('supported feature gate', () => {
       'payLife',
       // Group 4 of the Vraska deck: "{T}, Mill a card" (Millikin).
       'mill',
+      // D-625: "{T}, Tap an untapped creature you control: Add one mana of any color" (Jaspera Sentinel, Holdout Settlement).
+      'tapPermanents',
+      // Issue 245 (PR #280): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).
+      'removeCounters',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

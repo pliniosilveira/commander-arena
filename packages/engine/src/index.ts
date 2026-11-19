@@ -42,6 +42,7 @@ export type * from './mana/types';
 export { EMPTY_MANA_COST } from './mana/types';
 export { createRng, nextInt, nextUint32, shuffle } from './rng/index';
 export type * from './rng/types';
+export { coversCardTypes } from './rules/card-types-choice';
 export { defaultDivision } from './rules/combat-flow';
 export type { ControlEnd } from './rules/control';
 export { faceDownLabel } from './rules/face-down';

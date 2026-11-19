@@ -180,7 +180,7 @@ describe('Finale of Revelation', () => {
       effects: [
         {
           kind: 'conditional',
-          condition: { kind: 'xIs', compare: { cmp: 'atLeast', value: 10 } },
+          condition: { kind: 'xAtLeast', value: 10 },
           effect: {
             kind: 'sequence',
             effects: [

@@ -21,11 +21,17 @@ import {
 import type { IrAmount, IrNoun, IrQuotedAbility, IrToken } from '../../ir/types';
 import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
-import { KEYWORD_WORD, KEYWORD_WORDS } from '../keyword/list';
+import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
-import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY_OR_CREW_BONUS } from '../static/quoted';
-import { TOKEN_COPY_EXCEPT } from './copy-except';
+import {
+  namedTokenQuotedAbility,
+  readQuotedAbility,
+  TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
+} from '../static/quoted';
+import { AURA_TOKEN_RULES } from './aura';
+import { TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
+import { TOKEN_COPIES_X } from './prismari-g1';
 
 export type Bare = Omit<IrToken, 'span' | 'rule'>;
 
@@ -48,11 +54,27 @@ const COUNT = choice(
       span,
     }),
   ),
+  // Quandrix Unlimited deck, group D2 (The Goose Mother, CR 107.1a): "create half X, rounded up Food tokens" (`normalizeOracleText` writes the rounding after the X).
+  map(
+    spanned(pattern(/half X, rounded (up|down)(?![\p{L}\p{N}])/iu)),
+    ({ value, span }): IrAmount => ({
+      kind: 'half',
+      of: { kind: 'x', span },
+      round: (value[1] ?? 'down').toLowerCase() as 'down' | 'up',
+      span,
+    }),
+  ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
+  // Issue 160 (D-626, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
+  // which `validateCard` allows only in a trigger that has damage; the tokens are plural.
+  map(
+    spanned(pattern(/that many(?![\p{L}\p{N}])/iu)),
+    ({ span }): IrAmount => ({ kind: 'triggerDamage', span }),
+  ),
 );
 
-const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Map', 'Blood'] as const;
+const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Blood'] as const;
 type Predefined = (typeof PREDEFINED)[number];
 
 /** "tapped " between the count and the token ("two tapped Treasure tokens", CR 110.5b: they enter tapped). */
@@ -75,7 +97,8 @@ function predefinedToken(count: Parser<IrAmount>, pluralOnly = false): Parser<Ba
         ),
         TOKEN_WORD,
       ),
-      ([amount, , , , plural]) => (amount.kind !== 'x' && !pluralOnly) || plural,
+      ([amount, , , , plural]) =>
+        (amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural,
     ),
     ([amount, , tapped, predefined]): Bare => ({
       kind: 'token',
@@ -97,13 +120,14 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'two Treasure tokens',
     'a Food token',
     'a Clue token',
+    'a Gold token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
     'two tapped Treasure tokens',
   ],
   rejects: [
-    'a Gold token',
+    'a Gold',
     'a Treasure',
     'a 1/1 white Soldier creature token',
     'a Treasure token tapped',
@@ -128,19 +152,32 @@ const TOXIC_WORD: Parser<string> = map(
 );
 
 /**
+ * "changeling" (CR 702.73a, issue 104): a keyword a token has from its own text. It is a characteristic-defining ability the engine runs in every zone, and no static or
+ * effect can grant it (the engine's `GRANTABLE_KEYWORDS`), so only the token's own description reads it, not `KEYWORD_WORD`.
+ */
+const CHANGELING_WORD: Parser<string> = map(
+  pattern(/changeling(?![\p{L}\p{N}])/iu),
+  () => 'changeling',
+);
+
+/** The words a token's own description may name as keywords: those the engine can grant, and changeling. */
+const TOKEN_KEYWORD_WORD: Parser<string> = choice(KEYWORD_WORD, CHANGELING_WORD);
+const TOKEN_KEYWORD_WORDS: Parser<string[]> = keywordWordsOf(TOKEN_KEYWORD_WORD);
+
+/**
  * The keywords of a token: a list of those the engine can grant, or one keyword and "devour N" ("flying and devour 2"), or "devour N" alone. A longer
  * list with "devour N" at its end is not read (the list of grantable words is written "A, B, and C" and stops at the keyword it does not know).
  */
 const TOKEN_KEYWORDS: Parser<string[]> = choice(
   map(
     satisfy(
-      sequence(KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
+      sequence(TOKEN_KEYWORD_WORDS, literal(' and '), choice(DEVOUR_WORD, TOXIC_WORD)),
       ([words]) => words.length === 1,
     ),
     ([words, , numbered]): string[] => [...words, numbered],
   ),
   map(choice(DEVOUR_WORD, TOXIC_WORD), (numbered): string[] => [numbered]),
-  KEYWORD_WORDS,
+  TOKEN_KEYWORD_WORDS,
 );
 
 /**
@@ -156,7 +193,7 @@ const tokenWith = (
     // "with flying, haste, and \"...\"": the ability in quotes is the last of a list of three, so the keywords before it are joined by commas.
     map(
       satisfy(
-        sequence(separatedBy1(KEYWORD_WORD, literal(', ')), literal(', and '), quoted),
+        sequence(separatedBy1(TOKEN_KEYWORD_WORD, literal(', ')), literal(', and '), quoted),
         ([words]) => words.length >= 2 && new Set(words).size === words.length,
       ),
       ([keywords, , one]) => ({ keywords, abilities: [one] }),
@@ -206,6 +243,21 @@ const TOKEN_NAME = map(
 );
 
 /**
+ * The name of a legendary token: a token name, and the epithet some legends carry ("Primo, the Indivisible", CR 111.4, 201.2: the whole of it is the name). The epithet is the
+ * comma, "the" and capitalized words; the comma before ", a legendary" is the one that ends the name.
+ */
+const LEGENDARY_TOKEN_NAME = map(
+  sequence(
+    TOKEN_NAME,
+    optional(
+      map(pattern(/, the [A-Z][\p{L}'’-]*(?: [A-Z][\p{L}'’-]*)*/u), (m) => m[0]),
+      '',
+    ),
+  ),
+  ([name, epithet]) => `${name}${epithet}`,
+);
+
+/**
  * " named ~'s Pridemate" (D-266): the name of a token that begins with the name of the card that makes it, as Ajani's Pridemate does. The card's name was
  * written `~` when the text was normalized (a legendary card's short name too), so the possessive after it is what shows it is a name and not the card's: `~'s`
  * and one or more capitalized words, nothing else of `~`. The lowering puts the card's own short name back; a name that is only `~` or has it later is not read.
@@ -249,9 +301,19 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           keywords: [] as string[],
           abilities: [] as IrQuotedAbility[],
         }),
+        // D-648 (CR 508.4): "that's attacking that opponent", said of one token.
+        optional(
+          quiet(
+            map(
+              pattern(/ that['’]s attacking that opponent(?![\p{L}\p{N}])/iu),
+              () => true as const,
+            ),
+          ),
+          null,
+        ),
       ),
       ([amount, , , pt, , , , , plural]) =>
-        ((amount.kind !== 'x' && !pluralOnly) || plural) &&
+        ((amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural) &&
         ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')),
     ),
     ([
@@ -266,8 +328,10 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       ,
       named,
       { keywords, abilities },
+      attackingThatOpponent,
     ]): Bare => ({
       kind: 'token',
+      ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
       ...(tapped === null ? {} : { tapped }),
       ...(named === null ? {} : { named }),
       ...(pt[1] === 'X'
@@ -289,7 +353,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
  * the effect, 111.4 name and subtypes). Power and toughness are numbers; the colors and at least
  * one creature type are written out. The keywords the engine can grant may follow ("a 1/1 white
  * Spirit creature token with flying", "with flying and vigilance", stage P15; CR 702: a keyword
- * ability of the token's own). Any other ability, in quotes or not ("with changeling", "with
+ * ability of the token's own). Any other ability, in quotes or not ("with flash", "with
  * \"Sacrifice this token: ...\"") is not read, so a token is never created without it.
  */
 export const TOKEN_CUSTOM = defineRule<IrToken>({
@@ -311,6 +375,7 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 3/3 green Beast creature token with trample, reach, and haste',
     'X 1/1 white Soldier creature tokens',
     'X 2/2 black Zombie creature tokens',
+    'that many 1/1 green Insect creature tokens with flying and deathtouch',
     'a tapped 2/2 black Zombie creature token',
     'thirteen tapped 2/2 black Zombie creature tokens',
     'two 2/2 black Zombie Knight creature tokens with menace',
@@ -329,6 +394,10 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 2/2 red Goblin creature token with devour 1',
     'a 1/1 red Dragon creature token with first strike and devour 3',
     'a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "~ can’t block."',
+    // Issue 104 (CR 702.73a): a token with changeling.
+    'a 2/2 blue Shapeshifter creature token with changeling',
+    'a 1/1 white Soldier creature token with changeling and flying',
+    'a 1/1 white Soldier creature token with flying, changeling, and "{T}: You gain 1 life."',
   ],
   rejects: [
     'a 1/1 red and green Dragon creature token with devour',
@@ -347,7 +416,8 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 1/1 white Soldier creature token with flying and flying',
     'a 1/1 white Soldier creature token with',
     'a 1/1 white Soldier creature token with flash',
-    'a 1/1 white Soldier creature token with changeling',
+    'a 1/1 white Soldier creature token with changeling and changeling',
+    'a 1/1 white Soldier creature token with changelings',
     'a 1/1 white Soldier creature token with "Sacrifice ~: Draw a card"',
     'a 1/1 white Soldier creature token with "Sacrifice ~: Draw a card." and flying',
     'a 1/1 white Soldier creature token with flying and "Sacrifice ~: Draw a card"',
@@ -380,6 +450,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   examples: [
     'Smaug, a legendary 6/6 red Dragon creature token with flying, haste, and "When Smaug dies, create fourteen Treasure tokens."',
     'Hero, a legendary 2/2 white Soldier creature token',
+    'Primo, the Indivisible, a legendary 0/0 green and blue Fractal creature token',
     'Hero, a legendary 2/2 white Soldier creature token with flying',
     'Dead Knight of Doom, a legendary 3/3 black Zombie Knight creature token with menace',
     'Hero, a legendary 2/2 white Soldier creature token with "When Hero dies, you gain 1 life."',
@@ -397,6 +468,8 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
     'smaug, a legendary 6/6 red Dragon creature token',
     'a legendary 6/6 red Dragon creature token',
     'Smaug a legendary 6/6 red Dragon creature token',
+    'Primo, the, a legendary 0/0 green and blue Fractal creature token',
+    'Primo, The Indivisible, a legendary 0/0 green and blue Fractal creature token',
     'Smaug, a legendary 6/6 red Dragon creature token named Smaug',
     'Smaug, a legendary 6/6 red Dragon creature token with "When Smaug dies, create fourteen Treasure tokens"',
     'Smaug, a legendary 6/6 red Dragon creature token with flying, haste and "When Smaug dies, create fourteen Treasure tokens." and more',
@@ -414,7 +487,7 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   parse: node<Bare, IrToken>(
     'token.named-legendary',
     (ctx, pos) => {
-      const named = spanned(TOKEN_NAME)(ctx, pos);
+      const named = spanned(LEGENDARY_TOKEN_NAME)(ctx, pos);
       if (!named.ok) return named;
       const name = named.value.value;
       const rest = choice(
@@ -492,6 +565,73 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   ),
 });
 
+/**
+ * A characteristic-defining ability of power and toughness in the quotes of a token with no numbers of its own: "This token's power and toughness are each equal to the number of lands
+ * you control." The one static ability of such a token (CR 208.2a, 604.3); another static ability is not read.
+ */
+const DEFINES_PT_QUOTED: Parser<IrQuotedAbility> = satisfy(
+  (ctx, pos) => readQuotedAbility(ctx, pos, { mana: false, statics: true }),
+  (quoted) =>
+    quoted.ability.kind === 'static' &&
+    quoted.ability.statement.effects.some((e) => e.kind === 'definesPt'),
+);
+
+/**
+ * `token.defined-pt`: "a green Treefolk creature token with reach and \"This token's power and toughness are each equal to the number of lands you control.\"" (Wrenn and Seven; Death Toll
+ * deck, group C; CR 111.4, 208.2a, 604.3): one token with no numbers of power and toughness, its own characteristic-defining ability in the quotes defines both (the same as `token.named-
+ * legendary` reads for a token with a name of its own); keywords of the token may come before the quote. One token ("a"), the colors and creature types written out. Not read: numbers of
+ * power and toughness with the ability, no quote, another static ability in the quote, a plural, an artifact creature.
+ */
+export const TOKEN_DEFINED_PT = defineRule<IrToken>({
+  id: 'token.defined-pt',
+  family: 'token',
+  leading: ['a'],
+  cites: [
+    'CR 111.4 (Tokens)',
+    'CR 208.2a (Power/Toughness)',
+    'CR 604.3 (Handling Static Abilities)',
+  ],
+  examples: [
+    'a green Treefolk creature token with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+    'a green Treefolk creature token with "~\'s power and toughness are each equal to the number of lands you control."',
+  ],
+  rejects: [
+    'a green Treefolk creature token',
+    'a green Treefolk creature token with reach',
+    'a 1/1 green Treefolk creature token with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+    'a green Treefolk creature token with reach and "~ gets +1/+1 for each land you control."',
+    'a green Treefolk creature token with reach and "Creatures you control get +1/+1."',
+    'a green Treefolk creature token with reach and "~\'s power and toughness are each equal to the number of lands you control"',
+    'two green Treefolk creature tokens with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+    'a green Treefolk artifact creature token with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+  ],
+  parse: node<Bare, IrToken>(
+    'token.defined-pt',
+    map(
+      sequence(
+        spanned(literal('a ')),
+        COLORS,
+        literal(' '),
+        SUBTYPES,
+        literal(' creature'),
+        satisfy(TOKEN_WORD, (plural) => !plural),
+        literal(' with '),
+        satisfy(tokenWith(DEFINES_PT_QUOTED), (w) => w.abilities.length > 0),
+      ),
+      ([article, colors, , subtypes, , , , { keywords, abilities }]): Bare => ({
+        kind: 'token',
+        colors,
+        types: ['creature'],
+        subtypes,
+        count: { kind: 'number', value: 1, span: article.span },
+        ...(keywords.length > 0 ? { keywords } : {}),
+        abilities,
+      }),
+    ),
+    (b) => b,
+  ),
+});
+
 /** "a number of": a count that the sentence gives after the tokens, "equal to ..." (a placeholder of 1 until then). */
 const A_NUMBER_OF: Parser<IrAmount> = map(
   spanned(pattern(/a number of(?![\p{L}\p{N}])/iu)),
@@ -516,6 +656,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
     'a number of tapped Treasure tokens equal to its power',
     'a number of Treasure tokens equal to its power',
     'a number of Food tokens equal to that creature\u2019s power',
+    'a number of Gold tokens equal to its power',
     'a number of 1/1 white Soldier creature tokens equal to its power',
   ],
   rejects: [
@@ -523,7 +664,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
     'a number of Treasure tokens',
     'a number of Treasure tokens equal to',
     'a number of tokens equal to its power',
-    'a number of Gold tokens equal to its power',
+    'a number of Gold token equal to its power',
     'a number of tapped tapped Treasure tokens equal to its power',
     'a number of Treasure tokens equal to its power and draw a card',
   ],
@@ -616,10 +757,16 @@ export const TOKEN_RULES = [
   TOKEN_PREDEFINED,
   TOKEN_CUSTOM,
   TOKEN_NAMED_LEGENDARY,
+  // Death Toll deck, group C: a token with no numbers whose own characteristic-defining ability defines them.
+  TOKEN_DEFINED_PT,
   TOKEN_NUMBER_OF,
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,
+  TOKEN_COPY_EXCEPT_ADDITIVE,
   // Galadriel deck, group 3: "..., except it's not legendary and its starting loyalty is 1", for the same reason.
   ...GALADRIEL_G3_TOKEN_RULES,
+  ...AURA_TOKEN_RULES,
+  // Prismari deck, group 1 (D-638): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
+  TOKEN_COPIES_X,
   TOKEN_COPY,
 ];

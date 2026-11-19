@@ -35,12 +35,20 @@ export function sourceTypes(state: GameState, source: ObjectId | null): readonly
 }
 
 /** The colors `obj` has protection from, as it has them now. Empty for a permanent with none, or an object that is not on the battlefield. */
-export function protectedColors(state: GameState, obj: GameObject): readonly Color[] {
+export function protectedColors(
+  state: GameState,
+  obj: GameObject,
+  /** The source whose own exception (`exceptSource`, D-652: "This effect doesn't remove this Aura") leaves a protection out. */
+  source: ObjectId | null = null,
+): readonly Color[] {
   if (obj.zone !== 'battlefield') return [];
   const colors: Color[] = [];
   for (const a of derive(state, obj).abilities) {
     if (a.kind !== 'keyword' || a.keyword.kind !== 'protection') continue;
-    if (a.keyword.from === 'color') colors.push(...a.keyword.colors);
+    if (a.keyword.from === 'color') {
+      if (a.keyword.exceptSource !== undefined && a.keyword.exceptSource === source) continue;
+      colors.push(...a.keyword.colors);
+    }
     // CR 903.4f (D-259): printed on the permanent, "your" is its controller. A static grant is resolved to colors as it is applied (`derive-statics.ts`).
     else if (a.keyword.from === 'colorsNotInCommanderIdentity') {
       colors.push(...colorsNotInCommanderIdentity(state, controllerOf(state, obj)));
@@ -73,7 +81,7 @@ export function hasProtectionFrom(
   obj: GameObject,
   source: ObjectId | null,
 ): boolean {
-  const colors = protectedColors(state, obj);
+  const colors = protectedColors(state, obj, source);
   const types = protectedTypes(state, obj);
   const fromRingBearer =
     obj.zone === 'battlefield' &&
@@ -81,11 +89,23 @@ export function hasProtectionFrom(
       (a) =>
         a.kind === 'keyword' && a.keyword.kind === 'protection' && a.keyword.from === 'ringBearer',
     );
-  if (colors.length === 0 && types.length === 0 && !fromRingBearer) return false;
+  // CR 702.16a, 105.2: protection from multicolored stops a source with two or more colors.
+  const fromMulticolored =
+    obj.zone === 'battlefield' &&
+    derive(state, obj).abilities.some(
+      (a) =>
+        a.kind === 'keyword' &&
+        a.keyword.kind === 'protection' &&
+        a.keyword.from === 'multicolored',
+    );
+  if (colors.length === 0 && types.length === 0 && !fromRingBearer && !fromMulticolored) {
+    return false;
+  }
   const sourceObject = source === null ? undefined : state.objects[source];
   return (
     (colors.length > 0 && sourceColors(state, source).some((c) => colors.includes(c))) ||
     (types.length > 0 && sourceTypes(state, source).some((t) => types.includes(t))) ||
+    (fromMulticolored && sourceColors(state, source).length >= 2) ||
     (fromRingBearer && sourceObject !== undefined && ringBearerSeat(state, sourceObject) !== null)
   );
 }

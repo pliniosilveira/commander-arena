@@ -13,10 +13,10 @@ import { overloadedText } from '../ast/overload';
 import { isPermanentType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { getObject, getSeat } from '../state/ops';
+import { getObject, getSeat, patchObject } from '../state/ops';
 import type { ChosenValues, GameState, Instruction, ResolutionContext } from '../state/types';
 import { recordActionTaken, recordResolution } from './action-taken';
-import { attachEntered, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
+import { attachEntered, attachEnteredToPlayer, auraTargetSpec, ENCHANT_TARGET_ID } from './attach';
 import { runCascade } from './cascade';
 import { runCastCard } from './cast-card';
 import { runCastExiled } from './cast-exiled';
@@ -29,9 +29,11 @@ import { controllerOf } from './control';
 import { runCopySpell } from './copy-spell';
 import { derive } from './derive';
 import { DASH_RETURN_ABILITY } from './derive-alt';
+import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
-import { isAdventureSpell } from './layouts';
+import { faceDownBy } from './face-down';
+import { isAdventureSpell, isOmenSpell } from './layouts';
 import { faceOf, targetSpecsOf } from './legality';
 import { chosenEffect, modalOfObject } from './modes';
 import { runPayAmount } from './pay-amount';
@@ -47,6 +49,7 @@ import {
 import { cardTypeOfAnswer, colorOfAnswer } from './protection-choice';
 import { stillLegalTargets } from './select';
 import { setPending } from './set-pending';
+import { TIME_COUNTER } from './time-counter';
 import { collectTriggers } from './triggers';
 import { moveObject } from './zones';
 
@@ -76,6 +79,12 @@ export function resolveTop(input: GameState): ResolveOutcome {
         ? {}
         : { triggerSubject: obj.stack.triggerSubject }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
+      ...(obj.stack?.triggerAttackedAt === undefined
+        ? {}
+        : { triggerAttackedAt: obj.stack.triggerAttackedAt }),
+      ...(obj.stack?.triggerAttacked === undefined
+        ? {}
+        : { triggerAttacked: obj.stack.triggerAttacked }),
     })
   ) {
     events.push({ kind: 'fizzled', object: id, reason: 'interveningIf' });
@@ -99,10 +108,15 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerTargetCount === undefined
       ? {}
       : { triggerTargetCount: obj.stack.triggerTargetCount }),
+    // CR 608.2b: "mana value less than or equal to that spell's mana value" is read again as the ability resolves.
+    ...(obj.stack?.triggerSubject === undefined
+      ? {}
+      : { triggerSubject: obj.stack.triggerSubject }),
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 
-  if (specs.length > 0 && chosen.length > 0 && legal.length === 0) {
+  // CR 702.103e (bestow, rules text not checked): a bestow spell whose target is illegal is not countered: it resolves as a creature spell.
+  if (specs.length > 0 && chosen.length > 0 && legal.length === 0 && obj.stack?.alt !== 'bestow') {
     // CR 608.2b: all targets are illegal, so the spell doesn't resolve.
     events.push({ kind: 'fizzled', object: id });
     const moved = moveObject(input, { object: id, to: 'graveyard' });
@@ -159,9 +173,14 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
+      ...(obj.stack?.tappedPowerAsCost === undefined
+        ? {}
+        : { costTappedPower: obj.stack.tappedPowerAsCost }),
       ...(obj.stack?.exiledAsCost === undefined ? {} : { costExiled: obj.stack.exiledAsCost }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
+      // Issue 89: a reflexive ability that carries what the resolution before it made (`moved`, the Inkling token of "create a token. When you do, ... attached to that token").
+      ...(obj.stack?.movedBefore === undefined ? {} : { lastMoved: obj.stack.movedBefore }),
       ...(obj.stack?.triggerPlayer === undefined ? {} : { triggerPlayer: obj.stack.triggerPlayer }),
       ...(obj.stack?.triggerDamage === undefined ? {} : { triggerDamage: obj.stack.triggerDamage }),
       ...(obj.stack?.triggerTargetCount === undefined
@@ -173,6 +192,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.triggerAttackers === undefined
         ? {}
         : { triggerAttackers: obj.stack.triggerAttackers }),
+      ...(obj.stack?.triggerAttackedAt === undefined
+        ? {}
+        : { triggerAttackedAt: obj.stack.triggerAttackedAt }),
     },
   };
   return continueResolution(state, events);
@@ -242,10 +264,14 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
+                destroyedValue:
+                  (res.thisWay?.destroyedValue ?? 0) + (out.thisWay.destroyedValue ?? 0),
                 playersDrew: (res.thisWay?.playersDrew ?? 0) + (out.thisWay.playersDrew ?? 0),
                 tapped: (res.thisWay?.tapped ?? 0) + (out.thisWay.tapped ?? 0),
                 discarded: (res.thisWay?.discarded ?? 0) + (out.thisWay.discarded ?? 0),
                 milledValue: (res.thisWay?.milledValue ?? 0) + (out.thisWay.milledValue ?? 0),
+                milledCreature:
+                  (res.thisWay?.milledCreature ?? 0) + (out.thisWay.milledCreature ?? 0),
                 discardedCreature:
                   (res.thisWay?.discardedCreature ?? 0) + (out.thisWay.discardedCreature ?? 0),
                 discardedNoncreature:
@@ -254,6 +280,16 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 discardedInstantOrSorcery:
                   (res.thisWay?.discardedInstantOrSorcery ?? 0) +
                   (out.thisWay.discardedInstantOrSorcery ?? 0),
+                searched: (res.thisWay?.searched ?? 0) + (out.thisWay.searched ?? 0),
+                // Issue 279: the greatest number one player discarded, not a sum.
+                discardedMost: Math.max(
+                  res.thisWay?.discardedMost ?? 0,
+                  out.thisWay.discardedMost ?? 0,
+                ),
+                damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
+                countersRemoved:
+                  (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
+                ...mergePowerBy(res.thisWay?.exiledPowerBy, out.thisWay.exiledPowerBy),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),
@@ -314,10 +350,27 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
   throw new Error('Resolution did not finish');
 }
 
-/** The object an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
-function enchantedHost(res: ResolutionContext): ObjectId | null {
+/** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
+/** The totals of power by seat of two `thisWay` tallies, added (Oversimplify); nothing when neither has any. */
+function mergePowerBy(
+  a: Readonly<Record<number, number>> | undefined,
+  b: Readonly<Record<number, number>> | undefined,
+): { readonly exiledPowerBy?: Readonly<Record<number, number>> } {
+  if (a === undefined && b === undefined) return {};
+  const total: Record<number, number> = { ...a };
+  for (const [seat, power] of Object.entries(b ?? {})) {
+    total[Number(seat)] = (total[Number(seat)] ?? 0) + power;
+  }
+  return { exiledPowerBy: total };
+}
+
+function enchantedHost(
+  res: ResolutionContext,
+): { readonly object: ObjectId } | { readonly seat: SeatId } | null {
   for (const t of res.legalTargets) {
-    if (t.kind === 'object' && t.specId === ENCHANT_TARGET_ID) return t.id;
+    if (t.specId !== ENCHANT_TARGET_ID) continue;
+    if (t.kind === 'object') return { object: t.id };
+    return { seat: t.seat };
   }
   return null;
 }
@@ -333,12 +386,20 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
     const permanent = types.some((t) => isPermanentType(t));
     // CR 608.3c: an Aura spell enters attached to the object it targeted (it fizzled before this
     // if that target was illegal, CR 608.3b). The spell's own text says what it targeted.
-    const auraHost = auraTargetSpec(faceOf(next, obj)) === null ? null : enchantedHost(res);
+    const auraHost =
+      auraTargetSpec(faceOf(next, obj)) === null && obj.stack?.alt !== 'bestow'
+        ? null
+        : enchantedHost(res);
     // CR 715.3d: a spell cast as an Adventure that resolves is exiled instead of going to the
     // graveyard; a countered or fizzled one never gets here (CR 715.4) and goes to the graveyard.
     const adventure = isAdventureSpell(next, obj);
     // CR 614.1a, 608.2n (D-439): "exile that card instead of putting it into your graveyard as it resolves": an instant or sorcery that carries the mark is exiled.
     const exiled = exiledAsItResolves(obj, permanent, adventure);
+    // CR 608.2n, 122.1 (D-651): "Exile this spell with three time counters on it": the instruction decides where the card goes: exile, with the counters.
+    const timeCounters =
+      obj.stack?.exileWithTimeCounters !== undefined && obj.card !== null && !permanent
+        ? obj.stack.exileWithTimeCounters
+        : null;
     // CR 702.27a (Galadriel group 3): "If the buyback cost was paid, put this spell into its owner's hand instead of into that player's graveyard as it resolves": an instant
     // or sorcery card; not a permanent, an Adventure, a flashback spell or one another effect sends to exile (those keep their own place).
     const boughtBack =
@@ -347,17 +408,31 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !permanent &&
       !adventure &&
       !exiled &&
+      timeCounters === null &&
       obj.stack.flashback !== true &&
+      obj.stack.aftermath !== true &&
+      obj.stack.alt !== 'harmonize' &&
       obj.stack.exileInstead !== true;
+    // Omen: "Then shuffle this card into its owner's library" instead of the graveyard, for a spell that resolves (a countered one goes to the graveyard) and that no
+    // other effect sends to exile or the hand.
+    const omen =
+      isOmenSpell(next, obj) &&
+      !exiled &&
+      !boughtBack &&
+      obj.stack?.flashback !== true &&
+      obj.stack?.exileInstead !== true;
+    const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
         ? 'battlefield'
-        : adventure || exiled
+        : adventure || exiled || timeCounters !== null
           ? 'exile'
           : boughtBack
             ? 'hand'
-            : 'graveyard',
+            : omen
+              ? 'library'
+              : 'graveyard',
       // CR 400.3 (D-353): an instant or sorcery that resolves goes to its OWNER's graveyard, whoever cast it (a card cast from another player's graveyard); a
       // permanent enters under its controller's control (CR 110.2), and an Adventure is exiled for its caster (CR 715.3d).
       toSeat: permanent || adventure ? controllerOf(state, obj) : obj.owner,
@@ -367,13 +442,33 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       ...(res.entersDevour === undefined ? {} : { entersDevour: res.entersDevour }),
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
-      ...(adventure ? { onAdventure: true as const } : {}),
+      ...(adventure && timeCounters === null ? { onAdventure: true as const } : {}),
+      // CR 702.37c, 708.4: "When the spell resolves, it enters the battlefield with the same characteristics the spell had": a face-down spell becomes a face-down permanent.
+      ...(permanent && downBy !== null ? { entersFaceDown: downBy } : {}),
     });
     if (moved.kind === 'done') {
       next = moved.state;
       events.push(...moved.events);
+      // CR 122.1, 702.62b (D-651): the time counters go on the card as it is exiled (a card with suspend and a time counter in exile is suspended).
+      if (timeCounters !== null && moved.newObject !== null) {
+        next = patchObject(next, moved.newObject, { counters: { [TIME_COUNTER]: timeCounters } });
+        events.push({
+          kind: 'counterAdded',
+          object: moved.newObject,
+          counter: TIME_COUNTER,
+          count: timeCounters,
+        });
+      }
+      if (omen) {
+        const shuffled = shuffleLibrary(next, obj.owner);
+        next = shuffled.state;
+        events.push(...shuffled.events);
+      }
       if (auraHost !== null && moved.newObject !== null) {
-        const attached = attachEntered(next, moved.newObject, auraHost);
+        const attached =
+          'seat' in auraHost
+            ? attachEnteredToPlayer(next, moved.newObject, auraHost.seat)
+            : attachEntered(next, moved.newObject, auraHost.object);
         next = attached.state;
         events.push(...attached.events);
       }
@@ -430,6 +525,23 @@ export function answerResolutionChoice(
   const res = state.resolution;
   const head = res?.queue[0];
   if (!res || head === undefined) return null;
+  // D-668 (CR 303.4f): the permanent a token that is an Aura enters enchanting.
+  if (
+    head.kind === 'enterToken' &&
+    state.pending?.kind === 'choosePermanent' &&
+    state.pending.purpose === 'auraHost'
+  ) {
+    const [host] = chosen;
+    if (host === undefined) return null;
+    return continueResolution(
+      {
+        ...state,
+        pending: null,
+        resolution: { ...res, queue: [{ ...head, host }, ...res.queue.slice(1)] },
+      },
+      [],
+    );
+  }
   if (
     head.kind !== 'chooseSacrifice' &&
     head.kind !== 'chooseObjects' &&
@@ -442,6 +554,8 @@ export function answerResolutionChoice(
     head.kind !== 'pair' &&
     head.kind !== 'empowerJace' &&
     head.kind !== 'amass' &&
+    head.kind !== 'populate' &&
+    head.kind !== 'moveCounters' &&
     head.kind !== 'conniveNext' &&
     head.kind !== 'spare'
   ) {
@@ -486,6 +600,7 @@ export function answerResolutionCards(
       head.kind !== 'lookTake' &&
       head.kind !== 'lookSplit' &&
       head.kind !== 'pileSeparate' &&
+      head.kind !== 'opponentChoosesCard' &&
       head.kind !== 'castFree' &&
       head.kind !== 'behold' &&
       head.kind !== 'splitExiled' &&
@@ -558,7 +673,8 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   if (
     head.kind !== 'confirmOptional' &&
     head.kind !== 'mayEffect' &&
-    head.kind !== 'graveyardPair'
+    head.kind !== 'graveyardPair' &&
+    head.kind !== 'exileAnyNumber'
   ) {
     return null;
   }
@@ -569,7 +685,7 @@ export function answerResolutionOptional(state: GameState, accept: boolean): Res
   // (`mayEffect`, D-111) only drops that effect.
   const queue: readonly Instruction[] = accept
     ? [{ ...head, answer: true }, ...res.queue.slice(1)]
-    : head.kind === 'mayEffect' || head.kind === 'graveyardPair'
+    : head.kind === 'mayEffect' || head.kind === 'graveyardPair' || head.kind === 'exileAnyNumber'
       ? res.queue.slice(1)
       : [];
   // CR 603.2h (D-256): accepting the ability's own "you may" takes the action of "Do this only once each turn".

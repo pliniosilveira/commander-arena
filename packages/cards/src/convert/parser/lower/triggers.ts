@@ -9,6 +9,7 @@ import type {
   Condition,
   Cost,
   Effect,
+  ManaProduction,
   ObjectFilter,
   Trigger,
   TriggerStep,
@@ -58,6 +59,7 @@ const TRIGGER_KIND = {
   attacks: 'attacks',
   becomesTapped: 'becomesTapped',
   becomesUntapped: 'becomesUntapped',
+  becomesMonstrous: 'becomesMonstrous',
   blocks: 'blocks',
   becomesBlocked: 'becomesBlocked',
   landfall: 'landfall',
@@ -269,7 +271,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'dies':
     case 'blocks':
     case 'becomesBlocked':
-    case 'becomesUntapped': {
+    case 'becomesUntapped':
+    case 'becomesMonstrous': {
       const what = whatOf(t, ctx);
       if (!what.ok) return what;
       return ok({
@@ -320,6 +323,19 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'tappedForMana': {
       // "Whenever you tap a permanent for {C}" (stage P31, D-140, CR 106.12, 605.1b): a mana ability of a permanent the filter matches,
       // activated with {T} by the controller, and the type of mana it made when the text names one.
+      // "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the land the Aura is attached to, tapped by whoever controls it, who gets the mana.
+      if (t.enchantedTapped === true) {
+        if (t.subject === undefined) return failure(t);
+        const host = lowerFilter(t.subject);
+        if (!host.ok) return host;
+        const missing = missingFeatures(['trigger:tappedForMana', 'selector:hostOfSource']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({
+          kind: 'tappedForMana',
+          what: { ...host.value, hostOfSource: true },
+          by: 'tapper',
+        });
+      }
       if (t.actor?.det !== 'you' || t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
@@ -350,21 +366,59 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'landfall':
       return ok({ kind: 'landfall' });
+    case 'playsCard': {
+      // "Whenever you play a card with two or more card types" (Death Toll deck, group D, CR 305.1, 601.2, 205.2a): the player is the controller of the ability.
+      if (t.actor?.det !== 'you' || t.atLeast === undefined) return failure(t);
+      const blocked = missingFeatures(['trigger:playsCard']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
+    }
+    case 'doorUnlocked': {
+      // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
+      if (t.actor?.det !== 'you') return failure(t);
+      const blocked = missingFeatures(['trigger:doorUnlocked']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'doorUnlocked', who: 'you', door: 'this' });
+    }
     case 'cycled': {
       // "When you cycle this card" (stage P37, D-180, CR 702.29c): the card with the ability, which the engine finds in the zone it wound up in.
       if (t.actor?.det !== 'you' || t.subject?.det !== 'self') return failure(t);
       const blocked = missingFeatures(['trigger:cycled']);
       return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'cycled' });
     }
+    case 'exerted': {
+      // "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h): the creature with the ability, exerted as it attacked.
+      if (t.subject?.det !== 'self') return failure(t);
+      const blocked = missingFeatures(['trigger:exerted']);
+      return blocked.length > 0 ? failure(t, blocked) : ok({ kind: 'exerted' });
+    }
     case 'crimeCommitted':
+    case 'activatesAbility':
     case 'tokenCreated': {
       // "Whenever you commit a crime" (Gisa deck, D-464, CR 700.13), "whenever you create a token" (D-465, CR 111.2): the player is relative to the controller.
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      const blocked = missingFeatures([`trigger:${t.event}`]);
+      // Unbound Flourishing (CR 107.3, 602.2b, 603.4): "activate an ability, if that ability's activation cost contains {X}" (`xCost`), of any ability that uses the stack (`anySource`).
+      const flagged = (name: string): boolean => {
+        const a = t.args[name];
+        return a?.kind === 'flag' && a.value;
+      };
+      const xCost = t.event === 'activatesAbility' && flagged('xCost');
+      const anySource = t.event === 'activatesAbility' && flagged('anySource');
+      const blocked = missingFeatures([
+        `trigger:${t.event}`,
+        ...(xCost || anySource ? (['trigger:activatesAbilityX'] as const) : []),
+      ]);
       return blocked.length > 0
         ? failure(t, blocked)
-        : ok({ kind: t.event as 'crimeCommitted' | 'tokenCreated', who });
+        : ok({
+            kind: t.event as 'crimeCommitted' | 'tokenCreated' | 'activatesAbility',
+            who,
+            ...(xCost ? { xCost: true as const } : {}),
+            ...(anySource ? { anySource: true as const } : {}),
+          });
     }
     case 'ringTempted': {
       // "Whenever the Ring tempts you" (stage P45, D-197, CR 701.54d): the controller of the ability is the player tempted.
@@ -423,7 +477,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'step': {
       const whose = whoseOf(t.actor);
       if (whose === null || t.step === undefined) return failure(t);
-      return ok({ kind: 'step', step: t.step satisfies TriggerStep, whose });
+      return ok({
+        kind: 'step',
+        step: t.step satisfies TriggerStep,
+        whose,
+        ...(t.alsoStep === undefined ? {} : { alsoStep: t.alsoStep satisfies TriggerStep }),
+      });
     }
     case 'diesBatch': {
       // "Whenever one or more other creatures and/or artifacts you control die" (stage P49, D-206, CR 603.10a, 603.2c).
@@ -441,13 +500,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const another = t.another === true ? { another: true as const } : {};
       // "Whenever you discard a creature card" (D-383, CR 701.9a): the kind of card is a filter on the card discarded; "a card" has none.
       const kind = t.subject?.filter;
+      // "Whenever you discard one or more nonland cards" (Lorehold group 1, CR 603.2c): one trigger for the cards discarded together.
+      const batch = t.batch === true ? { batch: true as const } : {};
       if (kind === undefined || (kind.types === undefined && kind.notTypes === undefined)) {
-        return ok({ kind: 'discarded', who, ...another });
+        return ok({ kind: 'discarded', who, ...another, ...batch });
       }
       if (t.subject === undefined) return failure(t);
       const filter = lowerFilter(t.subject);
       if (!filter.ok) return filter;
-      return ok({ kind: 'discarded', who, ...another, filter: filter.value });
+      return ok({ kind: 'discarded', who, ...another, ...batch, filter: filter.value });
     }
     case 'drawn': {
       const who = whoOf(t.actor);
@@ -472,6 +533,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
       });
     }
+    case 'lifeLost': {
+      // "Whenever you lose life [for the first time each turn]" (CR 119.3, 603.2): the player is relative to the controller.
+      const who = whoOf(t.actor);
+      if (who === null) return failure(t);
+      const blocked = missingFeatures(['trigger:lifeLost']);
+      if (blocked.length > 0) return failure(t, blocked);
+      return ok({
+        kind: 'lifeLost',
+        who,
+        ...(t.firstEachTurn === true ? { firstEachTurn: true as const } : {}),
+      });
+    }
     case 'countersAdded': {
       // "Whenever you put one or more +1/+1 counters on ~" (stage P33, D-150, CR 122.6): once for one instance of putting.
       const what = whatOf(t, ctx);
@@ -483,6 +556,18 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(t.counter === undefined ? {} : { counter: t.counter }),
         by: t.by,
       });
+    }
+    case 'playerAttacksOpponent': {
+      // "Whenever a player attacks one of your opponents" (D-648, CR 508.1, 508.6): once for each opponent the declaration attacks.
+      if (t.actor?.det !== 'eachPlayer') return failure(t);
+      return ok({ kind: 'playerAttacksOpponent' });
+    }
+    case 'unblockedAttackBatch': {
+      // "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 508.1b): the creatures of an opponent.
+      if (whoOf(t.actor) !== 'opponent') return failure(t);
+      const missing = missingFeatures(['trigger:unblockedAttackBatch']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'unblockedAttackBatch', who: 'opponent' });
     }
     case 'attackBatch': {
       // "Whenever you attack with two or more creatures" (stage P33, D-150, CR 508.1): once for the declaration; "another player" is
@@ -500,6 +585,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         who,
         atLeast: t.atLeast,
         ...(what === undefined ? {} : { what }),
+        ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
+        ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
       });
     }
     case 'entersBatch': {
@@ -541,6 +628,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           ...(t.duringTurn === undefined ? {} : { duringTurn: t.duringTurn }),
         });
       }
+      // "Whenever you cast your first instant or sorcery spell each turn" (issue 100, CR 601.2i): the first spell of those card types the caster casts this turn.
+      if (t.firstOfKind === true) {
+        const missing = missingFeatures(['trigger:castFirstOfKind']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({ kind: 'castSpell', filter: filter.value, by, firstOfKind: true });
+      }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
     case 'leftGraveyard':
@@ -549,6 +642,25 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const missing = missingFeatures([`trigger:${t.event}`]);
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: t.event, who: 'you' });
+    }
+    case 'putIntoGraveyard': {
+      // "Whenever a land card is put into your graveyard from anywhere" (Death Toll deck, group B, CR 603.2, 603.2c): the kind of card is a filter on the card in the graveyard.
+      const missing = missingFeatures(['trigger:putIntoGraveyard']);
+      if (missing.length > 0) return failure(t, missing);
+      const kind = t.subject?.filter;
+      const filter =
+        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+          ? null
+          : lowerFilter(t.subject);
+      if (filter !== null && !filter.ok) return filter;
+      return ok({
+        kind: 'putIntoGraveyard',
+        who: 'you',
+        from: t.fromLibrary === true ? 'library' : 'anywhere',
+        ...(filter === null ? {} : { filter: filter.value }),
+        ...(t.batch === true ? { batch: true as const } : {}),
+        ...(t.firstEachTurn === true ? { firstTimeEachTurn: true as const } : {}),
+      });
     }
     case 'sacrifice': {
       // "you sacrifice" is the controller of this ability, "a player sacrifices" any player.
@@ -601,9 +713,15 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       'sacrifice',
       'becomesTarget',
       'lifeGained',
+      'lifeLost',
       'attackBatch',
+      // CR 509.1h: the opponent whose creatures were not blocked ("that player").
+      'unblockedAttackBatch',
+      // D-648: the attacking player ("that attacking player").
+      'playerAttacksOpponent',
       'dealtDamage',
       'crimeCommitted',
+      'activatesAbility',
       'tokenCreated',
       'scries',
       'surveils',
@@ -857,6 +975,7 @@ function eventAmountThatMany(ability: Triggered): Triggered {
       case 'multiple':
       case 'minus':
         return { ...amount, of: retarget(amount.of) };
+      case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map(retarget) };
       default:
@@ -887,6 +1006,65 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   return { ...ability, body: { ...ability.body, sentences } };
 }
 
+/** The count a prime-number condition reads, inside the intervening "if" (alone or joined with others by "and"). */
+function primeCountOf(condition: IrCondition | undefined): IrAmount | null {
+  const test = condition?.test;
+  if (test?.kind === 'amountIsPrime') return test.amount;
+  if (test?.kind === 'and') {
+    for (const term of test.terms) {
+      const found = primeCountOf(term);
+      if (found !== null) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * "..., if a land entered the battlefield under your control this turn and you control a prime number of lands, create Primo, the Indivisible, a legendary 0/0 ... token, then put that
+ * many +1/+1 counters on it." (Zimone, All-Questioning, CR 603.4, 608.2c): in the body of a triggered ability whose intervening "if" says that a count is a prime number, "that many" is that
+ * count (the number of lands), read as the ability resolves, when the condition holds again. Only before any instruction that could count something of its own ("sacrifice", "discard",
+ * "mill", "draw", "exile"): after one, "that many" may mean what it did, and the lowering refuses it.
+ */
+function conditionAmountThatMany(ability: Triggered): Triggered {
+  const count = primeCountOf(ability.interveningIf);
+  if (count === null || ability.modal !== undefined) return ability;
+  let counting = false;
+  const retarget = (amount: IrAmount): IrAmount => {
+    switch (amount.kind) {
+      case 'thisWay':
+        return amount.thatMany === true && !counting ? count : amount;
+      case 'half':
+      case 'multiple':
+      case 'minus':
+        return { ...amount, of: retarget(amount.of) };
+      case 'extreme':
+      case 'sum':
+        return { ...amount, of: amount.of.map(retarget) };
+      default:
+        return amount;
+    }
+  };
+  const COUNTS_ITS_OWN = new Set(['sacrifice', 'discard', 'mill', 'draw', 'exile', 'destroy']);
+  const sentences = ability.body.sentences.map((sentence) => ({
+    ...sentence,
+    clauses: sentence.clauses.map((clause): IrClause => {
+      const args = Object.fromEntries(
+        Object.entries(clause.args).map(([key, arg]) => [
+          key,
+          isIrAmount(arg)
+            ? retarget(arg)
+            : arg.kind === 'token'
+              ? { ...arg, count: retarget(arg.count) }
+              : arg,
+        ]),
+      );
+      if (COUNTS_ITS_OWN.has(clause.verb)) counting = true;
+      return { ...clause, args };
+    }),
+  }));
+  return { ...ability, body: { ...ability.body, sentences } };
+}
+
 /**
  * "Whenever another permanent you control leaves the battlefield, if it had counters on it, ..." (stage P33, D-150, CR 603.10a, 122.1): the
  * permanent is looked at as it last was, which is what the engine's filter `hasCounter` reads of a trigger about a permanent that left. The
@@ -900,12 +1078,47 @@ function foldHadCounters(trigger: Trigger, counter: string | undefined): Trigger
 }
 
 /**
+ * "..., if that spell's mana cost or that ability's activation cost contains {X}, ..." (Unbound Flourishing, CR 107.3, 603.4): the events must be exactly a spell being cast (not itself) and
+ * an ability being activated; the spell gets `xInManaCost` and the activation `xCost`. Null for any other events.
+ */
+function foldCostContainsX(triggers: readonly Trigger[]): Trigger[] | null {
+  const cast = triggers.filter((t) => t.kind === 'castSpell' && t.self !== true);
+  const activate = triggers.filter((t) => t.kind === 'activatesAbility');
+  if (triggers.length !== 2 || cast.length !== 1 || activate.length !== 1) return null;
+  return triggers.map((t) =>
+    t.kind === 'castSpell'
+      ? { ...t, filter: { ...t.filter, xInManaCost: true as const } }
+      : t.kind === 'activatesAbility'
+        ? { ...t, xCost: true as const }
+        : t,
+  );
+}
+
+/**
+ * A triggered ability, and for "You may exert ~ as it attacks. When you do, ..." (CR 701.43d, 607.2h) the two abilities the paragraph is: the static ability that
+ * offers the optional cost of attacking (`exertOnAttack`) and the triggered ability linked to it, which the engine triggers when the creature is exerted.
+ */
+export function lowerTriggered(
+  written: Triggered,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const lowered = lowerTriggeredAbility(written, ctx);
+  if (!lowered.ok || written.trigger.event !== 'exerted') return lowered;
+  const blocked = missingFeatures(['static:exertOnAttack']);
+  if (blocked.length > 0) return failure(written, blocked);
+  return {
+    ...lowered,
+    value: [{ kind: 'static', static: { kind: 'exertOnAttack' } }, ...lowered.value],
+  };
+}
+
+/**
  * A triggered ability. "A or B" is one engine ability per event (CR 603.2c: it triggers once each
  * time an event occurs; the two events cannot be the same event for one object), sharing the body.
  * "You may" covers the whole effect in the engine (D-060), so it is lowered only when the body is
  * that one instruction.
  */
-export function lowerTriggered(
+function lowerTriggeredAbility(
   written: Triggered,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
@@ -917,7 +1130,7 @@ export function lowerTriggered(
   if (taken === null) return failure(written);
   const { once, doOnce } = taken;
   // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
-  const ability = eventAmountThatMany(taken.ability);
+  const ability = conditionAmountThatMany(eventAmountThatMany(taken.ability));
   // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
   // lowering of those does not carry the flag into.
   if (doOnce && ability.modal !== undefined) return failure(written);
@@ -929,12 +1142,31 @@ export function lowerTriggered(
     triggers.push(lowered.value);
   }
   ctx.thatPlayer = thatPlayerOf(events);
+  // D-648: "that opponent": the player the declaration attacked, of a trigger about a player attacking one of your opponents.
+  ctx.attackedPlayer =
+    events.length === 1 && events[0]?.event === 'playerAttacksOpponent'
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
+  ctx.enchantedPlayerTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
   ctx.lifeGainTrigger = triggers.every((t) => t.kind === 'lifeGained');
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
+  ctx.triggeredBody = true;
+  ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
   ctx.castTrigger = triggers.every((t) => t.kind === 'castSpell' && t.self !== true);
+  // Unbound Flourishing (CR 707.10): "copy that spell or ability" needs an activation among the events, or there is no ability to copy.
+  ctx.activateTrigger = triggers.some((t) => t.kind === 'activatesAbility');
+  // Quandrix Unlimited group E (CR 107.3): "put X +1/+1 counters" of "whenever you cast a spell with {X} in its mana cost" is the X of the spell that was cast.
+  ctx.castTriggerX = triggers.every(
+    (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
+  );
   // CR 603.4: the intervening "if" is checked as the event happens and again on resolution, so
   // the ability does not trigger when it is false. It is not a conditional effect inside the
   // ability. "It" is the source only when every event is about the source itself.
@@ -953,6 +1185,15 @@ export function lowerTriggered(
     if (folded === null) return failure(ifWritten, []);
     triggers[0] = folded;
     foldedCounters = true;
+  } else if (ifWritten?.test.kind === 'costContainsX') {
+    // "Whenever you cast an instant or sorcery spell or activate an ability, if that spell's mana cost or that ability's activation cost contains {X}, ..." (Unbound Flourishing, CR 107.3,
+    // 603.4): about the spell or ability of the event itself, so a part of each event, read as it happens: the spell has an {X} in its mana cost (`xInManaCost`), the ability an X in its
+    // activation cost (`xCost`). The words name both, so the trigger must have both events and no other.
+    const folded = foldCostContainsX(triggers);
+    if (folded === null) return failure(ifWritten, []);
+    const blocked = missingFeatures(['selector:xInManaCost', 'trigger:activatesAbilityX']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers.splice(0, triggers.length, ...folded);
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
@@ -1056,6 +1297,10 @@ export function lowerTriggered(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  // D-657: "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard as well.
+  ctx.auraDies = triggers.every(
+    (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'attached',
+  );
   // D-284: "it" is the card of a creature that died only when every event is `~` dying: a leave-the-battlefield trigger may find the card in any zone.
   ctx.itDied = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
@@ -1125,7 +1370,9 @@ export function lowerTriggered(
   // `mayPay`, which asks its own question, so neither sentence is the ability's "you may".
   const offerSentence = (s: Sentence) =>
     s.clauses.some((c) => c.verb === 'pay' || c.verb === 'payXAtMost');
-  const boughtSentence = (s: Sentence) => s.condition?.test.kind === 'didPrevious';
+  // Death Toll deck, group D: "you may destroy another target creature. If a creature is destroyed this way, ..." is the same offer, and its sentence reads what the destroy did.
+  const boughtSentence = (s: Sentence) =>
+    s.condition?.test.kind === 'didPrevious' || s.condition?.test.kind === 'destroyedThisWay';
   // "You may discard a card. If you do, draw a card." and "You may exile it. When you do, ..." (stage P30, D-135): the offer is the
   // engine's `may` effect and what follows it is a `conditional` or a `reflexive`; neither sentence is the ability's "you may".
   const mayOffer = (s: Sentence, i: number) => {
@@ -1142,14 +1389,34 @@ export function lowerTriggered(
   // question of the ability's; a cast with no "you may" is not read, and stays a sentence of the ability's own (`castCard` lowers only an optional clause).
   // D-394 (group 9): "you may put it onto the battlefield" and "you may cast it without paying its mana cost" of the card an instruction before exiled: the engine's `may`
   // of that move and its `castFree` ask the question themselves, so the same holds.
+  // Lorehold group 1 (CR 608.2c): "you may search ... Then if an opponent controls more lands than you, repeat this process once": each search is its own offer (the engine's `search`
+  // with `optional`), asked again when the process is repeated, so the "you may" is no question of the ability as a whole.
+  const repeats = sentences.some((s) => s.clauses.some((c) => c.verb === 'repeatProcess'));
   const asksItself = (c: Sentence['clauses'][number]) =>
     c.optional &&
-    (c.verb === 'castCard' ||
+    ((repeats && c.verb === 'search') ||
+      // Lorehold group 1: "you may exile one of them from your graveyard": the engine's choice of none or one card is the question.
+      c.verb === 'exileOneOfThem' ||
+      c.verb === 'castCard' ||
       c.verb === 'castMovedFree' ||
+      // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
+      c.verb === 'castFromAmong' ||
+      // Issue 100 (Baral and Kari Zev): "you may cast a spell ... from your hand without paying its mana cost. If you don't, ...": the engine's `castFree` asks (and may be declined).
+      c.verb === 'castFree' ||
       c.verb === 'putMovedOntoBattlefield' ||
+      // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
+      c.verb === 'putCommanderFromCommandZone' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
-      c.verb === 'putFromAmong');
-  const permission = (s: Sentence) => s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
+      c.verb === 'putFromAmong' ||
+      // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
+      // engine's `may` of the mill alone (the ability's own `optional` would cover the whole effect); a trigger of the one offer keeps the ability's `optional`.
+      (c.verb === 'mill' && sentences.length > 1));
+  // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
+  // `optional` could not). Without a condition the "you may" of an attach stays the ability's.
+  const conditionalAttach = (s: Sentence) =>
+    s.condition !== undefined && s.clauses.every((c) => c.verb === 'attach' && c.optional);
+  const permission = (s: Sentence) =>
+    conditionalAttach(s) || s.clauses.every((c) => c.verb === 'mayPlay' || asksItself(c));
   const ownMay = (s: Sentence, i: number) =>
     !permission(s) &&
     !unlessSentence(s) &&
@@ -1176,7 +1443,10 @@ export function lowerTriggered(
         // The sentences of an offer keep their "you may": `lowerSentences` reads it, and refuses a "you
         // may" inside what a payment buys.
         // `castCard` keeps its "you may": its lowering reads it (a cast that is not the player's choice is not run). So do the two instructions of D-394.
-        optional: ownMay(s, i) || (permission(s) && !asksItself(c)) ? false : c.optional,
+        optional:
+          ownMay(s, i) || (permission(s) && !asksItself(c) && !conditionalAttach(s))
+            ? false
+            : c.optional,
       })),
     })),
     ctx,
@@ -1203,8 +1473,30 @@ export function lowerTriggered(
   }
   // "none of those creatures attacked you" is about the attackers of the declaration that triggered the ability (stage P33, D-150, CR 508.1b).
   if (
-    JSON.stringify(effect).includes('"attackersAttackedYou"') &&
+    JSON.stringify([effect, interveningIf ?? null]).includes('"attackersAttackedYou"') &&
     !triggers.every((t) => t.kind === 'attackBatch')
+  ) {
+    return failure(ability);
+  }
+  // D-643 (CR 508.1b): "if two or more of those creatures are attacking you and/or planeswalkers you control" is about the attackers of the declaration that triggered the ability.
+  if (
+    JSON.stringify(interveningIf ?? null).includes('"attackersAtYouAtLeast"') &&
+    // Whom the attackers attacked is said of another player's attack: the controller's own creatures never attack the controller.
+    !triggers.every((t) => t.kind === 'attackBatch' && t.who !== 'you')
+  ) {
+    return failure(ability);
+  }
+  // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" is about the permanent that left the battlefield, which only a `dies` or `leavesBattlefield` trigger has.
+  if (
+    JSON.stringify(effect).includes('"aurasAttachedToTriggerSubject"') &&
+    !triggers.every((t) => t.kind === 'dies' || t.kind === 'leavesBattlefield')
+  ) {
+    return failure(ability);
+  }
+  // D-653 (CR 508.6): "if that opponent has more life than another of your opponents" is about the player a "whenever a player attacks one of your opponents" trigger is about.
+  if (
+    JSON.stringify(interveningIf ?? null).includes('"attackedHasMoreLifeThanOtherOpponent"') &&
+    !triggers.every((t) => t.kind === 'playerAttacksOpponent')
   ) {
     return failure(ability);
   }
@@ -1255,20 +1547,27 @@ function lowerTappedForMana(
     clause.duration !== undefined ||
     clause.args.additional === undefined ||
     spec?.kind !== 'manaSpec' ||
-    spec.what.kind !== 'symbols'
+    (spec.what.kind !== 'symbols' && spec.what.kind !== 'anyColor')
   ) {
+    return failure(ability);
+  }
+  const [trigger] = triggers;
+  if (trigger === undefined || trigger.kind !== 'tappedForMana') return failure(ability);
+  // CR 605.1b, 106.12: "its controller adds" is for the controller of the land tapped (`by: 'tapper'`), and "add" for the controller of the ability (`by: 'you'`).
+  if ((clause.args.controller !== undefined) !== (trigger.by === 'tapper')) return failure(ability);
+  // CR 106.1b, 605.3b: one mana of any color is chosen as the mana ability that triggered this one is activated.
+  if (spec.what.kind === 'anyColor' && (spec.what.count !== undefined || trigger.by !== 'tapper')) {
     return failure(ability);
   }
   const blocked = missingFeatures(['ability:triggered', 'trigger:tappedForMana', 'effect:addMana']);
   if (blocked.length > 0) return failure(ability, blocked);
-  const [trigger] = triggers;
-  if (trigger === undefined) return failure(ability);
-  const mana = spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[];
+  const mana: ManaProduction =
+    spec.what.kind === 'anyColor'
+      ? { kind: 'anyColor' }
+      : { kind: 'fixed', mana: spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[] };
   return {
     ok: true,
-    value: [
-      { kind: 'triggered', trigger, effect: { kind: 'addMana', mana: { kind: 'fixed', mana } } },
-    ],
+    value: [{ kind: 'triggered', trigger, effect: { kind: 'addMana', mana } }],
     rule: ability.trigger.rule,
   };
 }
@@ -1286,6 +1585,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:dealtDamage',
   'trigger:becomesTapped',
   'trigger:becomesUntapped',
+  'trigger:becomesMonstrous',
   'trigger:blocks',
   'trigger:becomesBlocked',
   'trigger:landfall',
@@ -1304,19 +1604,29 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:combatDamageBatch',
   'trigger:diesBatch',
   'trigger:discarded',
+  'trigger:exerted',
+  'trigger:playsCard',
+  'trigger:doorUnlocked',
+  'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',
   'trigger:state',
   'trigger:lifeGained',
+  'trigger:lifeLost',
   'trigger:noncombatDamageDealt',
   'trigger:countersAdded',
   'trigger:attackBatch',
+  'trigger:unblockedAttackBatch',
+  'trigger:playerAttacksOpponent',
   'trigger:entersBatch',
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',
+  'trigger:putIntoGraveyard',
   'trigger:castNth',
+  'trigger:castFirstOfKind',
   'trigger:crimeCommitted',
   'trigger:tokenCreated',
+  'trigger:activatesAbility',
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:notAsAttacker',

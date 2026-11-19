@@ -4,7 +4,13 @@ import { AbilityChooser } from './AbilityChooser';
 import { type Index, nameOf } from './lookup';
 import { comboListText, comboText, lifeCostOf, lifeNote } from './mana-choice';
 import { Popover } from './Popover';
-import { setTapColor, setTapCombination, setTapSacrifice } from './payment';
+import {
+  setTapColor,
+  setTapCombination,
+  setTapExtra,
+  setTapSacrifice,
+  setTapTapped,
+} from './payment';
 import { clickOutcome } from './priority';
 import type { UiState } from './ui-state';
 
@@ -43,10 +49,12 @@ export function ChooserPopover({
     );
     const colors = ability?.colors ?? [];
     const combinations = ability?.combinations ?? [];
+    // CR 605.1b, 106.1b: the colors "adds an additional one mana of any color" on the land may add: asked after what the source makes itself.
+    const extras = ability?.extraColors ?? [];
     // D-222 (CR 601.2b): "Sacrifice a Spirit: Add {R}.": the player chooses the permanent first; an ability that also asks a color asks it next.
     const gives = ability?.sacrifices ?? [];
     if (gives.length > 1 && anchor.sacrifice === undefined) {
-      const asksMore = colors.length > 1 || combinations.length > 1;
+      const asksMore = colors.length > 1 || combinations.length > 1 || extras.length > 1;
       return (
         <Popover anchor={anchor} className="dec-ability-chooser">
           <legend className="dec-popover-title">Sacrifice which permanent?</legend>
@@ -83,7 +91,93 @@ export function ChooserPopover({
         </Popover>
       );
     }
+    // D-625 (CR 601.2b): "{T}, Tap an untapped creature you control: Add ...": the player chooses the permanent to tap, then (when it is asked) the color.
+    const taps = ability?.tappables ?? [];
+    if (taps.length > 1 && anchor.tapped === undefined) {
+      const asksMore = colors.length > 1 || combinations.length > 1 || extras.length > 1;
+      return (
+        <Popover anchor={anchor} className="dec-ability-chooser">
+          <legend className="dec-popover-title">Tap which permanent?</legend>
+          <ul className="dec-ability-list">
+            {taps.map((id) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  className="dec-chip"
+                  onClick={() =>
+                    update((u) =>
+                      asksMore
+                        ? { ...u, chooser: { ...anchor, tapped: id } }
+                        : {
+                            ...u,
+                            taps: setTapTapped(
+                              u.taps,
+                              sources,
+                              anchor.object,
+                              anchor.abilityIndex ?? 0,
+                              id,
+                            ),
+                            chooser: null,
+                          },
+                    )
+                  }
+                >
+                  {index === undefined ? id : nameOf(index, id)}
+                </button>
+              </li>
+            ))}
+            <li>{closeButton}</li>
+          </ul>
+        </Popover>
+      );
+    }
     const life = lifeCostOf(index?.get(anchor.object), colors[0] ?? null, combinations[0]);
+    // The color or combination of the source is asked first; the additional mana is asked once it is chosen (or at once for a source with nothing else to ask).
+    const asksOwnNow =
+      (colors.length > 1 || combinations.length > 1) &&
+      anchor.color === undefined &&
+      anchor.combination === undefined;
+    if (extras.length > 1 && !asksOwnNow) {
+      return (
+        <Popover anchor={anchor}>
+          <legend className="dec-popover-title">Additional mana of which color?</legend>
+          <div className="dec-popover-row">
+            {extras.map((extra) => (
+              <button
+                key={extra.join('')}
+                type="button"
+                className="dec-chip dec-chip-mana"
+                aria-label={`Add an additional ${extra.join('')}`}
+                onClick={() =>
+                  update((u) => ({
+                    ...u,
+                    taps: setTapExtra(
+                      u.taps,
+                      sources,
+                      anchor.object,
+                      anchor.abilityIndex ?? 0,
+                      extra,
+                      {
+                        ...(anchor.color === undefined ? {} : { color: anchor.color }),
+                        ...(anchor.combination === undefined
+                          ? {}
+                          : { combination: anchor.combination }),
+                        ...(anchor.sacrifice === undefined ? {} : { sacrifice: anchor.sacrifice }),
+                        ...(anchor.tapped === undefined ? {} : { tapped: anchor.tapped }),
+                      },
+                    ),
+                    chooser: null,
+                  }))
+                }
+              >
+                <ManaSymbols symbols={extra} />
+              </button>
+            ))}
+            {closeButton}
+          </div>
+        </Popover>
+      );
+    }
     if (combinations.length > 0) {
       return (
         <Popover anchor={anchor}>
@@ -96,18 +190,23 @@ export function ChooserPopover({
                 className="dec-chip dec-chip-mana"
                 aria-label={`Add ${comboText(combination)}`}
                 onClick={() =>
-                  update((u) => ({
-                    ...u,
-                    taps: setTapCombination(
-                      u.taps,
-                      sources,
-                      anchor.object,
-                      anchor.abilityIndex ?? 0,
-                      combination,
-                      anchor.sacrifice,
-                    ),
-                    chooser: null,
-                  }))
+                  update((u) =>
+                    extras.length > 1
+                      ? { ...u, chooser: { ...anchor, combination } }
+                      : {
+                          ...u,
+                          taps: setTapCombination(
+                            u.taps,
+                            sources,
+                            anchor.object,
+                            anchor.abilityIndex ?? 0,
+                            combination,
+                            anchor.sacrifice,
+                            anchor.tapped,
+                          ),
+                          chooser: null,
+                        },
+                  )
                 }
               >
                 <ManaSymbols symbols={combination} />
@@ -129,18 +228,23 @@ export function ChooserPopover({
               className="dec-chip dec-chip-mana"
               aria-label={`Add ${color}${life > 0 ? ` (${lifeNote(life).toLowerCase()})` : ''}`}
               onClick={() =>
-                update((u) => ({
-                  ...u,
-                  taps: setTapColor(
-                    u.taps,
-                    sources,
-                    anchor.object,
-                    anchor.abilityIndex ?? 0,
-                    color,
-                    anchor.sacrifice,
-                  ),
-                  chooser: null,
-                }))
+                update((u) =>
+                  extras.length > 1
+                    ? { ...u, chooser: { ...anchor, color } }
+                    : {
+                        ...u,
+                        taps: setTapColor(
+                          u.taps,
+                          sources,
+                          anchor.object,
+                          anchor.abilityIndex ?? 0,
+                          color,
+                          anchor.sacrifice,
+                          anchor.tapped,
+                        ),
+                        chooser: null,
+                      },
+                )
               }
             >
               <ManaSymbol symbol={color} />
@@ -168,6 +272,8 @@ export function ChooserPopover({
   // A filter land asks which combination, in words as well as symbols (D-099). Its plain tap, which
   // the view does not say what it makes, is a button of its own and is left out of the sentence.
   const asksCombination = outcome.choices.some((c) => c.combination !== undefined);
+  // CR 605.1b, 106.1b: a land with "adds an additional one mana of any color" on it asks the color of the additional mana too.
+  const asksExtra = outcome.choices.some((c) => c.extraColors !== undefined);
   const wanted = outcome.choices.flatMap((c) =>
     c.combination !== undefined ? [c.combination] : c.color === null ? [] : [[c.color]],
   );
@@ -175,16 +281,18 @@ export function ChooserPopover({
     <Popover anchor={anchor}>
       {asksCombination ? (
         <legend className="dec-popover-title">Add {comboListText(wanted)}?</legend>
+      ) : asksExtra ? (
+        <legend className="dec-popover-title">Additional mana of which color?</legend>
       ) : (
         <legend className="dec-sr">Choose mana</legend>
       )}
       <div className="dec-popover-row">
         {outcome.choices.map((c) => (
           <button
-            key={`${c.action.abilityIndex}-${c.combination?.join('') ?? c.color ?? 'x'}-${c.sacrifice ?? ''}`}
+            key={`${c.action.abilityIndex}-${c.combination?.join('') ?? c.color ?? 'x'}-${c.extraColors?.join('') ?? ''}-${c.sacrifice ?? ''}-${c.tapped ?? ''}`}
             type="button"
             className="dec-chip dec-chip-mana"
-            aria-label={`${c.sacrificeName === undefined ? c.label : `${c.label}, sacrificing ${c.sacrificeName}`}${c.life > 0 ? ` (${lifeNote(c.life).toLowerCase()})` : ''}`}
+            aria-label={`${c.sacrificeName !== undefined ? `${c.label}, sacrificing ${c.sacrificeName}` : c.tappedName !== undefined ? `${c.label}, tapping ${c.tappedName}` : c.label}${c.life > 0 ? ` (${lifeNote(c.life).toLowerCase()})` : ''}`}
             title={c.life > 0 ? lifeNote(c.life) : undefined}
             onClick={() => act(c.action)}
           >
@@ -193,12 +301,22 @@ export function ChooserPopover({
                 Sacrifice {c.sacrificeName}
                 {c.color === null ? null : <ManaSymbol symbol={c.color} />}
               </>
+            ) : c.tappedName !== undefined ? (
+              <>
+                Tap {c.tappedName}
+                {c.color === null ? null : <ManaSymbol symbol={c.color} />}
+              </>
             ) : c.combination !== undefined ? (
               <ManaSymbols symbols={c.combination} />
-            ) : c.color === null ? (
+            ) : c.color === null && c.extraColors === undefined ? (
               c.label
-            ) : (
+            ) : c.color === null ? null : (
               <ManaSymbol symbol={c.color} />
+            )}
+            {c.extraColors === undefined ? null : (
+              <span className="dec-chip-note">
+                +<ManaSymbols symbols={c.extraColors} />
+              </span>
             )}
             {c.life > 0 && <span className="dec-chip-note">{`-${c.life} life`}</span>}
           </button>

@@ -66,11 +66,23 @@ function checkSoulbondFace(face: CardFace, path: string, out: AstIssue[]): void 
   });
 }
 
+/**
+ * Whether the effect holds a `choose` selector of cards in exile at any depth, other than one among the cards the effect before it exiled (`fromMoved`: "put a permanent card from
+ * among them onto the battlefield", Death Toll deck), which reads no linked exile.
+ */
+function choosesFromExile(e: unknown): boolean {
+  if (Array.isArray(e)) return e.some(choosesFromExile);
+  if (typeof e !== 'object' || e === null) return false;
+  const o = e as { kind?: unknown; filter?: { zone?: unknown }; fromMoved?: unknown };
+  if (o.kind === 'choose' && o.filter?.zone === 'exile' && o.fromMoved !== true) return true;
+  return Object.values(e).some(choosesFromExile);
+}
+
 /** Whether the effect, at any depth, moves a card chosen from the cards the permanent exiled (D-207). */
 function readsLinkedExile(e: unknown): boolean {
   const text = JSON.stringify(e ?? null);
   return (
-    (text.includes('"zone":"exile"') && text.includes('"kind":"choose"')) ||
+    choosesFromExile(e) ||
     // D-230: "return the exiled card": the `linkedExile` reference (Fiend Hunter, Skyclave Apparition, the token Hofri makes).
     text.includes('"kind":"linkedExile"')
   );
@@ -95,7 +107,10 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
     (a) =>
       (a?.kind === 'static' && a.static?.kind === 'takeFromLinkedExile') ||
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
-      ((a?.kind === 'triggered' || a?.kind === 'activated') && readsLinkedExile(a.effect)),
+      ((a?.kind === 'triggered' || a?.kind === 'activated') &&
+        // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.
+        (readsLinkedExile(a.effect) ||
+          JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true'))),
   );
   const exiles = face.abilities.some(
     (a) => (a?.kind === 'triggered' || a?.kind === 'activated') && hasLinkedExile(a.effect),

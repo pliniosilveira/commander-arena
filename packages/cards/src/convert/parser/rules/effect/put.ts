@@ -18,7 +18,15 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrArg, IrFilter, IrFlag, IrNoun, IrNounList, IrZoneSpec } from '../../ir/types';
+import type {
+  IrAmount,
+  IrArg,
+  IrFilter,
+  IrFlag,
+  IrNoun,
+  IrNounList,
+  IrZoneSpec,
+} from '../../ir/types';
 import { PERMANENT_CARD_TYPES, PERMANENT_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
@@ -62,11 +70,11 @@ function zone(
 }
 
 const PUT_LIBRARY: Parser<Put> = choice(
-  // A permanent, or ~, to its owner's library.
+  // A permanent, or ~, or "it" (the card a permanent became when the trigger is about its own death, CR 400.7) to its owner's library.
   map(
     sequence(
       literal('put '),
-      operands(['noun.self', ...PERMANENT_OPERANDS], RULE),
+      operands(['noun.self', 'noun.it', ...PERMANENT_OPERANDS], RULE),
       spanned(sequence(POSITION, OWNERS_LIBRARY)),
     ),
     ([, objects, where]): Put => ({
@@ -108,6 +116,8 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
   examples: [
     "put ~ on top of its owner's library",
     "put ~ on the bottom of its owner's library",
+    "put it on the bottom of its owner's library",
+    "put it on top of its owner's library",
     "put target creature on top of its owner's library",
     'put target creature card from your graveyard on top of your library',
     'put target artifact card from your graveyard on top of your library',
@@ -116,6 +126,8 @@ export const EFFECT_PUT_LIBRARY = defineRule<Clauses>({
   ],
   rejects: [
     'put ~ on top of your library',
+    'put it on the bottom of your library',
+    "put it on the bottom of its owner's library and draw a card",
     'put target creature on top of your library',
     'put target card from a graveyard on top of your library',
     "put target creature card from an opponent's graveyard on top of your library",
@@ -198,6 +210,8 @@ export const EFFECT_PUT_BATTLEFIELD = defineRule<Clauses>({
 });
 
 const FROM_HAND_RULE = 'effect.put-from-hand';
+/** Stands for "permanent" among the words read before the filter is built. */
+const PERMANENT_MARK = 'permanent';
 
 /**
  * `effect.put-from-hand`: "You may put an artifact card from your hand onto the battlefield.", "put a creature card from your hand onto
@@ -222,6 +236,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a creature card from your graveyard onto the battlefield',
     'you may put a permanent card from your hand onto the battlefield',
     'you may put a Dragon creature card from your hand onto the battlefield',
+    // Issue 103 (Broodcaller Scourge): the limit is the damage of the trigger.
+    'you may put a permanent card with mana value less than or equal to that damage from your hand onto the battlefield',
     // Stage P34 (D-152, CR 508.4): it enters attacking.
     'you may put a Dragon creature card from your hand onto the battlefield tapped and attacking',
     // D-544: a card of the hand or of the graveyard.
@@ -230,6 +246,8 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     // CR 107.3a, 202.3: the mana value limit is the X of the spell.
     'you may put a permanent card with mana value X or less from your hand onto the battlefield tapped',
     'you may put a creature card with mana value X or less from your hand onto the battlefield',
+    // Issue 103 (Selvala's Stampede, CR 701.38b): up to one card for each vote for an option.
+    'you may put a permanent card from your hand onto the battlefield for each free vote',
   ],
   rejects: [
     'you may put an artifact card from your hand onto the battlefield under your control',
@@ -250,6 +268,10 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
     'you may put a permanent card with mana value x from your hand onto the battlefield',
     'you may put a permanent card with mana value x or more from your hand onto the battlefield',
     'you may put a permanent card with mana value y or less from your hand onto the battlefield',
+    'you may put a permanent card with mana value less than or equal to that much from your hand onto the battlefield',
+    'you may put a permanent card with mana value less than or equal to that damage from your library onto the battlefield',
+    'you may put a permanent card from your hand onto the battlefield for each vote',
+    'you may put a permanent card from your hand onto the battlefield for each free votes',
   ],
   parse: single(
     FROM_HAND_RULE,
@@ -273,19 +295,28 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
                   ),
                 ),
                 choice(
-                  map(pattern(/permanent(?![\p{L}\p{N}])/iu), (): string[] => ['permanent']),
+                  map(pattern(/permanent(?![\p{L}\p{N}])/iu), (): string[] => [PERMANENT_MARK]),
                   typeWords(PERMANENT_TYPES, false),
                 ),
                 literal(' card'),
                 // CR 107.3a, 202.3: "with mana value X or less", the X of the spell (Mind into Matter); read as the effect resolves.
+                // Issue 103 (CR 202.3, 603.2c): "with mana value less than or equal to that damage", the damage the trigger event carries (`true`).
                 optional(
-                  map(
-                    sequence(
-                      literal(' with mana value '),
-                      family<IrArg>('amount', { only: ['amount.x'] }),
-                      literal(' or less'),
+                  choice<IrArg | true>(
+                    map(
+                      sequence(
+                        literal(' with mana value '),
+                        family<IrArg>('amount', { only: ['amount.x'] }),
+                        literal(' or less'),
+                      ),
+                      ([, x]): IrArg | true => x,
                     ),
-                    ([, x]) => x,
+                    map(
+                      pattern(
+                        / with mana value less than or equal to that damage(?![\p{L}\p{N}])/iu,
+                      ),
+                      () => true as const,
+                    ),
                   ),
                   null,
                 ),
@@ -302,16 +333,25 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
           ),
         ),
         spanned(optional(choice(literal(' tapped and attacking'), literal(' tapped')), null)),
+        // Issue 103 (CR 701.38b, 608.2c): "... onto the battlefield for each free vote", up to that many cards (Selvala's Stampede).
+        optional(
+          map(
+            sequence(literal(' '), family<IrAmount>('amount', { only: ['amount.for-each-vote'] })),
+            ([, votes]) => votes,
+          ),
+          null,
+        ),
       )(ctx, pos);
       if (!r.ok) return r;
-      const [[may, , card, onto], tapped] = r.value;
+      const [[may, , card, onto], tapped, votes] = r.value;
       const where = {
         value: [null, tapped.value] as const,
         span: { start: onto.span.start, end: tapped.span.end },
       };
-      const [, subtypes, typeWordsRead, , atMostX, , zone] = card.value;
-      // CR 110.4a (Permanents): "a permanent card" is a card of any of the six permanent types, not any card (an instant or a sorcery cannot be put onto the battlefield).
-      const anyPermanent = typeWordsRead.includes('permanent');
+      const [, subtypes, typeWordsRead, , limit, , zone] = card.value;
+      // "a permanent card" (CR 110.1, 400.1): a card of any permanent type, never an instant or a sorcery.
+      const anyPermanent = typeWordsRead.includes(PERMANENT_MARK);
+      const atMostX = limit === true || limit === null ? null : limit;
       const types = anyPermanent ? [] : typeWordsRead;
       const objects: IrNoun = {
         kind: 'noun',
@@ -325,8 +365,21 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
             : {}),
           ...(types.length > 0 ? { types } : {}),
           ...(subtypes.length > 0 ? { subtypes } : {}),
+          ...(anyPermanent
+            ? {
+                anyOf: PERMANENT_CARD_TYPES.map((t): IrFilter => ({ types: [t], raw: t })),
+              }
+            : {}),
           controller: 'you',
           card: true,
+          ...(limit !== true
+            ? {}
+            : {
+                manaValueAtMostAmount: {
+                  kind: 'triggerDamage' as const,
+                  span: card.span,
+                },
+              }),
           raw: ctx.text.slice(card.span.start, card.span.end),
         },
         upTo: false,
@@ -357,13 +410,9 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         span: { start: pos, end: pos },
         rule: FROM_HAND_RULE,
       };
-      return {
-        ok: true,
-        value: { objects, to, may: flag, both, atMostX },
-        pos: r.pos,
-      };
+      return { ok: true, value: { objects, to, may: flag, both, votes, atMostX }, pos: r.pos };
     },
-    ({ objects, to, may, both, atMostX }) => ({
+    ({ objects, to, may, both, votes, atMostX }) => ({
       verb: 'putFromZone',
       args: {
         objects,
@@ -371,6 +420,7 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
         may,
         ...(both.value ? { alsoGraveyard: both } : {}),
         ...(atMostX === null ? {} : { manaValueAtMost: atMostX }),
+        ...(votes === null ? {} : { count: votes }),
       },
     }),
   ),

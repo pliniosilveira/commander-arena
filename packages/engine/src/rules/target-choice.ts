@@ -91,6 +91,15 @@ export function maxTargetCountX(
 }
 
 /**
+ * What a slot may offer, or null for "all of its legal targets": the objects (by id) after which the cost can be paid and whether a player may be chosen (a player is neither reduced
+ * nor taxed by what a spell targets, so the cost with a player as the target is the cost with none, D-149).
+ */
+export type PayableOnly = {
+  readonly objects: readonly ObjectId[];
+  readonly players: boolean;
+} | null;
+
+/**
  * The slots of a `targets` decision for these specs: bounds and every legal target (CR 115, 601.2c).
  * `modeOf` (D-114, D-344) says which mode of a modal spell or ability each slot belongs to, and which instance of it.
  */
@@ -104,7 +113,9 @@ export function targetChoiceSpecs(
   /** D-408: the spell is cast with its own conditional flash ("if it targets a commander"): its first mandatory slot offers only the objects this filter matches. */
   only: ObjectFilter | null = null,
   /** D-424, D-425: the first mandatory slot offers only these objects: the targets after which the cost can be paid (`rules/target-payable.ts`). Null leaves it alone. */
-  payable: readonly ObjectId[] | null = null,
+  payable: PayableOnly = null,
+  /** D-641: Strive: the slot of any number of targets offers at most this many (the targets after which the cost can be paid). Null leaves it alone. */
+  cap: number | null = null,
 ): TargetChoiceSpec[] {
   const restricted = only === null && payable === null ? -1 : flashSlotOf(specs);
   return specs.map((spec, index) => {
@@ -127,7 +138,9 @@ export function targetChoiceSpecs(
     );
     const legal =
       index === restricted && payable !== null
-        ? flashLegal.filter((t) => t.kind === 'object' && payable.includes(t.id))
+        ? flashLegal.filter((t) =>
+            t.kind === 'object' ? payable.objects.includes(t.id) : payable.players,
+          )
         : flashLegal;
     // D-386: "X target creature cards": exactly X (the announcement offered no X larger than the legal targets, `maxTargetCountX`).
     if (spec.countX === true) {
@@ -148,7 +161,9 @@ export function targetChoiceSpecs(
       max: Math.min(
         total === null ? bounds.max : Math.min(bounds.max, total),
         opponents,
-        spec.anyNumber === true ? legal.length : Number.MAX_SAFE_INTEGER,
+        spec.anyNumber === true
+          ? Math.min(legal.length, cap ?? Number.MAX_SAFE_INTEGER)
+          : Number.MAX_SAFE_INTEGER,
       ),
       ...(total === null ? {} : { divide: total }),
       ...(spec.onePerOpponent === true || spec.differentControllers === true
@@ -156,6 +171,10 @@ export function targetChoiceSpecs(
         : {}),
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
+      ...(spec.ownedByTarget === undefined ? {} : { ownedBy: spec.ownedByTarget }),
+      ...(slotMode?.differentFrom === undefined
+        ? {}
+        : { differentFromAll: slotMode.differentFrom }),
       target: spec,
       legal,
       ...(slotMode === undefined ? {} : { mode: slotMode.mode }),
@@ -194,6 +213,24 @@ export function targetAnswerError(
       const others = chosen.filter((t) => t.specId === spec.differentFrom);
       if (picks.some((t) => others.some((o) => sameTargetOf(o, t)))) {
         return 'Those targets must be different from the other target';
+      }
+    }
+    // CR 115.1: "target cards from their graveyard": each card is in the graveyard of the player chosen for the slot `ownedBy` names.
+    if (spec.ownedBy !== undefined && picks.length > 0) {
+      const named = chosen.find((t) => t.specId === spec.ownedBy);
+      const owners = picks.map((t) => spec.legal.find((l) => sameTarget(l, t)));
+      if (
+        named?.kind !== 'player' ||
+        owners.some((l) => l?.kind !== 'object' || l.group !== named.seat)
+      ) {
+        return 'Choose cards from the graveyard of the targeted player';
+      }
+    }
+    // CR 700.2d: "each mode must target a different player": none is a target chosen for a slot of another chosen mode.
+    if (spec.differentFromAll !== undefined) {
+      const others = chosen.filter((t) => spec.differentFromAll?.includes(t.specId));
+      if (picks.some((t) => others.some((o) => sameTargetOf(o, t)))) {
+        return 'Each mode must have different targets';
       }
     }
     // D-149: at most one target for each opponent: two targets of one player's are refused (the group is read from the legal list).

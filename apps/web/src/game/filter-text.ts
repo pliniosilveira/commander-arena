@@ -52,12 +52,14 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'attacking',
   'attackingYou',
   'attackingOrBlocking',
+  'blocking',
   // D-218.
   'attackingOpponents',
   // D-133.
   'token',
   'notSubtypes',
   'colorless',
+  'notColors',
   'keywords',
   // D-422: "Aura attached to it", "creatures that aren't enchanted".
   'attachedTo',
@@ -69,6 +71,8 @@ const COUNTABLE: ReadonlySet<string> = new Set([
   'controllerDealtDamageBySource',
   // D-431: said by `withText`.
   'powerAboveBase',
+  // D-638: said by `withText` ("from your hand").
+  'castFromHand',
   // D-145: "commanders you control", "creatures you control with a counter on it"; `withText` says the counter.
   'commander',
   'hasCounter',
@@ -214,6 +218,8 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
     (filter.notSupertypes ?? []).map((t) => `non${t}`).join(' '),
     (filter.notSubtypes ?? []).map((t) => `non-${t}`).join(' '),
     filter.colorless === true ? 'colorless' : '',
+    // CR 105.2: "nonblack creatures".
+    (filter.notColors ?? []).map((c) => `non${COLOR_NAMES[c] ?? c}`).join(' '),
     (filter.colors ?? []).map((c) => COLOR_NAMES[c] ?? c).join(' and '),
     (filter.supertypes ?? []).join(' '),
     subtypes,
@@ -238,9 +244,10 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
             : who === 'defendingPlayer'
               ? ' defending player controls'
               : filter.attacking === true ||
-                  filter.attackingYou === true ||
-                  filter.attackingOpponents === true ||
-                  filter.attackingOrBlocking === true
+                  filter.attackingYou !== undefined ||
+                  filter.attackingOpponents !== undefined ||
+                  filter.attackingOrBlocking === true ||
+                  filter.blocking === true
                 ? ''
                 : ' on the battlefield';
   } else if (zone === 'stack') {
@@ -257,11 +264,17 @@ export function thingsPhrase(filter: ObjectFilter, plural: boolean): string | nu
   const attackers =
     filter.attackingOrBlocking === true
       ? ' that is attacking or blocking'
-      : filter.attackingYou === true
-        ? ' attacking you'
-        : filter.attackingOpponents === true
-          ? ' attacking your opponents and/or planeswalkers they control'
-          : '';
+      : filter.blocking === true
+        ? ' that is blocking'
+        : filter.attackingYou === 'orPlaneswalkers'
+          ? ' attacking you or a planeswalker you control'
+          : filter.attackingYou === true
+            ? ' attacking you'
+            : filter.attackingOpponents === 'players'
+              ? ' attacking one of your opponents'
+              : filter.attackingOpponents === true
+                ? ' attacking your opponents and/or planeswalkers they control'
+                : '';
   // D-422 (CR 303.4): "creatures that aren't enchanted" names its objects by what is attached to them, so no "on the battlefield".
   const attached = attachedToWords(filter);
   if (attached === null) return null;

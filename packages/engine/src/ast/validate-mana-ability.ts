@@ -8,7 +8,13 @@ import type { ManaAbility } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
 import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
-import { checkCondition, checkCosts, checkEnumList } from './validate-parts';
+import {
+  checkCondition,
+  checkCosts,
+  checkDelayedCast,
+  checkEnumList,
+  checkStateAmount,
+} from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   checkCosts(a.cost, `${path}.cost`, out);
@@ -31,6 +37,20 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'a mana ability sacrifices one permanent: no "any number" (D-491)',
       );
     }
+    if (c?.kind === 'tapPermanents' && c.count !== 1) {
+      issue(
+        out,
+        `${path}.cost[${i}].count`,
+        'a mana ability taps one permanent besides its source (D-625)',
+      );
+    }
+    if (c?.kind === 'tapPermanents' && (a.cost ?? []).some((o) => o?.kind === 'sacrifice')) {
+      issue(
+        out,
+        `${path}.cost[${i}]`,
+        'a mana ability that taps a permanent does not also sacrifice one: the player would name two choices (D-625)',
+      );
+    }
     if (c?.kind === 'sacrifice' && c.countX !== undefined) {
       issue(
         out,
@@ -40,13 +60,56 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
-  // D-151: "for each ..." mana is added as a spell or a triggered ability resolves; a mana ability makes its mana before it can read anything (CR 605.1a).
+  // CR 605.1a, 605.3b: "Add {C} for each charge counter on this artifact" (Elementalist's Palette), "Add {U} for each artifact you control" (Uthros, Titanic Godcore): the count is read as the
+  // ability is activated and is what the game says then (a count, the counters on this permanent, ...): no target, no X and no earlier instruction to read. A cost that gives a permanent
+  // up or takes counters off could change what it counts, so the two are not combined.
   if (a.production?.kind === 'fixed' && a.production.times !== undefined) {
+    checkStateAmount(
+      a.production.times,
+      `${path}.production.times`,
+      out,
+      'the mana a mana ability makes',
+    );
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+      issue(
+        out,
+        `${path}.production.times`,
+        'the count is read before the costs are paid: no cost that gives up a permanent or takes counters off',
+      );
+    }
+  }
+  // D-650: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
+  if (a.production?.kind === 'fixed' && a.production.staysUntilEndOfTurn !== undefined) {
     issue(
       out,
-      `${path}.production.times`,
-      'a mana ability adds a fixed amount of mana, never a count',
+      `${path}.production.staysUntilEndOfTurn`,
+      'the mana of a mana ability empties as steps and phases end',
     );
+  }
+  // "Add X mana of any one color, where X is this creature's power": an amount the game says now, read for the permanent itself (CR 605.1a: no X, no target).
+  if (a.production?.kind === 'anyColorAmount') {
+    const amount = a.production.amount;
+    if (typeof amount === 'object' && amount !== null && amount.kind === 'powerOf') {
+      if (kindOf(amount.of) !== 'this') {
+        issue(
+          out,
+          `${path}.production.amount.of`,
+          'a mana ability reads the power of this permanent only',
+        );
+      }
+    } else {
+      checkStateAmount(amount, `${path}.production.amount`, out, 'the mana a mana ability makes');
+    }
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+      issue(
+        out,
+        `${path}.cost`,
+        'the amount is counted before the costs are paid: no cost that gives up a permanent or takes counters off',
+      );
+    }
+  }
+  if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
+    issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
   }
   if (a.production?.kind === 'couldProduce') {
     // The permanents whose mana is looked at are on the battlefield (CR 106.7).
@@ -61,6 +124,23 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       issue(out, `${path}.also`, 'also must be a non-empty list when present');
     } else {
       a.also.forEach((e, i) => {
+        // CR 603.7, 605.1a (Brass Infiniscope): the delayed trigger a mana ability creates is checked as that of any effect.
+        if (e?.kind === 'delayedCast') {
+          checkDelayedCast(
+            e,
+            `${path}.also[${i}]`,
+            {
+              owner: 'ability',
+              targets: new Map(),
+              xAllowed: false,
+              checkAbility: () => undefined,
+              checkContinuous: () => undefined,
+              checkEffectExt: () => false,
+            },
+            out,
+          );
+          return;
+        }
         checkManaAbilityAlso(e, `${path}.also[${i}]`, out);
       });
     }
@@ -74,8 +154,63 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
-      if (only.types === undefined && only.subtypes === undefined) {
+      if (only.xCost !== undefined && only.xCost !== true) {
+        issue(out, `${path}.spendOnly.xCost`, 'xCost must be true when present');
+      }
+      if (
+        only.xCost === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly xCost names no types, subtypes or qualities');
+      }
+      if (only.qualities !== undefined) {
+        if (!Array.isArray(only.qualities) || only.qualities.length === 0) {
+          issue(
+            out,
+            `${path}.spendOnly.qualities`,
+            'qualities must be a non-empty list when present',
+          );
+        } else {
+          if (only.chosenType === true) {
+            issue(
+              out,
+              `${path}.spendOnly`,
+              'spendOnly names qualities or the chosen type, not both',
+            );
+          }
+          only.qualities.forEach((q, i) => {
+            const ok =
+              q?.kind === 'hasX' ||
+              (q?.kind === 'manaValueAtLeast' && Number.isSafeInteger(q.value) && q.value >= 1);
+            if (!ok) {
+              issue(
+                out,
+                `${path}.spendOnly.qualities[${i}]`,
+                'a quality is hasX or manaValueAtLeast of a whole number from 1',
+              );
+            }
+          });
+        }
+      }
+      if (
+        only.types === undefined &&
+        only.subtypes === undefined &&
+        only.chosenType !== true &&
+        only.qualities === undefined &&
+        only.xCost !== true
+      ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
+      }
+      // Issue 199: "of the chosen type" stands in for the subtypes.
+      if (only.chosenType !== undefined && only.chosenType !== true) {
+        issue(out, `${path}.spendOnly.chosenType`, 'chosenType must be true when present');
+      }
+      if (only.chosenType === true && only.subtypes !== undefined) {
+        issue(out, `${path}.spendOnly`, 'spendOnly names subtypes or the chosen type, not both');
       }
       // D-151: "... or activate abilities of Dragons".
       if (only.alsoAbilities !== undefined && only.alsoAbilities !== true) {
@@ -113,6 +248,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           scry !== null &&
           (('scry' in scry && Number.isInteger(scry.scry) && scry.scry >= 1) ||
             ('scryCommanderCasts' in scry && scry.scryCommanderCasts === true) ||
+            ('countersCommanderCasts' in scry && scry.countersCommanderCasts === true) ||
             // D-328: "copy that spell" with or without "you may choose new targets for the copy".
             ('copySpell' in scry && (scry.copySpell === 'may' || scry.copySpell === 'no')))
         )
@@ -120,7 +256,7 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         issue(
           out,
           `${path}.spentRider.grants`,
-          'a rider is haste, a scry of one or more, a scry of the times the commander was cast or a copy of the spell',
+          'a rider is haste, a scry of one or more, a scry or counters of the times the commander was cast or a copy of the spell',
         );
       }
       if (rider.spells === null || typeof rider.spells !== 'object') {

@@ -1,4 +1,4 @@
-// Validation of `attackersGreatestPower`, `xIs`, `noMaxHandSizeForGame` and an amount as the count of `untap` (issue 337). CR 508.1 (the creatures
+// Validation of `attackersGreatestPower`, `noMaxHandSizeForGame` and an amount as the count of `untap` (issue 337). CR 508.1 (the creatures
 // of an attack declaration), CR 107.3a (the X of a spell), CR 402.2 and 514.1 (maximum hand size), CR 701.26a (untap).
 import { describe, expect, test } from 'vitest';
 import {
@@ -48,7 +48,6 @@ const messages = (c: CardDefinition) => validateCard(c).map((i) => `${i.path}: $
 describe('the kinds are supported', () => {
   test('they are in SUPPORTED_FEATURES', () => {
     expect(SUPPORTED_FEATURES.amountKinds).toContain('attackersGreatestPower');
-    expect(SUPPORTED_FEATURES.conditionKinds).toContain('xIs');
     expect(SUPPORTED_FEATURES.effectKinds).toContain('noMaxHandSizeForGame');
   });
 });
@@ -95,45 +94,6 @@ describe('untap up to an amount', () => {
   test('X is an amount where the spell has an X, and an error where it has none', () => {
     expect(messages(spell(untapLands({ kind: 'x' }), true))).toEqual([]);
     expect(messages(spell(untapLands({ kind: 'x' }), false)).join('\n')).toContain('X is used');
-  });
-});
-
-describe('xIs', () => {
-  const instead = (compare: unknown): Effect =>
-    ({
-      kind: 'conditional',
-      condition: { kind: 'xIs', compare },
-      effect: { kind: 'draw', player: { kind: 'you' }, count: 2 },
-      else: { kind: 'draw', player: { kind: 'you' }, count: 1 },
-    }) as Effect;
-
-  test('is valid in a conditional effect of a spell with an X', () => {
-    expect(messages(spell(instead({ cmp: 'atLeast', value: 10 }), true))).toEqual([]);
-  });
-
-  test('is refused where nothing has an X', () => {
-    expect(messages(spell(instead({ cmp: 'atLeast', value: 10 }), false)).join('\n')).toContain(
-      'xIs is used but nothing in this ability or spell has an X',
-    );
-  });
-
-  test('needs a known comparison and a whole number', () => {
-    expect(messages(spell(instead({ cmp: 'over', value: 10 }), true)).join('\n')).toContain(
-      'unknown comparison',
-    );
-    expect(messages(spell(instead({ cmp: 'atLeast', value: -1 }), true)).join('\n')).toContain(
-      'non-negative whole number',
-    );
-  });
-
-  test('is refused as a plain condition (an ability cost or a static condition)', () => {
-    const card = creature({
-      kind: 'triggered',
-      trigger: { kind: 'step', step: 'upkeep', whose: 'you' },
-      interveningIf: { kind: 'xIs', compare: { cmp: 'atLeast', value: 1 } },
-      effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
-    } as Ability);
-    expect(messages(card).join('\n')).toContain('xIs reads the X of the spell or ability');
   });
 });
 

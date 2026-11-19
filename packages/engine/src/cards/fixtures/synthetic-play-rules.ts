@@ -7,7 +7,7 @@
  * (CR 401.5), the attack tax (CR 508.1h) and the optional untap (CR 502.3). Names start with "SYNTHETIC "; oracleId is null. The text describes
  * what the AST does; it is not Oracle text and none of these copies a real card's definition.
  */
-import type { Ability, ObjectFilter } from '../../ast/types';
+import type { Ability } from '../../ast/types';
 import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 
@@ -17,25 +17,39 @@ const landDrops = (count: number, eachPlayer?: true): Ability => ({
 });
 
 /** "Creatures can't attack you unless their controller pays [mana] for each creature attacking you" (CR 508.1h). */
-const attackTax = (symbols: string[], planeswalkers?: true): Ability => ({
+const attackTax = (symbols: string[], planeswalkers?: true, perCounter?: true): Ability => ({
   kind: 'static',
   static: {
     kind: 'attackTax',
     cost: [{ kind: 'mana', symbols }],
     ...(planeswalkers ? { planeswalkers } : {}),
+    ...(perCounter ? { perCounter } : {}),
   },
-});
-
-/** "[Creatures] can't attack you [or planeswalkers you control]" (CR 508.1a, 506.3). */
-const cantAttackYou = (attackers: ObjectFilter, planeswalkers?: true): Ability => ({
-  kind: 'static',
-  static: { kind: 'cantAttackYou', attackers, ...(planeswalkers ? { planeswalkers } : {}) },
 });
 
 /** "You may choose not to untap this permanent during your untap step." (CR 502.3). */
 const optionalUntap: Ability = { kind: 'static', static: { kind: 'optionalUntap' } };
 
 export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
+  // "You may play an additional land this turn." and, at instant speed, the same (CR 305.2).
+  singleFace({
+    name: 'SYNTHETIC Extra Land Sorcery',
+    manaCost: ['1', 'G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You may play an additional land this turn.',
+    spell: { effect: { kind: 'additionalLandDropThisTurn', count: 1 } },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Extra Land Instant',
+    manaCost: ['G'],
+    types: ['instant'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You may play an additional land this turn.',
+    spell: { effect: { kind: 'additionalLandDropThisTurn', count: 1 } },
+  }),
   singleFace({
     name: 'SYNTHETIC Wandering Path',
     manaCost: ['2', 'G'],
@@ -150,22 +164,14 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
     abilities: [attackTax(['1'], true)],
   }),
   singleFace({
-    name: 'SYNTHETIC Skyward Ward',
-    manaCost: ['3', 'G'],
+    name: 'SYNTHETIC Tax Counter',
+    manaCost: ['2', 'W'],
     types: ['enchantment'],
-    colors: ['G'],
-    colorIdentity: ['G'],
-    oracleText: "Creatures with flying can't attack you or planeswalkers you control.",
-    abilities: [cantAttackYou({ types: ['creature'], keywords: ['flying'] }, true)],
-  }),
-  singleFace({
-    name: 'SYNTHETIC Skyward Ward Player',
-    manaCost: ['3', 'G'],
-    types: ['enchantment'],
-    colors: ['G'],
-    colorIdentity: ['G'],
-    oracleText: "Creatures with flying can't attack you.",
-    abilities: [cantAttackYou({ types: ['creature'], keywords: ['flying'] })],
+    colors: ['W'],
+    colorIdentity: ['W'],
+    oracleText:
+      "Each creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+    abilities: [attackTax(['1'], true, true)],
   }),
   singleFace({
     name: 'SYNTHETIC Tax Blood',

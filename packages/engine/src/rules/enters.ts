@@ -76,6 +76,14 @@ export function entersCopyOf(
   return null;
 }
 
+/** The color "As this enters, choose a color other than blue" leaves out (issue 184), or undefined when any color may be chosen. */
+export function entersColorExcept(abilities: readonly Ability[]): string | undefined {
+  for (const r of replacementsOf(abilities)) {
+    if (r.kind === 'asEntersChoose' && r.what === 'color') return r.except;
+  }
+  return undefined;
+}
+
 /** The names "As this enters, choose Khans or Dragons" offers (D-151), or none when the abilities ask no such question. */
 export function entersOptions(abilities: readonly Ability[]): readonly string[] {
   for (const r of replacementsOf(abilities)) {
@@ -122,9 +130,11 @@ export function entersWithCounters(
           ? r.count
           : r.count.kind === 'countOf'
             ? counted(r.count)
-            : r.count.kind === 'timesKicked'
-              ? kicks
-              : x;
+            : r.count.kind === 'sum'
+              ? r.count.of.reduce((n, part) => n + counted(part), 0)
+              : r.count.kind === 'timesKicked'
+                ? kicks
+                : x * (r.count.times ?? 1);
       if (count > 0) counters = { ...counters, [r.counter]: (counters[r.counter] ?? 0) + count };
     }
   }

@@ -511,7 +511,6 @@ describe('diagnostics point at the clause that did not parse', () => {
       'noun.each-permanent',
     ],
     ['Destroy target creature with flying or reach.', 'or reach.', 'noun.target-permanent'],
-    ['Destroy target nonblack creature.', 'nonblack creature.', 'noun.target-permanent'],
     // D-447 read "creature or Dragon"; a choice of three words joined by "or" is still unread.
     ['Destroy target creature or Dragon or Elf.', 'or Elf.', 'noun.target-permanent'],
     ['Destroy target artifact and enchantment.', 'enchantment.', 'spell.effect'],
@@ -538,9 +537,10 @@ describe('diagnostics point at the clause that did not parse', () => {
       'until your next turn.',
       'effect.pump',
     ],
+    // Lorehold group 3 reads "discards their hand" (D-623); a graveyard is not a hand.
     [
-      'Target player draws two cards and discards their hand.',
-      'their hand.',
+      'Target player draws two cards and discards their graveyard.',
+      'their graveyard.',
       'effect.player.discard',
     ],
     ['Target player gains 3 life.', '', 'spell.effect'],
@@ -580,9 +580,11 @@ describe('out of scope stays unparsed', () => {
     'Entwine {1}',
     'Destroy any number of target creatures.',
     'You may draw a card.',
-    'Create a 1/1 white Soldier creature token with changeling.',
-    'Search your library for a basic land card and put it onto the battlefield tapped.',
-    'Target player discards their hand.',
+    'Create a 1/1 white Soldier creature token with flash.',
+    // Lorehold group 1 reads "... and put it onto the battlefield tapped." (one card, a put joined with "and"); two cards put with "and" are still not read.
+    'Search your library for two basic land cards and put them onto the battlefield tapped.',
+    // Lorehold group 3 reads "Target player discards their hand." (D-623); two hands are not one.
+    'Target player discards their hands.',
     'Target creature gets +3/+3 until your next turn.',
     'The next time a source of your choice would deal damage to you this turn, prevent that damage.',
     '~ deals damage to target creature equal to its power.',

@@ -258,8 +258,8 @@ describe('what stays unread (never half-executed)', () => {
 
   test.each([
     [
-      "Copy target instant or sorcery spell, then return it to its owner's hand. You may choose new targets for the copy.",
-      'the real line of 1 card: a second instruction on the card the copy came from',
+      'Copy target instant or sorcery spell, then return it to your hand. You may choose new targets for the copy.',
+      "a second instruction on the card the copy came from, which is not its owner's hand (SYNTHETIC; the owner's hand is read since the Jeskai copy group)",
     ],
     [
       'Copy target instant or sorcery spell and draw a card. You may choose new targets for the copy.',
@@ -364,10 +364,10 @@ describe('the support of a card with these lines (validateCard is the last gate,
     ]);
   });
 
-  test('a copy that returns the spell to its owner stays unsupported, naming the whole line (real text)', () => {
+  test('a copy that returns the spell somewhere else stays unsupported, naming the whole line (SYNTHETIC)', () => {
     const imported = card(
       'Instant',
-      "Copy target instant or sorcery spell, then return it to its owner's hand. You may choose new targets for the copy.",
+      'Copy target instant or sorcery spell, then return it to your hand. You may choose new targets for the copy.',
     );
     expect(imported.support.status).toBe('unsupported');
     expect(imported.support.unparsed).toHaveLength(1);

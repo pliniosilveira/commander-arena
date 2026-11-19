@@ -13,6 +13,7 @@ import {
 import { type ReactNode, useLayoutEffect, useRef } from 'react';
 import { turnUpPayDetail } from '../../game/face-down-text';
 import { specialPayDetail } from '../../game/later-text';
+import { unlockPayDetail } from '../../game/room-text';
 import { ManaCost } from '../mana';
 import { ArrangePanel } from './ArrangePanel';
 import { AttackTargetDialog } from './AttackTargetDialog';
@@ -25,12 +26,12 @@ import { toggleCard } from './cards';
 import { commanderZoneDetail } from './commander-zone';
 import { DamagePanel } from './DamagePanel';
 import { Dialog } from './Dialog';
+import { IntroScreen } from './IntroScreen';
 import { attackTargetLabel, myHand, nameOf, objectIndex, plural, sameAttackTarget } from './lookup';
 import { MiniCard } from './MiniCard';
 import { ModesDialog } from './ModesDialog';
 import type { DecisionModel } from './model';
 import { NamedOptionDialog } from './NamedOptionDialog';
-import { OpponentCommanders } from './OpponentCommanders';
 import { OptionalDialog } from './OptionalDialog';
 import { OptionDialog } from './OptionDialog';
 import { OrderPanel } from './OrderPanel';
@@ -56,6 +57,8 @@ export interface OverlayProps {
   /** Sends an action to the engine (the dialogs that draw their own choices answer with it). */
   readonly act: (action: Action) => void;
   readonly error: string | null;
+  /** The screen before the opening hand is up: Start game moves on to the mulligan. */
+  readonly intro?: { readonly onStart: () => void } | null;
 }
 
 const none = () => null;
@@ -136,6 +139,7 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
     ),
 
     mulligan: (d) => {
+      if (props.intro) return <IntroScreen view={view} onStart={props.intro.onStart} />;
       const taken = view.seats[view.viewer]?.mulligans ?? 0;
       return (
         <Dialog label="Opening hand" className="dec-mulligan" popup>
@@ -149,7 +153,6 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
           <Hand view={view} ids={d.hand} selected={[]} />
           <BarButtons buttons={model.bar.buttons} />
           {d.canMulligan ? null : <p className="dec-sub">No more mulligans are possible.</p>}
-          <OpponentCommanders view={view} />
         </Dialog>
       );
     },
@@ -322,6 +325,11 @@ export function DockPanel(props: OverlayProps): ReactNode {
               {turnUpPayDetail(nameOf(index, d.source))}
             </p>
           ) : null}
+          {d.purpose === 'unlockDoor' ? (
+            <p className="dec-sub dec-left" data-unlock-pay>
+              {unlockPayDetail(index.get(d.source), d.door ?? 0)}
+            </p>
+          ) : null}
           {d.purpose === 'suspend' || d.purpose === 'foretell' ? (
             <p className="dec-sub dec-left" data-special-pay>
               {specialPayDetail(d.purpose, nameOf(index, d.source), index.get(d.source))}
@@ -335,6 +343,14 @@ export function DockPanel(props: OverlayProps): ReactNode {
           {sacrifices.length === 0 ? null : (
             <p className="dec-sub dec-left">{sacrifices.join(', ')} will be sacrificed.</p>
           )}
+          {ui.taps.some((t) => t.tapped !== undefined) ? (
+            <p className="dec-sub dec-left">
+              {ui.taps
+                .flatMap((t) => (t.tapped === undefined ? [] : [nameOf(index, t.tapped)]))
+                .join(', ')}{' '}
+              will be tapped too.
+            </p>
+          ) : null}
           <ErrorLine error={error} />
         </section>
       );

@@ -25,13 +25,17 @@ import {
   manaAbilitiesOf,
   manaCostSymbols,
   manaSacrificeCandidates,
+  manaTapCandidates,
+  manaTapChoice,
   outcomeColor,
   payManaAbilityCosts,
+  tapFilterOf,
   tierOfAbility,
 } from './mana-abilities';
 import { isCombinationProduction, productionOutcomes, spendRestrictionOf } from './mana-outcomes';
-import { additionalManaFor } from './mana-triggers';
+import { additionalManaOptions } from './mana-triggers';
 import { lifeTotalIsLocked } from './player-lock';
+import { activatablePlayerMana, PLAYER_MANA_ABILITY, playerManaSources } from './player-mana';
 
 const sourcesBySeat = new WeakMap<GameState, Map<SeatId, readonly PaymentSource[]>>();
 
@@ -63,14 +67,16 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
       // The mana cost is the planner's business (one level, mana/payment.ts), so only the {T},
       // sacrifice and life costs and the restriction on activating decide whether the source is on
       // offer.
-      if (!canPayPhysicalCosts(state, obj, ability, seat)) continue;
+      if (!canPayPhysicalCosts(state, obj, ability, seat, abilityIndex)) continue;
       // CR 605.4, D-139: what a triggered mana ability adds ("add an additional {C}") is made with the mana, so the planner counts it.
       const produces = productionOutcomes(state, obj, ability)
         .filter((o) => o.length > 0)
-        .map((o) => {
-          const extra = additionalManaFor(state, obj, ability, o);
-          return extra.length === 0 ? o : [...o, ...extra];
-        });
+        .flatMap((o) =>
+          // CR 605.4, 106.1b: one outcome for each choice of the color of the additional mana of "adds an additional one mana of any color".
+          additionalManaOptions(state, obj, ability, o).map((extra) =>
+            extra.length === 0 ? o : [...o, ...extra],
+          ),
+        );
       if (produces.length === 0) continue;
       const symbols = manaCostSymbols(ability);
       const lifeLoss = lifeLossOfActivating(ability);
@@ -83,13 +89,15 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
         // D-183: the mana it makes carries the card types of the permanent.
         types: d.types,
         // D-149: "Spend this mana only to cast an Angel spell".
-        restriction: spendRestrictionOf(ability),
+        restriction: spendRestrictionOf(ability, obj),
         ...(symbols.length > 0 ? { cost: parseManaCost(symbols) } : {}),
         ...((ability.also?.length ?? 0) > 0 ? { extraEffect: true } : {}),
         ...(lifeLoss > 0 ? { lifeLoss } : {}),
       });
     }
   }
+  // CR 605.1a (Channel): the mana ability an effect gave the player, as many uses as their life allows.
+  out.push(...playerManaSources(state, seat));
   return out;
 }
 
@@ -121,6 +129,10 @@ export function planFor(
   const sources = [...paymentSources(state, seat), ...(options.extraSources ?? [])]
     .filter((s) => options.avoidSacrificing !== true || s.tier !== 'sacrifice')
     .filter((s) => options.avoidObjects === undefined || !options.avoidObjects.includes(s.object));
+  // CR 605.1a (Channel): the mana ability a player was given costs life, so it is planned only when the cost cannot be paid without it (never to save a reserved color).
+  const own = sources.filter((s) => s.weighExtraByLife !== true);
+  const plan = planWithout(state, seat, cost, spell, reserve, own, 0);
+  if (plan !== null || own.length === sources.length) return plan;
   return planWithout(state, seat, cost, spell, reserve, sources, 0);
 }
 
@@ -153,6 +165,20 @@ function planWithout(
     ...(reserve ? { reserve } : {}),
   });
   if (plan === null) return null;
+  // D-625: a source whose cost taps another permanent needs one that no other source of the plan taps; plan again without a source that has none.
+  const noTap = tapConflicts(state, seat, plan);
+  if (noTap !== null) {
+    if (round >= MAX_DEVOTION_ROUNDS) return null;
+    return planWithout(
+      state,
+      seat,
+      cost,
+      spell,
+      reserve,
+      sources.filter((s) => !noTap.has(abilityKey(s))),
+      round + 1,
+    );
+  }
   const conflict = devotionConflicts(state, seat, plan);
   if (conflict === null) return plan;
   // D-265: the plan sacrifices a permanent whose symbols its own devotion mana counts. Plan again without the sacrificing abilities, then without the
@@ -164,6 +190,36 @@ function planWithout(
     if (other !== null) return other;
   }
   return null;
+}
+
+/**
+ * D-625 (CR 118.3, 605.3b): the sources of a plan whose cost taps another permanent ("{T}, Tap an untapped creature you control") that have none left to tap: the plan taps
+ * every one of its sources, so those are not available, and a permanent tapped for one such cost is not available for another. Null when every such source has one,
+ * else the keys (`object#abilityIndex`) of those that do not. The permanents are the engine's default choice (`manaTapChoice`), which is what `applyPaymentPlan` pays.
+ */
+function tapConflicts(state: GameState, seat: SeatId, plan: PaymentPlan): Set<string> | null {
+  const planned = new Set(plan.taps.map((t) => t.object));
+  const used = new Set<ObjectId>();
+  const none = new Set<string>();
+  for (const tap of plan.taps) {
+    const obj = state.objects[tap.object];
+    const ability =
+      obj === undefined
+        ? undefined
+        : manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === tap.abilityIndex)?.ability;
+    if (ability === undefined || tapFilterOf(ability) === null) continue;
+    const given = manaTapChoice(
+      state,
+      seat,
+      tap.object,
+      ability,
+      undefined,
+      new Set([...planned, ...used]),
+    );
+    if (given === null) none.add(abilityKey(tap));
+    else used.add(given);
+  }
+  return none.size === 0 ? null : none;
 }
 
 /**
@@ -235,32 +291,56 @@ export function payableSources(
   abilityIndex: number;
   colors?: ManaColor[];
   combinations?: ManaColor[][];
+  extraColors?: ManaColor[][];
   sacrifices?: ObjectId[];
+  tappables?: ObjectId[];
 }[] {
-  return paymentSources(state, seat).map((s) => {
-    const obj = state.objects[s.object];
-    const ability = obj
-      ? manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === s.abilityIndex)?.ability
-      : undefined;
-    if (!ability) return { object: s.object, abilityIndex: s.abilityIndex };
-    // D-222 (CR 601.2b): the permanents a cost "Sacrifice a Spirit" may give up, when there is a choice.
-    const gives = manaSacrificeCandidates(state, seat, s.object, ability);
-    const sacrifices = gives.length > 1 ? { sacrifices: [...gives] } : {};
-    // What the player picks is what the ability makes itself, not the mana a triggered mana ability adds to it (D-139).
-    const own =
-      obj === undefined ? [] : productionOutcomes(state, obj, ability).filter((o) => o.length > 0);
-    if (isCombinationProduction(ability.production)) {
-      return {
-        object: s.object,
-        abilityIndex: s.abilityIndex,
-        combinations: own.map((o) => [...o]),
-        ...sacrifices,
+  // CR 605.1a (Channel): the mana ability a player was given is one source of one use here (a tap of it is one use; the planner's sources of several uses are its own).
+  const granted = activatablePlayerMana(state, seat).map((g) => ({
+    object: g.source,
+    abilityIndex: PLAYER_MANA_ABILITY,
+  }));
+  const sources = paymentSources(state, seat)
+    .filter((s) => s.weighExtraByLife !== true)
+    .map((s) => {
+      const obj = state.objects[s.object];
+      const ability = obj
+        ? manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === s.abilityIndex)?.ability
+        : undefined;
+      if (!ability) return { object: s.object, abilityIndex: s.abilityIndex };
+      // D-222 (CR 601.2b): the permanents a cost "Sacrifice a Spirit" may give up, when there is a choice.
+      const gives = manaSacrificeCandidates(state, seat, s.object, ability);
+      // D-625: the permanents a cost "Tap an untapped creature you control" may tap, when there is a choice.
+      const taps = manaTapCandidates(state, seat, s.object, ability);
+      // What the player picks is what the ability makes itself, not the mana a triggered mana ability adds to it (D-139).
+      const own =
+        obj === undefined
+          ? []
+          : productionOutcomes(state, obj, ability).filter((o) => o.length > 0);
+      // CR 605.1b, 106.1b: the colors "adds an additional one mana of any color" may add to what this makes: the alternatives of the first outcome, when there is a choice.
+      const firstOwn = own[0];
+      const extras =
+        obj === undefined || firstOwn === undefined
+          ? []
+          : additionalManaOptions(state, obj, ability, firstOwn);
+      const sacrifices = {
+        ...(gives.length > 1 ? { sacrifices: [...gives] } : {}),
+        ...(taps.length > 1 ? { tappables: [...taps] } : {}),
+        ...(extras.length > 1 ? { extraColors: extras } : {}),
       };
-    }
-    if (!isColorChoice(ability.production)) {
-      return { object: s.object, abilityIndex: s.abilityIndex, ...sacrifices };
-    }
-    const colors = own.flatMap((o) => outcomeColor(o) ?? []);
-    return { object: s.object, abilityIndex: s.abilityIndex, colors, ...sacrifices };
-  });
+      if (isCombinationProduction(ability.production)) {
+        return {
+          object: s.object,
+          abilityIndex: s.abilityIndex,
+          combinations: own.map((o) => [...o]),
+          ...sacrifices,
+        };
+      }
+      if (!isColorChoice(ability.production)) {
+        return { object: s.object, abilityIndex: s.abilityIndex, ...sacrifices };
+      }
+      const colors = own.flatMap((o) => outcomeColor(o) ?? []);
+      return { object: s.object, abilityIndex: s.abilityIndex, colors, ...sacrifices };
+    });
+  return [...sources, ...granted];
 }

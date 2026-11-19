@@ -120,6 +120,32 @@ export const KEYWORD_DASH = defineRule<readonly IrKeyword[]>({
 });
 
 /**
+ * `keyword.bestow`: "Bestow {2}{W}{W}" (CR 702.103a, rules text not available to check: "You may cast this card by paying [cost] rather than its mana cost. If you do, it's an Aura
+ * enchantment spell with enchant creature"; it is a creature again when it is not attached). The engine owns all of it: the Aura spell and its target, the creature it
+ * becomes when the target is illegal or the permanent is unattached (`rules/derive-alt.ts`, `rules/attach.ts`). Only a plain mana cost, on a creature card
+ * (`validateCard`).
+ */
+export const KEYWORD_BESTOW = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.bestow',
+  family: 'keyword',
+  leading: ['bestow'],
+  cites: ['CR 702.103a (Bestow)', 'CR 118.9 (Alternative Costs)', 'CR 601.2b (Casting Spells)'],
+  examples: ['Bestow {2}{W}{W}', 'Bestow {3}{W}', 'Bestow {5}{G}', 'bestow {4}{B}'],
+  rejects: [
+    'Bestow',
+    'Bestow {X}{W}',
+    'Bestow {W/U}',
+    'Bestow {2}{W}.',
+    'Bestow—Pay 3 life.',
+    'Bestow {2}{W}, bestow {3}',
+    'Bestow {2}{W}, flying',
+    'Bestowed {2}{W}',
+    'Dash {2}{W}',
+  ],
+  parse: altCostKeyword('keyword.bestow', 'bestow'),
+});
+
+/**
  * `keyword.spectacle`: "Spectacle {R}" (CR 702.137a: "You may cast this spell by paying [cost] rather than its
  * mana cost if an opponent lost life this turn"). The engine reads the condition, at the first casting step, so
  * the line is the cost and nothing else. 11 cards of the owner's run.
@@ -226,6 +252,37 @@ export const KEYWORD_ETERNALIZE = defineRule<readonly IrKeyword[]>({
   parse: altCostKeyword('keyword.eternalize', 'eternalize'),
 });
 
+/**
+ * `keyword.embalm`: "Embalm {5}{W}" (CR 702.128a: "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's white, it has no mana cost, and it's a
+ * Zombie in addition to its other types. Activate only as a sorcery"). Like Eternalize it lowers to the keyword of the engine, which expands it into the activated ability that works from
+ * the graveyard; the token it makes is "embalmed" (CR 702.128b). The cost is a plain mana cost; a line is read on its own, never in a keyword list. The reminder text of the real cards is
+ * dropped before the line is read. The cards of issue 104: Angel of Sanctions, Vizier of Many Faces.
+ */
+export const KEYWORD_EMBALM = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.embalm',
+  family: 'keyword',
+  leading: ['embalm'],
+  cites: [
+    'CR 702.128a (Embalm)',
+    'CR 702.128b (Embalm)',
+    'CR 602.2 (Activating Activated Abilities)',
+  ],
+  examples: ['Embalm {5}{W}', 'Embalm {3}{U}{U}', 'Embalm {B}', 'embalm {1}{G}'],
+  rejects: [
+    'Embalm',
+    'Embalm {X}',
+    'Embalm {W/U}',
+    'Embalm—Pay 2 life.',
+    'Embalm {5}{W}.',
+    'Embalm {5}{W}, haste',
+    'Embalm {5}{W} {1}',
+    'Embalmed {5}{W}',
+    'Flying, embalm {5}{W}',
+    'Eternalize {5}{W}',
+  ],
+  parse: altCostKeyword('keyword.embalm', 'embalm'),
+});
+
 const ESCAPE_COUNTS = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
 /** "one other card" or "three other cards": the cards of the graveyard an escape cost exiles (one to nine). */
@@ -295,9 +352,11 @@ export const ALT_COST_KEYWORD_RULES = [
   KEYWORD_OVERLOAD,
   KEYWORD_EVOKE,
   KEYWORD_DASH,
+  KEYWORD_BESTOW,
   KEYWORD_SPECTACLE,
   KEYWORD_UNEARTH,
   KEYWORD_ENCORE,
   KEYWORD_ETERNALIZE,
+  KEYWORD_EMBALM,
   KEYWORD_ESCAPE,
 ];

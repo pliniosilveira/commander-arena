@@ -14,7 +14,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrAmount, IrManaSpec } from '../../ir/types';
+import type { IrAmount, IrManaSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL } from '../amount/scaled';
 import { defineRule, spanned } from '../registry';
 import { type Clauses, single } from './operands';
@@ -118,6 +118,8 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'CR 903.4 (Commander)',
   ],
   examples: [
+    // Issue 184 (Thriving Isle): a fixed color, or the one the permanent chose.
+    'add {U} or one mana of the chosen color',
     'add {G}',
     'add {C}{C}',
     'add {W}{U}{B}{R}{G}',
@@ -146,12 +148,18 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {R} or {G} for each creature you control',
     // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
     'add an amount of mana of that color equal to your devotion to that color',
+    // Kami of Whispered Hopes, Astral Cornucopia: a mana ability's count of mana of one chosen color.
+    'add x mana of any one color',
+    'add one mana of that color for each charge counter on ~',
   ],
   rejects: [
     'add two mana of the chosen color',
     'add one mana of the chosen type',
     'add one mana of the chosen colors',
     'add {G} or {G}',
+    'add {U} or one mana of the chosen colors',
+    'add {U} or two mana of the chosen color',
+    'add {U}{B} or one mana of the chosen color',
     'add two mana of any color',
     'add four mana of any one color',
     'add two mana of one color',
@@ -182,6 +190,10 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add an amount of mana of that color equal to your devotion to that colors',
     'add an amount of mana of any color equal to your devotion to that color',
     'add an amount of mana of that color equal to your devotion to that color for each creature you control',
+    'add one mana of that color',
+    'add x mana of any one color for each creature you control',
+    'add x mana of any color',
+    'add two mana of that color for each charge counter on ~',
   ],
   parse: single(
     'effect.add-mana',
@@ -190,6 +202,14 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
         literal('add '),
         spanned(
           choice<IrManaSpec['what']>(
+            // Issue 184 (Thriving Isle, CR 106.1, 607.2d): "{U} or one mana of the chosen color", before "{U} or {B}" and the fixed symbols that start the same way.
+            map(
+              pattern(/\{([WUBRG])\} or one mana of the chosen color(?![\p{L}\p{N}])/iu),
+              (m) => ({
+                kind: 'chosenColor' as const,
+                or: (m[1] ?? 'W').toUpperCase() as 'W' | 'U' | 'B' | 'R' | 'G',
+              }),
+            ),
             // The choice first: "{U} or {B}" starts like the fixed symbols "{U}".
             map(MANA_CHOICE, (colors) => ({ kind: 'oneOf' as const, colors })),
             // Before the symbols: "{R}{R}, {R}{W}, or {W}{W}" starts like "{R}{R}".
@@ -217,6 +237,14 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
               ),
               () => ({ kind: 'devotionToChosenColor' as const }),
             ),
+            // Kami of Whispered Hopes (CR 106.1b, 107.3c): "X mana of any one color", X what the sentence's ", where X is ..." says; lowered only by a mana ability that has it.
+            map(pattern(/x mana of any one color(?![\p{L}\p{N}])/iu), () => ({
+              kind: 'anyOneColorX' as const,
+            })),
+            // Astral Cornucopia (CR 605.3b, 106.1b): after "Choose a color.", one mana of that color for each of a count; lowered only after that sentence.
+            map(pattern(/one mana of that color(?![\p{L}\p{N}])/iu), () => ({
+              kind: 'thatColor' as const,
+            })),
             // Stage P34 (D-152, CR 106.1b, 605.3b): "two mana in any combination of colors", each of a color chosen on its own.
             map(
               pattern(/(two|three|four) mana in any combination of colors(?![\p{L}\p{N}])/iu),
@@ -238,7 +266,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
       ),
       // Only fixed mana is added once for each: a choice of colors would be chosen once or for each, which the words do not say.
       ([, what, each]) =>
-        each === null || what.value.kind === 'symbols' || what.value.kind === 'oneOf',
+        what.value.kind === 'thatColor'
+          ? each !== null
+          : each === null || what.value.kind === 'symbols' || what.value.kind === 'oneOf',
     ),
     ([, what, each]) => ({
       verb: 'addMana',
@@ -249,6 +279,35 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     }),
   ),
 });
+
+/** What an additional mana is: one symbol ("{C}", "{G}") or "one mana of any color" (CR 106.1b, 605.3b: the player chooses the color as the mana ability is activated). */
+const ADDITIONAL_WHAT: Parser<{ spec: IrManaSpec['what']; span: Span }> = choice(
+  map(spanned(ONE_SYMBOL), (s) => ({
+    spec: { kind: 'symbols', symbols: [s.value] } as IrManaSpec['what'],
+    span: s.span,
+  })),
+  map(spanned(literal('one mana of any color')), (s) => ({
+    spec: { kind: 'anyColor' } as IrManaSpec['what'],
+    span: s.span,
+  })),
+);
+
+function additionalClause(
+  rule: string,
+  what: { spec: IrManaSpec['what']; span: { start: number; end: number } },
+  controller: boolean,
+) {
+  return {
+    verb: 'addMana',
+    args: {
+      mana: { kind: 'manaSpec' as const, what: what.spec, span: what.span, rule },
+      additional: { kind: 'flag' as const, value: true as const, span: what.span, rule },
+      ...(controller
+        ? { controller: { kind: 'flag' as const, value: true as const, span: what.span, rule } }
+        : {}),
+    },
+  };
+}
 
 /**
  * `effect.add-additional-mana`: "add an additional {C}", "add an additional {G}" (stage P31, D-140, CR 106.12, 605.1b): the mana a
@@ -265,23 +324,45 @@ export const EFFECT_ADD_ADDITIONAL_MANA = defineRule<Clauses>({
   parse: single(
     'effect.add-additional-mana',
     sequence(literal('add an additional '), spanned(ONE_SYMBOL)),
-    ([, symbol]) => ({
-      verb: 'addMana',
-      args: {
-        mana: {
-          kind: 'manaSpec',
-          what: { kind: 'symbols', symbols: [symbol.value] },
-          span: symbol.span,
-          rule: 'effect.add-additional-mana',
-        },
-        additional: {
-          kind: 'flag',
-          value: true,
-          span: symbol.span,
-          rule: 'effect.add-additional-mana',
-        },
-      },
-    }),
+    ([, symbol]) =>
+      additionalClause(
+        'effect.add-additional-mana',
+        { spec: { kind: 'symbols', symbols: [symbol.value] }, span: symbol.span },
+        false,
+      ),
+  ),
+});
+
+/**
+ * `effect.controller-adds-additional-mana`: "its controller adds an additional one mana of any color", "its controller adds an additional {G}" (CR 106.12, 605.1b, 106.1b): the
+ * mana a triggered mana ability adds for the controller of the permanent that was tapped for mana (an Aura's "enchanted land", whose controller taps it), on top of what it made.
+ * One mana symbol or one mana of any color. The lowering reads it only as the effect of the trigger of `trigger.enchanted-tapped-for-mana`. Not read: another subject ("you",
+ * "that player"), "an additional" left out, two mana, a color restriction ("one mana of any color that land could produce"), "add".
+ */
+export const EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA = defineRule<Clauses>({
+  id: 'effect.controller-adds-additional-mana',
+  family: 'effect',
+  leading: ['its'],
+  cites: ['CR 106.12 (Mana)', 'CR 605.1b (Mana Abilities)', 'CR 106.1b (Mana)'],
+  examples: [
+    'its controller adds an additional one mana of any color',
+    'its controller adds an additional {G}',
+  ],
+  rejects: [
+    'its controller adds one mana of any color',
+    'its controller adds an additional two mana of any color',
+    'its controller adds an additional one mana of any type',
+    'its controller adds an additional {X}',
+    'its controller add an additional {G}',
+    'its owner adds an additional {G}',
+    'you add an additional {G}',
+    'its controller adds an additional one mana of any color that land could produce',
+    'its controller adds an additional',
+  ],
+  parse: single(
+    'effect.controller-adds-additional-mana',
+    sequence(literal('its controller adds an additional '), ADDITIONAL_WHAT),
+    ([, what]) => additionalClause('effect.controller-adds-additional-mana', what, true),
   ),
 });
 

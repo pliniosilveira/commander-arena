@@ -29,10 +29,11 @@
  * docs/ROADMAP.md. Callers already go through this one
  * function, so adding them changes nothing outside the rules folder.
  */
-import type { Ability, Restriction } from '../ast/types';
+import type { Ability, Keyword, Restriction } from '../ast/types';
 import type { CardType, Color, PtValue, Subtype, Supertype } from '../characteristics';
-import type { ObjectId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
+import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { alternativeAbilitiesOf } from './derive-alt';
 import { characteristicPtOf } from './derive-count';
@@ -66,6 +67,8 @@ export interface Derived extends DerivedBase {
    * other permanents' static abilities and from `restrict` effects. Read where the rule acts.
    */
   readonly restrictions: readonly Restriction[];
+  /** The players that goad it (issue 201, CR 701.15), from static abilities. Read where attackers are declared. */
+  readonly goadedBy: readonly SeatId[];
   /** The creatures this one can't be blocked by, from static abilities (CR 509.1b, D-139). Read where blockers are declared. */
   readonly blockLimits: readonly BlockLimit[];
   /**
@@ -114,37 +117,69 @@ export function derive(state: GameState, obj: GameObject): Derived {
   return hit;
 }
 
-function deriveFresh(state: GameState, obj: GameObject): Derived {
+/**
+ * D-149 (CR 613.1f, 613.4c, 613.8): the keywords without parameters an object has after layer 6, for a count in a static ability
+ * of layer 7c that names a keyword ("for each other creature you control with flying"). It is `derive` stopped before layer 7:
+ * the "+N/+N" static abilities are not applied (they are layer 7, which depends on layer 6 and never the other way round), so
+ * counting the keywords of other objects cannot loop. Kept for the pair (state, object) like `derive`.
+ */
+const layerSix = new WeakMap<GameState, WeakMap<GameObject, readonly Keyword['kind'][]>>();
+
+export function keywordsAfterLayer6(state: GameState, obj: GameObject): readonly Keyword['kind'][] {
+  let perState = layerSix.get(state);
+  if (perState === undefined) {
+    perState = new WeakMap();
+    layerSix.set(state, perState);
+  }
+  let hit = perState.get(obj);
+  if (hit === undefined) {
+    hit = keywordKindsOf(deriveFresh(state, obj, true).abilities);
+    perState.set(obj, hit);
+  }
+  return hit;
+}
+
+function deriveFresh(state: GameState, obj: GameObject, layer6Only = false): Derived {
   if (obj.card === null && obj.token === null && obj.copyOf === undefined) {
     // Abilities on the stack are not cards; they carry no characteristics here. A copy of a spell is a spell
     // with the values of the face it copies (CR 707.10, D-129), read by `copiableValues`.
-    return finish(state, obj, {
-      name: '',
-      manaCost: null,
-      supertypes: [],
-      types: [],
-      subtypes: [],
-      colors: [],
-      power: null,
-      toughness: null,
-      loyalty: null,
-      abilities: [],
-    });
+    return finish(
+      state,
+      obj,
+      {
+        name: '',
+        manaCost: null,
+        supertypes: [],
+        types: [],
+        subtypes: [],
+        colors: [],
+        power: null,
+        toughness: null,
+        loyalty: null,
+        abilities: [],
+      },
+      layer6Only,
+    );
   }
   // Layer 1 (CR 613.2a): the copiable values, which a copy effect replaces (rules/copiable.ts).
   const { characteristics: c, abilities } = copiableValues(state, obj);
-  return finish(state, obj, {
-    name: c.name,
-    manaCost: manaCostOf(state, obj, c.manaCost),
-    supertypes: c.supertypes,
-    types: c.types,
-    subtypes: c.subtypes,
-    colors: c.colors,
-    power: ptNumber(c.power),
-    toughness: ptNumber(c.toughness),
-    loyalty: c.loyalty,
-    abilities,
-  });
+  return finish(
+    state,
+    obj,
+    {
+      name: c.name,
+      manaCost: manaCostOf(state, obj, c.manaCost),
+      supertypes: c.supertypes,
+      types: c.types,
+      subtypes: c.subtypes,
+      colors: c.colors,
+      power: ptNumber(c.power),
+      toughness: ptNumber(c.toughness),
+      loyalty: c.loyalty,
+      abilities,
+    },
+    layer6Only,
+  );
 }
 
 /** The continuous effects on `obj` with the base power and toughness its permanents' static abilities set (layer 7b), by timestamp. */
@@ -164,7 +199,23 @@ function withStaticSets(
   return [...effects, ...own].sort((a, b) => a.timestamp - b.timestamp);
 }
 
-function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
+/**
+ * D-653 (CR 604.1, 109.5, 613.1b): a keyword an effect gives only "during your turn" (`duringYourTurn`) is given while it is its controller's turn, the controller the object has now.
+ * The effects are left as they are when none says so (the usual case).
+ */
+function turnLimited(
+  state: GameState,
+  obj: GameObject,
+  effects: readonly ContinuousEffect[],
+): readonly ContinuousEffect[] {
+  const limited = (e: ContinuousEffect) =>
+    e.change.kind === 'grantKeyword' && e.change.duringYourTurn === true;
+  if (!effects.some(limited)) return effects;
+  const mine = state.turn.activeSeat === controllerOf(state, obj);
+  return mine ? effects : effects.filter((e) => !limited(e));
+}
+
+function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only = false): Derived {
   // CR 701.54c (D-196): "Your Ring-bearer is legendary", an ability of the Ring (an emblem): a supertype added in layer 4, which no
   // creature's loss of abilities removes.
   const input: DerivedBase =
@@ -173,7 +224,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     isRingBearerOf(state, obj, obj.ringBearer)
       ? { ...base, supertypes: [...base.supertypes, 'legendary'] }
       : base;
-  const effects = effectsOn(state, obj.id);
+  const effects = turnLimited(state, obj, effectsOn(state, obj.id));
   // Layers 4 and 5 (CR 613.1d, 613.1e). They come first because what static abilities affect is
   // matched against their result (a lord of Frogs affects a creature that became a Frog).
   // Changeling and Devoid (CR 702.73a, 702.114a) are characteristic-defining abilities that work in every
@@ -224,6 +275,9 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     },
     // D-149: read only by a static ability whose subject names a keyword, with the grants it depends on.
     keywordsWith: (grants) => keywordKindsOf(applyAbilityLayer(start, grants, effects)),
+    // D-149: what a count of layer 7c reads of the other objects it counts (`keywordsAfterLayer6`).
+    keywordsOf: (other) => keywordsAfterLayer6(state, other),
+    layer6Only,
     ptWith,
   });
   const abilities = applyAbilityLayer(start, fx.grants, effects);
@@ -238,10 +292,13 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase): Derived {
     colors,
     abilities,
     restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
+    goadedBy: fx.goadedBy,
     blockLimits: fx.blockLimits,
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,
   };
+  // `keywordsAfterLayer6` stops here: the keywords are in `abilities`, nothing of layer 7 is read.
+  if (layer6Only) return typed;
   // Layers 7b and 7c (CR 613.4b, 613.4c).
   const pt = ptWith(fx.power, fx.toughness, fx.sets);
   if (pt.power === typed.power && pt.toughness === typed.toughness) return typed;

@@ -14,7 +14,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
+import type { IrAmount, IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
 import {
   BOUNDARY,
   permanentPhrase,
@@ -22,8 +22,8 @@ import {
   spellTypesAndPhrase,
   withoutZone,
 } from '../noun/phrases';
-import { defineRule, quietly, spanned } from '../registry';
-import { type Clauses, makeClause } from './operands';
+import { defineRule, family, quietly, spanned } from '../registry';
+import { type Clauses, makeClause, single } from './operands';
 
 /** `effect.proliferate`: "proliferate" (CR 701.34a: choose any number of permanents and/or players, then give each another counter of each kind). */
 export const EFFECT_PROLIFERATE = defineRule<Clauses>({
@@ -34,6 +34,7 @@ export const EFFECT_PROLIFERATE = defineRule<Clauses>({
   examples: ['proliferate', 'Proliferate'],
   rejects: [
     'proliferate twice',
+    'proliferate X times',
     'proliferate target creature',
     'proliferates',
     'proliferate it',
@@ -42,7 +43,7 @@ export const EFFECT_PROLIFERATE = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = spanned(
-      pattern(new RegExp(`proliferate${BOUNDARY}(?! (?:twice|it|that|target))`, 'iu')),
+      pattern(new RegExp(`proliferate${BOUNDARY}(?! (?:twice|it|that|target|\\w+ times))`, 'iu')),
     )(ctx, pos);
     if (!r.ok) return r;
     // "Proliferate and draw a card" is two instructions, which the sentence's join reads (the clause itself is a whole instruction).
@@ -52,6 +53,34 @@ export const EFFECT_PROLIFERATE = defineRule<Clauses>({
       pos: r.pos,
     };
   },
+});
+
+/**
+ * `effect.proliferate-times`: "proliferate X times" (CR 701.34a: the action is done that many times in a row, each with its own choice).
+ * The count is a number or the X of the spell or ability.
+ */
+export const EFFECT_PROLIFERATE_TIMES = defineRule<Clauses>({
+  id: 'effect.proliferate-times',
+  family: 'effect',
+  leading: ['proliferate'],
+  cites: ['CR 701.34 (Proliferate)', 'CR 701.34a (Proliferate)', 'CR 107.3 (Variables)'],
+  examples: ['proliferate X times', 'Proliferate X times', 'proliferate three times'],
+  rejects: [
+    'proliferate X',
+    'proliferate times',
+    'proliferate X times and draw a card',
+    'proliferate X time',
+    'proliferate that many times',
+  ],
+  parse: single(
+    'effect.proliferate-times',
+    sequence(
+      literal('proliferate '),
+      family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
+      literal(' times'),
+    ),
+    ([, times]) => ({ verb: 'proliferate', args: { times } }),
+  ),
 });
 
 function flag(rule: string, span: Span): IrFlag {
@@ -272,6 +301,10 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Dragon spells or activate abilities of Dragons',
     'spend this mana only to cast artifact spells or activate abilities of artifacts',
     'spend this mana only to cast a Dragon creature spell',
+    // Issue 199 (Unclaimed Territory): the creature type the permanent chose as it entered.
+    'spend this mana only to cast a creature spell of the chosen type',
+    // Issue 151 (Secluded Courtyard): and the abilities of the creatures of that type.
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type',
     // D-329: the spells of two card types, joined by "and".
     'spend this mana only to cast instant and sorcery spells',
     'spend this mana only to cast artifact and creature spells',
@@ -298,6 +331,8 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
     'spend this mana only to cast Dragon spells or activate abilities',
     'spend this mana only to cast Dragon spells or activate abilities of Dragons you control',
     'spend this mana only to cast creature spells or activate abilities of Dragons',
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability of a creature source of a chosen type',
+    'spend this mana only to cast a creature spell of the chosen type or activate an ability',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.spend-only';
@@ -318,6 +353,39 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
       return fail(ctx, pos);
     }
     // Stage P34 (D-152): "... or activate abilities of Dragons", the abilities of the permanents of the same kind as the spells (CR 106.6).
+    // Issue 151 (Secluded Courtyard): "... a creature spell of the chosen type or activate an ability of a creature source of the chosen type": the abilities of the
+    // creatures of the type the permanent chose (CR 106.6, 607.2d).
+    const chosenAbilities =
+      filter.chosen === 'type'
+        ? pattern(
+            / or activate an ability of a creature source of the chosen type(?![\p{L}\p{N}])/iu,
+          )(ctx, phrase.pos)
+        : null;
+    if (chosenAbilities?.ok === true) {
+      const end = chosenAbilities.pos;
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'each',
+        filter,
+        upTo: false,
+        plural: true,
+        other: false,
+        span: phrase.value.span,
+        rule: id,
+      };
+      return {
+        ok: true,
+        value: [
+          makeClause(
+            id,
+            'spendOnly',
+            { spells: noun, alsoAbilities: flag(id, { start: phrase.pos, end }) },
+            { start: pos, end },
+          ),
+        ],
+        pos: end,
+      };
+    }
     const abilities = optional(
       sequence(
         literal(' or activate abilities of '),
@@ -368,6 +436,7 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
 
 export const ANGEL_EFFECT_RULES = [
   EFFECT_PROLIFERATE,
+  EFFECT_PROLIFERATE_TIMES,
   EFFECT_EXILE_PER_OPPONENT,
   EFFECT_DESTROY_PER_OPPONENT,
   EFFECT_ONCE_EACH_TURN,

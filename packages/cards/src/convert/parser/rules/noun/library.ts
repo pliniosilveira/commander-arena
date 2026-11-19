@@ -97,6 +97,14 @@ function sharedSuffix(
   };
 }
 
+/**
+ * " named God-Pharaoh's Gift" after "a card" (issue 104, CR 201.2): the exact name of the card to find, up to the words that go on with the instruction (" and put ...", ", put ...",
+ * ", reveal ..."). A name is capitalised words, possibly with a comma, an apostrophe or a hyphen ("Regna, the Redeemer"). Only for one card: a search for a quantity of cards of a
+ * name is not built.
+ */
+const NAMED_SUFFIX =
+  / named (\p{Lu}[\p{L}'’-]*(?:,? [\p{L}'’-]+)*?)(?= and put (?:it|that card) |, put |, reveal |$)/u;
+
 /** The filter of "<what> card(s)", with the library as its zone (CR 401.1) and no owner. */
 function libraryPhrase(plural: boolean): Parser<IrFilter> {
   const cardWord = CARD_WORD(plural);
@@ -161,10 +169,16 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
       const anyOf = left.map((t): IrFilter => ({ types: [t], raw: t }));
       return { ok: true, value: { ...filter, card: true, anyOf }, pos: shared.pos };
     }
+    // Issue 104 (CR 201.2): "a card named God-Pharaoh's Gift": one card, with no kind of card before "card" and nothing after the name but the rest of the instruction.
+    const named =
+      plural || kind.ok || modifiers.value.length > 0
+        ? null
+        : quiet(pattern(NAMED_SUFFIX))(ctx, shared.pos);
+    const end = named?.ok === true ? named.pos : shared.pos;
     const filter = toFilter(
       'library',
       { ...parts, types: 'types' in kinds ? kinds.types : [] },
-      ctx.text.slice(pos, shared.pos),
+      ctx.text.slice(pos, end),
     );
     return {
       ok: true,
@@ -173,8 +187,9 @@ function libraryPhrase(plural: boolean): Parser<IrFilter> {
         card: true,
         ...('subtype' in kinds ? { subtypes: [kinds.subtype] } : {}),
         ...sharing,
+        ...(named?.ok === true ? { named: named.value[1] ?? '' } : {}),
       },
-      pos: shared.pos,
+      pos: end,
     };
   };
 }
@@ -243,6 +258,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an Aura or Equipment card',
     'up to two basic land cards',
     'up to three Forest cards',
+    'up to X basic land cards',
     'a snow permanent card',
     'a nonland permanent card',
     'up to two permanent cards',
@@ -254,6 +270,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an artifact creature card that shares a creature type with it',
     'up to two basic land cards that share a land type',
     'up to three basic land cards that share a land type',
+    // Issue 104 (CR 201.2): a card of a given name.
+    "a card named God-Pharaoh's Gift",
+    'a card named Regna, the Redeemer',
   ],
   rejects: [
     'a basic land',
@@ -298,6 +317,12 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'up to two basic land cards that share a creature type with it',
     'up to two permanent cards that share a land type',
     'up to two Forest cards that share a land type',
+    'a card named',
+    'a card named gift',
+    'a creature card named Regna',
+    'a basic card named Regna',
+    'two cards named Regna',
+    'up to two cards named Regna',
   ],
   parse: node<Bare, IrNoun>(
     'noun.library-card',
@@ -317,6 +342,19 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           plural: true,
           other: false,
           count: { kind: 'number', value: count.value, span: count.span },
+        }),
+      ),
+      // Issue 160 (D-626): "up to X basic land cards, where X is ...": the count is the X the search rule reads the definition of.
+      map(
+        sequence(literal('up to X '), libraryPhrase(true)),
+        ([, filter]): Bare => ({
+          kind: 'noun',
+          det: 'a',
+          filter,
+          upTo: true,
+          plural: true,
+          other: false,
+          count: { kind: 'x', span: { start: 0, end: 0 } },
         }),
       ),
       // D-260: "a snow permanent card, a legendary card, or a Saga card": one card of any of several kinds, before the single kind it starts like.

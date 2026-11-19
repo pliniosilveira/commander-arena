@@ -74,6 +74,17 @@ export type GameEvent =
       readonly cost: readonly string[];
     }
   /**
+   * CR 709.5h (Room): `seat` unlocked the half `door` (0 the left half, 1 the right half) of the permanent `object`: it was given the unlocked designation, as it entered the
+   * battlefield because that half was cast (CR 709.5d), by the special action (`cost` is the mana paid, CR 709.5e) or by an effect (CR 709.5f). `cost` is empty when none was paid.
+   */
+  | {
+      readonly kind: 'doorUnlocked';
+      readonly seat: SeatId;
+      readonly object: ObjectId;
+      readonly door: number;
+      readonly cost: readonly string[];
+    }
+  /**
    * `seat` drew a card (CR 121.1): `object` is the card in their hand. `nth` is how many cards they have
    * drawn this turn including this one (D-111), which the `drawn` trigger's `nth` compares.
    */
@@ -199,6 +210,8 @@ export type GameEvent =
       readonly stackObject: ObjectId | null;
       /** The X announced for the ability (CR 602.2b, D-103); present when its cost had an X. */
       readonly x?: number;
+      /** The ability is one of a permanent: its source was on the battlefield as it was activated (CR 602.2, 113.6); absent for an ability of a card in a hand or a graveyard. */
+      readonly fromBattlefield?: true;
     }
   /**
    * The modes of a modal spell or ability were chosen (CR 601.2b, 602.2b, 603.3c, 700.2, D-114): for a
@@ -550,6 +563,17 @@ export type GameEvent =
       readonly names: readonly string[];
       readonly faceDown?: true;
     }
+  /**
+   * CR 608.2d (D-660, "An opponent chooses a nonland card exiled this way"): `seat` chose the cards `objects` (public, face up in exile) as `source`, a spell or ability, resolved.
+   * `automatic` is true when there was one card to choose. Nothing is done to them: they are set aside.
+   */
+  | {
+      readonly kind: 'cardsChosen';
+      readonly seat: SeatId;
+      readonly source: ObjectId;
+      readonly objects: readonly ObjectId[];
+      readonly automatic: boolean;
+    }
   /** CR 603.5: the controller of an optional ("you may") triggered ability answered. */
   | {
       readonly kind: 'optionalAnswered';
@@ -613,6 +637,12 @@ export type GameEvent =
    */
   | { readonly kind: 'cycled'; readonly seat: SeatId; readonly object: ObjectId }
   /**
+   * A creature was exerted as it attacked (CR 701.43a, 701.43d, 508.1g): `seat`, its controller, chose to pay the optional cost of attacking its
+   * "You may exert ~ as it attacks" ability. It does not untap during their next untap step; the abilities linked to the exert ability ("When you do", CR 607.2h)
+   * trigger. It comes with the `attackersDeclared` event of the declaration.
+   */
+  | { readonly kind: 'exerted'; readonly seat: SeatId; readonly object: ObjectId }
+  /**
    * A card with madness was discarded and exiled instead of going to the graveyard (CR 702.35a, D-128). `object` is
    * the card in exile (public: exile is a public zone); the `discarded` event before it has the id the card had in
    * the hand. Its madness ability triggers.
@@ -641,6 +671,8 @@ export type GameEvent =
   | { readonly kind: 'foretold'; readonly seat: SeatId; readonly object: ObjectId }
   /** CR 701.3 (Attach): an Aura or Equipment became attached to a permanent. */
   | { readonly kind: 'attached'; readonly object: ObjectId; readonly to: ObjectId }
+  /** An Aura that enchants a player entered attached to that player (CR 303.4b, issue 160, D-629). */
+  | { readonly kind: 'attachedToPlayer'; readonly object: ObjectId; readonly seat: SeatId }
   /**
    * CR 701.3d: an Aura or Equipment became unattached from `from` and stays on the battlefield
    * (an Aura that falls off goes to the graveyard, which is its `zoneChanged`). `reason` is

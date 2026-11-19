@@ -20,8 +20,18 @@ function stepTrigger(
   span: { start: number; end: number },
   step: Step,
   actor: IrNoun,
+  alsoStep?: IrTrigger['alsoStep'],
 ): IrTrigger {
-  return { kind: 'trigger', event: 'step', step, actor, args: {}, span, rule };
+  return {
+    kind: 'trigger',
+    event: 'step',
+    step,
+    ...(alsoStep === undefined ? {} : { alsoStep }),
+    actor,
+    args: {},
+    span,
+    rule,
+  };
 }
 
 /** The phases that follow whose turn it is: "draw step", "precombat main phase", ... */
@@ -63,6 +73,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of your precombat main phase',
     'the beginning of your postcombat main phase',
     'the beginning of each of your postcombat main phases',
+    // Frontier Siege (issue 103, CR 505.1): both main phases of the controller's turn.
+    'the beginning of each of your main phases',
     'the beginning of each of your draw steps',
     'the beginning of your first main phase',
     'the beginning of your second main phase',
@@ -84,7 +96,8 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
     'the beginning of combat on each player’s turn',
     'the beginning of your next draw step',
     'the beginning of your main phase',
-    'the beginning of each of your main phases',
+    'the beginning of each of their main phases',
+    'the beginning of each of your main phase',
     'the beginning of each of your postcombat main phase',
     'the beginning of each of their postcombat main phases',
     'the beginning of each of your postcombat main phases and',
@@ -114,6 +127,18 @@ export const TRIGGER_STEP = defineRule<IrTrigger>({
         ),
       ),
     )(ctx, pos);
+    // "each of your main phases" (CR 505.1): the precombat and the postcombat main phase of the turns of the controller.
+    const bothMains = pattern(
+      new RegExp(`the beginning of each of your main phases${NOT_IN_WORD}`, 'iu'),
+    )(ctx, pos);
+    if (bothMains.ok) {
+      const actor = makeNoun('trigger.step', at(bothMains.pos), 'you', { raw: 'you' });
+      return {
+        ok: true,
+        value: stepTrigger('trigger.step', at(bothMains.pos), 'main1', actor, 'main2'),
+        pos: bothMains.pos,
+      };
+    }
     const owned = plural.ok
       ? ({ ok: true, value: [null, 'you' as const, plural.value[1]], pos: plural.pos } as const)
       : phase(ctx, pos);
@@ -303,6 +328,8 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     '~ deals combat damage to an opponent',
     '~ deals combat damage to a creature',
     '~ deals combat damage to a player or planeswalker',
+    '~ deals combat damage to a player who controls more lands than you',
+    'a creature you control deals combat damage to an opponent who controls more creatures than you',
     'a creature you control deals combat damage to a player or planeswalker',
     '~ deals combat damage',
     'a creature you control deals combat damage to a player',
@@ -322,6 +349,10 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     '~ deal combat damage to a player',
     'one or more creatures you control deal combat damage to a player',
     '~ deals combat damage to a player and',
+    '~ deals combat damage to a player who controls more lands',
+    '~ deals combat damage to a player who controls more cards than you',
+    '~ deals combat damage to a player who controls more lands than each opponent',
+    '~ deals combat damage to a creature who controls more lands than you',
     '~ deals noncombat damage to a player',
     '~ or another creature deals combat damage to a player',
   ],
@@ -339,7 +370,18 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
     )(ctx, pos);
     if (!dealt.ok) return dealt;
     const [what, { damaged, span: words }] = dealt.value;
-    const span = { start: pos, end: dealt.pos };
+    // CR 603.2: "to a player who controls more lands than you" qualifies the player damaged; the lowering reads it as a condition of the event itself.
+    const who =
+      damaged === 'player' || damaged === 'opponent'
+        ? spanned(
+            pattern(
+              new RegExp(` who controls more (lands|creatures) than you${NOT_IN_WORD}`, 'iu'),
+            ),
+          )(ctx, dealt.pos)
+        : undefined;
+    const whoRead = who?.ok === true ? who : undefined;
+    const end = whoRead === undefined ? dealt.pos : whoRead.pos;
+    const span = { start: pos, end };
     // The player hit is the antecedent of "that player" in the body.
     const recipient =
       damaged === 'player' || damaged === 'opponent'
@@ -361,11 +403,26 @@ export const TRIGGER_COMBAT_DAMAGE = defineRule<IrTrigger>({
         subject: what,
         ...(damaged === undefined ? {} : { damaged }),
         ...(recipient === undefined ? {} : { recipient }),
+        ...(whoRead === undefined
+          ? {}
+          : {
+              whileCondition: {
+                kind: 'condition',
+                test: {
+                  kind: 'subjectControllerHasMore',
+                  stat: /creatures/iu.test(whoRead.value.value[1] ?? '')
+                    ? ('creatures' as const)
+                    : ('lands' as const),
+                },
+                span: whoRead.value.span,
+                rule: 'trigger.combat-damage',
+              },
+            }),
         args: {},
         span,
         rule: 'trigger.combat-damage',
       },
-      pos: dealt.pos,
+      pos: end,
     };
   },
 });

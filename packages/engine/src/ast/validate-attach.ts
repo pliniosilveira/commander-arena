@@ -5,7 +5,7 @@
  */
 import { CARD_TYPES, type CardType, COLORS, SUPERTYPES, type Subtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
-import type { Ability, Keyword, ObjectFilter, StaticSubject } from './types';
+import type { Ability, AlternativeCost, Keyword, ObjectFilter, StaticSubject } from './types';
 import { isOneOf, kindOf } from './validate-base';
 import {
   type AstIssue,
@@ -38,7 +38,8 @@ export function checkBattlefieldFilter(f: ObjectFilter, path: string, out: AstIs
 
 /**
  * A static ability's subject. `keywords` (D-149) allows a filter that names a keyword ("creatures you control with flying"): only
- * a `grantKeyword` may, because `derive` reads the keywords after the effects that give them (CR 613.8a) for that one alone.
+ * a `grantKeyword` or a `modifyPt` may. `derive` reads the keywords after the effects that give them (CR 613.8a) for the first, and
+ * applies the second (layer 7c) after layer 6 is done (CR 613.1f, 613.4c).
  */
 export function checkStaticSubject(
   s: StaticSubject,
@@ -61,6 +62,13 @@ export function checkStaticSubject(
       }
       break;
     case 'attached':
+      if (s.andThis !== undefined && (s.andThis !== true || !allowPair)) {
+        issue(
+          out,
+          `${path}.andThis`,
+          "'andThis' is true, and for a static ability that changes power and toughness or grants a keyword or an ability only",
+        );
+      }
       // The host's types ("Enchanted creature"): see StaticSubject. Each list is non-empty when set.
       checkEnumList(out, `${path}.types`, s.types, CARD_TYPES, 'card type');
       checkEnumList(out, `${path}.supertypes`, s.supertypes, SUPERTYPES, 'supertype');
@@ -95,7 +103,7 @@ export function checkStaticSubject(
         issue(
           out,
           `${path}.filter`,
-          'only a static ability that grants a keyword can name a keyword in its subject (CR 613.8)',
+          'only a static ability that grants a keyword or changes power and toughness can name a keyword in its subject (CR 613.8)',
         );
       }
       if (s.other !== undefined && typeof s.other !== 'boolean') {
@@ -123,6 +131,22 @@ export function checkProtectionTypes(types: unknown, path: string, out: AstIssue
 export function checkGrantedParameter(k: Keyword, path: string, out: AstIssue[]): void {
   if (k?.kind === 'afflict' && (!isCount(k.count) || k.count < 1)) {
     issue(out, `${path}.count`, 'afflict needs a positive integer');
+  }
+  if (k?.kind === 'annihilator' && (!isCount(k.count) || k.count < 1)) {
+    // D-640 (CR 702.86a): "annihilator 2", a positive whole number.
+    issue(out, `${path}.count`, 'annihilator needs a positive integer');
+  }
+  if (k?.kind === 'ward') {
+    // D-638 (CR 702.21a): the cost is paid when the ward ability resolves (rules/pay-unless.ts): mana, life and discarding, as for a printed ward.
+    if (!Array.isArray(k.cost) || k.cost.length === 0) {
+      issue(out, `${path}.cost`, 'ward needs a cost');
+    } else {
+      k.cost.forEach((c, i) => {
+        if (c?.kind !== 'mana' && c?.kind !== 'payLife' && c?.kind !== 'discard') {
+          issue(out, `${path}.cost[${i}]`, 'a granted ward may cost mana, life or a discard');
+        }
+      });
+    }
   }
   if (k?.kind === 'landwalk') {
     if (typeof k.landType !== 'string' || k.landType === '') {
@@ -157,7 +181,9 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
     } else if (
       k.from !== 'colorsNotInCommanderIdentity' &&
       k.from !== 'chosenCardType' &&
-      k.from !== 'ringBearer'
+      k.from !== 'chosenColor' &&
+      k.from !== 'ringBearer' &&
+      k.from !== 'multicolored'
     ) {
       issue(
         out,
@@ -185,11 +211,17 @@ export function checkGrantedKeyword(k: Keyword, path: string, out: AstIssue[]): 
  */
 export function checkAttachmentFace(
   abilities: readonly Ability[],
-  face: { readonly types: readonly CardType[]; readonly subtypes: readonly Subtype[] },
+  face: {
+    readonly types: readonly CardType[];
+    readonly subtypes: readonly Subtype[];
+    readonly alternativeCosts?: readonly AlternativeCost[];
+  },
   path: string,
   out: AstIssue[],
 ): void {
   const isAura = face.subtypes.includes('Aura');
+  // CR 702.103a: a card with bestow is an Aura while it is attached, so its abilities may speak of "enchanted creature".
+  const bestows = face.alternativeCosts?.some((a) => a?.kind === 'bestow') === true;
   const isEquipment = face.subtypes.includes('Equipment');
   const enchants = abilities.filter((a) => a.kind === 'keyword' && a.keyword.kind === 'enchant');
   if (isAura && !face.types.includes('enchantment')) {
@@ -201,9 +233,25 @@ export function checkAttachmentFace(
   if (!isAura && enchants.length > 0) {
     issue(out, `${path}.abilities`, 'only an Aura has an enchant ability (CR 702.5a)');
   }
+  // D-629: "Whenever enchanted player is attacked" belongs to an Aura that enchants a player.
+  const enchantsPlayer = enchants.some(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'enchant' && a.keyword.player === true,
+  );
   abilities.forEach((a, i) => {
+    if (
+      a.kind === 'triggered' &&
+      a.trigger.kind === 'attackBatch' &&
+      a.trigger.attackedEnchantedPlayer === true &&
+      !enchantsPlayer
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].trigger`,
+        'attackedEnchantedPlayer needs an Aura that enchants a player (D-629)',
+      );
+    }
     const subject = a.kind === 'static' && 'subject' in a.static ? a.static.subject : null;
-    if (subject?.kind === 'attached' && !isAura && !isEquipment) {
+    if (subject?.kind === 'attached' && !isAura && !isEquipment && !bestows) {
       issue(
         out,
         `${path}.abilities[${i}].static.subject`,
@@ -211,4 +259,31 @@ export function checkAttachmentFace(
       );
     }
   });
+  // CR 400.7, 607.1 (Animate Dead): "that creature" (`putWithThis`) and "put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`) name what an ability of this same
+  // permanent put onto the battlefield (`moveToZone.putWithSource`): a face that reads the link needs the ability that makes it.
+  const reads = { link: false, makes: false };
+  scanLink(abilities, reads);
+  if (reads.link && !reads.makes) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'putWithThis and putWithSource name what an ability of this permanent put onto the battlefield: a moveToZone with putWithSource is needed',
+    );
+  }
+}
+
+/** Whether a tree of abilities reads the link of `putWithSource` and whether it makes one (a `moveToZone` with the flag). */
+function scanLink(node: unknown, found: { link: boolean; makes: boolean }): void {
+  if (Array.isArray(node)) {
+    for (const item of node) scanLink(item, found);
+    return;
+  }
+  if (node === null || typeof node !== 'object') return;
+  const record = node as Record<string, unknown>;
+  if (record.kind === 'putWithThis') found.link = true;
+  if (record.putWithSource === true) {
+    if (record.kind === 'moveToZone') found.makes = true;
+    else found.link = true;
+  }
+  for (const value of Object.values(record)) scanLink(value, found);
 }

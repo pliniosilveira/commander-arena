@@ -5,6 +5,7 @@ import {
   openStartFlow,
   select,
   startDefaultGame,
+  startFromVersus,
 } from './harness/menu';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
@@ -33,7 +34,7 @@ function hundredCardList(): string {
 
 async function openImport(page: Page): Promise<void> {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'My decks' }).click();
   await page.getByRole('button', { name: 'Paste a list' }).click();
   await expect(page.getByRole('heading', { name: 'Import a deck' })).toBeVisible();
 }
@@ -126,6 +127,8 @@ test('a deck with unsupported cards has one button that opens GitHub with the is
   const button = page.getByTestId('report-issue');
   await expect(button).toBeVisible();
   const [popup] = await Promise.all([page.waitForEvent('popup'), button.click()]);
+  // The pop-up opens before it has navigated: its URL is empty until the (stubbed) GitHub page loads.
+  await popup.waitForURL(/^https:\/\/github\.com\//);
   const url = new URL(popup.url());
   expect(url.origin + url.pathname).toBe(
     'https://github.com/pliniosilveira/commander-arena/issues/new',
@@ -167,9 +170,10 @@ test('an imported deck whose cards are all supported is saved and played from th
   await expect(page.getByText('Saved "SYNTHETIC Hundred".')).toBeVisible();
   await page.getByRole('button', { name: 'Back to menu' }).click();
   const mine = await openStartFlow(page);
-  await chooseDeck(mine, 'Your Decks', /SYNTHETIC Hundred/);
+  await chooseDeck(mine, 'My Decks', /SYNTHETIC Hundred/);
   const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
   await select(theirs);
+  await startFromVersus(page);
 
   // The first decision is the mulligan, with cards of this deck in the opening hand.
   const mulligan = page.getByRole('dialog', { name: 'Opening hand' });
@@ -189,7 +193,7 @@ test('saved decks: save, list, open and delete', async ({ page }) => {
   await page.getByRole('button', { name: 'Save deck' }).click();
   await expect(page.getByText('Saved "SYNTHETIC Saved".')).toBeVisible();
 
-  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'My decks' }).click();
   await expect(page.locator('strong', { hasText: 'SYNTHETIC Saved' })).toBeVisible();
   await page.getByRole('button', { name: /^Open/ }).first().click();
   await expect(page.getByTestId('coverage-headline')).toHaveText('91 of 100 cards supported', {
@@ -197,7 +201,7 @@ test('saved decks: save, list, open and delete', async ({ page }) => {
   });
   await expect(page.getByLabel('Deck name')).toHaveValue('SYNTHETIC Saved');
 
-  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'My decks' }).click();
   await page
     .getByRole('button', { name: /^Delete/ })
     .first()
@@ -222,7 +226,7 @@ test('a commander chosen after the import is still the commander after Save and 
   await expect(page.getByText('Saved "SYNTHETIC Hundred".')).toBeVisible();
 
   // Leave and come back: the commander is read from the saved deck, not asked for again.
-  await page.getByRole('button', { name: 'Your decks' }).click();
+  await page.getByRole('button', { name: 'My decks' }).click();
   await page.getByRole('button', { name: /^Open/ }).first().click();
   await expect(page.getByTestId('coverage-headline')).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole('heading', { name: 'Choose your commander' })).toHaveCount(0);

@@ -22,60 +22,86 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
 import { ARTIFACT_EFFECT_RULES } from './artifacts';
 import { ATTACH_RULES } from './attach';
+import { AURA_GRAVEYARD_EFFECT_RULES } from './aura-graveyard';
 import { BECOMES_RULES } from './becomes';
 import { BITE_RULES, DAMAGE_AMOUNT } from './bite';
 import { BRUNA_EFFECT_RULES } from './bruna';
 import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
+import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { EFFECT_COPY_SPELL } from './copy-spell';
+import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
+import { DAMAGE_HAND_EFFECT_RULES } from './damage-hand';
 import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
 import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
+import { DEATH_TOLL_B_EFFECT_RULES } from './death-toll-b';
+import { DEATH_TOLL_C_EFFECT_RULES } from './death-toll-c';
+import { DEATH_TOLL_WINTER_EFFECT_RULES } from './death-toll-winter';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
+import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
+import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
+import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FINALE_EFFECT_RULES } from './finale';
+import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
+import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
 import { GALADRIEL_G2_EFFECT_RULES } from './galadriel-g2';
 import { GALADRIEL_G3_EFFECT_RULES } from './galadriel-g3';
+import { GIDEON_EFFECT_RULES } from './gideon';
 import { GISA_G3_EFFECT_RULES } from './gisa-g3';
 import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
+import { GOAD_EFFECT_RULES } from './goad';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
+import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
+import { GROUP_BASE_PT_RULES } from './group-base-pt';
+import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
+import { HEXPROOF_LOSS_EFFECT_RULES } from './hexproof-loss';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
+import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
+import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
+import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
 import {
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
   EFFECT_CHOOSE_COLOR,
   EFFECT_CHOOSE_CREATURE_TYPE,
+  EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
+import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
+import { NILS_EFFECT_RULES } from './nils';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
 import { NIV_GROUP_3_A_EFFECT_RULES } from './niv-group-3-a';
@@ -104,20 +130,36 @@ import {
   EFFECT_PLAYER_LOCK,
   EFFECT_SHUFFLE,
 } from './player';
+import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
+import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';
+import { PRIMORDIAL_EFFECT_RULES } from './primordial';
+import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
+import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
+import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
+import { QUANDRIX_EFFECT_RULES } from './quandrix';
+import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
+import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
+import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
+import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
+import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
+import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
 import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
+import { SEARCH_PAIR_RULES } from './search-pair';
+import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
+import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 
@@ -210,6 +252,9 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
     // Stage P52 (D-210): the total mana value of the cards a mill before it milled.
     '~ deals damage to target opponent equal to the total mana value of those cards',
     '~ deals damage to that player equal to the total mana value of those cards',
+    // Lorehold Spirit deck, group 2 (issue 86, Fateful Tempest): every opponent, for the total mana value of the cards a mill before it milled (one number, counted once).
+    '~ deals damage to each opponent equal to the total mana value of cards milled this way',
+    '~ deals damage to each opponent equal to the total mana value of those cards',
   ],
   rejects: [
     '~ deals damage to that creature equal to the total mana value of those cards',
@@ -217,6 +262,8 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
     '~ deals damage to target player equal to the number of creatures',
     '~ deals damage to each creature equal to the number of lands you control',
     '~ deals damage to each opponent equal to the number of lands you control',
+    '~ deals damage to each player equal to the total mana value of those cards',
+    '~ deals damage to each creature equal to the total mana value of those cards',
     '~ deals damage to two target creatures equal to the number of lands you control',
     '~ deals damage to target creature equal to its power',
     '~ deals damage to target player',
@@ -226,19 +273,25 @@ export const EFFECT_DAMAGE_COUNT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.damage-count',
-    sequence(
-      literal('~ deals damage to '),
-      satisfy(
-        family<IrNoun>('noun', { only: DAMAGE_RECIPIENTS }),
-        (noun) =>
-          // Stage P52 (D-210): "that player", the one a sentence before it asked (the binding pass makes it that target).
-          (noun.det === 'target' ||
-            noun.det === 'you' ||
-            (noun.det === 'anaphor' && noun.rule === 'noun.that-player')) &&
-          noun.count === undefined,
+    satisfy(
+      sequence(
+        literal('~ deals damage to '),
+        satisfy(
+          family<IrNoun>('noun', { only: DAMAGE_RECIPIENTS }),
+          (noun) =>
+            // Stage P52 (D-210): "that player", the one a sentence before it asked (the binding pass makes it that target).
+            (noun.det === 'target' ||
+              noun.det === 'you' ||
+              // Lorehold group 2: "each opponent" is one number for every opponent, read only with the milled value (a count would be counted again for each, below).
+              noun.det === 'eachOpponent' ||
+              (noun.det === 'anaphor' && noun.rule === 'noun.that-player')) &&
+            noun.count === undefined,
+        ),
+        literal(' '),
+        family<IrArg>('amount', { only: ['amount.number-of', 'amount.milled-value-this-way'] }),
       ),
-      literal(' '),
-      family<IrArg>('amount', { only: ['amount.number-of', 'amount.milled-value-this-way'] }),
+      ([, to, , amount]) =>
+        to.det !== 'eachOpponent' || (amount.kind === 'thisWay' && amount.what === 'milledValue'),
     ),
     ([, to, , amount]) => ({ verb: 'dealDamage', args: { amount, to } }),
   ),
@@ -297,8 +350,13 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
     'it deals damage equal to its power to any target',
     'it deals X damage to any target',
     'it deals damage equal to the number of Dragons you control to any target',
+    // Grave Danger (issue 159, Lotleth Giant): the count after "for each" multiplies the quantity (CR 608.2c).
+    'it deals 1 damage to target opponent for each creature card in your graveyard',
+    'it deals 2 damage to each opponent for each creature you control',
   ],
   rejects: [
+    'it deals X damage to target opponent for each creature you control',
+    'it deals 1 damage to target opponent for each',
     'it deals damage equal to its power',
     'it deals 1 damage',
     'it deals damage to you',
@@ -309,14 +367,21 @@ export const EFFECT_DAMAGE_BY_IT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.damage-by-it',
-    sequence(
-      family<IrNoun>('noun', { only: ['noun.it'] }),
-      literal(' deals '),
-      DAMAGE_AMOUNT,
-      literal(' to '),
-      operands(DAMAGE_RECIPIENTS, 'effect.damage-by-it'),
+    satisfy(
+      sequence(
+        family<IrNoun>('noun', { only: ['noun.it'] }),
+        literal(' deals '),
+        DAMAGE_AMOUNT,
+        literal(' to '),
+        operands(DAMAGE_RECIPIENTS, 'effect.damage-by-it'),
+        optional(FOR_EACH_TAIL, null),
+      ),
+      ([, , amount, , , each]) => each === null || scaled(amount, each) !== null,
     ),
-    ([source, , amount, , to]) => ({ verb: 'dealDamage', args: { source, amount, to } }),
+    ([source, , amount, , to, each]) => ({
+      verb: 'dealDamage',
+      args: { source, amount: each === null ? amount : (scaled(amount, each) ?? amount), to },
+    }),
   ),
 });
 
@@ -384,6 +449,10 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards',
     // Stage P70 (D-231, CR 610.3): until an opponent becomes the monarch (Palace Jailer).
     'exile target creature an opponent controls until an opponent becomes the monarch',
+    // Lorehold group 2 (issue 86): a card of your graveyard that is none of the types the words leave out.
+    'exile target noncreature, nonland card from your graveyard',
+    // Soul Snare (CR 508.1b, 506.3): an attacker of the controller or of a planeswalker the controller controls.
+    "exile target creature that's attacking you or a planeswalker you control",
   ],
   rejects: [
     'exile target creature until an opponent becomes the monarch or ~ leaves the battlefield',
@@ -399,6 +468,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
     'exile this card from your hand',
     'exile that card from your hand',
     'exile that card from a graveyard',
+    'exile target noncreature, nonland card from a graveyard',
+    'exile target noncreature, nonland card from your graveyard until ~ leaves the battlefield',
     // D-270: the second half is another kind of target, which the slot of two zones does not say.
     'exile up to three other target creatures from the battlefield and/or creature cards from a graveyard',
     'exile up to three other target creatures from the battlefield and/or creature cards from graveyards until ~ leaves the battlefield',
@@ -412,6 +483,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
         operands(
           [
             ...GRAVEYARD_OPERANDS,
+            // Lorehold group 2 (issue 86): "exile target noncreature, nonland card from your graveyard".
+            'noun.target-nonmatching-graveyard-card',
             'noun.player-graveyard',
             'noun.all-graveyards',
             // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (the one verb that moves a card out of any zone).
@@ -425,6 +498,8 @@ export const EFFECT_EXILE = defineRule<Clauses>({
             'noun.that-object',
             // D-407 (Danitha deck): "Exile enchanted creature." (the permanent the Aura is attached to, which the engine's `attached` names).
             'noun.attached-permanent',
+            // Soul Snare (CR 508.1b, 506.3): "Exile target creature that's attacking you or a planeswalker you control."
+            'noun.target-creature-attacking-you',
           ],
           'effect.exile',
         ),
@@ -630,22 +705,49 @@ const RETURN_THIS_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
  */
 const TO_BATTLEFIELD_AHEAD = /^return [^.]*? to the battlefield/i;
 
-const RETURN_FROM_GRAVEYARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = (
-  ctx,
-  pos,
-) => {
+/**
+ * " attached to that token" after the battlefield (issue 89, Forum Filibuster, CR 303.4f, 400.7j): an Aura or an Equipment card put onto the battlefield attached to the token the
+ * sentences before it made, which names it, so nothing is asked. Only the token: another host is another statement.
+ */
+const ATTACHED_TO_THAT_TOKEN: Parser<IrNoun> = map(
+  sequence(literal(' attached to '), family<IrNoun>('noun', { only: ['noun.that-token'] })),
+  ([, host]) => host,
+);
+
+const RETURN_FROM_GRAVEYARD: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+  attachTo?: IrNoun;
+}> = (ctx, pos) => {
   const toBattlefield = TO_BATTLEFIELD_AHEAD.test(ctx.text.slice(pos));
   const r = sequence(
     literal('return '),
     // D-386: "return X target creature cards from your graveyard to your hand" (as many targets as the X announced) is read here and by no other verb.
     operands(
-      [...GRAVEYARD_OPERANDS, 'noun.x-target-graveyard-cards'],
+      [
+        ...GRAVEYARD_OPERANDS,
+        'noun.x-target-graveyard-cards',
+        'noun.up-to-x-target-graveyard-cards',
+      ],
       'effect.return',
       toBattlefield ? undefined : YOUR_GRAVEYARD_ONLY,
     ),
     toBattlefield ? TO_THE_BATTLEFIELD : TO_YOUR_HAND,
+    optional(ATTACHED_TO_THAT_TOKEN, null),
   )(ctx, pos);
-  return r.ok ? { ok: true, value: { objects: r.value[1], to: r.value[2] }, pos: r.pos } : r;
+  // Only a card put onto the battlefield is attached as it enters.
+  if (r.ok && !toBattlefield && r.value[3] !== null) return fail(ctx, pos);
+  return r.ok
+    ? {
+        ok: true,
+        value: {
+          objects: r.value[1],
+          to: r.value[2],
+          ...(r.value[3] === null ? {} : { attachTo: r.value[3] }),
+        },
+        pos: r.pos,
+      }
+    : r;
 };
 
 /**
@@ -693,6 +795,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     // D-362 (Victimize): the cards an earlier sentence chose as targets.
     'return the chosen cards to the battlefield',
     'return the chosen cards to the battlefield tapped',
+    // Issue 89 (Forum Filibuster): put onto the battlefield attached to the token the sentence before made.
+    'return up to one target Aura or Equipment card from your graveyard to the battlefield attached to that token',
+    'return target Aura card from your graveyard to the battlefield attached to that token',
   ],
   rejects: [
     "return that card to its owner's hand",
@@ -726,10 +831,16 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return the chosen cards to their owners' hands",
     'return the chosen card to the battlefield',
     'return the chosen cards to the battlefield under their owners control',
+    'return target creature card from your graveyard to your hand attached to that token',
+    'return target creature card from your graveyard to the battlefield attached to target creature',
+    'return target creature card from your graveyard to the battlefield attached to it',
+    'return target creature card from your graveyard to the battlefield attached to that creature',
+    'return target creature card from your graveyard to the battlefield attached to those tokens',
+    'return target creature card from your graveyard to the battlefield attached to',
   ],
   parse: single(
     'effect.return',
-    choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>(
+    choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec; attachTo?: IrNoun }>(
       RETURN_TO_HAND,
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
@@ -739,7 +850,10 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_THE_CHOSEN_CARDS,
       RETURN_THIS_CARD,
     ),
-    ({ objects, to }) => ({ verb: 'return', args: { objects, to } }),
+    ({ objects, to, attachTo }) => ({
+      verb: 'return',
+      args: { objects, to, ...(attachTo === undefined ? {} : { attachTo }) },
+    }),
   ),
 });
 
@@ -763,6 +877,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target spell with mana value 1',
     // Stage P50 (D-207): a triggered ability or a spell.
     'counter target triggered ability or colorless spell',
+    // Issue 100 (Sublime Epiphany): an activated or a triggered ability.
+    'counter target activated or triggered ability',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -776,7 +892,11 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     sequence(
       literal('counter '),
       family<IrNoun>('noun', {
-        only: ['noun.target-spell', 'noun.target-triggered-ability-or-spell'],
+        only: [
+          'noun.target-spell',
+          'noun.target-triggered-ability-or-spell',
+          'noun.target-activated-or-triggered-ability',
+        ],
       }),
     ),
     ([, objects]) => ({ verb: 'counter', args: { objects } }),
@@ -890,48 +1010,114 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
+  // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
+  ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
   ...GRAVEYARD_CHOICE_RULES,
   // D-438, D-439 (Feather, group 3): the copies for each other creature and the exile as a spell resolves start like a plain copy, a plain exile and "that player ...", and are tried first.
   ...FEATHER_G3_EFFECT_RULES,
+  // Quandrix Unlimited deck, group I (Unbound Flourishing): "double the value of X" and "copy that spell or ability" start like a plain double and a plain copy, and are tried first.
+  ...UNBOUND_I_EFFECT_RULES,
   // Gisa deck, group 4 (issue 41, D-459, D-460): "Exile it at the beginning of the next end step." and "Put each creature card exiled with ~ onto the battlefield ..." start like a plain
   // exile and a plain put, and "It gains haste." like a gain: tried first.
   ...GISA_G4_EFFECT_RULES,
+  // Prismari deck, group 1 (issue 87, D-638 to D-645): "populate", the sentences about the tokens an instruction just made ("Sacrifice it at the beginning of the next end step.",
+  // "Exile them ...", "They gain haste."), "choose any number of target creatures", "choose a token you control" and "~ becomes a copy of ..." start like the plain sacrifice, exile,
+  // choose and gain rules, and are tried first.
+  ...PRISMARI_G1_EFFECT_RULES,
+  // Prismari deck, group 2 (issue 87, D-647 and later): "for each opponent, create ... tokens that attack that opponent ...", "add ... Until end of turn, you don't lose this mana ...",
+  // "exile ~ with three time counters on it" and "exile up to one target ... card from your graveyard and copy it. You may cast the copy ..." start like the plain "for each", add and exile
+  // rules, and are tried first.
+  ...PRISMARI_G2_EFFECT_RULES,
+  // Prismari deck, group 3 (issue 87, D-660 and later): "Exile the top four cards ... in a face-down pile ...", "you may cast a spell from among them without paying its mana cost", "put the rest into
+  // your hand", "shuffle your library, then reveal cards ... exile that card ...", "as many times as you choose, you may exile ...", "each player exiles cards ... until they exile a nonland card",
+  // "an opponent chooses a nonland card exiled this way" and "whenever a creature you control deals combat damage ... copy the exiled card" start like the plain exile, cast, put, shuffle,
+  // each and whenever rules, and are tried first.
+  ...PRISMARI_G3_EFFECT_RULES,
   // Hylda deck, group 1 (issue 42, D-512, D-513): "for each opponent, tap up to one target creature that player controls" and "tap up to X target nonland permanents, where X is ...
   // scrying this way" start like a plain tap and like the "for each" rules, and are tried first.
   ...HYLDA_G1_EFFECT_RULES,
+  // Silverquill deck (Nils): "for each player, put a +1/+1 counter on up to one target creature that player controls" starts like the plain "for each" rules, and is tried first.
+  ...NILS_EFFECT_RULES,
   // D-517, D-519 (Hylda deck, group 2): "Those creatures don't untap during ... next untap step" and "Until your next turn, creatures ... enter tapped".
   ...HYLDA_G2_EFFECT_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
+  // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
+  ...JESKAI_FLASHBACK_EFFECT_RULES,
+  ...LOREHOLD_G1_EFFECT_RULES,
+  // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller" starts like the plain "each" rules, and is tried first.
+  ...CONTROLLER_DAMAGE_EFFECT_RULES,
+  // Issue 279 (Etali, Primal Storm): "exile the top card of each player's library" starts like the plain exile, and is tried first.
+  ...EACH_LIBRARY_EFFECT_RULES,
+  // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..." starts like "choose target ...", tried first.
+  ...LOREHOLD_G2_EFFECT_RULES,
   // Galadriel deck, group 1 (issue 43): "reveal the top card of your library. If ...", "look at the top card ... you may put that card onto the battlefield" and "They become 5/5 Elemental
   // creatures ... They're still lands." start like the plain reveal, look and pronoun rules, and are tried first.
   ...GALADRIEL_G1_EFFECT_RULES,
   // Galadriel deck, group 3 (issue 43): "Exchange control of ~ and target nonland permanent", "counter ... unless its controller pays mana equal to ...", "Draw a card and reveal it.
   // Remove ..." and "Its activated abilities can't be activated this turn." start like the plain counter, draw and pronoun rules, and are tried first.
   ...GALADRIEL_G3_EFFECT_RULES,
+  // CR 402.1: "it deals damage to each opponent equal to the number of cards in that player's hand", before the plain damage rules it starts like.
+  ...DAMAGE_HAND_EFFECT_RULES,
+  // Quandrix Unlimited deck, group D2: "you gain life and draw cards equal to its power".
+  ...GAIN_LIFE_AND_DRAW_EFFECT_RULES,
+  // Quandrix Unlimited deck, group D2: "target player draws X cards plus an additional card for each time they've cast a commander from the command zone this game".
+  ...DRAW_COMMANDER_CASTS_EFFECT_RULES,
+  // Quandrix Unlimited deck, group D2: "reveal the top X cards ... put all land cards from among them onto the battlefield tapped", "reveal cards until you reveal X land cards".
+  ...REVEAL_X_CARDS_EFFECT_RULES,
+  // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
+  ...DEATH_TOLL_C_EFFECT_RULES,
+  ...DEATH_TOLL_WINTER_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
+  ...COUNCIL_EFFECT_RULES,
   ...DINOSAUR_EFFECT_RULES,
   // Troyan deck, group 4 (issue 337): "Exile the top eight cards of your library. You may put a land card ..." starts like the plain exile of the top cards, and is tried first.
   ...TROYAN_G4_EFFECT_RULES,
+  // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
+  ...QUANDRIX_G_EFFECT_RULES,
+  // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
+  ...JESKAI_CASTFREE_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
   // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
   ...FINALE_EFFECT_RULES,
+  ...GIDEON_EFFECT_RULES,
+  // CR 701.20a, 119.3: 'you and target opponent each reveal the top card of your library. You each lose life ...' starts like the plain player rules, so it is tried first.
+  ...REVEAL_TOP_DUEL_EFFECT_RULES,
+  ...HEXPROOF_LOSS_EFFECT_RULES,
+  ...GOAD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
+  // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
+  ...QUANDRIX_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
+  ...FLASH_PERMISSION_EFFECT_RULES,
+  // Quandrix Unlimited deck: "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel).
+  ...PLAYER_MANA_ABILITY_EFFECT_RULES,
+  ...SPEND_QUALITIES_EFFECT_RULES,
   ...NIV_GROUP_2B_B_EFFECT_RULES,
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
+  ...PRIMORDIAL_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
+  // Issue 160 (D-627): "Populate".
+  ...POPULATE_EFFECT_RULES,
+  ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...MOVE_COUNTERS_EFFECT_RULES,
+  ...SEARCH_PAIR_RULES,
+  ...ENCHANTED_PLAYER_EFFECT_RULES,
+  // Issue 160 (D-628): "Each player gains control of all creatures they own."
+  ...RETURN_CONTROL_EFFECT_RULES,
   ...CONTROL_EFFECT_RULES,
   // Stage P44 (D-195): "starting with you, each player votes for profit or security".
   ...VOTE_EFFECT_RULES,
@@ -946,6 +1132,8 @@ export const EFFECT_RULES = [
   // The flicker sentence starts like a plain exile and must be tried first: the first rule that
   // reads a prefix of the text wins, and no rule backtracks into another.
   ...FLICKER_RULES,
+  // Issue 104: "exile a creature card from your graveyard" (a card the player chooses), before the plain exile of a target.
+  ...GRAVEYARD_COPY_EFFECT_RULES,
   EFFECT_EXILE,
   EFFECT_RETURN,
   // Before the plain counter: its phrase is a prefix of this one.
@@ -955,7 +1143,9 @@ export const EFFECT_RULES = [
   // Stage P38 (D-182): changing the target of a spell or ability with a single target.
   EFFECT_CHANGE_TARGET,
   // Stage P33 (D-150): proliferate, an exile for each opponent, and the sentences about the ability before them.
+  ...QUANDRIX_D1_EFFECT_RULES,
   ...ANGEL_EFFECT_RULES,
+  ...QUANDRIX_E_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
@@ -981,6 +1171,8 @@ export const EFFECT_RULES = [
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,
+  // Death Toll deck, group B: "choose a card at random in your graveyard", "return two creature cards at random from your graveyard to the battlefield".
+  ...DEATH_TOLL_B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".
@@ -1002,6 +1194,7 @@ export const EFFECT_RULES = [
   EFFECT_TAP,
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
+  EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,
@@ -1025,6 +1218,8 @@ export const EFFECT_RULES = [
   ...GAIN_RULES,
   ...RESTRICT_RULES,
   ...BECOMES_RULES,
+  ...GROUP_BASE_PT_RULES,
+  ...GROUP_BASE_PT_SOURCE_RULES,
   ...SEARCH_RULES,
   ...PREVENT_RULES,
   ...TRANSFORM_RULES,

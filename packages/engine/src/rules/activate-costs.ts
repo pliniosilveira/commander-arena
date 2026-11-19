@@ -34,7 +34,7 @@ import { isSummoningSick, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
-import { withX } from './x-value';
+import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
 
 /** An activation cost split by how it is paid. */
@@ -57,10 +57,14 @@ export interface CostBreakdown {
   readonly cycling: boolean;
   /** How many cards to discard from the hand, chosen by the player (CR 701.9, D-095); 0 for none. */
   readonly discard: number;
+  /** "Discard your hand" (D-626, CR 701.9): every card of the hand goes, none chosen; `discard` is 0 then. */
+  readonly discardHand: boolean;
   /** "Discard a legendary card" / "another card named ~" (D-207): what narrows the cards that may be discarded, or null for any. */
   readonly discardOf: Pick<Extract<Cost, { kind: 'discard' }>, 'filter' | 'named'> | null;
   /** The mana symbols of every `mana` cost, in order. */
   readonly mana: readonly string[];
+  /** The cost has an {X} (CR 107.3, 602.2b): `mana` has it paid already as generic mana. */
+  readonly hasX: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -98,6 +102,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let cycling = false;
   let discard = 0;
   let discards = 0;
+  let discardHand = false;
   let discardOf: CostBreakdown['discardOf'] = null;
   let sacrifice: CostBreakdown['sacrifice'] = null;
   let sacrificeCount = 1;
@@ -163,6 +168,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
       case 'discard':
         discards += 1;
         discard += cost.count;
+        if (cost.hand === true) discardHand = true;
         if (cost.filter !== undefined || cost.named !== undefined) {
           discardOf = {
             ...(cost.filter === undefined ? {} : { filter: cost.filter }),
@@ -216,12 +222,14 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   if (tapCreatures !== null && (mana.length > 0 || sacrifice !== null || discard > 0)) return null;
   // D-407: the creature to blight is chosen after the permanents to tap and before the sacrifice, which a crew cost (its creatures are chosen last, alone) has no place for.
   if (blight > 0 && tapCreatures !== null) return null;
-  // D-133: the permanents to tap are chosen before the sacrifice and the discard, and could have been tapped for mana first,
-  // so a tap cost is not combined with mana (or with a crew cost).
-  if (tapPermanents !== null && (mana.length > 0 || tapCreatures !== null)) return null;
+  // D-133: the permanents to tap are chosen before the sacrifice and the discard, so a tap cost is not combined with a crew cost.
+  // D-625: next to a mana cost they are chosen before the mana is paid (CR 601.2h: the costs are paid in the order the player likes), so
+  // the mana is paid from the sources that are still untapped.
+  if (tapPermanents !== null && tapCreatures !== null) return null;
   return {
     tap,
     life,
+    hasX: hasX(abilityXCost(costs)),
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -231,6 +239,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     mill,
     cycling,
     discard,
+    discardHand,
     discardOf,
     mana,
     sacrifice,
@@ -412,13 +421,15 @@ export function planActivationMana(
 ): PaymentPlan | null {
   const obj = state.objects[source];
   const d = obj === undefined ? null : derive(state, obj);
+  // CR 106.6, 107.3: "Spend this mana only on costs that contain {X}": the activation cost has an {X}.
+  const x = costs.hasX ? ({ hasX: true } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true }
-      : { ability: true, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x }
+      : { ability: true, ...x, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 

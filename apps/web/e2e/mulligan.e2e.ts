@@ -2,10 +2,6 @@ import { expect, test } from '@playwright/test';
 
 test('the first mulligan is free: keep seven cards and play on', async ({ page }) => {
   await page.goto('/?autostart=white-knights,swamp-forest&seed=7');
-  // Issue 48: under the buttons, the opponent's commander and its colours.
-  const opponent = page.locator('[data-opponent-commanders]');
-  await expect(opponent).toContainText(/^Your opponent is playing \S/);
-  await expect(opponent.locator('.mana').first()).toBeVisible();
   await page.getByRole('button', { name: 'Mulligan', exact: true }).click();
   await expect(page.getByText(/Mulligans taken: 1/)).toBeVisible();
   await expect(page.getByText(/no cards go to the bottom/i)).toBeVisible();

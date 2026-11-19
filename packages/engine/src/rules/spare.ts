@@ -11,9 +11,11 @@
 import type { CardType } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
-import { seatsInOrder } from '../state/ops';
-import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { allocateTimestamp, patchObject, seatsInOrder } from '../state/ops';
+import type { ContinuousEffect, GameState, Instruction, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
+import { bonusCounters, counterBonuses } from './counter-bonus';
+import { blocks, counterBlockers } from './counter-prevention';
 import { derive } from './derive';
 import { sacrificeInstructions } from './sacrifice-choice';
 import { apnapOrder } from './select';
@@ -34,6 +36,48 @@ function permanentsOf(
 }
 
 /**
+ * Promise of Loyalty (`sparePermanents.own.counter`, CR 122.1, 508.1a, 611.2b): puts the counter on each permanent kept (a counter it can't have is not put on, CR 122.6) and, with
+ * `cantAttackYou`, makes one effect for each that bars it from attacking the controller of the effect and their planeswalkers for as long as it has the counter. The set is fixed
+ * now (CR 611.2c).
+ */
+function markKept(
+  state: GameState,
+  res: ResolutionContext,
+  ins: SpareInstruction,
+  kept: ReadonlySet<ObjectId>,
+): { state: GameState; events: GameEvent[] } {
+  const counter = ins.counter;
+  if (counter === undefined) return { state, events: [] };
+  const blockers = counterBlockers(state);
+  const bonuses = counterBonuses(state);
+  let next = state;
+  const events: GameEvent[] = [];
+  for (const id of kept) {
+    const obj = next.objects[id];
+    if (obj === undefined || obj.zone !== 'battlefield') continue;
+    if (!ins.players.includes(controllerOf(next, obj))) continue;
+    if (!derive(next, obj).types.some((t) => ins.types.includes(t))) continue;
+    if (blocks(next, blockers, obj, counter)) continue;
+    const put = bonusCounters(next, bonuses, obj, counter, 1);
+    next = patchObject(next, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
+    });
+    events.push({ kind: 'counterAdded', object: id, counter, count: put, by: res.controller });
+    if (ins.cantAttackYou !== true || controllerOf(next, obj) === res.controller) continue;
+    const [timestamp, stamped] = allocateTimestamp(next);
+    const effect: ContinuousEffect = {
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: [id],
+      until: { kind: 'whileHasCounter', object: id, counter },
+      change: { kind: 'cantAttackPlayer', seat: res.controller },
+    };
+    next = { ...stamped, continuousEffects: [...stamped.continuousEffects, effect] };
+  }
+  return { state: next, events };
+}
+
+/**
  * The instruction that starts the choices of the effect: the players still in the game, in turn order from the active player. With `own` (D-484, "Each opponent chooses a
  * permanent they control of each permanent type and sacrifices the rest") only the players the effect names, each choosing for themselves.
  */
@@ -41,11 +85,13 @@ export function startSpare(
   state: GameState,
   types: readonly CardType[],
   own?: readonly SeatId[],
+  extras: Pick<SpareInstruction, 'typesOnly' | 'counter' | 'cantAttackYou'> = {},
 ): SpareInstruction {
   const players = seatsInOrder(state, state.turn.activeSeat);
   return {
     kind: 'spare',
     ...(own === undefined ? {} : { own: true as const }),
+    ...extras,
     players: own === undefined ? players : players.filter((seat) => own.includes(seat)),
     types,
     step: 0,
@@ -67,16 +113,20 @@ export function runSpare(
     const doomed = permanentsOf(state).filter(
       (p) =>
         ins.players.includes(p.controller) &&
-        (ins.own === true || !p.types.includes('land')) &&
+        // Promise of Loyalty: with `typesOnly` only the permanents of the types the effect names are sacrificed.
+        (ins.typesOnly === true
+          ? ins.types.some((t) => p.types.includes(t))
+          : ins.own === true || !p.types.includes('land')) &&
         !kept.has(p.id),
     );
+    const marked = markKept(state, res, ins, kept);
     const seats = apnapOrder(
       state,
       doomed.map((p) => p.controller),
     );
     // D-283 (CR 603.10a): all of them are sacrificed at once, so what each was is recorded before the first moves.
     const together = recordTogether(
-      state,
+      marked.state,
       seats.flatMap((seat) =>
         sacrificeInstructions(
           doomed.filter((p) => p.controller === seat).map((p) => p.id),
@@ -84,7 +134,7 @@ export function runSpare(
         ),
       ),
     );
-    return done(together.state, [], together.instructions);
+    return done(together.state, marked.events, together.instructions);
   }
   const candidates = permanentsOf(state)
     .filter((p) => p.controller === pair.player && p.types.includes(pair.type))

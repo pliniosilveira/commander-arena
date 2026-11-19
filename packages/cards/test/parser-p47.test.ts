@@ -213,7 +213,7 @@ describe('what the real planeswalkers still stop at (no card is half read)', () 
     ['Liliana of the Veil', /two piles/],
     ['Jace, the Mind Sculptor', /bottom of that player/],
     ['Nissa, Who Shakes the World', /noncreature land/],
-    ['Gideon Jura', /attack ~ if able/],
+    // Gideon Jura stopped at "attack ~ if able" until the First Flight decks taught the engine `requireAttackSource` (CR 508.1d).
     ['Tamiyo, Compleated Sage', /Compleated/],
     ['Narset, Parter of Veils', /can't draw more than one card/],
   ];
@@ -340,12 +340,11 @@ describe('emblems and Empower Jace: the near misses', () => {
       }),
     );
 
-  test('an emblem with an activated ability is read; plain text and target-dependent recipients are not', () => {
+  test('an emblem with an activated ability is read; plain text and a group of recipients are not', () => {
     expect(sorcery('You get an emblem with "Draw a card."').support.status).toBe('unsupported');
     expect(sorcery('You get an emblem with "{T}: Draw a card."').support.status).toBe('supported');
     expect(
-      sorcery('Target player gets an emblem with "Creatures you control get +1/+1."').support
-        .status,
+      sorcery('Each player gets an emblem with "Creatures you control get +1/+1."').support.status,
     ).toBe('unsupported');
   });
 

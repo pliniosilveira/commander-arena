@@ -85,6 +85,11 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
     many: "don't untap during their controllers' untap steps",
   },
   cantBeCountered: { one: "can't be countered", many: "can't be countered" },
+  // Prismari group 2 (CR 509.1b): Brazen Borrower.
+  canBlockOnlyFlying: {
+    one: 'can block only creatures with flying',
+    many: 'can block only creatures with flying',
+  },
   // Galadriel group 3: only an effect gives it ("Its activated abilities can't be activated this turn"), so no static ability shows it; the words are for the type.
   cantActivateAbilities: {
     one: "can't have its activated abilities activated",
@@ -351,6 +356,13 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
     case 'keepsDamage':
       // D-192 (CR 514.2): "Damage isn't removed from this creature during cleanup steps".
       return keepsDamageWording(ctx.noun);
+    case 'costPerExtraTarget': {
+      // D-641 (CR 601.2f, 207.2c): "Strive — This spell costs {2}{R} more to cast for each target beyond the first", mana only.
+      const symbols = effect.cost.flatMap((c) => (c.kind === 'mana' ? c.symbols : []));
+      return symbols.length === 0
+        ? null
+        : `Strive — This spell costs ${symbols.map((s) => `{${s}}`).join('')} more to cast for each target beyond the first`;
+    }
     case 'abilityCostReduction':
     case 'costReduction': {
       // D-424, D-425 (CR 601.2f, 602.2b): "Equip abilities you activate that target enchanted creature cost {3} less to activate", "Aura spells you cast that target ... cost {3} less to cast".

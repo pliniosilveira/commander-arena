@@ -14,7 +14,7 @@ import type {
 import { describe, expect, test } from 'vitest';
 import { objectIndex } from '../src/ui/decisions/lookup';
 import { initialUi } from '../src/ui/decisions/ui-state';
-import { enchantFilter } from '../src/ui/dnd/hosts';
+import { enchantFilter, enchantsGraveyardCard } from '../src/ui/dnd/hosts';
 import {
   accepts,
   type DragSource,
@@ -298,6 +298,34 @@ describe('enchantFilter reads the first Enchant line', () => {
     ]) {
       expect(read(text)).toEqual({});
     }
+  });
+});
+
+describe('an Aura that enchants a card in a graveyard (CR 303.4a)', () => {
+  const say = (text: string) => enchantsGraveyardCard({ oracleText: text } as ObjectView);
+
+  test('is read from its Enchant line', () => {
+    expect(say('Enchant creature card in a graveyard\nEnchanted creature gets -1/-0.')).toBe(true);
+    expect(say('Enchant land card in your graveyard')).toBe(true);
+    expect(say('Enchant creature')).toBe(false);
+    expect(say('Enchant creature you control\nWhen ~ enters, return a card in a graveyard.')).toBe(
+      false,
+    );
+    expect(say('')).toBe(false);
+  });
+
+  test('has no permanent to drop it on: it is not offered as a drag onto the board', () => {
+    const aura = obj(40, 'Test Aura', {
+      zone: 'hand',
+      types: ['enchantment'],
+      subtypes: ['Aura'],
+      oracleText: 'Enchant creature card in a graveyard',
+    });
+    const c = ctx(
+      viewOf([obj(1, 'Bears')], [aura]),
+      priority([{ kind: 'castSpell', object: o(40) }]),
+    );
+    expect(keys(c.spec(o(40), 'card'))).toEqual(['battlefield', 'stack']);
   });
 });
 

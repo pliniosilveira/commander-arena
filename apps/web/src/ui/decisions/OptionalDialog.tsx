@@ -34,6 +34,8 @@ const DIALOG_LABELS: Readonly<
   costChoice: 'Additional cost',
   pairReturn: 'Return the cards',
   castCard: 'Cast from a graveyard',
+  exileMore: 'Exile another card',
+  exert: 'Exert',
 };
 
 /**

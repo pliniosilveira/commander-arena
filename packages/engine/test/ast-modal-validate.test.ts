@@ -181,6 +181,24 @@ describe('modal spells', () => {
     );
   });
 
+  test('"you may choose two" (allOrNone) and "each mode must target a different player" (differentTargets), CR 700.2b, 700.2d', () => {
+    const THREE: readonly SpellMode[] = [...TWO, HIT('a')];
+    const may: ModeChoice = { min: 0, max: 2, allOrNone: true, differentTargets: true };
+    expect(issues(permanent([triggered({ modes: THREE, chooseModes: may })]))).toEqual([]);
+    const refused = (choose: ModeChoice) =>
+      issues(permanent([triggered({ modes: THREE, chooseModes: choose })])).join('\n');
+    // Only a triggered ability has no mode chosen as a way out, with a minimum of 0 and at least two modes to choose.
+    expect(issues(permanent([activated({ modes: THREE, chooseModes: may })])).join('\n')).toContain(
+      'allOrNone',
+    );
+    expect(refused({ min: 1, max: 2, allOrNone: true })).toContain('allOrNone');
+    expect(refused({ min: 0, max: 1, allOrNone: true })).toContain('allOrNone');
+    expect(refused({ min: 0, max: 2, allOrNone: true, repeatable: true })).toContain('allOrNone');
+    expect(refused({ min: 2, max: 2, repeatable: true, differentTargets: true })).toContain(
+      'differentTargets',
+    );
+  });
+
   test('the commander widening must raise the number, within the modes', () => {
     const widen = (max: number) =>
       spell(TWO, { min: 1, max: 1, maxIf: { condition: { kind: 'controlCommander' }, max } });

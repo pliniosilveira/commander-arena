@@ -169,6 +169,24 @@ describe('the continuous-effect nodes that are refused', () => {
     );
   });
 
+  test('an additive setColors names at least one color (issue 159)', () => {
+    expect(
+      structure(
+        on({
+          kind: 'setColors',
+          objects: T1,
+          colors: ['B'],
+          additive: true,
+          duration: END,
+        }),
+      ),
+    ).toEqual([]);
+    expectIssue(
+      structure(on({ kind: 'setColors', objects: T1, colors: [], additive: true, duration: END })),
+      'an additive setColors names at least one color',
+    );
+  });
+
   test('setColors needs real colors without duplicates', () => {
     expectIssue(
       structure(on({ kind: 'setColors', objects: T1, colors: ['X' as never], duration: END })),
@@ -182,11 +200,7 @@ describe('the continuous-effect nodes that are refused', () => {
 
   test('grantKeyword grants only keywords without parameters', () => {
     const cost = [{ kind: 'mana', symbols: ['1'] }] as const;
-    for (const keyword of [
-      { kind: 'cycling', cost },
-      { kind: 'ward', cost },
-      { kind: 'flash' },
-    ] as const) {
+    for (const keyword of [{ kind: 'cycling', cost }, { kind: 'flash' }] as const) {
       expectIssue(
         structure(on({ kind: 'grantKeyword', objects: T1, keyword, duration: END })),
         'only keywords without parameters can be granted',

@@ -76,7 +76,7 @@ export async function startFromForm(
     allowHidden: false,
   });
   if (!result.ok) return { started: false, kind: 'refused', reason: result.reason };
-  await startGame(result.options);
+  await startGame({ ...result.options, intro: true });
   return { started: true };
 }
 
@@ -101,4 +101,33 @@ function randomBelow(n: number): number {
   const buffer = new Uint32Array(1);
   crypto.getRandomValues(buffer);
   return (buffer[0] ?? 0) % Math.max(n, 1);
+}
+
+/** The color filter's buttons, in WUBRG order; "C" is colorless. */
+export const COLOR_FILTERS = ['W', 'U', 'B', 'R', 'G', 'C'] as const;
+export type ColorFilter = (typeof COLOR_FILTERS)[number];
+
+/** Toggles one filter button. Colorless excludes the five colors, and they exclude it. */
+export function toggleColorFilter(
+  selected: readonly ColorFilter[],
+  color: ColorFilter,
+): readonly ColorFilter[] {
+  if (selected.includes(color)) return selected.filter((c) => c !== color);
+  if (color === 'C') return ['C'];
+  return [...selected.filter((c) => c !== 'C'), color];
+}
+
+/**
+ * Does a deck's color identity match the filter exactly? Red alone is the mono-red decks, red and
+ * blue is the Izzet decks only, colorless is the decks with no color. No selection matches every
+ * deck; a deck of unknown colors matches only that empty filter.
+ */
+export function matchesColorFilter(
+  colors: readonly string[] | undefined,
+  selected: readonly ColorFilter[],
+): boolean {
+  if (selected.length === 0) return true;
+  if (colors === undefined) return false;
+  const want = selected.filter((c) => c !== 'C');
+  return colors.length === want.length && want.every((c) => colors.includes(c));
 }

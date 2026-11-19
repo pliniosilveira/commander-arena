@@ -33,6 +33,7 @@ import {
   specialAction,
   tapAction,
   toTarget,
+  unlockAction,
 } from './refs';
 import {
   type ActivateOptions,
@@ -254,6 +255,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
                 ...(s.combination !== undefined ? { combination: s.combination } : {}),
                 ...(s.ability !== undefined ? { ability: s.ability } : {}),
                 ...(s.sacrifice !== undefined ? { sacrifice: s.sacrifice } : {}),
+                ...(s.tapped !== undefined ? { tapped: s.tapped } : {}),
               })
             : tapAction(ctx, seat, s);
           if (a.kind !== 'activateAbility') throw new ScenarioError('not a mana ability');
@@ -263,6 +265,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
             ...(detailed && s.color !== undefined ? { color: a.color } : {}),
             ...(detailed && a.combination !== undefined ? { combination: a.combination } : {}),
             ...(a.sacrifice === undefined ? {} : { sacrifice: a.sacrifice }),
+            ...(a.tapped === undefined ? {} : { tapped: a.tapped }),
           };
         });
         apply(seat, { kind: 'payManual', taps });
@@ -285,6 +288,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
       suspend: (card) => tryApply(seat, specialAction(ctx, seat, 'suspend', card)),
       foretell: (card) => tryApply(seat, specialAction(ctx, seat, 'foretell', card)),
       turnFaceUp: (card) => tryApply(seat, specialAction(ctx, seat, 'turnFaceUp', card)),
+      unlock: (card, door) => tryApply(seat, unlockAction(ctx, card, door)),
       pass: () => tryApply(seat, { kind: 'pass' }),
       declareAttackers: (attacks) => tryApply(seat, declareAttackersAction(ctx, seat, attacks)),
       declareBlockers: (blocks) => tryApply(seat, declareBlockersAction(ctx, seat, blocks)),
@@ -330,7 +334,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
         const h = handle();
         if (o.modes !== undefined && state.casting?.stage === 'modes') h.modes(...o.modes);
         if (o.x !== undefined && state.casting?.stage === 'x') h.x(o.x);
-        if (o.targets !== undefined) h.targets(o.targets);
+        if (o.targets !== undefined) h.targets(o.targets, o.divide);
         if (o.pay) {
           if (state.pending?.kind === 'targets') {
             throw new ScenarioError(
@@ -349,6 +353,12 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
       },
       foretell(card, o: SpecialOptions = {}) {
         apply(seat, specialAction(ctx, seat, 'foretell', card));
+        const h = handle();
+        if (o.pay && state.pending?.kind === 'payMana') h.pay();
+        return h;
+      },
+      unlock(card, door, o: SpecialOptions = {}) {
+        apply(seat, unlockAction(ctx, card, door));
         const h = handle();
         if (o.pay && state.pending?.kind === 'payMana') h.pay();
         return h;

@@ -2096,6 +2096,9 @@ export const VRASKA_NAMES = [
   'SYNTHETIC Mill Stone',
   'SYNTHETIC Copy Mirror',
   'SYNTHETIC Prepared Scout // Scout Tidings',
+  // Lorehold group 3: a preparation card that becomes prepared at its controller's upkeep when a player has one or fewer cards in hand, and whose prepare spell makes each player
+  // discard their hand and draw seven cards.
+  'SYNTHETIC Lore Jackal // Spin of Fate',
 ] as const;
 
 /**
@@ -3144,6 +3147,231 @@ export const HYLDA_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] 
 ];
 
 /**
+ * The SYNTHETIC cards of group 1 of the Prismari deck (issue 87, D-638 to D-645): a creature that makes a Myr token each combat and has the other tokens become copies of a token it
+ * chooses, a creature that populates and gives the token haste until the end step, a creature that makes tapped and attacking copies of its tokens, one that makes X copies of a
+ * creature, a kicker spell that copies a creature, a strive spell with any number of targets, a creature that becomes a copy of another creature with myriad, the two prepared
+ * creatures (prepared when a creature token deals combat damage, when a spell of mana value 5 or more is cast from the hand) and the spells and token makers that feed them. They ask
+ * `choosePermanent` (populate and the token of a copy), `chooseObjects`, the kicker, any number of targets, the strive cost and the "you may" of a choice, which the generic pools are
+ * not built to follow: a style of their own.
+ */
+export const PRISMARI_G1_NAMES = [
+  'SYNTHETIC Myr Tinker',
+  'SYNTHETIC Iteration Engine',
+  'SYNTHETIC Storm Singer',
+  'SYNTHETIC Flame Dancer',
+  'SYNTHETIC Replication Rite',
+  'SYNTHETIC Twin Blaze',
+  'SYNTHETIC Mud Morph',
+  'SYNTHETIC Sky Painter // Gift Spell',
+  'SYNTHETIC Focus Mage // Brain Surge',
+  'SYNTHETIC Soldier Call',
+  'SYNTHETIC Beast Call',
+  'SYNTHETIC Prismari Legend',
+  'SYNTHETIC Prismari Cantrip',
+  'SYNTHETIC Prismari Grand Study',
+  'SYNTHETIC Prismari Grand Flash',
+  'SYNTHETIC Prismari Echo Study',
+  'SYNTHETIC Prismari Treasure Call',
+] as const;
+
+/** The prismariG1 style: every card of the group twice, the token makers three times, and bodies for the copies. */
+export const PRISMARI_G1_SPELLS = [
+  ...supported(PRISMARI_G1_NAMES),
+  ...supported(PRISMARI_G1_NAMES),
+  ...supported(['SYNTHETIC Soldier Call', 'SYNTHETIC Beast Call', 'SYNTHETIC Iteration Engine']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red for the creatures and the strive cost, white and green for the token makers. */
+export const PRISMARI_G1_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Plains',
+  'Forest',
+  'Forest',
+]);
+
+/** Style pairs of the Prismari group 1 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG1', 'prismariG1'],
+  ['prismariG1', 'spells'],
+  ['spells', 'prismariG1'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Prismari deck (issue 87, D-646 and later): creatures whose triggers read the spell that was cast (its mana value, the mana spent on it, the
+ * greatest mana value this turn), one that exiles a card from the graveyard to cast a copy of it, a spell that deals divided damage among any number of targets (and can be discarded for a
+ * Treasure), a spell that makes tokens that must attack each opponent and costs less for the instants and sorceries in the graveyard, a creature that copies itself and has creatures with its
+ * name unblockable, a land that becomes a creature, a dragon that gives artifacts a mana ability to spend on instants and sorceries, a creature that can block only creatures with flying, a
+ * draw spell with flashback that costs life, a sorcery that adds mana that stays and is suspended, and the spells and permanents that feed them. They ask the targets of a divided slot, the
+ * copy to cast, the mana to spend and the flashback payment, which the generic pools are not built to follow: a style of their own.
+ */
+export const PRISMARI_G2_NAMES = [
+  'SYNTHETIC Piano Elemental',
+  'SYNTHETIC Moment Master',
+  'SYNTHETIC Charging Ox',
+  'SYNTHETIC Manaform Drake',
+  'SYNTHETIC Opus Burst',
+  'SYNTHETIC Flocking Gale',
+  'SYNTHETIC Name Composer',
+  'SYNTHETIC Spire Land',
+  'SYNTHETIC Prism Dragon',
+  'SYNTHETIC Skittish Borrower',
+  'SYNTHETIC Deep Study',
+  'SYNTHETIC Rushing Refrain',
+  'SYNTHETIC Prismari Big Study',
+  'SYNTHETIC Prismari X Spell',
+  'SYNTHETIC Prismari Trinket',
+  'SYNTHETIC Prismari Discounter',
+  'SYNTHETIC Prismari Apprentice',
+] as const;
+
+/** The prismariG2 style: every card of the group twice, the spells that feed the triggers three times, and bodies. */
+export const PRISMARI_G2_SPELLS = [
+  ...supported(PRISMARI_G2_NAMES),
+  ...supported(PRISMARI_G2_NAMES),
+  ...supported([
+    'SYNTHETIC Prismari Cantrip',
+    'SYNTHETIC Prismari Grand Study',
+    'SYNTHETIC Prismari Big Study',
+  ]),
+  ...supported(['SYNTHETIC Charging Ox', 'SYNTHETIC Charging Ox', 'SYNTHETIC Prismari Cantrip']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red, for every cost of the group. */
+export const PRISMARI_G2_LANDS = supported([
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Island',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+]);
+
+/** Style pairs of the Prismari group 2 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG2', 'prismariG2'],
+  ['prismariG2', 'spells'],
+  ['spells', 'prismariG2'],
+];
+
+/**
+ * The SYNTHETIC cards of group 3 of the Prismari deck (issue 87, D-660 and later): sorceries and a creature that exile cards and cast spells from among them without paying their mana
+ * costs (up to two, any number, one, the card revealed until a nonland card), two piles of exiled cards one of them face down with an opponent's choice, the cards each player exiles until
+ * a nonland card and the opponent's choice among them, Demonstrate, a sorcery that copies an exiled card whenever a creature deals combat damage, Retrace, and the cheap and dear spells,
+ * the one with an additional cost and the permanents that these cast. They ask the cards to cast one at a time, the opponent's pile and card, the cards to discard for retrace and whether to
+ * copy: a style of their own.
+ */
+export const PRISMARI_G3_NAMES = [
+  'SYNTHETIC Calamity Dance',
+  'SYNTHETIC Calamity Unshuffled',
+  'SYNTHETIC Chaos Orc',
+  'SYNTHETIC Pile Performance',
+  'SYNTHETIC Reveal Technique',
+  'SYNTHETIC Copy Technique',
+  'SYNTHETIC Demo Bolt',
+  'SYNTHETIC Surge Victory',
+  'SYNTHETIC Chaos Retrace',
+  'SYNTHETIC Retrace Bolt',
+  'SYNTHETIC Retrace X Drain',
+  'SYNTHETIC Twin Cast',
+  'SYNTHETIC Calamity Gain Two',
+  'SYNTHETIC Calamity Gain Seven',
+  'SYNTHETIC Calamity Discard Draw',
+] as const;
+
+/** The prismariG3 style: every card of the group twice, cheap spells to cast for free, and bodies to attack with. */
+export const PRISMARI_G3_SPELLS = [
+  ...supported(PRISMARI_G3_NAMES),
+  ...supported(PRISMARI_G3_NAMES),
+  ...supported([
+    'SYNTHETIC Calamity Gain Two',
+    'SYNTHETIC Calamity Gain Seven',
+    'SYNTHETIC Prismari Big Study',
+    'SYNTHETIC Prismari Trinket',
+  ]),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Blue and red, for every cost of the group. */
+export const PRISMARI_G3_LANDS = PRISMARI_G2_LANDS;
+
+/** Style pairs of the Prismari group 3 soak test (issue 87): a mirror match and both mixed ways. */
+export const PRISMARI_G3_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['prismariG3', 'prismariG3'],
+  ['prismariG3', 'spells'],
+  ['spells', 'prismariG3'],
+];
+
+/**
+ * The SYNTHETIC cards of group 1 of the Lorehold Spirit deck (issue 86, D-610 and later): a 3/3 with vigilance that searches for a Plains when an opponent controls more lands (twice at
+ * most, shuffling if it searched), an artifact creature that may exile a card its controller discards and play it, one that may only cast it, a creature that may pay {1} and discard a
+ * card to draw when it attacks and may exile one of the nonland cards its controller discards and cast it, a creature that draws when its controller discards one or more cards, a sorcery
+ * that discards two cards, an artifact that mills and shuffles cards of the graveyard into the library, a sorcery in which each creature deals damage to itself equal to its power and a 3/5
+ * with deathtouch and lifelink. The "you may" of the searches, the cards to discard, the card to exile and the permission to play change which answers the generic pools ask for, which
+ * games-100 expects only from dedicated styles.
+ */
+export const LOREHOLD_G1_NAMES = [
+  'SYNTHETIC Land Claimer',
+  'SYNTHETIC Quarantine Golem',
+  'SYNTHETIC Cast Golem',
+  'SYNTHETIC Doubting Seer',
+  'SYNTHETIC Discard Watcher',
+  'SYNTHETIC Twin Discard',
+  'SYNTHETIC Memory Clock',
+  'SYNTHETIC Reckoning Tide',
+  'SYNTHETIC Venom Titan',
+] as const;
+
+/** The loreholdG1 style: every card of the group twice, the draw-and-discard sorcery of the generic pool for more discards, bodies, and a burn spell. */
+export const LOREHOLD_G1_SPELLS = [
+  ...supported(LOREHOLD_G1_NAMES),
+  ...supported(LOREHOLD_G1_NAMES),
+  ...supported(['SYNTHETIC Loot', 'SYNTHETIC Loot']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Raging Goblin']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Plains for the Claimer to find and for white, Mountains and Islands for the red and blue, Swamps for the Titan. */
+export const LOREHOLD_G1_LANDS = supported([
+  'Plains',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Lorehold group 1 soak test (issue 86): a mirror match and both mixed ways. */
+export const LOREHOLD_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['loreholdG1', 'loreholdG1'],
+  ['loreholdG1', 'spells'],
+  ['spells', 'loreholdG1'],
+];
+
+/**
  * The SYNTHETIC cards of group 1 of the Galadriel deck (issue 43, D-528 and later): a creature that scries when a creature of its controller enters and makes the Ring tempt its
  * controller the second time that ability resolves in a turn, a creature that scries 3 when the Ring tempts its controller (another creature chosen) and may reveal the top card
  * whenever its controller scries, a creature that draws whenever its controller scries or surveils, two sorceries that scry 3 and reveal the top card, a planeswalker with X loyalty, an
@@ -3190,6 +3418,50 @@ export const GALADRIEL_G1_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle]
   ['galadrielG1', 'galadrielG1'],
   ['galadrielG1', 'spells'],
   ['spells', 'galadrielG1'],
+];
+
+/**
+ * The SYNTHETIC cards of group 2 of the Lorehold Spirit deck (issue 86, D-618 and later): a sorcery in which each player votes for past or present (a card milled for each past vote and damage for
+ * the mana value of what was milled, a card exiled for each present vote to play until the end of the next turn), a 3/5 with vigilance that exiles a noncreature, nonland card of its controller's
+ * graveyard at their end step for a 3/2 Spirit and casts it for free later by sacrificing a Spirit, and a plain Spirit. The vote, the targets, the sacrifice and the free cast change which answers the
+ * generic pools ask for, which games-100 expects only from dedicated styles.
+ */
+export const LOREHOLD_G2_NAMES = [
+  'SYNTHETIC Verdict Tempest',
+  'SYNTHETIC Lore Elephant',
+  'SYNTHETIC Bound Spirit',
+] as const;
+
+/** The loreholdG2 style: every card of the group twice, cards that go to the graveyard to be exiled and cast (instants, sorceries and an artifact), bodies, and burn. */
+export const LOREHOLD_G2_SPELLS = [
+  ...supported(LOREHOLD_G2_NAMES),
+  ...supported(LOREHOLD_G2_NAMES),
+  ...supported(['SYNTHETIC Verdict Tempest', 'SYNTHETIC Bound Spirit']),
+  ...supported(['SYNTHETIC Loot', 'SYNTHETIC Loot']),
+  ...supported(['Lightning Bolt', 'Lightning Bolt', 'Divination', 'Sol Ring']),
+  ...supported(['Grizzly Bears', 'Giant Spider', 'Llanowar Elves', 'Raging Goblin']),
+  ...supported(['SYNTHETIC Vanilla 3/3', 'SYNTHETIC Vanilla 2/2']),
+];
+
+/** Mountains for the red and Plains for the white of the Elephant and the Spirits, Islands for the blue of the Divination and the Loot, Swamps. */
+export const LOREHOLD_G2_LANDS = supported([
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Mountain',
+  'Plains',
+  'Plains',
+  'Plains',
+  'Island',
+  'Island',
+  'Swamp',
+]);
+
+/** Style pairs of the Lorehold group 2 soak test (issue 86): a mirror match and both mixed ways. */
+export const LOREHOLD_G2_STYLE_PAIRS: readonly (readonly [DeckStyle, DeckStyle])[] = [
+  ['loreholdG2', 'loreholdG2'],
+  ['loreholdG2', 'spells'],
+  ['spells', 'loreholdG2'],
 ];
 
 /**
@@ -4128,6 +4400,25 @@ export const ANGEL_SPELLS = [
   ...supported(['Lightning Bolt', 'Murder', 'Unsummon', 'Counterspell']),
 ];
 
+/** The SYNTHETIC cards of issue 104 (an activation trigger, a search of the graveyard, hand and/or library for a named card). */
+export const ACTIVATES_ABILITY_NAMES = [
+  'SYNTHETIC Ability Watcher',
+  'SYNTHETIC Own Ability Watcher',
+  'SYNTHETIC Zone Seeker',
+] as const;
+
+/**
+ * SYNTHETIC cards of the top-5 ranking work (a creature-power filter on a target, an {X} group base power with all creature types, an unblocked-attack trigger): kept out of
+ * the random pools, so the seeded games the older tests rely on stay as they were.
+ */
+const RANKED_CARD_NAMES = [
+  'SYNTHETIC Humbling Sweep',
+  'SYNTHETIC Shapeshifter Choir',
+  'SYNTHETIC Greedy Gem',
+  'SYNTHETIC Prismatic Growth',
+  'SYNTHETIC Verdant Surge',
+] as const;
+
 /**
  * Creature and permanent pools for the combat-heavy deck mix. They are read from the engine's
  * exported fixtures instead of being listed by name, so every supported creature fixture (the
@@ -4156,6 +4447,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(DANITHA_G6_NAMES as readonly string[]).includes(card.name))
   // The Danitha group 7 cards (D-433) have modes with a cost of their own, which ask the modes of every cast: a style of their own.
   .filter((card) => !(DANITHA_G7_NAMES as readonly string[]).includes(card.name))
+  // Issue 104: the activation trigger and the multi-zone named search ask questions the generic pools do not expect: kept out of them.
+  .filter((card) => !(ACTIVATES_ABILITY_NAMES as readonly string[]).includes(card.name))
   // The Gisa group 3 cards (D-484 to D-492) ask which permanent each player keeps, an X announced for a sacrifice, and a sacrifice that may choose none: a style of their own.
   .filter((card) => !(GISA_G3_NAMES as readonly string[]).includes(card.name))
   // The Feather group 3 cards (D-437 to D-439) copy spells for each creature they could target, exile spells as they resolve and bring them back at the end step: a style of their own.
@@ -4184,6 +4477,14 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(GISA_G4_NAMES as readonly string[]).includes(card.name))
   // The Hylda group 1 cards (D-510 to D-514) ask to pay for reflexive abilities, the modes of one, targets of taps, the card type to protect from and what to do with a scry: a style of their own.
   .filter((card) => !(HYLDA_G1_NAMES as readonly string[]).includes(card.name))
+  // The Prismari group 1 cards (issue 87) populate, copy tokens, ask for any number of targets, a kicker, a strive cost and a token to choose: a style of their own.
+  .filter((card) => !(PRISMARI_G1_NAMES as readonly string[]).includes(card.name))
+  // The Prismari group 2 cards (issue 87) ask the targets of a divided slot, the copy of an exiled card to cast, the flashback payment and mana that stays: a style of their own.
+  .filter((card) => !(PRISMARI_G2_NAMES as readonly string[]).includes(card.name))
+  // The Lorehold group 1 cards (issue 86) ask a "you may" before a search, which cards to discard, which card to exile and whether to pay {1} and discard: a style of their own.
+  .filter((card) => !(LOREHOLD_G1_NAMES as readonly string[]).includes(card.name))
+  // The Lorehold group 2 cards (issue 86) ask each player to vote, which card to exile, which Spirit to sacrifice and whether to cast a card without paying: a style of their own.
+  .filter((card) => !(LOREHOLD_G2_NAMES as readonly string[]).includes(card.name))
   // The Galadriel group 1 cards (issue 43) ask a "you may" before a reveal, an X for a planeswalker, which permanent the Ring chooses and what to put onto the battlefield: a style of their own.
   .filter((card) => !(GALADRIEL_G1_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(DINOSAUR_NAMES as readonly string[]).includes(card.name))
@@ -4292,6 +4593,7 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(KEYWORD2_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(TRIGGER_SLICE_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(TRIGGER_SLICE_UNUSED_NAMES as readonly string[]).includes(card.name))
+  .filter((card) => !(RANKED_CARD_NAMES as readonly string[]).includes(card.name))
   .filter((card) => validateCard(card).length === 0);
 const frontTypes = (card: CardDefinition): readonly string[] => card.faces[0]?.types ?? [];
 const isLegendary = (card: CardDefinition) =>
@@ -4410,6 +4712,11 @@ export type DeckStyle =
   | 'featherG1'
   | 'gisaG4'
   | 'hyldaG1'
+  | 'prismariG1'
+  | 'prismariG2'
+  | 'prismariG3'
+  | 'loreholdG1'
+  | 'loreholdG2'
   | 'galadrielG1'
   | 'vehicles'
   | 'prevention'
@@ -4501,6 +4808,11 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'sacrificeMana' && SACRIFICE_MANA_SPELLS.length > 0) return SACRIFICE_MANA_SPELLS;
   if (style === 'gisaG1' && GISA_G1_SPELLS.length > 0) return GISA_G1_SPELLS;
   if (style === 'hyldaG1' && HYLDA_G1_SPELLS.length > 0) return HYLDA_G1_SPELLS;
+  if (style === 'prismariG1' && PRISMARI_G1_SPELLS.length > 0) return PRISMARI_G1_SPELLS;
+  if (style === 'prismariG2' && PRISMARI_G2_SPELLS.length > 0) return PRISMARI_G2_SPELLS;
+  if (style === 'prismariG3' && PRISMARI_G3_SPELLS.length > 0) return PRISMARI_G3_SPELLS;
+  if (style === 'loreholdG1' && LOREHOLD_G1_SPELLS.length > 0) return LOREHOLD_G1_SPELLS;
+  if (style === 'loreholdG2' && LOREHOLD_G2_SPELLS.length > 0) return LOREHOLD_G2_SPELLS;
   if (style === 'galadrielG1' && GALADRIEL_G1_SPELLS.length > 0) return GALADRIEL_G1_SPELLS;
   if (style === 'danithaG4' && DANITHA_G4_SPELLS.length > 0) return DANITHA_G4_SPELLS;
   if (style === 'danithaG3' && DANITHA_G3_SPELLS.length > 0) return DANITHA_G3_SPELLS;
@@ -4704,6 +5016,11 @@ export function landSlots(style: DeckStyle): readonly string[] {
   if (style === 'sacrificeMana' && BASIC_LANDS.length > 0) return SACRIFICE_MANA_LANDS;
   if (style === 'gisaG1' && BASIC_LANDS.length > 0) return GISA_G1_LANDS;
   if (style === 'hyldaG1' && BASIC_LANDS.length > 0) return HYLDA_G1_LANDS;
+  if (style === 'prismariG1' && BASIC_LANDS.length > 0) return PRISMARI_G1_LANDS;
+  if (style === 'prismariG2' && BASIC_LANDS.length > 0) return PRISMARI_G2_LANDS;
+  if (style === 'prismariG3' && BASIC_LANDS.length > 0) return PRISMARI_G3_LANDS;
+  if (style === 'loreholdG1' && BASIC_LANDS.length > 0) return LOREHOLD_G1_LANDS;
+  if (style === 'loreholdG2' && BASIC_LANDS.length > 0) return LOREHOLD_G2_LANDS;
   if (style === 'galadrielG1' && BASIC_LANDS.length > 0) return GALADRIEL_G1_LANDS;
   if (style === 'danithaG4' && BASIC_LANDS.length > 0) return DANITHA_G4_LANDS;
   if (style === 'danithaG3' && BASIC_LANDS.length > 0) return DANITHA_G3_LANDS;

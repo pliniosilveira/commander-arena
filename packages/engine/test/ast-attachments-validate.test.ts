@@ -79,15 +79,29 @@ describe('Auras (CR 303.4a, 702.5a)', () => {
     expect(messages(def)).toEqual([expect.stringContaining('an Aura is an enchantment')]);
   });
 
-  test('the enchant filter must be about permanents on the battlefield', () => {
+  test('the enchant filter must be about permanents on the battlefield or cards in a graveyard', () => {
     for (const filter of [
-      { zone: 'graveyard', types: ['creature'] },
+      { zone: 'exile', types: ['creature'] },
+      { zone: 'hand' },
       { stackKind: 'spell' },
       { anyOf: [{ zone: 'graveyard' }] },
+      // A card in a graveyard is its owner's, not controlled (CR 108.4a), and was not put onto the battlefield with an Aura (CR 702.5a).
+      { zone: 'graveyard', controller: 'you' },
+      { zone: 'graveyard', putWithSource: true },
     ] as ObjectFilter[]) {
       const def = aura([{ kind: 'keyword', keyword: { kind: 'enchant', filter } }]);
       expect(validateCardStructure(def), JSON.stringify(filter)).not.toEqual([]);
     }
+  });
+
+  test('"Enchant creature card in a graveyard" is a well-formed enchant ability (CR 702.5a)', () => {
+    const def = aura([
+      {
+        kind: 'keyword',
+        keyword: { kind: 'enchant', filter: { zone: 'graveyard', types: ['creature'] } },
+      },
+    ]);
+    expect(validateCardStructure(def)).toEqual([]);
   });
 
   test('two enchant abilities are structurally fine but not run (CR 702.5c)', () => {
@@ -126,7 +140,7 @@ describe('Auras (CR 303.4a, 702.5a)', () => {
       });
     // D-149: an Aura card named by a target, `moved` or `each` enters attached to what its controller chooses (`rules/aura-entry.ts`).
     expect(messages(reanimate({}))).toEqual([]);
-    // A card picked by a `choose` selector from the graveyard (or the hand) enters attached to what its controller chooses as well (`rules/move-choice.ts`).
+    // Issue 103: a card picked by a `choose` selector from the graveyard (or the hand, exile or command zone) that could be an Aura chooses what it enchants too (`runChooseMove`).
     const chosen = singleFace({
       name: 'SYNTHETIC Test Reanimate Chosen',
       manaCost: ['B'],
@@ -293,7 +307,6 @@ describe('static abilities with subjects (CR 611.3, 613)', () => {
     }
     for (const keyword of [
       { kind: 'flash' },
-      { kind: 'ward', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'cycling', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'equip', cost: [{ kind: 'mana', symbols: ['1'] }] },
       { kind: 'enchant', filter: {} },

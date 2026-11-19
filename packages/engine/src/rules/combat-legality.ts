@@ -14,12 +14,14 @@ import type { ObjectId, SeatId } from '../ids';
 import type { AttackTarget } from '../state/combat-types';
 import { getObject } from '../state/ops';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
+import { withoutBannedTargets } from './attack-bans';
 import { attackTargets } from './attack-targets';
 import { payableAttackTax, untaxedTargets } from './attack-tax';
 import { payableBlockTax } from './block-tax';
 import { controllerOf } from './control';
 import { attackerDefender } from './defending';
 import { derive } from './derive';
+import { goadersOf } from './goad';
 import { abilitiesHaveKeyword, hasKeyword } from './keywords';
 import { isSummoningSick } from './mana-engine';
 import { hasProtectionFrom } from './protection';
@@ -53,50 +55,10 @@ export function attackCandidates(
     .filter((id) => canAttack(state, getObject(state, id), seat))
     .map((attacker) => ({
       attacker,
-      targets: narrowedTargets(
-        state,
-        attacker,
-        withoutForbiddenTargets(state, getObject(state, attacker), targets),
-      ),
+      // CR 508.1a (D-647): "can't attack you or planeswalkers you control": the targets it may not attack are left out, and a creature with none left is not able to attack (CR 508.1c).
+      targets: narrowedTargets(state, attacker, withoutBannedTargets(state, attacker, targets)),
     }))
-    .filter((c) => c.targets.length > 0);
-}
-
-/**
- * CR 508.1a, 506.3 (101.2): "Creatures with flying can't attack you or planeswalkers you control." The targets of `attacker` left once every
- * `cantAttackYou` ability on the battlefield (read from the derived abilities, CR 604.1) has taken away the player its controller is and, with
- * `planeswalkers`, the planeswalkers that player controls. Only the declaration reads it: a creature already attacking stays attacking.
- */
-function withoutForbiddenTargets(
-  state: GameState,
-  attacker: GameObject,
-  targets: readonly AttackTarget[],
-): AttackTarget[] {
-  const bans: { controller: SeatId; planeswalkers: boolean }[] = [];
-  for (const id of state.battlefield) {
-    const source = getObject(state, id);
-    const controller = controllerOf(state, source);
-    for (const a of derive(state, source).abilities) {
-      if (a.kind !== 'static' || a.static.kind !== 'cantAttackYou') continue;
-      if (
-        matchesFilter(
-          state,
-          attacker,
-          { ...a.static.attackers, zone: 'battlefield' },
-          { controller, source: id },
-        )
-      ) {
-        bans.push({ controller, planeswalkers: a.static.planeswalkers === true });
-      }
-    }
-  }
-  if (bans.length === 0) return [...targets];
-  return targets.filter((t) => {
-    if (t.kind === 'player') return !bans.some((b) => b.controller === t.seat);
-    const obj = state.objects[t.object];
-    if (obj === undefined || !derive(state, obj).types.includes('planeswalker')) return true;
-    return !bans.some((b) => b.planeswalkers && b.controller === controllerOf(state, obj));
-  });
+    .filter((candidate) => candidate.targets.length > 0);
 }
 
 /** The group requirements ("creatures your opponents control attack each combat if able", D-179) that name `obj` as one of their creatures now. */
@@ -131,9 +93,24 @@ function narrowedTargets(
     const wanted = targets.filter((t) => t.kind === 'player' && forced.includes(t.seat));
     if (wanted.length > 0) return wanted;
   }
-  const away = groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
-    r.awayFrom === undefined ? [] : [r.awayFrom],
-  );
+  // CR 508.1d (Gideon Jura): "creatures that player controls attack this planeswalker if able": a creature that can attack that permanent attacks it (with several
+  // such permanents it attacks one of them: a creature obeys as many requirements as it can, and attacks one thing).
+  const wantedPermanents = permanentsToAttack(state, attacker);
+  if (wantedPermanents.length > 0) {
+    const wanted = targets.filter(
+      (t) => t.kind === 'permanent' && wantedPermanents.includes(t.object),
+    );
+    if (wanted.length > 0) return wanted;
+  }
+  const away = [
+    ...groupRequirements(state, getObject(state, attacker)).flatMap((r) =>
+      r.awayFrom === undefined ? [] : [r.awayFrom],
+    ),
+    // CR 701.15b (D-639): a goaded creature attacks a player other than each player that goaded it if able.
+    ...goadersOf(state, attacker),
+    // CR 701.15a (issue 201): a goaded creature attacks a player other than each player that goads it, if able.
+    ...derive(state, getObject(state, attacker)).goadedBy,
+  ];
   if (away.length === 0) return targets;
   const others = targets.filter((t) => t.kind === 'player' && !away.includes(t.seat));
   return others.length > 0 ? others : targets;
@@ -146,6 +123,18 @@ function playersToAttack(state: GameState, id: ObjectId): SeatId[] {
     if (e.change.kind === 'mustAttackPlayer' && e.objects.includes(id)) seats.push(e.change.seat);
   }
   return seats;
+}
+
+/** The permanents `id` is required to attack if able (`mustAttackPermanent`: "creatures that player controls attack this planeswalker if able"). */
+function permanentsToAttack(state: GameState, id: ObjectId): ObjectId[] {
+  const seat = controllerOf(state, getObject(state, id));
+  const found: ObjectId[] = [];
+  for (const e of state.continuousEffects) {
+    if (e.change.kind === 'mustAttackPermanent' && e.change.seat === seat) {
+      found.push(e.change.permanent);
+    }
+  }
+  return found;
 }
 
 function sameTarget(a: AttackTarget, b: AttackTarget): boolean {
@@ -169,9 +158,15 @@ export function requiredAttackers(
       (c) =>
         hasRestriction(state, getObject(state, c.attacker), 'attacksEachCombat') ||
         playersToAttack(state, c.attacker).length > 0 ||
+        // CR 508.1d: a creature that can attack the permanent it is required to attack must; one that cannot is not required.
+        permanentsToAttack(state, c.attacker).some((p) =>
+          c.targets.some((t) => t.kind === 'permanent' && t.object === p),
+        ) ||
+        // CR 701.15b (D-639): a goaded creature attacks each combat if able.
+        goadersOf(state, c.attacker).length > 0 ||
         groupRequirements(state, getObject(state, c.attacker)).length > 0,
     )
-    .filter((c) => untaxedTargets(state, c.targets).length > 0)
+    .filter((c) => untaxedTargets(state, c.attacker, c.targets).length > 0)
     .map((c) => c.attacker);
 }
 
@@ -292,6 +287,13 @@ export function canBlockAttacker(
   if (!isLiveCreature(state, blocker) || blocker.tapped) return false;
   if (derive(state, blocker).types.includes('battle')) return false;
   if (hasRestriction(state, blocker, 'cantBlock')) return false;
+  // CR 509.1b (D-648): "can block only creatures with flying": an attacker that does not have flying (reach is not flying) is not one it can block.
+  if (
+    hasRestriction(state, blocker, 'canBlockOnlyFlying') &&
+    !hasKeyword(state, attacker, 'flying')
+  ) {
+    return false;
+  }
   if (evades(state, blocker, attacker)) return false;
   if (hasKeyword(state, attacker, 'flying')) {
     return hasKeyword(state, blocker, 'flying') || hasKeyword(state, blocker, 'reach');

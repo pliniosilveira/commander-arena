@@ -12,13 +12,14 @@ import {
   type ObjectView,
 } from '@commander-arena/engine';
 import { chooseCopyCard, chooseEscapeExile, chooseSplitExiled } from './casual-alt-costs';
+import { chooseCardTypeCover } from './casual-card-types';
 import { chooseCardsToLose } from './casual-choices';
 import { chooseCostDiscard, isWardDiscard } from './casual-costs';
 import { chooseAnyNumberToDiscard, chooseBehold } from './casual-dragons';
 import { chooseFreeCast } from './casual-free';
 import { choosePutOnTop } from './casual-library';
 import { chooseLeastWorthCard } from './casual-pair';
-import { chooseSeparation } from './casual-piles';
+import { chooseCardToSetAside, chooseSeparation } from './casual-piles';
 import { findObject, isLand, manaValueOf } from './casual-view';
 
 /** The colour of a basic land, from its land type (CR 305.6), or null for any other card. */
@@ -218,11 +219,15 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'lookSplit') return chooseSplitPile(view, d);
   // D-303: the cards of pile 1 when the agent separates revealed cards into two piles (Fact or Fiction).
   if (d.purpose === 'separate') return chooseSeparation(view, d);
+  // CR 608.2d (D-661): the card an opponent sets aside among the cards exiled (Plargg and Nassari).
+  if (d.purpose === 'opponentChoice') return chooseCardToSetAside(view, d);
   // CR 701.4 (D-151): behold a Dragon; "discard any number of cards" (a discard with no minimum that is no cost).
   if (d.purpose === 'behold') return chooseBehold(view, d);
   if (d.purpose === 'discard' && d.min === 0 && d.forCost !== true && d.orSingle === undefined) {
     return chooseAnyNumberToDiscard(view, d);
   }
+  // CR 205.2a: "any number of cards from your graveyard with four or more card types among them": the smallest set that reaches the minimum.
+  if (d.minCardTypes !== undefined) return chooseCardTypeCover(view, d);
   if (d.purpose === 'move' || d.purpose === 'lookTake') return chooseToTake(view, d);
   // CR 608.2g (D-145): a spell cast or a card played without paying its cost: always one, the best.
   if (d.purpose === 'cast') return chooseFreeCast(view, d);

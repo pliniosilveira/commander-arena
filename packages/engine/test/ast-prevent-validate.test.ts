@@ -66,6 +66,10 @@ describe('preventDamage: shapes the engine runs', () => {
       }),
     ],
     ['noncombat', shield({ scope: 'noncombat', to: { kind: 'any' } })],
+    [
+      'a Treasure for each 1 prevented',
+      shield({ perPrevented: { token: { kind: 'preset', preset: 'Treasure' } } }),
+    ],
   ])('%s validates and is supported', (_name, card) => {
     expect(issues(card)).toEqual([]);
     expect(full(card)).toEqual([]);
@@ -125,5 +129,27 @@ describe('preventDamage: malformed nodes', () => {
   });
   test('a recipient of an unknown kind', () => {
     bad(shield({ to: { kind: 'everything' } as never }), 'unknown object reference');
+  });
+  test('a token for prevented damage may not copy another object', () => {
+    bad(
+      shield({ perPrevented: { token: { kind: 'copyOf', object: { kind: 'this' } } } as never }),
+      'not copyOf',
+    );
+  });
+  test('a token for prevented damage has a fixed power and toughness', () => {
+    const base = shield({ perPrevented: { token: { kind: 'preset', preset: 'Food' } } });
+    expect(issues(base)).toEqual([]);
+    bad(
+      shield({
+        perPrevented: {
+          token: {
+            kind: 'custom',
+            ptAmount: { kind: 'number', value: 1 } as never,
+            definition: { name: 'X' } as never,
+          },
+        },
+      }),
+      'fixed power and toughness',
+    );
   });
 });

@@ -16,6 +16,7 @@ import { numberedKeyword } from './numbered';
 import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { protectionKeyword } from './protection';
 import { simpleKeyword } from './simple';
+import { STATION_KEYWORD_RULES } from './station';
 import { TYPECYCLING_RULES } from './typecycling';
 import { UPKEEP_KEYWORD_RULES } from './upkeep';
 import { plainWard, WARD_CREW_RULES } from './ward-crew';
@@ -72,6 +73,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'CR 702.80a (Wither)',
     'CR 702.164a (Toxic)',
     'CR 702.61a (Split Second)',
+    'CR 702.127a (Aftermath)',
     'CR 702.118a (Skulk)',
     'CR 702.91a (Battle Cry)',
     'CR 702.134a (Mentor)',
@@ -133,6 +135,14 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Improvise',
     'Delve',
     'Cascade',
+    // Prismari deck, group 3 (issue 87, D-665, D-666): Demonstrate and Retrace, alone and in a list (the reminder text is stripped before the line is read).
+    'Demonstrate',
+    'Retrace',
+    'Cascade, retrace',
+    'Retrace, flying',
+    // CR 702.127a: Aftermath on the second half of a split card (the reminder text is stripped before the line is read).
+    'Aftermath',
+    'aftermath',
     'Bushido 1',
     'Bushido 2',
     // Stage P40 (D-186, CR 702.82a, 702.136a): Devour N and Riot.
@@ -169,10 +179,15 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Flying, protection from black',
     'Protection from white and from blue',
     'Flying, protection from red and from green, haste',
+    // CR 702.16a, 105.2: protection from multicolored sources.
+    'Protection from multicolored',
+    'Reach, trample, protection from multicolored',
   ],
   rejects: [
     'Ward {2}',
     'Protection from monocolored',
+    'Protection from multicolored and from red',
+    'Protection from multicoloredx',
     'Protection from artifacts',
     'Protection from everything',
     'Protection from red and blue',
@@ -221,6 +236,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Afflict three',
     'Afflict 3 4',
     'Afflict {1}',
+    'Aftermath {2}{B}',
     'Infectious',
     'Split',
     'Split second.',
@@ -258,6 +274,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Unearth {2}{B}',
     'Encore {3}{R}',
     'Eternalize {5}{U}{U}',
+    'Embalm {5}{W}',
     'Riot.',
     'Riot {1}',
     'Riots',
@@ -362,6 +379,8 @@ export const KEYWORD_RULES = [
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
   ...WARD_CREW_RULES,
+  // CR 702.184a (Station).
+  ...STATION_KEYWORD_RULES,
   // Galadriel deck, group 3 (D-548): "Buyback {2}".
   ...GALADRIEL_G3_KEYWORD_RULES,
 ];

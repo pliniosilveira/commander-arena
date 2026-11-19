@@ -116,12 +116,24 @@ describe('static.attached: what an Aura or Equipment gives (CR 604.4, 613.4c, 61
   // now (parser-p14.test.ts). The engine gives no other kind of ability, so any other quoted text is
   // read as a grant and dropped whole, naming no engine feature (it is the kind that is refused).
   test('a granted ability in quotes that is not a mana ability is read and dropped, never run', () => {
-    expect(diagnosticOf('Equipped creature has "{T}: Draw a card."', 'Equipment')).toMatchObject({
+    expect(diagnosticOf('Enchanted permanent has "{T}: Draw a card."', 'Aura')).toMatchObject({
+      reason: 'notRunnable',
+      closestRule: 'static.attached',
+    });
+    expect(diagnosticOf('Enchanted permanent has "{T}: Draw a card."', 'Aura')).not.toHaveProperty(
+      'needs',
+    );
+  });
+
+  test('a granted ability in quotes that the engine cannot run is read and dropped, never run (an activated one is run since D-641)', () => {
+    expect(
+      diagnosticOf('Equipped creature has "{T}: Foretell the top card."', 'Equipment'),
+    ).toMatchObject({
       reason: 'notRunnable',
       closestRule: 'static.attached',
     });
     expect(
-      diagnosticOf('Equipped creature has "{T}: Draw a card."', 'Equipment'),
+      diagnosticOf('Equipped creature has "{T}: Foretell the top card."', 'Equipment'),
     ).not.toHaveProperty('needs');
   });
 
@@ -133,7 +145,7 @@ describe('static.attached: what an Aura or Equipment gives (CR 604.4, 613.4c, 61
 
   test.each([
     ["Enchanted creature can't attack or block alone.", 'alone.'],
-    ['Enchanted creature has ward {2}.', 'ward {2}.'],
+    ['Enchanted creature has ward.', 'ward.'],
     ['Enchanted creature has flash.', 'flash.'],
     ['Enchanted creature gets +1/+1 and loses flying.', 'and loses flying.'],
     ['Enchanted creature gets +1/+1 until end of turn.', 'until end of turn.'],

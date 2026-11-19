@@ -39,6 +39,7 @@ import { modeText, timesNote } from './mode-text';
 import { inherentNameOf } from './monarch-text';
 import type { LogLevel } from './protocol';
 import { giftedText } from './recursion-text';
+import { doorName, unlockedLine } from './room-text';
 import { chapterWord, loreCountIn, romanNumeral } from './saga';
 import { turnLabel } from './turn-label';
 
@@ -1183,6 +1184,17 @@ export function describeEvent(
         'CR 701.3',
       );
     }
+    case 'attachedToPlayer': {
+      // D-629 (CR 303.4b): an Aura that enchants a player enters attached to that player.
+      const caster = after.objects[event.object]?.controller;
+      return line(
+        'major',
+        `${name(event.object)} enchants ${who(event.seat)}.`,
+        caster ?? null,
+        [event.object],
+        'CR 303.4b',
+      );
+    }
     case 'unattached':
       // `from` may have left the battlefield: `name` falls back to last-known information. An
       // Equipment that moves emits `unattached` (replaced) and then `attached` (CR 701.3c).
@@ -1582,6 +1594,31 @@ export function describeEvent(
         [event.permanent],
         'CR 701.42a',
       );
+    case 'doorUnlocked': {
+      // CR 709.5h (Room): a half was given its unlocked designation, entering the battlefield with the half that was cast included.
+      const room = after.objects[event.object];
+      const instance = room?.card == null ? undefined : after.cards[room.card];
+      const face =
+        instance === undefined
+          ? undefined
+          : after.definitions[instance.definition]?.faces[event.door];
+      return line(
+        'major',
+        unlockedLine(who(event.seat), face?.name ?? doorName(undefined, event.door)),
+        event.seat,
+        [event.object],
+        'CR 709.5h',
+      );
+    }
+    case 'exerted':
+      // CR 701.43a, 701.43d: the creature will not untap during its controller's next untap step; the "When you do" ability that follows says what it does.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'exert', 'exerts')} ${name(event.object)}. It won't untap during ${event.seat === viewer ? 'your' : 'their'} next untap step.`,
+        event.seat,
+        [event.object],
+        'CR 701.43a',
+      );
     case 'meldFailed':
       // CR 701.42b, 701.42c (D-277): what could not be melded stays where it is.
       return line(
@@ -1590,6 +1627,15 @@ export function describeEvent(
         null,
         event.objects,
         'CR 701.42c',
+      );
+    case 'cardsChosen':
+      // CR 608.2d (D-660): an opponent chose one of the cards exiled; the cards are public.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} ${event.objects.length === 1 ? 'a card' : 'cards'} among the exiled cards.`,
+        event.seat,
+        event.objects,
+        'CR 608.2d',
       );
     default: {
       const unreachable: never = event;

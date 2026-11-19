@@ -4,7 +4,15 @@
  * checked against SUPPORTED_FEATURES before anything is built, so an ability the engine cannot run
  * is reported with what is missing.
  */
-import type { Ability, Color, Cost, Keyword, ObjectFilter } from '@commander-arena/engine';
+import type {
+  Ability,
+  Amount,
+  Color,
+  Condition,
+  Cost,
+  Keyword,
+  ObjectFilter,
+} from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
 import {
   isGrantable,
@@ -14,7 +22,7 @@ import {
   typecyclingFilter,
 } from '../rules/keyword/vocabulary';
 import { lowerAmount } from './amounts';
-import { lowerEnchant } from './attachments';
+import { lowerEnchant, lowerEnchantPlayer } from './attachments';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
@@ -54,6 +62,7 @@ const KEYWORD_RULE = {
   unearth: 'keyword.unearth',
   encore: 'keyword.encore',
   eternalize: 'keyword.eternalize',
+  embalm: 'keyword.embalm',
   echo: 'keyword.echo',
   cumulativeUpkeep: 'keyword.cumulative-upkeep',
   ward: 'keyword.ward',
@@ -71,6 +80,7 @@ type CostedKeyword =
   | 'unearth'
   | 'encore'
   | 'eternalize'
+  | 'embalm'
   | 'echo'
   | 'cumulativeUpkeep'
   | 'ward'
@@ -97,7 +107,7 @@ type CostedKeyword =
 function lowerEquipCosts(
   ability: IrKeyword,
   written: readonly IrCost[],
-  name: 'equip' | 'ward' = 'equip',
+  name: 'equip' | 'ward' | 'flashback' = 'equip',
 ): LowerResult<readonly Ability[]> {
   const kinds = written.map((c) => c.kind);
   if (kinds.length !== 2 || !kinds.includes('mana') || !kinds.includes('payLife')) {
@@ -135,6 +145,15 @@ function lowerCostedKeyword(
   if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more], 'ward');
   }
+  // "Flashback—{1}{U}, Pay 3 life." (Grave Danger, issue 159, CR 702.34a): a mana cost and a payment of life, each once.
+  if (
+    name === 'flashback' &&
+    only !== undefined &&
+    more.length === 1 &&
+    ability.params.length === 0
+  ) {
+    return lowerEquipCosts(ability, [only, ...more], 'flashback');
+  }
   if (only === undefined || more.length > 0 || ability.params.length > 0) return failure(ability);
   // A cost the engine does not pay for this keyword is refused at the keyword, whatever else it is.
   // Ward's cost is paid as its ability resolves (CR 702.21a); a sacrifice is read and the engine's
@@ -145,6 +164,7 @@ function lowerCostedKeyword(
     name === 'unearth' ||
     name === 'encore' ||
     name === 'eternalize' ||
+    name === 'embalm' ||
     name === 'echo' ||
     name === 'cumulativeUpkeep' ||
     name === 'replicate' ||
@@ -307,6 +327,24 @@ function lowerCrew(ability: IrKeyword, ctx: LowerContext): LowerResult<readonly 
 }
 
 /**
+ * "Station" (CR 702.184a): the keyword; the engine expands it into the activated ability. Only a station card has it (a Spacecraft or a Planet, CR 702.184b, 721.1), so another
+ * face is read and refused with no gap named.
+ */
+function lowerStation(ability: IrKeyword, ctx: LowerContext): LowerResult<readonly Ability[]> {
+  if (ability.params.length > 0) return failure(ability);
+  if (!ctx.faceSubtypes.includes('Spacecraft') && !ctx.faceSubtypes.includes('Planet')) {
+    return failure(ability);
+  }
+  const blocked = gate(ability, ['ability:keyword', 'keyword:station']);
+  if (blocked !== null) return blocked;
+  return {
+    ok: true,
+    value: [{ kind: 'keyword', keyword: { kind: 'station' } }],
+    rule: 'keyword.station',
+  };
+}
+
+/**
  * "Toxic 1" (CR 702.164a), "Annihilator 2" (CR 702.86a), "Bushido 1" (CR 702.45a) and "Devour 2" (CR 702.82a, D-186): the keyword with its
  * number, a positive whole number. The engine reads Toxic where combat damage is dealt and expands
  * Annihilator and Bushido into their triggered abilities, so the lowering only builds the keyword.
@@ -385,6 +423,16 @@ function lowerTypecycling(
 
 /** "Protection from black" (CR 702.16, stage P68, D-229): the colors it names; the engine reads damage, enchanting, blocking and targeting. */
 function lowerProtection(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  if (ability.quality === 'multicolored' && ability.colors === undefined) {
+    // CR 702.16a, 105.2: protection from sources of two or more colors.
+    const blockedQuality = gate(ability, ['ability:keyword', 'keyword:protection']);
+    if (blockedQuality !== null) return blockedQuality;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'protection', from: 'multicolored' } }],
+      rule: 'keyword.line',
+    };
+  }
   const words = ability.colors ?? [];
   const colors = words.map((w) => colorLetter(w));
   if (colors.length === 0 || colors.some((c) => c === undefined) || ability.params.length > 0) {
@@ -418,6 +466,7 @@ export function lowerKeyword(
     ability.name === 'unearth' ||
     ability.name === 'encore' ||
     ability.name === 'eternalize' ||
+    ability.name === 'embalm' ||
     ability.name === 'echo' ||
     ability.name === 'cumulativeUpkeep' ||
     ability.name === 'replicate' ||
@@ -435,7 +484,9 @@ export function lowerKeyword(
   }
   if (ability.name === 'canBeCommander') return lowerCanBeCommander(ability);
   if (ability.name === 'crew') return lowerCrew(ability, ctx);
+  if (ability.name === 'station') return lowerStation(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
+  if (ability.name === 'enchantPlayer') return lowerEnchantPlayer(ability);
   if (
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
@@ -527,6 +578,33 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (blocked !== null) return blocked;
     return built({ kind: 'lifeGainBonus', amount: amount.value });
   }
+  if (event.verb === 'countersPlus') {
+    // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
+    // CR 614.1a, 122.6): the engine's `countersPlus` of the permanent. The permanents are the noun's filter as they are on the battlefield (the controller's own, "another"
+    // leaving the permanent out).
+    const objects = event.args.what;
+    const amount = event.args.amount;
+    if (
+      objects?.kind !== 'noun' ||
+      amount?.kind !== 'number' ||
+      amount.value < 1 ||
+      event.condition !== undefined
+    ) {
+      return failure(ability);
+    }
+    const blocked = gate(ability, ['ability:replacement', 'replacement:countersPlus']);
+    if (blocked !== null) return blocked;
+    const what = lowerFilter(objects);
+    if (!what.ok) return what;
+    const { zone, ...filter } = what.value;
+    void zone;
+    return built({
+      kind: 'countersPlus',
+      what: objects.other ? { ...filter, other: true } : filter,
+      counter: '+1/+1',
+      extra: amount.value,
+    });
+  }
   if (event.verb === 'lifeGainDouble') {
     if (event.condition !== undefined || Object.keys(event.args).length > 0)
       return failure(ability);
@@ -582,11 +660,20 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       spec.types.length === 1 && only !== undefined
         ? { subtypes: [only] }
         : { anyOf: spec.types.map((t) => ({ subtypes: [t] })) };
+    // "... or you control a Dragon": the IR says "applies when X is false"; the engine's `orIf` is X itself.
+    let orIf: Condition | undefined;
+    if (event.condition !== undefined) {
+      if (event.condition.test.kind !== 'not' || spec.behold) return failure(ability);
+      const lowered = lowerCondition(event.condition.test.term, true);
+      if (!lowered.ok) return lowered;
+      orIf = lowered.value;
+    }
     return built({
       kind: 'entersTappedUnlessReveals',
       filter,
       words: spec.words,
       ...(spec.behold ? { fromBattlefield: true as const } : {}),
+      ...(orIf === undefined ? {} : { orIf }),
     });
   }
   if (event.verb === 'entersChoose') {
@@ -602,7 +689,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         ? failure(ability)
         : built({ kind: 'asEntersChoose', what: 'option', options: [...what.options] });
     }
-    return built({ kind: 'asEntersChoose', what: what.what });
+    return built({
+      kind: 'asEntersChoose',
+      what: what.what,
+      ...(what.except === undefined ? {} : { except: what.except }),
+    });
   }
   if (event.verb === 'entersAsCopy') {
     // CR 614.12, 707.2, 707.9b (stage P34, D-152): the permanent enters as a copy of one the controller chooses, with the keywords the exception
@@ -611,7 +702,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const until = event.args.duration;
     const gained = event.args.gains;
     if (what?.kind !== 'noun' || until?.kind !== 'flag') return failure(ability);
-    const blocked = gate(ability, ['ability:replacement', 'replacement:entersAsCopy']);
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:entersAsCopy',
+      ...(event.args.withX === undefined ? [] : (['ability:copyEntersWithX'] as const)),
+    ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
@@ -623,12 +718,39 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       if (word === undefined || !isGrantable(word)) return failure(ability);
       gains.push(plainKeyword(word));
     }
+    // Issue 103 (CR 707.9b): "except it's a Dragon in addition to its other types": creature types only.
+    const exceptTypes = event.args.exceptTypes;
+    if (
+      exceptTypes !== undefined &&
+      (exceptTypes.kind !== 'typeList' ||
+        exceptTypes.additive !== true ||
+        exceptTypes.cardTypes !== undefined ||
+        exceptTypes.colors !== undefined ||
+        exceptTypes.subtypes.length === 0)
+    ) {
+      return failure(ability);
+    }
     return built({
       kind: 'entersAsCopy',
       what: kind,
       optional: true,
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
+      ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
+      // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
+      ...(event.args.withX?.kind === 'flag' && event.args.withX.value
+        ? { withX: { counter: '+1/+1' } }
+        : {}),
+      // Issue 104 (CR 707.9b, 702.128b): "except if ~ was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
+      ...(event.args.embalmed?.kind === 'flag' && event.args.embalmed.value
+        ? {
+            ifEmbalmed: {
+              setColors: ['W' as const],
+              noManaCost: true as const,
+              addSubtypes: ['Zombie'],
+            },
+          }
+        : {}),
     });
   }
   if (event.verb === 'drawInstead') {
@@ -730,6 +852,30 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       alsoCreate: { token: only.token, count: only.count },
     });
   }
+  // Issue 245 (Vivid Grove): "~ enters tapped with two charge counters on it." is the replacement that makes it enter tapped and the one that gives it counters.
+  if (event.verb === 'entersTappedWithCounters') {
+    if (event.condition !== undefined) return failure(ability);
+    const count = event.args.count;
+    const counter = event.args.counter;
+    if (counter?.kind !== 'counterSpec' || count?.kind !== 'number') return failure(ability);
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:entersTapped',
+      'replacement:entersWithCounters',
+    ]);
+    if (blocked !== null) return blocked;
+    return {
+      ok: true,
+      value: [
+        { kind: 'replacement', replacement: { kind: 'entersTapped' } },
+        {
+          kind: 'replacement',
+          replacement: { kind: 'entersWithCounters', counter: counter.name, count: count.value },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (event.verb === 'entersWithCounters') {
     // The engine's replacement has no condition ("If ~ was kicked, it enters with ..."): read, not run.
     if (event.condition !== undefined) return failure(ability);
@@ -757,7 +903,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         'amount:x',
       ]);
       if (blockedX !== null) return blockedX;
-      return built({ kind: 'entersWithCounters', counter: counter.name, count: { kind: 'x' } });
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: count.times === undefined ? { kind: 'x' } : { kind: 'x', times: count.times },
+      });
     }
     // "for each Zombie card in your graveyard" (stage P28, D-131): counted as it enters, for its controller (CR 614.12).
     if (count?.kind === 'countOf') {
@@ -773,6 +923,31 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         return failure(ability);
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
+    // "for each other Zombie you control and each Zombie card in your graveyard" (issue 159): each count as it enters, added.
+    if (count?.kind === 'sum') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:countOf',
+        'amount:sum',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'sum') {
+        return failure(ability);
+      }
+      const parts: Extract<Amount, { kind: 'countOf' }>[] = [];
+      for (const part of counted.value.of) {
+        if (typeof part !== 'object' || part.kind !== 'countOf') return failure(ability);
+        parts.push(part);
+      }
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: { kind: 'sum', of: parts },
+      });
     }
     // "enters with a charge counter on it for each time it was kicked" (D-254, CR 702.33c, 614.1c): the kicks of the spell it came from.
     if (count?.kind === 'timesKicked') {
@@ -847,6 +1022,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:unearth',
   'keyword:encore',
   'keyword:eternalize',
+  'keyword:embalm',
   'keyword:devour',
   'keyword:riot',
   'keyword:suspend',
@@ -863,6 +1039,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:cumulativeUpkeep',
   'keyword:ward',
   'keyword:crew',
+  'keyword:station',
   'keyword:enchant',
   'keyword:landwalk',
   'ability:replacement',
@@ -876,6 +1053,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:entersAsCopy',
   'replacement:skipDraw',
   'replacement:tokensInstead',
+  'replacement:countersPlus',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

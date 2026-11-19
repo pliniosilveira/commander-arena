@@ -17,7 +17,7 @@ import {
   separatedBy1,
   sequence,
 } from '../../combinators';
-import type { IrAmount, IrCounterSpec } from '../../ir/types';
+import type { IrAmount, IrCounterSpec, IrNoun } from '../../ir/types';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, LIST_SEPARATOR, makeClause, operands, single } from './operands';
@@ -47,10 +47,16 @@ const COUNTER_OPERANDS = [
   'noun.each-of-them',
 ] as const;
 
+/**
+ * D-653 (Breena, the Demagogue): "put two +1/+1 counters on a creature you control", one permanent the controller chooses as the effect resolves. Only the plain
+ * counters effect reads it ("a number of ... equal to" and the others keep the operands above).
+ */
+const ADD_COUNTERS_OPERANDS = [...COUNTER_OPERANDS, 'noun.a-permanent'] as const;
+
 export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
   id: 'effect.add-counters',
   family: 'effect',
-  leading: ['put'],
+  leading: ['put', 'you'],
   cites: ['CR 122.6 (Counters)', 'CR 122.1 (Counters)'],
   examples: [
     'put a +1/+1 counter on ~',
@@ -73,8 +79,11 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     'put two +1/+1 counters on ~ for each opponent who has more life than you',
     'put that many +1/+1 counters on each creature you control',
     'put that many +1/+1 counters on ~',
+    'you put two +1/+1 counters on a creature you control',
+    'put two +1/+1 counters on a creature you control',
   ],
   rejects: [
+    'you put two +1/+1 counters on target creature and draw a card',
     'put X +1/+1 counters on it for each time it was kicked',
     'put a +1/+1 counter on it for each time',
     'put a +1/+1 counter on it for each creature',
@@ -99,7 +108,8 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
     // multiply, which the engine's one amount cannot say.
     satisfy(
       sequence(
-        literal('put '),
+        // D-653 (Breena, the Demagogue): "... and you put two +1/+1 counters on a creature you control": the controller as the subject.
+        map(sequence(optional(literal('you '), null), literal('put ')), () => 'put '),
         family<IrAmount>('amount', { only: COUNT_ONLY }),
         literal(' '),
         map(
@@ -112,7 +122,7 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
           }),
         ),
         pattern(/ counters? on /i),
-        operands(COUNTER_OPERANDS, 'effect.add-counters'),
+        operands(ADD_COUNTERS_OPERANDS, 'effect.add-counters'),
         optional(FOR_EACH_TAIL, null),
       ),
       ([, count, , , , , each]) => each === null || scaled(count, each) !== null,
@@ -121,6 +131,66 @@ export const EFFECT_ADD_COUNTERS = defineRule<Clauses>({
       verb: 'addCounters',
       args: { count: each === null ? count : (scaled(count, each) ?? count), counter, objects },
     }),
+  ),
+});
+
+/** The objects the counters of a kind can be doubled on: this permanent, "it", a target, or a group as the effect resolves. */
+const DOUBLE_COUNTER_OPERANDS = [
+  'noun.self',
+  'noun.it',
+  'noun.target-permanent',
+  'noun.each-permanent',
+  'noun.all-permanents',
+  // Quandrix Unlimited deck, group D2 (Kinetic Ooze): "any number of other target creatures".
+  'noun.any-number-targets',
+] as const;
+
+/**
+ * `effect.double-counters`: "double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, 122.6): each object gets as
+ * many more counters of the kind as it has as the effect resolves. The counters are put by the controller of the spell or ability, so they go
+ * through the same placement as "put a +1/+1 counter on" does. Not read: a doubling of a quantity that is not a counter kind ("double the
+ * number of counters" with no kind, which is every kind) or one with a trailing clause.
+ */
+export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
+  id: 'effect.double-counters',
+  family: 'effect',
+  leading: ['double'],
+  cites: ['CR 701.10 (Double)', 'CR 122.6 (Counters)', 'CR 122.1 (Counters)'],
+  examples: [
+    'double the number of +1/+1 counters on target creature you control',
+    'double the number of +1/+1 counters on ~',
+    'double the number of +1/+1 counters on it',
+    'double the number of -1/-1 counters on target creature',
+    'double the number of charge counters on ~',
+    'double the number of +1/+1 counters on each creature you control',
+    'double the number of +1/+1 counters on any number of other target creatures',
+  ],
+  rejects: [
+    'double the number of counters on target creature',
+    'double the number of +1/+1 counters on target creature you control and draw a card',
+    'double the number of +1/+1 counters on',
+    'double the number of +1/+1 counters',
+    'double the +1/+1 counters on ~',
+    'double the number of +1/+1 counters on ~ until end of turn',
+    'double the power and toughness of ~ until end of turn',
+  ],
+  parse: single(
+    'effect.double-counters',
+    sequence(
+      literal('double the number of '),
+      map(
+        spanned(pattern(COUNTER_NAME)),
+        ({ value, span }): IrCounterSpec => ({
+          kind: 'counterSpec',
+          name: value[0].toLowerCase(),
+          span,
+          rule: 'effect.double-counters',
+        }),
+      ),
+      pattern(/ counters on /i),
+      operands(DOUBLE_COUNTER_OPERANDS, 'effect.double-counters'),
+    ),
+    ([, counter, , objects]) => ({ verb: 'doubleCounters', args: { counter, objects } }),
   ),
 });
 
@@ -240,8 +310,70 @@ export const EFFECT_ADD_COUNTERS_KINDS = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.player-add-counters`: "Target player puts a +1/+1 counter on each creature they control" (CR 122.6, 109.4, 608.2c, 115.1): a chosen player puts counters on every permanent
+ * of a kind they control. The player is a target noun of its own, numbered with the other targets of the text; the permanents are the engine's `each` selector with `controlledBy`
+ * that player. Not read: "you" and the other subjects (`effect.add-counters`), a plural subject, "puts" with a number of counters that is not a number or "a", other objects, a
+ * for-each count.
+ */
+export const EFFECT_PLAYER_ADD_COUNTERS = defineRule<Clauses>({
+  id: 'effect.player-add-counters',
+  family: 'effect',
+  leading: ['target'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 109.4 (Objects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'target player puts a +1/+1 counter on each creature they control',
+    'target opponent puts two -1/-1 counters on each creature they control',
+  ],
+  rejects: [
+    'target player put a +1/+1 counter on each creature they control',
+    'target player puts a +1/+1 counter on each creature you control',
+    'target player puts a +1/+1 counter on target creature',
+    'target player puts a +1/+1 counter on each creature',
+    'target player puts a +1/+1 counter on each creature they control for each creature',
+    'target players put a +1/+1 counter on each creature they control',
+    'each player puts a +1/+1 counter on each creature they control',
+    'target player puts X +1/+1 counters on each creature they control',
+    'target creature puts a +1/+1 counter on each creature they control',
+    'you put a +1/+1 counter on each creature they control',
+  ],
+  parse: single(
+    'effect.player-add-counters',
+    satisfy(
+      sequence(
+        family<IrNoun>('noun', { only: ['noun.player'] }),
+        literal(' puts '),
+        family<IrAmount>('amount', { only: ['amount.number', 'amount.article'] }),
+        literal(' '),
+        map(
+          spanned(pattern(COUNTER_NAME)),
+          ({ value, span }): IrCounterSpec => ({
+            kind: 'counterSpec',
+            name: value[0].toLowerCase(),
+            span,
+            rule: 'effect.player-add-counters',
+          }),
+        ),
+        pattern(/ counters? on /i),
+        family<IrNoun>('noun', { only: ['noun.each-permanent-they-control'] }),
+      ),
+      ([subject]) => subject.det === 'target',
+    ),
+    ([player, , count, , counter, , objects]) => ({
+      verb: 'addCounters',
+      args: { player, count, counter, objects },
+    }),
+  ),
+});
+
 export const COUNTER_RULES = [
+  EFFECT_PLAYER_ADD_COUNTERS,
   EFFECT_ADD_COUNTERS,
+  EFFECT_DOUBLE_COUNTERS,
   EFFECT_ADD_COUNTERS_NUMBER_OF,
   EFFECT_ADD_COUNTERS_KINDS,
 ];

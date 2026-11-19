@@ -25,10 +25,13 @@
  *   written without ids or timestamps so that two equal shields used in either order are the same result, and where a default order
  *   that is at least as good as every other (it prevents all and keeps the numeric shield) is not asked about either.
  */
+
+import type { TokenDefinition } from '../ast/types';
 import type { SeatId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
 import type { ChooseOptionDecision, DamageReplacementChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
+import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
 import type { DamageEvent, DamageModifier } from './damage-modifier';
 import { modifierText, nameOf } from './damage-order-text';
@@ -110,6 +113,15 @@ export interface Settling {
   readonly used: readonly string[];
   readonly lane: { readonly applied: number; readonly prevented: number };
   readonly events: readonly GameEvent[];
+  /** The tokens the shields applied so far make for the damage they prevented (CR 615.5), one entry for each shield use. */
+  readonly riders: readonly TokenRider[];
+}
+
+/** "For each 1 damage prevented this way, create a token" (CR 615.5): `count` tokens of `definition` for `controller`. */
+export interface TokenRider {
+  readonly definition: TokenDefinition;
+  readonly controller: SeatId;
+  readonly count: number;
 }
 
 export const beginSettling = (state: GameState, event: DamageEvent): Settling => ({
@@ -122,6 +134,7 @@ export const beginSettling = (state: GameState, event: DamageEvent): Settling =>
   used: [],
   lane: { applied: 0, prevented: 0 },
   events: [],
+  riders: [],
 });
 
 /** The event as it is at this point of the process: the recipient it would be dealt to now and what is left of it. */
@@ -148,6 +161,25 @@ const laneEvents = (current: Settling): readonly GameEvent[] =>
           combat: current.event.combat,
         },
       ];
+
+/** The counter a static prevention removes as it prevents the event (issue 159), with the event of it; null when it removes none or the permanent has none. */
+function counterRemoval(
+  current: Settling,
+  prevention: StaticPrevention,
+): { readonly state: GameState; readonly event: GameEvent } | null {
+  const { removeCounter } = prevention;
+  const obj = current.state.objects[prevention.object];
+  if (removeCounter === undefined || obj === undefined || (obj.counters[removeCounter] ?? 0) < 1) {
+    return null;
+  }
+  const { [removeCounter]: had = 0, ...others } = obj.counters;
+  return {
+    state: patchObject(current.state, obj.id, {
+      counters: had > 1 ? { ...others, [removeCounter]: had - 1 } : others,
+    }),
+    event: { kind: 'counterRemoved', object: obj.id, counter: removeCounter, count: 1 },
+  };
+}
 
 /** Applies one modifier (the file comment): the result is what is left of the event and the shields after it. */
 export function applyModifier(current: Settling, modifier: DamageModifier): Settling {
@@ -180,12 +212,21 @@ export function applyModifier(current: Settling, modifier: DamageModifier): Sett
     prevented: current.lane.prevented + took,
   });
   if (origin.kind === 'static' || origin.shield.change.amount === 'all') {
+    // Issue 159 (Unbreathing Horde): "prevent that damage and remove a +1/+1 counter from it": one counter for each event the ability prevents.
+    const removal = origin.kind === 'static' ? counterRemoval(current, origin.prevention) : null;
     return {
       ...current,
+      ...(removal === null
+        ? {}
+        : { state: removal.state, events: [...current.events, removal.event] }),
       amount: 0,
       prevented: current.prevented + current.amount,
       applied: current.applied + 1,
       lane: lane(current.amount),
+      riders:
+        origin.kind === 'shield'
+          ? withRider(current.riders, origin.shield, current.amount)
+          : current.riders,
     };
   }
   const shield = origin.shield;
@@ -204,7 +245,18 @@ export function applyModifier(current: Settling, modifier: DamageModifier): Sett
     prevented: current.prevented + take,
     applied: current.applied + 1,
     lane: lane(take),
+    riders: withRider(current.riders, shield, take),
   };
+}
+
+/** CR 615.5: the additional effect of a shield, "for each 1 damage prevented this way, create a token", for the `prevented` damage it took. */
+function withRider(
+  riders: readonly TokenRider[],
+  shield: Shield,
+  prevented: number,
+): readonly TokenRider[] {
+  const made = shield.change.perPrevented;
+  return made === undefined || prevented <= 0 ? riders : [...riders, { ...made, count: prevented }];
 }
 
 /** The shields that are interchangeable: the same effect on the same event, whatever their ids and timestamps (two Fog-like shields, two "prevent the next 3" of one kind). */
@@ -215,6 +267,7 @@ const groupOf = (e: Shield): string =>
     e.change.recipients ?? null,
     e.change.sources ?? null,
     e.change.sourceFilter ?? null,
+    e.change.perPrevented ?? null,
     e.objects,
     e.players ?? null,
     e.until,
@@ -371,6 +424,8 @@ export interface Settled {
   readonly to: DamageRecipient;
   readonly remaining: number;
   readonly events: readonly GameEvent[];
+  /** The tokens to create for the damage the shields prevented (CR 615.5), in the order the shields were applied. */
+  readonly riders: readonly TokenRider[];
 }
 
 /** The decision of a replacement question, before the engine gives it its id. */
@@ -485,5 +540,6 @@ export function settleDamage(
     to: current.to,
     remaining: current.amount,
     events: [...current.events, ...laneEvents(current)],
+    riders: current.riders,
   };
 }

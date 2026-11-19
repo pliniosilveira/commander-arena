@@ -115,7 +115,7 @@ export interface PermanentOptions extends PlaceOptions {
   readonly face?: number;
   readonly tapped?: boolean;
   /** The permanent is face down, manifested (CR 701.40a, 708.2a, D-308): a 2/2 creature with no name until it is turned face up. Labelled in the order placed. */
-  readonly faceDown?: true;
+  readonly faceDown?: true | 'morph';
   /** Damage marked on it (CR 120.3). */
   readonly damage?: number;
   /** Counters, for example { '+1/+1': 2 }. */
@@ -166,6 +166,8 @@ export interface PermanentOptions extends PlaceOptions {
   readonly ringBearer?: true;
   /** The level of a Class on the battlefield (CR 716.2, D-235). */
   readonly level?: number;
+  /** The unlocked halves of a Room on the battlefield (CR 709.5c): 0 the left half, 1 the right half. Neither by default. */
+  readonly unlocked?: readonly number[];
 }
 
 export interface AtOptions {
@@ -214,6 +216,7 @@ export interface CastHandle {
     | 'payment'
     | 'behold'
     | 'additionalExile'
+    | 'harmonize'
     | 'sacrifice'
     | 'discard'
     | 'exile'
@@ -287,6 +290,7 @@ export interface CastHandle {
           readonly ability?: number;
           /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): needed when the player has more than one. */
           readonly sacrifice?: CardRef;
+          readonly tapped?: CardRef;
         }
     )[],
   ): Actor;
@@ -305,6 +309,8 @@ export interface TryVerbs {
   foretell(card: CardRef): TryResult;
   /** Turn a face-down permanent face up (D-310), any permanent on the battlefield the seat names. */
   turnFaceUp(card: CardRef): TryResult;
+  /** Unlock the half `door` (0 the left half, 1 the right half) of a Room (CR 709.5e). */
+  unlock(card: CardRef, door: number): TryResult;
   playLand(card: CardRef, options?: PlayLandOptions): TryResult;
   cast(card: CardRef, options?: Pick<CastOptions, 'alternative' | 'face'>): TryResult;
   tapForMana(card: CardRef, options?: TapOptions): TryResult;
@@ -330,6 +336,8 @@ export interface ActivateOptions {
   readonly x?: number;
   /** Targets in slot order, as for `cast`. */
   readonly targets?: readonly TargetRef[];
+  /** The share of each target, in the order of `targets`, when the ability divides something among them (CR 601.2d, 602.2b). */
+  readonly divide?: readonly number[];
   /** Pay the mana cost with the planner straight away, when the engine asks for a payment. */
   readonly pay?: boolean;
 }
@@ -341,8 +349,12 @@ export interface TapOptions {
   readonly combination?: ManaSpec;
   /** Index of the mana ability on the card. Default: the first one. */
   readonly ability?: number;
+  /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b): needed when the land has such an ability on it. */
+  readonly extraColors?: readonly ManaColor[];
   /** The permanent a cost "Sacrifice a Spirit" gives up (D-222): needed when the player has more than one. */
   readonly sacrifice?: CardRef;
+  /** The permanent a cost "Tap an untapped creature you control" taps (D-625): needed when the player has more than one. */
+  readonly tapped?: CardRef;
 }
 
 export interface PlayLandOptions {
@@ -365,7 +377,7 @@ export interface CastOptions {
   readonly face?: number;
   /**
    * Cast with an alternative cost (CR 118.9): `'flashback'` casts the card from the graveyard
-   * (CR 702.34a), looked up in the graveyard, not the hand; `'free'` casts it without paying its mana
+   * (CR 702.34a), looked up in the graveyard, not the hand; `'retrace'` (D-667, CR 702.81a) casts it from the graveyard too; `'free'` casts it without paying its mana
    * cost (D-095), from the hand or the command zone.
    */
   readonly alternative?: CastAlternativeKind;
@@ -439,6 +451,8 @@ export interface Actor {
   foretell(card: CardRef, options?: SpecialOptions): CastHandle;
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): the special action, paid as `suspend`. */
   turnFaceUp(card: CardRef, options?: SpecialOptions): CastHandle;
+  /** Unlock a half of a Room you control (CR 709.5e): the special action, paid as `suspend`. */
+  unlock(card: CardRef, door: number, options?: SpecialOptions): CastHandle;
   pass(): Actor;
   concede(): Actor;
   /** Mulligan decisions (CR 103.5). */
@@ -527,6 +541,7 @@ export type ActionSpec =
   | { readonly suspend: CardRef }
   | { readonly foretell: CardRef }
   | { readonly turnFaceUp: CardRef }
+  | { readonly unlock: CardRef; readonly door: number }
   | {
       readonly tap: CardRef;
       readonly color?: ManaColor;
@@ -567,6 +582,7 @@ export interface Expectations {
     card: CardRef,
     expected: {
       readonly types?: readonly string[];
+      readonly supertypes?: readonly string[];
       readonly subtypes?: readonly string[];
       readonly colors?: readonly string[];
       readonly keywords?: readonly string[];

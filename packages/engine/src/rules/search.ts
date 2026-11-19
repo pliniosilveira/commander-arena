@@ -19,6 +19,8 @@ import type { ChooseCardsDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchObject } from '../state/ops';
 import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import { withAuraEntries } from './aura-entry';
+import { counterCountOn } from './counter-bonus';
 import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
@@ -30,6 +32,24 @@ import { done, type StepOutcome } from './step-outcome';
 
 type SearchInstruction = Extract<Instruction, { kind: 'search' }>;
 type DiscardInstruction = Extract<Instruction, { kind: 'discard' }>;
+type SearchZone = 'graveyard' | 'hand' | 'library';
+
+/**
+ * Whether the search went through the library (`librarySearched`, `thisWay` `searched`). A search of the library alone always does; one of several zones ("your graveyard,
+ * hand, and/or library", CR 701.23a) does unless the cards found came from the graveyard or the hand: "and/or" lets the player search only those zones. A search that finds nothing
+ * searched all of them.
+ */
+function searchedLibrary(
+  state: GameState,
+  search: SearchInstruction['search'],
+  found: readonly ObjectId[],
+): boolean {
+  const zones = search.zones;
+  if (zones === undefined) return true;
+  if (!zones.includes('library')) return false;
+  if (found.length === 0) return true;
+  return found.some((id) => state.objects[id]?.zone === 'library');
+}
 
 /** The numeric part of an object id ("o12" is 12), so the order is the order of creation. */
 function idNumber(id: ObjectId): number {
@@ -45,13 +65,17 @@ export function searchCandidates(
   seat: SeatId,
   source: ObjectId | null,
   filter: ObjectFilter,
+  zones: readonly SearchZone[] = ['library'],
 ): ObjectId[] {
-  const scoped: ObjectFilter = { ...filter, zone: 'library' };
   const found: { id: ObjectId; name: string }[] = [];
-  for (const id of getSeat(state, seat).library) {
-    const obj = state.objects[id];
-    if (obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source })) {
-      found.push({ id, name: derive(state, obj).name });
+  // CR 701.23a: the cards of every zone searched ("your graveyard, hand, and/or library") that match, in one list.
+  for (const zone of zones) {
+    const scoped: ObjectFilter = { ...filter, zone };
+    for (const id of getSeat(state, seat)[zone]) {
+      const obj = state.objects[id];
+      if (obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source })) {
+        found.push({ id, name: derive(state, obj).name });
+      }
     }
   }
   found.sort((a, b) =>
@@ -128,10 +152,15 @@ export function runSearch(
     };
   }
   if (instruction.chosen === null) {
-    const legal = searchCandidates(state, seat, res.source, search.filter);
+    const legal = searchCandidates(state, seat, res.source, search.filter, search.zones);
     // CR 701.23c: with nothing to find the player still searched (and shuffles if told to).
-    if (legal.length === 0) {
-      return done(state, [{ kind: 'librarySearched', seat, found: 0 }], shuffle);
+    if (legal.length === 0 || search.max <= 0) {
+      // Lorehold group 1: the player searched, which "if you search your library this way" reads.
+      const library = search.zones === undefined || search.zones.includes('library');
+      return {
+        ...done(state, library ? [{ kind: 'librarySearched', seat, found: 0 }] : [], shuffle),
+        thisWay: library ? { searched: 1 } : {},
+      };
     }
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
@@ -155,7 +184,20 @@ export function runSearch(
     return { state, events: [], front: [], needs: decision };
   }
   const found = instruction.chosen;
-  const events: GameEvent[] = [{ kind: 'librarySearched', seat, found: found.length }];
+  // CR 701.23a: "found" counts the cards of the library alone for the event of a library search.
+  const searched = searchedLibrary(state, search, found);
+  const events: GameEvent[] = searched
+    ? [
+        {
+          kind: 'librarySearched',
+          seat,
+          found:
+            search.zones === undefined
+              ? found.length
+              : found.filter((id) => state.objects[id]?.zone === 'library').length,
+        },
+      ]
+    : [];
   if (search.reveal && found.length > 0) {
     const cards = found.flatMap((id) => {
       const obj = state.objects[id];
@@ -176,7 +218,11 @@ export function runSearch(
     ? [{ kind: 'shuffle', seat, ...(placed.onTop.length > 0 ? { keep: placed.onTop } : {}) }]
     : [];
   const top = [...placed.onTop].reverse().map((id) => moveInstruction(id, 'library', false));
-  return done(state, events, [...placed.now, ...shuffled, ...top]);
+  return {
+    // CR 303.4f: an Aura found for the battlefield chooses what it enchants as it enters.
+    ...done(state, events, [...withAuraEntries(state, placed.now), ...shuffled, ...top]),
+    thisWay: searched ? { searched: 1 } : {},
+  };
 }
 
 /** CR 701.9: the player chooses (unless the whole hand goes), then the cards go to the graveyard. */
@@ -188,7 +234,9 @@ export function runDiscard(
   const { seat } = instruction;
   const hand = getSeat(state, seat).hand;
   // D-151: "Discard any number of cards": as many as the hand holds may be chosen, none included.
-  const count = instruction.anyNumber === true ? hand.length : instruction.count;
+  // CR 701.9a: "discards their hand": the whole hand as it is when this player's instruction comes up, so nothing is chosen.
+  const count =
+    instruction.anyNumber === true || instruction.hand === true ? hand.length : instruction.count;
   // D-139: "discard N cards unless you discard an artifact card": the cards of the hand the filter matches may be discarded alone.
   const alone =
     instruction.unless === undefined
@@ -283,14 +331,15 @@ export function runDiscard(
     const conniver = next.objects[instruction.conniver];
     // D-380 (CR 122.6, 101.2): a creature that can't have +1/+1 counters gets none.
     if (conniver?.zone === 'battlefield' && !counterBlocked(next, conniver, '+1/+1')) {
+      const put = counterCountOn(next, conniver, '+1/+1', 1);
       next = patchObject(next, conniver.id, {
-        counters: { ...conniver.counters, '+1/+1': (conniver.counters['+1/+1'] ?? 0) + 1 },
+        counters: { ...conniver.counters, '+1/+1': (conniver.counters['+1/+1'] ?? 0) + put },
       });
       events.push({
         kind: 'counterAdded',
         object: conniver.id,
         counter: '+1/+1',
-        count: 1,
+        count: put,
         by: instruction.seat,
       });
     }
@@ -305,6 +354,8 @@ export function runDiscard(
       discardedCreature: discardedCreatures,
       discardedNoncreature: discardedCards - discardedCreatures,
       discardedInstantOrSorcery: discardedSpells,
+      // Issue 279: this player's own number; the resolution keeps the greatest of them (`stack.ts`).
+      discardedMost: discardedCards,
       ...(discardedCards > 0 ? { discardedBy: [seat] } : {}),
     },
   };

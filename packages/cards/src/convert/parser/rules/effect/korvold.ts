@@ -60,7 +60,7 @@ export const EFFECT_IT_HAS_ABILITY = defineRule<Clauses>({
  * `effect.return-chosen-card`: "you may return a creature card from your graveyard to your hand", "return a land card from your graveyard to
  * your hand" (stage P35, D-176, CR 400.7, 608.2d, 701.17b): not a target, the player chooses a card of their own graveyard as the instruction
  * runs, any card of the kind in it, and with "you may" none. The words "you may" are read here so that a clause after "then" can say them
- * (\"Mill two cards, then you may return a creature card ...\"): the lowering is the engine's `moveToZone` of a chosen card to the hand.
+ * (\"Mill two cards, then you may return a creature card ...\"): the lowering is the engine's `moveToZone` of a chosen card to the hand, or (Dim Oubliette) onto the battlefield under the player's control (CR 110.2a).
  */
 export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
   id: 'effect.return-chosen-card',
@@ -78,6 +78,9 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     'return an artifact card from your graveyard to your hand',
     'you may return a Dragon card from your graveyard to your hand',
     'you may return a permanent card from your graveyard to your hand',
+    // Death Toll deck, Dim Oubliette (CR 400.7, 608.2d, 110.2a): the same choice, put onto the battlefield under your control.
+    'return a creature card from your graveyard to the battlefield',
+    'you may return a creature card from your graveyard to the battlefield',
   ],
   rejects: [
     'you may return target creature card from your graveyard to your hand',
@@ -85,7 +88,8 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     'you may return a creature card from a graveyard to your hand',
     'you may return a creature card from an opponent’s graveyard to your hand',
     "you may return a creature card from your graveyard to its owner's hand",
-    'you may return a creature card from your graveyard to the battlefield',
+    'you may return a creature card from your graveyard to the battlefield tapped',
+    'you may return a creature card from your graveyard to the battlefield under your control',
     'you may return a creature from your graveyard to your hand',
     'you may return a creature card from your graveyard to your hand tapped',
     'you may return it to your hand',
@@ -105,7 +109,7 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
               satisfy(graveyardPhrase(false), (filter) => filter.controller === 'you'),
             ),
           ),
-          spanned(literal(' to your hand')),
+          spanned(choice(literal(' to your hand'), literal(' to the battlefield'))),
         ),
       )(ctx, pos);
       if (!head.ok) return head;
@@ -122,10 +126,12 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
         span: at,
         rule: 'effect.return-chosen-card',
       };
+      const toBattlefield =
+        ctx.text.slice(hand.span.start, hand.span.end) === ' to the battlefield';
       const to: IrZoneSpec = {
         kind: 'zoneSpec',
-        zone: 'hand',
-        whose: 'you',
+        zone: toBattlefield ? 'battlefield' : 'hand',
+        ...(toBattlefield ? {} : { whose: 'you' as const }),
         span: hand.span,
         rule: 'effect.return-chosen-card',
       };

@@ -40,10 +40,14 @@ export interface AbilityObjectRequest {
   readonly attacked?: readonly SeatId[];
   /** For an `attackBatch` ability that reads `attackersGreatestPower`: the creatures its attack event declared as attackers. */
   readonly attackers?: readonly ObjectId[];
+  /** For a triggered ability that reads `attackersAtYouAtLeast` (D-643): who each creature of its attack event was declared attacking. */
+  readonly attackedAt?: readonly SeatId[];
   /** For a reflexive ability (D-177): the permanents the resolution that created it had sacrificed. */
   readonly sacrificedBefore?: readonly ObjectId[];
   /** For a reflexive ability (D-231): what the resolution that created it had counted. */
   readonly thisWayBefore?: ThisWayCounts;
+  /** For a reflexive ability with `carriesMoved` (issue 89): the objects the resolution that created it had made or moved. */
+  readonly movedBefore?: readonly ObjectId[];
   /** For a `leftGraveyard` ability (D-232): the cards that left the graveyard. */
   readonly cards?: readonly ObjectId[];
   /** For a Saga's chapter ability: the chapter number reached (CR 714.2). */
@@ -95,10 +99,12 @@ export function pushAbilityObject(
       ...(request.targetCount === undefined ? {} : { triggerTargetCount: request.targetCount }),
       ...(request.attacked === undefined ? {} : { triggerAttacked: request.attacked }),
       ...(request.attackers === undefined ? {} : { triggerAttackers: request.attackers }),
+      ...(request.attackedAt === undefined ? {} : { triggerAttackedAt: request.attackedAt }),
       ...(request.sacrificedBefore === undefined
         ? {}
         : { sacrificedBefore: request.sacrificedBefore }),
       ...(request.thisWayBefore === undefined ? {} : { thisWayBefore: request.thisWayBefore }),
+      ...(request.movedBefore === undefined ? {} : { movedBefore: request.movedBefore }),
       ...(request.cards === undefined ? {} : { triggerCards: request.cards }),
       ...(request.chapter === undefined ? {} : { chapter: request.chapter }),
     },

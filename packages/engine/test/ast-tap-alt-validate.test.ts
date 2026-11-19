@@ -66,7 +66,9 @@ describe('the tapPermanents alternative cost', () => {
       cost: [{ kind: 'mana', symbols: ['R'] }],
       count: 2,
     } as unknown as AlternativeCost;
-    expect(messages(card(bad)).join('|')).toContain('only tapPermanents taps permanents');
+    expect(messages(card(bad)).join('|')).toContain(
+      'only tapPermanents and sacrificeFromGraveyard name permanents',
+    );
   });
 
   test('on a land it is refused', () => {
@@ -122,10 +124,42 @@ describe('a keyword in the subject of a static ability', () => {
     ).toEqual([]);
   });
 
+  test('a "+N/+N" may too (layer 7c, read after layer 6, D-149), and so may its count', () => {
+    expect(
+      validateCard(
+        stat({
+          kind: 'modifyPt',
+          subject: { kind: 'filter', filter: FLYER },
+          power: 1,
+          toughness: 1,
+        }),
+      ),
+    ).toEqual([]);
+    const count = {
+      kind: 'countOf',
+      filter: { ...FLYER, other: true, controller: 'you' },
+    } as const;
+    expect(
+      validateCard(
+        stat({ kind: 'modifyPt', subject: { kind: 'this' }, power: count, toughness: 0 }),
+      ),
+    ).toEqual([]);
+  });
+
+  test('a count of a characteristic-defining ability (layer 7a) may not name a keyword', () => {
+    const issues = validateCard(
+      stat({
+        kind: 'characteristicPt',
+        power: { kind: 'countOf', filter: { ...FLYER, controller: 'you' } },
+      }),
+    );
+    expect(issues.map((i) => i.message).join('|')).toContain('cannot name a keyword');
+  });
+
   test('any other static ability may not', () => {
     const issues = validateCard(
       stat({
-        kind: 'modifyPt',
+        kind: 'setPt',
         subject: { kind: 'filter', filter: FLYER },
         power: 1,
         toughness: 1,

@@ -46,6 +46,16 @@ describe('the ability on the stack', () => {
     );
   });
 
+  test('a free cast says so (the Diluvian Primordial group)', () => {
+    const free = abilityOf('SYNTHETIC Tidal Caster');
+    expect(triggerGist(free, undefined)).toBe(
+      "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost. If that spell would be put into a graveyard, exile it instead",
+    );
+    expect(castCardPrompt('Divination', castCardOf(free.effect))).toBe(
+      'Cast Divination from a graveyard, without paying its mana cost? If it would be put into a graveyard, it is exiled instead.',
+    );
+  });
+
   test('the pieces', () => {
     expect(castCardText({ kind: 'castCard', object: { kind: 'target', id: 't1' } }, 'it')).toBe(
       'You may cast it',

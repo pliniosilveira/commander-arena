@@ -19,6 +19,32 @@ export const ENCORE_SACRIFICE_ABILITY: TriggeredAbility = {
 };
 
 /**
+ * "... tokens that attack that opponent this turn if able" (CR 508.1d, D-652): each of `tokens` is required to attack the player `opponent` this turn if it is able to (the same
+ * requirement Encore gives its copies; no haste and no delayed ability).
+ */
+export function requireAttackingPlayer(
+  input: GameState,
+  tokens: readonly ObjectId[],
+  opponent: SeatId,
+): GameState {
+  if (tokens.length === 0) return input;
+  const [stamp, next] = allocateTimestamp(input);
+  return {
+    ...next,
+    continuousEffects: [
+      ...next.continuousEffects,
+      {
+        id: `ce${stamp}`,
+        timestamp: stamp,
+        objects: [...tokens],
+        until: 'endOfTurn',
+        change: { kind: 'mustAttackPlayer', seat: opponent },
+      },
+    ],
+  };
+}
+
+/**
  * The requirement to attack `opponent` (CR 508.1d), the haste (CR 702.10) until end of turn and the delayed sacrifice for the token `token`, which
  * `controller` created.
  */

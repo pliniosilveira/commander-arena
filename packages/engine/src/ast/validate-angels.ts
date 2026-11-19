@@ -22,6 +22,7 @@ import { checkPlainCondition } from './validate-static-condition';
 export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): boolean {
   switch (t?.kind) {
     case 'lifeGained':
+    case 'lifeLost':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
@@ -38,6 +39,15 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         issue(out, `${path}.by`, `unknown player ${String(t.by)}`);
       }
       return true;
+    case 'playerAttacksOpponent':
+      // D-648: no parameters.
+      return true;
+    case 'unblockedAttackBatch':
+      // CR 509.1h: the creatures of an opponent attacking you.
+      if (t.who !== 'opponent') {
+        issue(out, `${path}.who`, "unblockedAttackBatch is about the creatures of an 'opponent'");
+      }
+      return true;
     case 'attackBatch':
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -45,6 +55,23 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
       // D-187: "Whenever you attack" is one or more creatures declared: `atLeast` 1.
       if (!isCount(t.atLeast) || t.atLeast < 1) {
         issue(out, `${path}.atLeast`, 'atLeast is a whole number of 1 or more');
+      }
+      if (t.attackedEnchantedPlayer !== undefined && t.attackedEnchantedPlayer !== true) {
+        issue(
+          out,
+          `${path}.attackedEnchantedPlayer`,
+          'attackedEnchantedPlayer is true when present',
+        );
+      }
+      if (t.eachAttackedPlayer !== undefined && t.eachAttackedPlayer !== true) {
+        issue(out, `${path}.eachAttackedPlayer`, 'eachAttackedPlayer is true when present');
+      }
+      if (t.eachAttackedPlayer === true && t.attackedEnchantedPlayer === true) {
+        issue(
+          out,
+          `${path}.eachAttackedPlayer`,
+          'eachAttackedPlayer does not go with attackedEnchantedPlayer',
+        );
       }
       if (t.what !== undefined) {
         checkFilter(t.what, `${path}.what`, out);
@@ -58,7 +85,8 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
               f.attacking !== undefined ||
               f.attackingYou !== undefined ||
               f.attackingOpponents !== undefined ||
-              f.attackingOrBlocking !== undefined,
+              f.attackingOrBlocking !== undefined ||
+              f.blocking !== undefined,
           )
         ) {
           issue(
@@ -102,6 +130,16 @@ export function checkAngelsReplacement(r: Replacement, path: string, out: AstIss
       }
       return true;
     case 'lifeGainDouble':
+      return true;
+    case 'countersPlus':
+      // CR 614.1a, 122.6: the permanents that get more counters of one kind, and how many more.
+      checkEnteringFilter(r.what, `${path}.what`, out);
+      if (typeof r.counter !== 'string' || r.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      if (!isCount(r.extra) || r.extra < 1) {
+        issue(out, `${path}.extra`, 'the extra counters are a positive whole number');
+      }
       return true;
     case 'tokensInstead':
       // D-219: the tokens that would be created, as they would be on the battlefield; and the token that is created instead or as well.
@@ -185,6 +223,7 @@ function checkEnteringFilter(what: ObjectFilter, path: string, out: AstIssue[]):
         f.attackingYou !== undefined ||
         f.attackingOpponents !== undefined ||
         f.attackingOrBlocking !== undefined ||
+        f.blocking !== undefined ||
         f.manaValueX !== undefined ||
         f.powerLessThanSource !== undefined ||
         f.controllerDealtDamageBySource !== undefined ||
@@ -208,6 +247,9 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       if (!isOneOf(s.scope, ['all', 'combat', 'noncombat'])) {
         issue(out, `${path}.scope`, `unknown scope ${JSON.stringify(s.scope)}`);
+      }
+      if (s.removeCounter !== undefined && !isOneOf(s.removeCounter, ['+1/+1', '-1/-1'])) {
+        issue(out, `${path}.removeCounter`, 'removeCounter is a +1/+1 or a -1/-1 counter');
       }
       return true;
     case 'blockTax':

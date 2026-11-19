@@ -64,10 +64,20 @@ export type PriorityOption =
        */
       readonly combination?: readonly ManaColor[];
       /**
+       * For a mana ability whose land has triggered mana abilities of "adds an additional one mana of any color" (CR 605.1b, 106.1b): the colors they add, one option for each choice
+       * (`Action.extraColors`). Absent when there is nothing to choose.
+       */
+      readonly extraColors?: readonly ManaColor[];
+      /**
        * For a mana ability whose cost sacrifices a kind of permanent ("Sacrifice a Spirit: Add {R}.", D-222, CR 601.2b) when the player has more than one to give
        * up: one option for each permanent they may give up, this one. Absent when the cost sacrifices nothing, only the source, or when there is one candidate.
        */
       readonly sacrifice?: ObjectId;
+      /**
+       * For a mana ability whose cost taps an untapped permanent besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-625, CR 601.2b)
+       * when the player has more than one to tap: one option for each permanent they may tap, this one. Absent otherwise.
+       */
+      readonly tapped?: ObjectId;
     }
   /** Suspend a card from the hand (CR 702.62a, D-128): a special action, see the `suspend` action. */
   | { readonly kind: 'suspend'; readonly object: ObjectId }
@@ -75,6 +85,8 @@ export type PriorityOption =
   | { readonly kind: 'foretell'; readonly object: ObjectId }
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): a special action, see the `turnFaceUp` action. */
   | { readonly kind: 'turnFaceUp'; readonly object: ObjectId }
+  /** Unlock a locked half of a Room you control (CR 709.5e): a special action, see the `unlockDoor` action. */
+  | { readonly kind: 'unlockDoor'; readonly object: ObjectId; readonly door: number }
   | { readonly kind: 'concede' };
 
 export interface PriorityDecision extends DecisionBase {
@@ -157,8 +169,12 @@ export interface TargetChoiceSpec {
    * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
    */
   readonly eachController?: true;
+  /** "Up to three target cards from their graveyard" (`TargetSpec.ownedByTarget`): every target of this slot is a card of the graveyard of the player chosen for the slot with this id (its `group`). */
+  readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
+  /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes). */
+  readonly differentFromAll?: readonly string[];
   /**
    * The slot as the card words it (the `TargetSpec` it came from, public like the card's text): the interface reads "target creature you control" from it so a
    * spell with several slots says what each slot is for. Absent when the engine builds a slot of its own (a changed target, an Aura's host).
@@ -204,11 +220,22 @@ export interface PayManaDecision extends DecisionBase {
      */
     readonly combinations?: readonly (readonly ManaColor[])[];
     /**
+     * Set when a triggered mana ability of "adds an additional one mana of any color" (CR 605.1b, 106.1b) is on the permanent the source is, so the player has a choice to make:
+     * the additional mana on offer (one list for each choice, in the order of those abilities). A manual tap of the source must name one of them as `extraColors`; `payAuto`
+     * lets the planner choose the color the payment needs.
+     */
+    readonly extraColors?: readonly (readonly ManaColor[])[];
+    /**
      * Set when the ability's cost sacrifices a kind of permanent ("Sacrifice a Spirit: Add {R}.", D-222, CR 601.2b) and the player has more than one to give up:
      * the permanents they may choose. A manual tap of the source must name one of them as `sacrifice`; `payAuto` gives up the one the planner prefers (a token
      * before a card, then the lowest mana value).
      */
     readonly sacrifices?: readonly ObjectId[];
+    /**
+     * Set when the ability's cost taps an untapped permanent besides the source (D-625, CR 601.2b) and the player has more than one to tap: the permanents they may
+     * choose. A manual tap of the source must name one of them as `tapped`; `payAuto` taps the one the planner prefers.
+     */
+    readonly tappables?: readonly ObjectId[];
   }[];
   /**
    * `'ward'`, `'counterUnlessPays'`: the cost is not a spell's or an ability's but the one a
@@ -229,7 +256,10 @@ export interface PayManaDecision extends DecisionBase {
     | 'blockTax'
     | 'suspend'
     | 'foretell'
-    | 'turnFaceUp';
+    | 'turnFaceUp'
+    | 'unlockDoor';
+  /** For purpose `'unlockDoor'` (CR 709.5e): the half of the Room `source` that is unlocked once the cost is paid (0 the left half, 1 the right half). */
+  readonly door?: number;
   readonly subject?: ObjectId;
   /**
    * For purpose `'unlessPays'` when the payment is the one of an upkeep keyword (D-127): `'echo'` (CR 702.30a:
@@ -246,7 +276,12 @@ export interface PayManaDecision extends DecisionBase {
    * declares exactly these attackers; `cancel` takes the declaration back and asks the `declareAttackers`
    * question again. Absent for every other payment.
    */
-  readonly attacks?: readonly { readonly attacker: ObjectId; readonly target: AttackTarget }[];
+  readonly attacks?: readonly {
+    readonly attacker: ObjectId;
+    readonly target: AttackTarget;
+    /** The attacker was exerted as it attacks (CR 701.43a, 508.1g): kept for the declaration that follows the payment. */
+    readonly exert?: true;
+  }[];
   /**
    * For `'blockTax'` (CR 509.1d, D-149): the cost of blocking with the creatures in `blocks` ("Creatures can't block unless their controller
    * pays {1} for each of those creatures"). `seat` is the defending player, `source` the first permanent that taxes blocking, `totalCost` the whole
@@ -263,6 +298,9 @@ export interface PayManaDecision extends DecisionBase {
  *
  * For `'turnFaceUp'` (CR 701.40b, 708.8, D-310): the cost of turning a face-down permanent face up, paid before it is turned. `source` is the permanent, `seat` its
  * controller (the only seat that gets the decision), `totalCost` the mana cost of its card. Answered like the cost of a special action.
+ *
+ * For `'unlockDoor'` (CR 709.5e): the unlock cost of a Room, the mana cost of the locked half `door`, paid before the half is unlocked. `source` is the permanent, `seat` its
+ * controller. Answered like the cost of a special action.
  */
 
 /** Cleanup: discard down to maximum hand size (CR 514.1). */
@@ -402,6 +440,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'ringBearer'
     | 'empowerJace'
     | 'amass'
+    | 'populate'
+    | 'moveCounters'
     | 'untapChoice'
     | 'conniveOrder'
     | 'spare'
@@ -420,8 +460,15 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back.
    * For `'empowerJace'` (D-201, CR 701.71a: "Choose a Jace planeswalker token you control"): `seat`, the player who empowers, chooses which Jace token of
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
+   * For `'populate'` (D-627, CR 701.36a: "Choose a creature token you control"): `seat`, the player who populates, chooses which creature token of `legal` (all they control)
+   * is copied; exactly one. Asked only with two or more.
+   * For `'moveCounters'` (issue 230, CR 122.1: "Move any number of +1/+1 counters from this creature onto other creatures"): `seat`, the controller of the ability, chooses the
+   * permanent of `legal` that one more counter moves onto, or none (`min` 0, `max` 1) to stop; asked again after each move while the source has a counter left. `source` is the ability.
    * For `'amass'` (D-367, CR 701.47a: "Choose an Army creature you control"): `seat`, the player who amasses, chooses which Army creature of `legal` (all they
    * control, as `derive` types them now, a token the effect just made among them) gets the +1/+1 counters; exactly one. Asked only with two or more. `source` is the
+   * spell or ability.
+   * For `'populate'` (D-639, CR 701.36a: "choose a creature token you control and create a token that's a copy of that creature token"): `seat`, the player who populates, chooses
+   * which creature token of `legal` (all they control, as `derive` types them now) is copied; exactly one (`min` = `max` = 1). Asked only with two or more. `source` is the
    * spell or ability.
    * For `'ringBearer'` (D-196, CR 701.54a: "Each time the Ring tempts you, choose a creature you control"): `seat`, the player the Ring is tempting,
    * chooses which creature of `legal` (all the creatures they control, as `derive` types them now) becomes their Ring-bearer; exactly one
@@ -491,7 +538,9 @@ export interface ChoosePermanentDecision extends DecisionBase {
  * `min` = `max` other cards from `seat`'s graveyard (`zone: 'graveyard'`) are exiled as the spell is cast; the
  * cards are public, `forCost` is always set, and `cancel` rewinds the cast. `'cast'` (D-145, CR 608.2g) is "You may cast a spell ... from
  * your hand without paying its mana cost" and "You may play the exiled card": none or one of the `legal` cards (`min` 0, `max` 1, in `zone`
- * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it.
+ * 'hand' or 'exile'), which the controller then casts or plays without paying; a card exiled face down is shown to the player who may look at it. With the effect's `max` above one (D-660)
+ * the question is asked again after each spell cast. `'opponentChoice'` (D-660, CR 608.2d, "An opponent chooses a nonland card exiled this way"): `seat` is the opponent, `legal` the cards
+ * in exile (`zone`) that qualify, all public, and exactly one is chosen (`min` = `max` = 1).
  */
 export interface ChooseCardsDecision extends DecisionBase {
   readonly kind: 'chooseCards';
@@ -512,8 +561,9 @@ export interface ChooseCardsDecision extends DecisionBase {
     | 'split'
     | 'copy'
     | 'pair'
-    | 'separate';
-  readonly zone: 'library' | 'hand' | 'graveyard' | 'exile';
+    | 'separate'
+    | 'opponentChoice';
+  readonly zone: 'library' | 'hand' | 'graveyard' | 'exile' | 'command';
   /** "From your hand or graveyard" (D-544): with `zone` `hand`, the cards of `legal` may also be in the graveyard of `seat`. Absent for every other question. */
   readonly alsoGraveyard?: true;
   readonly legal: readonly ObjectId[];
@@ -531,6 +581,15 @@ export interface ChooseCardsDecision extends DecisionBase {
    * have one land type in common (one card, or none, always does). Absent for every other question.
    */
   readonly shareLandType?: Readonly<Record<ObjectId, readonly string[]>>;
+  /**
+   * For a move "you may exile any number of cards from your graveyard with four or more card types among them" (CR 205.2a, `ChooseSelector.minCardTypes`): the cards chosen
+   * together must have at least `count` different card types, given the card types of each card of `legal` (the answer is checked against them). The empty answer (`min` 0) is
+   * always legal: it is the player declining. Absent for every other question.
+   */
+  readonly minCardTypes?: {
+    readonly count: number;
+    readonly types: Readonly<Record<ObjectId, readonly string[]>>;
+  };
   /**
    * For `'reveal'` (D-225, CR 614.12, 701.20a: "As this land enters, you may reveal a Mountain or Plains card from your hand"): the player who accepted chooses which
    * of the cards of `legal` (all in their hand, more than one) to reveal; exactly one (`min` = `max` = 1), and `source` is the land that is entering (or the spell
@@ -694,7 +753,26 @@ export interface ConfirmOptionalDecision extends DecisionBase {
     | 'costChoice'
     | 'pairReturn'
     | 'castCard'
-    | 'buyback';
+    | 'buyback'
+    | 'exileMore'
+    | 'exert';
+  /**
+   * For purpose `'exileMore'` (D-661, "As many times as you choose, you may exile the top card of your library"): the cards exiled so far by this effect, which are public (face up in
+   * exile), so the player can see the total mana value before choosing again. Accepting exiles the top card of the library of `seat` and asks again; declining ends the effect.
+   */
+  readonly exiled?: readonly ObjectId[];
+  /**
+   * For purpose `'exert'` (CR 701.43d, 508.1g; the optional cost of attacking "You may exert ~ as it attacks"): `seat` is the attacking player, `source` the attacker
+   * being asked about, and `attacks` the whole declaration: each attacker with the answer so far (`exert` true or false once asked, absent while not). Accepting
+   * exerts the creature: it does not untap during its next untap step (CR 701.43a) and the abilities linked to the exert ability trigger when the attackers
+   * are declared. After the last question the cost of attacking is paid, if there is one (CR 508.1h), and the attackers are declared. `cancel` takes the
+   * declaration back and asks the `declareAttackers` question again (CR 733).
+   */
+  readonly exertAttacks?: readonly {
+    readonly attacker: ObjectId;
+    readonly target: AttackTarget;
+    readonly exert?: boolean;
+  }[];
   /**
    * For purpose `'pairReturn'` (D-272, "You may return those cards to the battlefield under their owners' control", Dawnbreak Reclaimer): the cards that would return, which are in
    * graveyards and public: `theirs` the card chosen in an opponent's graveyard (it returns under its owner's control, the opponent's), `mine` the card chosen in the graveyard of
@@ -797,6 +875,12 @@ export interface ChooseOptionDecision extends DecisionBase {
    */
   readonly riotSoFar?: readonly string[];
   /**
+   * For the choice a land asks as it enters from the hand after another question (CR 614.12a; "you may reveal a Dragon card from your hand", then "choose a
+   * color"): the answers already given, so playing the land again with the choice does not ask the first question twice. `paid` is the answer to the reveal and
+   * `revealed` the card the player chose to reveal among several. Absent when nothing was asked before.
+   */
+  readonly entersSoFar?: { readonly paid: boolean; readonly revealed?: ObjectId };
+  /**
    * For purpose `'effect'` (D-175, CR 608.2d, "create a Food token or a Treasure token"): `options` are the words of the instructions the
    * effect offers, in the order the text gives them, and `source` is the spell or ability that resolves. Nothing is entering.
    */
@@ -833,6 +917,8 @@ export interface ChooseOptionDecision extends DecisionBase {
     /** Which pile is face down and its size; the chooser's view must omit its object IDs (D-579). */
     readonly faceDownPile?: 1 | 2;
     readonly faceDownCount?: number;
+    /** D-663 (CR 700.3c): the zone the piles are in while they are chosen between; absent for the library. The words of the question say it. */
+    readonly zone?: 'exile';
   };
   readonly source: ObjectId;
   readonly sourceName: string;
@@ -1039,6 +1125,11 @@ export interface ChooseXDecision extends DecisionBase {
   readonly purpose: 'spell' | 'ability' | 'multikicker' | 'replicate' | 'payAnyAmount' | 'drawUpTo';
   readonly min: number;
   readonly max: number;
+  /**
+   * The values from `min` to `max` that leave the spell a legal target, for a spell whose target is "with mana value X" (CR 601.2b, 601.2c: X is announced before the
+   * targets, and a spell with no legal target cannot be cast). Absent: every value is legal.
+   */
+  readonly values?: readonly number[];
   readonly perX: {
     readonly mana: number;
     readonly life: number;
@@ -1084,6 +1175,8 @@ export interface ChooseModesDecision extends DecisionBase {
    * instance, and `max` may be more than the number of modes. Absent otherwise.
    */
   readonly repeatable?: true;
+  /** "You may choose two" (`ModeChoice.allOrNone`): no mode or exactly `max` of them; `sets` holds only those. Absent otherwise. */
+  readonly allOrNone?: true;
   readonly sets: readonly (readonly number[])[];
   /** True for a triggered ability being put on the stack: it is not optional, so there is no `cancel`. */
   readonly forTrigger?: true;

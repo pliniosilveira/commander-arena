@@ -196,6 +196,8 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
     'target creature you control gets +X/+X and gains hexproof and indestructible until end of turn',
     '~ gets +1/+1 and gains flying and lifelink until end of turn',
     'target creature gains skulk until end of turn',
+    // Issue 89 (D-638, CR 702.21a): a ward with a mana cost.
+    'target creature gains ward {2} until end of turn',
     // Stage P35 (D-176, CR 303.4b): the permanent an Aura is attached to.
     'enchanted creature gains trample and indestructible until end of turn',
     'equipped creature gains flying until end of turn',
@@ -214,7 +216,7 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
     'target creature gains cascade until end of turn',
     'target creature gains battle cry until end of turn',
     'target creature gains protection from red until end of turn',
-    'target creature gains ward {2} until end of turn',
+    'target creature gains ward until end of turn',
     'target creature gets +1/+1 and gains until end of turn',
     'target creature gets +Y/+Y and gains flying until end of turn',
     'target creature gets +X/+Y and gains flying until end of turn',
@@ -273,6 +275,34 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
     ['noun.plain-permanents', 'noun.all-permanents'],
     true,
   ),
+});
+
+/**
+ * `effect.gain-keyword-those`: "those creatures gain vigilance until end of turn" (issue 160, D-627, CR 611.2a, 611.2c, 613.1f): the group an instruction before it named ("Put a
+ * +1/+1 counter on each creature you control. Those creatures gain vigilance until end of turn."), gaining keywords. The group is the one the text named, as the lowering reads it.
+ */
+export const EFFECT_GAIN_KEYWORD_THOSE = defineRule<Clauses>({
+  id: 'effect.gain-keyword-those',
+  family: 'effect',
+  leading: ['those'],
+  cites: [
+    'CR 611.2a (Continuous Effects)',
+    'CR 611.2c (Continuous Effects)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'those creatures gain vigilance until end of turn',
+    'those creatures gain flying and trample until end of turn',
+  ],
+  rejects: [
+    'those creatures gains vigilance until end of turn',
+    'those creatures gain vigilance',
+    'those creatures gain vigilance until your next turn',
+    'those cards gain vigilance until end of turn',
+    'those creatures get +1/+1 until end of turn',
+  ],
+  parse: gainParser('effect.gain-keyword-those', ['noun.those-creatures'], true),
 });
 
 /**
@@ -553,6 +583,7 @@ export const GAIN_RULES = [
   EFFECT_GAIN_KEYWORD,
   EFFECT_GAIN_KEYWORD_ALL,
   EFFECT_GAIN_KEYWORD_EACH,
+  EFFECT_GAIN_KEYWORD_THOSE,
   EFFECT_LEAD_GRANTED_ABILITY,
   EFFECT_LEAD_GAIN,
   EFFECT_LEAD_GAIN_ALL,

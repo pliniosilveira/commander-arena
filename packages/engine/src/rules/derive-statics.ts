@@ -26,7 +26,7 @@ import type {
   Restriction,
   StaticEffect,
 } from '../ast/types';
-import type { ObjectId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import type { GameObject, GameState } from '../state/types';
 import { colorsNotInCommanderIdentity } from './commander-colors';
 import { controllerOf } from './control';
@@ -35,7 +35,7 @@ import { characteristicPtOf, staticAmountOf } from './derive-count';
 import { linkedCardOf } from './derive-group-types';
 import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
-import type { FilterContext, FilterSubject } from './filter-match';
+import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
 import { staticConditionHolds } from './static-conditions';
 import { subjectAffects, subjectContextOf } from './static-subject';
@@ -48,6 +48,7 @@ type Modifier = Extract<
       | 'grantKeyword'
       | 'grantAbility'
       | 'restriction'
+      | 'goaded'
       | 'setPt'
       | 'cantBeBlockedBy'
       | 'takeFromLinkedExile'
@@ -78,6 +79,11 @@ interface ModifierEntry {
   readonly pt: boolean;
   /** Its subject names a keyword: it applies after the effects that give keywords (CR 613.8a). */
   readonly keywords: boolean;
+  /**
+   * A "+N/+N" static ability whose subject names a keyword (D-149): layer 7c depends on layer 6 (CR 613.1f, 613.4c), so it applies
+   * after every effect of layer 6 has, to the keywords the target has then.
+   */
+  readonly late: boolean;
   /** Its place in the order the static abilities are applied in (battlefield order). */
   readonly seq: number;
 }
@@ -107,7 +113,7 @@ function listEntries(entries: readonly ModifierEntry[]): EntryLists {
     const target =
       subject.kind === 'this'
         ? entry.source.object.id
-        : subject.kind === 'attached'
+        : subject.kind === 'attached' && !('andThis' in subject && subject.andThis === true)
           ? entry.source.object.attachedTo
           : undefined;
     if (target === undefined) common.push(entry);
@@ -162,6 +168,8 @@ export interface LibraryCastSource {
   readonly object: GameObject;
   readonly spells: ObjectFilter;
   readonly gainsHaste: boolean;
+  /** The permanent sacrificed as an additional cost of a spell cast this way ("by sacrificing a nonland permanent"); absent for none. */
+  readonly sacrifice?: ObjectFilter;
 }
 
 /**
@@ -174,6 +182,28 @@ export interface GraveyardPlaySource {
   readonly land: boolean;
   readonly entersTapped: boolean;
   readonly gains: Ability | undefined;
+  /** `playLandsFromGraveyard`: the land cards that may be played (any land when absent); the permission is not used up by a use. */
+  readonly lands?: ObjectFilter;
+  readonly unlimited?: true;
+}
+
+/**
+ * A static ability of a permanent that gives the cards in its controller's hand a keyword (`grantKeywordToHandCards`, issue 104, CR 702.29a, 613.1f): read by `staticEffectsOn` for a
+ * card in a hand. A permanent that lost all its abilities has none (CR 613.1f).
+ */
+interface HandGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
+  readonly condition?: Condition;
+  readonly conditionKey?: string;
+}
+
+/** A static ability of a permanent that gives flashback to the cards of its controller's graveyard (`grantFlashbackToGraveyardCards`, CR 702.34a, 613.1f). */
+export interface FlashbackGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly condition?: Condition;
 }
 
 interface BoardIndex {
@@ -184,8 +214,12 @@ interface BoardIndex {
   readonly immediate: EntryLists;
   /** The static abilities that depend on power, toughness or keywords, in battlefield order (applied after `immediate`). */
   readonly deferred: EntryLists;
+  /** The "+N/+N" static abilities whose subject names a keyword, in battlefield order (applied after `deferred`, D-149). */
+  readonly late: EntryLists;
   /** Permanents with a `costReduction` static ability that names spells by a filter, in battlefield order. */
   readonly reductions: readonly CostReductionSource[];
+  /** Whether any permanent has a `costIncrease` static ability, its own or one a `grantAbility` gives (D-149): only then are the derived abilities read for a tax. */
+  readonly hasCostIncrease: boolean;
   /** Permanents with an `abilityCostReduction` static ability, in battlefield order (D-425). */
   readonly abilityReductions: readonly AbilityReductionSource[];
   /** Permanents with a `castAsThoughFlash` static ability, in battlefield order (D-139). */
@@ -194,6 +228,10 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
+  /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
+  readonly handGrants: readonly HandGrantSource[];
+  /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
+  readonly flashbackGrants: readonly FlashbackGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -213,6 +251,7 @@ function isModifier(a: Ability): a is Extract<Ability, { kind: 'static' }> & { s
       a.static.kind === 'grantKeyword' ||
       a.static.kind === 'grantAbility' ||
       a.static.kind === 'restriction' ||
+      a.static.kind === 'goaded' ||
       a.static.kind === 'setPt' ||
       a.static.kind === 'cantBeBlockedBy' ||
       a.static.kind === 'takeFromLinkedExile' ||
@@ -298,7 +337,12 @@ function libraryCastsOf(object: GameObject, abilities: readonly Ability[]): Libr
   const out: LibraryCastSource[] = [];
   for (const a of abilities) {
     if (a.kind === 'static' && a.static.kind === 'castFromTopOfLibrary') {
-      out.push({ object, spells: a.static.spells, gainsHaste: a.static.gainsHaste === true });
+      out.push({
+        object,
+        spells: a.static.spells,
+        gainsHaste: a.static.gainsHaste === true,
+        ...(a.static.sacrifice === undefined ? {} : { sacrifice: a.static.sacrifice }),
+      });
     }
   }
   return out;
@@ -319,6 +363,62 @@ function graveyardPlaysOf(
         gains: a.static.gains,
       });
     }
+    // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.
+    if (a.kind === 'static' && a.static.kind === 'playLandsFromGraveyard') {
+      out.push({
+        object,
+        cast: undefined,
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        unlimited: true,
+        ...(a.static.lands === undefined ? {} : { lands: a.static.lands }),
+      });
+    }
+  }
+  return out;
+}
+
+function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGrantSource[] {
+  const out: HandGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantKeywordToHandCards' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        keyword: a.static.keyword,
+        ...(a.condition === undefined
+          ? {}
+          : { condition: a.condition, conditionKey: JSON.stringify(a.condition) }),
+      });
+    }
+  }
+  return out;
+}
+
+function flashbackGrantsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): FlashbackGrantSource[] {
+  const out: FlashbackGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantFlashbackToGraveyardCards' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
   }
   return out;
 }
@@ -326,10 +426,13 @@ function graveyardPlaysOf(
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
+  let hasCostIncrease = false;
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
+  const handGrants: HandGrantSource[] = [];
+  const flashbackGrants: FlashbackGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
   for (const id of state.battlefield) {
     const object = state.objects[id];
@@ -339,11 +442,14 @@ function buildIndex(state: GameState): BoardIndex {
     const modifiers = staticModifiers(printed);
     if (modifiers.length > 0)
       sources.push({ object, modifiers, context: subjectContextOf(state, object) });
+    if (printed.some(givesCostIncrease)) hasCostIncrease = true;
     reductions.push(...costReductionsOf(object, printed));
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
     libraryCasts.push(...libraryCastsOf(object, printed));
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
+    handGrants.push(...handGrantsOf(object, printed));
+    flashbackGrants.push(...flashbackGrantsOf(object, printed));
     if (object.attachedTo !== null) {
       const list = attachments.get(object.attachedTo);
       if (list === undefined) attachments.set(object.attachedTo, [id]);
@@ -375,12 +481,21 @@ function buildIndex(state: GameState): BoardIndex {
   }
   const immediate: ModifierEntry[] = [];
   const deferred: ModifierEntry[] = [];
+  const late: ModifierEntry[] = [];
   let seq = 0;
   for (const source of sources) {
     for (const mod of source.modifiers) {
       const pt = dependsOnPt(mod);
       const keywords = dependsOnKeywords(mod);
-      (pt || keywords ? deferred : immediate).push({ source, mod, pt, keywords, seq });
+      const isLate = keywords && mod.kind === 'modifyPt';
+      (isLate ? late : pt || keywords ? deferred : immediate).push({
+        source,
+        mod,
+        pt,
+        keywords,
+        late: isLate,
+        seq,
+      });
       seq += 1;
     }
   }
@@ -390,11 +505,15 @@ function buildIndex(state: GameState): BoardIndex {
     effects: state.continuousEffects,
     immediate: listEntries(immediate),
     deferred: listEntries(deferred),
+    late: listEntries(late),
     reductions,
+    hasCostIncrease,
     abilityReductions,
     flashes,
     libraryCasts,
     graveyardPlays,
+    handGrants,
+    flashbackGrants,
     attachments,
   };
 }
@@ -412,6 +531,22 @@ function indexOf(state: GameState): BoardIndex {
   const fresh = buildIndex(state);
   cache.set(state.objects, fresh);
   return fresh;
+}
+
+/** Whether an ability is a `costIncrease` or a static ability that gives one (D-149). */
+function givesCostIncrease(a: Ability): boolean {
+  return (
+    a.kind === 'static' &&
+    (a.static.kind === 'costIncrease' ||
+      (a.static.kind === 'grantAbility' &&
+        a.static.ability.kind === 'static' &&
+        a.static.ability.static.kind === 'costIncrease'))
+  );
+}
+
+/** Whether a permanent on the battlefield may have a spell tax (`costIncrease`) after the layers (D-149); read before looking at any permanent's derived abilities. */
+export function hasCostIncreaseSources(state: GameState): boolean {
+  return indexOf(state).hasCostIncrease;
 }
 
 /** The cost-reducing static abilities of the permanents on the battlefield (D-095). */
@@ -432,6 +567,11 @@ export function libraryCastSources(state: GameState): readonly LibraryCastSource
 /** The permission "Once during each of your turns, you may play a land or cast a spell from your graveyard" of the permanents on the battlefield (D-232). */
 export function graveyardPlaySources(state: GameState): readonly GraveyardPlaySource[] {
   return indexOf(state).graveyardPlays;
+}
+
+/** The static abilities of the permanents on the battlefield that give flashback to the cards of their controller's graveyard (CR 702.34a). */
+export function flashbackGrantSources(state: GameState): readonly FlashbackGrantSource[] {
+  return indexOf(state).flashbackGrants;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */
@@ -473,6 +613,8 @@ export interface StaticEffects {
    * (D-094; `derive` adds the ones continuous effects give). Read where the rule acts, not in a layer.
    */
   readonly restrictions: readonly Restriction[];
+  /** The players that goad this permanent (issue 201, CR 701.15): the controllers of the permanents whose `goaded` static ability applies to it. */
+  readonly goadedBy: readonly SeatId[];
   /** Permanents on the battlefield attached to this one. */
   readonly attachments: readonly ObjectId[];
   /** The permanent this one is attached to, when it is still on the battlefield. */
@@ -492,6 +634,16 @@ export interface StaticBase extends FilterSubject {
    * a static ability reads that grants a keyword to "creatures you control with flying" (CR 613.8a, 613.8b).
    */
   readonly keywordsWith: (grants: readonly StaticGrant[]) => readonly Keyword['kind'][];
+  /**
+   * The keywords without parameters another object has after layer 6 (D-149): what a "+N/+N for each other creature you control with
+   * flying" counts (CR 613.4c reads layer 6, 613.8). Left out where no count names a keyword.
+   */
+  readonly keywordsOf?: (other: GameObject) => readonly Keyword['kind'][];
+  /**
+   * Set while only layer 6 is wanted (`keywordsAfterLayer6`): the "+N/+N" static abilities (layer 7c) are not applied, which is what
+   * keeps a count of keywords from reading itself.
+   */
+  readonly layer6Only?: boolean;
   readonly ptWith: (
     power: number,
     toughness: number,
@@ -548,33 +700,68 @@ function conditionHolds(
   return holds;
 }
 
+/** What the static abilities do to an object that is not a permanent: nothing but the keywords given to a card in a hand (`handGrantsOn`). */
+function otherZoneEffects(grants: readonly StaticGrant[]): StaticEffects {
+  return {
+    grants,
+    power: 0,
+    toughness: 0,
+    sets: [],
+    blockLimits: [],
+    restrictions: [],
+    goadedBy: [],
+    attachments: NONE,
+    attachedTo: null,
+  };
+}
+
+/**
+ * The keywords the static abilities of the permanents on the battlefield give to `target`, a card in a hand (issue 104, `grantKeywordToHandCards`, CR 702.29a, 613.1f): "Each creature
+ * card in your hand has cycling {1}{U}." The hand is the one of the permanent's controller, and `what` is read against the card as it is after layers 4 and 5 (`base`).
+ */
+function handGrantsOn(state: GameState, target: GameObject, base: StaticBase): StaticGrant[] {
+  const grants: StaticGrant[] = [];
+  for (const source of indexOf(state).handGrants) {
+    if (target.owner !== controllerOf(state, source.object)) continue;
+    if (
+      source.condition !== undefined &&
+      !conditionHolds(state, source.condition, source.conditionKey ?? '', source.object)
+    ) {
+      continue;
+    }
+    const filter: ObjectFilter = { ...source.what, zone: 'hand' };
+    if (
+      !matchesFilterWith(state, target, () => base, filter, subjectContextOf(state, source.object))
+    ) {
+      continue;
+    }
+    grants.push({
+      ability: { kind: 'keyword', keyword: source.keyword },
+      timestamp: source.object.timestamp,
+    });
+  }
+  return grants;
+}
+
 /**
  * The static effects on `target`, whose characteristics after layers 4 and 5 are `base`. Only a permanent
  * on the battlefield is affected (CR 611.3b: a static ability of a permanent works there); for any
- * other object the result is empty.
+ * other object the result is empty, but for the keywords a permanent gives to the cards of its controller's hand
+ * (issue 104, CR 702.29a).
  */
 export function staticEffectsOn(
   state: GameState,
   target: GameObject,
   base: StaticBase,
 ): StaticEffects {
-  if (target.zone !== 'battlefield') {
-    return {
-      grants: [],
-      power: 0,
-      toughness: 0,
-      sets: [],
-      blockLimits: [],
-      restrictions: [],
-      attachments: NONE,
-      attachedTo: null,
-    };
-  }
+  if (target.zone === 'hand') return otherZoneEffects(handGrantsOn(state, target, base));
+  if (target.zone !== 'battlefield') return otherZoneEffects([]);
   const index = indexOf(state);
   const grants: StaticGrant[] = [];
   let power = 0;
   let toughness = 0;
   const restrictions: Restriction[] = [];
+  const goadedBy: SeatId[] = [];
   const sets: StaticSet[] = [];
   const blockLimits: BlockLimit[] = [];
   const apply = (source: ModifierSource, mod: Modifier, view: FilterSubject): boolean => {
@@ -594,6 +781,16 @@ export function staticEffectsOn(
         const colors = colorsNotInCommanderIdentity(state, controllerOf(state, source.object));
         if (colors.length === 0) return true;
         keyword = { kind: 'protection', from: 'color', colors };
+      } else if (keyword.kind === 'protection' && keyword.from === 'chosenColor') {
+        // CR 702.16a, 607.2d (D-652): "the chosen color" is the choice of the permanent that gives the keyword; it chose none: nothing to give.
+        const chosen = source.object.chosen?.color;
+        if (chosen === undefined) return true;
+        keyword = {
+          kind: 'protection',
+          from: 'color',
+          colors: [chosen],
+          ...(keyword.exceptSource === true ? { exceptSource: source.object.id } : {}),
+        };
       } else if (keyword.kind === 'protection' && keyword.from === 'chosenCardType') {
         // CR 702.16a, 607.2d (D-376): "the chosen card type" is the choice of the permanent that gives the keyword; it chose none: nothing to give.
         const chosen = source.object.chosen?.cardType;
@@ -613,6 +810,11 @@ export function staticEffectsOn(
     } else if (mod.kind === 'restriction') {
       // CR 613.11: a rules-modifying effect, read where the rule acts (no layer, no timestamp).
       if (!restrictions.includes(mod.restriction)) restrictions.push(mod.restriction);
+    } else if (mod.kind === 'goaded') {
+      // CR 701.15a (issue 201): goaded by the controller of the permanent with the ability: it attacks each combat if able and attacks a player other than them if able.
+      if (!restrictions.includes('attacksEachCombat')) restrictions.push('attacksEachCombat');
+      const goader = controllerOf(state, source.object);
+      if (!goadedBy.includes(goader)) goadedBy.push(goader);
     } else if (mod.kind === 'setPt') {
       // CR 613.4b (D-139): "base power and toughness 5/3", layer 7b, with the permanent's timestamp.
       sets.push({ timestamp: source.object.timestamp, power: mod.power, toughness: mod.toughness });
@@ -639,12 +841,15 @@ export function staticEffectsOn(
           toughness: number(c.toughness, defined?.toughness),
         });
       }
+    } else if (base.layer6Only === true) {
+      // D-149: only layer 6 is wanted: no layer 7c effect is applied (see `StaticBase.layer6Only`).
+      return true;
     } else {
       // CR 613.4c: sublayer 7c holds only additions, which commute, so the timestamp order that
       // CR 613.7 gives (an Aura's or Equipment's own timestamp) does not change the sum. A counted amount
       // is worked out now, from the board as it is (CR 611.3a, D-115).
-      power += staticAmountOf(state, mod.power, source.object, target);
-      toughness += staticAmountOf(state, mod.toughness, source.object, target);
+      power += staticAmountOf(state, mod.power, source.object, target, base.keywordsOf);
+      toughness += staticAmountOf(state, mod.toughness, source.object, target, base.keywordsOf);
     }
     return true;
   };
@@ -671,6 +876,18 @@ export function staticEffectsOn(
     progress = unapplied.length < waiting.length;
     waiting = unapplied;
   }
+  // D-149 (CR 613.1f, 613.4c): a "+N/+N" whose subject names a keyword applies once layer 6 is done: it reads the keywords the target
+  // has then, whatever the order on the battlefield. Layer 7c effects commute (CR 613.4c), so the order among them does not matter.
+  if (base.layer6Only !== true) {
+    const keywordsNow = base.keywordsWith(grants);
+    for (const { source, mod, pt } of entriesFor(index.late, target.id)) {
+      apply(source, mod, {
+        ...base,
+        ...(pt ? base.ptWith(power, toughness, sets) : {}),
+        keywords: keywordsNow,
+      });
+    }
+  }
   const host = target.attachedTo === null ? undefined : state.objects[target.attachedTo];
   return {
     grants,
@@ -679,6 +896,7 @@ export function staticEffectsOn(
     sets,
     blockLimits,
     restrictions,
+    goadedBy,
     attachments: index.attachments.get(target.id) ?? NONE,
     attachedTo: host?.zone === 'battlefield' ? host.id : null,
   };

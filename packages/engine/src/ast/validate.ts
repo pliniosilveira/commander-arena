@@ -35,6 +35,7 @@ import {
 } from './validate-attach';
 import { kindOf, triggerHasPlayer } from './validate-base';
 import {
+  castPhaseTargetsUsedUnguarded,
   checkCastFace,
   checkFlashbackCost,
   checkKickerCost,
@@ -49,6 +50,8 @@ import {
   checkAdditionalCosts,
   checkAlternativeCosts,
   checkAttackTax,
+  checkCostIncrease,
+  checkCostPerExtraTarget,
   checkCostReduction,
 } from './validate-cost';
 import { checkCrossZoneSlots } from './validate-cross-zone';
@@ -117,8 +120,38 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       // CR 702.5a: what an Aura spell can target and what it can stay attached to: permanents.
       if (k.filter === undefined || k.filter === null) {
         issue(out, `${path}.filter`, 'enchant needs a filter');
+      } else if (k.player !== undefined) {
+        // Issue 159 (CR 702.5a, 702.5d): "Enchant player": a player, never a permanent, so there is nothing to describe.
+        if (k.player !== true) issue(out, `${path}.player`, 'player must be true when present');
+        if (Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
+      } else if (k.filter.zone === 'graveyard') {
+        // CR 702.5a, 303.4a (Animate Dead): "Enchant creature card in a graveyard": the spell targets such a card, which the Aura is attached to while it stays there.
+        checkFilter(k.filter, `${path}.filter`, out);
+        if (k.filter.stackKind !== undefined || k.filter.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter`,
+            "a card in a graveyard is its owner's (CR 108.4a), so the filter names no controller, and is no spell",
+          );
+        }
+        if (k.filter.putWithSource === true) {
+          issue(
+            out,
+            `${path}.filter`,
+            'only a permanent was put onto the battlefield with an Aura',
+          );
+        }
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
+      }
+      // D-629: "Enchant player": the Aura enchants a player; the filter of permanents says nothing then.
+      if (k.player !== undefined) {
+        if (k.player !== true) issue(out, `${path}.player`, 'player is true when present');
+        else if (k.filter !== undefined && k.filter !== null && Object.keys(k.filter).length > 0) {
+          issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
+        }
       }
       break;
     case 'equip':
@@ -155,6 +188,9 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
         issue(out, `${path}.power`, 'crew power must be a positive integer');
       }
       break;
+    case 'station':
+      // CR 702.184a: no parameters; the permanent is a station card (CR 702.184b).
+      break;
     case 'kicker':
       // CR 702.33a: an additional cost, paid as the spell is cast.
       checkKickerCost(k.cost, `${path}.cost`, out);
@@ -167,8 +203,17 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
       if (k.from === 'ringBearer') break;
+      // CR 702.16a, 105.2: protection from sources of two or more colors names nothing to check.
+      if (k.from === 'multicolored') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
+      // D-652 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).
+      if (k.from === 'chosenColor') {
+        if (k.exceptSource !== undefined && k.exceptSource !== true) {
+          issue(out, `${path}.exceptSource`, 'exceptSource must be true when present');
+        }
+        break;
+      }
       if (k.from === 'cardType') {
         checkProtectionTypes(k.types, `${path}.types`, out);
         break;
@@ -180,6 +225,13 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
           `unknown protection quality ${String((k as { from: unknown }).from)}`,
         );
         break;
+      }
+      if (k.exceptSource !== undefined) {
+        issue(
+          out,
+          `${path}.exceptSource`,
+          'exceptSource is what chosenColor becomes, never written',
+        );
       }
       if (!Array.isArray(k.colors) || k.colors.length === 0) {
         issue(out, `${path}.colors`, 'protection needs at least one color');
@@ -236,6 +288,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
     case 'entersTappedUnlessReveals':
       // D-208 (CR 701.20, 701.4): the cards that may be revealed, as a filter of the hand (and the permanents the controller controls, for behold).
       checkFilter(r.filter, `${path}.filter`, out);
+      if (r.orIf !== undefined) checkCondition(r.orIf, `${path}.orIf`, out);
       if (typeof r.words !== 'string' || r.words.trim() === '') {
         issue(out, `${path}.words`, 'the dialog needs the words of what is revealed');
       }
@@ -271,6 +324,30 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'sum') {
+        // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
+        const parts = (r.count as { of?: unknown }).of;
+        if (!Array.isArray(parts) || parts.length < 2) {
+          issue(out, `${path}.count.of`, 'a sum of counts needs at least two counts');
+        } else {
+          parts.forEach((part, i) => {
+            if (kindOf(part) !== 'countOf') {
+              issue(out, `${path}.count.of[${i}]`, 'an enters-with sum is made of countOf amounts');
+            } else {
+              checkStateAmount(
+                part as Amount,
+                `${path}.count.of[${i}]`,
+                out,
+                'an enters-with count',
+              );
+            }
+          });
+        }
+      } else if (kindOf(r.count) === 'x') {
+        const times = (r.count as { times?: unknown }).times;
+        if (times !== undefined && (!isCount(times) || times < 2)) {
+          issue(out, `${path}.count.times`, 'the multiple of X is an integer of 2 or more');
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&
@@ -279,7 +356,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         issue(
           out,
           `${path}.count`,
-          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" } or a countOf',
+          'counter count must be a positive integer, { kind: "x" }, { kind: "timesKicked" }, a countOf or a sum of them',
         );
       }
       // CR 702.138c (D-124): "escapes with" is the only conditional form; it needs an escape cost (`checkCastFace`).
@@ -310,7 +387,8 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
             f.attacking !== undefined ||
             f.attackingYou !== undefined ||
             f.attackingOpponents !== undefined ||
-            f.attackingOrBlocking !== undefined,
+            f.attackingOrBlocking !== undefined ||
+            f.blocking !== undefined,
         )
       ) {
         issue(out, `${path}.what`, 'a replacement of a death does not read the combat');
@@ -353,10 +431,67 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         issue(out, `${path}.scope`, 'scope must be youControl or youOwn');
       }
       break;
+    case 'grantKeywordToHandCards':
+      // Issue 104 (CR 702.29a): "Each creature card in your hand has cycling {1}{U}": only Cycling, for the cards of the controller's hand a filter names.
+      if (s.keyword?.kind !== 'cycling') {
+        issue(out, `${path}.keyword`, 'only cycling can be given to the cards in a hand');
+      } else {
+        checkKeyword(s.keyword, `${path}.keyword`, out);
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a hand are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'grantFlashbackToGraveyardCards':
+      // CR 702.34a: "Each instant and sorcery card in your graveyard has flashback": the cards of the controller's graveyard a filter names, as the cards they are.
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'creatureOffBattlefield':
+      // CR 604.3: a characteristic-defining ability of the card itself: a power and toughness (whole numbers, not negative) and at least one creature type.
+      if (!isCount(s.power) || !isCount(s.toughness)) {
+        issue(out, path, 'the power and toughness are whole numbers, 0 or more');
+      }
+      if (!Array.isArray(s.subtypes) || s.subtypes.length === 0) {
+        issue(out, `${path}.subtypes`, 'name at least one creature type');
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':
     case 'optionalUntap':
+    case 'exertOnAttack':
       break;
     case 'crewSaddleBonus':
       // Galadriel group 3 (CR 702.122a): the power a creature counts more as it is tapped for a crew cost: a positive whole number.
@@ -396,24 +531,8 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       checkAttackTax(s, path, out);
       break;
     case 'cantAttackYou':
-      // CR 508.1a (D-139): the creatures it covers are read on the battlefield as the attackers are declared: no zone, owner, stack kind or combat.
-      checkFilter(s.attackers, `${path}.attackers`, out);
-      if (
-        filterSome(
-          s.attackers,
-          (f) =>
-            f.zone !== undefined ||
-            f.owner !== undefined ||
-            f.stackKind !== undefined ||
-            readsCombatOrSource(f),
-        )
-      ) {
-        issue(
-          out,
-          `${path}.attackers`,
-          'the attackers are creatures on the battlefield: no zone, owner, stackKind or combat',
-        );
-      }
+      // D-647: a filter of battlefield permanents, read for the controller of the permanent; `planeswalkers` is true when present.
+      checkBattlefieldFilter(s.creatures, `${path}.creatures`, out);
       if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
         issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
       }
@@ -428,7 +547,7 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       }
       break;
     case 'modifyPt':
-      checkStaticSubject(s.subject, `${path}.subject`, out, false, true);
+      checkStaticSubject(s.subject, `${path}.subject`, out, true, true);
       // D-115: an integer, or a count of objects (or a multiple of one) that follows the board.
       checkStaticPtAmount(s.power, `${path}.power`, true, out);
       checkStaticPtAmount(s.toughness, `${path}.toughness`, true, out);
@@ -466,17 +585,47 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'goaded':
+      // CR 701.15 (issue 201): the subject is goaded by the controller of the permanent with the ability.
+      checkStaticSubject(s.subject, `${path}.subject`, out);
+      break;
     case 'costReduction':
       checkCostReduction(s, path, out);
+      break;
+    case 'costIncrease':
+      checkCostIncrease(s, path, out);
+      break;
+    case 'costPerExtraTarget':
+      checkCostPerExtraTarget(s, path, out);
       break;
     case 'abilityCostReduction':
       checkAbilityCostReduction(s, path, out);
       break;
     case 'castFromGraveyard':
-      // D-133: the permission has no parameters; the face-level checks say where it may stand.
+      // D-133: the face-level checks say where it may stand. D-656: its alternative cost, mana only (CR 118.9), the same as the cost of a flashback.
+      if (s.cost !== undefined) {
+        if (!Array.isArray(s.cost) || s.cost.length === 0) {
+          issue(
+            out,
+            `${path}.cost`,
+            'the alternative cost of castFromGraveyard needs at least one cost',
+          );
+        } else if (s.cost.some((c) => c?.kind !== 'mana')) {
+          issue(out, `${path}.cost`, 'the alternative cost of castFromGraveyard is mana only');
+        } else {
+          checkFlashbackCost(s.cost, `${path}.cost`, out);
+        }
+      }
       break;
     case 'grantAbility':
-      checkStaticSubject(s.subject, `${path}.subject`, out, false, s.ability?.kind !== 'mana');
+      // D-149: a group of the cost increase may name a keyword ("creatures you control with flying"): it gives no keyword, so it cannot change what it reads (CR 613.8).
+      checkStaticSubject(
+        s.subject,
+        `${path}.subject`,
+        out,
+        s.ability?.kind === 'static',
+        s.ability?.kind !== 'mana',
+      );
       // D-099: a mana ability; D-151: an activated or a triggered ability too, held to the rules of one of the card's own.
       if (s.ability?.kind === 'mana') {
         checkManaAbility(s.ability, `${path}.ability`, out);
@@ -508,11 +657,21 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         if (s.ability.kind === 'triggered' && s.ability.functionsIn !== undefined) {
           issue(out, `${path}.ability.functionsIn`, 'a granted ability works on the battlefield');
         }
+      } else if (s.ability?.kind === 'static' && s.ability.static?.kind === 'costIncrease') {
+        // D-149 (CR 604.1, 613.1f): the one static ability a static ability gives; it has no condition and works on the battlefield.
+        checkAbility(s.ability, `${path}.ability`, out);
+        if (s.ability.condition !== undefined || s.ability.functionsIn !== undefined) {
+          issue(
+            out,
+            `${path}.ability`,
+            'a granted cost increase has no condition and works on the battlefield',
+          );
+        }
       } else {
         issue(
           out,
           `${path}.ability`,
-          `a static ability can grant a mana, an activated or a triggered ability, not ${kindOf(s.ability)}`,
+          `a static ability can grant a mana, an activated, a triggered ability or a cost increase, not ${kindOf(s.ability)}`,
         );
       }
       break;
@@ -589,6 +748,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
       checkTriggerSubject(t.what, t.kind !== 'entersBattlefield', `${path}.what`, out);
@@ -646,6 +806,17 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           issue(out, `${path}.nth`, 'nth must be a positive integer');
         if (t.self !== undefined) issue(out, `${path}.nth`, 'a self cast trigger has no count');
       }
+      // CR 601.2i: "your first instant or sorcery spell each turn": the first spell of the card types the filter names; not with `self` or `nth`.
+      if (t.firstOfKind !== undefined) {
+        const typed =
+          (t.filter?.types?.length ?? 0) > 0 ||
+          (t.filter?.anyOf?.some((m) => (m.types?.length ?? 0) > 0) ?? false);
+        if (t.firstOfKind !== true) issue(out, `${path}.firstOfKind`, 'firstOfKind must be true');
+        if (t.self !== undefined || t.nth !== undefined) {
+          issue(out, `${path}.firstOfKind`, 'firstOfKind is not for a self trigger or with nth');
+        }
+        if (!typed) issue(out, `${path}.filter`, 'firstOfKind names at least one card type');
+      }
       if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
         issue(out, `${path}.duringTurn`, 'unknown active player condition');
       }
@@ -654,6 +825,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       }
       break;
     case 'landfall':
+      break;
+    case 'playsCard':
+      // CR 305.1, 601.2: at least one card type (a card has one or more); none is any card.
+      if (t.minCardTypes !== undefined && (!isCount(t.minCardTypes) || t.minCardTypes < 1)) {
+        issue(out, `${path}.minCardTypes`, 'minCardTypes must be a positive integer when present');
+      }
       break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
@@ -667,6 +844,7 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'crimeCommitted':
     case 'tokenCreated':
+    case 'activatesAbility':
     case 'scries':
     case 'surveils':
     case 'rollsHighest':
@@ -674,9 +852,19 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (!isOneOf(t.who, ['you', 'opponent', 'any'])) {
         issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       }
+      if (t.kind === 'activatesAbility') {
+        for (const flag of ['xCost', 'anySource'] as const) {
+          if (t[flag] !== undefined && t[flag] !== true) {
+            issue(out, `${path}.${flag}`, 'must be true when present');
+          }
+        }
+      }
       break;
     case 'cycled':
       // D-179: "when you cycle this card" has no parameters; the face is checked for Cycling or typecycling with its abilities.
+      break;
+    case 'exerted':
+      // CR 701.43d: "When you do" has no parameters; the face is checked for the exert static ability it is linked to.
       break;
     case 'becomesTarget':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
@@ -766,8 +954,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the permanent tapped is on the battlefield: no zone, owner or stackKind',
         );
       }
-      if (t.by !== 'you')
-        issue(out, `${path}.by`, 'only your own tapping is supported: by must be "you"');
+      if (t.by !== 'you' && t.by !== 'tapper')
+        issue(
+          out,
+          `${path}.by`,
+          'by must be "you" (your own tapping) or "tapper" (whoever taps it)',
+        );
       if (t.mana !== undefined && !isOneOf(t.mana, ['W', 'U', 'B', 'R', 'G', 'C'])) {
         issue(out, `${path}.mana`, `unknown mana type ${JSON.stringify(t.mana)}`);
       }
@@ -780,6 +972,10 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-374: "another card".
       if (t.another !== undefined && typeof t.another !== 'boolean') {
         issue(out, `${path}.another`, 'another must be a boolean');
+      }
+      // CR 603.2c (Lorehold group 1): "one or more cards": a batch.
+      if (t.batch !== undefined && t.batch !== true) {
+        issue(out, `${path}.batch`, 'batch must be true when present');
       }
       // D-383: "a creature card": read against the card where it went (a graveyard, or exile for madness), so no zone, controller or owner.
       if (t.filter !== undefined) {
@@ -823,6 +1019,57 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-229: the cards of the controller's own graveyard (and library): `who` is "you".
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       break;
+    case 'doorUnlocked':
+      // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (t.door !== 'this') issue(out, `${path}.door`, 'door must be "this"');
+      break;
+    case 'putIntoGraveyard':
+      // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (!isOneOf(t.from, ['anywhere', 'library'])) {
+        issue(out, `${path}.from`, `from must be "anywhere" or "library", not ${String(t.from)}`);
+      }
+      if (t.batch !== undefined && t.batch !== true) {
+        issue(out, `${path}.batch`, 'batch must be true when present');
+      }
+      if (t.firstTimeEachTurn !== undefined) {
+        if (t.firstTimeEachTurn !== true || t.batch !== true) {
+          issue(
+            out,
+            `${path}.firstTimeEachTurn`,
+            'firstTimeEachTurn must be true, and it goes with batch',
+          );
+        }
+        // Only the card types of an earlier card are kept for it (`TurnLog.graveyardEntries`).
+        if (
+          t.filter !== undefined &&
+          Object.keys(t.filter).some((k) => k !== 'types' && k !== 'notTypes')
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'firstTimeEachTurn reads card types only: the filter has types or notTypes',
+          );
+        }
+      }
+      // The card is read where it went (its owner's graveyard): no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the card put into the graveyard is read there: the filter names no zone, controller or owner',
+          );
+        }
+      }
+      break;
     case 'diesBatch':
       // D-206: one or more permanents that `what` names die together: a filter of battlefield permanents, as they were.
       checkFilter(t.what, `${path}.what`, out);
@@ -854,6 +1101,16 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'step':
       if (!isOneOf(t.step, TRIGGER_STEPS)) {
         issue(out, `${path}.step`, `unknown step ${String(t.step)}`);
+      }
+      if (
+        t.alsoStep !== undefined &&
+        (!isOneOf(t.alsoStep, TRIGGER_STEPS) || t.alsoStep === t.step)
+      ) {
+        issue(
+          out,
+          `${path}.alsoStep`,
+          `alsoStep must be another known step, not ${String(t.alsoStep)}`,
+        );
       }
       if (!isOneOf(t.whose, ['you', 'each', 'opponent'])) {
         issue(out, `${path}.whose`, `unknown turn owner ${String(t.whose)}`);
@@ -949,6 +1206,8 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealtDamage' ||
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
+    // Issue 103: all the combat damage the sources dealt to the player, "that damage".
+    t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
     // D-513: the cards looked at while scrying are "that many".
     t?.kind === 'scries' ||
@@ -1003,6 +1262,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'attacks':
     case 'becomesTapped':
     case 'becomesUntapped':
+    case 'becomesMonstrous':
     case 'blocks':
     case 'becomesBlocked':
     case 'landfall':
@@ -1015,12 +1275,19 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'leavesBattlefield':
     case 'countersAdded':
     case 'tapsForMana':
+    case 'exerted':
       return 'permanent';
     case 'castSpell':
     case 'becomesTarget':
     case 'crimeCommitted':
+    case 'activatesAbility':
       return 'stack';
     case 'tokenCreated':
+      return 'permanent';
+    case 'putIntoGraveyard':
+      // One card for each occurrence; a batch is about several cards and has no one subject.
+      return t.batch === true ? undefined : 'permanent';
+    case 'doorUnlocked':
       return 'permanent';
     default:
       return undefined;
@@ -1265,6 +1532,31 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         });
       }
       break;
+    case 'stationLevel':
+      // CR 721.2a (Station): the abilities of a station symbol, from `threshold` charge counters on: a whole number of 1 or more, one or more abilities, and no symbol inside another.
+      if (!Number.isSafeInteger(a.threshold) || a.threshold < 1) {
+        issue(
+          out,
+          `${path}.threshold`,
+          'the threshold of a station symbol is a whole number from 1',
+        );
+      }
+      if (!Array.isArray(a.abilities) || a.abilities.length === 0) {
+        issue(out, `${path}.abilities`, 'a station symbol gates at least one ability');
+      } else {
+        a.abilities.forEach((inner, i) => {
+          if (inner?.kind === 'stationLevel' || inner?.kind === 'level') {
+            issue(
+              out,
+              `${path}.abilities[${i}]`,
+              `a station symbol does not hold a ${inner.kind} ability`,
+            );
+          } else {
+            checkAbility(inner, `${path}.abilities[${i}]`, out);
+          }
+        });
+      }
+      break;
     case 'static':
       checkStatic(a.static, `${path}.static`, out);
       checkStaticCondition(a.static, a.condition, path, out);
@@ -1281,11 +1573,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         a.targets,
         `${path}.targets`,
         out,
-        false,
+        // CR 601.2d, 603.3d: a triggered ability announces its division as it is put on the stack.
+        true,
         false,
         true,
         false,
         a.trigger?.kind === 'scries',
+        true,
       );
       // D-270: a slot of two zones (the battlefield and graveyards) is named only by an `exile` of it, in an ability with no modes.
       checkCrossZoneSlots(
@@ -1296,18 +1590,33 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         out,
       );
       const subject = subjectOf(a.trigger);
+      // CR 603.3d: a target filter reads the triggering object only where it is a spell (`manaValueAtMost` of its mana value).
+      if (JSON.stringify(a.targets ?? []).includes('"triggerSubject"') && subject !== 'stack') {
+        issue(
+          out,
+          `${path}.targets`,
+          'a target filter that reads the triggering spell needs a cast trigger',
+        );
+      }
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
-        xAllowed: false,
+        // CR 601.2b: "When you cast this spell, ... half X": the spell is still on the stack with the X announced for it (the face checks its cost has an {X}).
+        xAllowed: selfCast,
         ...(subject === undefined ? {} : { triggerSubject: subject }),
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
-        ...(a.trigger.kind === 'leftGraveyard' ? { triggerCards: true } : {}),
+        ...(a.trigger.kind === 'leftGraveyard' ||
+        (a.trigger.kind === 'putIntoGraveyard' && a.trigger.batch === true) ||
+        (a.trigger.kind === 'discarded' && a.trigger.batch === true)
+          ? { triggerCards: true }
+          : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),
-        ...(a.trigger?.kind === 'attackBatch' ? { triggerAttacked: true } : {}),
+        ...(a.trigger?.kind === 'attackBatch' || a.trigger?.kind === 'playerAttacksOpponent'
+          ? { triggerAttacked: true }
+          : {}),
         triggeredAbility: true,
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
@@ -1316,6 +1625,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(selfCast ? { selfCast: true } : {}),
         ...(a.trigger?.kind === 'dies' ? { diesTrigger: true } : {}),
+        // D-657: the Aura's own trigger "when enchanted creature dies".
+        ...(a.trigger?.kind === 'dies' && kindOf(a.trigger.what) === 'attached'
+          ? { auraDiesTrigger: true }
+          : {}),
         // CR 107.3m (Hylda group 3): the enters trigger of the permanent itself may refer to the X of the spell it came from.
         ...(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this'
           ? { entersX: true }
@@ -1377,7 +1690,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       if (a.trigger?.kind === 'tappedForMana') {
         const plain =
           a.effect?.kind === 'addMana' &&
-          a.effect.mana?.kind === 'fixed' &&
+          (a.effect.mana?.kind === 'fixed' ||
+            // CR 106.1b, 605.3b: one mana of any color, named as the mana ability is activated.
+            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1)) &&
           a.targets === undefined &&
           a.modes === undefined &&
           a.optional !== true &&
@@ -1386,7 +1701,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           issue(
             out,
             path,
-            'an ability that triggers when a permanent is tapped for mana is a triggered mana ability (CR 605.1b): it only adds fixed mana, with no target, mode, "may" or intervening "if"',
+            'an ability that triggers when a permanent is tapped for mana is a triggered mana ability (CR 605.1b): it only adds fixed mana or one mana of any color, with no target, mode, "may" or intervening "if"',
           );
         }
       }
@@ -1416,6 +1731,28 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             out,
             `${path}.interveningIf`,
             'subjectControllerHasMore reads the controller of a permanent the event is about',
+          );
+        }
+        // D-648: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
+        if (
+          conditionHas(a.interveningIf, 'attackedHasMoreLifeThanOtherOpponent') &&
+          a.trigger?.kind !== 'playerAttacksOpponent'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackedHasMoreLifeThanOtherOpponent reads the player a playerAttacksOpponent trigger is about: it is only valid in the intervening "if" of one',
+          );
+        }
+        // D-643: the attack declaration is what `attackersAtYouAtLeast` reads, so only the intervening "if" of an attackBatch trigger has it.
+        if (
+          conditionHas(a.interveningIf, 'attackersAtYouAtLeast') &&
+          a.trigger?.kind !== 'attackBatch'
+        ) {
+          issue(
+            out,
+            `${path}.interveningIf`,
+            'attackersAtYouAtLeast reads the creatures of an attackBatch trigger: it is only valid in the intervening "if" of one',
           );
         }
         if (conditionHas(a.interveningIf, 'triggerPlayerHasMore') && !triggerHasPlayer(a.trigger)) {
@@ -1475,11 +1812,15 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore is read as an intervening "if"',
           );
         }
-        if (conditionHas(a.triggerCondition, 'triggerPlayerHasMore')) {
+        // CR 603.2: "deals combat damage to a player who controls more lands than you" is part of the event, read once as it happens.
+        if (
+          conditionHas(a.triggerCondition, 'triggerPlayerHasMore') &&
+          !triggerHasPlayer(a.trigger)
+        ) {
           issue(
             out,
             `${path}.triggerCondition`,
-            'triggerPlayerHasMore is read as an intervening "if"',
+            'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
         }
         if (conditionHas(a.triggerCondition, 'subjectGreaterPt')) {
@@ -1580,7 +1921,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           issue(out, `${path}.costReducedBy`, 'only a mana cost can be reduced');
         }
       }
-      const targets = declareTargets(a.targets, `${path}.targets`, out);
+      // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
+      const targets = declareTargets(a.targets, `${path}.targets`, out, true);
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
@@ -1589,6 +1931,10 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // D-133: "the sacrificed creature" is readable where the cost sacrificed something.
         ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'sacrifice')
           ? { sacrificedCost: true }
+          : {}),
+        // CR 702.184a: "equal to the tapped creature's power" is readable where the cost taps permanents.
+        ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'tapPermanents')
+          ? { tappedCost: true }
           : {}),
         // D-232: "the exiled cards" are readable where the cost exiled cards from the graveyard.
         ...(Array.isArray(a.cost) && a.cost.some((c) => c?.kind === 'exileFromGraveyard')
@@ -1687,6 +2033,24 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
   // D-386: X targets read the X announced for the spell: the text must say it has one.
   if (!xAllowed && (s.targets ?? []).some((t) => t.countX === true)) {
     issue(out, `${path}.x`, 'X targets need x: true (the spell announces an X)');
+  }
+  if (!xAllowed && (s.targets ?? []).some((t) => kindOf(t.divide?.total) === 'x')) {
+    issue(out, `${path}.x`, 'a division of X needs x: true (the spell announces an X)');
+  }
+  // CR 107.3a, 601.2b: "X can't be greater than the number of players in the game": a limit on the X announced, read as the spell is cast.
+  if (s.xAtMost !== undefined) {
+    if (!xAllowed)
+      issue(out, `${path}.xAtMost`, 'a limit on X needs x: true (the spell announces an X)');
+    checkStateAmount(s.xAtMost, `${path}.xAtMost`, out, 'the limit on X');
+  }
+  // CR 107.3a, 202.3: "target creature with mana value X" reads the X announced for the spell.
+  if (
+    !xAllowed &&
+    (s.targets ?? []).some(
+      (t) => t.what?.kind === 'object' && JSON.stringify(t.what.filter).includes('"manaValueX"'),
+    )
+  ) {
+    issue(out, `${path}.x`, 'a target with mana value X needs x: true (the spell announces an X)');
   }
   if (s.effect !== undefined) {
     checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
@@ -1813,6 +2177,20 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
       'a land is played, not cast: it has no castFromGraveyard to give it permission for',
     );
   }
+  // D-641 (CR 601.2f): "costs {2}{R} more to cast for each target beyond the first" is the cost of a spell, once, of a face with targets to count.
+  const strive = face.abilities.filter(
+    (a) => a?.kind === 'static' && a.static?.kind === 'costPerExtraTarget',
+  ).length;
+  if (strive > 0 && !face.types.some((t) => t === 'instant' || t === 'sorcery')) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'costPerExtraTarget is the cost of a spell: an instant or a sorcery face (CR 601.2f)',
+    );
+  }
+  if (strive > 1) {
+    issue(out, `${path}.abilities`, 'costPerExtraTarget once is enough: a spell has one such cost');
+  }
   // CR 607.2d, 614.12 (D-100): the choice a permanent makes as it enters and what reads it.
   chosenIssues(
     face.abilities,
@@ -1855,6 +2233,14 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
         `target "${id}" exists only in the matching gift branch: use it only in that branch`,
       );
     }
+    // Issue 244, CR 601.2c: a target chosen only if the spell was cast during its controller's main phase is used only in a `castInOwnMainPhase` conditional.
+    for (const id of castPhaseTargetsUsedUnguarded(face.spell)) {
+      issue(
+        out,
+        `${path}.spell.targets`,
+        `target "${id}" exists only if the spell was cast during its controller's main phase: use it only in the effect of a castInOwnMainPhase conditional`,
+      );
+    }
     // D-181, CR 702.33g, 601.2c: a target chosen only if the spell was kicked (or only if it was not) is used only in that case.
     for (const id of kickedTargetsUsedOutsideTheirCase(face.spell)) {
       issue(
@@ -1884,11 +2270,57 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     }
   });
 
+  // CR 601.2b: the X read by "When you cast this spell, ..." is the X announced for that spell, so the mana cost needs an {X}.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      a.trigger?.kind === 'castSpell' &&
+      a.trigger.self === true &&
+      JSON.stringify(a.effect ?? null).includes('"x"') &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(out, `${path}.abilities[${i}].effect`, 'X is read but the mana cost has no {X}');
+    }
+  });
+  // CR 107.3m: the X of a copy's "enters with X additional counters" is the spell's X, so the cost needs an {X}.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'replacement' &&
+      a.replacement?.kind === 'entersAsCopy' &&
+      a.replacement.withX !== undefined &&
+      !(face.manaCost ?? []).includes('X')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].replacement.withX`,
+        'enters with X counters but the mana cost has no {X}',
+      );
+    }
+  });
+
+  // CR 107.3m: "destroy up to one target artifact or enchantment with mana value X or less" reads the X of the spell the permanent came from, so only the enters trigger of the permanent itself has it.
+  face.abilities.forEach((a, i) => {
+    if (
+      a?.kind === 'triggered' &&
+      JSON.stringify(a.targets ?? null).includes('"enteredX"') &&
+      !(a.trigger?.kind === 'entersBattlefield' && kindOf(a.trigger.what) === 'this')
+    ) {
+      issue(
+        out,
+        `${path}.abilities[${i}].targets`,
+        'enteredX in a target reads the X of the spell the permanent came from: only its own enters trigger has one',
+      );
+    }
+  });
+
   // CR 107.3m (Hylda group 3): "When this creature enters, draw X cards" reads the X of the spell's mana cost; without an {X} there is nothing to read.
   face.abilities.forEach((a, i) => {
     if (
       a?.kind === 'triggered' &&
-      JSON.stringify(a.effect ?? null).includes('"enteredX"') &&
+      (JSON.stringify(a.effect ?? null).includes('"enteredX"') ||
+        JSON.stringify(a.targets ?? null).includes('"enteredX"') ||
+        (a.trigger?.kind === 'entersBattlefield' &&
+          JSON.stringify(a.effect ?? null).includes('"xAtLeast"'))) &&
       !(face.manaCost ?? []).includes('X')
     ) {
       issue(
@@ -1923,10 +2355,35 @@ function checkFace(face: CardFace, path: string, supported: boolean, out: AstIss
     }
   });
 
+  // CR 701.43d, 607.2h: "You may exert ~ as it attacks" is a cost to attack, so it is on a creature; the "When you do" abilities linked to it are on the same face.
+  const exerts = face.abilities.some(
+    (k) => k?.kind === 'static' && k.static?.kind === 'exertOnAttack',
+  );
+  face.abilities.forEach((a, i) => {
+    if (a?.kind === 'triggered' && a.trigger?.kind === 'exerted' && !exerts) {
+      issue(
+        out,
+        `${path}.abilities[${i}].trigger`,
+        '"when you do" after exerting needs the "you may exert this creature as it attacks" ability on the same face (CR 607.2h)',
+      );
+    }
+  });
+  if (exerts && !face.types.includes('creature')) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'exert is the cost of attacking: a creature has it (CR 701.43d)',
+    );
+  }
+
   // An unsupported instant or sorcery has had its text dropped (SPEC 7.1), so only a supported
   // one must carry an effect. A supported instant or sorcery with no effect would do nothing.
+  // D-667 (CR 702.85a, 608.2): "Cascade. Retrace." is a sorcery with no spell text whose cast trigger does the work: cascade alone makes a spell with no effect to resolve valid.
   const isSpellCard = face.types.includes('instant') || face.types.includes('sorcery');
-  if (supported && isSpellCard && !spellHasEffect(face.spell)) {
+  const castsOnItsOwn = face.abilities.some(
+    (a) => a.kind === 'keyword' && a.keyword.kind === 'cascade',
+  );
+  if (supported && isSpellCard && !spellHasEffect(face.spell) && !castsOnItsOwn) {
     issue(out, `${path}.spell`, 'an instant or sorcery must have spell text with an effect');
   }
 }
@@ -1974,6 +2431,13 @@ export function validateCardStructure(def: CardDefinition): AstIssue[] {
     checkFace(face, `faces[${i}]`, def.support === 'supported', out);
     // CR 702.94a (D-274): the reveal is read from the card's front face only (`rules/miracle.ts`, `miracleCostOf`), so a miracle
     // cost on any other face would never be offered: refused here instead of accepted and dropped without a word.
+    if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'harmonize')) {
+      issue(
+        out,
+        `faces[${i}].alternativeCosts`,
+        'harmonize on a face other than the front face is not supported (CR 702.180a)',
+      );
+    }
     if (i > 0 && face.alternativeCosts?.some((a) => a?.kind === 'miracle')) {
       issue(
         out,

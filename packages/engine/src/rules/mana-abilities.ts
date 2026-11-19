@@ -16,11 +16,12 @@ import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
+import { additionalManaOptions } from './mana-triggers';
 import { manaValueOfCost } from './mana-value';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { hasRestriction } from './restrictions';
-import { sacrificeCandidates, sacrificePermanent } from './sacrifice';
+import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
 
 export function manaAbilitiesOf(
   state: GameState,
@@ -125,6 +126,63 @@ export function manaSacrificeChoice(
   return sorted[0]?.id ?? null;
 }
 
+/**
+ * The kind of permanent the ability's cost taps besides the source ("{T}, Tap an untapped creature you control: Add one mana of any color.", D-625, CR 118.3, 605.3b,
+ * 701.26a), or null when the cost taps nothing else.
+ */
+export function tapFilterOf(ability: ManaAbility): ObjectFilter | null {
+  for (const c of ability.cost) if (c.kind === 'tapPermanents') return c.filter;
+  return null;
+}
+
+/**
+ * The permanents the player may choose to tap for the cost of a mana ability that taps a kind of permanent (D-625, CR 118.3, 302.6: summoning sickness holds back only a
+ * creature's own {T} ability, so a creature that came under control this turn may be tapped): the untapped ones the seat controls that match. The source is one of them
+ * only when its own cost leaves it untapped (no {T}): the {T} is paid first, so the source is tapped by then. Empty for an ability that taps nothing else. `reserved` are
+ * permanents the caller keeps out (the other sources a payment plan taps).
+ */
+export function manaTapCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId,
+  ability: ManaAbility,
+  reserved: ReadonlySet<ObjectId> = new Set(),
+): readonly ObjectId[] {
+  const filter = tapFilterOf(ability);
+  if (filter === null) return [];
+  const selfTaps = hasCost(ability, 'tap');
+  return tapCandidates(state, seat, source, filter).filter(
+    (id) => !(selfTaps && id === source) && !reserved.has(id),
+  );
+}
+
+/**
+ * The permanent a mana ability taps as its cost (D-625): `preferred` when it is a legal choice, otherwise the engine picks the one the player would tap first: a creature
+ * that makes no mana of its own, then the weakest, then the oldest. That default is what the payment planner uses (a player who taps by hand names the permanent).
+ */
+export function manaTapChoice(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId,
+  ability: ManaAbility,
+  preferred?: ObjectId,
+  reserved: ReadonlySet<ObjectId> = new Set(),
+): ObjectId | null {
+  const candidates = manaTapCandidates(state, seat, source, ability, reserved);
+  if (preferred !== undefined && candidates.includes(preferred)) return preferred;
+  const rank = (id: ObjectId): [number, number] => {
+    const obj = state.objects[id];
+    if (obj === undefined) return [2, 0];
+    const d = derive(state, obj);
+    const makesMana = d.abilities.some((a) => a.kind === 'mana');
+    return [makesMana ? 1 : 0, typeof d.power === 'number' ? d.power : 0];
+  };
+  const sorted = candidates
+    .map((id, index) => ({ id, index, rank: rank(id) }))
+    .sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.index - b.index);
+  return sorted[0]?.id ?? null;
+}
+
 /** The symbols of the mana part of the ability's cost ("{1}" of "{1}, {T}"), empty when it has none. */
 export function manaCostSymbols(ability: ManaAbility): string[] {
   return ability.cost.flatMap((c) => (c.kind === 'mana' ? c.symbols : []));
@@ -139,6 +197,15 @@ export function lifeCostOf(ability: ManaAbility): number {
 }
 
 /** The cards the ability's cost mills from its controller's library ("Mill a card", CR 701.17, D-208). */
+/** The counters the ability's cost removes from its own permanent ("Remove a charge counter from this land", issue 245, CR 118.3, 122.1). */
+export function counterCostsOf(
+  ability: ManaAbility,
+): readonly { readonly counter: string; readonly count: number }[] {
+  return ability.cost.flatMap((c) =>
+    c.kind === 'removeCounters' ? [{ counter: c.counter, count: c.count }] : [],
+  );
+}
+
 export function millCostOf(ability: ManaAbility): number {
   return ability.cost.reduce((n, c) => n + (c.kind === 'mill' ? c.count : 0), 0);
 }
@@ -192,9 +259,30 @@ export function canPayPhysicalCosts(
   obj: GameObject,
   ability: ManaAbility,
   seat: SeatId,
+  abilityIndex?: number,
 ): boolean {
   if (lifeCostOf(ability) > 0 && lifeTotalIsLocked(state, seat)) return false;
-  return physicalRefusal(state, obj, ability, seat) === null;
+  return physicalRefusal(state, obj, ability, seat, abilityIndex) === null;
+}
+
+/**
+ * CR 602.5b, 605.1a: "Activate only once each turn" of a mana ability: remembers that this object's ability at `abilityIndex` was activated this turn (the same log the
+ * ordinary activated abilities use). Only an ability with the limit is logged, so the log of every other game is as it was.
+ */
+export function recordManaActivation(
+  state: GameState,
+  object: ObjectId,
+  abilityIndex: number,
+  ability: ManaAbility,
+): GameState {
+  if (ability.oncePerTurn !== true) return state;
+  return {
+    ...state,
+    turnLog: {
+      ...state.turnLog,
+      activated: [...state.turnLog.activated, { object, abilityIndex }],
+    },
+  };
 }
 
 /** Why the seat cannot use the ability now for a reason `canPayPhysicalCosts` looks at, or null. */
@@ -203,6 +291,8 @@ export function physicalRefusal(
   obj: GameObject,
   ability: ManaAbility,
   seat: SeatId,
+  /** The index of the ability among the object's abilities: needed to read "Activate only once each turn" (CR 602.5b). */
+  abilityIndex?: number,
 ): string | null {
   const name = derive(state, obj).name;
   if (obj.zone !== 'battlefield' || controllerOf(state, obj) !== seat)
@@ -214,6 +304,14 @@ export function physicalRefusal(
   if (hasCost(ability, 'tap') && !canTapForMana(state, obj, seat)) {
     return `${name} is tapped or summoning sick`;
   }
+  // CR 602.5b, 605.1a: "Activate only once each turn": this object's ability was not activated yet this turn.
+  if (
+    ability.oncePerTurn === true &&
+    abilityIndex !== undefined &&
+    state.turnLog.activated.some((a) => a.object === obj.id && a.abilityIndex === abilityIndex)
+  ) {
+    return `${name} can be activated only once each turn`;
+  }
   const life = lifeCostOf(ability);
   // A cost of no life is always payable, whatever the life total (it may be negative while the player cannot lose the game, CR 104.3b, issue 254).
   if (life > 0 && life > getSeat(state, seat).life) return `you have less than ${life} life to pay`;
@@ -221,10 +319,22 @@ export function physicalRefusal(
   const mill = millCostOf(ability);
   if (mill > getSeat(state, seat).library.length)
     return `you have fewer than ${mill} cards in your library to mill`;
+  // CR 118.3, 122.1 (issue 245): "Remove a charge counter from this land" cannot be paid by a permanent with fewer of them.
+  for (const { counter, count } of counterCostsOf(ability)) {
+    if ((obj.counters[counter] ?? 0) < count)
+      return `${name} has fewer than ${count} ${counter} counters`;
+  }
   // CR 701.21a, 118.3: "Sacrifice a Spirit" needs a permanent of the kind that the seat controls.
   const kind = sacrificeFilterOf(ability);
   if (kind !== null && sacrificeCandidates(state, seat, obj.id, kind).length === 0) {
     return `you control nothing to sacrifice for ${name}`;
+  }
+  // CR 118.3 (D-625): "Tap an untapped creature you control" needs one besides the source.
+  if (
+    tapFilterOf(ability) !== null &&
+    manaTapCandidates(state, seat, obj.id, ability).length === 0
+  ) {
+    return `you control no untapped permanent to tap for ${name}`;
   }
   if (!activationAllowed(state, obj, ability))
     return `${name} can be activated only if its condition holds`;
@@ -245,6 +355,10 @@ export function payManaAbilityCosts(
   ability: ManaAbility,
   /** The permanent a cost "Sacrifice a Spirit" gives up, when the player named it (D-216); the engine chooses otherwise. */
   sacrifice?: ObjectId,
+  /** The permanent a cost "Tap an untapped creature you control" taps, when the player named it (D-625); the engine chooses otherwise. */
+  tapped?: ObjectId,
+  /** Permanents the engine's choice leaves alone (the other sources of a payment plan, D-625). */
+  reserved?: ReadonlySet<ObjectId>,
 ): { state: GameState; events: GameEvent[] } {
   let next = state;
   const events: GameEvent[] = [];
@@ -254,6 +368,23 @@ export function payManaAbilityCosts(
     // CR 106.12 (D-189): tapping a permanent for mana is activating its mana ability with {T} in the cost; "whenever an opponent taps an artifact
     // for mana" reads it (the sacrifice below, as a Treasure's, is part of the same ability).
     events.push({ kind: 'tappedForMana', object: id, seat });
+  }
+  // CR 701.26a (D-625): the permanent tapped as a cost is tapped, not tapped for mana.
+  if (tapFilterOf(ability) !== null) {
+    const given = manaTapChoice(next, seat, id, ability, tapped, reserved);
+    if (given !== null) {
+      next = patchObject(next, given, { tapped: true });
+      events.push({ kind: 'tapped', object: given, by: seat });
+    }
+  }
+  // CR 118.3, 122.1 (issue 245): the counters the cost removes from this permanent.
+  for (const { counter, count } of counterCostsOf(ability)) {
+    const obj = next.objects[id];
+    if (obj === undefined) continue;
+    next = patchObject(next, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) - count },
+    });
+    events.push({ kind: 'counterRemoved', object: id, counter, count });
   }
   const life = lifeCostOf(ability);
   if (life > 0) {
@@ -319,13 +450,25 @@ export function activationChoices(
   state: GameState,
   obj: GameObject,
   ability: ManaAbility,
-): { color: ManaColor | null; combination?: readonly ManaColor[] }[] {
-  const out: { color: ManaColor | null; combination?: readonly ManaColor[] }[] = [];
+): {
+  color: ManaColor | null;
+  combination?: readonly ManaColor[];
+  extraColors?: readonly ManaColor[];
+}[] {
+  const out: {
+    color: ManaColor | null;
+    combination?: readonly ManaColor[];
+    extraColors?: readonly ManaColor[];
+  }[] = [];
   for (const outcome of productionOutcomes(state, obj, ability)) {
     if (outcome.length === 0) continue;
-    if (isCombinationProduction(ability.production))
-      out.push({ color: null, combination: outcome });
-    else out.push({ color: isColorChoice(ability.production) ? outcomeColor(outcome) : null });
+    const base = isCombinationProduction(ability.production)
+      ? { color: null, combination: outcome }
+      : { color: isColorChoice(ability.production) ? outcomeColor(outcome) : null };
+    // CR 605.1b, 106.1b: a land with "adds an additional one mana of any color" on it offers one activation for each color of that mana.
+    const extras = additionalManaOptions(state, obj, ability, outcome);
+    if (extras.length === 1) out.push(base);
+    else for (const extraColors of extras) out.push({ ...base, extraColors });
   }
   return out;
 }

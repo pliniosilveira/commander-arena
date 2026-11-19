@@ -56,6 +56,8 @@ export function describeAction(state: GameState, action: Action): string {
     case 'foretell':
     case 'turnFaceUp':
       return `${action.kind} ${named(action.object)}`;
+    case 'unlockDoor':
+      return `unlockDoor ${named(action.object)} (door ${action.door})`;
     case 'activate':
       return `activate ${named(action.object)}#${action.abilityIndex}`;
     case 'activateAbility':

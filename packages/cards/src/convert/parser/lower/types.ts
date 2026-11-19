@@ -58,6 +58,10 @@ export interface LowerContext {
    * spell itself), so "that spell" is the spell that caused the trigger, which the engine reads as its `triggerSubject` (CR 601.2h).
    */
   castTrigger: boolean;
+  /** The triggers are all "whenever you cast a spell with {X} in its mana cost": an X in the body is the X of that spell (Quandrix Unlimited group E, CR 107.3). */
+  castTriggerX: boolean;
+  /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
+  activateTrigger: boolean;
   /**
    * The ids of targets an earlier instruction of this text sent away from the battlefield (destroy,
    * exile, return, sacrifice): "it" after them is the card in its new zone, which a tap or an untap
@@ -69,6 +73,18 @@ export interface LowerContext {
    * are ambiguous), not an earlier target, so a rule that reads "it" as the target refuses. Filled by `lowerSentences` as each clause is lowered.
    */
   madeAToken: boolean;
+  /**
+   * True right after an instruction that made the tokens the engine's `moved` names (D-643, Prismari group 1: `createToken`, `createCopies`, `populate`): "They gain haste.",
+   * "The token created this way gains haste.", "Exile them at the beginning of the next end step." and "Sacrifice those tokens." are about exactly those tokens, and are lowered only
+   * then. Any later instruction that moves, destroys, exiles or sacrifices something else makes it false again. Filled by `lowerSentences` as each clause is lowered.
+   */
+  tokensMade: boolean;
+  /**
+   * The last `createToken` effect of a token that is a copy this text lowered (D-643): "create five of those tokens instead" makes that many tokens of the same kind, which this
+   * effect (with its target and its exceptions) says. Null before one. Filled by `lowerSentences` as each clause is lowered.
+   */
+  /** The `createToken` the instruction before made, of any kind of token (D-643, D-646): what "create five of those tokens instead" makes more of. */
+  lastToken: Effect | null;
   /**
    * The number of instructions of this text lowered so far (D-287): "return it" after an earlier instruction may name what that one made or moved, so a rule that reads
    * "it" as the object of the trigger itself needs this to be 0. Filled by `lowerSentences` as each clause is lowered.
@@ -82,6 +98,15 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
+  /** The sentence of "If they don't" after a "may" sentence the asked player does themselves is being lowered: "they" and "that player" are the player who declined (`declinedPlayer`). */
+  declinedPlayer: boolean;
+  /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
+  attackedPlayer: {
+    readonly selector: PlayerSelector;
+    readonly needs: readonly FeatureRef[];
+  } | null;
+  /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
+  enchantedPlayerTrigger: boolean;
   /**
    * "..., where X is the number of Zombies you control." (stage P28, CR 107.3c): while the clauses of that
    * sentence are lowered, an X in them is this amount, written into each slot that says X. `used` is set when a slot
@@ -154,6 +179,16 @@ export interface LowerContext {
   /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
   /**
+   * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
+   * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
+   */
+  auraDies: boolean;
+  /**
+   * True after the instruction "return that card to the battlefield" of the dies trigger of an Aura's enchanted creature has been lowered (issue 89, Gift of Immortality, CR 400.7, 603.10a):
+   * the creature that returned is what "that creature" of the next instruction is (the engine's `moved`), not the one that died.
+   */
+  returnedDyingCard: boolean;
+  /**
    * True while the total of a divided damage is lowered (stage P32, D-147, CR 601.2d): "..., where X is the greatest power among
    * creatures you control as you cast this spell" is read once, as the spell is cast, and only there.
    */
@@ -168,10 +203,11 @@ export interface LowerContext {
   /**
    * What an earlier instruction of this text exiled (stage P34, D-152): `top` the cards of the top of the library ("exile the top card of
    * your library", the cards "that card" and "those cards" name), `cast` the card found by exiling until a card is found (Discover, "the
-   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."). Null before any. The
+   * discovered card"), `milled` (D-327) the cards the controller milled ("Mill a card. You may play that card this turn."), `cards` (Lorehold group 1) the card an
+   * `exile` of the text exiled from where it was ("you may exile that card from your graveyard. If you do, you may play that card this turn"). Null before any. The
    * engine's `moved` names them.
    */
-  exiled: 'top' | 'cast' | 'milled' | null;
+  exiled: 'top' | 'cast' | 'milled' | 'cards' | null;
   /** True when the cards the last "exile the top ... cards" exiled were exiled face down (stage P41, D-188, CR 406.3): "you may look at and play those cards". */
   exiledFaceDown: boolean;
   /**
@@ -183,6 +219,12 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** True in the body of a triggered ability (CR 603.3d): the number of targets of a slot ("up to X target ...") may be read as it triggers. */
+  triggeredBody: boolean;
+  /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
+  didSearch: boolean;
+  /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
+  discardBatchTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -194,20 +236,50 @@ export interface LowerContext {
    */
   madeToken: string | null;
   /**
+   * True right after a clause that was the exile of a card the player chose from their graveyard (issue 104, "you may exile a creature card from your graveyard. If you do, create a token
+   * that's a copy of that card"): "that card" names the card that exile put into exile, which the engine's `moved` holds until another instruction moves, destroys or exiles something.
+   */
+  chosenExiled: boolean;
+  /**
    * True right after a clause that was one mill of the controller's own library (D-411, CR 701.17a): "them" and "the cards milled this way" of "you may put a land card from
    * among them into your hand" are the cards that mill put into the graveyard. Any other clause lowered after it makes it false again.
    */
   milled: boolean;
+  /**
+   * True right after a clause that was a `destroy` (issue 159, Necromantic Selection): "a creature card put into a graveyard this way" names the cards that destroy
+   * put into graveyards, which the engine's `moved` holds until another instruction moves something.
+   */
+  destroyed: boolean;
+  /**
+   * The `createToken` the clause before it lowered to, when it was the only effect and made the tokens for the controller (issue 159, Curse of Disturbance): "Each opponent attacking
+   * that player does the same" makes the same tokens for other players. Null after any other clause.
+   */
+  createdToken: Extract<Effect, { kind: 'createToken' }> | null;
   /**
    * True right after a clause that was one `moveToZone` to the hand (D-412, CR 400.7j): "If you put a Town card into your hand this way" asks about the card that move put there,
    * and "onto the battlefield this way" about a card put there; the condition is read only after the move it says (a card put into the hand is not "put onto the battlefield").
    */
   movedToHand: boolean;
   /**
+   * True right after a clause that was the exile of "any number of cards from your graveyard with four or more card types among them" (Death Toll deck, Winter, Cynical Opportunist,
+   * CR 608.2c): "them" of "put a permanent card from among them onto the battlefield" are the cards that exile moved. Any other clause lowered after it makes it false again.
+   */
+  exiledAnyCardTypes: boolean;
+  /**
    * What "it" means in "If you do, return it to the battlefield ... at the beginning of the next end step" (stage P48, D-205, CR 603.7c, 400.7j): the reference of the
    * target the last instruction exiled, which the engine's `moved` names. Null before an exile of a target and after any other move, destroy or sacrifice.
    */
   exiledRef: string | null;
+  /**
+   * The kind of the last instruction lowered (Prismari deck group 3, D-664): "the other cards exiled this way" is read only after the opponent's choice among the cards exiled, "them"
+   * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
+   */
+  lastEffectKind: string | null;
+  /**
+   * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
+   * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
+   */
+  randomYardCard: boolean;
   /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
@@ -250,10 +322,17 @@ export function newContext(
     itIsSelf: false,
     selfCast: false,
     castTrigger: false,
+    castTriggerX: false,
+    activateTrigger: false,
     removed: new Set(),
     madeAToken: false,
+    tokensMade: false,
+    lastToken: null,
     lowered: 0,
     thatPlayer: null,
+    declinedPlayer: false,
+    attackedPlayer: null,
+    enchantedPlayerTrigger: false,
     xIs: null,
     xDefined: false,
     exiled: null,
@@ -261,12 +340,21 @@ export function newContext(
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
     scryTrigger: false,
+    triggeredBody: false,
+    discardBatchTrigger: false,
+    didSearch: false,
     searched: null,
     sacrificedRef: null,
     madeToken: null,
+    chosenExiled: false,
     milled: false,
+    destroyed: false,
+    createdToken: null,
     movedToHand: false,
+    exiledAnyCardTypes: false,
     exiledRef: null,
+    lastEffectKind: null,
+    randomYardCard: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,
@@ -281,6 +369,8 @@ export function newContext(
     interveningCondition: false,
     meldPartner: null,
     itIsCard: false,
+    auraDies: false,
+    returnedDyingCard: false,
     itDied: false,
     diesTrigger: false,
     cardName,

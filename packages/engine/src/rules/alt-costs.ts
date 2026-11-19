@@ -44,6 +44,17 @@ export function escalateCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'escalate');
 }
 
+/**
+ * The cost "for each target beyond the first" of the face's spell, or null when it has none (D-641, CR 601.2f; Strive is an ability word, CR 207.2c): the static ability
+ * `costPerExtraTarget` of the spell itself, which works on the stack (CR 113.6d). Mana only (`validateCard`).
+ */
+export function costPerExtraTargetOf(face: CardFace | null): readonly Cost[] | null {
+  for (const a of face?.abilities ?? []) {
+    if (a.kind === 'static' && a.static.kind === 'costPerExtraTarget') return a.static.cost;
+  }
+  return null;
+}
+
 /** Whether a mode of the face's modal spell has a cost listed before its effect (CR 700.2h, 702.183a, D-433): Tiered. */
 export function hasModeCosts(face: CardFace | null): boolean {
   return face?.spell?.modes?.some((m) => m.cost !== undefined) === true;
@@ -64,14 +75,49 @@ export function hasGift(face: CardFace | null): boolean {
   return face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'gift') === true;
 }
 
+/** Whether the face has Aftermath (CR 702.127a): a half of a split card that is cast only from a graveyard and is exiled when it leaves the stack. */
+export function hasAftermath(face: CardFace | null): boolean {
+  return (
+    face?.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'aftermath') === true
+  );
+}
+
 /** The cost of whichever kicker ability the face has, kicker or multikicker (CR 702.33c), or null. */
 export function kickerLikeCostOf(face: CardFace | null): readonly Cost[] | null {
   return kickerCostOf(face) ?? multikickerCostOf(face);
 }
 
+/**
+ * The alternative cost of the card's own "You may cast this card from your graveyard by paying {2}{W} rather than paying its mana cost" (CR 118.9, D-656), or null when the face has
+ * no such ability (or its ability has no cost of its own).
+ */
+export function graveyardCostOf(face: CardFace | null): readonly Cost[] | null {
+  for (const a of face?.abilities ?? []) {
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'castFromGraveyard' &&
+      a.static.cost !== undefined
+    ) {
+      return a.static.cost;
+    }
+  }
+  return null;
+}
+
 /** The flashback cost of the face, or null when it has no flashback (CR 702.34a). */
 export function flashbackCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'flashback');
+}
+
+/**
+ * The flashback cost a card is cast for when something gave it flashback with the cost equal to its mana cost (CR 702.34a, 118.9: `grantFlashbackToGraveyardCards`,
+ * `gainFlashbackFromManaCost`): its mana cost, as a mana cost; null when it has none (a cost equal to nothing cannot be paid, CR 202.1b).
+ */
+export function manaCostAsFlashbackCost(face: CardFace | null): readonly Cost[] | null {
+  const symbols = face?.manaCost;
+  return symbols === undefined || symbols === null || symbols.length === 0
+    ? null
+    : [{ kind: 'mana', symbols }];
 }
 
 /** The alternative cost of `kind` the face lists (`CardFace.alternativeCosts`, D-121), or null. */

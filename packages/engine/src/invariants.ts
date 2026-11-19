@@ -10,6 +10,7 @@ import {
   buybackCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
+  manaCostAsFlashbackCost,
   multikickerCostOf,
   replicateCostOf,
 } from './rules/alt-costs';
@@ -126,6 +127,14 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(`${id} is attached but is not on the battlefield`);
       if (obj.attachedTo === obj.id) problems.push(`${id} is attached to itself`);
     }
+    // CR 303.4, 303.4d (D-629): an Aura that enchants a player is on the battlefield (or phased out), enchants a seat of the game, and is attached to no object.
+    if (obj.attachedToPlayer !== undefined) {
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased')
+        problems.push(`${id} enchants a player but is not on the battlefield`);
+      if (state.seats[obj.attachedToPlayer] === undefined)
+        problems.push(`${id} enchants a player who is not in the game`);
+      if (obj.attachedTo !== null) problems.push(`${id} is attached to an object and a player`);
+    }
     for (const [counter, n] of Object.entries(obj.counters)) {
       if (n < 0) problems.push(`${id} has a negative ${counter} counter count`);
     }
@@ -233,8 +242,9 @@ export function checkInvariants(state: GameState): string[] {
       if (
         obj.card !== null ||
         obj.token !== null ||
-        // CR 722.3c (D-214): the copy of a prepare spell waits in exile, made for a prepared permanent.
-        (obj.prepareOf === undefined
+        // CR 722.3c (D-214): the copy of a prepare spell waits in exile, made for a prepared permanent. D-654 (CR 707.12): the copy of a card waits in exile, made by the effect that is
+        // resolving, for as long as that resolution lasts.
+        (obj.prepareOf === undefined && obj.cardCopy !== true
           ? obj.zone !== 'stack' || obj.stack?.kind !== 'spell'
           : obj.zone !== 'exile' || obj.stack !== null) ||
         state.cards[obj.copyOf] === undefined
@@ -244,7 +254,9 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 708.2, 708.6 (D-308): a face-down object is a card on the battlefield (or phased out), and its label is its own among the face-down permanents.
     if (obj.faceDown !== undefined) {
-      if (obj.zone !== 'battlefield' && obj.zone !== 'phased') {
+      // CR 708.4: a card cast face down is a face-down spell on the stack until it resolves.
+      const downSpell = obj.zone === 'stack' && obj.faceDown.by === 'morph';
+      if (obj.zone !== 'battlefield' && obj.zone !== 'phased' && !downSpell) {
         problems.push(`${id} is face down but is in ${obj.zone}`);
       }
       if (obj.card === null || obj.token !== null) {
@@ -285,6 +297,10 @@ export function checkInvariants(state: GameState): string[] {
       (obj.zone !== 'battlefield' || !Number.isSafeInteger(obj.castX) || obj.castX < 1)
     ) {
       problems.push(`${id} remembers the X ${obj.castX} of a spell it cannot have come from`);
+    }
+    // CR 601.2a: the zone a permanent's spell was cast from is remembered by a permanent only.
+    if (obj.castFrom !== undefined && obj.zone !== 'battlefield') {
+      problems.push(`${id} remembers a cast but is not a permanent`);
     }
     // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
     // treated as though it does not exist but stays as it was, with the face it had up).
@@ -384,7 +400,11 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${id} has transformed but is not on the battlefield`);
     }
     if (obj.stack?.flashback === true) {
-      if (obj.stack.kind !== 'spell' || flashbackCostOf(face) === null) {
+      // CR 702.34a: a printed flashback, or flashback with the cost equal to the mana cost that something gave the card.
+      if (
+        obj.stack.kind !== 'spell' ||
+        (flashbackCostOf(face) === null && manaCostAsFlashbackCost(face) === null)
+      ) {
         problems.push(`${id} was cast with flashback but is not a spell with flashback`);
       }
       if (obj.zone !== 'stack')

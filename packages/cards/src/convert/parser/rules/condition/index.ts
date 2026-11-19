@@ -24,16 +24,20 @@ import { defineRule, spanned } from '../registry';
 import { ANGEL_CONDITION_RULES } from './angels';
 import { ARDEN_CONDITION_RULES } from './arden';
 import { ARTIFACT_CONDITION_RULES } from './artifacts';
+import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
+import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
+import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
+import { DEATH_TOLL_B_CONDITION_RULES } from './death-toll-b';
+import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
-import { FINALE_CONDITION_RULES } from './finale';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
@@ -41,16 +45,28 @@ import { HOFRI_CONDITION_RULES } from './hofri';
 import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
+import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
+import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
+import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
+import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
+import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
+import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
+import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
+import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
+import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
+import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
+import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
 import { VRASKA_CONDITION_RULES } from './vraska';
+import { CONDITION_X_AT_LEAST } from './x-at-least';
 
 function amountOf(count: { value: number; span: Span }): IrAmount {
   return { kind: 'number', value: count.value, span: count.span };
@@ -431,6 +447,51 @@ export const CONDITION_CREATURE_DIED_THIS_TURN = defineRule<IrCondition>({
 });
 
 /**
+ * `condition.modified-creature-died`: "a modified creature died under your control this turn" (CR 700.9, 700.4, 603.10a): a creature that was modified (a counter, an Equipment, or an
+ * Aura its controller controlled) as it left the battlefield and died under the controller of the ability. The engine's `diedThisTurn` amount with `modified`, at least one.
+ */
+export const CONDITION_MODIFIED_CREATURE_DIED = defineRule<IrCondition>({
+  id: 'condition.modified-creature-died',
+  family: 'condition',
+  leading: ['a'],
+  cites: ['CR 700.9 (Modified)', 'CR 700.4 (Dies)', 'CR 603.10a (Handling Triggered Abilities)'],
+  examples: ['a modified creature died under your control this turn'],
+  rejects: [
+    'a modified creature died this turn',
+    'a modified creature died under your control last turn',
+    'a modified creature dies under your control this turn',
+    'a modified creature died under an opponent’s control this turn',
+    'a modified creature card died under your control this turn',
+    'a creature died under your control this turn',
+    'a modified creature died under your control this turn.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/a modified creature died under your control this turn(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const amount: IrAmount = {
+      kind: 'diedThisTurn',
+      controller: 'you',
+      types: ['creature'],
+      modified: true,
+      span,
+    };
+    return {
+      ok: true,
+      value: condition('condition.modified-creature-died', span, {
+        kind: 'amountIs',
+        amount,
+        compare: { cmp: 'atLeast', value: 1 },
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `condition.control-commander`: "you control a commander" (stage P13, CR 903.3d: a commander is a
  * permanent on the battlefield that was designated as a commander; a token or a copy is not one
  * (CR 903.3), and a commander in the command zone is not controlled). The engine's
@@ -467,15 +528,19 @@ export const CONDITION_CONTROL_COMMANDER = defineRule<IrCondition>({
 });
 
 export const CONDITION_RULES = [
+  // Quandrix Unlimited deck, group G: two conditions joined by "and", and "you control a prime number of lands", before the single conditions they start with.
+  ...QUANDRIX_G_CONDITION_RULES,
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
   ...ANGEL_CONDITION_RULES,
+  // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
+  ...THEY_ATTACKED_YOU_CONDITION_RULES,
   ...BRUNA_CONDITION_RULES,
   // Stage P70 (D-278): "you both own and control ~ and a creature named X", the condition of the meld ability.
   ...MELD_CONDITION_RULES,
   // Stage P69 (D-271): "the result is 1" after a die roll, "~ is in your graveyard".
   ...ARDEN_CONDITION_RULES,
-  // Issue 337 (Finale of Revelation): "X is 10 or more".
-  ...FINALE_CONDITION_RULES,
+  // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
+  ...IT_ON_BATTLEFIELD_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,
@@ -485,15 +550,20 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_LAND_TYPE,
   CONDITION_OPPONENT_POISON_AT_LEAST,
   CONDITION_CREATURE_DIED_THIS_TURN,
+  CONDITION_MODIFIED_CREATURE_DIED,
   CONDITION_OPPONENTS_AT_LEAST,
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,
   ...SELF_STATE_CONDITION_RULES,
+  ...NO_COUNTERS_CONDITION_RULES,
+  ...COUNTER_COUNT_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
   // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value".
   ...ARTIFACT_CONDITION_RULES,
   // Stage P32 (D-147): "you don't control another Dinosaur", "the creature you control has trample".
   ...DINOSAUR_CONDITION_RULES,
+  // Jeskai free-cast cards (issue 100): "you cast it".
+  ...JESKAI_CASTFREE_CONDITION_RULES,
   // Stage P34 (D-152): the most life, the total power of the attackers, the damage and the permanents of the turn.
   ...DRAGON_CONDITION_RULES,
   // Stage P37 (D-180): "you put a Cave onto the battlefield this way".
@@ -502,12 +572,20 @@ export const CONDITION_RULES = [
   ...VRASKA_CONDITION_RULES,
   // Issue 25 (the Niv-Mizzet deck): "five or more mana was spent to cast that spell".
   ...NIV_CONDITION_RULES,
+  // Prismari deck, group 2 (issue 87, D-646): "that spell's mana value is 5 or greater".
+  ...PRISMARI_G2_CONDITION_RULES,
+  // Prismari deck, group 3 (issue 87, D-661): "the total mana value of the cards exiled this way is 13 or less".
+  ...PRISMARI_G3_CONDITION_RULES,
+  // Death Toll deck, group B (CR 205.2a): "two cards that share all their card types were milled this way".
+  ...DEATH_TOLL_B_CONDITION_RULES,
   // Issue 25 (D-318): "you've cast three or more spells this turn".
   ...SPELLS_CAST_CONDITION_RULES,
   // Issue 25 (D-331): "there are no cards in your library", "your library has no cards in it".
   ...LIBRARY_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".
   ...CHOOSER_CONDITION_RULES,
+  // Death Toll deck, group D: "a creature is destroyed this way".
+  ...DEATH_TOLL_D_CONDITION_RULES,
   // Stage P63 (D-216): "you created a token this turn".
   ...EDHREC_CONDITION_RULES,
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".
@@ -518,15 +596,26 @@ export const CONDITION_RULES = [
   ...DANITHA_G2_LATE_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-427): "enchanted creature is green", "another Aura is attached to enchanted creature", "~ entered this turn".
   ...DANITHA_G3_CONDITION_RULES,
+  // Issue 89: "it's attacking one of your opponents".
+  ...ATTACKING_OPPONENTS_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
+  // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
+  ...UNBOUND_I_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
+  // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
+  ...LOREHOLD_G1_CONDITION_RULES,
+  // Lorehold Spirit deck, group 3 (issue 86): "a player has one or fewer cards in hand".
+  ...LOREHOLD_G3_CONDITION_RULES,
   // Galadriel deck, group 1 (issue 43): "this is the second time this ability has resolved this turn", "you chose a creature other than ~ as your Ring-bearer".
   ...GALADRIEL_G1_CONDITION_RULES,
   CONDITION_KICKED,
+  CONDITION_CAST_IN_OWN_MAIN_PHASE,
+  CONDITION_X_AT_LEAST,
+  CONDITION_THAT_OBJECT_POWER,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

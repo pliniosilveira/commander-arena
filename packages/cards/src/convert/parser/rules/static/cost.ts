@@ -31,6 +31,7 @@ import {
   type Comparison,
   comparisonSuffix,
   type FilterParts,
+  KEYWORD_SUFFIX,
   MODIFIER,
   NO_PARTS,
   SUBTYPE_WORD,
@@ -249,8 +250,10 @@ const SUBJECT_MODIFIERS = satisfy(
     parts.notSupertypes.length === 0 &&
     parts.token === undefined &&
     !parts.colorless &&
+    parts.notColors.length === 0 &&
     !parts.attacking &&
     !parts.attackingOrBlocking &&
+    !parts.blocking &&
     !parts.historic &&
     parts.colorCount === undefined,
 );
@@ -295,11 +298,18 @@ export function spellSubject(): Parser<IrFilter> {
         [] as string[],
       ),
       SPELLS,
+      // CR 702, 601.2f: "Creature spells with flying you cast": the keyword the spell has as it is cast.
+      optional(KEYWORD_SUFFIX, undefined),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [parts, types] = r.value;
+    const [parts, types, , keyword] = r.value;
     const filter: IrFilter = {
       ...(types.length > 0 ? { types } : {}),
+      ...(keyword === undefined
+        ? {}
+        : keyword.has
+          ? { keywords: [keyword.keyword] }
+          : { notKeywords: [keyword.keyword] }),
       ...(parts.notTypes.length > 0 ? { notTypes: parts.notTypes } : {}),
       ...(parts.colors.length > 0 ? { colors: parts.colors } : {}),
       raw: ctx.text.slice(pos, r.pos),
@@ -373,6 +383,7 @@ const CAST_HEAD: Parser<{
   readonly notHand?: true;
   readonly anyCaster?: true;
   readonly targetsHost?: true;
+  readonly aimed?: IrFilter;
 }> = choice(
   map(sequence(CHOSEN_SUFFIX, literal(' you cast cost ')), ([chosen]) => ({
     chosen,
@@ -390,6 +401,20 @@ const CAST_HEAD: Parser<{
     compared: undefined,
     targetsHost: true as const,
   })),
+  // D-645 (Killian, Ink Duelist, CR 601.2c, 601.2f, 115.1): "Spells you cast that target a creature cost {2} less to cast": the spell has a target of that kind, chosen before the cost is
+  // determined (the engine assumes the most favourable target while it asks whether the spell may be cast at all, D-424).
+  map(
+    pattern(
+      / you cast that target an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)? cost /iu,
+    ),
+    (m) => {
+      const what = (m[1] ?? '').toLowerCase();
+      const yours = m[2] === undefined ? {} : { controller: 'you' as const };
+      const aimed: IrFilter =
+        what === 'permanent' ? { ...yours, raw: what } : { types: [what], ...yours, raw: what };
+      return { chosen: undefined, compared: undefined, aimed };
+    },
+  ),
   // Stage P75 (D-235, CR 601.2a): "Spells you cast from anywhere other than your hand cost {2} less to cast".
   map(literal(' you cast from anywhere other than your hand cost '), () => ({
     chosen: undefined,
@@ -451,6 +476,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Angel spells and Human spells you cast cost {1} less to cast for each +1/+1 counter on ~.',
     'Artifact spells and Dragon spells you cast cost {1} less to cast.',
     'Creature spells you cast with power 4 or greater cost {2} less to cast.',
+    // The keyword a spell has as it is cast (Warden of Evos Isle).
+    'Creature spells with flying you cast cost {1} less to cast.',
+    'Spells without flying you cast cost {1} less to cast.',
     // Stage P75 (D-235): spells cast from anywhere other than the hand.
     'Spells you cast from anywhere other than your hand cost {2} less to cast.',
     'Spells you cast with mana value 5 or greater cost {1} less to cast.',
@@ -458,6 +486,9 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // D-426 (Danitha group 3): the spells that target the permanent the Aura is attached to.
     'Aura spells you cast that target enchanted creature cost {3} less to cast.',
     'Aura and Equipment spells you cast that target enchanted creature cost {1} less to cast.',
+    // D-645 (Killian, Ink Duelist): the spells that target a creature.
+    'Spells you cast that target a creature cost {2} less to cast.',
+    'Aura spells you cast that target a creature you control cost {1} less to cast.',
   ],
   rejects: [
     'Angel spells and Angel spells you cast cost {1} less to cast.',
@@ -476,6 +507,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Creature spells you cast of the chosen player cost {1} less to cast.',
     'Creature spells you cast with power 4 cost {2} less to cast for each creature you control.',
     'Creature spells you cast with flying cost {2} less to cast.',
+    'Creature spells with flying or reach you cast cost {1} less to cast.',
+    'Creature spells with flying cost {1} less to cast.',
     'Each spell you cast that’s red or green costs {1} less to cast.',
     'Instant or sorcery spells you cast cost {1} less to cast.',
     'Instant and sorcery spells you cast cost {2} less to cast for each creature you control.',
@@ -488,7 +521,6 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Spells you cast from your graveyard cost {2} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to cast',
     'Aura spells you cast that target equipped creature cost {3} less to cast.',
-    'Aura spells you cast that target a creature cost {3} less to cast.',
     'Aura spells you cast that target enchanted creature cost {3} less to activate.',
     'Aura spells that target enchanted creature cost {3} less to cast.',
     'Aura spells your opponents cast that target enchanted creature cost {3} less to cast.',
@@ -500,7 +532,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     // ("Creature spells you control can't be countered.") was never this statement.
     const r = sequence(quiet(sequence(spellSubject(), CAST_HEAD)), reduction(), PERIOD)(ctx, pos);
     if (!r.ok) return r;
-    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost }], amount] = r.value;
+    const [[filter, { chosen, compared, notHand, anyCaster, targetsHost, aimed }], amount] =
+      r.value;
     const subjectEnd = pos + filter.raw.length;
     const subject: IrNoun = {
       kind: 'noun',
@@ -512,6 +545,8 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
           ...(chosen === undefined ? {} : { chosen }),
           ...(notHand === true ? { notCastFromHand: true as const } : {}),
           ...(targetsHost === true ? { targetsHost: true as const } : {}),
+          // D-645: what the spell targets, read from the spell as it is cast (the filter of a cost reduction names no zone).
+          ...(aimed === undefined ? {} : { castTargets: aimed }),
         },
         compared,
       ),
@@ -525,6 +560,102 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     return {
       ok: true,
       value: statement('static.spells-cost-reduction', subject, effect, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
+/** What an affinity counts (CR 702.41a): "Auras", "artifacts": the permanents of that kind the controller controls, in the plural. */
+const AFFINITY_KIND: Parser<{ readonly filter: IrFilter; readonly end: number }> = (ctx, pos) => {
+  const aura = pattern(/Auras(?![\p{L}\p{N}'’])/u)(ctx, pos);
+  if (aura.ok) {
+    return {
+      ok: true,
+      value: { filter: { subtypes: ['Aura'], raw: 'Aura' }, end: aura.pos },
+      pos: aura.pos,
+    };
+  }
+  const type = pattern(/(artifact|creature|enchantment|land|planeswalker)s(?![\p{L}\p{N}'’])/iu)(
+    ctx,
+    pos,
+  );
+  if (!type.ok) return type;
+  const word = (type.value[1] ?? '').toLowerCase();
+  return {
+    ok: true,
+    value: { filter: { types: [word], raw: word }, end: type.pos },
+    pos: type.pos,
+  };
+};
+
+/**
+ * `static.spells-have-affinity`: "Enchantment spells you cast have affinity for Auras." (CR 702.41a: "Affinity for [text]" means "This spell costs {1} less to cast for each
+ * [text] you control"; CR 702.41b: each instance applies; D-646). The spells the controller casts that match have it, so it is the reduction of {1} for each permanent of the kind
+ * the controller controls that `static.spells-cost-reduction` reads, and the engine applies it as the cost is determined (CR 601.2f). Not read: a singular kind, the permanents of an
+ * opponent, a kind that is not a card type or Aura, and "have affinity" with nothing to count.
+ */
+export const STATIC_SPELLS_AFFINITY = defineRule<IrStatic>({
+  id: 'static.spells-have-affinity',
+  family: 'static',
+  leading: [],
+  cites: [
+    'CR 702.41a (Affinity)',
+    'CR 702.41b (Affinity)',
+    'CR 601.2f (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Enchantment spells you cast have affinity for Auras.',
+    'Creature spells you cast have affinity for artifacts.',
+    'Spells you cast have affinity for lands.',
+  ],
+  rejects: [
+    'Enchantment spells you cast have affinity for Aura.',
+    'Enchantment spells you cast have affinity for Auras',
+    'Enchantment spells you cast have affinity.',
+    'Enchantment spells have affinity for Auras.',
+    'Enchantment spells your opponents cast have affinity for Auras.',
+    'Enchantment spells you cast have affinity for Auras you control.',
+    'Enchantment spells you cast have affinity for each Aura.',
+    'Enchantment spells you cast have affinity for Auras and artifacts.',
+    'Enchantment spells you cast have affinity for tokens.',
+    'Enchantment spell you cast has affinity for Auras.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      quiet(sequence(spellSubject(), literal(' you cast have affinity for '))),
+      AFFINITY_KIND,
+      PERIOD,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [[filter], kind] = r.value;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...filter, controller: 'you' },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: pos + filter.raw.length },
+      rule: 'static.spells-have-affinity',
+    };
+    const of: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { zone: 'battlefield', ...kind.filter, controller: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: r.pos - kind.filter.raw.length - 1, end: kind.end },
+      rule: 'static.spells-have-affinity',
+    };
+    const effect = {
+      kind: 'costReduction' as const,
+      amount: { kind: 'countOf' as const, of, span: of.span },
+    };
+    return {
+      ok: true,
+      value: statement('static.spells-have-affinity', subject, effect, pos, r.pos),
       pos: r.pos,
     };
   },
@@ -803,9 +934,72 @@ export const STATIC_ADDITIONAL_COST_SACRIFICE_COPIES = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.first-x-spell-cost-reduction`: "The first spell you cast with {X} in its mana cost each turn costs {1} less to cast for each +1/+1 counter on ~." (Quandrix Unlimited deck,
+ * group E; CR 118.7a, 601.2f, 601.2i, 604.2: a static ability of a permanent that reduces the generic mana of the first spell with an {X} in its mana cost its controller casts each
+ * turn, read as the cost is determined). The engine's `costReduction` of the spells with `xInManaCost` and `firstXSpellThisTurn`. The count after the cost is read as for the other
+ * reductions. Not read: another caster, a spell that is not the first, "each turn" missing, a reduction with no period.
+ */
+export const STATIC_FIRST_X_SPELL_COST_REDUCTION = defineRule<IrStatic>({
+  id: 'static.first-x-spell-cost-reduction',
+  family: 'static',
+  leading: ['The', 'the'],
+  cites: [
+    'CR 118.7a (Costs)',
+    'CR 601.2f (Casting Spells)',
+    'CR 601.2i (Casting Spells)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'The first spell you cast with {X} in its mana cost each turn costs {1} less to cast for each +1/+1 counter on ~.',
+    'The first spell you cast with {X} in its mana cost each turn costs {1} less to cast.',
+  ],
+  rejects: [
+    'The first spell you cast with {X} in its mana cost each turn costs {1} less to cast for each +1/+1 counter on ~',
+    'The first spell your opponents cast with {X} in its mana cost each turn costs {1} less to cast.',
+    'The second spell you cast with {X} in its mana cost each turn costs {1} less to cast.',
+    'The first spell you cast with {X} in its mana cost costs {1} less to cast.',
+    'The first spell you cast with {X} in its mana cost each turn costs {1} more to cast.',
+    'The first spell you cast each turn costs {1} less to cast.',
+    'The first spell you cast with {X} in its mana cost each turn costs {W} less to cast.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.first-x-spell-cost-reduction';
+    const head = pattern(
+      /[Tt]he first spell you cast with \{X\} in its mana cost each turn costs /u,
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const r = sequence(reduction(), PERIOD)(ctx, head.pos);
+    if (!r.ok) return r;
+    const [amount] = r.value;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: {
+        controller: 'you',
+        xInManaCost: true,
+        firstXSpellThisTurn: true,
+        raw: 'The first spell you cast with {X} in its mana cost each turn',
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: head.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: statement(id, subject, { kind: 'costReduction', amount }, pos, r.pos),
+      pos: r.pos,
+    };
+  },
+});
+
 export const COST_STATIC_RULES = [
   STATIC_SELF_COST_REDUCTION,
+  STATIC_FIRST_X_SPELL_COST_REDUCTION,
   STATIC_SPELLS_COST_REDUCTION,
+  STATIC_SPELLS_AFFINITY,
   // D-492: its first words are those of `static.additional-cost`, which reads that prefix and fails after it: tried first.
   STATIC_ADDITIONAL_COST_SACRIFICE_COPIES,
   STATIC_ADDITIONAL_COST,

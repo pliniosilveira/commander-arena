@@ -1265,7 +1265,7 @@ describe('fights (CR 701.14)', () => {
   test.each([
     'Target creature fights.',
     'Target creatures fight each other.',
-    'Target creature you control fights up to one target creature.',
+    'Target creature you control fights up to two target creatures.',
     'Target creature you control fights each creature.',
     'Each of those tokens fights one of those creatures.',
     'Each of those tokens fights a different one of them.',
@@ -1374,7 +1374,7 @@ describe('the look at the top cards that puts a card onto the battlefield (CR 40
     `${LOOK} You may reveal a land card from among them and put it onto the battlefield tapped. Put the rest on the bottom of your library in a random order.`,
     `${LOOK} You may reveal a land card from among them and put it into your library. Put the rest on the bottom of your library in a random order.`,
     `${LOOK} You may reveal a land card with mana value less than or equal to 3 from among them and put it into your hand. Put the rest on the bottom of your library in a random order.`,
-    `${LOOK} You may reveal a land card from among them and put it onto the battlefield. Put the rest on the bottom of your library in any order.`,
+    `${LOOK} You may reveal a land card from among them and put it onto the battlefield. Put the rest on the bottom of your library in any order or at random.`,
   ])('stays unread: %s', (text) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised' });
   });

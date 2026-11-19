@@ -21,16 +21,25 @@ import {
   type Cost,
   type Effect,
   type ManaAbility,
+  type ManaProduction,
 } from '@commander-arena/engine';
-import type { IrAbility, IrClause, IrFilter, IrModes, IrQuotedAbility } from '../ir/types';
+import type {
+  IrAbility,
+  IrAmount,
+  IrClause,
+  IrFilter,
+  IrModes,
+  IrQuotedAbility,
+} from '../ir/types';
 import { lowerAmount } from './amounts';
+import { amountArg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause, lowerMana } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { colorLetter } from './nouns';
-import { kindOfNoun, lowerSentences } from './sentences';
+import { kindOfNoun, lowerDelayedCast, lowerSentences } from './sentences';
 import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
 
 type Activated = Extract<IrAbility, { kind: 'activated' }>;
@@ -70,6 +79,25 @@ const plainClause = (clause: IrClause) =>
  * color, a quality or a mix of the two kinds in one choice says more than the engine's restriction and is not lowered.
  */
 function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
+  // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
+  const xCost = clause.args.xCost;
+  if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
+  // "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of the qualities.
+  const atLeast = clause.args.manaValueAtLeast;
+  const hasX = clause.args.hasX;
+  if (atLeast !== undefined || hasX !== undefined) {
+    if (!plainClause(clause) || clause.args.spells !== undefined) return null;
+    if (atLeast !== undefined && (atLeast.kind !== 'number' || atLeast.value < 1)) return null;
+    if (hasX !== undefined && !(hasX.kind === 'flag' && hasX.value)) return null;
+    return {
+      qualities: [
+        ...(atLeast?.kind === 'number'
+          ? [{ kind: 'manaValueAtLeast' as const, value: atLeast.value }]
+          : []),
+        ...(hasX === undefined ? [] : [{ kind: 'hasX' as const }]),
+      ],
+    };
+  }
   const spells = clause.args.spells;
   if (spells?.kind !== 'noun' || !plainClause(clause)) return null;
   const kinds = spellKindsOf(spells.filter);
@@ -77,6 +105,7 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   // "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (stage P34, D-152): the abilities of the permanents that
   // are of the kinds the spells are (the engine's `alsoAbilities`), which the text says by naming the same kind.
   const abilities = clause.args.alsoAbilities;
+  // Issue 151 (Secluded Courtyard): "or activate an ability of a creature source of the chosen type": the abilities of the creatures of the chosen type.
   return {
     ...kinds,
     ...(abilities?.kind === 'flag' && abilities.value ? { alsoAbilities: true as const } : {}),
@@ -87,9 +116,19 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
  * The card types and the creature types a noun of spells names (stage P33, D-150): a choice of types or a choice of creature types, never a
  * mix of the two, and nothing else (a color or a quality says more than the engine's restriction and its rider). Null when the words say more.
  */
-function spellKindsOf(filter: IrFilter): { types?: CardType[]; subtypes?: string[] } | null {
-  const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw']);
+function spellKindsOf(
+  filter: IrFilter,
+): { types?: CardType[]; subtypes?: string[]; chosenType?: true } | null {
+  const known = new Set(['types', 'subtypes', 'anyOf', 'zone', 'stackKind', 'raw', 'chosen']);
   if (Object.keys(filter).some((key) => !known.has(key))) return null;
+  // Issue 199 (CR 106.6, 607.2d): "a creature spell of the chosen type": the card types, and the creature type the permanent chose as it entered; not with named creature types.
+  if (filter.chosen === 'type') {
+    const only = filter.types ?? [];
+    if (only.length === 0 || filter.subtypes !== undefined || filter.anyOf !== undefined)
+      return null;
+    if (!only.every((t) => (CARD_TYPES as readonly string[]).includes(t))) return null;
+    return { types: only as CardType[], chosenType: true };
+  }
   const types = [...(filter.types ?? [])];
   const subtypes = [...(filter.subtypes ?? [])];
   const members = filter.anyOf ?? [];
@@ -121,6 +160,13 @@ function spentRiderOf(clause: IrClause): ManaAbility['spentRider'] | null {
   if (byCommander?.kind === 'flag' && byCommander.value) {
     if (!plainClause(clause)) return null;
     return { spells: { commander: true }, grants: { scryCommanderCasts: true } };
+  }
+  // "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command
+  // zone this game" (issue 241, CR 122.6, 903.8): the spells are the caster's commanders and the commander enters with that many more counters.
+  const counters = clause.args.commanderCastCounters;
+  if (counters?.kind === 'flag' && counters.value) {
+    if (!plainClause(clause)) return null;
+    return { spells: { commander: true }, grants: { countersCommanderCasts: true } };
   }
   const spells = clause.args.spells;
   if (spells?.kind !== 'noun' || !plainClause(clause)) return null;
@@ -195,7 +241,11 @@ function lowerManaAbility(
 ): LowerResult<readonly Ability[]> | null {
   const [add, ...afterAdd] = clauses;
   const spec = add?.args.mana;
-  if (spec?.kind === 'manaSpec' && spec.what.kind === 'devotionToChosenColor' && !colorChosen) {
+  if (
+    spec?.kind === 'manaSpec' &&
+    (spec.what.kind === 'devotionToChosenColor' || spec.what.kind === 'thatColor') &&
+    !colorChosen
+  ) {
     return failure(ability);
   }
   // "Spend this mana only to cast an Angel spell." (stage P33, D-150): a sentence about the mana, not an instruction.
@@ -212,7 +262,14 @@ function lowerManaAbility(
   if (spendClause !== undefined && spendOnly === null) return failure(spendClause);
   // A definition of X after the mana would be dropped by this reading, so it is not read (stage P28). Neither is a test on a
   // sentence (stage P32): "If you control a Dragon, add {R}" is not "Add {G}", and only `lowerManaInstead` reads the one that says "instead".
-  if (ability.body.sentences.some((s) => s.where !== undefined)) return failure(ability);
+  // "Add X mana of any one color, where X is this creature's power." (CR 107.3c): the one definition of X a mana ability of one sentence may have, read by that production.
+  const defines = spec?.kind === 'manaSpec' && spec.what.kind === 'anyOneColorX';
+  const whereOf =
+    ability.body.sentences.length === 1 ? ability.body.sentences[0]?.where : undefined;
+  if (ability.body.sentences.some((s) => s.where !== undefined) && !(defines && whereOf)) {
+    return failure(ability);
+  }
+  if (defines && whereOf === undefined) return failure(ability);
   if (ability.body.sentences.some((s) => s.condition !== undefined || s.instead === true)) {
     return failure(ability);
   }
@@ -236,16 +293,60 @@ function lowerManaAbility(
   if (trial.usesX) return failure(ability);
   const costs = lowerCosts(ability);
   if (!costs.ok) return costs;
-  const restrictions = restrictionsOf(ability, false);
+  // "Activate only once each turn." (CR 602.5b) is the one timing a mana ability has (no "as a sorcery": CR 605.3a).
+  const restrictions = restrictionsOf(ability, false, true);
   if (!restrictions.ok) return restrictions;
-  const production = lowerMana(spec);
+  // CR 106.1b, 605.3b: the count of mana of the one color chosen as the ability resolves, from the "for each" of the sentence or from the X its ", where X is" defines.
+  let production: ManaProduction;
+  if (spec.what.kind === 'thatColor' || spec.what.kind === 'anyOneColorX') {
+    const counted = spec.what.kind === 'thatColor' ? add.args.times : whereOf;
+    if (counted === undefined || counted.kind === 'flag') return failure(ability);
+    const amount = lowerAmount(counted as IrAmount, trial, spec.rule);
+    if (!amount.ok) return amount;
+    // The amount is counted before the costs are paid, so no cost may change what it reads (CR 605.3a, 605.3b).
+    if (costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')) {
+      return failure(ability);
+    }
+    production = { kind: 'anyColorAmount', amount: amount.value };
+  } else {
+    const plain = lowerMana(spec);
+    if (plain === null) return failure(ability);
+    production = plain;
+  }
+  // "Add {C} for each charge counter on ~." (Quandrix Unlimited group E), "Add {U} for each artifact you control." (Uthros, Titanic Godcore; CR 605.1a, 106.1): the fixed mana as many
+  // times as the amount says, read as the ability is activated. An amount that is not a state amount (X, a target) has nothing to read it from, and a cost that gives up a permanent or
+  // takes counters off could change the count: neither is read (`validateCard` refuses them too).
+  const countsOwnCounters = add.args.times !== undefined && production.kind === 'fixed';
+  if (countsOwnCounters && production.kind === 'fixed') {
+    const times = amountArg(add, 'times', trial);
+    if (!times.ok) return times;
+    if (
+      trial.usesX ||
+      costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')
+    ) {
+      return failure(ability);
+    }
+    production = { ...production, times: times.value };
+  }
+  // A "for each" the production does not read would be dropped by this reading, so it is not read.
+  if (
+    add.args.times !== undefined &&
+    production.kind !== 'fixed' &&
+    production.kind !== 'anyColorAmount'
+  ) {
+    return failure(ability);
+  }
   const needs: FeatureRef[] = [
     'ability:mana',
+    ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
+    ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
     ...effects.map((e): FeatureRef => `manaAlso:${e.kind}`),
     ...(spendClause === undefined ? [] : (['ability:manaSpendOnly'] as const)),
+    ...(restrictions.value.oncePerTurn === true ? (['ability:oncePerTurn'] as const) : []),
+    ...(spendOnly?.chosenType === true ? (['ability:manaSpendOnlyChosenType'] as const) : []),
     ...(riderClause === undefined ? [] : (['ability:manaSpentRider'] as const)),
     // D-328: the rider copies the spell the mana is spent on.
     ...(spentRider !== undefined &&
@@ -253,6 +354,12 @@ function lowerManaAbility(
     typeof spentRider.grants === 'object' &&
     'copySpell' in spentRider.grants
       ? (['ability:manaSpentRiderCopy'] as const)
+      : []),
+    ...(spentRider !== undefined &&
+    spentRider !== null &&
+    typeof spentRider.grants === 'object' &&
+    'countersCommanderCasts' in spentRider.grants
+      ? (['ability:manaSpentRiderCounters'] as const)
       : []),
     ...(production.kind === 'anyCombination' && production.distinct === true
       ? (['ability:manaDistinctColors'] as const)
@@ -264,20 +371,29 @@ function lowerManaAbility(
   const manas = costs.value.filter((c) => c.kind === 'mana').length;
   const lives = costs.value.filter((c) => c.kind === 'payLife').length;
   const mills = costs.value.filter((c) => c.kind === 'mill').length;
+  // Issue 245 (Vivid Grove): "Remove a charge counter from ~", one such cost of the permanent itself.
+  const removals = costs.value.filter((c) => c.kind === 'removeCounters').length;
   const sacrifices = costs.value.filter((c) => c.kind === 'sacrifice');
+  // D-625 (CR 118.3, 605.3b): "Tap an untapped creature you control" once, chosen as the ability is activated; never together with a sacrifice (two choices to name).
+  const tapsOther = costs.value.filter((c) => c.kind === 'tapPermanents');
   // CR 605.3b, 701.21a (stage P63, D-216): the permanent itself ("Sacrifice this artifact: Add ...") or one of a kind the controller has ("Sacrifice a Spirit:
   // Add {R}."), one only: the engine chooses it as the ability is activated, or the payment names it.
   const selfOnly = sacrifices.every((c) => c.kind === 'sacrifice' && c.count === undefined);
-  // `{T}` or the sacrifice of itself pays for it (a Treasure, or a Gold token with no `{T}`).
+  // `{T}`, the sacrifice of itself or a counter taken off it pays for it (a Treasure, a Gold token with no `{T}`, or "Remove a charge counter from ~": Mana Bloom).
   const shaped =
     taps <= 1 &&
-    (taps === 1 || sacrifices.length === 1) &&
+    (taps === 1 || sacrifices.length === 1 || removals === 1) &&
     manas <= 1 &&
     lives <= 1 &&
     mills <= 1 &&
+    removals <= 1 &&
     sacrifices.length <= 1 &&
+    tapsOther.length <= 1 &&
+    (tapsOther.length === 0 ||
+      (sacrifices.length === 0 && tapsOther.every((c) => c.count === 1))) &&
     selfOnly &&
-    taps + manas + lives + mills + sacrifices.length === costs.value.length &&
+    taps + manas + lives + mills + removals + sacrifices.length + tapsOther.length ===
+      costs.value.length &&
     effects.every(isAlso) &&
     rest.every(plainClause);
   if (!shaped) return failure(ability);
@@ -295,6 +411,7 @@ function lowerManaAbility(
     ...(restrictions.value.activateOnlyIf === undefined
       ? {}
       : { activateOnlyIf: restrictions.value.activateOnlyIf }),
+    ...(restrictions.value.oncePerTurn === true ? { oncePerTurn: true as const } : {}),
   };
   return { ok: true, value: [value], rule: 'mana.tap-add' };
 }
@@ -321,7 +438,8 @@ function lowerChosenColorDevotion(
     choose.verb !== 'chooseColor' ||
     add.verb !== 'addMana' ||
     add.args.mana?.kind !== 'manaSpec' ||
-    add.args.mana.what.kind !== 'devotionToChosenColor' ||
+    (add.args.mana.what.kind !== 'devotionToChosenColor' &&
+      add.args.mana.what.kind !== 'thatColor') ||
     !plainClause(choose) ||
     !plainClause(add) ||
     first.condition !== undefined ||
@@ -385,6 +503,7 @@ function lowerManaInstead(
   const condition = lowerCondition(second.condition, false, newContext('ability', faceTypes));
   if (!condition.ok) return condition;
   const production = lowerMana(spec);
+  if (production === null) return failure(ability);
   const blocked = gate(ability, [
     'ability:manaInstead',
     `manaProduction:${production.kind}`,
@@ -437,7 +556,11 @@ interface Restrictions {
  * has one slot for each. A mana ability has no timing (`allowTiming` false); a condition needs
  * the engine's `ability:activateOnlyIf`.
  */
-function restrictionsOf(ability: Activated, allowTiming: boolean): LowerResult<Restrictions> {
+function restrictionsOf(
+  ability: Activated,
+  allowTiming: boolean,
+  allowOnce = allowTiming,
+): LowerResult<Restrictions> {
   let timing: 'sorcery' | undefined;
   let activateOnlyIf: Condition | undefined;
   let costReducedIf: Restrictions['costReducedIf'];
@@ -463,7 +586,7 @@ function restrictionsOf(ability: Activated, allowTiming: boolean): LowerResult<R
     }
     // "Activate only once each turn." (stage P31, D-140, CR 602.5b): an ordinary activation's own count; a mana ability has none.
     if (restriction.perTurn !== undefined) {
-      if (!allowTiming || oncePerTurn || restriction.perTurn !== 1) return failure(restriction);
+      if (!allowOnce || oncePerTurn || restriction.perTurn !== 1) return failure(restriction);
       if (restriction.timing !== undefined || restriction.condition !== undefined) {
         return failure(restriction);
       }
@@ -562,14 +685,8 @@ function prepare(
       : []),
   ]);
   if (blocked !== null) return blocked;
-  // The engine refuses a cost that taps permanents together with a mana cost, another tap cost or Crew (D-133): the
-  // player could tap those permanents for mana first. The ability is recognised and not run.
-  if (
-    costs.value.some((c) => c.kind === 'tapPermanents') &&
-    costs.value.some((c) => c.kind === 'mana' || c.kind === 'tap')
-  ) {
-    return failure(ability);
-  }
+  // D-625: a cost that taps permanents may come with a mana cost and {T} (the permanents are chosen before the mana is paid); the engine still
+  // refuses a second one and Crew (`activationCostIssues`).
   // The engine pays one sacrifice and one discard (`breakDown` in the engine's
   // rules/activate-costs.ts): an ability with two of either is never offered.
   if (costs.value.filter((c) => c.kind === 'sacrifice').length > 1) return failure(ability);
@@ -723,10 +840,48 @@ export function lowerActivated(
     if (chosen !== null) return chosen;
     const instead = lowerManaInstead(ability, ctx.faceTypes);
     if (instead !== null) return instead;
+    // "{T}: Add {C}{C}. When you next cast a spell with {X} in its mana cost this turn, you draw a card and gain half X life, rounded down." (Quandrix Unlimited group E, CR 603.7,
+    // 605.1a): the mana ability, and the delayed trigger it creates as its extra effect (`also`).
+    const delayed = lowerManaWithDelayedCast(ability, ctx);
+    if (delayed !== null) return delayed;
     const mana = lowerManaAbility(ability, clauses, ctx.faceTypes);
     if (mana !== null) return mana;
   }
   return lowerOrdinary(ability, ctx);
+}
+
+/**
+ * A mana ability whose last sentence is a "When you next cast ..." delayed trigger: the sentence is the `also` effect `delayedCast` (the engine runs it in the same activation, as
+ * the mana is added), the rest is read as any mana ability. Null when the ability has no such sentence.
+ */
+function lowerManaWithDelayedCast(
+  ability: Activated,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> | null {
+  const sentences = ability.body.sentences;
+  const at = sentences.findIndex((s) => s.delayed?.step === 'nextCast');
+  const sentence = sentences[at];
+  if (at < 1 || at !== sentences.length - 1 || sentence === undefined) return null;
+  const spell = sentence.delayed?.spell;
+  const without = { ...ability, body: { ...ability.body, sentences: sentences.slice(0, at) } };
+  const base = lowerManaAbility(
+    without,
+    without.body.sentences.flatMap((s) => s.clauses),
+    ctx.faceTypes,
+  );
+  if (base === null) return null;
+  if (!base.ok) return base;
+  const [mana] = base.value;
+  if (mana?.kind !== 'mana' || spell === undefined) return failure(ability);
+  const blocked = gate(ability, ['manaAlso:delayedCast', 'effect:delayedCast']);
+  if (blocked !== null) return blocked;
+  const lowered = lowerDelayedCast(sentence, spell, newContext('ability', ctx.faceTypes));
+  if (!lowered.ok) return lowered;
+  return {
+    ok: true,
+    value: [{ ...mana, also: [...(mana.also ?? []), lowered.value] }],
+    rule: base.rule,
+  };
 }
 
 /** Features the activated and mana ability lowerings can name, for the dimension test. */
@@ -745,12 +900,17 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:couldProduce',
   'manaProduction:combination',
   'manaProduction:chosenColor',
-  'ability:manaSpendOnly',
+  'ability:manaSpendOnlyChosenType',
+  'ability:manaSpendOnlyXCost',
+  'ability:manaCountOwnCounters',
+  'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',
   'ability:manaSpentRiderCopy',
+  'ability:manaSpentRiderCounters',
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
+  'manaProduction:anyColorAmount',
   'ability:activateOnlyIf',
   'ability:costReducedIf',
   'ability:costReducedBy',

@@ -12,8 +12,14 @@ import type { ChosenValues, GameState } from '../state/types';
 export type ChoiceKind = 'creatureType' | 'color' | 'option' | 'cardType';
 
 /** The options of a question, in the fixed order its legal actions follow. */
-export function optionsFor(what: ChoiceKind, named: readonly string[] = []): readonly string[] {
+export function optionsFor(
+  what: ChoiceKind,
+  named: readonly string[] = [],
+  except: string | undefined = undefined,
+): readonly string[] {
   if (what === 'cardType') return CARD_TYPES;
+  // Issue 184: "choose a color other than blue" leaves that color out.
+  if (what === 'color') return COLORS.filter((c) => c !== except);
   return what === 'creatureType' ? CREATURE_TYPES : what === 'option' ? named : COLORS;
 }
 

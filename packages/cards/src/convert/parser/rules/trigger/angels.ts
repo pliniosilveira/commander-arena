@@ -87,6 +87,71 @@ export const TRIGGER_LIFE_GAINED = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.life-lost`: "you lose life", "you lose life for the first time each turn", "an opponent loses life", "a player loses life" (CR 119.3: every reduction of a life total
+ * is a loss of life: damage, a life-loss effect, life paid; CR 603.2: "for the first time each turn" counts the player's losses). The player is relative to the controller of the
+ * ability; the player who lost the life is "that player" in the body.
+ */
+export const TRIGGER_LIFE_LOST = defineRule<IrTrigger>({
+  id: 'trigger.life-lost',
+  family: 'trigger',
+  leading: ['you', 'an', 'a'],
+  cites: ['CR 119.3 (Life)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: [
+    'you lose life',
+    'you lose life for the first time each turn',
+    'an opponent loses life',
+    'a player loses life',
+    'an opponent loses life for the first time each turn',
+  ],
+  rejects: [
+    'you lose',
+    'you lose 3 life',
+    'you lose life for the first time',
+    'you lose life for the second time each turn',
+    'you lose life this turn',
+    'you loses life',
+    'an opponent lose life',
+    'each opponent loses life',
+    'a creature loses life',
+    'you lose life or gain life',
+    'you lose life for the first time each turn or',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.life-lost';
+    const who = spanned(
+      choice(
+        map(pattern(/you lose life(?![\p{L}\p{N}])/iu), () => 'you' as const),
+        map(pattern(/an opponent loses life(?![\p{L}\p{N}])/iu), () => 'opponent' as const),
+        map(pattern(/a player loses life(?![\p{L}\p{N}])/iu), () => 'any' as const),
+      ),
+    )(ctx, pos);
+    if (!who.ok) return who;
+    const first = optional(literal(' for the first time each turn'), null)(ctx, who.pos);
+    if (!first.ok) return first;
+    const kind = who.value.value;
+    const actor: IrNoun =
+      kind === 'you'
+        ? makeNoun(id, who.value.span, 'you', { raw: 'you' })
+        : makeNoun(id, who.value.span, kind === 'opponent' ? 'eachOpponent' : 'eachPlayer', {
+            raw: kind === 'opponent' ? 'an opponent' : 'a player',
+          });
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'lifeLost',
+        actor,
+        ...(first.value === null ? {} : { firstEachTurn: true as const }),
+        args: {},
+        span: { start: pos, end: first.pos },
+        rule: id,
+      },
+      pos: first.pos,
+    };
+  },
+});
+
 /** The kind of counter a trigger names: "+1/+1", "page", or none ("one or more counters"). */
 const COUNTER_KIND = choice(
   map(pattern(/([+-]\d+\/[+-]\d+|[a-z]+) counters(?![\p{L}\p{N}])/iu), (m) =>
@@ -278,8 +343,104 @@ export const TRIGGER_ATTACK_BATCH = defineRule<IrTrigger>({
   },
 });
 
+/**
+ * `trigger.opponent-attacks`: "an opponent attacks with creatures" (CR 508.1, 603.2, 603.2c: the attackers are declared together and the ability triggers once for the declaration,
+ * however many creatures it holds; D-643). One or more creatures, so `atLeast` 1 and every creature declared counts; "an opponent" is a player who is not the controller of the
+ * ability, who is "that opponent" in the body.
+ */
+export const TRIGGER_OPPONENT_ATTACKS = defineRule<IrTrigger>({
+  id: 'trigger.opponent-attacks',
+  family: 'trigger',
+  leading: ['an'],
+  cites: [
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 603.2 (Handling Triggered Abilities)',
+    'CR 603.2c (Handling Triggered Abilities)',
+  ],
+  examples: ['an opponent attacks with creatures'],
+  rejects: [
+    'an opponent attacks with a creature',
+    'an opponent attacks with creature',
+    'an opponent attacks with creatures you control',
+    'an opponent attack with creatures',
+    'an opponent attacks with creatures and',
+    'an opponent attacks',
+    'a player attacks with creatures',
+    'you attack with creatures',
+    'another player attacks with creatures',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.opponent-attacks';
+    const r = pattern(/an opponent attacks with creatures(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'attackBatch',
+        actor: makeNoun(id, span, 'eachOpponent', { raw: 'an opponent' }),
+        atLeast: 1,
+        args: {},
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `trigger.player-attacks-opponent`: "a player attacks one of your opponents" (CR 508.1, 508.6, 603.2c; D-648: the ability triggers once for each opponent of its controller that the
+ * declaration attacks, whoever declares the attackers). "That attacking player" is the player who declares them, "that opponent" the one attacked.
+ */
+export const TRIGGER_PLAYER_ATTACKS_OPPONENT = defineRule<IrTrigger>({
+  id: 'trigger.player-attacks-opponent',
+  family: 'trigger',
+  leading: ['a'],
+  cites: [
+    'CR 508.1 (Declare Attackers Step)',
+    'CR 508.6 (Declare Attackers Step)',
+    'CR 603.2c (Handling Triggered Abilities)',
+  ],
+  examples: ['a player attacks one of your opponents'],
+  rejects: [
+    'a player attacks one of their opponents',
+    'a player attacks your opponents',
+    'a player attacks one of your opponent',
+    'a player attacks you',
+    'a player attacks one of your opponents with creatures',
+    'an opponent attacks one of your opponents',
+    'you attack one of your opponents',
+    'a player attack one of your opponents',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.player-attacks-opponent';
+    const r = pattern(/a player attacks one of your opponents(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'playerAttacksOpponent',
+        actor: makeNoun(id, { start: pos, end: pos + 'a player'.length }, 'eachPlayer', {
+          raw: 'a player',
+        }),
+        args: {},
+        span,
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
+  TRIGGER_LIFE_LOST,
   TRIGGER_COUNTERS_ADDED,
   TRIGGER_ATTACK_BATCH,
+  TRIGGER_OPPONENT_ATTACKS,
+  TRIGGER_PLAYER_ATTACKS_OPPONENT,
 ].map(quietly);

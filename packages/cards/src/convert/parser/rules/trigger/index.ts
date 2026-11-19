@@ -26,14 +26,20 @@ import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { romanValue } from '../../roman';
 import { spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
+import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
+import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
+import { ENCHANTED_MANA_TRIGGER_RULES } from './enchanted-mana';
+import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
 import { EVENT_TRIGGER_RULES } from './events';
+import { EXERT_TRIGGER_RULES } from './exert';
 import { GALADRIEL_G1_TRIGGER_RULES } from './galadriel-g1';
 import { GALADRIEL_G3_TRIGGER_RULES } from './galadriel-g3';
 import { GISA_G2_TRIGGER_RULES } from './gisa-g2';
@@ -41,9 +47,14 @@ import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
+import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
+import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
+import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
+import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
   makeNoun,
@@ -53,6 +64,8 @@ import {
   triggerSubject,
   youNoun,
 } from './subjects';
+import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
+import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -61,8 +74,12 @@ type EventName =
   | 'attacks'
   | 'becomesTapped'
   | 'becomesUntapped'
+  // CR 701.37 (Monstrosity): "becomes monstrous".
+  | 'becomesMonstrous'
   | 'blocks'
   | 'becomesBlocked'
+  // Grave Danger (issue 159, Vela the Night-Clad): "leaves the battlefield", for `trigger.or-subjects` only.
+  | 'leavesBattlefield'
   // Stage P36 (D-178): "becomes the target of a spell", for the alternatives of `trigger.or` only.
   | 'becomesTargetSpell';
 
@@ -87,6 +104,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
     pattern(/ becomes untapped(?![\p{L}\p{N}])/iu),
     (): EventName => 'becomesUntapped',
   ),
+  // CR 701.37a, 701.37b: "becomes monstrous" (once when the monstrosity action makes the permanent monstrous).
+  becomesMonstrous: map(
+    pattern(/ becomes monstrous(?![\p{L}\p{N}])/iu),
+    (): EventName => 'becomesMonstrous',
+  ),
   // Stage P21 (CR 509.3a, 509.3c): "blocks" once for each creature declared as a blocker, "becomes
   // blocked" once for each attacking creature a blocker is declared for. "Blocks a creature" and "becomes
   // blocked by a creature" (CR 509.3b, 509.3d) trigger once for each creature blocked or blocking, which
@@ -95,6 +117,11 @@ const EVENT_WORDS: Readonly<Record<EventName, Parser<EventName>>> = {
   becomesBlocked: map(
     pattern(/ becomes blocked(?![\p{L}\p{N}])/iu),
     (): EventName => 'becomesBlocked',
+  ),
+  // CR 603.6c: "leaves the battlefield" (a permanent that goes to another zone, wherever it went).
+  leavesBattlefield: map(
+    pattern(/ leaves the battlefield(?![\p{L}\p{N}])/iu),
+    (): EventName => 'leavesBattlefield',
   ),
   // CR 603.2, 601.2c: "becomes the target of a spell" (a spell, not an ability: the engine's `becomesTarget` with `spellOnly`).
   becomesTargetSpell: map(
@@ -112,6 +139,9 @@ const ANY_EVENT = choice(
   EVENT_WORDS.blocks,
   EVENT_WORDS.becomesBlocked,
 );
+
+/** The events of `trigger.or-subjects`: those of `ANY_EVENT` and "leaves the battlefield" (CR 603.6c). */
+const OR_SUBJECTS_EVENT = choice(ANY_EVENT, EVENT_WORDS.leavesBattlefield);
 
 /** The events of `trigger.or`: those of any trigger of one subject, and (stage P36, D-178) "becomes the target of a spell". */
 const OR_EVENT = choice(ANY_EVENT, EVENT_WORDS.becomesTargetSpell);
@@ -369,6 +399,26 @@ export const TRIGGER_BECOMES_UNTAPPED = singleEvent('trigger.becomes-untapped', 
   rejects: ['~ becomes tapped', '~ untaps', '~ becomes untapped or attacks', '~ becomes untap'],
 });
 
+/** `trigger.becomes-monstrous`: "~ becomes monstrous" (CR 701.37a, 701.37b, 603.2: the monstrosity action makes the permanent monstrous; the engine's `becomesMonstrous`). */
+export const TRIGGER_BECOMES_MONSTROUS = singleEvent(
+  'trigger.becomes-monstrous',
+  'becomesMonstrous',
+  {
+    cites: [
+      'CR 701.37a (Monstrosity)',
+      'CR 701.37b (Monstrosity)',
+      'CR 603.2 (Handling Triggered Abilities)',
+    ],
+    examples: ['~ becomes monstrous', 'another creature you control becomes monstrous'],
+    rejects: [
+      '~ becomes monster',
+      '~ becomes monstrous or attacks',
+      '~ becomes tapped',
+      '~ becomes monstrous again',
+    ],
+  },
+);
+
 /**
  * `trigger.blocks`: "~ blocks", "a creature you control blocks", "equipped creature blocks" (CR 509.3a: it
  * triggers once for each creature declared as a blocker, however many creatures it blocks; stage P21, the
@@ -525,8 +575,11 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
     '~ or another creature enters',
     '~ or another artifact you control enters',
     '~ or another creature you control attacks',
+    '~ or another creature you control leaves the battlefield',
   ],
   rejects: [
+    '~ or a creature leaves the battlefield',
+    '~ or another creature leaves',
     '~ or a creature dies',
     '~ or another creature',
     '~ or another creature dies or attacks',
@@ -540,7 +593,7 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
       spanned(literal('~')),
       literal(' or '),
       satisfy(objectSubject('trigger.or-subjects'), (n) => n.other),
-      ANY_EVENT,
+      OR_SUBJECTS_EVENT,
     )(ctx, pos);
     if (!r.ok) return r;
     const [self, , other, event] = r.value;
@@ -557,15 +610,25 @@ export const TRIGGER_OR_SUBJECTS = defineRule<IrTrigger>({
 
 /** What a cast trigger's spell targets: "that targets a creature [you control]" (the object's kind and, for "you control", its controller) or the source itself. */
 type Aimed =
-  | { readonly kind: 'object'; readonly what: string; readonly yours: boolean }
+  | {
+      readonly kind: 'object';
+      readonly what: string;
+      readonly yours: boolean;
+      readonly modified?: true;
+    }
   | { readonly kind: 'self'; readonly only: boolean }
   | { readonly kind: 'any' };
 
 const AIMED: Parser<Aimed> = map(
   pattern(
-    /\s?that targets an? (creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
+    /\s?that targets an? (modified )?(creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
   ),
-  (m): Aimed => ({ kind: 'object', what: (m[1] ?? '').toLowerCase(), yours: m[2] !== undefined }),
+  (m): Aimed => ({
+    kind: 'object',
+    what: (m[2] ?? '').toLowerCase(),
+    yours: m[3] !== undefined,
+    ...(m[1] === undefined ? {} : { modified: true as const }),
+  }),
 );
 
 /** D-437: "that targets ~", "that targets only ~" (the `~` is the permanent with the ability). */
@@ -584,7 +647,11 @@ const AIMED_ANY: Parser<Aimed> = map(
 function aimedFilter(aimed: Aimed): IrFilter {
   if (aimed.kind === 'any') return { targetCountAtLeast: 1, raw: 'with one or more targets' };
   if (aimed.kind !== 'object') throw new Error('aimedFilter: an object');
-  const yours = aimed.yours ? { controller: 'you' as const } : {};
+  // D-646 (CR 700.9): "a modified permanent you control" (Pearl-Ear, Imperial Advisor): a permanent with a counter, an Equipment or an Aura its controller controls.
+  const yours = {
+    ...(aimed.yours ? { controller: 'you' as const } : {}),
+    ...(aimed.modified === true ? { modified: true as const } : {}),
+  };
   return aimed.what === 'permanent'
     ? { ...yours, raw: aimed.what }
     : { types: [aimed.what], ...yours, raw: aimed.what };
@@ -615,6 +682,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast an instant or sorcery spell',
     'you cast an artifact spell',
     'you cast an Aura or Equipment spell',
+    // D-644 (Sram, Senior Edificer): a list of three kinds of spell.
+    'you cast an Aura, Equipment, or Vehicle spell',
     'you cast a creature spell of the chosen type',
     'a player casts a spell',
     'a player casts a creature spell',
@@ -1053,8 +1122,12 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
       '~ enters and whenever you cast a spell with mana value 4 or greater',
       '~ enters and whenever you cast a creature spell',
       '~ enters and whenever you cast a noncreature spell',
+      '~ enters and whenever you cast your first spell with {X} in its mana cost each turn',
+      // Death Toll deck, group D: the second event may be a card played (a land played or a spell cast).
+      '~ enters and whenever you play a card with two or more card types',
     ],
     rejects: [
+      '~ enters and whenever you play a card',
       '~ enters and whenever you cast',
       '~ enters and whenever ~ attacks',
       '~ enters and you cast a creature spell',
@@ -1073,7 +1146,9 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
           (t) => t.subject?.det === 'self',
         ),
         literal(' and whenever '),
-        family<IrTrigger>('trigger', { only: ['trigger.cast'] }),
+        family<IrTrigger>('trigger', {
+          only: ['trigger.cast', 'trigger.cast-x', 'trigger.play-card'],
+        }),
       )(ctx, pos);
       if (!r.ok) return r;
       const [enters, , cast] = r.value;
@@ -1094,6 +1169,13 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
+  // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
+  // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
+  ...PRISMARI_G1_TRIGGER_RULES,
+  // Quandrix Unlimited deck, group E: "you cast a spell with {X} in its mana cost" and its first-each-turn form start like `trigger.cast`, which stops before the rest.
+  ...QUANDRIX_E_TRIGGER_RULES,
+  // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
+  ...UNBOUND_I_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,
@@ -1102,14 +1184,26 @@ export const TRIGGER_RULES = [
   TRIGGER_LANDFALL,
   // Stage P37 (D-180): "you cycle this card".
   ...KORVOLD_TRIGGER_RULES,
+  // CR 701.43d: "you may exert ~ as it attacks" (Exert).
+  ...EXERT_TRIGGER_RULES,
   ...CONTROL_TRIGGER_RULES,
   // Stage P33 (D-150): gaining life, counters put on a permanent, attacking with several creatures.
   ...ANGEL_TRIGGER_RULES,
+  ...UNBLOCKED_TRIGGER_RULES,
+  ...ENCHANTED_MANA_TRIGGER_RULES,
+  // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
+  ...OPPONENT_ATTACKS_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
+  // Issue 160 (D-629): "Whenever enchanted player is attacked".
+  ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  // CR 709.5h: "you unlock this door" (a Room).
+  ...ROOM_TRIGGER_RULES,
+  // Jeskai free-cast cards (issue 100): "you cast your first instant or sorcery spell each turn".
+  ...JESKAI_CASTFREE_TRIGGER_RULES,
   // Stage P30 (D-135): "enters untapped" and "dies or is put into exile from the battlefield" read the words after the event
   // that `trigger.enters` and `trigger.dies` stop at, so they come before those.
   ...RECURSION_TRIGGER_RULES,
@@ -1129,6 +1223,7 @@ export const TRIGGER_RULES = [
   TRIGGER_ATTACKS,
   TRIGGER_BECOMES_TAPPED,
   TRIGGER_BECOMES_UNTAPPED,
+  TRIGGER_BECOMES_MONSTROUS,
   TRIGGER_BLOCKS,
   TRIGGER_BECOMES_BLOCKED,
   TRIGGER_SACRIFICE,
@@ -1145,11 +1240,17 @@ export const TRIGGER_RULES = [
   ...HASHATON_G1_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
+  // Death Toll deck, group D: "you play a card with two or more card types".
+  ...DEATH_TOLL_D_TRIGGER_RULES,
+  // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
+  ...ACTIVATES_ABILITY_TRIGGER_RULES,
   // Hylda deck, group 1 (issue 42, D-510, D-513): "you tap an untapped creature an opponent controls", "you scry".
   ...HYLDA_G1_TRIGGER_RULES,
   // Galadriel deck, group 1 (issue 43): "you scry or surveil", "you surveil".
   ...GALADRIEL_G1_TRIGGER_RULES,
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
+  // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
+  ...DEATH_TOLL_B_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

@@ -5,7 +5,17 @@
  * 118.9), a token for each creature (CR 608.2c) and damage divided as the caster chooses (CR 601.2d). Each says what the text says; what the
  * engine can run is the lowering's business.
  */
-import { choice, fail, literal, map, pattern, quiet, satisfy, sequence } from '../../combinators';
+import {
+  choice,
+  fail,
+  literal,
+  map,
+  optional,
+  pattern,
+  quiet,
+  satisfy,
+  sequence,
+} from '../../combinators';
 import type {
   IrAmount,
   IrClause,
@@ -103,6 +113,11 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
 /** One creature: a target or "it" or `~`, never a group or "up to". */
 const ONE_CREATURE = ['noun.target-permanent', 'noun.self', 'noun.it'] as const;
 const isOne = (noun: IrNoun): boolean => !noun.plural && !noun.upTo && noun.count === undefined;
+/** "Up to one target creature" (Primal Might): the creature fought is optional, and nothing is fought when no target was chosen (CR 701.14b, 115.1). */
+const isOneOrUpToOne = (noun: IrNoun): boolean =>
+  !noun.plural &&
+  (noun.count === undefined ||
+    (noun.upTo && noun.count.kind === 'number' && noun.count.value === 1));
 
 /**
  * `effect.fight`: "target creature you control fights target creature you don't control", "~ fights target creature" (CR 701.14 Fight:
@@ -112,7 +127,7 @@ const isOne = (noun: IrNoun): boolean => !noun.plural && !noun.upTo && noun.coun
 export const EFFECT_FIGHT = defineRule<Clauses>({
   id: 'effect.fight',
   family: 'effect',
-  leading: ['target', 'another', '~', 'it'],
+  leading: ['target', 'another', '~', 'it', 'have'],
   cites: ['CR 701.14 (Fight)', 'CR 701.14b (Fight)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
   examples: [
     "target creature you control fights target creature you don't control",
@@ -120,11 +135,22 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     '~ fights target creature',
     'it fights target creature',
     'another target creature you control fights target creature an opponent controls',
+    // Frontier Siege (issue 103, "you may" is read apart): the permanent is made to fight.
+    "have it fight target creature you don't control",
+    'have target creature you control fight target creature an opponent controls',
+    // Primal Might: the creature fought is an "up to one" target.
+    "it fights up to one target creature you don't control",
+    "target creature you control fights up to one target creature you don't control",
   ],
   rejects: [
+    "have it fights target creature you don't control",
+    "it fight target creature you don't control",
+    'have it fight',
+    'have it fight each creature',
     'target creature fights',
     'target creatures fight each other',
-    'target creature you control fights up to one target creature',
+    'target creature you control fights up to two target creatures',
+    'up to one target creature you control fights up to one target creature',
     'target creature you control fight target creature',
     'two target creatures fight each other',
     '~ fights',
@@ -134,10 +160,22 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
   ],
   parse: single(
     'effect.fight',
-    sequence(
-      satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
-      literal(' fights '),
-      satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+    choice(
+      sequence(
+        satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
+        literal(' fights '),
+        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
+      ),
+      // "have it fight target creature": the causative form, with the bare verb.
+      map(
+        sequence(
+          literal('have '),
+          satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
+          literal(' fight '),
+          satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+        ),
+        ([, fighter, , against]): [IrNoun, string, IrNoun] => [fighter, ' fights ', against],
+      ),
     ),
     ([fighter, , against]) => ({ verb: 'fight', args: { fighters: fighter, against } }),
   ),
@@ -307,6 +345,50 @@ export const EFFECT_REVEAL_UNTIL = defineRule<Clauses>({
 });
 
 /**
+ * `effect.reveal-until-may-put`: "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your
+ * hand. Put the rest on the bottom of your library in a random order" (D-659, CR 701.20, 401.4, 303.4f, 608.2c: Songbirds' Blessing). Four sentences that `splitSentences` keeps
+ * together: the card found is offered for the battlefield, goes into the hand when the player does not put it there, and the rest go to the bottom in a random order. Not read:
+ * another place for the card, another place for the rest, "in any order", a quality with a mana value.
+ */
+export const EFFECT_REVEAL_UNTIL_MAY_PUT = defineRule<Clauses>({
+  id: 'effect.reveal-until-may-put',
+  family: 'effect',
+  leading: ['reveal'],
+  cites: [
+    'CR 701.20 (Reveal)',
+    'CR 401.4 (Library)',
+    'CR 303.4f (Auras)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order",
+    'reveal cards from the top of your library until you reveal a land card. You may put that card onto the battlefield. If you don’t, put it into your hand. Put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand",
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your graveyard. Put the rest on the bottom of your library in a random order",
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in any order",
+    "reveal cards from the top of your library until you reveal an Aura card. You may put that card into your hand. If you don't, put it onto the battlefield. Put the rest on the bottom of your library in a random order",
+    "reveal cards from the top of your library until you reveal two Aura cards. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order",
+    "reveal cards from the top of your library until you reveal an Aura card with mana value 3 or less. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the bottom of your library in a random order",
+  ],
+  parse: single(
+    'effect.reveal-until-may-put',
+    sequence(
+      literal('reveal cards from the top of your library until you reveal '),
+      family<IrNoun>('noun', { only: ['noun.library-card'] }),
+      pattern(
+        /\. you may put that card onto the battlefield\. if you don['’]t, put it into your hand\. put the rest on the bottom of your library in a random order/iu,
+      ),
+    ),
+    ([, card]) => ({
+      verb: 'revealUntilMayPut',
+      args: { card: { ...card, upTo: false, plural: false } },
+    }),
+  ),
+});
+
+/**
  * `effect.cast-free`: "you may cast a spell with mana value 5 or less from your hand without paying its mana cost", "you may cast a
  * creature spell from your hand without paying its mana cost", "you may play the exiled card without paying its mana cost" (CR 608.2g,
  * 118.9, 305.1: the controller may cast the card as this resolves without paying its mana cost, or, with "play", put a land onto the
@@ -316,7 +398,7 @@ export const EFFECT_REVEAL_UNTIL = defineRule<Clauses>({
 export const EFFECT_CAST_FREE = defineRule<Clauses>({
   id: 'effect.cast-free',
   family: 'effect',
-  leading: ['you'],
+  leading: ['you', 'cast', 'play'],
   cites: [
     'CR 608.2g (Resolving Spells and Abilities)',
     'CR 118.9 (Alternative Costs)',
@@ -327,11 +409,20 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast a spell with mana value 5 or less from your hand without paying its mana cost',
     'you may cast a creature spell from your hand without paying its mana cost',
     'you may cast a spell from your hand without paying its mana cost',
+    'you may cast a spell with mana value X or less from your hand without paying its mana cost',
+    'you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost',
     'you may play the exiled card without paying its mana cost',
     'you may cast the exiled card without paying its mana cost',
+    // Death Toll deck, group D: in a triggered ability the "you may" is the ability's own.
+    'play the exiled card without paying its mana cost',
   ],
   rejects: [
     'you may cast a spell with mana value 5 or less from your hand',
+    'you may cast a spell with mana value X or less from your graveyard without paying its mana cost',
+    'you may cast a spell with mana value X or less from your hand',
+    'you may cast a spell with lesser mana value from your hand without paying its mana cost',
+    'you may cast a spell that shares a card type with it from your hand without paying its mana cost',
+    'you may cast a spell with lesser mana value that shares a card type with it from your graveyard without paying its mana cost',
     'you may cast a spell with mana value 5 or less from your graveyard without paying its mana cost',
     'you may cast a spell with mana value 5 or less without paying its mana cost',
     'you may cast two spells from your hand without paying their mana costs',
@@ -345,13 +436,28 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
   ],
   parse: single(
     'effect.cast-free',
-    choice<{ objects: IrNoun; play: boolean }>(
+    choice<{ objects: IrNoun; play: boolean; written: boolean }>(
       (ctx, pos) => {
-        const head = pattern(/you may cast an? /iu)(ctx, pos);
+        // "you may cast ..."; inside a triggered ability the "you may" is the ability's (the clause is optional), so "cast ..." is read too, and the lowering asks for one of the two.
+        const head = pattern(/(you may )?cast an? /iu)(ctx, pos);
         if (!head.ok) return head;
         const phrase = spanned(spellPhrase(false))(ctx, head.pos);
         if (!phrase.ok) return phrase;
-        const from = literal(' from your hand without paying its mana cost')(ctx, phrase.pos);
+        // "a spell with mana value X or less" (CR 107.3a, 202.3): at most the X announced for the spell this is the text of.
+        const atMostX = optional(
+          quiet(pattern(/ with mana value X or less(?![\p{L}\p{N}])/u)),
+          null,
+        )(ctx, phrase.pos);
+        if (!atMostX.ok) return atMostX;
+        // "a spell with lesser mana value that shares a card type with it" (issue 100, CR 202.3, 205.2a): relative to the spell a cast trigger is about.
+        const lesser = optional(
+          quiet(
+            pattern(/ with lesser mana value that shares a card type with it(?![\p{L}\p{N}])/u),
+          ),
+          null,
+        )(ctx, atMostX.pos);
+        if (!lesser.ok) return lesser;
+        const from = literal(' from your hand without paying its mana cost')(ctx, lesser.pos);
         if (!from.ok) return from;
         const { stackKind: _kind, zone: _zone, ...rest } = phrase.value.value;
         void _kind;
@@ -360,6 +466,8 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
         const filter = {
           ...rest,
           zone: 'hand' as const,
+          ...(atMostX.value === null ? {} : { manaValueAtMostX: true as const }),
+          ...(lesser.value === null ? {} : { lesserSharingTypeWithTriggerSpell: true as const }),
           // "a spell" is a card that is not a land: a land is played, never cast (CR 305.1, 601.1).
           ...(plainSpell ? { notTypes: ['land'] } : {}),
         };
@@ -373,12 +481,16 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
           span: phrase.value.span,
           rule: 'effect.cast-free',
         };
-        return { ok: true, value: { objects, play: false }, pos: from.pos };
+        return {
+          ok: true,
+          value: { objects, play: false, written: head.value[1] !== undefined },
+          pos: from.pos,
+        };
       },
       (ctx, pos) => {
         const r = spanned(
           pattern(
-            /you may (cast|play) the exiled card without paying its mana cost(?![\p{L}\p{N}])/iu,
+            /(you may )?(cast|play) the exiled card without paying its mana cost(?![\p{L}\p{N}])/iu,
           ),
         )(ctx, pos);
         if (!r.ok) return r;
@@ -394,14 +506,24 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
         };
         return {
           ok: true,
-          value: { objects, play: (r.value.value[1] ?? '').toLowerCase() === 'play' },
+          value: {
+            objects,
+            play: (r.value.value[2] ?? '').toLowerCase() === 'play',
+            // Inside a triggered ability the "you may" is the ability's (the clause is optional), as for the cast of a spell of the hand above.
+            written: r.value.value[1] !== undefined,
+          },
           pos: r.pos,
         };
       },
     ),
-    ({ objects, play }) => ({
+    ({ objects, play, written }) => ({
       verb: 'castFree',
-      args: { objects, play: flag('effect.cast-free', play, objects.span) },
+      args: {
+        objects,
+        play: flag('effect.cast-free', play, objects.span),
+        // Whether the sentence said "you may" itself (a triggered ability's own "you may" makes the clause optional instead).
+        mayWritten: flag('effect.cast-free', written, objects.span),
+      },
     }),
   ),
 });
@@ -421,8 +543,11 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
     'for each creature you control, create a Treasure token',
     'for each land you control, create a 0/1 green Plant creature token',
     'for each creature your opponents control, create two 1/1 white Soldier creature tokens',
+    'for each creature card put into a graveyard this way, you create a tapped 2/2 black Zombie creature token',
   ],
   rejects: [
+    'for each creature your opponents control, you destroy it',
+    'for each creature your opponents control, you create X Treasure tokens',
     'for each creature your opponents control create a 4/4 green Phyrexian Beast creature token',
     'for each creature your opponents control, destroy it',
     'for each creature, create a 4/4 green Phyrexian Beast creature token',
@@ -434,7 +559,8 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
     const r = sequence(
       // Quiet: "For each 1 damage prevented this way, create ..." stops where the older rules stop (at "For each").
       quiet(family<IrAmount>('amount', { only: FOR_EACH_AMOUNTS })),
-      literal(', create '),
+      // "..., you create ..." (Dread Summons) says the same with the subject spelled out.
+      choice(literal(', create '), literal(', you create ')),
       tokenWithEach(),
     )(ctx, pos);
     if (!r.ok) return r;
@@ -455,19 +581,31 @@ export const EFFECT_FOR_EACH_CREATE = defineRule<Clauses>({
  * `effect.damage-divided`: "~ deals X damage divided as you choose among any number of target creatures" (CR 601.2d: the caster divides
  * the damage among the targets as the spell is cast, each target getting at least 1; CR 120.3). The amount is a number or X (defined by
  * "..., where X is the greatest power among creatures you control as you cast this spell"); the targets are "any number of target
- * creatures" or "up to three target creatures" (the fewest is none). The lowering reads it only in a spell, with a total that is a
- * number or an amount read as the spell is cast.
+ * creatures" (also "creatures and/or planeswalkers your opponents control"), "up to three target creatures" (the fewest is none) or "one or two
+ * targets" (any target, at least one). The damage is dealt by "~" or by "it" (the source of the ability, CR 113.7a: the lowering reads only the
+ * "it" that is `~` itself). Spells, activated abilities and triggered abilities announce the division as they are put on the stack (CR 601.2d,
+ * 602.2b, 603.3d); the lowering reads it with a total that is a number or an amount read then.
  */
 export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
   id: 'effect.damage-divided',
   family: 'effect',
-  leading: ['~'],
-  cites: ['CR 601.2d (Casting Spells)', 'CR 120.3 (Damage)', 'CR 115.1 (Targets)'],
+  leading: ['~', 'it'],
+  cites: [
+    'CR 601.2d (Casting Spells)',
+    'CR 602.2b (Activating Activated Abilities)',
+    'CR 603.3d (Handling Triggered Abilities)',
+    'CR 120.3 (Damage)',
+    'CR 115.1 (Targets)',
+  ],
   examples: [
     '~ deals X damage divided as you choose among any number of target creatures',
     '~ deals 3 damage divided as you choose among any number of target creatures',
     '~ deals 4 damage divided as you choose among up to three target creatures',
     '~ deals X damage divided as you choose among any number of target creatures you don’t control',
+    // Prismari deck, group 2 (D-657, CR 115.4): any target, as many as the damage can be divided among.
+    '~ deals 4 damage divided as you choose among any number of targets',
+    '~ deals 2 damage divided as you choose among one or two targets',
+    'it deals 5 damage divided as you choose among any number of target creatures and/or planeswalkers your opponents control',
   ],
   rejects: [
     '~ deals X damage divided as you choose among any number of target creatures and draw a card',
@@ -478,22 +616,41 @@ export const EFFECT_DAMAGE_DIVIDED = defineRule<Clauses>({
     '~ deals X damage as you choose among any number of target creatures',
     '~ deals damage divided as you choose among any number of target creatures',
     '~ deals X damage divided as you choose among any target',
+    '~ deals 4 damage divided as you choose among any number of targets you control',
+    '~ deals 2 damage divided as you choose among one or two target',
+    'it deals 2 damage divided as you choose among one or two creatures',
+    'its deals 2 damage divided as you choose among one or two targets',
   ],
   parse: single(
     'effect.damage-divided',
     sequence(
-      literal('~ deals '),
+      choice(
+        map(literal('~ deals '), () => null),
+        map(
+          sequence(family<IrNoun>('noun', { only: ['noun.it'] }), literal(' deals ')),
+          ([it]) => it,
+        ),
+      ),
       family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
       literal(' damage divided as you choose among '),
       choice(
-        family<IrNoun>('noun', { only: ['noun.any-number-targets'] }),
+        family<IrNoun>('noun', {
+          only: [
+            'noun.any-number-targets',
+            'noun.any-number-of-targets',
+            'noun.one-or-two-targets-bare',
+          ],
+        }),
         satisfy(
           family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
           (noun) => noun.upTo && noun.plural,
         ),
       ),
     ),
-    ([, amount, , to]) => ({ verb: 'dealDividedDamage', args: { amount, to } }),
+    ([source, amount, , to]) => ({
+      verb: 'dealDividedDamage',
+      args: source === null ? { amount, to } : { source, amount, to },
+    }),
   ),
 });
 
@@ -503,6 +660,7 @@ export const DINOSAUR_EFFECT_RULES = [
   EFFECT_FIGHT_EACH,
   EFFECT_EXCESS_DAMAGE,
   EFFECT_REVEAL_UNTIL,
+  EFFECT_REVEAL_UNTIL_MAY_PUT,
   EFFECT_CAST_FREE,
   EFFECT_FOR_EACH_CREATE,
   EFFECT_DAMAGE_DIVIDED,

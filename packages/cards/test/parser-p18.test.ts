@@ -633,7 +633,7 @@ describe('power, toughness and mana value in a filter (CR 202.3, 208.1)', () => 
   test.each([
     ['Destroy target creature with power greater than 3.', 'with power greater than 3.'],
     ['Destroy target creature with power 3 or less and flying.', 'flying.'],
-    ['Destroy target creature with mana value X or less.', 'with mana value X or less.'],
+    ['Destroy target creature with mana value X or greater.', 'with mana value X or greater.'],
     ['Destroy target creature with power 3 or more.', 'or more.'],
     [
       'Destroy target creature with converted mana cost 3 or less.',

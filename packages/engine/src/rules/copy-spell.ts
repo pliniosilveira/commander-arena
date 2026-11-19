@@ -19,6 +19,9 @@
  *   make     creates the next copy, emits `spellCopied`, and goes on to `targets` or, with nothing to choose, finishes it
  *   targets  asks the targets of the copy (the question is public: it changes nothing until it is answered)
  *
+ * The same instruction copies an activated ability on the stack ("copy that spell or ability", Unbound Flourishing; CR 707.10): the copy is an ability with the same text, targets and
+ * X (`copyObject`), controlled by whoever has it put on the stack, and its new targets are asked the same way (`targetSpecsOf` reads the ability's own slots).
+ *
  * (The answer is `rules/copy-spell-answer.ts`: it goes on with the resolution, which this file cannot import.)
  * Both stages are one instruction (`Instruction` `copySpell`) so that a decision can be asked in the middle of a resolution
  * (CR 903.9b, 608.2d) and the resolution go on with the answer.
@@ -38,7 +41,7 @@ import type { GameObject, GameState, ResolutionContext } from '../state/types';
 import { becameTargetEvents } from './becomes-target';
 import { type CopySpellInstruction, copiedSpell } from './copy-source';
 import { faceOf, targetSpecsOf } from './legality';
-import { modalOfSpellText, specModes } from './modes';
+import { modalOfAbility, modalOfSpellText, specModes } from './modes';
 import { legalTargets, matchesFilter, type SelectContext, sameTarget } from './select';
 import { done, type StepOutcome } from './step-outcome';
 import { targetChoiceSpecs } from './target-choice';
@@ -117,7 +120,27 @@ function copyObject(
 ): GameObject | null {
   const card = printedCard(original);
   const stack = original.stack;
-  if (card === null || stack === null) return null;
+  if (stack === null) return null;
+  if (stack.kind === 'ability') {
+    // CR 707.10, 113.7a (Unbound Flourishing): a copy of an ability on the stack is an ability with the same text, targets, modes and X (everything is in `stack`, which is kept),
+    // controlled by the player who put it on the stack. It is not a spell and not a card; like every ability it ceases to exist when it leaves the stack.
+    return {
+      ...original,
+      id,
+      timestamp,
+      owner: controller,
+      controller,
+      damage: 0,
+      stack: {
+        ...stack,
+        chosenTargets:
+          retarget === undefined
+            ? stack.chosenTargets
+            : stack.chosenTargets.map((t) => (t.kind === 'object' ? { ...t, id: retarget } : t)),
+      },
+    };
+  }
+  if (card === null) return null;
   return {
     id,
     card: null,
@@ -191,8 +214,9 @@ function makeCopy(
 }
 
 /** The context the targets of the copy are chosen in: its controller, with the copy as the source (CR 601.2c). */
-function copyContext(res: ResolutionContext, copy: GameObject): SelectContext {
-  return { controller: res.controller, source: copy.id };
+function copyContext(_res: ResolutionContext, copy: GameObject): SelectContext {
+  // D-665 (CR 702.144a): the player a copy belongs to chooses its new targets, whoever controls the ability that made it.
+  return { controller: copy.controller, source: copy.id };
 }
 
 /** The slots of the question for `copy`: every legal target, and the targets the copy has now (CR 707.10c). */
@@ -203,7 +227,10 @@ function copyDecision(
 ): Omit<TargetsDecision, 'id'> | null {
   const specs = targetSpecsOf(state, copy);
   if (specs.length === 0) return null;
-  const modal = modalOfSpellText(faceOf(state, copy)?.spell);
+  const modal =
+    copy.stack?.ability != null
+      ? modalOfAbility(copy.stack.ability)
+      : modalOfSpellText(faceOf(state, copy)?.spell);
   const current = copy.stack?.chosenTargets ?? [];
   const slots = targetChoiceSpecs(
     state,
@@ -228,7 +255,7 @@ function copyDecision(
   });
   return {
     kind: 'targets',
-    seat: res.controller,
+    seat: copy.controller,
     source: copy.id,
     specs: slots,
     forCopy: true,

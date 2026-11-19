@@ -38,6 +38,9 @@ function numberOf(amount: IrArg): number {
 
 const AT_LEAST = (n: number): Parser<IrArg> => satisfy(NUMBER, (a) => numberOf(a) >= n);
 
+/** A count of two or more: "look at the top seven cards". */
+export const AT_LEAST_TWO: Parser<IrArg> = AT_LEAST(2);
+
 function keywordAction(verb: 'scry' | 'surveil', cite: string) {
   const id = `effect.${verb}`;
   return defineRule<Clauses>({
@@ -329,12 +332,17 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     // Issue 25: a list of card types and subtypes, any one of which the card may be.
     'look at the top six cards of your library. You may reveal an instant, sorcery, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top four cards of your library. You may reveal an artifact or Wizard card from among them and put it into your hand. Put the rest into your graveyard',
+    // Quandrix Unlimited deck, group G (CR 401.4: the order is the player's): "put that card", and the rest on the bottom in any order.
+    'look at the top three cards of your library. You may reveal a land card from among them and put that card into your hand. Put the rest on the bottom of your library in any order',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order',
   ],
   rejects: [
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your library. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an artifact card with mana value less than or equal to 3 from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
-    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order or at random',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest into your graveyard in any order',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put those cards into your hand. Put the rest on the bottom of your library in any order',
     'look at the top card of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top X cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an instant, sorcery or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
@@ -362,7 +370,8 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
         ),
         null,
       ),
-      literal(' from among them and put it '),
+      // "put that card" is the wording of the newer cards (Quandrix Apprentice).
+      pattern(/ from among them and put (?:it|that card) /iu),
       spanned(choice(literal('into your hand'), literal('onto the battlefield'))),
       literal('. put the rest '),
       spanned(
@@ -371,6 +380,11 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
           map(
             pattern(/on the bottom (?:of your library )?in a random order(?![\p{L}\p{N}])/iu),
             () => 'bottomRandom' as const,
+          ),
+          // "in any order" (CR 401.4: the player who owns the cards chooses the order, which stays hidden): the engine's `bottomChosen`.
+          map(
+            pattern(/on the bottom of your library in any order(?![\p{L}\p{N}])/iu),
+            () => 'bottomChosen' as const,
           ),
           map(literal('into your graveyard'), () => 'graveyard' as const),
         ),
@@ -388,6 +402,17 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
           span: rest.span,
           rule: 'effect.look-take',
         },
+        // Set when the rest go on the bottom in an order the player chooses (CR 401.4).
+        ...(rest.value === 'bottomChosen'
+          ? {
+              chosenOrder: {
+                kind: 'flag' as const,
+                value: true,
+                span: rest.span,
+                rule: 'effect.look-take',
+              },
+            }
+          : {}),
         // Set when the card taken goes onto the battlefield; into the hand otherwise.
         ontoBattlefield: {
           kind: 'flag',
@@ -396,6 +421,123 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
           rule: 'effect.look-take',
         },
         ...(atMost === null ? {} : { manaValueAtMost: atMost }),
+      },
+    }),
+  ),
+});
+
+/**
+ * `effect.look-put-onto`: "look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your
+ * library in a random order" (CR 401.2, 401.4, 701.20a: Ureni of the Unwritten). Three sentences that `splitSentences` keeps together; the card is put without being revealed
+ * ("put", not "reveal and put"). The engine's `lookAtTop` taking one card of the kind onto the battlefield. Not read: "into your hand" (the player must reveal it, `effect.look-take`),
+ * a rest that goes anywhere but the bottom in a random order, one card looked at.
+ */
+export const EFFECT_LOOK_PUT_ONTO = defineRule<Clauses>({
+  id: 'effect.look-put-onto',
+  family: 'effect',
+  leading: ['look'],
+  cites: ['CR 401.2 (Library)', 'CR 401.4 (Library)', 'CR 701.20a (Reveal)'],
+  examples: [
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put a creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them into your hand. Put the rest on the bottom of your library in a random order',
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in any order',
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest into your graveyard',
+    'look at the top card of your library. You may put a Dragon creature card from among them onto the battlefield. Put the rest on the bottom of your library in a random order',
+    'look at the top eight cards of your library. You may put a Dragon creature card from among them onto the battlefield tapped. Put the rest on the bottom of your library in a random order',
+  ],
+  parse: single(
+    'effect.look-put-onto',
+    sequence(
+      literal('look at the top '),
+      AT_LEAST(2),
+      literal(' cards of your library. you may put '),
+      TAKEN_CARD,
+      literal(
+        ' from among them onto the battlefield. put the rest on the bottom of your library in a random order',
+      ),
+    ),
+    ([, count, , take]) => ({
+      verb: 'lookTake',
+      args: {
+        count,
+        take,
+        toGraveyard: { kind: 'flag', value: false, span: take.span, rule: 'effect.look-put-onto' },
+        ontoBattlefield: {
+          kind: 'flag',
+          value: true,
+          span: take.span,
+          rule: 'effect.look-put-onto',
+        },
+      },
+    }),
+  ),
+});
+
+/**
+ * `effect.look-put-attach`: "look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the
+ * battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, CR 401.2, 303.4f, 301.5,
+ * 701.3, 401.4: Armored Skyhunter). Four sentences that `splitSentences` keeps together; the card is taken without being revealed ("put", not "reveal and put"), an Aura chooses what it
+ * enchants as it enters, an Equipment may be attached to a creature the controller controls. The count is two or more.
+ */
+export const EFFECT_LOOK_PUT_ATTACH = defineRule<Clauses>({
+  id: 'effect.look-put-attach',
+  family: 'effect',
+  leading: ['look'],
+  cites: [
+    'CR 401.2 (Library)',
+    'CR 303.4f (Auras)',
+    'CR 301.5 (Equipment)',
+    'CR 701.3 (Attach)',
+    'CR 401.4 (Library)',
+  ],
+  examples: [
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in any order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them into your hand. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top card of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order',
+    'look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you may attach it to a creature you control. Put the rest of those cards into your graveyard',
+  ],
+  parse: single(
+    'effect.look-put-attach',
+    sequence(
+      literal('look at the top '),
+      AT_LEAST(2),
+      literal(' cards of your library. you may put '),
+      TAKEN_CARD,
+      literal(
+        ' from among them onto the battlefield. if an equipment is put onto the battlefield this way, you may attach it to a creature you control. put the rest of those cards on the bottom of your library in a random order',
+      ),
+    ),
+    ([, count, , take]) => ({
+      verb: 'lookTake',
+      args: {
+        count,
+        take,
+        toGraveyard: {
+          kind: 'flag',
+          value: false,
+          span: take.span,
+          rule: 'effect.look-put-attach',
+        },
+        ontoBattlefield: {
+          kind: 'flag',
+          value: true,
+          span: take.span,
+          rule: 'effect.look-put-attach',
+        },
+        attachEquipment: {
+          kind: 'flag',
+          value: true,
+          span: take.span,
+          rule: 'effect.look-put-attach',
+        },
       },
     }),
   ),
@@ -567,6 +709,8 @@ export const LIBRARY_RULES = [
   EFFECT_SURVEIL,
   EFFECT_LOOK_REORDER,
   EFFECT_LOOK_TAKE,
+  EFFECT_LOOK_PUT_ATTACH,
+  EFFECT_LOOK_PUT_ONTO,
   EFFECT_LOOK_TAKE_BOTTOM,
   EFFECT_LOOK_TAKE_ONE_TOP,
   EFFECT_LOOK_TAKE_ONE_BOTTOM,

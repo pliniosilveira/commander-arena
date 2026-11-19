@@ -38,6 +38,7 @@ import { activationExileDecision, exileChosen, exileCostCandidates } from './act
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
 import { crimeEvents } from './crime';
+import { derive } from './derive';
 import { discardCandidates, discardCostDecision, discardObjects } from './discard-cost';
 import { targetSpecsOf } from './legality';
 import { isLoyaltyAbility } from './loyalty';
@@ -271,9 +272,21 @@ export function payCosts(state: GameState, events: GameEvent[]): Result {
   if (state.objects[activation.source] === undefined) return fail('The source is gone');
   const paid = payImmediateCosts(state, casting.seat, activation.source, costs);
   events.push(...paid.events);
+  // D-625 (CR 601.2h): the permanents to tap are chosen first when there is mana to pay too, so the mana comes from the sources still untapped.
+  if (costs.tapPermanents !== null && costs.mana.length > 0) {
+    return payTap(paid.state, events, costs.tapPermanents);
+  }
   if (costs.mana.length === 0) return payRest(paid.state, events);
+  return askMana(paid.state, events);
+}
+
+/** The mana of the cost (CR 601.2g-h): a `payMana` decision for the player. */
+function askMana(state: GameState, events: GameEvent[]): Result {
+  const going = inProgress(state);
+  if (!going) return fail('No activation is in progress');
+  const { casting, costs } = going;
   const next: GameState = {
-    ...paid.state,
+    ...state,
     casting: { ...casting, stage: 'payment', totalCost: costs.mana },
   };
   return pause(next, events, {
@@ -299,7 +312,10 @@ function payRest(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { costs } = going;
   if (costs.tapCreatures !== null) return payCrew(state, events, costs.tapCreatures);
-  if (costs.tapPermanents !== null) return payTap(state, events, costs.tapPermanents);
+  // D-625: with mana to pay the permanents were tapped before it.
+  if (costs.tapPermanents !== null && costs.mana.length === 0) {
+    return payTap(state, events, costs.tapPermanents);
+  }
   return payBlight(state, events, paySacrifice);
 }
 
@@ -340,6 +356,7 @@ function tapChosen(
 ): Result {
   const casting = state.casting;
   if (!casting) return fail('No activation is in progress');
+  const going = inProgress(state);
   let next = state;
   events.push({
     kind: 'permanentsChosen',
@@ -349,10 +366,17 @@ function tapChosen(
     purpose: 'tap',
     automatic,
   });
+  // CR 702.184a, 608.2h: the power each creature has as it is tapped, which the ability reads when it resolves ("equal to the tapped creature's power").
+  let tappedPower = 0;
   for (const id of chosen) {
+    const creature = next.objects[id];
+    if (creature !== undefined) tappedPower += Math.max(0, derive(next, creature).power ?? 0);
     next = patchObject(next, id, { tapped: true });
     events.push({ kind: 'tapped', object: id, by: casting.seat });
   }
+  next = rememberTappedPower(next, tappedPower);
+  // D-625: the mana is paid after the permanents are tapped when the cost has both; otherwise the sacrifice comes next.
+  if ((going?.costs.mana.length ?? 0) > 0) return askMana(next, events);
   return payBlight(next, events, paySacrifice);
 }
 
@@ -362,6 +386,16 @@ export function answerTapCost(state: GameState, chosen: readonly ObjectId[]): Re
     return fail('No permanents are being chosen to tap for a cost');
   }
   return tapChosen({ ...state, pending: null }, [], chosen, false);
+}
+
+/** Remembers the power of the permanents tapped to pay the ability's cost, for `tappedAsCostPower` (CR 702.184a). */
+function rememberTappedPower(state: GameState, power: number): GameState {
+  const object = state.casting?.object;
+  const stack = object === undefined ? undefined : state.objects[object]?.stack;
+  if (object === undefined || stack == null) return state;
+  return patchObject(state, object, {
+    stack: { ...stack, tappedPowerAsCost: (stack.tappedPowerAsCost ?? 0) + power },
+  });
 }
 
 /** Remembers the permanents sacrificed to pay the ability's cost, for `sacrificedCost` (D-133). */
@@ -526,6 +560,11 @@ function payDiscard(state: GameState, events: GameEvent[]): Result {
   const going = inProgress(state);
   if (!going) return fail('No activation is in progress');
   const { casting, costs } = going;
+  // D-626 (CR 701.9): "Discard your hand" discards every card of it, none chosen; an empty hand pays it with nothing to discard.
+  if (costs.discardHand) {
+    const all = [...(state.seats[casting.seat]?.hand ?? [])];
+    return all.length === 0 ? payExileCards(state, events) : discardChosen(state, events, all);
+  }
   if (costs.discard === 0) return payExileCards(state, events);
   // The activation is an object on the stack whose `source` is the permanent with the ability (D-207: "another card named ~" is that permanent's name).
   const source = state.objects[casting.object]?.stack?.source ?? casting.object;
@@ -648,6 +687,8 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
     abilityIndex: activation.abilityIndex,
     stackObject: casting.object,
     ...(announced == null ? {} : { x: announced }),
+    // CR 113.6: read before the cost moved the source (a sacrificed permanent is still "a permanent" the ability of which was activated).
+    ...(casting.fromZone === 'battlefield' ? { fromBattlefield: true as const } : {}),
   });
   const next: GameState = {
     ...state,
@@ -663,6 +704,9 @@ function finishActivation(state: GameState, events: GameEvent[]): Result {
           abilityIndex: activation.abilityIndex,
           // CR 606.3 (D-200): a loyalty ability of this permanent was activated this turn.
           ...(isLoyaltyAbility(activation.ability.cost) ? { loyalty: true as const } : {}),
+          // Issue 159: "activated an ability of a card in a graveyard this turn": the card was in a graveyard as the ability was activated (`casting.fromZone`, read
+          // before the cost moved it).
+          ...(casting.fromZone === 'graveyard' ? { fromGraveyard: casting.seat } : {}),
         },
       ],
     },

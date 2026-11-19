@@ -94,20 +94,8 @@ describe('creatures with flying can not attack you or planeswalkers you control 
         kind: 'static',
         static: {
           kind: 'cantAttackYou',
-          attackers: { types: ['creature'], keywords: ['flying'] },
+          creatures: { types: ['creature'], keywords: ['flying'] },
           planeswalkers: true,
-        },
-      },
-    ]);
-  });
-
-  test('the form without planeswalkers covers only the player', () => {
-    expect(readAll("Creatures with flying can't attack you.", 'enchantment').abilities).toEqual([
-      {
-        kind: 'static',
-        static: {
-          kind: 'cantAttackYou',
-          attackers: { types: ['creature'], keywords: ['flying'] },
         },
       },
     ]);

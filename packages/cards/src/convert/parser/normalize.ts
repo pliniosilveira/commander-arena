@@ -3,7 +3,7 @@
  * The grammar then only has to know one spelling of "this card".
  */
 
-import { CREATURE_TYPES } from '@commander-arena/engine';
+import { CREATURE_TYPES, PLANESWALKER_TYPES } from '@commander-arena/engine';
 
 export interface NormalizeOptions {
   /** The face's own name. */
@@ -257,9 +257,12 @@ function givenName(name: string): string | undefined {
  * Depths, D-515). The title starts with a capital (a "of the" is a place of the plane, not a name: "Liliana of the Veil"), and the word is no possessive and no type of permanent.
  */
 function creatureOfName(name: string): string | undefined {
-  const m = /^(\p{Lu}[\p{L}'’-]{2,}) of \p{Lu}/u.exec(name);
+  const m = /^(\p{Lu}[\p{L}'’-]{2,}) of (the )?\p{Lu}/u.exec(name);
   const first = m?.[1];
   if (first === undefined || /['’]s$/u.test(first) || NOT_A_GIVEN_NAME.has(first)) return undefined;
+  // "Ureni of the Unwritten" is "Ureni" (a legendary creature), but "of the" after a planeswalker type is a place of the plane ("Gideon of the Trials", "Liliana of the Veil"): that
+  // word is the type of a planeswalker the text may name ("a Gideon planeswalker"), not the card.
+  if (m?.[2] !== undefined && PLANESWALKER_TYPES.includes(first)) return undefined;
   return first;
 }
 
@@ -275,6 +278,22 @@ function withLevelBarPeriod(line: string): string {
   return /^(?:\{[^}]+\})+: Level [2-9]\d*$/u.test(line) ? `${line}.` : line;
 }
 
+/**
+ * "half X" says how it rounds (CR 107.1a), in one of two places that no phrase of the grammar sits next to: after the whole instruction ("create half X Food tokens, rounded
+ * up.") or in a sentence of its own for every "half" before it ("... gain half X life and draw half X cards. Round down each time."). The line is written so the rounding follows
+ * the amount, as the other "half" phrases have it: "create half X, rounded up Food tokens." The sentence "Round down each time." is dropped once its rounding is written in.
+ */
+export function withHalfRounding(line: string): string {
+  const each = /^(.*?)\s*\bRound (up|down) each time\.?$/u.exec(line);
+  if (each?.[1] !== undefined && /\bhalf X\b/u.test(each[1])) {
+    return each[1].replace(/\bhalf X\b(?!, rounded)/gu, `half X, rounded ${each[2] ?? 'down'}`);
+  }
+  return line.replace(
+    /\bhalf X ((?:(?!half)[^,.])+), rounded (up|down)(?=[.,]|$)/gu,
+    'half X, rounded $2 $1',
+  );
+}
+
 export function normalizeOracleText(text: string, options: NormalizeOptions): string {
   let out = stripReminderText(text);
   for (const name of selfNames(options)) {
@@ -285,7 +304,9 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
   out = tokenSelfInQuotes(out);
   return out
     .split('\n')
-    .map((line) => withLevelBarPeriod(stripAbilityWord(line.replace(/[ \t]+/g, ' ').trim())))
+    .map((line) =>
+      withHalfRounding(withLevelBarPeriod(stripAbilityWord(line.replace(/[ \t]+/g, ' ').trim()))),
+    )
     .filter((line) => line !== '')
     .join('\n');
 }
@@ -297,6 +318,18 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
 const OPTION_CHOICE = /^[Aa]s ~ enters, choose \p{Lu}[^.—•\n]*? or \p{Lu}[^.—•\n]*\.$/u;
 
 /**
+ * "... When ~ leaves the battlefield, that creature's controller sacrifices it." (issue 89, Animate Dead; CR 603.1, 607.2): a triggered ability that the Oracle text prints in the
+ * same paragraph as the one it is linked to is an ability of its own, so it starts a line. Only after the period that ends a sentence, outside quotes.
+ */
+const LINKED_LEAVES = /(?<=\.) (?=When ~ leaves the battlefield, )/gu;
+
+function splitLinkedLeaves(normalized: string): string {
+  return normalized.replace(LINKED_LEAVES, (_match, offset: number) =>
+    (normalized.slice(0, offset).match(/["”“]/gu)?.length ?? 0) % 2 === 0 ? '\n' : ' ',
+  );
+}
+
+/**
  * Splits normalized text into abilities, one per line. A bullet line ("• ...") belongs to the
  * line above it, so "Choose one —" stays together with its modes; the bullets of a choice among
  * named options are lines of their own (`segment` reads the name).
@@ -304,7 +337,7 @@ const OPTION_CHOICE = /^[Aa]s ~ enters, choose \p{Lu}[^.—•\n]*? or \p{Lu}[^.
 export function splitAbilities(normalized: string): string[] {
   const abilities: string[] = [];
   let optionBullets = false;
-  for (const line of normalized.split('\n')) {
+  for (const line of splitLinkedLeaves(normalized).split('\n')) {
     if (line === '') continue;
     const last = abilities.length - 1;
     if (line.startsWith('•') && last >= 0 && !optionBullets) {

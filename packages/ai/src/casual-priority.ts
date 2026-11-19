@@ -46,6 +46,7 @@ import { chooseSpecialAction } from './casual-later';
 import { hasWorthwhileMode, isModalText } from './casual-modes';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey, worthCastingPrevention } from './casual-prevention';
+import { chooseUnlockDoor } from './casual-rooms';
 import {
   asFace,
   effectiveCost,
@@ -55,6 +56,7 @@ import {
   manaValueOf,
   opposingCreatures,
   ownCreatureCount,
+  withoutReminder,
 } from './casual-view';
 import { multikickerHasRoom, needsPaidX, xSpellHasRoom } from './casual-x';
 
@@ -120,13 +122,17 @@ export function worthCasting(view: GameView, spell: ObjectView): boolean {
   }
   // D-129: a spell that copies a spell helps only when the spell on top is one of ours.
   if (copiesTargetSpell(spell.oracleText)) return copyWorthCasting(view);
-  if (TARGETS_SPELL.test(spell.oracleText)) {
+  if (TARGETS_SPELL.test(withoutReminder(spell.oracleText))) {
     const top = view.stack[view.stack.length - 1];
     return top !== undefined && top.controller !== view.viewer;
   }
   // A pump or a keyword gain needs a creature of our own to help, not one of the opponent's.
   if (isHelpfulSpell(spell) && TARGETS_CREATURE.test(spell.oracleText)) {
     return ownCreatureCount(view) > 0;
+  }
+  // A protection spell for "target permanent you control" needs a permanent of ours, not one of the opponent's.
+  if (isHelpfulSpell(spell) && TARGETS_PERMANENT.test(spell.oracleText)) {
+    return view.battlefield.some((o) => o.controller === view.viewer);
   }
   if (TARGETS_CREATURE.test(spell.oracleText)) return opposingCreatures(view).length > 0;
   if (TARGETS_PERMANENT.test(spell.oracleText)) {
@@ -222,7 +228,13 @@ export function spellPlays(
   const byCard = new Map<string, Play[]>();
   for (const o of d.options) {
     // A card in the graveyard (flashback, escape) is a play of its own, considered after the hand (below).
-    if (o.kind !== 'castSpell' || o.alternative === 'flashback' || o.alternative === 'escape')
+    if (
+      o.kind !== 'castSpell' ||
+      o.alternative === 'flashback' ||
+      o.alternative === 'escape' ||
+      o.alternative === 'retrace' ||
+      o.alternative === 'harmonize'
+    )
       continue;
     const base = findObject(view, o.object);
     if (base === undefined) continue;
@@ -355,6 +367,28 @@ export function choosePriorityAction(
     }
   }
 
+  // 2b'. Retrace (CR 702.81a, D-667): a card in the graveyard cast by discarding a land card, only while the hand has a land card the agent cannot play this turn
+  // (it has played its land, or it holds two or more); the most valuable card by mana value, ties by PRNG. Which land goes is answered as any discard cost is.
+  const mine = view.seats.find((x) => x.id === view.viewer);
+  const landsInHand = (mine?.hand ?? []).filter((o) => isLand(o)).length;
+  const spareLand = landsInHand >= 2 || (landsInHand === 1 && (mine?.landsPlayedThisTurn ?? 0) > 0);
+  const retraces = spareLand
+    ? d.options.flatMap((o) => {
+        const obj =
+          o.kind === 'castSpell' && o.alternative === 'retrace'
+            ? findObject(view, o.object)
+            : undefined;
+        return obj !== undefined && allowed(view, obj, activations) ? [obj] : [];
+      })
+    : [];
+  if (retraces.length > 0) {
+    const best = Math.max(...retraces.map(manaValueOf));
+    const top = retraces.filter((s) => manaValueOf(s) === best);
+    const chosen = top[draw(top.length)];
+    if (chosen !== undefined)
+      return { kind: 'castSpell', object: chosen.id, alternative: 'retrace' };
+  }
+
   // 2c. Escape (CR 702.138a, D-124): like flashback, only once no worthwhile spell is left to cast from the hand.
   // The most valuable worthwhile card by printed mana value; ties by PRNG. The engine lists the option only when
   // the escape cost and the other cards to exile are there; which cards go is answered by `chooseEscapeExile`.
@@ -371,6 +405,25 @@ export function choosePriorityAction(
       return { kind: 'castSpell', object: chosen.id, alternative: 'escape' };
   }
 
+  // 2c'. Harmonize (CR 702.180a): the same, a card of the graveyard once no worthwhile spell is left to cast from the hand. The engine lists the
+  // option only when the cost can be paid, with a creature tapped if that is what it takes; the tap is answered by `choosePermanentToTap`.
+  const harmonized = d.options.flatMap((o) => {
+    const obj =
+      o.kind === 'castSpell' && o.alternative === 'harmonize'
+        ? findObject(view, o.object)
+        : undefined;
+    return obj !== undefined && allowed(view, obj, activations) ? [obj] : [];
+  });
+  if (harmonized.length > 0) {
+    const best = Math.max(...harmonized.map(manaValueOf));
+    const top = harmonized.filter((s) => manaValueOf(s) === best);
+    const chosen = top[draw(top.length)];
+    if (chosen !== undefined) {
+      if (isPreventionSpell(chosen)) activations.add(preventionKey(view));
+      return { kind: 'castSpell', object: chosen.id, alternative: 'harmonize' };
+    }
+  }
+
   // 2d. The special actions of Suspend and Foretell (D-128, `casual-later.ts`): once nothing worth casting is left.
   const special = chooseSpecialAction(view, d, worthCasting);
   if (special !== null) return special;
@@ -378,6 +431,10 @@ export function choosePriorityAction(
   // 2e. A face-down permanent of ours that is worth turning face up (D-313, `casual-face-down.ts`): with the mana left after the spells.
   const faceUp = chooseTurnFaceUp(view, d);
   if (faceUp !== null) return faceUp;
+
+  // 2f. A locked half of a Room of ours (CR 709.5e, `casual-rooms.ts`): unlocked with the mana left after the spells.
+  const unlock = chooseUnlockDoor(view, d);
+  if (unlock !== null) return unlock;
 
   // 3. A land to cycle, or a pump that changes the combat (see casual-activations.ts).
   const activation = chooseActivation(view, d, activations);

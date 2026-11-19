@@ -9,8 +9,15 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { alternativeOf, flashbackCostOf, hasGift, hasModeCosts } from './alt-costs';
-import { auraTargetSpec } from './attach';
+import {
+  alternativeOf,
+  flashbackCostOf,
+  hasAftermath,
+  hasGift,
+  hasModeCosts,
+  manaCostAsFlashbackCost,
+} from './alt-costs';
+import { auraTargetSpec, BESTOW_TARGET_SPEC } from './attach';
 import {
   type CastAlternative,
   type CastFrom,
@@ -18,6 +25,7 @@ import {
   castAs,
   isNamedAlternative,
 } from './cast-cost';
+import { castInOwnMainPhase } from './cast-phase';
 import {
   castForbiddenByOpponentsPermanent,
   castForbiddenByOwnAbility,
@@ -27,12 +35,15 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardPlayPermission } from './graveyard-play';
+import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
+import { hasGrantedFlashCasting } from './player-flash';
 import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
 import { splitSecondOnStack } from './split-second';
@@ -84,6 +95,8 @@ export function castTiming(
   if (types.includes('instant') || hasKeyword(state, obj, 'flash')) return free;
   // CR 601.3b (D-139): "You may cast artifact spells as though they had flash": a permanent of the caster's gives the permission.
   if (flashPermitted(state, seat, obj)) return free;
+  // CR 601.3b (Alchemist's Refuge): "You may cast spells this turn as though they had flash": an effect of this turn gives the permission.
+  if (hasGrantedFlashCasting(state, seat)) return free;
   if (hasSorceryTiming(state, seat)) return free;
   return ownFlashPermission(state, seat, obj) ?? { allowed: false, onlyTargets: null };
 }
@@ -159,13 +172,53 @@ export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObj
  * CR 601.2, 305.1, 611.2a (D-151): whether an effect ("You may play that card this turn") lets `seat` cast or play the card `obj` in exile: a
  * `playPermission` of the seat that names this very object (a card that left exile is a new one, CR 400.7) and has not ended.
  */
-export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject): boolean {
+export function mayPlayFromExile(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  asLand = false,
+  /**
+   * Lorehold group 2 (CR 118.9): `true` asks for a permission to cast the card without paying its mana cost, which is the alternative cost `free` and no other way; `false` (the
+   * default) for one that lets it be cast paying its cost. A card with both is cast either way.
+   */
+  free = false,
+): boolean {
   return (
     obj.zone === 'exile' &&
     state.continuousEffects.some(
       (e) =>
-        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+        e.change.kind === 'playPermission' &&
+        e.change.seat === seat &&
+        e.objects.includes(obj.id) &&
+        (e.change.free === true) === free &&
+        // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
+        !(asLand && e.change.castOnly === true),
     )
+  );
+}
+
+/**
+ * "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" (Lorehold group 2, CR 614.1a): whether the spell cast from exile with the
+ * permission of `free` kind that names `obj` carries the rider. It does when every permission of that kind that names the card carries it: a player who has another permission to
+ * cast the card without the rider uses that one, as they may choose, so the rider is not forced on them.
+ */
+export function playPermissionBottoms(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  free: boolean,
+): boolean {
+  const grants = state.continuousEffects.filter(
+    (e) =>
+      e.change.kind === 'playPermission' &&
+      e.change.seat === seat &&
+      e.objects.includes(obj.id) &&
+      (e.change.free === true) === free,
+  );
+  return (
+    obj.zone === 'exile' &&
+    grants.length > 0 &&
+    grants.every((e) => e.change.kind === 'playPermission' && e.change.bottomInstead === true)
   );
 }
 
@@ -174,13 +227,21 @@ export function mayPlayFromExile(state: GameState, seat: SeatId, obj: GameObject
  * graveyard: a `playPermission` of the seat that names this very object (a card that left the graveyard is a new one, CR 400.7) and has not ended.
  * The effect names only cards the seat owns (`runMayPlay`).
  */
-export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+export function mayPlayFromGraveyard(
+  state: GameState,
+  seat: SeatId,
+  obj: GameObject,
+  asLand = false,
+): boolean {
   return (
     obj.zone === 'graveyard' &&
     obj.owner === seat &&
     state.continuousEffects.some(
       (e) =>
-        e.change.kind === 'playPermission' && e.change.seat === seat && e.objects.includes(obj.id),
+        e.change.kind === 'playPermission' &&
+        e.change.seat === seat &&
+        e.objects.includes(obj.id) &&
+        !(asLand && e.change.castOnly === true),
     )
   );
 }
@@ -188,11 +249,11 @@ export function mayPlayFromGraveyard(state: GameState, seat: SeatId, obj: GameOb
 export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, face = 0): boolean {
   if (obj.card === null) return false;
   // D-151: a land card in exile an effect lets the player play ("You may play that card this turn").
-  const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj);
+  const fromExile = obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, true);
   // D-232: a land card in the graveyard a permanent lets its controller play once each turn; D-327: or an effect let them play this turn.
   const fromGraveyard =
     obj.zone === 'graveyard' &&
-    (mayPlayFromGraveyard(state, seat, obj) ||
+    (mayPlayFromGraveyard(state, seat, obj, true) ||
       graveyardPlayPermission(state, seat, obj, true) !== null);
   if (!fromExile && !fromGraveyard && (obj.zone !== 'hand' || obj.owner !== seat)) return false;
   if (!castableFaces(definitionOf(state, obj.card)).includes(face)) return false;
@@ -208,12 +269,50 @@ export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, fac
  * (its own "you may cast this card from your graveyard", a permission to play it): a player who has both uses the one with no rider, as they may choose, so the rider
  * is not forced on them.
  */
+/** Whether an effect that names `obj` lets `seat` cast it from the graveyard of any player (`mayCast.anyGraveyard`, issue 159). */
+function grantedFromAnyGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  return state.continuousEffects.some(
+    (e) =>
+      e.change.kind === 'castPermission' &&
+      e.change.seat === seat &&
+      e.change.anyGraveyard === true &&
+      e.objects.includes(obj.id),
+  );
+}
+
+/** The cards in any graveyard that an effect lets `seat` cast now (issue 159): the ones the cast permissions name. */
+function anyGraveyardCastable(state: GameState, seat: SeatId): ObjectId[] {
+  return state.continuousEffects
+    .filter(
+      (e) =>
+        e.change.kind === 'castPermission' &&
+        e.change.seat === seat &&
+        e.change.anyGraveyard === true,
+    )
+    .flatMap((e) => e.objects)
+    .filter((id) => state.objects[id]?.zone === 'graveyard' && state.objects[id]?.owner !== seat);
+}
+
+/** Whether the continuous effect is a cast permission for `seat` that covers the card `obj` of their graveyard: a named card, or (issue 159) a filter every matching card meets. */
+function grantsCast(
+  state: GameState,
+  e: GameState['continuousEffects'][number],
+  seat: SeatId,
+  obj: GameObject,
+): boolean {
+  if (e.change.kind !== 'castPermission' || e.change.seat !== seat) return false;
+  if (e.change.spells === undefined) return e.objects.includes(obj.id);
+  return matchesFilter(
+    state,
+    obj,
+    { ...e.change.spells, zone: 'graveyard' },
+    { controller: seat, source: obj.id },
+  );
+}
+
 export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameObject): boolean {
   if (obj.zone !== 'graveyard' || obj.owner !== seat) return false;
-  const grants = state.continuousEffects.filter(
-    (e) =>
-      e.change.kind === 'castPermission' && e.change.seat === seat && e.objects.includes(obj.id),
-  );
+  const grants = state.continuousEffects.filter((e) => grantsCast(state, e, seat, obj));
   if (grants.length === 0) return false;
   if (!grants.every((e) => e.change.kind === 'castPermission' && e.change.exileInstead === true))
     return false;
@@ -236,15 +335,12 @@ export function castPermissionExiles(state: GameState, seat: SeatId, obj: GameOb
  * front face, which is what it is in the graveyard (CR 712.8a). Or (D-135) an effect gave it a permission for this turn.
  */
 export function mayCastFromGraveyard(state: GameState, seat: SeatId, obj: GameObject): boolean {
-  if (obj.zone !== 'graveyard' || obj.owner !== seat) return false;
+  if (obj.zone !== 'graveyard') return false;
+  // Issue 159, CR 601.2: "You may cast target creature card in a graveyard this turn" names a card of any player's graveyard.
+  if (obj.owner !== seat) return grantedFromAnyGraveyard(state, seat, obj);
   // D-135, CR 611.2a: "You may cast target Zombie creature card from your graveyard this turn" gave this card, as it is now
   // (a card that moved is a new object, CR 400.7), the permission until the end of the turn.
-  if (
-    state.continuousEffects.some(
-      (e) =>
-        e.change.kind === 'castPermission' && e.change.seat === seat && e.objects.includes(obj.id),
-    )
-  ) {
+  if (state.continuousEffects.some((e) => grantsCast(state, e, seat, obj))) {
     return true;
   }
   // D-327, CR 601.2: "Mill a card. You may play that card this turn." lets the owner cast the card they milled.
@@ -326,20 +422,58 @@ export function castZone(
     obj.zone === 'exile' &&
     (obj.adventureBy === seat ||
       mayPlayFromExile(state, seat, obj) ||
+      // Lorehold group 2 (CR 118.9): "You may cast that card this turn without paying its mana cost".
+      mayPlayFromExile(state, seat, obj, false, true) ||
       freeCastSlots(state, seat, obj, faceIndex).length > 0);
-  if (obj.owner !== seat && !theirs) return null;
+  // Issue 159: or a card of another player's graveyard that an effect named ("You may cast target creature card in a graveyard this turn").
+  const fromTheirGraveyard = obj.zone === 'graveyard' && grantedFromAnyGraveyard(state, seat, obj);
+  if (obj.owner !== seat && !theirs && !fromTheirGraveyard) return null;
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
     return null;
+  // CR 702.127a (Aftermath): a half with Aftermath is cast from a graveyard and from no other zone, paying its own mana cost (it takes no alternative cost); the other half of the
+  // card is cast as any split half is.
+  if (obj.card !== null && hasAftermath(definitionOf(state, obj.card).faces[faceIndex] ?? null)) {
+    return alternative === undefined && obj.zone === 'graveyard' && obj.owner === seat
+      ? 'graveyard'
+      : null;
+  }
+  // CR 702.81a (Retrace, D-667): a card with retrace in its owner's graveyard is cast from there, paying its mana cost and discarding a land card.
+  if (alternative === 'retrace') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    const retrace = faceOf(state, obj)?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'retrace',
+    );
+    return retrace === true ? 'graveyard' : null;
+  }
   if (alternative === 'flashback') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const face = faceOf(state, obj);
     const spell = face?.types.includes('instant') || face?.types.includes('sorcery');
-    return spell === true && flashbackCostOf(face) !== null ? 'graveyard' : null;
+    if (spell !== true) return null;
+    // CR 702.34a: printed flashback, or flashback with the cost equal to the mana cost that an effect or a permanent gave the card (rules/flashback-grant.ts).
+    if (flashbackCostOf(face) !== null) return 'graveyard';
+    return manaCostAsFlashbackCost(face) !== null && hasGrantedFlashback(state, seat, obj)
+      ? 'graveyard'
+      : null;
   }
   if (alternative === 'escape') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     return alternativeOf(faceOf(state, obj), 'escape') === null ? null : 'graveyard';
+  }
+  // Issue 159: a card with a `sacrificeFromGraveyard` cost is cast from its owner's graveyard only.
+  if (alternative === 'sacrificeFromGraveyard') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    return alternativeOf(faceOf(state, obj), 'sacrificeFromGraveyard') === null
+      ? null
+      : 'graveyard';
+  }
+  // CR 702.180a (Harmonize): cast from the owner's graveyard, an instant or a sorcery card whose front face lists the harmonize cost.
+  if (alternative === 'harmonize') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    const face = faceOf(state, obj);
+    const spell = face?.types.includes('instant') || face?.types.includes('sorcery');
+    return spell === true && alternativeOf(face, 'harmonize') !== null ? 'graveyard' : null;
   }
   // CR 702.35a, 702.94a (D-128, D-274): a card is cast for its madness or miracle cost only as that ability resolves
   // (`castExiled`); it is never cast that way from a hand, so `canCast` and the option lists never offer it.
@@ -373,12 +507,15 @@ export function castZone(
   }
   // D-151: "You may play that card this turn": a card in exile with such a permission is cast as though it were in the hand.
   if (obj.zone === 'exile') {
-    if (alternative === undefined && mayPlayFromExile(state, seat, obj)) return 'exile';
+    // Lorehold group 2 (CR 118.9): a permission to cast without paying the mana cost is the alternative cost `free`, and only that.
     // CR 601.2, 118.9 (`mayCastEachType`): "you may cast a spell of that type from among the exiled cards without paying its mana cost", at the timing of its type.
-    if (alternative === 'free' && freeCastSlots(state, seat, obj, faceIndex).length > 0) {
-      return 'exile';
+    if (alternative === 'free') {
+      return mayPlayFromExile(state, seat, obj, false, true) ||
+        freeCastSlots(state, seat, obj, faceIndex).length > 0
+        ? 'exile'
+        : null;
     }
-    return null;
+    return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
   }
   if (obj.zone === 'hand') return 'hand';
   // A card in the command zone is one card, never a melded permanent (D-277).
@@ -401,6 +538,8 @@ export function targetSpecsOf(
   kicked = obj.stack?.kicked === true,
   /** Whether Gift was promised. Before casting, callers can ask either branch. */
   giftPromised = obj.stack?.giftTo !== undefined,
+  /** CR 702.103b: the spell is cast for its bestow cost: an Aura spell with "enchant creature", whatever its card is. */
+  bestowed = obj.stack?.alt === 'bestow',
 ): readonly TargetSpec[] {
   // CR 702.96b: a spell cast for its overload cost won't require any targets.
   if (overloaded && obj.stack?.ability == null) return [];
@@ -420,11 +559,16 @@ export function targetSpecsOf(
   )
     .filter((spec) => spec.ifGiftPromised === undefined || spec.ifGiftPromised === promised)
     // CR 702.33g, 601.2c (D-181): a slot of the kicked spell's text, or of the unkicked spell's, is chosen only in that case.
-    .filter(
-      (spec) => (spec.ifKicked !== true || kicked) && (spec.unlessKicked !== true || !kicked),
-    );
+    .filter((spec) => (spec.ifKicked !== true || kicked) && (spec.unlessKicked !== true || !kicked))
+    // Issue 244, CR 601.2c: a slot of the text that applies only to a spell cast during its controller's main phase.
+    .filter((spec) => spec.ifCastInOwnMain !== true || castInOwnMainPhase(state, obj));
   // Only a card that is not on the battlefield is being cast (an Aura permanent has no spell text).
-  const aura = obj.zone === 'battlefield' ? null : auraTargetSpec(face);
+  const aura =
+    obj.zone === 'battlefield'
+      ? null
+      : bestowed && obj.stack?.ability == null
+        ? BESTOW_TARGET_SPEC
+        : auraTargetSpec(face);
   return aura === null ? declared : [aura, ...declared];
 }
 
@@ -441,6 +585,8 @@ export function targetsPossible(
   kicked = obj.stack?.kicked === true,
   /** D-408: the spell is cast only by its own conditional flash ("if it targets a commander"): its targets must be objects this filter matches. */
   only: ObjectFilter | null = null,
+  /** CR 702.103b: the spell would be cast for its bestow cost (it needs a creature to target). */
+  bestowed = obj.stack?.alt === 'bestow',
 ): boolean {
   // CR 702.96b: an overloaded spell needs no target (the "each" of its text affects what matches).
   if (overloaded) return true;
@@ -455,7 +601,7 @@ export function targetsPossible(
       ? [false, true]
       : [obj.stack?.giftTo !== undefined];
   return giftBranches.some((giftPromised) => {
-    const specs = targetSpecsOf(state, obj, false, kicked, giftPromised);
+    const specs = targetSpecsOf(state, obj, false, kicked, giftPromised, bestowed);
     // D-408: a spell with nothing it must target cannot meet "if it targets a commander".
     const restricted = only === null ? -1 : flashSlotOf(specs);
     if (only !== null && restricted < 0) return false;
@@ -495,6 +641,10 @@ export function alternativeCostAllowed(
   kind: AlternativeCost['kind'],
 ): boolean {
   if (obj.card === null) return false;
+  // Lorehold group 2 (CR 118.9): a card in exile the effect lets its controller cast without paying its mana cost: the card lists no alternative cost for it.
+  if (kind === 'free' && obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, false, true)) {
+    return true;
+  }
   const alt = definitionOf(state, obj.card).faces[face]?.alternativeCosts?.find(
     (a) => a.kind === kind,
   );
@@ -556,7 +706,7 @@ export function canCast(
   ) {
     return false;
   }
-  const spell = castAs(obj, seat, face);
+  const spell = castAs(obj, seat, face, alternative);
   const types = derive(state, spell).types;
   if (types.includes('land')) return false;
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".
@@ -576,9 +726,17 @@ export function canCast(
   const payments = modePayments(state, seat, spell);
   return kickedWays.some(
     (kicked) =>
-      targetsPossible(state, seat, spell, alternative === 'overload', kicked, timing.onlyTargets) &&
-      payments.some((modes) =>
-        canPayRequest(state, seat, spell, {
+      targetsPossible(
+        state,
+        seat,
+        spell,
+        alternative === 'overload',
+        kicked,
+        timing.onlyTargets,
+        alternative === 'bestow',
+      ) &&
+      payments.some((modes) => {
+        const request = {
           seat,
           spell,
           zone,
@@ -588,8 +746,14 @@ export function canCast(
           x: least,
           // CR 702.120a (D-145): a modal spell with escalate needs at least the mana for the fewest modes it must choose; with modes that have a cost (D-433) the set chosen.
           ...modes,
-        }),
-      ),
+        } as const;
+        // CR 702.180a (Harmonize): paid with no creature tapped, or with one tapped (which then pays no mana).
+        return alternative === 'harmonize'
+          ? harmonizeWays(state, seat).some((way) =>
+              canPayRequest(way.state, seat, spell, { ...request, harmonizeTap: way.tap }),
+            )
+          : canPayRequest(state, seat, spell, request);
+      }),
   );
 }
 
@@ -630,12 +794,13 @@ export function canCastDuringResolution(
    * with the miracle cost, for a card that is in the hand (its X, when it has one, is announced in the cast). `normal` (D-350): the card, in a graveyard, is cast
    * paying its mana cost (an effect named it).
    */
-  alternative: 'free' | 'normal' | 'madness' | 'miracle' = 'free',
+  alternative: 'free' | 'freeGraveyard' | 'normal' | 'madness' | 'miracle' = 'free',
   /** D-351 (CR 609.4b): mana of any type can be spent to cast the spell (`normal` only): the cost is read that way. */
   anyManaType = false,
 ): boolean {
-  if (obj.card === null) return false;
-  if (alternative === 'normal') {
+  // D-654 (CR 707.12): the copy of a card an effect made in exile is cast as the effect resolves, like the card itself.
+  if (obj.card === null && obj.cardCopy !== true) return false;
+  if (alternative === 'normal' || alternative === 'freeGraveyard') {
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
     // effect names it); the spell is cast from there and its owner stays the card's owner.
     if (obj.zone !== 'graveyard') return false;
@@ -649,7 +814,8 @@ export function canCastDuringResolution(
   if (obj.zone === 'library' && (obj.owner !== seat || alternative !== 'free')) return false;
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
-  if (obj.zone === 'hand' && obj.owner !== seat) return false;
+  // CR 608.2g: a card of a library is cast from among the cards its owner looked at ("look at the top seven cards ... you may cast a spell from among them").
+  if ((obj.zone === 'hand' || obj.zone === 'library') && obj.owner !== seat) return false;
   // CR 702.94a (D-274): a card is cast for its miracle cost from the hand it was revealed in.
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (
@@ -674,7 +840,12 @@ export function canCastDuringResolution(
           spell,
           zone: from,
           // D-350: a cast that pays the mana cost has no alternative cost.
-          alternative: alternative === 'normal' ? undefined : alternative,
+          alternative:
+            alternative === 'normal'
+              ? undefined
+              : alternative === 'freeGraveyard'
+                ? 'free'
+                : alternative,
           kicked,
           excluded: obj.id,
           // CR 702.120a, 118.9 (D-145): a free cast still pays the escalate cost of the fewest modes it must choose, and the cost of the modes chosen (D-433).
@@ -714,6 +885,11 @@ function faceOptions(
   return out;
 }
 
+/** Whether the card has a half with Aftermath (CR 702.127a): in a graveyard it may be cast from there. */
+function hasAftermathHalf(state: GameState, obj: GameObject): boolean {
+  return obj.card !== null && definitionOf(state, obj.card).faces.some((f) => hasAftermath(f));
+}
+
 /**
  * Every spell the seat could cast now from the hand, the command zone, or exile for a card on an
  * Adventure, one entry per castable face (CR 709.3, 712.11b, 715.3).
@@ -721,11 +897,16 @@ function faceOptions(
 export function castableObjects(state: GameState, seat: SeatId): FaceOption[] {
   const onAdventure = state.exile.filter((id) => getObject(state, id).onAdventure === true);
   const prepared = state.exile.filter((id) => getObject(state, id).prepareOf !== undefined);
-  const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
-    (id) =>
-      mayCastFromGraveyard(state, seat, getObject(state, id)) ||
-      graveyardPlayPermission(state, seat, getObject(state, id), false) !== null,
-  );
+  const fromGraveyard = [
+    ...zoneList(state, 'graveyard', seat).filter(
+      (id) =>
+        mayCastFromGraveyard(state, seat, getObject(state, id)) ||
+        graveyardPlayPermission(state, seat, getObject(state, id), false) !== null ||
+        hasAftermathHalf(state, getObject(state, id)),
+    ),
+    // Issue 159: the cards of other players' graveyards that an effect lets the seat cast this turn.
+    ...anyGraveyardCastable(state, seat),
+  ];
   const playable = state.exile.filter(
     (id) => !onAdventure.includes(id) && mayPlayFromExile(state, seat, getObject(state, id)),
   );
@@ -754,12 +935,24 @@ export function alternativeCastObjects(
   kind: Exclude<CastAlternative, 'flashback'>,
 ): FaceOption[] {
   const onAdventure = state.exile.filter((id) => getObject(state, id).onAdventure === true);
+  // Lorehold group 2 (CR 118.9): the cards in exile an effect lets the seat cast without paying their mana cost.
+  const freeFromExile =
+    kind === 'free'
+      ? state.exile.filter(
+          (id) =>
+            !onAdventure.includes(id) &&
+            mayPlayFromExile(state, seat, getObject(state, id), false, true),
+        )
+      : [];
   const candidates = [
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'command', seat),
     ...onAdventure,
+    ...freeFromExile,
     // `mayCastEachType`: the exiled cards a permission lets the seat cast without paying their mana costs.
-    ...(kind === 'free' ? freeCastCards(state, seat) : []),
+    ...(kind === 'free'
+      ? freeCastCards(state, seat).filter((id) => !freeFromExile.includes(id))
+      : []),
   ];
   return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, kind, face));
 }
@@ -776,6 +969,27 @@ export function foretellCastObjects(state: GameState, seat: SeatId): ObjectId[] 
 export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'escape'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now with retrace (CR 702.81a, D-667): the card is castable and a land card can be discarded for it. */
+export function retraceObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'retrace'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now for their `sacrificeFromGraveyard` cost (issue 159). */
+export function sacrificeFromGraveyardObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'sacrificeFromGraveyard'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now for their harmonize cost (CR 702.180a). */
+export function harmonizeObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'harmonize'),
   );
 }
 

@@ -122,6 +122,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
+      if (ctx.castTriggerX) {
+        const blockedCast = needs('triggerSpellX');
+        return blockedCast ?? { ok: true, value: { kind: 'triggerSpellX' }, rule };
+      }
       const blocked = needs('x');
       if (blocked !== null) return blocked;
       ctx.usesX = true;
@@ -181,6 +186,22 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'triggerDamage' }, rule };
     }
+    case 'aurasAttachedToIt': {
+      // CR 603.10a, 113.7a (D-654): read from the last-known information of the permanent the trigger is about; `validateCard` refuses it where the trigger has none.
+      const blocked = needs('aurasAttachedToTriggerSubject');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: { kind: 'aurasAttachedToTriggerSubject', controlledBy: 'you' },
+        rule,
+      };
+    }
+    case 'cardTypesAmongThoseCards': {
+      // CR 205.2a, 603.2c: "for each card type among those cards": the cards of a batch trigger; `validateCard` refuses it where the trigger has no cards.
+      const blocked = needs('cardTypesAmongTriggerCards');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'cardTypesAmongTriggerCards' }, rule };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -202,6 +223,14 @@ export function lowerAmount(
       // this spell" only (the spell is the source there); "it" is that spell only when the ability is about the source itself.
       const blocked = needs('manaSpent');
       if (blocked !== null) return blocked;
+      // D-646 (CR 601.2h, 113.7a): "the amount of mana spent to cast that spell": the spell that caused a "whenever you cast" trigger, read from the spell as it is or as it last was.
+      if (amount.who === 'thatSpell') {
+        // The colors of the mana spent on "that spell" are not read (the engine reads them of the spell itself).
+        if (!ctx.castTrigger || amount.colors === true) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        return { ok: true, value: { kind: 'manaSpent', of: { kind: 'triggerSubject' } }, rule };
+      }
       // D-260: the effect of a spell reads it too, of the spell itself ("... for each {S} spent to cast ~", the card's own name): the engine reads the stack data of
       // the spell that is resolving.
       const ofSpell = ctx.owner === 'spell' && amount.who === 'self';
@@ -214,6 +243,8 @@ export function lowerAmount(
           kind: 'manaSpent',
           ...(amount.fromType === undefined ? {} : { fromType: amount.fromType }),
           ...(amount.snow === true ? { snow: true as const } : {}),
+          // "the number of colors of mana spent to cast ~" (Converge, issue 310, CR 105.1).
+          ...(amount.colors === true ? { colors: true as const } : {}),
         },
         rule,
       };
@@ -232,6 +263,13 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
     }
+    case 'cardsInHandOfAffected': {
+      // CR 402.1: the engine reads each player's own hand as the damage is dealt to them; the damage lowering refuses it where the recipients are not players, and
+      // `validateCard` refuses it in any other amount.
+      const blocked = needs('cardsInHandOfAffected');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
+    }
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -240,6 +278,12 @@ export function lowerAmount(
     case 'diedThisTurn': {
       const blocked = needs(amount.kind);
       if (blocked !== null) return blocked;
+      // CR 700.9 (modified): the deaths record whether the permanent was modified as it left.
+      const modified = amount.kind === 'diedThisTurn' && amount.modified === true;
+      if (modified) {
+        const missing = missingFeatures(['selector:modified']);
+        if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
+      }
       return {
         ok: true,
         value: {
@@ -247,6 +291,7 @@ export function lowerAmount(
           controller: amount.controller,
           ...(amount.types === undefined ? {} : { types: amount.types as readonly CardType[] }),
           ...(amount.token === undefined ? {} : { token: amount.token }),
+          ...(modified ? { modified: true as const } : {}),
         },
         rule,
       };
@@ -262,6 +307,36 @@ export function lowerAmount(
       const blocked = needs('cardsDrawnThisTurn');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
+    }
+    case 'spellsCastThisTurn': {
+      // CR 601.2i (D-638): the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
+      const blocked = needs('spellsCastThisTurn');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: {
+          kind: 'spellsCastThisTurn',
+          ...(amount.ofTypes === undefined
+            ? {}
+            : { ofTypes: amount.ofTypes as readonly CardType[] }),
+        },
+        rule,
+      };
+    }
+    case 'greatestManaValueCast': {
+      // CR 202.3, 601.2i (D-646): the greatest mana value among the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
+      const blocked = needs('greatestManaValueCast');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: {
+          kind: 'greatestManaValueCast',
+          ...(amount.ofTypes === undefined
+            ? {}
+            : { ofTypes: amount.ofTypes as readonly CardType[] }),
+        },
+        rule,
+      };
     }
     case 'countOf': {
       const blocked = needs('countOf');
@@ -281,14 +356,31 @@ export function lowerAmount(
         const { controller: _named, ...rest } = amount.of.filter;
         const plain = countFilter({ ...amount.of, filter: rest });
         if (!plain.ok) return plain;
+        // D-649 (CR 108.3, 400.1): a card outside the battlefield belongs to its owner ("for each card in target opponent's hand"); a permanent has a controller.
+        const outside =
+          amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
         return {
           ok: true,
-          value: { kind: 'countOf', filter: { ...plain.value, controlledBy: named.value } },
+          value: {
+            kind: 'countOf',
+            filter: outside
+              ? { ...plain.value, owner: named.value }
+              : { ...plain.value, controlledBy: named.value },
+          },
           rule,
         };
       }
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
+      // Issue 279 (CR 608.2c, 611.2c): "Draw a card for each creature you control with a +1/+1 counter on it. Those creatures gain indestructible until end of turn.":
+      // "those creatures" are the ones the count counted, the group the filter names as the later instruction resolves (nothing in between changes who is in it). Only the
+      // `each` of a plural group counted by `for each`/`the number of`; a player or a group that names another object is not recorded.
+      if (amount.of.ref !== undefined && amount.of.det === 'each') {
+        const selecting = missingFeatures(['selector:each']);
+        if (selecting.length === 0) {
+          ctx.eachMentions.set(amount.of.ref, { kind: 'each', filter: filter.value });
+        }
+      }
       return { ok: true, value: { kind: 'countOf', filter: filter.value }, rule };
     }
     case 'cardTypesAmong': {
@@ -307,8 +399,43 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       // "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once as the spell is cast, which only the total of a divided
       // damage is; anywhere else the same words would be read as the spell resolves.
-      if (amount.asCast === true && !ctx.readAsCast) {
+      // "as you cast ~" names a spell: an ability has no cast (CR 601.2d, 602.2b), so its total is a number or an amount that reads no "cast".
+      if (amount.asCast === true && (!ctx.readAsCast || ctx.owner !== 'spell')) {
         return { ok: false, needs: [], at: amount.span, rule };
+      }
+      // "the greatest power among creatures they control" (Death Toll deck, group D, CR 109.4, 608.2c): the player is a target the ability declares, read as the amount is
+      // worked out (the engine's `controlledBy` of a target, as in a count). Only a permanent of the battlefield, and only a target: any other player is left unread.
+      const controller = amount.of.filter.controller;
+      if (typeof controller === 'object') {
+        const missingRef = missingFeatures(['selector:controllerRef']);
+        if (missingRef.length > 0) return { ok: false, needs: missingRef, at: amount.span, rule };
+        const outside =
+          amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield';
+        // "they" is the player a target names, bound to that target (an anaphor with its reference); a player the binding left unbound is refused.
+        if (
+          outside ||
+          amount.asCast === true ||
+          controller.orPlaneswalkerController === true ||
+          (controller.noun.det !== 'target' && controller.noun.det !== 'anaphor')
+        ) {
+          return { ok: false, needs: [], at: amount.span, rule };
+        }
+        const named = playerSelectorOf(controller.noun, ctx);
+        if (!named.ok) return named;
+        if (named.value.kind !== 'target') return { ok: false, needs: [], at: amount.span, rule };
+        const { controller: _named, ...rest } = amount.of.filter;
+        const plain = countFilter({ ...amount.of, filter: rest });
+        if (!plain.ok) return plain;
+        return {
+          ok: true,
+          value: {
+            kind: 'aggregate',
+            how: amount.how,
+            stat: amount.stat,
+            filter: { ...plain.value, controlledBy: named.value },
+          },
+          rule,
+        };
       }
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
@@ -339,6 +466,12 @@ export function lowerAmount(
       // CR 903.8 (stage P68, D-229): the times the controller's commanders were cast from the command zone.
       const blocked = needs('commanderCasts');
       if (blocked !== null) return blocked;
+      if (amount.player !== undefined) {
+        // "... for each time they've cast a commander from the command zone this game": the player the effect names (a target), not the controller.
+        const player = playerSelectorOf(amount.player, ctx);
+        if (!player.ok) return player;
+        return { ok: true, value: { kind: 'commanderCasts', player: player.value }, rule };
+      }
       return { ok: true, value: { kind: 'commanderCasts' }, rule };
     }
     case 'lifeTotalOf': {
@@ -399,10 +532,35 @@ export function lowerAmount(
       if (parts.length < 2) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'sum', of: parts }, rule };
     }
+    case 'extreme': {
+      const blocked = needs('extreme');
+      if (blocked !== null) return blocked;
+      const parts: Amount[] = [];
+      for (const part of amount.of) {
+        const lowered = lowerAmount(part, ctx, rule);
+        if (!lowered.ok) return lowered;
+        parts.push(lowered.value);
+      }
+      if (parts.length < 2) return { ok: false, needs: [], at: amount.span, rule };
+      return { ok: true, value: { kind: 'extreme', pick: amount.pick, of: parts }, rule };
+    }
+    case 'opponentCount': {
+      const blocked = needs('opponentCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'opponentCount' }, rule };
+    }
     case 'opponentsWithMore': {
       const blocked = needs('opponentsWithMore');
       if (blocked !== null) return blocked;
-      return { ok: true, value: { kind: 'opponentsWithMore', stat: amount.stat }, rule };
+      return {
+        ok: true,
+        value: {
+          kind: 'opponentsWithMore',
+          stat: amount.stat,
+          ...(amount.fewer === true ? { fewer: true as const } : {}),
+        },
+        rule,
+      };
     }
     case 'shortfall': {
       // CR 701.57 (stage P34, D-152): the limit less the mana value of the card an earlier instruction of this text found by exiling cards
@@ -492,7 +650,7 @@ export function lowerCountedPtStep(
 }
 
 /** Whether the filter, or one of its `anyOf` members, is something a static ability's count cannot read (D-115). */
-function staticCannotRead(f: IrNoun['filter']): boolean {
+function staticCannotRead(f: IrNoun['filter'], keywords = false): boolean {
   // D-115, CR 613.8: the count reads types, colors, subtypes, controller and zone and never a power or a
   // toughness (the filter rules read "with power 4 or greater", which the engine refuses here). The objects of
   // another player ("your opponents control") are not counted by a static ability here; the cards in the graveyards
@@ -502,18 +660,20 @@ function staticCannotRead(f: IrNoun['filter']): boolean {
   return (
     f.power !== undefined ||
     f.toughness !== undefined ||
-    f.attackingYou === true ||
-    f.attackingOpponents === true ||
+    f.attackingYou !== undefined ||
+    f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
+    f.blocking === true ||
     f.attacking === true ||
     f.manaValueX === true ||
     f.controllerDamagedBySource === true ||
     f.modified === true ||
-    f.keywords !== undefined ||
-    f.notKeywords !== undefined ||
+    f.goaded === true ||
+    // D-149 (CR 613.4c, 613.8): a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (7a) may not.
+    (!keywords && (f.keywords !== undefined || f.notKeywords !== undefined)) ||
     opponentsObjects ||
     typeof f.controller === 'object' ||
-    (f.anyOf?.some(staticCannotRead) ?? false)
+    (f.anyOf?.some((m) => staticCannotRead(m, keywords)) ?? false)
   );
 }
 
@@ -522,9 +682,11 @@ function countInStatic(
   amount: IrAmount,
   ctx: LowerContext,
   rule: string,
+  keywords = false,
 ): LowerResult<Extract<Amount, { kind: 'countOf' }>> {
   if (amount.kind !== 'countOf') return { ok: false, needs: [], at: amount.span, rule };
-  if (staticCannotRead(amount.of.filter)) return { ok: false, needs: [], at: amount.span, rule };
+  if (staticCannotRead(amount.of.filter, keywords))
+    return { ok: false, needs: [], at: amount.span, rule };
   const lowered = lowerAmount(amount, ctx, rule);
   if (!lowered.ok) return lowered;
   if (
@@ -542,6 +704,7 @@ function sumInStatic(
   amount: Extract<IrAmount, { kind: 'sum' }>,
   ctx: LowerContext,
   rule: string,
+  keywords = false,
 ): LowerResult<{
   readonly kind: 'sum';
   readonly of: readonly Extract<Amount, { kind: 'countOf' }>[];
@@ -550,7 +713,7 @@ function sumInStatic(
   if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
   const parts: Extract<Amount, { kind: 'countOf' }>[] = [];
   for (const part of amount.of) {
-    const counted = countInStatic(part, ctx, rule);
+    const counted = countInStatic(part, ctx, rule, keywords);
     if (!counted.ok) return counted;
     parts.push(counted.value);
   }
@@ -596,10 +759,10 @@ export function lowerStaticPtStep(
   // D-539 (CR 613.4c): "+1/+1 for each land you control and each land card in your graveyard": the sum of counts; a step other than 1 of a sum is not a multiple the engine reads.
   if (count.kind === 'sum') {
     return step === 1
-      ? sumInStatic(count, ctx, rule)
+      ? sumInStatic(count, ctx, rule, true)
       : { ok: false, needs: [], at: count.span, rule };
   }
-  const counted = countInStatic(count, ctx, rule);
+  const counted = countInStatic(count, ctx, rule, true);
   if (!counted.ok || step === 1) return counted;
   const missing = missingFeatures(['amount:times']);
   if (missing.length > 0) return { ok: false, needs: missing, at: count.span, rule };
@@ -623,6 +786,26 @@ export function lowerStaticAmount(
   if (amount.kind === 'commanderCasts') {
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderCasts' }, rule } : lowered;
+  }
+  // "+X/+0, where X is the greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, which reads the printed power of cards
+  // in a zone outside the battlefield (a greatest power among permanents would read layer 7 itself, CR 613.8: refused).
+  if (amount.kind === 'aggregate' && amount.how === 'greatest' && amount.stat === 'power') {
+    const missing = missingFeatures(['amount:greatestPowerAmong']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
+    const zone = amount.of.filter.zone;
+    if (
+      zone === undefined ||
+      zone === 'battlefield' ||
+      zone === 'stack' ||
+      amount.asCast === true ||
+      staticCannotRead(amount.of.filter)
+    ) {
+      return { ok: false, needs: [], at: amount.span, rule };
+    }
+    const filter = countFilter(amount.of);
+    return filter.ok
+      ? { ok: true, value: { kind: 'greatestPowerAmong', filter: filter.value }, rule }
+      : filter;
   }
   return lowerStaticPtStep(1, amount, ctx, rule);
 }
@@ -655,6 +838,7 @@ export function lowerDefinedPt(
 export const AMOUNT_NEEDS = [
   'amount:x',
   'amount:enteredX',
+  'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
   'amount:powerOf',
   'amount:manaValueOf',
@@ -667,6 +851,8 @@ export const AMOUNT_NEEDS = [
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
+  'amount:spellsCastThisTurn',
+  'amount:greatestManaValueCast',
   'amount:exiledAsCost',
   'amount:times',
   'amount:toughnessOf',
@@ -679,14 +865,19 @@ export const AMOUNT_NEEDS = [
   'amount:commanderCasts',
   'amount:lifeTotalOf',
   'amount:colorsAmong',
+  'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',
   'amount:sum',
+  'amount:extreme',
+  'amount:opponentCount',
   'amount:opponentsWithMore',
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:cardTypesAmongTriggerCards',
+  'amount:triggerSpellX',
   'amount:votesFor',
 ] as const;

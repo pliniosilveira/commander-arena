@@ -77,6 +77,8 @@ const SPELL_SUBTYPES: Parser<string[]> = (ctx, pos) => {
 interface Named {
   readonly types: string[];
   readonly subtypes?: string[];
+  /** A creature type before "creature" ("a Zombie creature spell", Gisa and Geralf, issue 159): the spell is a creature of that type. */
+  readonly creatureType?: string;
 }
 
 /**
@@ -90,6 +92,11 @@ const GRAVEYARD_SPELL: Parser<IrFilter> = (ctx, pos) => {
       map(literal('permanent'), (): Named => ({ types: ['permanent'] })),
       map(typeWords(CARD_TYPES, false), (types): Named => ({ types })),
       map(SPELL_SUBTYPES, (subtypes): Named => ({ types: [], subtypes })),
+      // Issue 159: "a Zombie creature spell": a creature type, then "creature".
+      map(
+        sequence(pattern(new RegExp(`(${SUBTYPE_WORD})(?= creature )`, 'u')), literal(' creature')),
+        ([m]): Named => ({ types: ['creature'], creatureType: m[1] ?? '' }),
+      ),
     ),
     literal(' spell'),
     optional(
@@ -100,27 +107,32 @@ const GRAVEYARD_SPELL: Parser<IrFilter> = (ctx, pos) => {
   if (!r.ok) return r;
   const [, what, , compared] = r.value;
   const { types } = what;
+  if (what.creatureType !== undefined && PERMANENT_SPELL_SUBTYPES.has(what.creatureType)) {
+    return fail(ctx, pos);
+  }
   const permanent = types.length === 1 && types[0] === 'permanent';
   if (!permanent && types.some((t) => t === 'land' || t === 'instant' || t === 'sorcery')) {
     return fail(ctx, pos);
   }
   const raw = ctx.text.slice(pos, r.pos);
-  const base: IrFilter = what.subtypes
-    ? {
-        // The spell is an Aura or an Equipment (each member one subtype), as a spell of any of the card types is (CR 205.3).
-        anyOf: what.subtypes.map((w): IrFilter => ({ subtypes: [w], raw: w })),
-        raw,
-      }
-    : {
-        ...(permanent
-          ? {
-              anyOf: ['artifact', 'creature', 'enchantment', 'planeswalker', 'battle'].map(
-                (t): IrFilter => ({ types: [t], raw: t }),
-              ),
-            }
-          : { types }),
-        raw,
-      };
+  const base: IrFilter = what.creatureType
+    ? { types: ['creature'], subtypes: [what.creatureType], raw }
+    : what.subtypes
+      ? {
+          // The spell is an Aura or an Equipment (each member one subtype), as a spell of any of the card types is (CR 205.3).
+          anyOf: what.subtypes.map((w): IrFilter => ({ subtypes: [w], raw: w })),
+          raw,
+        }
+      : {
+          ...(permanent
+            ? {
+                anyOf: ['artifact', 'creature', 'enchantment', 'planeswalker', 'battle'].map(
+                  (t): IrFilter => ({ types: [t], raw: t }),
+                ),
+              }
+            : { types }),
+          raw,
+        };
   return { ok: true, value: withComparison(base, compared), pos: r.pos };
 };
 
@@ -146,6 +158,8 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an artifact spell from your graveyard. If you cast a spell this way, that artifact enters tapped.',
     'Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it gains "When ~ is put into a graveyard from the battlefield, exile it and you gain 2 life."',
     'Once during each of your turns, you may cast a creature spell from your graveyard.',
+    // Grave Danger (issue 159, Gisa and Geralf): a creature type before "creature".
+    'Once during each of your turns, you may cast a Zombie creature spell from your graveyard.',
     'Once during each of your turns, you may play a land from your graveyard.',
     // D-401 (Danitha, group 1b): subtypes of permanents.
     'Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard.',
@@ -169,6 +183,9 @@ export const STATIC_GRAVEYARD_PLAY = defineRule<IrStatic>({
     'Once during each of your turns, you may cast an Aura or Equipment spell from your graveyard. If you cast a spell this way, that artifact enters tapped.',
     'Once during each of your turns, you may cast an Aura or Arcane spell from your graveyard.',
     'Once during each of your turns, you may cast an Aura or Forest spell from your graveyard.',
+    'Once during each of your turns, you may cast a Zombie spell from your graveyard.',
+    'Once during each of your turns, you may cast a Zombie creature spell from your hand.',
+    'Once during each of your turns, you may cast an Aura creature spell from your graveyard.',
     'Once during each of your turns, you may cast an Aura or Banana spell from your graveyard.',
     'Once during each of your turns, you may cast an Aura or Aura spell from your graveyard.',
     'Once during each of your turns, you may cast Aura or Equipment spells from your graveyard.',

@@ -165,6 +165,9 @@ export const PLURAL_STARTS = [
   ...TYPE_LEADING_WORDS.map((word) => `non-${word}`),
   'nontoken',
   'colorless',
+  // CR 508.1k, 509.1g: "attacking creatures with flying get +1/+1", "blocking creatures with flying get +0/+2".
+  'attacking',
+  'blocking',
   ...['creatures', 'artifacts', 'enchantments', 'lands', 'planeswalkers', 'battles', 'permanents'],
   ...['artifact', 'enchantment', 'land', 'planeswalker', 'battle', 'creature'],
   ...['legendary', 'basic', 'snow', 'tapped', 'untapped'],
@@ -193,6 +196,8 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
     'creatures you control get +1/+1 until end of turn for each artifact you control',
     // Stage P65 (D-218): the attackers of your opponents.
     'creatures attacking your opponents and/or planeswalkers they control get +2/+0 until end of turn',
+    // Issue 160 (D-627, CR 115.1, 611.2c): the creatures of a player the text targets.
+    'creatures target player controls get +2/+2 until end of turn',
   ],
   rejects: [
     'creatures you control gets +1/+1 until end of turn',
@@ -204,7 +209,14 @@ export const EFFECT_PUMP_ALL = defineRule<Clauses>({
   parse: single(
     'effect.pump-all',
     sequence(
-      family<IrNoun>('noun', { only: ['noun.plain-permanents', 'noun.attacking-opponents'] }),
+      family<IrNoun>('noun', {
+        only: [
+          'noun.plain-permanents',
+          'noun.attacking-opponents',
+          // Issue 160 (D-627): "creatures target player controls get +2/+2 until end of turn".
+          'noun.group-of-target-player',
+        ],
+      }),
       literal(' get '),
       PUMP_TAIL,
     ),
@@ -239,6 +251,7 @@ export const EFFECT_PUMP_EACH = defineRule<Clauses>({
     'All creatures your opponents control get -1/-1 until end of turn',
     'Each creature gets +2/+0 until end of turn',
     'each creature you control gets +1/+1 until end of turn',
+    "each other creature that's attacking one of your opponents gets +1/+1 until end of turn",
     'All creatures get -1/-1 until end of turn for each Swamp you control',
     'Each creature gets +1/+1 until end of turn for each artifact you control',
   ],
@@ -259,7 +272,13 @@ export const EFFECT_PUMP_EACH = defineRule<Clauses>({
       quiet(
         choice(
           sequence(family<IrNoun>('noun', { only: ['noun.all-permanents'] }), literal(' get ')),
-          sequence(family<IrNoun>('noun', { only: ['noun.each-permanent'] }), literal(' gets ')),
+          sequence(
+            // D-650: "each other creature that's attacking one of your opponents gets +1/+1" (Martial Impetus).
+            family<IrNoun>('noun', {
+              only: ['noun.each-permanent', 'noun.each-other-attacking-opponent'],
+            }),
+            literal(' gets '),
+          ),
         ),
       ),
       PUMP_TAIL,

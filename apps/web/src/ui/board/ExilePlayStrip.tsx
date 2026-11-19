@@ -8,7 +8,7 @@ import type { GameView, ObjectView } from '@commander-arena/engine';
 import { exileBadge } from '../decisions/layouts';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
-import { exilePlayable } from './exile-play';
+import { type ExilePlayable, exilePlayable } from './exile-play';
 import { useHoverPreview } from './hover';
 
 function PlayTile({ object, label }: { object: ObjectView; label: string }) {
@@ -33,23 +33,30 @@ function PlayTile({ object, label }: { object: ObjectView; label: string }) {
   );
 }
 
-export function ExilePlayStrip({ view }: { view: GameView }) {
+/**
+ * `playable` is the list the board already computed; without it the strip computes its own. The strip sits
+ * in a zero-width anchor at the right end of the field row and floats over the right side of the rows, so
+ * it never meets the emblem strip at the left and the permanents stay centred.
+ */
+export function ExilePlayStrip({ view, playable }: { view: GameView; playable?: ExilePlayable }) {
   const ix = useInteraction();
-  const { cards, exile, priority, index } = exilePlayable(view, ix.clickable);
+  const { cards, exile, priority, index } = playable ?? exilePlayable(view, ix.clickable);
   if (cards.length === 0) return null;
   return (
-    <section className="board-emblems board-exile-plays is-mine" aria-label="Cast from exile">
-      <span className="board-emblems-caption">Play from exile</span>
-      <ul className="board-emblems-list">
-        {cards.map((o) => (
-          <li key={o.id}>
-            <PlayTile
-              object={o}
-              label={exileBadge(exile, index, o.id, priority ?? undefined) ?? 'Cast from exile'}
-            />
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className="board-exile-anchor">
+      <section className="board-emblems board-exile-plays is-mine" aria-label="Cast from exile">
+        <span className="board-emblems-caption">Play from exile</span>
+        <ul className="board-emblems-list">
+          {cards.map((o) => (
+            <li key={o.id}>
+              <PlayTile
+                object={o}
+                label={exileBadge(exile, index, o.id, priority ?? undefined) ?? 'Cast from exile'}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }

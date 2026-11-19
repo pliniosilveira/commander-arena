@@ -77,6 +77,8 @@ describe('amounts that read an object', () => {
       'times',
       'lifeLostThisWay',
       'lifeLostThisTurn',
+      // CR 402.1: the cards in that player's hand, read for each player a dealDamage hurts.
+      'cardsInHandOfAffected',
       'lifeGainedThisTurn',
       'enteredThisTurn',
       'diedThisTurn',
@@ -93,6 +95,8 @@ describe('amounts that read an object', () => {
       'lifeTotalOf',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
+      // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
+      'greatestPowerAmong',
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'timesAttacked',
@@ -101,21 +105,34 @@ describe('amounts that read an object', () => {
       'multiple',
       'minus',
       'sum',
+      'extreme',
+      'opponentCount',
       'opponentsWithMore',
       'thisWay',
       // D-133.
       'triggerDamage',
       // D-574: the number of targets on a spell that caused a cast trigger.
       'triggerTargetCount',
+      // Quandrix Unlimited group E: the X of the spell that caused a cast trigger.
+      'triggerSpellX',
+      // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
+      'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
       'cardsDrawnThisTurn',
+      // D-638 (CR 601.2i): the instants and sorceries cast this turn.
+      'spellsCastThisTurn',
+      // D-646 (CR 202.3, 601.2i): the greatest mana value among the spells cast this turn.
+      'greatestManaValueCast',
       'sacrificedAsCost',
       // D-575: the cards selected for a spell's optional hand-exile cost.
       'exiledAsCost',
+      'tappedAsCostPower',
       // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
       'enteredX',
+      // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a).
+      'aurasAttachedToTriggerSubject',
       'dieResult',
     ]);
   });

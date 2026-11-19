@@ -114,11 +114,8 @@ const ATTACHED: readonly Line[] = [
   {
     kind: 'equipment',
     text: "Equipped creature has ward {2}, is an Assassin in addition to its other types, and can't be blocked.\nEquip {2}",
-    expect: no(
-      "ward {2}, is an Assassin in addition to its other types, and can't be blocked.",
-      'static.attached',
-    ),
-    note: 'replay: 1 card; ward is not a grant and "is an Assassin" is not read',
+    expect: OK,
+    note: 'replay: 1 card; ward is a grant since D-638; the list "has ward {2}, is an Assassin ..., and can\'t be blocked" is read whole',
   },
   {
     kind: 'enchantment',
@@ -129,10 +126,7 @@ const ATTACHED: readonly Line[] = [
   {
     kind: 'enchantment',
     text: "Creatures with power less than ~'s power can't block creatures you control.",
-    expect: no(
-      "with power less than ~'s power can't block creatures you control.",
-      'static.permanents',
-    ),
+    expect: OK,
     note: 'replay: 1 card',
   },
 ];

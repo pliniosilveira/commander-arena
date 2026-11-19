@@ -80,7 +80,7 @@ describe('keyword.line: the keywords of batch 2 (CR 702.118, 702.91, 702.134, 70
 
   test.each([
     ['Ninjutsu {1}{U}', 'D-117'],
-    ['Morph {3}', 'D-117'],
+    ['Megamorph {3}', 'D-117'],
     ['Flying, storm', 'one unread keyword leaves the whole line'],
     ['Skulk, storm', 'the same after a keyword of batch 2'],
   ])('"%s" stays unread (%s)', (text) => {
@@ -825,6 +825,11 @@ describe('amount.life-lost-this-way: "equal to the life lost this way" (CR 702.1
       'the loss comes after',
     ],
     ['Draw a card. You gain life equal to the life lost this way.', 'no loss before it'],
+    // Issue 159: "the damage dealt this way" is read, and needs a damage instruction before it.
+    [
+      'Each opponent loses 1 life. You gain life equal to the damage dealt this way.',
+      'no damage before it',
+    ],
   ])('"%s" is read and not run (%s)', (text, _why) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'notRunnable' });
   });
@@ -834,7 +839,6 @@ describe('amount.life-lost-this-way: "equal to the life lost this way" (CR 702.1
     'Each opponent loses 1 life. You gain life equal to the life lost.',
     'Each opponent loses 1 life. You gain life equal to life lost this way.',
     'Each opponent loses 1 life. You gain life equal to the life lost this turn.',
-    'Each opponent loses 1 life. You gain life equal to the damage dealt this way.',
     'Each opponent loses 1 life. You gain life equal to the life lost this way plus 1.',
   ])('"%s" is not read', (text) => {
     expect(dropped(text, 'sorcery')).toMatchObject({ reason: 'unrecognised' });

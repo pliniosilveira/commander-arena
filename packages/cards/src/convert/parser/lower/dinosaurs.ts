@@ -6,7 +6,9 @@
 import type { Amount } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { withoutZone } from '../rules/noun/phrases';
+import { lowerAmount } from './amounts';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
+import { missingFeatures } from './features';
 import { declareDividedTarget, lowerFilter, objectRefOf, objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
@@ -61,7 +63,8 @@ export const FIGHT: Lowering<IrClause, Effects> = {
     const fighter = operand(clause, 'fighters');
     const against = operand(clause, 'against');
     if (fighter?.kind !== 'noun' || against?.kind !== 'noun') return failure(clause);
-    const first = objectSelectorOf(fighter, ctx);
+    // "It" may be the permanent whose event caused the trigger ("Whenever a creature you control with flying enters, you may have it fight ...").
+    const first = objectSelectorOf(fighter, ctx, { triggerSubject: true });
     if (!first.ok) return first;
     const second = objectSelectorOf(against, ctx);
     if (!second.ok) return second;
@@ -141,6 +144,85 @@ export const REVEAL_UNTIL: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Reveal cards from the top of your library until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your
+ * library." (issue 103, CR 701.20, 701.38b, 701.24): the engine's `revealUntil` with a `count` (the votes) and the rest left in the library, then a `shuffle` of the controller's
+ * library. The second sentence must name the kind of the first in the plural.
+ */
+export const REVEAL_UNTIL_VOTES: Lowering<IrClause, Effects> = {
+  head: 'revealUntilVotes',
+  id: 'lower.reveal-until-votes',
+  needs: ['effect:revealUntil', 'effect:shuffle', 'ability:revealUntilCount', 'amount:votesFor'],
+  lower(clause, ctx) {
+    const card = arg(clause, 'card');
+    const votes = arg(clause, 'count');
+    const kind = arg(clause, 'kind');
+    if (card?.kind !== 'noun' || votes?.kind !== 'votesFor' || kind?.kind !== 'name') {
+      return failure(clause);
+    }
+    // "a creature card ... those creature cards": the same single type, nothing else asked of the card.
+    const types = card.filter.types ?? [];
+    if (types.length !== 1 || types[0] !== kind.name) return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    const count = lowerAmount(votes, ctx, clause.rule);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'revealUntil',
+          filter: filter.value,
+          count: count.value,
+          put: 'battlefield',
+          rest: 'stay',
+        },
+        { kind: 'shuffle', player: { kind: 'you' } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
+ * bottom of your library in a random order." (D-659, CR 701.20, 303.4f, 608.2c): the engine's `revealUntil` that moves nothing (`put: 'none'`; the rest go to the bottom), then a `may`
+ * move of the card found onto the battlefield (an Aura chooses what it enchants as it enters) and, when the player did not, a move of it into the hand.
+ */
+export const REVEAL_UNTIL_MAY_PUT: Lowering<IrClause, Effects> = {
+  head: 'revealUntilMayPut',
+  id: 'lower.reveal-until-may-put',
+  needs: [
+    'effect:revealUntil',
+    'effect:may',
+    'effect:conditional',
+    'effect:moveToZone',
+    'selector:moved',
+  ],
+  lower(clause) {
+    const card = arg(clause, 'card');
+    if (card?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        { kind: 'revealUntil', filter: filter.value, put: 'none' },
+        {
+          kind: 'may',
+          effect: { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'battlefield' },
+        },
+        {
+          kind: 'conditional',
+          condition: { kind: 'not', term: { kind: 'didPrevious' } },
+          effect: { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'hand' },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost", "You may play the exiled card without
  * paying its mana cost" (CR 608.2g, 118.9, 305.1): the engine's `castFree`, the controller choosing among the cards of their hand that
  * match (a `choose` selector) or taking the card a linked ability exiled; "play" lets a land be chosen too. Declining does nothing, which
@@ -154,8 +236,20 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const play = arg(clause, 'play');
     if (objects?.kind !== 'noun' || play?.kind !== 'flag') return failure(clause);
+    // The cast is the controller's to decline: "you may cast ..." said by the sentence, or made optional by the "you may" of a triggered ability. "Cast a spell ..." alone is no offer.
+    const written = arg(clause, 'mayWritten');
+    if (written?.kind === 'flag' && !written.value && !clause.optional) return failure(clause);
     const playing = play.value ? { play: true as const } : {};
     if (objects.det === 'linkedExile') {
+      // D-664 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
+      // ability to belong to: "Reveal cards from the top of your library until you reveal a nonland card. Exile that card ... You may cast the exiled card without paying its mana cost."
+      if (ctx.owner === 'spell' && ctx.lastEffectKind === 'revealUntil' && !play.value) {
+        return {
+          ok: true,
+          value: [{ kind: 'castFree', objects: { kind: 'moved' } }],
+          rule: clause.rule,
+        };
+      }
       const ref = objectRefOf(objects, ctx);
       if (!ref.ok) return ref;
       if (ref.value.kind !== 'linkedExile') return failure(clause);
@@ -166,11 +260,49 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
       };
     }
     if (objects.det !== 'a' || objects.filter.zone !== 'hand') return failure(clause);
-    const filter = lowerFilter(objects);
+    // "a spell with mana value X or less from your hand" (CR 107.3a, 202.3): the X announced for this spell, so only the text of a spell reads it.
+    let subject = objects;
+    let atMost: Amount | undefined;
+    if (objects.filter.manaValueAtMostX === true) {
+      if (ctx.owner !== 'spell' || ctx.xIs !== null) return failure(clause);
+      const missing = missingFeatures(['selector:manaValueAtMost']);
+      if (missing.length > 0) return failure(clause, missing);
+      const amount = lowerAmount({ kind: 'x', span: objects.span }, ctx, clause.rule);
+      if (!amount.ok) return amount;
+      atMost = amount.value;
+      const { manaValueAtMostX: _x, ...rest } = objects.filter;
+      void _x;
+      subject = { ...objects, filter: rest };
+    }
+    // "... with lesser mana value that shares a card type with it": "it" is the spell of the cast trigger the effect belongs to (CR 603.3d).
+    let relative = false;
+    if (subject.filter.lesserSharingTypeWithTriggerSpell === true) {
+      if (!ctx.castTrigger) return failure(clause);
+      const missing = missingFeatures(['selector:manaValueBelow', 'selector:sharesCardTypeWith']);
+      if (missing.length > 0) return failure(clause, missing);
+      const { lesserSharingTypeWithTriggerSpell: _lesser, ...rest } = subject.filter;
+      void _lesser;
+      subject = { ...subject, filter: rest };
+      relative = true;
+    }
+    const filter = lowerFilter(subject);
     if (!filter.ok) return filter;
+    const limited = {
+      ...filter.value,
+      ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
+      ...(relative
+        ? {
+            manaValueBelow: {
+              kind: 'manaValueOf' as const,
+              of: { kind: 'triggerSubject' as const },
+            },
+            sharesCardTypeWith: 'triggerSubject' as const,
+          }
+        : {}),
+    };
     return {
       ok: true,
-      value: [{ kind: 'castFree', objects: { kind: 'choose', filter: filter.value }, ...playing }],
+      value: [{ kind: 'castFree', objects: { kind: 'choose', filter: limited }, ...playing }],
       rule: clause.rule,
     };
   },
@@ -178,9 +310,9 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
 
 /**
  * "~ deals X damage divided as you choose among any number of target creatures, where X is the greatest power among creatures you control as
- * you cast this spell" (CR 601.2d, 120.3): the spell's targets slot with `divide` (the total is read once, as the spell is cast) and the
- * engine's `dealDividedDamage` to it. Only a spell's own text; the total is a number or an amount that reads the game as the spell is cast,
- * never an announced X.
+ * you cast this spell" (CR 601.2d, 120.3): the targets slot with `divide` (the total is read once, as the spell is cast or the ability is put on the
+ * stack, CR 602.2b, 603.3d) and the engine's `dealDividedDamage` to it. A spell's own text or an activated or triggered ability; the total is a number
+ * or an amount that reads the game then, never an announced X.
  */
 export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
   head: 'dealDividedDamage',
@@ -188,7 +320,13 @@ export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
   needs: ['effect:dealDividedDamage', 'selector:target'],
   lower(clause, ctx) {
     const to = operand(clause, 'to');
-    if (to?.kind !== 'noun' || to.det !== 'target' || ctx.owner !== 'spell') return failure(clause);
+    if (to?.kind !== 'noun' || to.det !== 'target') return failure(clause);
+    // "it deals ...": the damage is dealt by the source of the ability (CR 113.7a), which is the one thing the engine's `dealDividedDamage` knows; an "it" that is
+    // another object is refused.
+    const source = arg(clause, 'source');
+    if (source !== undefined && (source.kind !== 'noun' || source.ref !== 'self')) {
+      return failure(clause);
+    }
     ctx.readAsCast = true;
     let total: Amount;
     try {
@@ -214,6 +352,8 @@ export const DINOSAUR_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   FIGHT,
   FIGHT_PAIRS,
   REVEAL_UNTIL,
+  REVEAL_UNTIL_VOTES,
+  REVEAL_UNTIL_MAY_PUT,
   CAST_FREE,
   DEAL_DIVIDED_DAMAGE,
 ];

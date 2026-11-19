@@ -22,7 +22,7 @@ import {
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
-import { countForSource } from './derive-count';
+import { cardTypesAmongForSource, countForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders } from './designations';
 import { matchesFilterWith } from './filter-match';
@@ -93,8 +93,25 @@ export function staticConditionHolds(
       return state.turnLog.entered.some((e) => e.object === source.id);
     case 'amountIs': {
       // D-423: "as long as another Aura is attached to enchanted creature": the count of a filter, read through layers 1, 4 and 5 (`validateCard` allows only `countOf` here).
-      if (typeof condition.amount === 'number' || condition.amount.kind !== 'countOf') return false;
-      const n = countForSource(state, condition.amount.filter, source);
+      if (typeof condition.amount === 'number') return false;
+      if (condition.amount.kind === 'countersOn') {
+        // CR 122.1, CR 613.8: the counters on the source itself, which no layer changes.
+        const have = source.counters[condition.amount.counter] ?? 0;
+        const c = condition.compare;
+        return c.cmp === 'atLeast'
+          ? have >= c.value
+          : c.cmp === 'atMost'
+            ? have <= c.value
+            : have === c.value;
+      }
+      // CR 205.2a (delirium): the card types among the cards of a zone outside the battlefield.
+      const n =
+        condition.amount.kind === 'cardTypesAmong'
+          ? cardTypesAmongForSource(state, condition.amount.filter, source)
+          : condition.amount.kind === 'countOf'
+            ? countForSource(state, condition.amount.filter, source)
+            : null;
+      if (n === null) return false;
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
     }

@@ -81,6 +81,18 @@ interface Antecedent {
   readonly token?: true;
   /** The source of "~ deals damage equal to its power" (stage P49, D-206): only "it" and "its" may mean it, never "that creature". */
   readonly selfIt?: true;
+  /**
+   * A token that is a copy with exceptions (issue 104, "create a token that's a copy of that card, except it's a 4/4 black Zombie. It gains haste until end of turn."): "it" of the
+   * sentence after it is the token, as "that token" is (CR 707.9: the exceptions are said of "it", the copy).
+   */
+  readonly itToken?: true;
+  /**
+   * A token an instruction made (Quandrix Unlimited group E, CR 111.2, 400.7j): "it" of "Put a number of +1/+1 counters on it" in the sentence after it is the token. Only that
+   * verb reads it so (the other pronouns after a token keep their meaning: "If that enchantment is an Aura, you may attach it to the token").
+   */
+  readonly plainToken?: true;
+  /** A creature token with a power and toughness of its own (issue 100): "it" that gains a keyword in the sentence after it is the token. */
+  readonly itTokenGains?: true;
 }
 
 const key = (span: Span) => `${span.start}:${span.end}`;
@@ -112,9 +124,13 @@ type Pronoun =
 
 function classify(raw: string): Pronoun | null {
   const word = raw.trim().toLowerCase();
-  if (word === 'that player' || word === 'they') return { kind: 'player' };
+  if (word === 'that player' || word === 'that opponent' || word === 'they') {
+    return { kind: 'player' };
+  }
   // D-392 (Hashaton, group 9): "that source's controller", the player a trigger about a source names.
   if (/^that source['’]s controller$/u.test(word)) return { kind: 'player' };
+  // Unbound Flourishing (CR 707.10): "copy that spell or ability" names the spell or the activated ability that caused the trigger; the binding pass takes the spell of the trigger.
+  if (word === 'that spell or ability') return { kind: 'single', type: 'spell' };
   if (word === 'the other') return { kind: 'other' };
   if (word === 'them' || /^those \w+$/.test(word)) return { kind: 'plural' };
   // D-362 (Victimize): "the chosen cards" are the cards of the target phrase the text chose before.
@@ -183,6 +199,14 @@ class Binder {
    */
   seedHost(condition: IrCondition | undefined): void {
     const test = condition?.test;
+    // "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, put a charge counter on it." (CR 603.4, 122.1): the permanent the intervening
+    // "if" counts counters on is what "it" of the body means, not the spell of the trigger.
+    if (test?.kind === 'amountIs' && test.amount.kind === 'countersOn') {
+      if (test.amount.of.det === 'self') {
+        this.antecedents.push({ noun: { ...test.amount.of, ref: 'self' }, kind: 'object' });
+      }
+      return;
+    }
     if (test?.kind !== 'attachedTo' || test.via === undefined) return;
     const host: IrNoun = {
       kind: 'noun',
@@ -196,6 +220,18 @@ class Binder {
       ref: 'host',
     };
     this.antecedents.push({ noun: host, kind: 'object' });
+  }
+
+  /**
+   * The permanent an intervening "if" of a triggered ability says things of by `~` ("if ~ has no charge counters on it, return it to its owner's hand", CR 603.4): the
+   * "it" of the body is that permanent, as for a cost that names `~`. Read only for a trigger that has no subject of its own ("at the beginning of your upkeep"), which
+   * leaves "it" nothing else to mean, and only where the condition counts the counters of `~`.
+   */
+  seedSelfCondition(trigger: IrTrigger, condition: IrCondition | undefined): void {
+    const test = condition?.test;
+    if (trigger.subject !== undefined || test?.kind !== 'amountIs') return;
+    if (test.amount.kind !== 'countersOn' || test.amount.of.det !== 'self') return;
+    this.seed(test.amount.of, 'triggerSubject', true);
   }
 
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
@@ -242,12 +278,18 @@ class Binder {
             !(
               this.playerAsked &&
               a.noun.det === 'you' &&
-              /^that player$/iu.test(noun.filter.raw.trim())
+              /^that (?:player|opponent)$/iu.test(noun.filter.raw.trim())
             ),
         );
         break;
       case 'plural':
-        found = recent.find((a) => a.kind === 'object' && a.noun.plural);
+        // Issue 160 (D-627, CR 608.2c): "Put a +1/+1 counter on each creature you control. Those creatures gain vigilance": the group "each creature" named, which the
+        // singular wording of "each" does not mark as plural. Only "those creatures" says so ("them" after an "each" stays unbound).
+        found = recent.find(
+          (a) =>
+            a.kind === 'object' &&
+            (a.noun.plural || (a.noun.det === 'each' && /^those /iu.test(noun.filter.raw.trim()))),
+        );
         break;
       case 'other':
         found = recent.find((a) => a.noun.count?.kind === 'number' && a.noun.count.value === 2);
@@ -257,7 +299,16 @@ class Binder {
           (a) =>
             a.kind === 'object' &&
             // "That token" means a token an instruction made and nothing else does (stage P48, D-205).
-            (pronoun.type === 'token') === (a.token === true) &&
+            (pronoun.type === 'token'
+              ? a.token === true
+              : a.token !== true ||
+                (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim())) ||
+                (this.clauseVerb === 'addCounters' &&
+                  a.plainToken === true &&
+                  /^it$/iu.test(noun.filter.raw.trim())) ||
+                (a.itTokenGains === true &&
+                  this.clauseVerb === 'grantKeyword' &&
+                  /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             !a.noun.plural &&
@@ -316,7 +367,7 @@ class Binder {
       members = bound;
     }
     const controller = noun.filter.controller;
-    const filter =
+    const bareFilter =
       typeof controller === 'object'
         ? {
             ...noun.filter,
@@ -331,6 +382,12 @@ class Binder {
               ...noun.filter,
               manaValueAtMostAmount: this.amount(noun.filter.manaValueAtMostAmount),
             };
+    // "with power greater than target creature's power": the target it names is numbered with the others of the text.
+    const powerNoun = noun.filter.powerGreaterThanNoun;
+    const filter =
+      powerNoun === undefined
+        ? bareFilter
+        : { ...bareFilter, powerGreaterThanNoun: this.noun(powerNoun) };
     let out: IrNoun = {
       ...noun,
       filter,
@@ -377,10 +434,16 @@ class Binder {
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
         return { ...amount, of: this.noun(amount.of) };
+      case 'commanderCasts':
+        // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.
+        return amount.player === undefined
+          ? amount
+          : { ...amount, player: this.noun(amount.player) };
       case 'half':
       case 'multiple':
       case 'minus':
         return { ...amount, of: this.amount(amount.of) };
+      case 'extreme':
       case 'sum':
         return { ...amount, of: amount.of.map((part) => this.amount(part)) };
       default:
@@ -413,7 +476,10 @@ class Binder {
         // "a token that's a copy of target creature": the permanent copied is a noun like any other.
         // "a number of tapped Treasure tokens equal to its power" (stage P35, D-176): the pronoun of the count is bound like any other.
         const count = this.amount(arg.count);
-        const made = arg.copyOf === undefined && count.kind === 'number' && count.value === 1;
+        // D-643 (Prismari group 1): the permanent a copy is made of is bound first, so that "it" of "a token that's a copy of it" is not the token itself; then a token that is a
+        // copy is the token "that token" follows, as any other token of one ("Create a token that's a copy of target creature you control. That token gains haste until end of turn.").
+        const copyOf = arg.copyOf === undefined ? undefined : this.noun(arg.copyOf);
+        const made = count.kind === 'number' && count.value === 1;
         if (made) this.tokenCount += 1;
         const ref = made ? `tk${this.tokenCount}` : undefined;
         if (ref !== undefined) {
@@ -421,6 +487,20 @@ class Binder {
           this.antecedents.push({
             kind: 'object',
             token: true,
+            // "Create a 0/0 ... Fractal creature token. Put X +1/+1 counters on it." (Quandrix Unlimited deck, group G): a 0/0 token dies without counters, so "it" of the next sentence is it.
+            ...(arg.copyExcept === undefined && !(arg.power === 0 && arg.toughness === 0)
+              ? {}
+              : { itToken: true as const }),
+            plainToken: true as const,
+            // Issue 100 (Baral and Kari Zev): "Create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.": the "it" that
+            // GAINS something (the subject of a keyword grant) after the creation of a creature token with a power and toughness of its own is that token. An "it" that is the object
+            // of another verb ("create a 2/2 token. If that enchantment is an Aura, you may attach it to the token") is still the permanent the text is about.
+            ...(arg.copyOf === undefined &&
+            arg.predefined === undefined &&
+            arg.power !== undefined &&
+            arg.toughness !== undefined
+              ? { itTokenGains: true as const }
+              : {}),
             noun: {
               kind: 'noun',
               det: 'a',
@@ -438,7 +518,7 @@ class Binder {
           ...arg,
           count,
           ...(ref === undefined ? {} : { ref }),
-          ...(arg.copyOf === undefined ? {} : { copyOf: this.noun(arg.copyOf) }),
+          ...(copyOf === undefined ? {} : { copyOf }),
         };
       }
       default:
@@ -446,7 +526,11 @@ class Binder {
     }
   }
 
+  /** The verb of the clause being bound: only the "it" of a keyword grant (issue 100) or of a counters clause (Quandrix Unlimited group E, `Antecedent.plainToken`) may mean the token a creature-token instruction made. */
+  private clauseVerb = '';
+
   clause(clause: IrClause): IrClause {
+    this.clauseVerb = clause.verb;
     // Visit nouns in text order, whatever order the rule put its arguments in.
     const entries = Object.entries(clause.args).sort(([, a], [, b]) => spanStart(a) - spanStart(b));
     const args: Record<string, IrArg> = {};
@@ -494,6 +578,15 @@ class Binder {
       // D-406: "Whenever a creature enters, you may attach ~ to that creature": the Aura or Equipment an attach moves is no antecedent of the pronoun after
       // it, which names the other permanent (the trigger's).
       if (clause.verb === 'attach' && name === 'object') this.antecedents.length = seen;
+      // Issue 103: "Whenever a Dragon you control enters, you may have ~ become a copy of it": the permanent that becomes the copy is no antecedent of "it", which is the trigger's.
+      if (
+        clause.verb === 'becomeCopy' &&
+        name === 'objects' &&
+        value.kind === 'noun' &&
+        value.det === 'self'
+      ) {
+        this.antecedents.length = seen;
+      }
     }
     // "unless that player pays {1}" (stage P18): the player who pays follows the clause's own nouns.
     const test = clause.condition?.test;
@@ -523,9 +616,28 @@ class Binder {
         },
       });
     }
+    // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card": "that card" is the card the exile moved, which the engine
+    // names `moved`. Pushed after the clause's own noun, so that it is the most recent object of the text.
+    if (clause.verb === 'exileChosenCard') {
+      this.antecedents.push({
+        kind: 'object',
+        noun: {
+          kind: 'noun',
+          det: 'a',
+          filter: { raw: 'card' },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: clause.span,
+          rule: clause.rule,
+          ref: 'moved',
+        },
+      });
+    }
     // "... exiles a card from their hand at random. If it's a land card, you may put it onto the battlefield" (D-393, group 9): "it" is the card the instruction exiled,
     // which the engine names `moved`. Pushed after the clause's own nouns, so that it is the most recent object of the text.
-    if (clause.verb === 'exileRandomFromHand') {
+    // Death Toll deck group B: "Choose a card at random in your graveyard. If it's a creature card, put it onto the battlefield": "it" is the card picked, which the engine names `moved` too.
+    if (clause.verb === 'exileRandomFromHand' || clause.verb === 'chooseRandomGraveyardCard') {
       this.antecedents.push({
         kind: 'object',
         noun: {
@@ -591,6 +703,8 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   'attacks',
   'becomesTapped',
   'becomesUntapped',
+  // CR 701.37: the permanent has just become monstrous, and is on the battlefield.
+  'becomesMonstrous',
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).
   'blocks',
   'becomesBlocked',
@@ -707,6 +821,17 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
     case 'triggered': {
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
+      binder.seedSelfCondition(ability.trigger, ability.interveningIf);
+      // "At the beginning of your upkeep, if ~ has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it." (Quandrix Unlimited deck, group G): the
+      // permanent the intervening "if" names is what "it" means in the body, when the trigger has no subject of its own.
+      const tested = ability.interveningIf;
+      if (
+        tested?.test.kind === 'thisMatches' &&
+        tested.test.who === 'self' &&
+        ability.trigger.subject === undefined
+      ) {
+        binder.seed(selfNoun(tested), 'triggerSubject', true);
+      }
       if (ability.modal !== undefined) {
         // Each mode starts from the antecedents a body would: the trigger's subject and actor.
         const modal = bindModes(ability.modal, scope, verbs, (b) =>

@@ -12,13 +12,15 @@
  *     much as the best creature of the set; Storm last. The commander is a play like any other (valued
  *     as a creature plus 4) with one rule for the commander tax (CR 903.8): with a tax of 4 or more (two
  *     casts or more) it is cast only when the best set without it uses less than half of the mana and the
- *     agent is not clearly losing (`evaluate` at least `LOSING`).
+ *     agent is not clearly losing (`evaluate` at least `LOSING`). Each play of the set is then cast on the
+ *     sample (`heuristic-delta.ts`) and dropped when the board it leaves scores clearly worse than
+ *     passing, so a board wipe that costs the agent more than the opponent is held.
  *  3. Everything else that an instant-speed card could do waits for a window (below); the mana it needs
  *     stays untapped because the set above does not count it.
  *  4. What is left is the casual rules without the plays above (flashback, escape, special actions,
  *     activations such as a regeneration or a pump ability), then pass.
  *
- * WINDOWS (any other priority decision) for instant-speed plays:
+ * WINDOWS (any other priority decision) for instant-speed plays (the end-step set is vetted on the sample like a main-phase set):
  *  - after blockers are declared (declare-blockers step, empty stack): each instant-speed candidate is
  *    cast on the sample and the combat is played out; it is cast when it beats passing by `TRICK_MARGIN`
  *    (reason `trick`, or `removal-attacker` for a removal spell). A pump that changes nothing is held;
@@ -32,10 +34,8 @@ import type {
   GameView,
   ObjectId,
   ObjectView,
-  PendingDecision,
   PriorityDecision,
 } from '@commander-arena/engine';
-import { getView } from '@commander-arena/engine';
 import { flashesForCommander, isAura } from './casual-attachments';
 import { hasStorm } from './casual-copies';
 import { discountsHand } from './casual-costs';
@@ -44,18 +44,21 @@ import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import { choosePriorityAction, type Play, spellPlays, spendOf, withFace } from './casual-priority';
-import { hasKeyword, manaValueOf } from './casual-view';
+import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
 import { creatureValue, evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
+import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { canPayAll, costSymbols, ownUnits } from './heuristic-mana';
-import { applyOrNull, playOut } from './heuristic-sim';
+import { protectionPlay, protectionReserve } from './heuristic-protect';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
 
 export interface PriorityChoice {
   readonly action: Action;
   readonly reason: Reason;
+  /** The mana symbols the payment of this cast keeps open for a protection spell (`heuristic-protect.ts`). */
+  readonly reserve?: readonly string[];
 }
 
 /** A trick or a window removal must beat passing by this much (score points; a card in hand is worth 1.2). */
@@ -71,7 +74,8 @@ const TARGETS_SPELL = /target (activated or triggered ability|(\w+ )?spell)/i;
 
 const isInstantSpeed = (o: ObjectView): boolean =>
   o.types.includes('instant') || hasKeyword(o, 'flash');
-const isCounter = (o: ObjectView): boolean => isInstantSpeed(o) && TARGETS_SPELL.test(o.oracleText);
+const isCounter = (o: ObjectView): boolean =>
+  isInstantSpeed(o) && TARGETS_SPELL.test(withoutReminder(o.oracleText));
 
 const castAction = (p: Play): Action => ({
   kind: 'castSpell',
@@ -101,6 +105,8 @@ function bestSet(
   view: GameView,
   plays: readonly Play[],
   units: ReturnType<typeof ownUnits>,
+  /** Mana symbols that must stay payable besides the set (a protection spell held open). */
+  hold: readonly string[] | null = null,
 ): Play[] {
   const pool = [...plays]
     .sort((a, b) => worthOf(view, b) - worthOf(view, a) || (a.obj.id < b.obj.id ? -1 : 1))
@@ -111,7 +117,9 @@ function bestSet(
     const spend = set.reduce((sum, p) => sum + spendOf(p), 0);
     const value = set.reduce((sum, p) => sum + worthOf(view, p), 0);
     if (spend < best.spend || (spend === best.spend && value <= best.value)) continue;
-    if (canPayAll(set.map(sym), units)) best = { set, spend, value };
+    if (canPayAll(hold === null ? set.map(sym) : [...set.map(sym), hold], units)) {
+      best = { set, spend, value };
+    }
   }
   return best.set;
 }
@@ -168,7 +176,13 @@ function casualRemainder(
   const options = d.options.filter(
     (o) =>
       o.kind !== 'playLand' &&
-      !(o.kind === 'castSpell' && o.alternative !== 'flashback' && o.alternative !== 'escape'),
+      !(
+        o.kind === 'castSpell' &&
+        o.alternative !== 'flashback' &&
+        o.alternative !== 'escape' &&
+        o.alternative !== 'retrace' &&
+        o.alternative !== 'harmonize'
+      ),
   );
   return choosePriorityAction(view, { ...d, options }, think.draw, activations);
 }
@@ -178,6 +192,7 @@ function mainPhase(
   d: PriorityDecision,
   think: Think,
   activations: Set<string>,
+  answer: Answer,
 ): PriorityChoice {
   const land = planLand(view, d);
   if (land !== null && !land.hold) {
@@ -187,8 +202,20 @@ function mainPhase(
     };
   }
   const units = ownUnits(view);
-  const plays = withCommanderRule(view, mainPlays(view, spellPlays(view, d, activations)), units);
+  const castable = spellPlays(view, d, activations);
+  const plays = withCommanderRule(view, mainPlays(view, castable), units);
   let set = bestSet(view, plays, units);
+  // Mana for a protection spell stays open when that costs no mana the set would spend (the hold is kept only then).
+  let hold: readonly string[] | null = null;
+  const reserve = protectionReserve(view, castable);
+  if (reserve !== null) {
+    const held = bestSet(view, plays, units, reserve);
+    const spent = (xs: readonly Play[]): number => xs.reduce((sum, p) => sum + spendOf(p), 0);
+    if (held.length > 0 && spent(held) >= spent(set)) {
+      set = held;
+      hold = reserve;
+    }
+  }
   if (set.length === 0) {
     // The estimate may not know a source of mana; the engine lists only plays it can pay, so the dearest goes.
     const dearest = [...plays].sort(
@@ -196,7 +223,9 @@ function mainPhase(
     )[0];
     set = dearest === undefined ? [] : [dearest];
   }
-  const first = order(view, set)[0];
+  // Each play is cast on the sample first: one that leaves the board clearly worse than passing (a wipe
+  // that costs the agent more than the opponent) is dropped, the next one of the set is tried.
+  const first = vetPlays(view, order(view, set), think, answer, castAction)[0];
   if (first !== undefined) {
     if (isPreventionSpell(first.obj)) activations.add(preventionKey(view));
     const reason: Reason = first.obj.isCommander
@@ -204,55 +233,13 @@ function mainPhase(
       : isRemovalSpell(first.obj)
         ? 'removal'
         : 'curve';
-    return { action: castAction(first), reason };
+    return { action: castAction(first), reason, ...(hold === null ? {} : { reserve: hold }) };
   }
   const rest = casualRemainder(view, d, think, activations);
   if (rest.kind === 'pass') {
     return { action: rest, reason: land?.hold === true ? 'hold' : 'no-play' };
   }
   return { action: rest, reason: 'delegated' };
-}
-
-type Answer = (view: GameView, pending: PendingDecision) => Action;
-
-/** Casts `play` on the sample and plays the follow-up questions and the rest of the combat out; the score or null. */
-function scoreCast(
-  sample: ReturnType<Think['sample']>,
-  me: number,
-  play: Action | null,
-  answer: Answer,
-  budget: Think['budget'],
-): number | null {
-  if (sample === undefined) return null;
-  let state = sample;
-  if (play !== null) {
-    const cast = applyOrNull(state, me, play);
-    if (cast === null) return null;
-    state = cast;
-    for (let i = 0; i < 12; i += 1) {
-      const pending = state.pending;
-      if (pending === null || pending.seat !== me || pending.kind === 'priority') break;
-      let next: ReturnType<typeof applyOrNull>;
-      try {
-        next = applyOrNull(state, me, answer(getView(state, me), pending));
-      } catch {
-        return null;
-      }
-      if (next === null) return null;
-      state = next;
-    }
-  }
-  // Played on to the start of the next turn, so effects that last until end of turn (a pump) and marked
-  // damage are gone and only what lasts is scored.
-  const turn = sample.turn.number;
-  const end = playOut(
-    state,
-    me,
-    { abort: budget.over },
-    (s) => s.result !== null || s.turn.number > turn,
-    200,
-  );
-  return end === null ? null : evaluate(getView(end, me), me).score;
 }
 
 /**
@@ -322,6 +309,9 @@ function windowPlay(
     const ward = plays.find((p) => isAura(p.obj) && flashesForCommander(p.obj));
     if (ward !== undefined) return { action: castAction(ward), reason: 'protect-commander' };
   }
+  // In response to an opponent's spell or ability that names a permanent of the agent's: a protection spell.
+  const shield = protectionPlay(view, plays, think, answer, castAction);
+  if (shield !== null) return { action: castAction(shield), reason: 'protect-threatened' };
   // In response to an opponent's spell: a counterspell for a spell worth it.
   if (top !== undefined && top.controller !== me && !top.abilitySource) {
     const counter = plays
@@ -373,7 +363,8 @@ function windowPlay(
     const fit = plays.filter((p) => !isCounter(p.obj) && !isHelpfulSpell(p.obj));
     const ok = fit.filter((p) => !isRemovalSpell(p.obj) || bestRemovalTarget(view, p.obj) !== null);
     const set = bestSet(view, ok, ownUnits(view));
-    const first = order(view, set)[0];
+    // Each play is cast on the sample first, as in the main phase: one that leaves the board clearly worse is dropped.
+    const first = vetPlays(view, order(view, set), think, answer, castAction)[0];
     if (first !== undefined) return { action: castAction(first), reason: 'end-step' };
   }
   return null;
@@ -392,7 +383,7 @@ export function choosePriorityHeuristic(
     view.activeSeat === me &&
     (view.step === 'precombatMain' || view.step === 'postcombatMain') &&
     view.stack.length === 0;
-  if (mainWindow) return mainPhase(view, d, think, activations);
+  if (mainWindow) return mainPhase(view, d, think, activations, answer);
   const faceUp = faceUpWindow(view, d, think, answer);
   if (faceUp !== null) return faceUp;
   const play = windowPlay(view, d, think, activations, answer);

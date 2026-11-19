@@ -1,7 +1,7 @@
 /**
  * Keywords that are shorthand for an ability of another kind, expanded when `derive` computes an
  * object's abilities: Cycling (CR 702.29a), Equip (CR 702.6a), Prowess (CR 702.108a), Ward
- * (CR 702.21a), Crew (CR 702.122a), and (D-110) typecycling (CR 702.29e), Exalted (CR 702.83a),
+ * (CR 702.21a), Crew (CR 702.122a), Station (CR 702.184a), and (D-110) typecycling (CR 702.29e), Exalted (CR 702.83a),
  * Annihilator (CR 702.86a), Persist (CR 702.79a) and Undying (CR 702.93a); and (D-120) Battle cry
  * (CR 702.91a), Mentor (CR 702.134a), Evolve (CR 702.100a), Bushido (CR 702.45a), Extort (CR 702.101a),
  * Cascade (CR 702.85a) and Affinity (CR 702.41a); and (D-124) Unearth (CR 702.84a); and (D-129) Storm (CR 702.40a) and Replicate (CR 702.56a); and (D-185) Encore (CR 702.141a); and (D-384) Eternalize (CR 702.129a).
@@ -106,6 +106,28 @@ function crewAbility(power: number): Ability {
     },
   };
 }
+
+/**
+ * CR 702.184a: "Station" means "Tap another untapped creature you control: Put a number of charge counters on this permanent equal to the tapped creature's power. Activate only as a
+ * sorcery." A creature that came under the controller's control this turn can be tapped for it: only the creature's own {T} ability is held back by summoning sickness (CR 302.6).
+ */
+export const STATION_ABILITY: Ability = {
+  kind: 'activated',
+  cost: [
+    {
+      kind: 'tapPermanents',
+      filter: { types: ['creature'], controller: 'you', other: true },
+      count: 1,
+    },
+  ],
+  timing: 'sorcery',
+  effect: {
+    kind: 'addCounters',
+    objects: { kind: 'this' },
+    counter: 'charge',
+    count: { kind: 'tappedAsCostPower' },
+  },
+};
 
 /**
  * CR 702.83a: "Exalted" means "Whenever a creature you control attacks alone, that creature gets +1/+1 until
@@ -363,6 +385,36 @@ const STORM_ABILITY: Extract<Ability, { kind: 'triggered' }> = {
 };
 
 /**
+ * CR 702.144a: "Demonstrate" means "When you cast this spell, you may copy it and you may choose new targets for the copy. If you copy the spell, choose an opponent. That player
+ * copies the spell and may choose new targets for that copy." A triggered ability of the spell that functions on the stack, found as the spell is cast (CR 603.3b). The copies are
+ * copies of a spell, not cast (CR 707.10): the copy of the controller goes on the stack first and the opponent's above it, so the opponent's copy resolves first. Each instance triggers
+ * separately. "If you copy the spell" is "if you do" of the `may` (CR 603.12, D-135): the opponent copies only when the controller did (D-665).
+ */
+const DEMONSTRATE_ABILITY: Ability = {
+  kind: 'triggered',
+  trigger: { kind: 'castSpell', filter: { stackKind: 'spell' }, by: 'you', self: true },
+  effect: {
+    kind: 'sequence',
+    effects: [
+      {
+        kind: 'may',
+        effect: { kind: 'copySpell', spell: { kind: 'triggerSubject' }, newTargets: 'may' },
+      },
+      {
+        kind: 'conditional',
+        condition: { kind: 'didPrevious' },
+        effect: {
+          kind: 'copySpell',
+          spell: { kind: 'triggerSubject' },
+          newTargets: 'may',
+          copier: 'opponent',
+        },
+      },
+    ],
+  },
+};
+
+/**
  * CR 702.56a: "Replicate [cost]" means, besides the additional cost, "When you cast this spell, if a replicate cost
  * was paid for it, copy it for each time its replicate cost was paid. If the spell has any targets, you may choose new
  * targets for any of the copies." The intervening "if" is the `replicated` condition (CR 603.4): with no payment the
@@ -443,6 +495,31 @@ function eternalizeAbility(cost: readonly Cost[]): Ability {
         setPt: { power: 4, toughness: 4 },
         noManaCost: true,
         addSubtypes: ['Zombie'],
+      },
+      count: 1,
+    },
+    timing: 'sorcery',
+    functionsIn: 'graveyard',
+  };
+}
+
+/**
+ * CR 702.128a: "Embalm [cost]" means "[Cost], Exile this card from your graveyard: Create a token that's a copy of this card, except it's white, it has no mana cost, and it's a
+ * Zombie in addition to its other types. Activate only as a sorcery." The token is "embalmed" (CR 702.128b), which `embalmed` records for what its own replacement effects read.
+ */
+function embalmAbility(cost: readonly Cost[]): Ability {
+  return {
+    kind: 'activated',
+    cost: [...cost, { kind: 'exileThis' }],
+    effect: {
+      kind: 'createToken',
+      token: {
+        kind: 'copyOf',
+        object: { kind: 'this' },
+        setColors: ['W'],
+        noManaCost: true,
+        addSubtypes: ['Zombie'],
+        embalmed: true,
       },
       count: 1,
     },
@@ -604,6 +681,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [wardAbility(ability.keyword.cost)];
     case 'crew':
       return [crewAbility(ability.keyword.power)];
+    case 'station':
+      return [STATION_ABILITY];
     case 'exalted':
       return [EXALTED_ABILITY];
     case 'soulbond':
@@ -634,6 +713,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [EXTORT_ABILITY];
     case 'cascade':
       return [CASCADE_ABILITY];
+    case 'demonstrate':
+      return [DEMONSTRATE_ABILITY];
     case 'storm':
       return [STORM_ABILITY];
     case 'gravestorm':
@@ -646,6 +727,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [encoreAbility(ability.keyword.cost)];
     case 'eternalize':
       return [eternalizeAbility(ability.keyword.cost)];
+    case 'embalm':
+      return [embalmAbility(ability.keyword.cost)];
     case 'affinity':
       return [affinityAbility(ability.keyword.filter)];
     case 'echo':

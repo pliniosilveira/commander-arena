@@ -52,6 +52,25 @@ export const SYNTHETIC_DRAGONS_REVEAL_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // "Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand." (issue 310)
+  singleFace({
+    name: 'SYNTHETIC Top Card Scout',
+    manaCost: ['1', 'G'],
+    types: ['instant'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText:
+      "Reveal the top card of your library. If it's a land card, put it onto the battlefield. Otherwise, put that card into your hand.",
+    spell: {
+      effect: {
+        kind: 'revealTop',
+        player: { kind: 'you' },
+        ifMatches: { types: ['land'] },
+        to: 'battlefield',
+        otherwiseTo: 'hand',
+      },
+    },
+  }),
   // "Target player reveals the top card of their library. If it's a permanent card, they put it onto the battlefield."
   singleFace({
     name: 'SYNTHETIC Reveal Probe',

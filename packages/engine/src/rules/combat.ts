@@ -16,6 +16,7 @@ import type {
 import type { GameEvent } from '../state/events';
 import { getObject, patchObject } from '../state/ops';
 import type { AttackerState, CombatState, GameObject, GameState } from '../state/types';
+import { recordAttacks } from './attack-random-opponent';
 import { type Dealt, dealDamageAsking, lethalDamageTo } from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget, defenderRecord } from './defending';
@@ -70,6 +71,11 @@ export function declareAttackers(
     turnLog: {
       ...state.turnLog,
       attacked: [...state.turnLog.attacked, ...attacks.map((a) => a.attacker)],
+      // CR 508.1: the player who declares the attackers is the one who attacked with them (issue 279).
+      attackedWith: [
+        ...state.turnLog.attackedWith,
+        ...attacks.map((a) => ({ object: a.attacker, seat })),
+      ],
       // CR 508.6 (D-269): only an attack on a player is an attack on that player; one on a planeswalker or a battle is not.
       attackedPlayers: [
         ...state.turnLog.attackedPlayers,
@@ -79,6 +85,14 @@ export function declareAttackers(
       ],
     },
   };
+  // CR 508.6: what the combat phase attacked, for "a player this creature didn't attack during your last combat".
+  state = recordAttacks(
+    state,
+    seat,
+    attacks.flatMap((a) =>
+      a.target.kind === 'player' ? [{ object: a.attacker, player: a.target.seat }] : [],
+    ),
+  );
   events.push({
     kind: 'attackersDeclared',
     seat,
@@ -87,14 +101,17 @@ export function declareAttackers(
   return { state: { ...state, combat }, events };
 }
 
-/** CR 509.1g-h: blockers become blocking; an attacker with a blocker becomes blocked. */
+/**
+ * CR 509.1g-h: blockers become blocking; an attacker with a blocker becomes blocked. The declaration is an event with no blockers too: the creatures no one blocks are
+ * unblocked (CR 509.1h), which "attack you and aren't blocked" reads.
+ */
 export function declareBlockers(
   state: GameState,
   seat: SeatId,
   blocks: readonly { blocker: ObjectId; attacker: ObjectId }[],
 ): { state: GameState; events: GameEvent[] } {
   const combat = state.combat;
-  if (!combat || blocks.length === 0) return { state, events: [] };
+  if (!combat) return { state, events: [] };
   const blocked = new Set(blocks.map((b) => b.attacker));
   const attackers: AttackerState[] = combat.attackers.map((a) =>
     blocked.has(a.object) ? { ...a, blocked: true } : a,

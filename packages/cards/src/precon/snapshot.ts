@@ -22,6 +22,10 @@ export interface PreconSnapshot {
   readonly source: string;
   /** The decklist exactly as it was given, so a precon replays through the normal import path. */
   readonly decklist: string;
+  /** The set the precon was sold in, as its name; absent when not recorded. */
+  readonly set?: string | undefined;
+  /** The year the precon was released; absent when not recorded. */
+  readonly year?: number | undefined;
   /** Sorted by name, then oracle id. */
   readonly cards: readonly SnapshotCard[];
 }
@@ -73,6 +77,8 @@ const snapshot = z.strictObject({
   blurb: z.string(),
   source: z.string(),
   decklist: z.string().min(1),
+  set: z.string().min(1).optional(),
+  year: z.number().int().min(1993).optional(),
   cards: z.array(card),
 });
 

@@ -31,10 +31,26 @@ export function graveyardPlayPermission(
   if (state.turn.activeSeat !== seat) return null;
   const used = state.turnLog.graveyardPlays ?? [];
   const types = derive(state, obj).types;
+  // A permission that is not used up (CR 305.1, "You may play Forests from your graveyard") is preferred to one that is, so the use of a land play keeps the once-each-turn one.
+  let limited: GraveyardPlaySource | null = null;
   for (const source of graveyardPlaySources(state)) {
-    if (controllerOf(state, source.object) !== seat || used.includes(source.object.id)) continue;
+    if (controllerOf(state, source.object) !== seat) continue;
+    if (source.unlimited !== true && used.includes(source.object.id)) continue;
     if (asLand) {
-      if (source.land && types.includes('land')) return source;
+      if (!source.land || !types.includes('land')) continue;
+      if (
+        source.lands !== undefined &&
+        !matchesFilter(
+          state,
+          obj,
+          { ...source.lands, zone: 'graveyard' },
+          { controller: seat, source: source.object.id },
+        )
+      ) {
+        continue;
+      }
+      if (source.unlimited === true) return source;
+      limited ??= source;
       continue;
     }
     if (types.includes('land') || source.cast === undefined) continue;
@@ -49,7 +65,7 @@ export function graveyardPlayPermission(
       return source;
     }
   }
-  return null;
+  return limited;
 }
 
 /** The rider a use of `source` gives. */

@@ -12,6 +12,52 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: gain.pos,
     };
   }
+  // D-638 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.
+  const spells = pattern(
+    /the number of (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (spells.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'spellsCastThisTurn',
+        ...(spells.value[1] === undefined ? {} : { ofTypes: ['instant', 'sorcery'] }),
+        span: { start: pos, end: spells.pos },
+      },
+      pos: spells.pos,
+    };
+  }
+  // D-646 (Prismari deck group 2, CR 202.3, 601.2i): the greatest mana value among the spells the controller has cast this turn.
+  const greatest = pattern(
+    /the greatest mana value among (instant and sorcery )?spells you(?:['’]ve| have) cast this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (greatest.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'greatestManaValueCast',
+        ...(greatest.value[1] === undefined ? {} : { ofTypes: ['instant', 'sorcery'] }),
+        span: { start: pos, end: greatest.pos },
+      },
+      pos: greatest.pos,
+    };
+  }
+  // Grave Danger (issue 159, Liliana's Standard Bearer): "where X is the number of creatures that died under your control this turn".
+  const died = pattern(
+    /the number of creatures that died under your control this turn(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (died.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'diedThisTurn',
+        controller: 'you',
+        types: ['creature'],
+        span: { start: pos, end: died.pos },
+      },
+      pos: died.pos,
+    };
+  }
   const entries = pattern(
     /the number of (nontoken |token )?(creatures|permanents) you had enter the battlefield under your control this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);
@@ -36,9 +82,14 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
   family: 'amount',
   leading: ['for'],
   cites: ['CR 700.4 (General)', 'CR 608.2c (Resolving Spells and Abilities)'],
-  examples: ['for each creature that died under your control this turn'],
+  examples: [
+    'for each creature that died under your control this turn',
+    'for each nontoken creature that died this turn',
+  ],
   rejects: [
     'for each creature that died this turn',
+    'for each token creature that died this turn',
+    'for each nontoken creature that died last turn',
     'for each creature that died under your control last turn',
     'for each creature that died under an opponent’s control this turn',
     'for each creature card that died under your control this turn',
@@ -48,16 +99,34 @@ export const AMOUNT_FOR_EACH_DIED = defineRule<IrAmount>({
       ctx,
       pos,
     );
-    if (!r.ok) return r;
+    if (r.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'diedThisTurn',
+          controller: 'you',
+          types: ['creature'],
+          span: { start: pos, end: r.pos },
+        },
+        pos: r.pos,
+      };
+    }
+    // CR 700.4: "for each nontoken creature that died this turn" counts the creatures that died under any player's control; a token that died is not counted.
+    const any = pattern(/for each nontoken creature that died this turn(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!any.ok) return any;
     return {
       ok: true,
       value: {
         kind: 'diedThisTurn',
-        controller: 'you',
+        controller: 'any',
         types: ['creature'],
-        span: { start: pos, end: r.pos },
+        token: false,
+        span: { start: pos, end: any.pos },
       },
-      pos: r.pos,
+      pos: any.pos,
     };
   },
 });

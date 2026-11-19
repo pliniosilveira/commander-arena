@@ -8,10 +8,14 @@ import type { IrAbility, IrChoiceArg, IrClause } from '../../ir/types';
 import { defineRule } from '../registry';
 import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
+import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
+import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
 import { EDHREC_REPLACEMENT_RULES } from './edhrec';
+import { EMBALM_REPLACEMENT_RULES } from './embalm';
+import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
@@ -69,12 +73,20 @@ function optionNames(text: string): readonly string[] | null {
   return new Set(parts).size === parts.length ? parts : null;
 }
 
+const EXCLUDED_COLORS: Readonly<Record<string, 'W' | 'U' | 'B' | 'R' | 'G'>> = {
+  white: 'W',
+  blue: 'U',
+  black: 'B',
+  red: 'R',
+  green: 'G',
+};
+
 /**
  * `replacement.as-enters-choose`: "As ~ enters, choose a creature type." and "As ~ enters, choose a
  * color." (CR 614.1c, 614.12, 614.12a: "as this enters" is a replacement effect, and the choice is made
  * before the permanent is on the battlefield; D-100). The words that read the choice are other
  * abilities of the card ("Creatures you control of the chosen type get +1/+1."). A choice with more
- * words ("choose a color other than white", "choose two colors"), another kind of choice (a card
+ * words ("choose two colors"; "other than" a color is read, issue 184), another kind of choice (a card
  * name, a number, a basic land type, an opponent) and "you may choose" are not read: the engine asks the two questions it has and no other.
  */
 export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
@@ -98,6 +110,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     // Hashaton deck group 6 (D-376): a card type.
     'As ~ enters, choose a card type.',
     'As ~ enters the battlefield, choose a card type.',
+    // Issue 184 (Thriving Isle): a color other than one.
+    'As ~ enters, choose a color other than blue.',
   ],
   rejects: [
     'As ~ enters, choose Khans, Dragons or Wolves.',
@@ -108,7 +122,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     'As ~ enters, you may choose Khans or Dragons.',
     'As ~ enters, choose Khans or Dragons',
     'As ~ enters, choose a creature type',
-    'As ~ enters, choose a color other than white.',
+    'As ~ enters, choose a color other than gold.',
+    'As ~ enters, choose a color other than blue or red.',
     'As ~ enters, choose two colors.',
     'As ~ enters, choose a basic land type.',
     'As ~ enters, choose a card name.',
@@ -135,6 +150,8 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
       choice(
         // Hashaton deck group 6 (D-376, CR 205.2a): "choose a card type".
         pattern(/, choose a (creature type|color|card type)\./i),
+        // Issue 184 (Thriving Isle, CR 614.12): "choose a color other than blue".
+        pattern(/, choose a (color) other than (white|blue|black|red|green)\./i),
         // Stage P34 (D-152, CR 614.12, 607.2d): "As ~ enters, choose Khans or Dragons." The names are the card's own, capitalized.
         pattern(/, choose (\p{Lu}[^.,—•\n]*(?:(?:, or | or |, )\p{Lu}[^.,—•\n]*)+)\./u),
       ),
@@ -147,11 +164,13 @@ export const REPLACEMENT_AS_ENTERS_CHOOSE = defineRule<IrAbility>({
     const plain = kind === 'color' || kind === 'creature type' || kind === 'card type';
     const names = plain ? null : optionNames(tail[1] ?? '');
     if (!plain && names === null) return fail(ctx, pos);
+    const excluded = EXCLUDED_COLORS[(tail[2] ?? '').toLowerCase()];
     const what: IrChoiceArg =
       names === null
         ? {
             kind: 'choiceKind',
             what: kind === 'color' ? 'color' : kind === 'card type' ? 'cardType' : 'creatureType',
+            ...(excluded === undefined ? {} : { except: excluded }),
             span,
             rule: id,
           }
@@ -189,10 +208,13 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with ten -1/-1 counters on it.',
     '~ enters with three charge counters on it.',
     '~ enters with X +1/+1 counters on it.',
+    '~ enters with twice X +1/+1 counters on it.',
     '~ enters with X charge counters on it.',
     '~ enters the battlefield with X +1/+1 counters on it.',
     '~ enters with a +1/+1 counter on it for each Zombie card in your graveyard.',
     '~ enters with a +1/+1 counter on it for each creature you control.',
+    // Grave Danger (issue 159): two counts joined by "and each".
+    '~ enters with a +1/+1 counter on it for each other Zombie you control and each Zombie card in your graveyard.',
     // Stage P69 (D-254): Everflowing Chalice.
     '~ enters with a +1/+1 counter on it for each time it was kicked.',
     '~ enters with a charge counter on it for each time it was kicked.',
@@ -202,7 +224,11 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
     '~ enters with two +1/+1 counters on it for each time it was kicked.',
     '~ enters with X +1/+1 counters on it for each creature you control.',
     '~ enters with a +1/+1 counter on it for each creature.',
+    '~ enters with a +1/+1 counter on it for each creature you control and each.',
+    '~ enters with a +1/+1 counter on it for each creature you control and creature cards in your graveyard.',
     '~ enters with Y +1/+1 counters on it.',
+    '~ enters with twice Y +1/+1 counters on it.',
+    '~ enters with twice X +1/+1 counters on it for each creature you control.',
     '~ enters with X on it.',
     '~ enters with up to X +1/+1 counters on it.',
     '~ enters with zero +1/+1 counters on it.',
@@ -230,8 +256,59 @@ export const REPLACEMENT_ENTERS_WITH_COUNTERS = defineRule<IrAbility>({
   },
 });
 
+/**
+ * `replacement.enters-tapped-with-counters`: "~ enters tapped with two charge counters on it." (issue 245, Vivid Grove; CR 614.1c, 614.1d, 122.6): the two replacement effects of
+ * a permanent that enters tapped and with counters, read as one sentence. A whole number of counters (the lowering refuses another count); the counter is "+1/+1", "-1/-1" or a
+ * named kind. Not read: a condition, "and with", the counters without "tapped", or more after the sentence.
+ */
+export const REPLACEMENT_ENTERS_TAPPED_WITH_COUNTERS = defineRule<IrAbility>({
+  id: 'replacement.enters-tapped-with-counters',
+  family: 'replacement',
+  leading: ['~'],
+  cites: [
+    'CR 614.1c (Replacement Effects)',
+    'CR 614.1d (Replacement Effects)',
+    'CR 614.12 (Replacement Effects)',
+    'CR 122.6 (Counters)',
+  ],
+  examples: [
+    '~ enters tapped with two charge counters on it.',
+    '~ enters the battlefield tapped with three charge counters on it.',
+    '~ enters tapped with a +1/+1 counter on it.',
+  ],
+  rejects: [
+    '~ enters tapped and with two charge counters on it.',
+    '~ enters with two charge counters on it.',
+    '~ enters tapped with two charge counters on it',
+    '~ enters tapped with two charge counters on it and draw a card.',
+    '~ enters untapped with two charge counters on it.',
+    '~ enters tapped unless you control a Forest with two charge counters on it.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      ENTERS,
+      literal(' tapped'),
+      countersTail('replacement.enters-tapped-with-counters', true, true),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const { count, counter } = r.value[2];
+    const span = { start: pos, end: r.pos };
+    const id = 'replacement.enters-tapped-with-counters';
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'entersTappedWithCounters',
+      args: { count, counter },
+      optional: false,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: r.pos };
+  },
+});
+
 export const REPLACEMENT_RULES = [
   REPLACEMENT_ENTERS_TAPPED,
+  REPLACEMENT_ENTERS_TAPPED_WITH_COUNTERS,
   REPLACEMENT_AS_ENTERS_CHOOSE,
   REPLACEMENT_ENTERS_WITH_COUNTERS,
   ...UNLESS_RULES,
@@ -241,8 +318,16 @@ export const REPLACEMENT_RULES = [
   ...DIE_REPLACEMENT_RULES,
   // Stage P33 (D-150): "If you would gain life, you gain that much life plus 1 instead."
   ...ANGEL_REPLACEMENT_RULES,
+  // Quandrix Unlimited deck, group A: "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
+  ...COUNTERS_PLUS_REPLACEMENT_RULES,
   // Stage P34 (D-152): "As ~ enters, you may have it become a copy of any creature on the battlefield ...".
   ...DRAGON_REPLACEMENT_RULES,
+  // Issue 104: "You may have ~ enter as a copy of any creature on the battlefield, except if ~ was embalmed, ...".
+  ...EMBALM_REPLACEMENT_RULES,
+  // Quandrix Unlimited deck, group D2: "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it."
+  ...ENTERS_AS_COPY_COUNTERS_RULES,
+  // Issue 103: "You may have ~ enter as a copy of a creature you control with power 4 or greater, except it's a Dragon in addition to its other types ...".
+  ...COPY_EXCEPT_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
   // Stage P66 (D-219): "If one or more artifact tokens would be created under your control, ... are created instead."

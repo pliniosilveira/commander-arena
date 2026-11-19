@@ -254,10 +254,14 @@ describe('trigger.cast: "Whenever you cast ... spell" (CR 601.2i)', () => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });
 
-  test('a list of three types stops at its first comma: the segmenter ends a trigger there', () => {
+  test('a list of three kinds of spell is read whole since D-644: its commas are not the end of the trigger', () => {
     const text = 'Whenever you cast an Aura, Equipment, or Vehicle spell, draw a card.';
     expect(segment(text, 'permanent').trigger).toBeDefined();
-    expect(dropped(text, 'creature')).toMatchObject({ reason: 'unrecognised' });
+    expect(
+      dropped('Whenever you cast an Aura, Equipment, or Vehicle, draw a card.', 'creature'),
+    ).toMatchObject({
+      reason: 'unrecognised',
+    });
   });
 
   test('"it" in the body is the spell that was cast, which the engine cannot name as a permanent', () => {
