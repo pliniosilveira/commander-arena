@@ -76,7 +76,19 @@ Reproduced with seed 7, 3 seats, agent `heuristic` (decks, in seat order: Grave 
 
 `putTriggersOnStack` (`rules/trigger-stack.ts`) walks `seatsInOrder`, which skips seats that have lost, so no seat ever puts that trigger on the stack and nothing removes it. `settle` then repeats a round that changes nothing until its guard of 10,000 rounds throws. The loop produced no events.
 
-So the crash comes from the same gap as the permanents that stay after their owner loses (CR 800.4a): the triggers, and the objects, of a player who left the game are not removed. It needs more than two seats by its mechanism: with two seats the game ends when a player loses, so no trigger of a player who has lost can be waiting. The same three decks with seats 0 and 1 only (a different game, since the shuffles differ) ended at turn 18 with a win and no crash. This is one reproduced case; the other crash seeds were not examined and may have the same cause.
+So the crash comes from the same gap as the permanents that stay after their owner loses (CR 800.4a): the triggers, and the objects, of a player who left the game are not removed. It needs more than two seats by its mechanism: with two seats the game ends when a player loses, so no trigger of a player who has lost can be waiting. The same three decks with seats 0 and 1 only (a different game, since the shuffles differ) ended at turn 18 with a win and no crash. The other seven crash seeds of the casual and heuristic runs were played again with the same extended error, and all end the same way: at the crash every waiting trigger belongs to a seat that has lost.
+
+| Run | Waiting triggers (kind) | Controller | Seats that have lost |
+| --- | --- | --- | --- |
+| heuristic, 3 seats, seed 1 | cast a spell | seat 1 | seat 1 |
+| casual, 3 seats, seed 2 | leaves the battlefield | seat 1 | seat 1 |
+| casual, 3 seats, seed 5 | attack batch | seat 1 | seat 1 |
+| casual, 3 seats, seed 9 | dies, leaves the battlefield | seat 0 | seat 0 |
+| casual, 4 seats, seed 4 | dies | seat 1 | seat 1 |
+| casual, 4 seats, seed 6 | attack batch, attacks | seat 2 | seats 0 and 2 |
+| casual, 4 seats, seed 9 | dies, leaves the battlefield (twice) | seat 0 | seat 0 |
+
+The crash seeds of the random run were not examined. A game is reproduced from its seed and seat count alone, so the wrapper of the probe is not needed to replay it.
 
 ## Reading of the results
 
@@ -87,7 +99,7 @@ So the crash comes from the same gap as the permanents that stay after their own
 ## Limits of this probe
 
 - All three agents were run at 10 games per seat count, which is a small sample: the crash rates (1 to 3 of 10) are not comparable between agents. Decision time was not measured.
-- The crash seeds are recorded above; one was reproduced, not with `replayGame` but by running the same seed again with the error of `settle` extended (a scratch change, not kept). The three turn caps of the random run were not recorded.
+- The crash seeds are recorded above; eight were reproduced, not with `replayGame` but by running the same seed again with the error of `settle` extended (a scratch change, not kept). The three turn caps of the random run were not recorded.
 - The fallback count of the wrapper is fixed at construction and under-counts; it is zero for the random agent anyway.
 - Decision times were not measured. Runs of 10 games took on the order of minutes.
 - The probe's agents are wrapped, so a failing seed must be replayed without the wrapper to confirm it.
@@ -128,7 +140,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 ## Open work from the probe
 
-- Check that the other crash seeds (casual: 2, 5, 9 with 3 seats and 4, 6, 9 with 4; heuristic: 1 with 3 seats) end the same way: a waiting trigger whose controller has lost.
+- Check the crash of the random run (4 seats) and the three turn caps of that run.
 - Read how the 21-point commander loss is checked with several defenders (CR 903.10a; the CR text was not available in this session).
 - Look at the rejections: `You cannot pay that cost` (casual with 3 seats, heuristic with both) and the mana ability of Overflowing Basin tried with an empty pool (heuristic with 3 seats). They may be agent bugs that exist with two seats too.
 - Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
