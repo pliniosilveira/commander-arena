@@ -565,3 +565,95 @@ describe('Nissa: the reveal happens only the first time the ability resolves eac
     g.expect.invariants();
   });
 });
+
+// ---- Plan for All Outcomes: "When this enchantment enters, the owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library." (CR 108.3,
+// 401.4, 701.24: the owner, not the controller, makes the choice; 111.7: a token ceases to exist) and "Whenever you cast your first noncreature spell each turn, empower Jace 1." (CR 701.71a).
+
+const PLAN = parsed(
+  'SYNTHETIC Parsed Plan',
+  'Enchantment',
+  'When this enchantment enters, the owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library.\nWhenever you cast your first noncreature spell each turn, empower Jace 1. (Put a loyalty counter on a Jace token you control. If you don\'t control one, first create a blue Jace planeswalker token with "[−1]: Surveil 1" and "[−3]: Draw a card.")',
+  { manaCost: '{2}{W}{U}', colors: ['W', 'U'] },
+);
+
+describe('Plan for All Outcomes: the owner puts a permanent on the top or the bottom of their library', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(PLAN)
+      .hand(PLAN.name)
+      .battlefield('Plains', 'Plains', 'Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears')
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test("the target's owner chooses the top of their library", () => {
+    const g = start();
+    g.act(0).cast(PLAN.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('Grizzly Bears');
+    g.passAll();
+    g.expect.pending('chooseOption', 1);
+    g.act(1).chooseOption('on top of your library');
+    g.expect.zone('Grizzly Bears', 'library', { seat: 1 });
+    // It is the top card: the owner's next draw would be the Bears.
+    expect(g.state.seats[1]?.library[0] === g.id({ name: 'Grizzly Bears', zone: 'library' })).toBe(
+      true,
+    );
+    g.expect.invariants();
+  });
+
+  test('the owner can choose the bottom of their library', () => {
+    const g = start();
+    g.act(0).cast(PLAN.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets('Grizzly Bears');
+    g.passAll();
+    g.act(1).chooseOption('on the bottom of your library');
+    const library = g.state.seats[1]?.library ?? [];
+    expect(library[library.length - 1] === g.id({ name: 'Grizzly Bears', zone: 'library' })).toBe(
+      true,
+    );
+  });
+
+  test('up to one: with no target nothing happens', () => {
+    const g = start();
+    g.act(0).cast(PLAN.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets();
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 1 });
+  });
+});
+
+describe('Plan for All Outcomes: empower Jace on the first noncreature spell each turn', () => {
+  test('the first noncreature spell makes a Jace with a loyalty counter; the second does nothing', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(PLAN)
+      .battlefield(PLAN.name, 'Island', 'Swamp', 'Swamp', 'Swamp')
+      .hand('Unsummon', 'Murder')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears', 'Giant Spider')
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast('Unsummon', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.counters('Jace', { loyalty: 1 });
+    g.act(0).cast('Murder', { targets: ['Giant Spider'], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.counters('Jace', { loyalty: 1 });
+    g.expect.invariants();
+  });
+});

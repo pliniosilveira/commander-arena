@@ -587,6 +587,11 @@ export function declareDividedTarget(
 function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   const id = noun.ref;
   if (id === undefined) return failure(noun, []);
+  // Issue 81 (Plan for All Outcomes): "up to one other target nonland permanent" as the first target of an ability of a permanent: there is no slot before it to be different
+  // from, so "other" is the permanent with the ability (CR 115.1, 109.1), as in "another target ...".
+  if (noun.otherTarget === true && ctx.targets.length === 0 && ctx.owner === 'ability') {
+    return declareTarget({ ...noun, otherTarget: false, other: true }, ctx);
+  }
   // "Any number of target creatures" has no bounds of its own: a divided damage reads it (`declareDividedTarget`), and an effect that takes any number of
   // targets (stage P74, D-234: "any number of other target creatures you control phase out") has the slot `anyNumber`.
   const anyNumberTarget = noun.anyNumber === true && noun.det === 'target';

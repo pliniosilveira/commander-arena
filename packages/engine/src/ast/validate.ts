@@ -801,12 +801,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.firstOfKind !== undefined) {
         const typed =
           (t.filter?.types?.length ?? 0) > 0 ||
+          (t.filter?.notTypes?.length ?? 0) > 0 ||
           (t.filter?.anyOf?.some((m) => (m.types?.length ?? 0) > 0) ?? false);
         if (t.firstOfKind !== true) issue(out, `${path}.firstOfKind`, 'firstOfKind must be true');
         if (t.self !== undefined || t.nth !== undefined) {
           issue(out, `${path}.firstOfKind`, 'firstOfKind is not for a self trigger or with nth');
         }
-        if (!typed) issue(out, `${path}.filter`, 'firstOfKind names at least one card type');
+        if (!typed)
+          issue(
+            out,
+            `${path}.filter`,
+            'firstOfKind names at least one card type, or one it must not have',
+          );
       }
       if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
         issue(out, `${path}.duringTurn`, 'unknown active player condition');

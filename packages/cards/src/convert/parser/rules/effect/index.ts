@@ -113,6 +113,7 @@ import {
   single,
   UNDER_CONTROL,
 } from './operands';
+import { OWNER_LIBRARY_EFFECT_RULES } from './owner-library';
 import { EFFECT_PAY } from './pay';
 import { PILES_EFFECT_RULES } from './piles';
 import { PLANESWALKER_EFFECT_RULES } from './planeswalker';
@@ -1064,6 +1065,7 @@ export const EFFECT_RULES = [
   ...REVEAL_X_CARDS_EFFECT_RULES,
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
+  ...OWNER_LIBRARY_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,

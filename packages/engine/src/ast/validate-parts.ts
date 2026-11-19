@@ -6268,6 +6268,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;
+    case 'ownerPutsOnLibrary':
+      // CR 108.3 (issue 81): the permanents named are put into their owners' libraries; they are a selector of permanents.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      break;
     case 'explore':
       // CR 701.44a (issue 81): the permanents named explore; they are a selector of permanents.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);

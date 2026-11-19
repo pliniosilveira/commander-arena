@@ -268,6 +268,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'surveil',
     // Issue 81 (Map token, Restless Anchorage): "target creature you control explores" (CR 701.44).
     'explore',
+    // Issue 81 (Plan for All Outcomes): "the owner of target permanent puts it on their choice of the top or bottom of their library".
+    'ownerPutsOnLibrary',
     'lookAndReorder',
     'lookAndSplit',
     // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (CR 700.3).
@@ -2262,6 +2264,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   scry: true,
   surveil: true,
   explore: true,
+  ownerPutsOnLibrary: true,
   lookAndReorder: true,
   lookAndSplit: true,
   revealAndSeparate: true,

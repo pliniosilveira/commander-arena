@@ -3269,6 +3269,12 @@ export type Effect =
    * An empty library reveals nothing, so the permanent gets the counter (CR 701.44a, 701.44b). The permanent explores even when the counter cannot be put on it.
    */
   | { readonly kind: 'explore'; readonly objects: ObjectSelector }
+  /**
+   * "The owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library" (CR 108.3, 401.4, issue 81, Plan for All Outcomes): each
+   * permanent `objects` names that is on the battlefield is put into its owner's library, where the owner (not the controller) chooses between the top and the bottom. The owners are
+   * asked one permanent at a time, in the order the selector names them. A token ceases to exist (CR 111.7).
+   */
+  | { readonly kind: 'ownerPutsOnLibrary'; readonly objects: ObjectSelector }
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */
   | { readonly kind: 'shuffle'; readonly player: PlayerSelector }
   /**
@@ -3811,7 +3817,7 @@ export type Trigger =
       readonly nth?: number;
       /**
        * "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i, 603.2): only the first spell of the card types `filter` names (`types` or the `types` of its `anyOf`
-       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type.
+       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
        */
       readonly firstOfKind?: true;
       /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */

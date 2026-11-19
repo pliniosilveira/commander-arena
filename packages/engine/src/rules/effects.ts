@@ -113,6 +113,7 @@ import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
+import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantCastAsThoughFlash } from './player-flash';
@@ -2810,6 +2811,10 @@ function runEffect(
         [],
         [{ kind: 'behold', seat: res.controller, filter: effect.filter, chosen: null }],
       );
+
+    case 'ownerPutsOnLibrary':
+      // CR 108.3, 401.4: the owner of each permanent chooses the top or the bottom of their library (rules/owner-library-choice.ts).
+      return runOwnerLibraryChoice(state, resolveObjects(state, effect.objects, ctx, targets));
 
     case 'explore':
       // CR 701.44 (issue 81): the permanents explore one at a time (rules/explore.ts).

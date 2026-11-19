@@ -881,8 +881,13 @@ function matches(
           ...(trigger.filter.types ?? []),
           ...(trigger.filter.anyOf ?? []).flatMap((m) => m.types ?? []),
         ];
+        // Issue 81 (Plan for All Outcomes): "your first noncreature spell each turn": the card types the spell must not have (`notTypes`), with no type to name.
+        const unwanted = trigger.filter.notTypes ?? [];
         const same = state.turnLog.castSpells.filter(
-          (s) => s.seat === occ.seat && s.types.some((t) => wanted.includes(t)),
+          (s) =>
+            s.seat === occ.seat &&
+            (wanted.length === 0 || s.types.some((t) => wanted.includes(t))) &&
+            !s.types.some((t) => unwanted.includes(t)),
         );
         if (same.length !== 1) return false;
       }
