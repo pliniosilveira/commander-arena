@@ -1385,7 +1385,7 @@ export interface TokenDefinition extends Characteristics {
 }
 
 /** Predefined tokens (CR 111.10) the engine knows by name. See `cards/tokens.ts`. */
-export type TokenPreset = 'Treasure' | 'Food' | 'Clue';
+export type TokenPreset = 'Treasure' | 'Food' | 'Clue' | 'Gold';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }

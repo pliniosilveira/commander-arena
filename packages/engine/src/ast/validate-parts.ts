@@ -2957,7 +2957,7 @@ function movesObjects(e: Effect): boolean {
   );
 }
 
-const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue'];
+const TOKEN_PRESET_NAMES: readonly TokenPreset[] = ['Treasure', 'Food', 'Clue', 'Gold'];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
 const SINGLE_PLAYER_KINDS: readonly (string | undefined)[] = [

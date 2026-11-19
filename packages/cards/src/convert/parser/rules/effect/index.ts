@@ -855,6 +855,8 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     'counter target spell with mana value 1',
     // Stage P50 (D-207): a triggered ability or a spell.
     'counter target triggered ability or colorless spell',
+    // Issue 100 (Sublime Epiphany): an activated or a triggered ability.
+    'counter target activated or triggered ability',
   ],
   rejects: [
     'counter target spell unless its controller pays {1}',
@@ -868,7 +870,11 @@ export const EFFECT_COUNTER = defineRule<Clauses>({
     sequence(
       literal('counter '),
       family<IrNoun>('noun', {
-        only: ['noun.target-spell', 'noun.target-triggered-ability-or-spell'],
+        only: [
+          'noun.target-spell',
+          'noun.target-triggered-ability-or-spell',
+          'noun.target-activated-or-triggered-ability',
+        ],
       }),
     ),
     ([, objects]) => ({ verb: 'counter', args: { objects } }),
