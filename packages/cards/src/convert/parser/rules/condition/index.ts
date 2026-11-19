@@ -50,6 +50,7 @@ import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
+import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { RECURSION_CONDITION_RULES } from './recursion';
@@ -545,6 +546,7 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,
   ...SELF_STATE_CONDITION_RULES,
+  ...NO_COUNTERS_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
   // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value".
   ...ARTIFACT_CONDITION_RULES,

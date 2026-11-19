@@ -128,6 +128,7 @@ import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter } from './select';
 import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
+import { spellSpendTarget } from './spend-target';
 import { striveTargetCap } from './strive';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
 import { payableSpellTargets } from './target-payable';
@@ -1297,12 +1298,8 @@ export function answerPayment(
   // does not count (CR 106.6, 605.3a), and `finish` goes on to the rest of the cost.
   const spell = activation
     ? abilitySpend(state, activation.source)
-    : {
-        types: derivedSpell.types,
-        subtypes: derivedSpell.subtypes,
-        // D-351 (CR 609.4b): "mana of any type can be spent to cast that spell".
-        ...(spellObject.stack?.anyManaType === true ? { anyType: true as const } : {}),
-      };
+    : // D-351 (CR 609.4b): "mana of any type can be spent to cast that spell".
+      spellSpendTarget(state, spellObject, spellObject.stack?.anyManaType === true);
   const sacrifice = casting.extra?.sacrifice ?? null;
   const tap = casting.extra?.tap;
   const finish = (s: GameState, events: GameEvent[]): Result => {

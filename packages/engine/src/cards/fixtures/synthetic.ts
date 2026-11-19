@@ -118,6 +118,7 @@ import { SYNTHETIC_LOREHOLD_G2_LIST } from './synthetic-lorehold-g2';
 import { SYNTHETIC_LOREHOLD_G3_LIST } from './synthetic-lorehold-g3';
 import { SYNTHETIC_LOSE_GAME_LIST } from './synthetic-lose-game';
 import { SYNTHETIC_MANA_LIST } from './synthetic-mana';
+import { SYNTHETIC_MANA_GROUP_F_LIST } from './synthetic-mana-group-f';
 import { SYNTHETIC_MANA_INSTEAD_LIST } from './synthetic-mana-instead';
 import { SYNTHETIC_MANA_PLUS_LIST } from './synthetic-mana-plus';
 import { SYNTHETIC_MANA_RESTRICTED_LIST } from './synthetic-mana-restricted';
@@ -441,6 +442,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
   ...SYNTHETIC_COUNTERS_PLUS_LIST,
+  ...SYNTHETIC_MANA_GROUP_F_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
   ...SYNTHETIC_DANITHA_G4_LIST,

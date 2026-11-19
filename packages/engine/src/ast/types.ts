@@ -2880,6 +2880,16 @@ export type Effect =
       readonly player: PlayerSelector;
       readonly duration: 'untilEndOfTurn';
     }
+  /**
+   * "You may cast spells this turn as though they had flash." (CR 601.3b, 702.8a, 611.2, 514.2; Alchemist's Refuge): each player the selector names may cast any spell at
+   * the timing of an instant until end of turn. The players are fixed as the effect begins (CR 611.2c). It is only a permission about when (the spells get no flash keyword,
+   * as `castAsThoughFlash` does not give it), so it is a "may" by nature and asks nothing.
+   */
+  | {
+      readonly kind: 'grantCastAsThoughFlash';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
   /** "Target player gains protection from everything until their next turn" (D-607, CR 702.16). */
   | {
       readonly kind: 'grantPlayerProtectionEverything';
@@ -3509,6 +3519,14 @@ export type ManaProduction =
    * no mana. Only a mana ability (`validateCard`): a spell or a triggered ability has no way to ask the color.
    */
   | { readonly kind: 'anyColorDevotion' }
+  /**
+   * "{T}: Add X mana of any one color, where X is this creature's power." (Kami of Whispered Hopes) and "{T}: Choose a color. Add one mana of that color for each charge
+   * counter on this artifact." (Astral Cornucopia; CR 106.1b, 605.3b): the player chooses one of the five colors as the ability resolves (so the activation names it, like
+   * `anyColor`) and as many mana of it as `amount`, read as the ability is activated for its controller with its permanent as "this" (a mana ability resolves at once). An
+   * amount of 0 or less makes no mana, so no color is on offer. Only a state-reading amount that needs no target, X or earlier instruction (`validateCard`); a cost that gives
+   * the permanent up or takes counters off it is refused where the lowering reads this, as the amount is counted before costs are paid.
+   */
+  | { readonly kind: 'anyColorAmount'; readonly amount: Amount }
   /**
    * "{T}: Add one mana of any color that a land an opponent controls could produce." (Exotic
    * Orchard, Fellwar Stone) and "... of any type that a land you control could produce." (Reflecting
@@ -6075,6 +6093,11 @@ export interface ManaAbility {
   /** "Activate only if you control a Swamp." (CR 602.5b, D-099): see the activated ability. */
   readonly activateOnlyIf?: Condition;
   /**
+   * "Activate only once each turn." (CR 602.5b, 605.1a): once this mana ability of this object has been activated in a turn, whether by hand or as part of paying a
+   * cost, it cannot be activated again until the next turn begins. The object's own count, as `ActivatedAbility.oncePerTurn` has it.
+   */
+  readonly oncePerTurn?: true;
+  /**
    * "Spend this mana only to cast an Angel spell." (CR 106.6, D-149): the mana the ability adds can be spent only on a spell (never on an
    * ability's cost) that is of one of `types` (when given) and of one of `subtypes` (when given); until then it stays in the pool as
    * restricted mana, which empties as any mana does (CR 106.4).
@@ -6082,6 +6105,15 @@ export interface ManaAbility {
   readonly spendOnly?: {
     readonly types?: readonly CardType[];
     readonly subtypes?: readonly Subtype[];
+    /**
+     * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of
+     * these qualities, as it is cast: `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
+     * least the number; `hasX` there is an {X} in its mana cost, whatever X is. With `types` or `subtypes`, the spell is of those as well. Not with `chosenType`.
+     */
+    readonly qualities?: readonly (
+      | { readonly kind: 'manaValueAtLeast'; readonly value: number }
+      | { readonly kind: 'hasX' }
+    )[];
     /**
      * "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (D-151): the mana may also be spent on an activated ability of
      * a permanent that has at least one of the card types and at least one of the subtypes (each when given), besides the spells it names.

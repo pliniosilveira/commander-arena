@@ -534,3 +534,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - Selvala's Stampede: with no wild vote nothing is revealed but the library is still shuffled; the rulings of that case could not be checked.
 - The colors of the mana spent to cast a spell (Converge) are read only for the spell itself, not for "that spell" in a cast trigger.
 - A triggered mana ability adds mana of fixed types or one mana of any color; "of the chosen color" (Utopia Sprawl) and "of any type that land could produce" are not read.
+- A mana ability's count of mana of one color (Kami of Whispered Hopes, Astral Cornucopia) is read before its costs are paid, so one that also sacrifices the permanent or removes counters from it is not read.
+- "You may cast spells this turn as though they had flash" is read only for every spell and only for you; a kind of spell, another player or a longer duration is not.
+- "Spend this mana only to cast spells with mana value N or greater (or with {X} in their mana costs)" is read with a digit and "or greater" only; "or less", and a type or color beside it, are not.
