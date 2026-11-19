@@ -144,12 +144,12 @@ const UNREAD: readonly Line[] = [
   },
   {
     kind: 'instant',
-    text: "Copy target instant or sorcery spell, then return it to its owner's hand. You may choose new targets for the copy.",
+    text: 'Copy target instant or sorcery spell, then return it to your hand. You may choose new targets for the copy.',
     expect: no(
-      ", then return it to its owner's hand. You may choose new targets for the copy.",
+      ', then return it to your hand. You may choose new targets for the copy.',
       'effect.copy-spell',
     ),
-    note: 'the real line (1 card): the second instruction has no way to run on the card the copy came from, so the line is not read',
+    note: "SYNTHETIC: the second instruction is not a return to the owner's hand, so the line is not read (Narset's Reversal reads since the Jeskai copy group)",
   },
   {
     kind: 'instant',

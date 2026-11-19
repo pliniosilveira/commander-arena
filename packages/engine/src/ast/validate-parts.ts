@@ -486,6 +486,17 @@ export function checkFilter(
     }
     checkFilter(aimed, `${path}.${key}`, out, undefined, undefined, { inTargets: true });
   }
+  // CR 115.1: "that targets a player" is about a spell or ability on the stack, as `targetsObject` is.
+  if (f.targetsPlayer !== undefined) {
+    if (f.targetsPlayer !== true) issue(out, `${path}.targetsPlayer`, 'targetsPlayer must be true');
+    if (f.zone !== 'stack' && f.stackKind === undefined && where.onStack !== true) {
+      issue(
+        out,
+        `${path}.targetsPlayer`,
+        "only a spell or ability on the stack has targets chosen: the filter's zone is 'stack' or it has a stackKind",
+      );
+    }
+  }
   // D-437: "this creature" is the object a spell targets, in the filter of `targetsObject` or `targetsOnly`: the permanent that has the ability.
   if (f.isSource !== undefined) {
     if (f.isSource !== true) issue(out, `${path}.isSource`, 'isSource must be true');
@@ -553,7 +564,7 @@ export function checkFilter(
     f.anyOf.forEach((member, i) => {
       const p = `${path}.anyOf[${i}]`;
       checkFilter(member, p, out, undefined, sharesWith, {
-        onStack: f.zone === 'stack' || f.stackKind !== undefined,
+        onStack: f.zone === 'stack' || f.stackKind !== undefined || where.onStack === true,
         ...(where.inTargets === true ? { inTargets: true } : {}),
       });
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
@@ -653,7 +664,8 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.modified !== undefined ||
   f.goaded !== undefined ||
   f.named !== undefined ||
-  f.targetsObject !== undefined;
+  f.targetsObject !== undefined ||
+  f.targetsPlayer !== undefined;
 
 /**
  * True for a filter that names keywords (D-133): `derive` matches the subject of a static ability, and the objects a
@@ -3771,7 +3783,15 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       } else {
         checkRef(c.of, 'object', `${path}.of`, scope, out);
       }
-      checkFilter(c.filter, `${path}.filter`, out);
+      // CR 115.1 (Shiko and Narset, Unified: "if it targets a permanent or player"): the spell the trigger is about is on the stack, so its filter may say what it targets.
+      checkFilter(
+        c.filter,
+        `${path}.filter`,
+        out,
+        undefined,
+        undefined,
+        ofKind === 'triggerSubject' && scope.triggerSubject === 'stack' ? { onStack: true } : {},
+      );
       if (
         filterSome(
           c.filter,

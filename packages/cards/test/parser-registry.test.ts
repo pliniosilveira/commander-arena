@@ -382,6 +382,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
   'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
+  // CR 603.4: "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, ..." is read after "if", like every condition.
+  'condition.this-counter-count': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
+  ),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,

@@ -190,6 +190,14 @@ class Binder {
    */
   seedHost(condition: IrCondition | undefined): void {
     const test = condition?.test;
+    // "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, put a charge counter on it." (CR 603.4, 122.1): the permanent the intervening
+    // "if" counts counters on is what "it" of the body means, not the spell of the trigger.
+    if (test?.kind === 'amountIs' && test.amount.kind === 'countersOn') {
+      if (test.amount.of.det === 'self') {
+        this.antecedents.push({ noun: { ...test.amount.of, ref: 'self' }, kind: 'object' });
+      }
+      return;
+    }
     if (test?.kind !== 'attachedTo' || test.via === undefined) return;
     const host: IrNoun = {
       kind: 'noun',

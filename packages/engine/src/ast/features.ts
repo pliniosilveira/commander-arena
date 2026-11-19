@@ -776,6 +776,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'targetCountAtLeast',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
+    // "copy that spell if it targets a permanent or player" (`ObjectFilter.targetsPlayer`).
+    'targetsPlayer',
     // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
     'targetsOnly',
     'isSource',
@@ -1466,6 +1468,8 @@ export const SELECTOR_KINDS = [
   'searchZones',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
+  /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
+  'targetsPlayer',
   /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
   'targetsOnly',
   /** "This creature" as the object a filter describes, "that targets this creature" (D-437): the engine's `ObjectFilter.isSource`. */
