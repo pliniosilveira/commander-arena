@@ -71,6 +71,10 @@ export function checkDragonsEffect(
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
       return true;
+    case 'revealTopCast':
+      // CR 701.20a, 608.2g: the limit on the mana value of the card revealed, an amount read as the effect runs.
+      checkAmount(e.manaValueBelow, `${path}.manaValueBelow`, scope, out);
+      return true;
     case 'revealTop':
       // CR 701.20 (D-151): the players who reveal, the cards in the library that go on, and where they go.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);

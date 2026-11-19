@@ -250,10 +250,6 @@ describe('trigger.cast: "Whenever you cast ... spell" (CR 601.2i)', () => {
       'Whenever you cast a creature spell of the chosen player, you gain 1 life.',
       'of the chosen player, you gain 1 life.',
     ],
-    [
-      'Whenever you cast your first spell each turn, you gain 1 life.',
-      'your first spell each turn, you gain 1 life.',
-    ],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text, 'creature')).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });

@@ -354,6 +354,14 @@ const REVEAL_TOP_CARD = /(?:^|, )(?:then )?(?:you may )?reveal the top card of y
 const IF_REVEALED_CARD =
   /^if (?:it['’]s an? [^.,]* card|an? [^.,]* card is revealed this way), [^.]*\.$/i;
 /**
+ * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand."
+ * (CR 701.20a, 608.2g): three sentences that are one instruction (what is revealed, what may be cast and what happens to the card when it is not), kept together so
+ * `effect.reveal-top-cast` reads them as one. Only all three in a row (the first may follow the comma of a trigger).
+ */
+const MAY_CAST_IF_LESSER =
+  /^you may cast it without paying its mana cost if it['’]s a spell with lesser mana value\.$/i;
+const ELSE_CAST_INTO_HAND = /^if you don['’]t cast it, put it into your hand\.$/i;
+/**
  * "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto
  * the battlefield." (Galadriel deck, group 1, CR 401.2): the second sentence of the instruction of `LOOK_AT_TOP_CARD` that puts the card onto the battlefield (`effect.look-top-put`).
  */
@@ -394,6 +402,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, MAY_CAST_IF_LESSER) &&
+      said(c, ELSE_CAST_INTO_HAND)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

@@ -2286,6 +2286,25 @@ function runEffect(
         ],
       );
 
+    case 'revealTopCast':
+      // CR 701.20a, 608.2g: reveal the top card, may cast it without paying its mana cost when its mana value is less than the limit, else put it into the hand.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'cascade',
+            stage: 'start',
+            exiled: [],
+            found: null,
+            variant: {
+              rest: 'stayExiled',
+              revealTop: { below: amountOf(state, effect.manaValueBelow, ctx, targets) },
+            },
+          },
+        ],
+      );
+
     case 'unearth': {
       // CR 702.84a (D-124): "Return this card from your graveyard to the battlefield." The card is the source of
       // the ability; if it is no longer that object in a graveyard (it left: CR 400.7) there is nothing to

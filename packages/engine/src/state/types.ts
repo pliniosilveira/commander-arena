@@ -1405,6 +1405,11 @@ export type Instruction =
         readonly foundAtMost?: number;
         readonly castAtMost?: number;
         readonly rest: 'bottomRandom' | 'stayExiled';
+        /**
+         * `revealTopCast` (CR 701.20a, 608.2g): the card is the top card of the library, revealed and not exiled, and may be cast, from the library, only when it
+         * is not a land and its mana value is less than `below` (read as the effect ran); a card that is not cast goes into the hand.
+         */
+        readonly revealTop?: { readonly below: number };
       };
     }
   /**

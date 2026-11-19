@@ -180,7 +180,9 @@ export function beginCast(
       ? 'hand'
       : obj.zone === 'graveyard'
         ? 'graveyard' // D-350: "cast target instant or sorcery card from a graveyard"
-        : 'exile'
+        : obj.zone === 'library'
+          ? 'library' // "Reveal the top card of your library. You may cast it without paying its mana cost" (`revealTopCast`)
+          : 'exile'
     : castZone(state, seat, obj, alternative, face);
   if (zone === null) return fail('That card is not in a zone it can be cast from');
 

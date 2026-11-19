@@ -115,6 +115,7 @@ import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
+import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 
@@ -973,6 +974,7 @@ export const EFFECT_RULES = [
   ...GISA_G3_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
+  ...TROYAN_G4_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,

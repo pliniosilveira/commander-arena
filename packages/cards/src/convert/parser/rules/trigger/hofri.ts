@@ -122,10 +122,12 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     'you cast your second spell each turn',
     'a player casts their third spell each turn',
     "you cast your first spell during each opponent's turn",
+    // "Your first spell each turn" is the caster's first spell of the turn (the engine's nth of 1).
+    'you cast your first spell each turn',
   ],
   rejects: [
     'an opponent casts their first spell each turn',
-    'you cast your first spell each turn',
+    'a player casts their first spell each turn',
     'an opponent casts their second spell',
     'an opponent casts their second creature spell each turn',
     'an opponent casts your second spell each turn',
@@ -172,7 +174,7 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
     }
     const n = ORDINALS[(ordinal[1] ?? '').toLowerCase()];
     if (n === undefined) return fail(ctx, pos);
-    if (n === 1 && (actor.det !== 'you' || duringTurn !== 'opponent')) return fail(ctx, pos);
+    if (n === 1 && actor.det !== 'you') return fail(ctx, pos);
     if (n !== 1 && duringTurn !== undefined) return fail(ctx, pos);
     const subject = makeNoun(id, spell.span, 'a', filter);
     return {
