@@ -1028,6 +1028,8 @@ interface CardWords {
   readonly types: readonly string[];
   readonly anyOf: readonly string[];
   readonly subtypes: readonly string[];
+  /** "non-Dragon creature card" (CR 205.3d): creature types the card does not have. */
+  readonly notSubtypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1065,8 +1067,20 @@ export function graveyardPhrase(
     sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
   );
+  // "non-Dragon creature card" (CR 205.3d): the card has none of these creature types.
+  const nonSubtypes: Parser<string[]> = many(
+    map(
+      sequence(
+        literal('non-'),
+        satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
+        literal(' '),
+      ),
+      ([, w]) => w.subtype,
+    ),
+  );
   const typed: Parser<CardWords> = map(
     sequence(
+      nonSubtypes,
       many(
         map(
           sequence(
@@ -1081,7 +1095,12 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([subtypes, types]): CardWords => ({ types, anyOf: [], subtypes }),
+    ([notSubtypes, subtypes, types]): CardWords => ({
+      types,
+      anyOf: [],
+      subtypes,
+      ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
+    }),
   );
   // "nonland permanent card" (stage P33, D-150, CR 110.1, 205.2a): a card that is a permanent card is of one of the permanent types, so the
   // words say a choice of them, less the types the modifiers leave out ("nonland": not a land card). An instant or a sorcery is no
@@ -1180,8 +1199,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes }] = r.value;
+    const [{ types, subtypes, notSubtypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
+    // A negated creature type inside a union is another reading, not built here.
+    if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
       ok: true,
       value: {
@@ -1241,7 +1262,7 @@ export function graveyardPhrase(
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, extra, subtypeAnyOf },
       ,
       compared,
       atMostX,
@@ -1259,6 +1280,7 @@ export function graveyardPhrase(
         {
           ...filter,
           ...(subtypes.length > 0 ? { subtypes } : {}),
+          ...(notSubtypes !== undefined ? { notSubtypes } : {}),
           ...(anyOf.length > 0
             ? {
                 anyOf: [...anyOf.map((t): IrFilter => ({ types: [t], raw: t })), ...(extra ?? [])],
