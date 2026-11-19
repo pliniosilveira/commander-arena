@@ -49,8 +49,6 @@ const grantOptions = (state: GameState, seat: 0 | 1) =>
     (a) => a.kind === 'activateAbility' && a.abilityIndex <= GRANT,
   );
 
-const lifeOf = (state: GameState, seat: 0 | 1) => state.seats[seat]?.life;
-
 const withLife = (state: GameState, seat: 0 | 1, life: number): GameState => ({
   ...state,
   seats: state.seats.map((s) => (s.id === seat ? { ...s, life } : s)),
@@ -65,7 +63,7 @@ describe('the cards are valid', () => {
     const edit = (change: Record<string, unknown>) => {
       const card = syntheticCard(CHANNEL);
       const face = card.faces[0];
-      if (face === undefined || face.spell === undefined) throw new Error('no spell');
+      if (face === undefined || face.spell == null) throw new Error('no spell');
       const effect = { ...(face.spell.effect as object), ...change };
       return { ...card, faces: [{ ...face, spell: { ...face.spell, effect } }] } as never;
     };
@@ -151,12 +149,7 @@ describe('activated by hand (CR 605.3a, 605.3b, 118.3)', () => {
     if (option === undefined) throw new Error('no option');
     // The state is changed under the listing, so only the refusal is asked of the engine (a player can't pay more life than they have).
     expect(applyAction(withLife(g.state, 0, 0), 0, option).ok).toBe(false);
-    const dear = base()
-      .hand(DEAR)
-      .battlefield('Forest')
-      .life(1)
-      .at('precombatMain')
-      .build();
+    const dear = base().hand(DEAR).battlefield('Forest').life(1).at('precombatMain').build();
     dear.act(0).cast(DEAR, { pay: true });
     dear.passAll();
     // 2 life to pay, 1 life: refused. At 2 life it is on offer, and it takes the player to 0.
@@ -280,9 +273,7 @@ describe('in the middle of paying for a spell (CR 605.3b, 601.2g)', () => {
 
   test('a cost of colored mana is not paid with the colorless mana of the ability', () => {
     const g = withChannel(GREEN);
-    expect(
-      getLegalActions(g.state, 0).some((a) => a.kind === 'castSpell'),
-    ).toBe(false);
+    expect(getLegalActions(g.state, 0).some((a) => a.kind === 'castSpell')).toBe(false);
     g.expect.life(0, 40);
   });
 

@@ -29,7 +29,8 @@ export const isPlayerManaAbility = (abilityIndex: number): boolean =>
 const MAX_PLANNED_USES = 20;
 
 /** How many uses a planner source of the ability stands for (`playerManaSources`). */
-export const usesOfPlanned = (abilityIndex: number): number => PLAYER_MANA_ABILITY - abilityIndex + 1;
+export const usesOfPlanned = (abilityIndex: number): number =>
+  PLAYER_MANA_ABILITY - abilityIndex + 1;
 
 export interface PlayerManaGrant {
   readonly source: ObjectId;

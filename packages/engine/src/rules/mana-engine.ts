@@ -23,13 +23,6 @@ import type { GameObject, GameState } from '../state/types';
 import { derive } from './derive';
 import { runImmediateEffects } from './effects';
 import {
-  activatePlayerMana,
-  isPlayerManaAbility,
-  payGrantLife,
-  playerManaGrants,
-  usesOfPlanned,
-} from './player-mana';
-import {
   canPayPhysicalCosts,
   isColorChoice,
   manaAbilitiesOf,
@@ -52,6 +45,13 @@ import {
   spentRiderOf,
 } from './mana-outcomes';
 import { additionalManaOptions } from './mana-triggers';
+import {
+  activatePlayerMana,
+  isPlayerManaAbility,
+  payGrantLife,
+  playerManaGrants,
+  usesOfPlanned,
+} from './player-mana';
 
 export {
   canTapForMana,

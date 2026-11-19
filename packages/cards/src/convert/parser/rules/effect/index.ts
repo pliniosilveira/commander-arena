@@ -55,7 +55,6 @@ import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
-import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
@@ -126,6 +125,7 @@ import {
   EFFECT_PLAYER_LOCK,
   EFFECT_SHUFFLE,
 } from './player';
+import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { POPULATE_EFFECT_RULES } from './populate';
 import { PREPARE_EFFECT_RULES } from './prepare';
 import { PREVENT_RULES } from './prevent';

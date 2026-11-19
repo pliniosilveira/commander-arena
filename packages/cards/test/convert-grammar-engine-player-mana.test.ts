@@ -21,14 +21,6 @@ const real = (name: string) => {
 };
 
 const LIB = Array.from({ length: 12 }, () => 'Plains');
-const base = () =>
-  scenario()
-    .seat(0)
-    .library(...LIB)
-    .seat(1)
-    .library(...LIB)
-    .seat(0);
-
 const grantOptions = (state: Parameters<typeof getLegalActions>[0]) =>
   getLegalActions(state, 0).filter((a) => a.kind === 'activateAbility' && a.abilityIndex <= -1000);
 
@@ -89,9 +81,7 @@ describe('the engine runs what the grammar lowered', () => {
     const three = parsed('SYNTHETIC Parsed Three', 'Sorcery', 'You gain 3 life.', {
       manaCost: '{3}',
     });
-    const b = scenario()
-      .define(bloomsage)
-      .define(three);
+    const b = scenario().define(bloomsage).define(three);
     b.seat(0)
       .library(...LIB)
       .hand(...(extra.hand ?? []))
