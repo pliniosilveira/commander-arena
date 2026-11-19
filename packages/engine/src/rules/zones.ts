@@ -1060,6 +1060,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
     };
   }
+  // CR 603.2, 404.1: a card put into a graveyard from anywhere ("whenever a land card is put into your graveyard ... for the first time each turn").
+  if (to === 'graveyard' && created.card !== null) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        graveyardEntries: [
+          ...next.turnLog.graveyardEntries,
+          { seat: old.owner, types: derive(next, getObject(next, newId)).types },
+        ],
+      },
+    };
+  }
   // CR 400.7 (D-206): a card that left a graveyard ("if a card left your graveyard this turn").
   if (old.zone === 'graveyard' && to !== 'graveyard' && old.card !== null) {
     next = {

@@ -31,6 +31,7 @@ import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
@@ -1238,5 +1239,7 @@ export const TRIGGER_RULES = [
   ...GALADRIEL_G1_TRIGGER_RULES,
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
+  // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
+  ...DEATH_TOLL_B_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

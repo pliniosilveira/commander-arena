@@ -2317,6 +2317,14 @@ export interface TurnLog {
    * A card that goes from one graveyard to another is not here (it stays in a graveyard: no zone change of that kind is made).
    */
   readonly leftGraveyard: readonly SeatId[];
+  /**
+   * Each card put into a graveyard this turn from anywhere (CR 603.2, 400.7), in order: the seat that owns it and its card types in the graveyard. A token is not a card and is
+   * not here. "For the first time each turn" of a trigger about cards put into your graveyard reads it.
+   */
+  readonly graveyardEntries: readonly {
+    readonly seat: SeatId;
+    readonly types: readonly CardType[];
+  }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**
@@ -2352,6 +2360,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   graveyarded: [],
   died: [],
   leftGraveyard: [],
+  graveyardEntries: [],
   modesChosen: [],
   castSpells: [],
 };

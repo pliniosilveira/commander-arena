@@ -1318,6 +1318,8 @@ export interface IrTrigger extends IrNode {
    * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
    */
   readonly batch?: true;
+  /** 'putIntoGraveyard' (Death Toll deck group B, CR 603.2): "from your library" (the cards came from the library), not "from anywhere". */
+  readonly fromLibrary?: true;
 }
 
 export interface IrRestriction extends IrNode {

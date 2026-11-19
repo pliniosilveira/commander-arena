@@ -1,0 +1,238 @@
+// The Death Toll deck, group B: the REAL cards of the golden corpus read through the grammar only and played through applyAction. Cards put into a graveyard from
+// anywhere (CR 603.2, 603.2c), once for each card or as a batch, "for the first time each turn". Stand-ins are SYNTHETIC (named so), with invented power and toughness.
+import { readFileSync } from 'node:fs';
+import { type Action, type CardDefinition, type GameState, getView } from '@commander-arena/engine';
+import { scenario } from '@commander-arena/engine/testing';
+import { describe, expect, test } from 'vitest';
+import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
+import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
+
+const cards: readonly GoldenCard[] = parseGolden(
+  readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
+);
+
+function real(name: string): CardDefinition {
+  const card = cards.find((c) => c.name === name);
+  if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
+  const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
+  expect(imported.support.status, name).toBe('supported');
+  expect(imported.support.unparsed, name).toEqual([]);
+  return imported.definition;
+}
+
+const FILLER = Array.from({ length: 30 }, () => 'Island');
+const names = (state: GameState, seat: 0 | 1): string[] =>
+  getView(state, seat).battlefield.map((o) => o.name);
+
+/** Passes priority until the stack is empty. */
+function settle(g: {
+  state: GameState;
+  passAll(): unknown;
+  legalActions(seat: 0 | 1): readonly Action[];
+  choose(seat: 0 | 1, action: Action): unknown;
+}) {
+  for (let i = 0; i < 16; i += 1) {
+    const d = g.state.pending;
+    if (d !== null && d.kind === 'orderTriggers') {
+      g.choose(d.seat as 0 | 1, g.legalActions(d.seat as 0 | 1)[0] as Action);
+    } else if (g.state.stack.length > 0) g.passAll();
+    else break;
+  }
+}
+
+const MILL_TWO = parsed('SYNTHETIC Mill Two', 'Sorcery', 'Mill two cards.', { manaCost: '{1}' });
+const MILL_ONE = parsed('SYNTHETIC Mill One', 'Sorcery', 'Mill a card.', { manaCost: '{1}' });
+const MILL_ONE_B = parsed('SYNTHETIC Mill One B', 'Sorcery', 'Mill a card.', { manaCost: '{1}' });
+const BEAR = parsed('SYNTHETIC Bear', 'Creature — Bear', '', {
+  manaCost: '{1}{G}',
+  power: '2',
+  toughness: '2',
+});
+const SWEEP = parsed('SYNTHETIC Sweep', 'Sorcery', 'Destroy all creatures.', { manaCost: '{1}' });
+
+describe('Skola Grovedancer (whenever a land card is put into your graveyard from anywhere)', () => {
+  const SKOLA = real('Skola Grovedancer');
+
+  test('read as a trigger of the cards of the controller’s graveyard, from anywhere, for a land card (CR 603.2)', () => {
+    expect(SKOLA.faces[0]?.abilities.find((a) => a.kind === 'triggered')).toMatchObject({
+      trigger: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
+    });
+  });
+
+  const game = (top: readonly string[]) =>
+    scenario()
+      .define(SKOLA)
+      .define(MILL_TWO)
+      .define(MILL_ONE)
+      .define(BEAR)
+      .define(SWEEP)
+      .seat(0)
+      .hand(MILL_TWO.name, MILL_ONE.name, SWEEP.name)
+      .battlefield(SKOLA.name)
+      .battlefield('Plains', { count: 4 })
+      .library(...top, ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('two lands milled together: one trigger for each card, two life (one trigger for each land card)', () => {
+    const g = game(['Forest', 'Mountain']);
+    const before = g.state.seats[0]?.life ?? 0;
+    g.act(0).cast(MILL_TWO.name, { pay: true });
+    settle(g);
+    expect(g.state.seats[0]?.life).toBe(before + 2);
+    g.expect.invariants();
+  });
+
+  test('a nonland card milled does not trigger it, a land card does', () => {
+    const g = game([BEAR.name, 'Forest']);
+    const before = g.state.seats[0]?.life ?? 0;
+    g.act(0).cast(MILL_TWO.name, { pay: true });
+    settle(g);
+    expect(g.state.seats[0]?.life).toBe(before + 1);
+  });
+
+  test('a land creature that dies is put into the graveyard from the battlefield: it triggers (from anywhere)', () => {
+    const LAND_CREATURE = parsed('SYNTHETIC Living Land', 'Land Creature \u2014 Forest', '', {
+      power: '1',
+      toughness: '1',
+    });
+    const KILL = parsed('SYNTHETIC Kill', 'Sorcery', 'Destroy target creature.', {
+      manaCost: '{1}',
+    });
+    const g = scenario()
+      .define(SKOLA)
+      .define(LAND_CREATURE)
+      .define(KILL)
+      .seat(0)
+      .hand(KILL.name)
+      .battlefield(SKOLA.name)
+      .battlefield(LAND_CREATURE.name)
+      .battlefield('Plains', { count: 2 })
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    const before = g.state.seats[0]?.life ?? 0;
+    g.act(0).cast(KILL.name, { pay: true, targets: [LAND_CREATURE.name] });
+    settle(g);
+    expect(g.state.seats[0]?.life).toBe(before + 1);
+  });
+
+  test('a land card put into an opponent’s graveyard is not "your graveyard"', () => {
+    const g = scenario()
+      .define(SKOLA)
+      .define(MILL_ONE)
+      .seat(0)
+      .hand(MILL_ONE.name)
+      .battlefield(SKOLA.name)
+      .battlefield('Plains', { count: 2 })
+      .library(...FILLER)
+      .seat(1)
+      .battlefield(SKOLA.name)
+      .library('Forest', ...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    const mine = g.state.seats[0]?.life ?? 0;
+    g.act(0).cast(MILL_ONE.name, { pay: true });
+    settle(g);
+    // Seat 0 milled an Island of their own: a land card, so seat 0's Skola gained 1, and seat 1's did nothing for it.
+    expect(g.state.seats[0]?.life).toBe(mine + 1);
+    expect(g.state.seats[1]?.life).toBe(40);
+  });
+
+  test('Skola must be on the battlefield after the land card is put there: a land that dies together with it does not trigger (ruling 2020-01-24)', () => {
+    const LANDCREATURE = parsed('SYNTHETIC Living Land', 'Land Creature — Forest', '', {
+      power: '1',
+      toughness: '1',
+    });
+    const g = scenario()
+      .define(SKOLA)
+      .define(SWEEP)
+      .define(LANDCREATURE)
+      .seat(0)
+      .hand(SWEEP.name)
+      .battlefield(SKOLA.name)
+      .battlefield(LANDCREATURE.name)
+      .battlefield('Plains', { count: 2 })
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    const before = g.state.seats[0]?.life ?? 0;
+    g.act(0).cast(SWEEP.name, { pay: true });
+    settle(g);
+    expect(names(g.state, 0)).not.toContain(SKOLA.name);
+    expect(g.state.seats[0]?.life).toBe(before);
+  });
+});
+
+describe('Crawling Sensation (whenever one or more land cards are put into your graveyard from anywhere for the first time each turn)', () => {
+  const CRAWL = real('Crawling Sensation');
+
+  test('read as a batch trigger, first time each turn (CR 603.2c)', () => {
+    expect(CRAWL.faces[0]?.abilities.filter((a) => a.kind === 'triggered')).toHaveLength(2);
+    expect(
+      CRAWL.faces[0]?.abilities.find(
+        (a) => a.kind === 'triggered' && a.trigger.kind === 'putIntoGraveyard',
+      ),
+    ).toMatchObject({
+      trigger: {
+        kind: 'putIntoGraveyard',
+        who: 'you',
+        from: 'anywhere',
+        batch: true,
+        firstTimeEachTurn: true,
+        filter: { types: ['land'] },
+      },
+    });
+  });
+
+  const game = (top: readonly string[]) =>
+    scenario()
+      .define(CRAWL)
+      .define(MILL_TWO)
+      .define(MILL_ONE)
+      .define(MILL_ONE_B)
+      .define(BEAR)
+      .seat(0)
+      .hand(MILL_TWO.name, MILL_ONE.name, MILL_ONE_B.name)
+      .battlefield(CRAWL.name)
+      .battlefield('Plains', { count: 6 })
+      .library(...top, ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+  const insects = (g: { state: GameState }) => names(g.state, 0).filter((n) => n === 'Insect');
+
+  test('two lands milled together are one batch: one Insect', () => {
+    const g = game(['Forest', 'Mountain']);
+    g.act(0).cast(MILL_TWO.name, { pay: true });
+    settle(g);
+    expect(insects(g)).toHaveLength(1);
+    g.expect.invariants();
+  });
+
+  test('a second land card the same turn does not trigger it again', () => {
+    const g = game(['Forest', 'Mountain', 'Swamp']);
+    g.act(0).cast(MILL_ONE.name, { pay: true });
+    settle(g);
+    g.act(0).cast(MILL_ONE_B.name, { pay: true });
+    settle(g);
+    expect(insects(g)).toHaveLength(1);
+  });
+
+  test('a card that is not a land does not use up the first time: the first land card does trigger it', () => {
+    const g = game([BEAR.name, 'Forest']);
+    g.act(0).cast(MILL_ONE.name, { pay: true });
+    settle(g);
+    expect(insects(g)).toHaveLength(0);
+    g.act(0).cast(MILL_ONE_B.name, { pay: true });
+    settle(g);
+    expect(insects(g)).toHaveLength(1);
+  });
+});

@@ -4061,6 +4061,22 @@ export type Trigger =
    */
   | { readonly kind: 'leftGraveyard'; readonly who: 'you' }
   /**
+   * "Whenever a land card is put into your graveyard from anywhere" and "Whenever one or more land cards are put into your graveyard from anywhere for the first time each
+   * turn" (CR 603.2, 603.2c, 400.7, 404.1): a card put into the graveyard of the player `who` names (`you`: the controller of this ability, who owns the card, CR 404.1) from
+   * `from` (`anywhere`, or only the player's `library`: "from your library"). A token is not a card and never counts. The permanent with this ability must be on the battlefield
+   * as the card is put there (it does not look back in time). `filter` describes the card as it is in the graveyard (`types` or `notTypes` only, no zone, controller or
+   * owner). Without `batch` the ability triggers once for each card, and `triggerSubject` is that card; with `batch` the cards put into a graveyard in one run of events are one
+   * occurrence, however many. `firstTimeEachTurn` (batch only): only when no card the filter names was put into the player's graveyard earlier this turn.
+   */
+  | {
+      readonly kind: 'putIntoGraveyard';
+      readonly who: 'you';
+      readonly from: 'anywhere' | 'library';
+      readonly filter?: ObjectFilter;
+      readonly batch?: true;
+      readonly firstTimeEachTurn?: true;
+    }
+  /**
    * "Whenever one or more cards are put into exile from your library and/or your graveyard" (CR 603.2c, 400.7, D-229): a batch trigger on the cards of the
    * controller of this ability that are put into exile from their library or from their graveyard in one run of events. Once, however many. A card put
    * into exile from a hand, the battlefield, the stack or an opponent's zones is not counted.

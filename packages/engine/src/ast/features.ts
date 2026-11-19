@@ -429,6 +429,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "one or more cards leave your graveyard", "one or more cards are put into exile from your library and/or your graveyard".
     'leftGraveyard',
     'exiledFromLibraryOrGraveyard',
+    // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere" (once for each card, or a batch "for the first time each turn").
+    'putIntoGraveyard',
     'becomesTarget',
     'chapter',
     // D-111: steps and phases, draws, combat damage dealt, leaving the battlefield.
@@ -2354,6 +2356,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   entersBatch: true,
   leftGraveyard: true,
   exiledFromLibraryOrGraveyard: true,
+  putIntoGraveyard: true,
   becomesTarget: true,
   chapter: true,
   step: true,

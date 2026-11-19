@@ -626,6 +626,25 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: t.event, who: 'you' });
     }
+    case 'putIntoGraveyard': {
+      // "Whenever a land card is put into your graveyard from anywhere" (Death Toll deck, group B, CR 603.2, 603.2c): the kind of card is a filter on the card in the graveyard.
+      const missing = missingFeatures(['trigger:putIntoGraveyard']);
+      if (missing.length > 0) return failure(t, missing);
+      const kind = t.subject?.filter;
+      const filter =
+        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+          ? null
+          : lowerFilter(t.subject);
+      if (filter !== null && !filter.ok) return filter;
+      return ok({
+        kind: 'putIntoGraveyard',
+        who: 'you',
+        from: t.fromLibrary === true ? 'library' : 'anywhere',
+        ...(filter === null ? {} : { filter: filter.value }),
+        ...(t.batch === true ? { batch: true as const } : {}),
+        ...(t.firstEachTurn === true ? { firstTimeEachTurn: true as const } : {}),
+      });
+    }
     case 'sacrifice': {
       // "you sacrifice" is the controller of this ability, "a player sacrifices" any player.
       const by = t.actor?.det === 'you' ? 'you' : t.actor?.det === 'eachPlayer' ? 'any' : null;
@@ -1578,6 +1597,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersBatch',
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',
+  'trigger:putIntoGraveyard',
   'trigger:castNth',
   'trigger:castFirstOfKind',
   'trigger:crimeCommitted',
