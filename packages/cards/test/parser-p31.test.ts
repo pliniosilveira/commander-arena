@@ -865,7 +865,7 @@ describe('costs and restrictions (CR 118.3, 601.2f, 602.5b)', () => {
   });
 
   test.each([
-    ['{T}: Add {G}. Activate only once each turn.', 'land'],
+    ['{T}: Add {G}. Activate only as a sorcery.', 'land'],
     [
       '{T}: Add {G}. This ability costs {1} less to activate for each creature you control.',
       'land',

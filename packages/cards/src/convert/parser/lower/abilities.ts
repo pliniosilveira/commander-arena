@@ -876,7 +876,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
         'amount:x',
       ]);
       if (blockedX !== null) return blockedX;
-      return built({ kind: 'entersWithCounters', counter: counter.name, count: { kind: 'x' } });
+      return built({
+        kind: 'entersWithCounters',
+        counter: counter.name,
+        count: count.times === undefined ? { kind: 'x' } : { kind: 'x', times: count.times },
+      });
     }
     // "for each Zombie card in your graveyard" (stage P28, D-131): counted as it enters, for its controller (CR 614.12).
     if (count?.kind === 'countOf') {

@@ -321,6 +321,12 @@ export function matchesFilterWith(
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;
   if (filter.colors && !filter.colors.every((c) => d.colors.includes(c))) return false;
   if (!compares(filter.power, d.power)) return false;
+  // "Each creature with power of the chosen quality" (Zimone's Hypothesis): the power now is odd or even; 0 is even and so is any multiple of 2, negative or not.
+  if (filter.powerParity !== undefined) {
+    if (d.power === null || d.power === undefined) return false;
+    const odd = Math.abs(d.power) % 2 === 1;
+    if (odd !== (filter.powerParity === 'odd')) return false;
+  }
   if (!compares(filter.toughness, d.toughness)) return false;
   if (!compares(filter.manaValue, d.manaValue)) return false;
   // CR 202.3 (D-230): "mana value X or less, where X is ...": the limit is worked out by the caller (`select.ts`); without it the filter fails closed.
@@ -403,6 +409,11 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power > base)) return false;
+  }
+  // CR 208.4b: "with base power 0": the base power the object has before counters and effects that only modify it.
+  if (filter.basePowerIs !== undefined) {
+    const base = d.basePower;
+    if (base === null || base === undefined || base !== filter.basePowerIs) return false;
   }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
   if (filter.chosenType === true) {

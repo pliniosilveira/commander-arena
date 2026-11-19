@@ -475,7 +475,7 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
               (c, p) => {
                 const ahead = pattern(
                   // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
-                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
+                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|put an? [+-]\d+\/[+-]\d+ counter on a creature\.|exile up to one other target ))/iu,
                 )(c, p);
                 return ahead.ok ? literal('you may ')(c, p) : ahead;
               },

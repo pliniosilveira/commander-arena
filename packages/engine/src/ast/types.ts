@@ -596,6 +596,11 @@ export interface ObjectFilter {
   readonly power?: NumberComparison;
   readonly toughness?: NumberComparison;
   readonly manaValue?: NumberComparison;
+  /**
+   * "Return each creature with power of the chosen quality" (Zimone's Hypothesis, after "choose odd or even"): the object's power now is an odd number or an even number (zero is even).
+   * An object with no power matches neither.
+   */
+  readonly powerParity?: 'odd' | 'even';
   /** Only objects that are not this ability's source ("another creature"). */
   readonly other?: boolean;
   /**
@@ -710,6 +715,11 @@ export interface ObjectFilter {
    * (a static ability's subject, a count a static ability reads), as `powerLessThanSource` is.
    */
   readonly powerAboveBase?: true;
+  /**
+   * "Creatures you control with base power 0" (CR 208.4b): the object's base power, the power layer 7b leaves before counters and "+N/+N" effects, is this whole number. An object with no power
+   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is.
+   */
+  readonly basePowerIs?: number;
   /**
    * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
    * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
@@ -1725,6 +1735,17 @@ export type Effect =
   | {
       readonly kind: 'dealDividedDamage';
       readonly to: { readonly kind: 'target'; readonly id: string };
+    }
+  /**
+   * "Distribute X +1/+1 counters among any number of target creatures you control" (CR 601.2d, 122.6, 608.2b): the counters of a kind a spell divided as it was cast, put on each
+   * target of the slot `to` names, if it is still legal as the spell resolves, in the share the caster gave it; a target that became illegal gets none, and its share is not given to the
+   * others. The counters are put by the controller through the same placement as `addCounters` (a replacement such as `countersPlus` applies to each target's share). `to` is a `target`
+   * of a slot whose `TargetSpec` has `divide`; with the total `{ kind: 'x' }` the spell announces an X (CR 107.3a).
+   */
+  | {
+      readonly kind: 'distributeCounters';
+      readonly to: { readonly kind: 'target'; readonly id: string };
+      readonly counter: string;
     }
   /**
    * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.3a-e, 608.2c; Lorehold group 1): every object `objects` names is a source and its own
@@ -4785,6 +4806,12 @@ export type Condition =
    */
   | { readonly kind: 'amountIs'; readonly amount: Amount; readonly compare: NumberComparison }
   /**
+   * "If you control a prime number of lands" (Zimone, All-Questioning): a state-reading amount (as for `amountIs`) is a prime number, a whole number of 2 or more that has no divisor
+   * but 1 and itself (2, 3, 5, 7, 11, ...); 0 and 1 are not prime. Read as it is when the condition is read (CR 603.4: as the ability triggers and as it resolves, for an intervening "if").
+   * There is no comprehensive rule for it: the card says what a prime number is in its reminder text.
+   */
+  | { readonly kind: 'amountIsPrime'; readonly amount: Amount }
+  /**
    * "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the holder of the designation is one of
    * the players `player` names (relative to the controller of the thing that asks: `you`, `eachOpponent`, ...). A
    * designation is something a player has, not a permanent or an emblem (CR 725.1: "the monarch is a designation");
@@ -5146,10 +5173,11 @@ export type Replacement =
       readonly counter: string;
       /**
        * `timesKicked` (D-254, CR 702.33c, 614.1c): "enters with a charge counter on it for each time it was kicked", the kicks of the spell the permanent came from.
+       * `x` with `times` (an integer of 2 or more): "enters with twice X +1/+1 counters on it" (CR 107.3m, 122.6), X multiplied by `times`.
        */
       readonly count:
         | number
-        | { readonly kind: 'x' }
+        | { readonly kind: 'x'; readonly times?: number }
         | { readonly kind: 'timesKicked' }
         | CountAmount
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */

@@ -64,6 +64,7 @@ import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
+import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
@@ -815,6 +816,8 @@ export const NOUN_RULES = [
   ...HYLDA_G2_TARGET_NOUN_RULES,
   // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.
   ...ATTACKING_YOU_NOUN_RULES,
+  // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
+  ...QUANDRIX_G_TARGET_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -831,6 +834,8 @@ export const NOUN_RULES = [
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
   ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,
+  // Quandrix Unlimited deck, group G: "commanders you control".
+  ...QUANDRIX_G_NOUN_RULES,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.
   ...EDHREC_NOUN_RULES,

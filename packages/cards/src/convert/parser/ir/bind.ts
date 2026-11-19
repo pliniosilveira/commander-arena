@@ -467,7 +467,10 @@ class Binder {
           this.antecedents.push({
             kind: 'object',
             token: true,
-            ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
+            // "Create a 0/0 ... Fractal creature token. Put X +1/+1 counters on it." (Quandrix Unlimited deck, group G): a 0/0 token dies without counters, so "it" of the next sentence is it.
+            ...(arg.copyExcept === undefined && !(arg.power === 0 && arg.toughness === 0)
+              ? {}
+              : { itToken: true as const }),
             plainToken: true as const,
             noun: {
               kind: 'noun',
@@ -789,6 +792,16 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
       binder.seedSelfCondition(ability.trigger, ability.interveningIf);
+      // "At the beginning of your upkeep, if ~ has one or more +1/+1 counters on it, you may remove a +1/+1 counter from it." (Quandrix Unlimited deck, group G): the
+      // permanent the intervening "if" names is what "it" means in the body, when the trigger has no subject of its own.
+      const tested = ability.interveningIf;
+      if (
+        tested?.test.kind === 'thisMatches' &&
+        tested.test.who === 'self' &&
+        ability.trigger.subject === undefined
+      ) {
+        binder.seed(selfNoun(tested), 'triggerSubject', true);
+      }
       if (ability.modal !== undefined) {
         // Each mode starts from the antecedents a body would: the trigger's subject and actor.
         const modal = bindModes(ability.modal, scope, verbs, (b) =>

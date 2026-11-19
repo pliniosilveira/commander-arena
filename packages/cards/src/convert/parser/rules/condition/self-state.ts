@@ -295,12 +295,17 @@ export const CONDITION_THIS_HAS_COUNTER = defineRule<IrCondition>({
     '~ has a stun counter on it',
     '~ has an oil counter on it',
     '~ has +1/+1 counters on it',
+    // Ingenious Prodigy (Quandrix Unlimited deck, group G): at least one counter of the kind.
+    '~ has one or more +1/+1 counters on it',
+    '~ has one or more counters on it',
   ],
   rejects: [
     '~ has a +1/+1 counter on it.',
     '~ has no counters on it',
     '~ has no +1/+1 counters on it',
     '~ has a +1/+1 counters on it',
+    '~ has one or more +1/+1 counter on it',
+    '~ has one or more no counters on it',
     '~ has two +1/+1 counters on it',
     '~ has a +1/+1 counter',
     '~ has a +1/+1 counter on it and',
@@ -313,14 +318,14 @@ export const CONDITION_THIS_HAS_COUNTER = defineRule<IrCondition>({
     const r = spanned(
       pattern(
         new RegExp(
-          `(~|it) has (?:an? (?:${kind} )?counter|(?:${kind} )?counters) on it(?![\\p{L}\\p{N}])`,
+          `(~|it) has (?:an? (?:${kind} )?counter|(?:${kind} )?counters|one or more (?:${kind} )?counters) on it(?![\\p{L}\\p{N}])`,
           'iu',
         ),
       ),
     )(ctx, pos);
     if (!r.ok) return r;
     const match = r.value.value;
-    const counter = (match[2] ?? match[3])?.toLowerCase();
+    const counter = (match[2] ?? match[3] ?? match[4])?.toLowerCase();
     // "it has no counters on it" says the opposite, and "two" is a number: neither is a kind of counter.
     if (counter === 'no' || counter === 'two') return fail(ctx, pos);
     const who = (match[1] ?? '').toLowerCase() === '~' ? 'self' : 'it';

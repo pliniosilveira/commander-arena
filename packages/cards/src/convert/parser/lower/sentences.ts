@@ -746,6 +746,8 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
   'behold',
   // D-212: "you may have ~ become a copy of ... If you do, ..." (CR 707.2).
   'becomeCopy',
+  // Quandrix Unlimited deck, group G (CR 122.1, 608.2c): "you may remove a +1/+1 counter from ~. If you do, ...".
+  'removeCounters',
 ]);
 
 /**

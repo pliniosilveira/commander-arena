@@ -890,6 +890,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 241 (Opal Palace).
   'effect.mana-rider-counters-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  'amount.damage-dealt-by-trigger': permanent(
+    (e) =>
+      `Whenever one or more creatures you control deal combat damage to a player, create a 0/0 green and blue Fractal creature token. Put a number of +1/+1 counters on it ${e}.`,
+  ),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
   'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),
@@ -1001,6 +1005,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
+  'condition.and': permanent((e) => `At the beginning of your end step, if ${e}, draw a card.`),
+  'condition.prime-number-of': permanent(
+    (e) => `At the beginning of your end step, if ${e}, draw a card.`,
+  ),
+  'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
+  'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

@@ -340,6 +340,11 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
             }
           });
         }
+      } else if (kindOf(r.count) === 'x') {
+        const times = (r.count as { times?: unknown }).times;
+        if (times !== undefined && (!isCount(times) || times < 2)) {
+          issue(out, `${path}.count.times`, 'the multiple of X is an integer of 2 or more');
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&
@@ -1884,6 +1889,9 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
   // D-386: X targets read the X announced for the spell: the text must say it has one.
   if (!xAllowed && (s.targets ?? []).some((t) => t.countX === true)) {
     issue(out, `${path}.x`, 'X targets need x: true (the spell announces an X)');
+  }
+  if (!xAllowed && (s.targets ?? []).some((t) => kindOf(t.divide?.total) === 'x')) {
+    issue(out, `${path}.x`, 'a division of X needs x: true (the spell announces an X)');
   }
   if (s.effect !== undefined) {
     checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);

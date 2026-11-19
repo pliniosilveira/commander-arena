@@ -354,6 +354,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'fight',
     // D-145: "deals X damage divided as you choose among any number of target creatures" (CR 601.2d): with `TargetSpec.divide`.
     'dealDividedDamage',
+    // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control" (CR 601.2d): with `TargetSpec.divide`.
+    'distributeCounters',
     // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
     'dealDamageToSelf',
     // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
@@ -832,6 +834,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerLessThanSource',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
+    // "Creatures you control with base power 0" (`ObjectFilter.basePowerIs`).
+    'basePowerIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
@@ -882,6 +886,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discardedThisWay',
     // D-139: "two or more colors" (`ObjectFilter.colorCount`).
     'colorCount',
+    // Zimone's Hypothesis: "power of the chosen quality" (`ObjectFilter.powerParity`).
+    'powerParity',
     // D-139: "mana value X" and "whose controller was dealt combat damage by this creature this turn".
     'manaValueX',
     'controllerDamagedBySource',
@@ -933,6 +939,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-131: any state-reading amount compared with a number ("total power 8 or greater", "seven or more
     // creature cards in your graveyard").
     'amountIs',
+    // Quandrix Unlimited deck, group G: "you control a prime number of lands".
+    'amountIsPrime',
     // D-131: "if you're the monarch" (CR 725): a player has a designation.
     'playerHasDesignation',
     // D-235: "Activate only if this Class is level N".
@@ -1551,6 +1559,8 @@ export const SELECTOR_KINDS = [
   'powerLessThanSource',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
   'powerAboveBase',
+  /** "With base power 0" (CR 208.4b): the engine's `ObjectFilter.basePowerIs`. */
+  'basePowerIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */
@@ -1608,6 +1618,8 @@ export const SELECTOR_KINDS = [
   'discardedThisWay',
   /** "Permanents that are two or more colors", "monocolored" (CR 105.2, D-139): the engine's `ObjectFilter.colorCount`. */
   'colorCount',
+  /** "Each creature with an odd power" (Zimone's Hypothesis): the engine's `ObjectFilter.powerParity`. */
+  'powerParity',
   /** "With mana value X" (CR 202.3, D-139): the engine's `ObjectFilter.manaValueX`. */
   'manaValueX',
   /** "Whose controller was dealt combat damage by this creature this turn" (CR 510.2, D-139): the engine's `ObjectFilter.controllerDealtDamageBySource`. */
@@ -1658,6 +1670,8 @@ export const CONDITION_KINDS = [
   'cameUnderControlSinceLastUpkeep',
   /** "If creatures you control have total power 8 or greater", "if you have seven or more creature cards in your graveyard" (D-131): the engine's `amountIs`. */
   'amountIs',
+  /** "If you control a prime number of lands" (Zimone, All-Questioning): the engine's `amountIsPrime`. */
+  'amountIsPrime',
   /** "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the engine's `playerHasDesignation`. */
   'playerHasDesignation',
   /** "Activate only if this Class is level N" (CR 716.2a, D-235): the engine's `classLevelIs`. */
@@ -2218,6 +2232,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
+  distributeCounters: true,
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,

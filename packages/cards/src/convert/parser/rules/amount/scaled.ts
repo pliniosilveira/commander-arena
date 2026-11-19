@@ -35,6 +35,7 @@ export function scaled(quantity: IrAmount, each: IrAmount): IrAmount | null {
  */
 export const EQUAL_AMOUNTS = [
   'amount.equal-to',
+  'amount.damage-dealt-by-trigger',
   'amount.number-of',
   'amount.power-of',
   'amount.mana-value-of',

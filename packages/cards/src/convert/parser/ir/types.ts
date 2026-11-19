@@ -383,6 +383,8 @@ export interface IrFilter {
   readonly castTargetsSelf?: true;
   /** "with power greater than its base power" (D-431, CR 208.4b): the engine's `powerAboveBase`. */
   readonly powerAboveBase?: true;
+  /** "with base power 0" (CR 208.4b): the engine's `basePowerIs`. */
+  readonly basePowerIs?: number;
   /**
    * "with power greater than target creature's power" (CR 208.1, 608.2c): the engine's `powerGreaterThan` of the target this noun is. A target noun of its own, numbered with
    * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
@@ -405,7 +407,11 @@ export interface IrFilter {
 
 export type IrAmount =
   | { readonly kind: 'number'; readonly value: number; readonly span: Span }
-  | { readonly kind: 'x'; readonly span: Span }
+  | {
+      readonly kind: 'x';
+      readonly span: Span /** "twice X": X multiplied by this (an integer of 2 or more). */;
+      readonly times?: number;
+    }
   // "for each creature you control"
   | { readonly kind: 'countOf'; readonly of: IrNoun; readonly span: Span }
   | { readonly kind: 'powerOf'; readonly of: IrNoun; readonly span: Span }
@@ -706,6 +712,8 @@ export interface IrCondition extends IrNode {
     // creature cards in your graveyard", "if an opponent controls more creatures than you": any amount of the
     // game compared with a number
     | { readonly kind: 'amountIs'; readonly amount: IrAmount; readonly compare: IrComparison }
+    /** "you control a prime number of lands" (Zimone, All-Questioning): the engine's `amountIsPrime`. */
+    | { readonly kind: 'amountIsPrime'; readonly amount: IrAmount }
     // "if you're the monarch", "if an opponent is the monarch" (CR 725.1: a designation); `not` for the negative
     | {
         readonly kind: 'designation';

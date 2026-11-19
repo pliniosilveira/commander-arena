@@ -329,12 +329,17 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
     // Issue 25: a list of card types and subtypes, any one of which the card may be.
     'look at the top six cards of your library. You may reveal an instant, sorcery, or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top four cards of your library. You may reveal an artifact or Wizard card from among them and put it into your hand. Put the rest into your graveyard',
+    // Quandrix Unlimited deck, group G (CR 401.4: the order is the player's): "put that card", and the rest on the bottom in any order.
+    'look at the top three cards of your library. You may reveal a land card from among them and put that card into your hand. Put the rest on the bottom of your library in any order',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order',
   ],
   rejects: [
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand',
     'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your library. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an artifact card with mana value less than or equal to 3 from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
-    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in any order or at random',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest into your graveyard in any order',
+    'look at the top six cards of your library. You may reveal an artifact card from among them and put those cards into your hand. Put the rest on the bottom of your library in any order',
     'look at the top card of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top X cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
     'look at the top six cards of your library. You may reveal an instant, sorcery or Dragon card from among them and put it into your hand. Put the rest on the bottom of your library in a random order',
@@ -362,7 +367,8 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
         ),
         null,
       ),
-      literal(' from among them and put it '),
+      // "put that card" is the wording of the newer cards (Quandrix Apprentice).
+      pattern(/ from among them and put (?:it|that card) /iu),
       spanned(choice(literal('into your hand'), literal('onto the battlefield'))),
       literal('. put the rest '),
       spanned(
@@ -371,6 +377,11 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
           map(
             pattern(/on the bottom (?:of your library )?in a random order(?![\p{L}\p{N}])/iu),
             () => 'bottomRandom' as const,
+          ),
+          // "in any order" (CR 401.4: the player who owns the cards chooses the order, which stays hidden): the engine's `bottomChosen`.
+          map(
+            pattern(/on the bottom of your library in any order(?![\p{L}\p{N}])/iu),
+            () => 'bottomChosen' as const,
           ),
           map(literal('into your graveyard'), () => 'graveyard' as const),
         ),
@@ -388,6 +399,17 @@ export const EFFECT_LOOK_TAKE = defineRule<Clauses>({
           span: rest.span,
           rule: 'effect.look-take',
         },
+        // Set when the rest go on the bottom in an order the player chooses (CR 401.4).
+        ...(rest.value === 'bottomChosen'
+          ? {
+              chosenOrder: {
+                kind: 'flag' as const,
+                value: true,
+                span: rest.span,
+                rule: 'effect.look-take',
+              },
+            }
+          : {}),
         // Set when the card taken goes onto the battlefield; into the hand otherwise.
         ontoBattlefield: {
           kind: 'flag',

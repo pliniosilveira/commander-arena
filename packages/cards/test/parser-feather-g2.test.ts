@@ -79,7 +79,6 @@ describe('Bastion Protector: "Commander creatures you control get +2/+2 and have
   test.each([
     'Commander spells you cast get +1/+1.',
     'Commander you control gets +2/+2.',
-    'Commanders you control get +2/+2.',
     'Your commander creatures get +2/+2.',
     'Commander creature you control gets +2/+2.',
     'Commander creatures you control get +2/+2 and have.',
