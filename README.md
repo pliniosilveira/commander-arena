@@ -49,6 +49,7 @@ The ready-made decks work without any setup:
 | Silverquill Influence | A Commander precon led by Killian, Decisive Mentor. |
 | Jeskai Striker | A Commander precon led by Shiko and Narset, Unified. |
 | Quandrix Unlimited | A Commander precon led by Zimone, Infinite Analyst. |
+| Multiverse Reforged | A Commander precon led by Jace, Multiverse Architect. |
 
 ## Playing with your own deck
 
