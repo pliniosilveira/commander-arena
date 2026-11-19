@@ -1,5 +1,5 @@
 {
-  "parserVersion": 165,
+  "parserVersion": 166,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -66,6 +66,14 @@
       ],
       "reasons": [],
       "ast": "e7704bfc"
+    },
+    "01a79429-7d57-4a51-9815-a20905ed4707": {
+      "name": "Rashmi, Eternities Crafter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a1a8d964"
     },
     "01dbf1bc-ca62-4fb6-959c-ef7c0dc03bb0": {
       "name": "Benevolent Hydra",
@@ -1259,6 +1267,14 @@
       "reasons": [],
       "ast": "e32d51eb"
     },
+    "2469c0b7-a045-4733-bf53-28f3fdbe3797": {
+      "name": "Cosmic Crucible",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "93554d18"
+    },
     "24882fa2-3fe9-4c1b-aa3d-0e6488b9db27": {
       "name": "Heroic Intervention",
       "group": "training",
@@ -2337,6 +2353,14 @@
       "reasons": [],
       "ast": "c4f68918"
     },
+    "429eff2b-635b-43f6-b20f-82e25992c0b9": {
+      "name": "Sandwurm Convergence",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "796f4d91"
+    },
     "42d7ec93-0943-43e2-9b65-b7edc3349410": {
       "name": "Gadrak, the Crown-Scourge",
       "group": "acceptance",
@@ -2954,6 +2978,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ff07c294"
+    },
+    "56314980-5f18-4b93-a9a0-6002ee8a880c": {
+      "name": "Shriekwood Devourer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e60a1055"
     },
     "5669ea7c-c4fc-494c-896b-4bce9b494817": {
       "name": "Curse of the Swine",
@@ -4090,6 +4122,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6359e759"
+    },
+    "755bd5d8-67f1-4f24-a4e8-d98edf2f2e03": {
+      "name": "Finale of Revelation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a55e55b"
     },
     "7565c101-a479-4812-9d18-63918084bfca": {
       "name": "Tetzimoc, Primal Death",
@@ -5452,6 +5492,14 @@
       "reasons": [],
       "ast": "799e936a"
     },
+    "9f9e4be0-814a-4cab-948b-114769035a4a": {
+      "name": "Mind into Matter",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "88a52603"
+    },
     "9fb7e7ca-ad2f-4677-859c-7a9adf8fb5fd": {
       "name": "Transforming Flourish",
       "group": "acceptance",
@@ -6137,6 +6185,14 @@
       "reasons": [],
       "ast": "e70232cf"
     },
+    "b368121b-9984-4a01-8d35-d1e4a8a87539": {
+      "name": "Planar Genesis",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d07ab5db"
+    },
     "b380c04b-0bce-4328-8f0a-1425e48bee72": {
       "name": "Urza's Incubator",
       "group": "acceptance",
@@ -6785,6 +6841,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "eb9e48cf"
+    },
+    "c9160997-0305-47f5-9a2f-77588d167da0": {
+      "name": "Aminatou's Augury",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ef01cb9b"
     },
     "c97361b5-af16-4a7b-af85-a429dbaf4ad2": {
       "name": "Mind Stone",
@@ -8549,8 +8613,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 747,
-      "total": 766
+      "supported": 755,
+      "total": 774
     }
   }
 }
