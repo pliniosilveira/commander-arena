@@ -1,7 +1,7 @@
 /**
  * Keywords that are shorthand for an ability of another kind, expanded when `derive` computes an
  * object's abilities: Cycling (CR 702.29a), Equip (CR 702.6a), Prowess (CR 702.108a), Ward
- * (CR 702.21a), Crew (CR 702.122a), and (D-110) typecycling (CR 702.29e), Exalted (CR 702.83a),
+ * (CR 702.21a), Crew (CR 702.122a), Station (CR 702.184a), and (D-110) typecycling (CR 702.29e), Exalted (CR 702.83a),
  * Annihilator (CR 702.86a), Persist (CR 702.79a) and Undying (CR 702.93a); and (D-120) Battle cry
  * (CR 702.91a), Mentor (CR 702.134a), Evolve (CR 702.100a), Bushido (CR 702.45a), Extort (CR 702.101a),
  * Cascade (CR 702.85a) and Affinity (CR 702.41a); and (D-124) Unearth (CR 702.84a); and (D-129) Storm (CR 702.40a) and Replicate (CR 702.56a); and (D-185) Encore (CR 702.141a); and (D-384) Eternalize (CR 702.129a).
@@ -106,6 +106,28 @@ function crewAbility(power: number): Ability {
     },
   };
 }
+
+/**
+ * CR 702.184a: "Station" means "Tap another untapped creature you control: Put a number of charge counters on this permanent equal to the tapped creature's power. Activate only as a
+ * sorcery." A creature that came under the controller's control this turn can be tapped for it: only the creature's own {T} ability is held back by summoning sickness (CR 302.6).
+ */
+export const STATION_ABILITY: Ability = {
+  kind: 'activated',
+  cost: [
+    {
+      kind: 'tapPermanents',
+      filter: { types: ['creature'], controller: 'you', other: true },
+      count: 1,
+    },
+  ],
+  timing: 'sorcery',
+  effect: {
+    kind: 'addCounters',
+    objects: { kind: 'this' },
+    counter: 'charge',
+    count: { kind: 'tappedAsCostPower' },
+  },
+};
 
 /**
  * CR 702.83a: "Exalted" means "Whenever a creature you control attacks alone, that creature gets +1/+1 until
@@ -659,6 +681,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [wardAbility(ability.keyword.cost)];
     case 'crew':
       return [crewAbility(ability.keyword.power)];
+    case 'station':
+      return [STATION_ABILITY];
     case 'exalted':
       return [EXALTED_ABILITY];
     case 'soulbond':

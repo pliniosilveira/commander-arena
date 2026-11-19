@@ -60,21 +60,21 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
-  // D-151: "for each ..." mana is added as a spell or a triggered ability resolves; a mana ability makes its mana before it can read anything (CR 605.1a).
-  // CR 605.1a: the count of a mana ability is read as it is activated and comes from the permanent itself: the counters on it ("Add {C} for each charge counter on this
-  // artifact", Elementalist's Palette). No other count: a mana ability reads no target, no X and no other object.
+  // CR 605.1a, 605.3b: "Add {C} for each charge counter on this artifact" (Elementalist's Palette), "Add {U} for each artifact you control" (Uthros, Titanic Godcore): the count is read as the
+  // ability is activated and is what the game says then (a count, the counters on this permanent, ...): no target, no X and no earlier instruction to read. A cost that gives a permanent
+  // up or takes counters off could change what it counts, so the two are not combined.
   if (a.production?.kind === 'fixed' && a.production.times !== undefined) {
-    const times = a.production.times;
-    const ownCounters =
-      typeof times === 'object' &&
-      times !== null &&
-      times.kind === 'countersOn' &&
-      kindOf(times.of) === 'this';
-    if (!ownCounters) {
+    checkStateAmount(
+      a.production.times,
+      `${path}.production.times`,
+      out,
+      'the mana a mana ability makes',
+    );
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
       issue(
         out,
         `${path}.production.times`,
-        'a mana ability adds a fixed amount of mana, never a count but the counters on the permanent itself',
+        'the count is read before the costs are paid: no cost that gives up a permanent or takes counters off',
       );
     }
   }

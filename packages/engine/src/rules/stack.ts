@@ -173,6 +173,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
+      ...(obj.stack?.tappedPowerAsCost === undefined
+        ? {}
+        : { costTappedPower: obj.stack.tappedPowerAsCost }),
       ...(obj.stack?.exiledAsCost === undefined ? {} : { costExiled: obj.stack.exiledAsCost }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),

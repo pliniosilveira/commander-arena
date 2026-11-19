@@ -313,22 +313,20 @@ function lowerManaAbility(
     if (plain === null) return failure(ability);
     production = plain;
   }
-  // "Add {C} for each charge counter on ~." (Quandrix Unlimited group E, CR 605.1a, 106.1): the fixed mana as many times as the counters on the permanent itself, read as the ability is
-  // activated. Any other count would be dropped by this reading, so it is not read (a mana ability reads no target, no X and no other object).
+  // "Add {C} for each charge counter on ~." (Quandrix Unlimited group E), "Add {U} for each artifact you control." (Uthros, Titanic Godcore; CR 605.1a, 106.1): the fixed mana as many
+  // times as the amount says, read as the ability is activated. An amount that is not a state amount (X, a target) has nothing to read it from, and a cost that gives up a permanent or
+  // takes counters off could change the count: neither is read (`validateCard` refuses them too).
   const countsOwnCounters = add.args.times !== undefined && production.kind === 'fixed';
   if (countsOwnCounters && production.kind === 'fixed') {
     const times = amountArg(add, 'times', trial);
     if (!times.ok) return times;
-    const count = times.value;
     if (
-      typeof count !== 'object' ||
-      count.kind !== 'countersOn' ||
-      count.of.kind !== 'this' ||
-      trial.usesX
+      trial.usesX ||
+      costs.value.some((c) => c.kind === 'sacrifice' || c.kind === 'removeCounters')
     ) {
       return failure(ability);
     }
-    production = { ...production, times: count };
+    production = { ...production, times: times.value };
   }
   // A "for each" the production does not read would be dropped by this reading, so it is not read.
   if (

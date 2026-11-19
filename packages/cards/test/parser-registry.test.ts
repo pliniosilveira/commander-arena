@@ -164,6 +164,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.replicate': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
+  'keyword.station': asIs,
   'token.copy': spell((e) => `Create ${e}.`),
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),

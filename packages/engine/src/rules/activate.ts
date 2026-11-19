@@ -38,6 +38,7 @@ import { activationExileDecision, exileChosen, exileCostCandidates } from './act
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
 import { crimeEvents } from './crime';
+import { derive } from './derive';
 import { discardCandidates, discardCostDecision, discardObjects } from './discard-cost';
 import { targetSpecsOf } from './legality';
 import { isLoyaltyAbility } from './loyalty';
@@ -365,10 +366,15 @@ function tapChosen(
     purpose: 'tap',
     automatic,
   });
+  // CR 702.184a, 608.2h: the power each creature has as it is tapped, which the ability reads when it resolves ("equal to the tapped creature's power").
+  let tappedPower = 0;
   for (const id of chosen) {
+    const creature = next.objects[id];
+    if (creature !== undefined) tappedPower += Math.max(0, derive(next, creature).power ?? 0);
     next = patchObject(next, id, { tapped: true });
     events.push({ kind: 'tapped', object: id, by: casting.seat });
   }
+  next = rememberTappedPower(next, tappedPower);
   // D-625: the mana is paid after the permanents are tapped when the cost has both; otherwise the sacrifice comes next.
   if ((going?.costs.mana.length ?? 0) > 0) return askMana(next, events);
   return payBlight(next, events, paySacrifice);
@@ -380,6 +386,16 @@ export function answerTapCost(state: GameState, chosen: readonly ObjectId[]): Re
     return fail('No permanents are being chosen to tap for a cost');
   }
   return tapChosen({ ...state, pending: null }, [], chosen, false);
+}
+
+/** Remembers the power of the permanents tapped to pay the ability's cost, for `tappedAsCostPower` (CR 702.184a). */
+function rememberTappedPower(state: GameState, power: number): GameState {
+  const object = state.casting?.object;
+  const stack = object === undefined ? undefined : state.objects[object]?.stack;
+  if (object === undefined || stack == null) return state;
+  return patchObject(state, object, {
+    stack: { ...stack, tappedPowerAsCost: (stack.tappedPowerAsCost ?? 0) + power },
+  });
 }
 
 /** Remembers the permanents sacrificed to pay the ability's cost, for `sacrificedCost` (D-133). */

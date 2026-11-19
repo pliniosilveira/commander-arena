@@ -530,6 +530,11 @@ export interface StackData {
    */
   readonly sacrificedAsCost?: readonly ObjectId[];
   /**
+   * For an activated ability whose cost tapped permanents (`tapPermanents`, CR 702.184a): the power the tapped creatures had as they were tapped, added up, which the amount
+   * `tappedAsCostPower` reads when the ability resolves (CR 608.2h). Absent for every other object.
+   */
+  readonly tappedPowerAsCost?: number;
+  /**
    * For an activated ability whose cost exiled cards from the graveyard (`exileFromGraveyard`, D-232): the cards as they are in exile now (new objects, CR 400.7), in the order
    * chosen, which `splitCostExiled` reads. Absent for every other object.
    */
@@ -1824,6 +1829,8 @@ export interface ResolutionContext {
   readonly triggerAttackedAt?: readonly SeatId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
+  /** What `tappedAsCostPower` means (CR 702.184a): `StackData.tappedPowerAsCost`. */
+  readonly costTappedPower?: number;
   /** The cards the cost of this activated ability exiled from the graveyard (D-232, `StackData.exiledAsCost`). */
   readonly costExiled?: readonly ObjectId[];
   /** The cards that left the graveyard and triggered this ability (D-232, `StackData.triggerCards`). */

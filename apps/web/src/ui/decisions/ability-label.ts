@@ -1782,6 +1782,16 @@ export function activationLabel(
   }
   const crew = crewNumber(card, ability);
   if (crew !== null) return `Crew ${crew}`;
+  // CR 702.184a: the expansion of the Station keyword reads "Station", as the card prints it.
+  if (
+    (card?.keywords ?? []).includes('station') &&
+    ability.effect.kind === 'addCounters' &&
+    ability.effect.count !== undefined &&
+    typeof ability.effect.count === 'object' &&
+    ability.effect.count.kind === 'tappedAsCostPower'
+  ) {
+    return 'Station';
+  }
   const noun = selfNoun(card);
   // Lorehold group 1: "Exile this artifact" of a permanent on the battlefield; the exile of a card in the graveyard is said by the cost.
   const cost = ability.cost

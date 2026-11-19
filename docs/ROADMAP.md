@@ -139,8 +139,9 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.
+- A station symbol is read only with one ability line each and no power and toughness box (CR 721.2b); a line after a symbol that carries none is left unread, as its striation is not in the text.
 - The mana ability Channel gives a player has no control in the web: automatic payment uses it, the AI never taps it by hand, and a manual payment in the web cannot.
-- A mana ability's "Add {C} for each ..." reads only the counters on its own permanent (Elementalist's Palette); any other count (Gaea's Cradle) is refused, not read as one mana.
 - "Total power of creatures they controlled that were exiled this way" (Oversimplify) counts only creatures an `exile` effect exiled, for each player's own tokens; other exiles (`exileTop`, until-leaves) and "you" or opponent phrasings are not read.
 - A card given flashback with the cost equal to its mana cost does not show the keyword in the view, and one that also prints flashback is offered only for its printed cost.
 - "Attached to that token" is read only after a token created in the same ability (Forum Filibuster). An Equipment put onto the battlefield attached to a non-creature enters unattached; that rule's text was not checked.

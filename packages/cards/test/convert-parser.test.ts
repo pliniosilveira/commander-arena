@@ -320,6 +320,7 @@ describe('unmatched abilities', () => {
       'keyword.escalate',
       'keyword.ward',
       'keyword.crew',
+      'keyword.station',
       'keyword.buyback',
       'replacement.enters-tapped',
       'replacement.enters-tapped-with-counters',

@@ -126,6 +126,8 @@ export interface Scope {
   readonly triggerSubject?: 'permanent' | 'stack';
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
+  /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
+  readonly tappedCost?: boolean;
   /** True in the effect of a triggered ability about the cards that left a graveyard (`becomeCopyOfCard`, D-232). */
   readonly triggerCards?: boolean;
   /** True in the effect of an activated ability whose cost exiles cards from the graveyard (`splitCostExiled`, D-232). */
@@ -1665,6 +1667,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     return;
   }
   switch (a?.kind) {
+    case 'tappedAsCostPower':
+      // CR 702.184a (Station): the power of the creature tapped for the cost, read when the ability resolves.
+      if (scope.tappedCost !== true) {
+        issue(
+          out,
+          path,
+          "'tappedAsCostPower' needs an activated ability whose cost taps permanents (a tapPermanents cost)",
+        );
+      }
+      break;
     case 'x':
       if (!scope.xAllowed)
         issue(out, path, 'X is used but nothing in this ability or spell has an X');
