@@ -80,7 +80,7 @@ export const EFFECT_EMPOWER_JACE = defineRule<Clauses>({
 });
 
 /** The quoted text of an emblem: an ability of its own, static or triggered, "this emblem" being the emblem (CR 114.3). */
-const EMBLEM_ABILITY: Parser<IrQuotedAbility> = (ctx, pos) =>
+export const EMBLEM_ABILITY: Parser<IrQuotedAbility> = (ctx, pos) =>
   readQuotedAbility(ctx, pos, { mana: false, statics: true, self: 'this emblem' });
 
 /**

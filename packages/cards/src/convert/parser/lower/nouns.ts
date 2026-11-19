@@ -1252,6 +1252,14 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     }
     case 'anaphor':
     case 'triggerActor': {
+      // Death Toll deck, group C: "If they don't, they lose 3 life" after "Each opponent may discard a card": the player who declined.
+      if (
+        noun.det === 'anaphor' &&
+        ctx.declinedPlayer &&
+        /^(?:they|that player)$/iu.test(noun.filter.raw.trim())
+      ) {
+        return ok({ kind: 'declinedPlayer' });
+      }
       // D-648: "that opponent" of a trigger about a player attacking one of your opponents is the player attacked (any other trigger: the player the trigger names, below).
       if (/^that opponent$/iu.test(noun.filter.raw.trim()) && ctx.attackedPlayer !== null) {
         return gate(noun, ctx.attackedPlayer.needs) ?? ok(ctx.attackedPlayer.selector);

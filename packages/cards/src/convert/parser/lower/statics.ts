@@ -24,6 +24,7 @@ import {
   landwalkOf,
   WARD_WORD,
 } from '../rules/keyword/vocabulary';
+import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { lowerGrantedMana } from './activated';
 import { isKeepsDamage, lowerKeepsDamage } from './adamantoise';
 import { lowerAmount, lowerDefinedPt, lowerStaticAmount, lowerStaticPtStep } from './amounts';
@@ -521,6 +522,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantAbility'];
     case 'noMaxHandSize':
       return ['static:noMaximumHandSize'];
+    case 'creatureOffBattlefield':
+      return ['static:creatureOffBattlefield'];
     case 'chosenType':
       return ['static:setTypes'];
     case 'castFromGraveyard':
@@ -1018,6 +1021,31 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     if (more.length > 0) return failure(ability);
     return lowerOwnStatic(ability, first);
   }
+  // "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3).
+  if (first.kind === 'creatureOffBattlefield') {
+    if (more.length > 0 || statement.subject.det !== 'self' || statement.condition !== undefined) {
+      return failure(ability);
+    }
+    const missing = missingFeatures(['ability:static', ...needsOf(first)]);
+    if (missing.length > 0) return failure(ability, missing);
+    // The creature types are the CR 205.3m list: a word that is none is not read.
+    if (first.subtypes.some((type) => !CREATURE_TYPES.has(type))) return failure(ability);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'creatureOffBattlefield',
+            power: first.power,
+            toughness: first.toughness,
+            subtypes: [...first.subtypes],
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   if (first.kind === 'noMaxHandSize') {
     if (more.length > 0 || statement.subject.det !== 'you') return failure(ability);
     return lowerNoMaximum(ability);
@@ -1114,6 +1142,7 @@ function lowerOwnStatic(
 export const STATIC_NEEDS: readonly FeatureRef[] = [
   'ability:static',
   'static:noMaximumHandSize',
+  'static:creatureOffBattlefield',
   'static:modifyPt',
   'static:characteristicPt',
   'static:grantKeyword',

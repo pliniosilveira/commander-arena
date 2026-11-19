@@ -521,6 +521,18 @@ const SEPARATES_INTO_PILES = /^an opponent separates those cards into two piles\
  */
 const PUT_ALL_FROM_AMONG =
   /^put all [^.]* cards from among them onto the battlefield tapped and the rest on the bottom of your library in a random order\.$/i;
+/**
+ * "Reveal the top four cards of your library. Put all land cards revealed this way into your hand and the rest into your graveyard." (Death Toll deck, group C, Mulch, CR 701.20a): the
+ * second sentence says what is done with the cards the first one reveals, so the two are one instruction (`effect.reveal-put-all-hand`).
+ */
+const PUT_ALL_REVEALED_HAND =
+  /^put all [^.]* cards revealed this way into your hand and the rest into your graveyard\.$/i;
+/**
+ * "Look at the top three cards of your library. Put one of them into your hand and the rest into your graveyard." (Professor Onyx, CR 401.2): one instruction in two sentences
+ * (`effect.look-take-one-graveyard`).
+ */
+const PUT_HAND_REST_GRAVEYARD =
+  /^put one of them into your hand and the rest into your graveyard\.$/i;
 const PUT_ONE_PILE = /^put one pile into your hand and the other into your graveyard\.$/i;
 /**
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
@@ -681,7 +693,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP) &&
           (said(b, PUT_HAND_REST_BOTTOM) ||
             said(b, PUT_HAND_REST_TOP) ||
-            said(b, PUT_HAND_OTHER_BOTTOM))) ||
+            said(b, PUT_HAND_OTHER_BOTTOM) ||
+            said(b, PUT_HAND_REST_GRAVEYARD))) ||
         (said(a, CHOOSE_GRAVEYARD_PAIR) && said(b, MAY_RETURN_THOSE_CARDS)) ||
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
@@ -692,6 +705,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
+        (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
