@@ -473,6 +473,8 @@ export interface SeatView {
   readonly citysBlessing?: true;
   /** The energy counters this player has (CR 107.14, D-209). Public. Absent until the first time. */
   readonly energy?: number;
+  /** The experience counters this player has (CR 122.1). Public. Absent until the first time. */
+  readonly experience?: number;
 }
 
 export interface CombatView {
@@ -937,6 +939,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
       ...(s.energy === undefined ? {} : { energy: s.energy }),
+      ...(s.experience === undefined ? {} : { experience: s.experience }),
     };
   });
   const pending = state.pending;

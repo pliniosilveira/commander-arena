@@ -610,7 +610,9 @@ class Binder {
     const test = clause.condition?.test;
     const condition =
       clause.condition !== undefined &&
-      (test?.kind === 'unlessPays' || test?.kind === 'objectMatches')
+      (test?.kind === 'unlessPays' ||
+        test?.kind === 'objectMatches' ||
+        test?.kind === 'manaValueAtMostAmount')
         ? { ...clause.condition, test: { ...test, who: this.noun(test.who) } }
         : clause.condition;
     if (this.bindingVerbs.has(clause.verb)) {
@@ -681,7 +683,8 @@ class Binder {
         // "If it's a Zombie card, ...": the pronoun of the condition (stage P30) comes before the clauses of its sentence.
         const test = s.condition?.test;
         const condition =
-          s.condition !== undefined && test?.kind === 'objectMatches'
+          s.condition !== undefined &&
+          (test?.kind === 'objectMatches' || test?.kind === 'manaValueAtMostAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
             : s.condition;
         // "Target opponent may have you draw three cards" (stage P52, D-210): the player asked is named before the clauses, and later sentences may say "that player".

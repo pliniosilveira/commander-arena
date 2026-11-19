@@ -894,6 +894,11 @@
   border-color: var(--accent);
 }
 
+.board-flag-experience {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .board-flag-monarch {
   color: var(--accent-text);
   background: var(--accent);

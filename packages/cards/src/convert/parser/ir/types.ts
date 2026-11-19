@@ -464,6 +464,8 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
+  // "the number of experience counters you have" (Meren of Clan Nel Toth, CR 122.1): the experience counters the controller has now
+  | { readonly kind: 'experienceCounters'; readonly span: Span }
   // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-638, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
   | {
       readonly kind: 'spellsCastThisTurn';
@@ -722,6 +724,8 @@ export interface IrCondition extends IrNode {
     // Stage P30 (D-135): "if it's a Zombie card", "if it's an Angel" (CR 608.2c): an object an earlier instruction of the
     // text moved or named, against a filter that says what it is (never where it is: no zone, controller or owner)
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
+    // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
+    | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
@@ -1904,6 +1908,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',
+  'experienceCounters',
   'spellsCastThisTurn',
   'greatestManaValueCast',
   'toughnessOf',

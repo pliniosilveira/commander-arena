@@ -38,6 +38,7 @@ import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
+import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
 import { GISA_G1_CONDITION_RULES } from './gisa-g1';
@@ -616,6 +617,8 @@ export const CONDITION_RULES = [
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_X_AT_LEAST,
   CONDITION_THAT_OBJECT_POWER,
+  // Meren of Clan Nel Toth: "that card's mana value is less than or equal to the number of experience counters you have".
+  ...EXPERIENCE_CONDITION_RULES,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

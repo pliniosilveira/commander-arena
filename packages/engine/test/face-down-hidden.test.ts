@@ -395,6 +395,7 @@ const EVENT_CARD_FIELDS: Readonly<Record<GameEvent['kind'], readonly string[]>> 
   damagePrevented: [],
   damageRedirected: [],
   energyChanged: [],
+  experienceChanged: [],
   prepared: [],
   lifeChanged: [],
   lifeGained: [],

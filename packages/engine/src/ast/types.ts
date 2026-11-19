@@ -348,6 +348,12 @@ export type Amount =
    */
   | { readonly kind: 'cardsDrawnThisTurn' }
   /**
+   * "The number of experience counters you have" (CR 122.1, Meren of Clan Nel Toth): the experience counters the controller of the spell or ability has now
+   * (`SeatState.experience`, 0 when they have none), read as the instruction runs. A state amount, so valid wherever an amount is; a static ability is not refreshed when
+   * the number changes (`validateCard` refuses it there).
+   */
+  | { readonly kind: 'experienceCounters' }
+  /**
    * "One plus the number of instant and sorcery spells you've cast this turn" (Prismari deck, group 1, CR 601.2i, 707.10): how many spells the controller of the spell or ability
    * has cast this turn (`TurnLog.castSpells`: a spell counts once it is on the stack with its costs paid, whether or not it resolved or was countered; a copy is not cast, and an
    * opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that have at least one of those card types, as they were cast; left out,
@@ -2969,6 +2975,11 @@ export type Effect =
    */
   | { readonly kind: 'gainEnergy'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "You get an experience counter" (CR 122.1, Meren of Clan Nel Toth): each player the selector names gets `amount` experience counters (a player's own counters, kept
+   * for the rest of the game), one `experienceChanged` event. Nothing for an amount of 0 or less.
+   */
+  | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
    * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): the controller of the effect has no maximum hand size from now on, so a cleanup step makes them
    * discard nothing. Not a static ability: it works for the player, not a permanent, and does not end when a permanent leaves. No event; it stays in `SeatState.noMaximumHandSize`.
    */
@@ -5324,6 +5335,12 @@ export type Condition =
    * Only in a `conditional` effect that follows a moving effect in its sequence.
    */
   | { readonly kind: 'movedShareAllCardTypes' }
+  /**
+   * "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c, Meren of Clan Nel Toth): the mana value of the
+   * object `of` names (a target, the object that was moved or the one that caused the trigger; as it is, or as it last was, CR 608.2h; an {X} counts 0 anywhere but on
+   * the stack, CR 202.3e) is at most `amount`, a state amount read now. False when `of` names nothing. Only in a `conditional` effect.
+   */
+  | { readonly kind: 'manaValueAtMostAmount'; readonly of: ObjectRef; readonly amount: Amount }
   /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).
