@@ -70,6 +70,7 @@ import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
+import { GROUP_BASE_PT_SOURCE_RULES } from './group-base-pt-source';
 import { HASHATON_G5_EFFECT_RULES } from './hashaton-g5';
 import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
@@ -1188,6 +1189,7 @@ export const EFFECT_RULES = [
   ...RESTRICT_RULES,
   ...BECOMES_RULES,
   ...GROUP_BASE_PT_RULES,
+  ...GROUP_BASE_PT_SOURCE_RULES,
   ...SEARCH_RULES,
   ...PREVENT_RULES,
   ...TRANSFORM_RULES,

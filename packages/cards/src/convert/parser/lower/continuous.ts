@@ -246,6 +246,15 @@ export const SET_PT: Lowering<IrClause, Effects> = {
       power = x.value;
       toughness = x.value;
     }
+    // "become equal to ~'s power and toughness" (CR 613.4b, 611.2c): read from the source as the effect resolves, then fixed.
+    if (base.fromSource === true) {
+      const missing = missingFeatures(['amount:powerOf', 'amount:toughnessOf']);
+      if (missing.length > 0) {
+        return { ok: false, needs: missing, at: clause.span, rule: clause.rule };
+      }
+      power = { kind: 'powerOf', of: { kind: 'this' } };
+      toughness = { kind: 'toughnessOf', of: { kind: 'this' } };
+    }
     return eachObject(
       clause,
       ctx,
