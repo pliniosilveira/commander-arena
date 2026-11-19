@@ -6871,19 +6871,10 @@
     "d9068051-b51c-4700-b492-30b148e3a72c": {
       "name": "Yavimaya Bloomsage // Channel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 1,
-          "ability": 0,
-          "text": "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lead-becomes-land-creature"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "f8ae16cf"
+      "ast": "9de9af5f"
     },
     "d90af00a-d322-4265-9954-7b1e80702e18": {
       "name": "Skyclave Apparition",
@@ -8150,7 +8141,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 694,
+      "supported": 695,
       "total": 714
     }
   }
