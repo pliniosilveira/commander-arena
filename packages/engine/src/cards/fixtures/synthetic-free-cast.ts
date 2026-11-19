@@ -268,6 +268,25 @@ export const SYNTHETIC_FREE_CAST_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "Put a creature card from your hand onto the battlefield." (a permanent that enters without being cast, CR 601.2a, 603.4)
+  singleFace({
+    name: 'SYNTHETIC Quick Drop',
+    manaCost: ['U'],
+    types: ['instant'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'Put a creature card from your hand onto the battlefield.',
+    spell: {
+      effect: {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: { zone: 'hand', types: ['creature'], controller: 'you' },
+        },
+        to: 'battlefield',
+      },
+    },
+  }),
   // CR 107.3a, 202.3: "mana value X or less" is the X announced for this spell.
   singleFace({
     name: 'SYNTHETIC X Burn Free Rite',

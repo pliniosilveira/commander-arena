@@ -10,7 +10,6 @@ import { chooseCardsDecision } from './pending-helpers';
 
 const DRAGON = 'SYNTHETIC Thief Dragon'; // {2}{U} flash 2/2
 const BOLT = 'Lightning Bolt';
-const BEARS = 'Grizzly Bears';
 
 /** Seat 1 casts the Bolt at seat 0 (life 20); seat 0 holds the Dragon with three Islands. */
 const respond = () => {
@@ -63,16 +62,27 @@ describe('cast: the spell is countered, exiled, and may be cast for free by the 
   });
 });
 
-describe('not cast: the intervening "if" does not hold', () => {
-  test('a Dragon put onto the battlefield by an effect does not trigger (nothing to target, nothing asked)', () => {
+describe('not cast: the intervening "if" does not hold (CR 603.4)', () => {
+  test('a Dragon put onto the battlefield by an effect with a spell on the stack does not trigger: the Bolt stays, nothing is exiled', () => {
     const g = scenario()
       .seat(0)
-      .battlefield(DRAGON)
+      .life(20)
+      .hand('SYNTHETIC Quick Drop', DRAGON)
+      .battlefield('Island')
       .seat(1)
-      .hand(BEARS)
-      .battlefield('Forest', 'Forest')
+      .life(20)
+      .hand(BOLT)
+      .battlefield('Mountain')
+      .at('precombatMain', { active: 1, turn: 2 })
       .build();
+    g.act(1).cast(BOLT, { targets: [{ player: 0 }], pay: true });
+    g.act(1).pass();
+    g.act(0).cast('SYNTHETIC Quick Drop', { pay: true });
+    g.passAll();
+    g.passAll();
     g.expect.zone(DRAGON, 'battlefield', { seat: 0 });
-    g.expect.pending('priority', 0);
+    // The Dragon was not cast: no trigger, so the Bolt was not countered (it resolves).
+    g.expect.life(0, 17);
+    g.expect.zone(BOLT, 'graveyard', { seat: 1 });
   });
 });
