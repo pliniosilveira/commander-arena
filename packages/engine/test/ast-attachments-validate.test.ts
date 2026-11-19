@@ -85,7 +85,7 @@ describe('Auras (CR 303.4a, 702.5a)', () => {
       { zone: 'hand' },
       { stackKind: 'spell' },
       { anyOf: [{ zone: 'graveyard' }] },
-      // A card in a graveyard has no controller and was not put onto the battlefield with an Aura (CR 702.5a, 108.4a).
+      // A card in a graveyard is its owner's, not controlled (CR 108.4a), and was not put onto the battlefield with an Aura (CR 702.5a).
       { zone: 'graveyard', controller: 'you' },
       { zone: 'graveyard', putWithSource: true },
     ] as ObjectFilter[]) {

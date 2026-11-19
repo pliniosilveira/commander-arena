@@ -130,7 +130,11 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
         // CR 702.5a, 303.4a (Animate Dead): "Enchant creature card in a graveyard": the spell targets such a card, which the Aura is attached to while it stays there.
         checkFilter(k.filter, `${path}.filter`, out);
         if (k.filter.stackKind !== undefined || k.filter.controller !== undefined) {
-          issue(out, `${path}.filter`, 'a card in a graveyard has no controller and is no spell');
+          issue(
+            out,
+            `${path}.filter`,
+            "a card in a graveyard is its owner's (CR 108.4a), so the filter names no controller, and is no spell",
+          );
         }
         if (k.filter.putWithSource === true) {
           issue(

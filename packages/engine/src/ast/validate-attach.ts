@@ -258,7 +258,7 @@ export function checkAttachmentFace(
       );
     }
   });
-  // CR 400.7, 607.2a (Animate Dead): "that creature" (`putWithThis`) and "put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`) name what an ability of this same
+  // CR 400.7, 607.1 (Animate Dead): "that creature" (`putWithThis`) and "put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`) name what an ability of this same
   // permanent put onto the battlefield (`moveToZone.putWithSource`): a face that reads the link needs the ability that makes it.
   const reads = { link: false, makes: false };
   scanLink(abilities, reads);
