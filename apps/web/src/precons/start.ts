@@ -49,12 +49,14 @@ export async function startOptionsFor(
   if (!human.ok) return { ok: false, reason: human.reason };
   const ai = await resolveId(precons, request.aiDeck, request.allowHidden);
   if (!ai.ok) return { ok: false, reason: ai.reason };
+  const aiPreconName = precons.list.find((info) => info.id === request.aiDeck)?.name;
   const options: NewGameOptions = {
     seed: request.seed,
     humanDeck: request.humanDeck,
     aiDeck: request.aiDeck,
     ...('deck' in human ? { humanCards: human.deck } : {}),
     ...('deck' in ai ? { aiCards: ai.deck } : {}),
+    ...(aiPreconName === undefined ? {} : { aiPreconName }),
     ...(request.freeMulligan === undefined ? {} : { freeMulligan: request.freeMulligan }),
     ...(request.ai === undefined ? {} : { ai: request.ai }),
   };
