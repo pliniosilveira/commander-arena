@@ -6,9 +6,9 @@
  * step." (CR 502.3). Each is one whole line and one engine `static` ability; the wordings are the real ones of
  * `reports/templates.json`, and a near miss (another subject, another cost, a count in the cost) is not read.
  */
-import { fail, type Parser, pattern, satisfy } from '../../combinators';
+import { fail, type Parser, pattern, quiet, satisfy } from '../../combinators';
 import type { IrCost, IrNoun, IrStatic, IrStaticEffect, Span } from '../../ir/types';
-import { defineRule } from '../registry';
+import { defineRule, family } from '../registry';
 
 type Det = IrNoun['det'];
 
@@ -301,6 +301,62 @@ export const STATIC_ATTACK_TAX = defineRule<IrStatic>({
 });
 
 /**
+ * `static.cant-attack-you`: "Creatures with flying can't attack you or planeswalkers you control." and "Creatures with flying can't attack you." (CR 508.1a: a
+ * creature that can't be declared as an attacker; CR 506.3: a player or a planeswalker is what is attacked; CR 101.2: a "can't" wins). The creatures are the
+ * plural group the noun names (a keyword, a type, a controller), read as the attackers are declared, and the ability covers its controller and, with the
+ * planeswalkers, the planeswalkers that player controls. Not read: a cost to attack anyway ("unless", `static.attack-tax`), "can't attack" alone, another
+ * defender ("your opponents", "battles you protect"), "or block", and a condition.
+ */
+export const STATIC_CANT_ATTACK_YOU = defineRule<IrStatic>({
+  id: 'static.cant-attack-you',
+  family: 'static',
+  leading: ['creatures'],
+  cites: [
+    'CR 508.1a (Declare Attackers Step)',
+    'CR 506.3 (Attack)',
+    'CR 101.2 (Golden Rules)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    "Creatures with flying can't attack you or planeswalkers you control.",
+    'Creatures with flying can’t attack you or planeswalkers you control.',
+    "Creatures with flying can't attack you.",
+    "Creatures with haste can't attack you.",
+  ],
+  rejects: [
+    "Creatures with flying can't attack you or planeswalkers you control",
+    "Creatures with flying can't attack you or battles you protect.",
+    "Creatures with flying can't attack your opponents.",
+    "Creatures with flying can't attack or block you.",
+    "Creatures with flying can't attack.",
+    "Creatures with flying can't attack me.",
+    "Creatures with flying can't attack planeswalkers you control.",
+    "Creatures with flying can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+    "Creatures with flying can't attack you or planeswalkers you control. Draw a card.",
+    "Creature with flying can't attack you.",
+  ],
+  parse: (ctx, pos) => {
+    const who = quiet(family<IrNoun>('noun', { only: ['noun.plain-permanents'] }))(ctx, pos);
+    if (!who.ok) return who;
+    const tail = pattern(/\s+can['’]t attack you( or planeswalkers you control)?\./iy)(
+      ctx,
+      who.pos,
+    );
+    if (!tail.ok) return tail;
+    const planeswalkers = tail.value[1] !== undefined;
+    const effect: IrStaticEffect = {
+      kind: 'cantAttackYou',
+      ...(planeswalkers ? { planeswalkers: true as const } : {}),
+    };
+    return {
+      ok: true,
+      value: statement('static.cant-attack-you', who.value, effect, { start: pos, end: tail.pos }),
+      pos: tail.pos,
+    };
+  },
+});
+
+/**
  * `static.optional-untap`: "You may choose not to untap ~ during your untap step." (CR 502.3: the active player
  * determines which permanents untap; the permanent's own ability lets its controller keep it tapped). It is the
  * ability of the permanent itself: another permanent ("You may choose not to untap target creature", "enchanted
@@ -431,6 +487,7 @@ export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
   STATIC_ATTACK_TAX,
+  STATIC_CANT_ATTACK_YOU,
   STATIC_OPTIONAL_UNTAP,
   STATIC_UNTAP_IN_OTHERS_STEP,
 ];

@@ -733,6 +733,27 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
     }
     // "Add an additional {C}" (stage P31) is only the effect of a triggered mana ability, which `lowerTriggered` builds itself.
     if (arg(clause, 'additional') !== undefined) return failure(clause);
+    // "Add four mana in any combination of colors." (CR 106.1b, 608.2d): each mana is a color chosen on its own as the instruction resolves, which is the engine's
+    // `chooseOne` of the five colors repeated `count` times, each option adding one mana of that color. "Different colors" cannot be said this way: the
+    // choices would not exclude one another.
+    if (spec.what.kind === 'anyCombination' && spec.what.distinct !== true) {
+      const blocked = missingFeatures(['effect:chooseOne']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseOne',
+            times: spec.what.count,
+            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+              label: `{${color}}`,
+              effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
+            })),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     // The interpreter's addMana effect adds fixed mana only: it has no color decision while a
     // spell or ability resolves (a mana ability chooses while paying instead).
     if (spec.what.kind !== 'symbols') {

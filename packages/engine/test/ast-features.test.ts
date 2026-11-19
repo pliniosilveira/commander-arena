@@ -171,6 +171,7 @@ describe('the dimensions', () => {
       'additionalLandDrops',
       'lookAtTopOfLibrary',
       'attackTax',
+      'cantAttackYou',
       'optionalUntap',
       'crewSaddleBonus',
       'untapInOthersUntapStep',
