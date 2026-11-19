@@ -278,6 +278,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   out.thisWay.discardedMost ?? 0,
                 ),
                 damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
+                countersRemoved:
+                  (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),

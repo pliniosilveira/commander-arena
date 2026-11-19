@@ -362,6 +362,8 @@ export type ThisWayKind =
   | 'discardedMost'
   // Lorehold group 1: "If you search your library this way, shuffle." (CR 701.23): the `search` instructions of this resolution the player went through with (a "may" search they accepted).
   | 'searched'
+  // Nexus Mentality: "Draw a card for each counter removed this way": the counters the `removeAllCounters` effects of this resolution took off (CR 122.1, 608.2c).
+  | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
   | 'damageDealt';
 
@@ -1031,6 +1033,12 @@ export interface TargetSpec {
    * or `upToThatMany` it is refused. The controllers are read as the targets are chosen; a later change of control does not make a target illegal (CR 608.2b reads only the filter).
    */
   readonly differentControllers?: true;
+  /**
+   * "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the slot's targets are cards in the graveyard of
+   * the player chosen for the earlier player slot this id names (`what` is an `object` filter of `zone` `graveyard`). A target of another player's graveyard is not
+   * legal; as the spell or ability resolves, the cards are legal only while they are still in that player's graveyard.
+   */
+  readonly ownedByTarget?: string;
   /**
    * "Deals 4 damage to any target and 3 damage to each of up to two other targets" (CR 115.3, D-151): none of the targets of this slot may be a target
    * of the slot `differentFrom` names (an earlier slot of the same ability). The word "other" is what makes them different: two slots of an ability may
@@ -2683,6 +2691,12 @@ export type Effect =
   | { readonly kind: 'removeAllCounters'; readonly objects: ObjectSelector }
   | { readonly kind: 'removeAllPlayerCounters'; readonly player: PlayerSelector }
   /**
+   * "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6): every counter of every kind on the
+   * permanent `from` names is removed from it and put on the permanent `to` names, one `counterRemoved` and one `counterAdded` event for each kind. A kind of counter the
+   * second permanent can't have (CR 122.6) stays where it is. Nothing is moved when either is no longer on the battlefield as the effect runs, or when they are the same permanent.
+   */
+  | { readonly kind: 'moveAllCounters'; readonly from: ObjectRef; readonly to: ObjectRef }
+  /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,
    * 101.4): each player `players` names, in the order CR 101.4 gives, is asked whether to do `effect`; a player who accepts has it done, a player who declines
    * has `otherwise` done, if there is one. `effect` is done by the controller of the ability, or, with `runsAs: 'chooser'`, by the player asked (they are "you" in
@@ -4203,6 +4217,12 @@ export type Keyword =
    */
   | { readonly kind: 'protection'; readonly from: 'cardType'; readonly types: readonly CardType[] }
   | { readonly kind: 'protection'; readonly from: 'chosenCardType' }
+  /**
+   * "Protection from multicolored" (CR 702.16a, 105.2: a multicolored object is two or more colors): protection from every source that has two or more colors. A
+   * colorless or monocolored source is not stopped by it. Read where protection is read (`rules/protection.ts`). Only a printed keyword or a static `grantKeyword` may
+   * carry it.
+   */
+  | { readonly kind: 'protection'; readonly from: 'multicolored' }
   /**
    * "Enchanted creature has protection from the chosen color. This effect doesn't remove this Aura." (CR 702.16a, 607.2d, D-652; Flickering Ward): protection from the
    * color the permanent that gives the keyword chose as it entered (needs `asEntersChoose` `color`); it chose none: nothing is given. `exceptSource`: the Aura that gives

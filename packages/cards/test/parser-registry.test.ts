@@ -337,6 +337,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
+  'noun.all-tokens': spell((e) => `Destroy ${e}.`),
   'noun.each-permanent': spell((e) => `Destroy ${e}.`),
   'amount.number': spell((e) => `Draw ${e} cards.`),
   'amount.x': spell((e) => `Draw ${e} cards.`),

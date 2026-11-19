@@ -1052,6 +1052,15 @@ export function declareTargets(
         );
       }
     }
+    if (spec.ownedByTarget !== undefined) {
+      // CR 115.1, 608.2b: cards in the graveyard of the player an earlier slot of the ability targets.
+      if (typeof spec.ownedByTarget !== 'string' || declared.get(spec.ownedByTarget) !== 'player') {
+        issue(out, `${p}.ownedByTarget`, 'ownedByTarget names an earlier player target slot');
+      }
+      if (what?.kind !== 'object' || what.filter.zone !== 'graveyard') {
+        issue(out, `${p}.what`, 'ownedByTarget is said of cards in a graveyard');
+      }
+    }
     if (spec.divide !== undefined) {
       // CR 601.2d (D-145): the division is announced as the spell is cast, so the total is an amount that reads the game then.
       if (!divideAllowed) {
@@ -1425,6 +1434,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
+  countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
 };
 
@@ -1450,6 +1460,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
+  if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -4903,6 +4914,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'removeAllPlayerCounters':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'moveAllCounters':
+      // CR 122.1: both permanents are targets of the ability (or the triggering permanent), as for a copy that names its original.
+      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      checkRef(e.to, 'object', `${path}.to`, scope, out);
       break;
     case 'counter':
     case 'removeAllCounters':

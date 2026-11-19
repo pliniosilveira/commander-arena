@@ -1402,6 +1402,9 @@ function countsWhatHappened(
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
+    case 'countersRemoved':
+      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
+      return earlier.verb === 'removeAllCounters';
     case 'damageDealt':
       // Issue 159: "you gain life equal to the damage dealt this way": a `dealDamage` before it.
       return earlier.verb === 'dealDamage';

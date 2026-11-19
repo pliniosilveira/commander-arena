@@ -171,6 +171,7 @@ export function targetChoiceSpecs(
         : {}),
       ...(spec.differentControllers === true ? { eachController: true as const } : {}),
       ...(spec.differentFrom === undefined ? {} : { differentFrom: spec.differentFrom }),
+      ...(spec.ownedByTarget === undefined ? {} : { ownedBy: spec.ownedByTarget }),
       ...(slotMode?.differentFrom === undefined
         ? {}
         : { differentFromAll: slotMode.differentFrom }),
@@ -212,6 +213,17 @@ export function targetAnswerError(
       const others = chosen.filter((t) => t.specId === spec.differentFrom);
       if (picks.some((t) => others.some((o) => sameTargetOf(o, t)))) {
         return 'Those targets must be different from the other target';
+      }
+    }
+    // CR 115.1: "target cards from their graveyard": each card is in the graveyard of the player chosen for the slot `ownedBy` names.
+    if (spec.ownedBy !== undefined && picks.length > 0) {
+      const named = chosen.find((t) => t.specId === spec.ownedBy);
+      const owners = picks.map((t) => spec.legal.find((l) => sameTarget(l, t)));
+      if (
+        named?.kind !== 'player' ||
+        owners.some((l) => l?.kind !== 'object' || l.group !== named.seat)
+      ) {
+        return 'Choose cards from the graveyard of the targeted player';
       }
     }
     // CR 700.2d: "each mode must target a different player": none is a target chosen for a slot of another chosen mode.

@@ -200,6 +200,8 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
       // D-259 (CR 903.4f): "each color that's not in your commander's color identity" names no color: the engine works them out.
       if (k.from === 'colorsNotInCommanderIdentity') break;
       if (k.from === 'ringBearer') break;
+      // CR 702.16a, 105.2: protection from sources of two or more colors names nothing to check.
+      if (k.from === 'multicolored') break;
       // D-376 (CR 702.16a): "the chosen card type" is read from the permanent's own choice (the card must ask it, `validate-chosen.ts`); named card types are checked.
       if (k.from === 'chosenCardType') break;
       // D-652 (CR 702.16a, 607.2d): "the chosen color", and "this effect doesn't remove this Aura" as a flag; the card must ask the color (`validate-chosen.ts`).
