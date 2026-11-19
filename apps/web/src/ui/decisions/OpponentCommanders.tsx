@@ -31,7 +31,7 @@ export function OpponentCommanders({ view }: { view: GameView }) {
   if (precon !== undefined && others.length === 1) {
     return (
       <p className="dec-sub dec-opponent" data-opponent-commanders>
-        Your opponent is playing precon <strong>{precon}</strong> with{' '}
+        Your opponent is playing the precon <strong>{precon}</strong> with{' '}
         {commanders.length === 1 ? 'commander ' : 'commanders '}
         <Commanders commanders={commanders} />
       </p>
@@ -57,7 +57,7 @@ export function PlayerCommander({ view }: { view: GameView }) {
         'You are playing '
       ) : (
         <>
-          You are playing precon <strong>{precon}</strong> with{' '}
+          You are playing the precon <strong>{precon}</strong> with{' '}
           {commanders.length === 1 ? 'commander ' : 'commanders '}
         </>
       )}
