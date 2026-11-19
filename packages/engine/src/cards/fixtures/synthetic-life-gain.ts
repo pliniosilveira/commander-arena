@@ -323,6 +323,40 @@ export const SYNTHETIC_LIFE_GAIN_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "At the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value X or less from your
+  // graveyard to the battlefield, where X is the amount of life you gained this turn." (the shape of the real Moseo, issue 255)
+  singleFace({
+    name: 'SYNTHETIC Dawn Rite',
+    manaCost: ['1', 'B'],
+    types: ['enchantment'],
+    colors: ['B'],
+    colorIdentity: ['B'],
+    oracleText:
+      'At the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value X or less from your graveyard to the battlefield, where X is the amount of life you gained this turn.',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'endStep', whose: 'you' },
+        interveningIf: { kind: 'lifeGainedThisTurn', atLeast: 1 },
+        targets: [
+          {
+            id: 't1',
+            min: 0,
+            max: 1,
+            what: {
+              kind: 'object',
+              filter: {
+                zone: 'graveyard',
+                types: ['creature'],
+                manaValueAtMost: { kind: 'lifeGainedThisTurn' },
+              },
+            },
+          },
+        ],
+        effect: { kind: 'moveToZone', objects: T1, to: 'battlefield', controller: 'you' },
+      },
+    ],
+  }),
   // ---- spells
   singleFace({
     name: 'SYNTHETIC Mend',
