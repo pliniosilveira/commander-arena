@@ -53,6 +53,7 @@ import { NIV_CONDITION_RULES } from './niv';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { RECURSION_CONDITION_RULES } from './recursion';
+import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
@@ -520,6 +521,8 @@ export const CONDITION_CONTROL_COMMANDER = defineRule<IrCondition>({
 });
 
 export const CONDITION_RULES = [
+  // Quandrix Unlimited deck, group G: two conditions joined by "and", and "you control a prime number of lands", before the single conditions they start with.
+  ...QUANDRIX_G_CONDITION_RULES,
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".

@@ -703,6 +703,8 @@ export interface IrCondition extends IrNode {
     // creature cards in your graveyard", "if an opponent controls more creatures than you": any amount of the
     // game compared with a number
     | { readonly kind: 'amountIs'; readonly amount: IrAmount; readonly compare: IrComparison }
+    /** "you control a prime number of lands" (Zimone, All-Questioning): the engine's `amountIsPrime`. */
+    | { readonly kind: 'amountIsPrime'; readonly amount: IrAmount }
     // "if you're the monarch", "if an opponent is the monarch" (CR 725.1: a designation); `not` for the negative
     | {
         readonly kind: 'designation';

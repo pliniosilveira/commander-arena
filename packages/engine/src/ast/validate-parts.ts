@@ -2909,6 +2909,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.compare.value`, 'a count is compared with a non-negative whole number');
       }
       break;
+    case 'amountIsPrime':
+      // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
+      checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
+      break;
     case 'playerHasDesignation':
       // D-131: whether the designation's holder is one of the players the selector names (so "an opponent is the
       // monarch" is `eachOpponent`). A condition has no targets and reads no trigger subject.

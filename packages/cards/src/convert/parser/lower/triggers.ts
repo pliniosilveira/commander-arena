@@ -949,6 +949,65 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   return { ...ability, body: { ...ability.body, sentences } };
 }
 
+/** The count a prime-number condition reads, inside the intervening "if" (alone or joined with others by "and"). */
+function primeCountOf(condition: IrCondition | undefined): IrAmount | null {
+  const test = condition?.test;
+  if (test?.kind === 'amountIsPrime') return test.amount;
+  if (test?.kind === 'and') {
+    for (const term of test.terms) {
+      const found = primeCountOf(term);
+      if (found !== null) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * "..., if a land entered the battlefield under your control this turn and you control a prime number of lands, create Primo, the Indivisible, a legendary 0/0 ... token, then put that
+ * many +1/+1 counters on it." (Zimone, All-Questioning, CR 603.4, 608.2c): in the body of a triggered ability whose intervening "if" says that a count is a prime number, "that many" is that
+ * count (the number of lands), read as the ability resolves, when the condition holds again. Only before any instruction that could count something of its own ("sacrifice", "discard",
+ * "mill", "draw", "exile"): after one, "that many" may mean what it did, and the lowering refuses it.
+ */
+function conditionAmountThatMany(ability: Triggered): Triggered {
+  const count = primeCountOf(ability.interveningIf);
+  if (count === null || ability.modal !== undefined) return ability;
+  let counting = false;
+  const retarget = (amount: IrAmount): IrAmount => {
+    switch (amount.kind) {
+      case 'thisWay':
+        return amount.thatMany === true && !counting ? count : amount;
+      case 'half':
+      case 'multiple':
+      case 'minus':
+        return { ...amount, of: retarget(amount.of) };
+      case 'extreme':
+      case 'sum':
+        return { ...amount, of: amount.of.map(retarget) };
+      default:
+        return amount;
+    }
+  };
+  const COUNTS_ITS_OWN = new Set(['sacrifice', 'discard', 'mill', 'draw', 'exile', 'destroy']);
+  const sentences = ability.body.sentences.map((sentence) => ({
+    ...sentence,
+    clauses: sentence.clauses.map((clause): IrClause => {
+      const args = Object.fromEntries(
+        Object.entries(clause.args).map(([key, arg]) => [
+          key,
+          isIrAmount(arg)
+            ? retarget(arg)
+            : arg.kind === 'token'
+              ? { ...arg, count: retarget(arg.count) }
+              : arg,
+        ]),
+      );
+      if (COUNTS_ITS_OWN.has(clause.verb)) counting = true;
+      return { ...clause, args };
+    }),
+  }));
+  return { ...ability, body: { ...ability.body, sentences } };
+}
+
 /**
  * "Whenever another permanent you control leaves the battlefield, if it had counters on it, ..." (stage P33, D-150, CR 603.10a, 122.1): the
  * permanent is looked at as it last was, which is what the engine's filter `hasCounter` reads of a trigger about a permanent that left. The
@@ -997,7 +1056,7 @@ function lowerTriggeredAbility(
   if (taken === null) return failure(written);
   const { once, doOnce } = taken;
   // "put that many +1/+1 counters" of a life gain trigger (D-256): the life gained.
-  const ability = eventAmountThatMany(taken.ability);
+  const ability = conditionAmountThatMany(eventAmountThatMany(taken.ability));
   // "Do this only once each turn." (D-256, CR 603.2h) is for an ability with one body: not a modal one, not a triggered mana ability, which the
   // lowering of those does not carry the flag into.
   if (doOnce && ability.modal !== undefined) return failure(written);

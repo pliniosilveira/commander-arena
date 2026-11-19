@@ -922,6 +922,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-131: any state-reading amount compared with a number ("total power 8 or greater", "seven or more
     // creature cards in your graveyard").
     'amountIs',
+    // Quandrix Unlimited deck, group G: "you control a prime number of lands".
+    'amountIsPrime',
     // D-131: "if you're the monarch" (CR 725): a player has a designation.
     'playerHasDesignation',
     // D-235: "Activate only if this Class is level N".
@@ -1637,6 +1639,8 @@ export const CONDITION_KINDS = [
   'cameUnderControlSinceLastUpkeep',
   /** "If creatures you control have total power 8 or greater", "if you have seven or more creature cards in your graveyard" (D-131): the engine's `amountIs`. */
   'amountIs',
+  /** "If you control a prime number of lands" (Zimone, All-Questioning): the engine's `amountIsPrime`. */
+  'amountIsPrime',
   /** "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the engine's `playerHasDesignation`. */
   'playerHasDesignation',
   /** "Activate only if this Class is level N" (CR 716.2a, D-235): the engine's `classLevelIs`. */

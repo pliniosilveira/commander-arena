@@ -469,4 +469,66 @@ describe('Quandrix Apprentice', () => {
   });
 });
 
+describe('Zimone, All-Questioning', () => {
+  const zimone = real('Zimone, All-Questioning');
+  const ZIMONE = zimone.name;
+  const start = (lands: number, hand: readonly string[] = []) => {
+    const b = scenario().define(zimone).seat(0).library(...LIBRARY);
+    // Zimone is one of the permanents, not a land: `lands` basic lands on the battlefield.
+    b.battlefield(ZIMONE, ...Array.from({ length: lands }, () => 'Forest'));
+    if (hand.length > 0) b.hand(...hand);
+    return b
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  };
+
+  test('the card reads: an intervening if of two conditions, and a legendary named token', () => {
+    const trigger = zimone.faces[0]?.abilities[0];
+    expect(trigger).toMatchObject({
+      kind: 'triggered',
+      interveningIf: {
+        kind: 'and',
+        terms: [{ kind: 'enteredThisTurn' }, { kind: 'amountIsPrime' }],
+      },
+    });
+  });
+
+  test('a land entered this turn and you control 3 lands (prime): Primo, the Indivisible enters with 3 +1/+1 counters', () => {
+    const g = start(2, ['Forest']);
+    g.act(0).playLand('Forest');
+    g.advanceTo('end');
+    g.expect.stack([`${ZIMONE} (ability)`]);
+    g.passAll();
+    g.expect.zone('Primo, the Indivisible', 'battlefield', { seat: 0 });
+    g.expect.counters('Primo, the Indivisible', { '+1/+1': 3 });
+    g.expect.pt('Primo, the Indivisible', 3, 3);
+    g.expect.derived('Primo, the Indivisible', { colors: ['G', 'U'] });
+    g.expect.invariants();
+  });
+
+  test('a land entered this turn but you control 4 lands (not prime): nothing', () => {
+    const g = start(3, ['Forest']);
+    g.act(0).playLand('Forest');
+    g.advanceTo('end');
+    g.expect.stack([]);
+    g.expect.noObject('Primo, the Indivisible');
+  });
+
+  test('you control a prime number of lands but none entered this turn: nothing', () => {
+    const g = start(3);
+    g.advanceTo('end');
+    g.expect.stack([]);
+    g.expect.noObject('Primo, the Indivisible');
+  });
+
+  test('1 is not a prime number', () => {
+    const g = start(0, ['Forest']);
+    g.act(0).playLand('Forest');
+    g.advanceTo('end');
+    g.expect.stack([]);
+  });
+});
+
 // END

@@ -4746,6 +4746,12 @@ export type Condition =
    */
   | { readonly kind: 'amountIs'; readonly amount: Amount; readonly compare: NumberComparison }
   /**
+   * "If you control a prime number of lands" (Zimone, All-Questioning): a state-reading amount (as for `amountIs`) is a prime number, a whole number of 2 or more that has no divisor
+   * but 1 and itself (2, 3, 5, 7, 11, ...); 0 and 1 are not prime. Read as it is when the condition is read (CR 603.4: as the ability triggers and as it resolves, for an intervening "if").
+   * There is no comprehensive rule for it: the card says what a prime number is in its reminder text.
+   */
+  | { readonly kind: 'amountIsPrime'; readonly amount: Amount }
+  /**
    * "If you're the monarch", "if an opponent is the monarch" (CR 725, D-131): the holder of the designation is one of
    * the players `player` names (relative to the controller of the thing that asks: `you`, `eachOpponent`, ...). A
    * designation is something a player has, not a permanent or an emblem (CR 725.1: "the monarch is a designation");

@@ -347,6 +347,14 @@ export function lowerCondition(
       const { cmp, value } = test.compare;
       return ok({ kind: 'amountIs', amount: amount.value, compare: { cmp, value } });
     }
+    case 'amountIsPrime': {
+      // "You control a prime number of lands" (Zimone, All-Questioning): a count of the game, which is or is not a prime number, read as the ability triggers and as it resolves (CR 603.4).
+      const blocked = missingFeatures(['condition:amountIsPrime']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const amount = lowerAmount(test.amount, ctx ?? newContext('ability', []), c.rule);
+      if (!amount.ok) return amount;
+      return ok({ kind: 'amountIsPrime', amount: amount.value });
+    }
     case 'designation': {
       // CR 725.1: the monarch is a designation a player has; the selector names the players that count.
       const blocked = missingFeatures(['condition:playerHasDesignation']);
@@ -719,6 +727,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:thisWayAtLeast',
   'condition:unlessPays',
   'condition:amountIs',
+  'condition:amountIsPrime',
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:giftPromised',

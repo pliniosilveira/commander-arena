@@ -33,6 +33,13 @@ import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
 
 /** CR 702.105a (D-151): `source` is attacking a player with the most life or tied for the most among the players still in the game. */
+/** A prime number: a whole number of 2 or more with no divisor but 1 and itself (`amountIsPrime`); 0, 1 and negative numbers are not. */
+function isPrime(n: number): boolean {
+  if (!Number.isInteger(n) || n < 2) return false;
+  for (let d = 2; d * d <= n; d++) if (n % d === 0) return false;
+  return true;
+}
+
 function attackingMostLife(state: GameState, source: ObjectId | null): boolean {
   if (source === null) return false;
   const entry = state.combat?.attackers.find((a) => a.object === source);
@@ -341,6 +348,16 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atLeast') return n >= condition.compare.value;
       if (condition.compare.cmp === 'atMost') return n <= condition.compare.value;
       return n === condition.compare.value;
+    }
+    case 'amountIsPrime': {
+      // Zimone, All-Questioning: the state-reading amount as it is now (the validator allows only amounts that need no target, X, trigger subject or earlier instruction).
+      const n = amountOf(
+        state,
+        condition.amount,
+        { controller: ctx.controller, source: ctx.source },
+        [],
+      );
+      return isPrime(n);
     }
     case 'classLevelIs':
       // CR 716.2a, 716.2d (D-235): the level of the permanent the ability belongs to; none is level 1.
