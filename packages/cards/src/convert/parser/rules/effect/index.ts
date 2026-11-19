@@ -128,6 +128,7 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
+import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
@@ -1047,6 +1048,8 @@ export const EFFECT_RULES = [
   ...GOAD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
+  // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
+  ...QUANDRIX_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
   ...NIV_GROUP_2B_B_EFFECT_RULES,

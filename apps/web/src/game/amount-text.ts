@@ -181,6 +181,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'damageDealt':
       // Issue 159: "equal to the damage dealt this way".
       return 'the damage dealt this way';
+    case 'countersRemoved':
+      // Nexus Mentality: "for each counter removed this way".
+      return 'the number of counters removed this way';
   }
 }
 

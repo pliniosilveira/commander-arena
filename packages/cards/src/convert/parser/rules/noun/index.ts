@@ -63,6 +63,7 @@ import { PLAYER_NOUN_RULES } from './players';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
+import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
@@ -786,6 +787,8 @@ export const NOUN_RULES = [
   ...DRAGON_NOUN_RULES,
   // D-295: "each of one or two targets".
   ...ONE_OR_TWO_NOUN_RULES,
+  // Quandrix deck: "all creature tokens", before `noun.all-permanents`, whose phrase would stop at "creature".
+  ...QUANDRIX_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,

@@ -2569,6 +2569,34 @@ function runEffect(
       return { ...done(next, events), performed: attached };
     }
 
+    case 'moveAllCounters': {
+      // CR 122.1, 122.6: each counter comes off the first permanent and goes onto the second, except a kind the second can't have.
+      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
+      const toId = resolveObjects(state, effect.to, ctx, targets)[0];
+      const from = fromId === undefined ? undefined : next.objects[fromId];
+      const to = toId === undefined ? undefined : next.objects[toId];
+      if (from?.zone !== 'battlefield' || to?.zone !== 'battlefield' || from.id === to.id) {
+        return done(next);
+      }
+      let moved: GameState = next;
+      const events: GameEvent[] = [];
+      const fromCounters = { ...from.counters };
+      let toCounters = { ...to.counters };
+      for (const [counter, count] of Object.entries(from.counters)) {
+        if (count <= 0 || counterBlocked(state, to, counter)) continue;
+        delete fromCounters[counter];
+        toCounters = { ...toCounters, [counter]: (toCounters[counter] ?? 0) + count };
+        events.push(
+          { kind: 'counterRemoved', object: from.id, counter, count },
+          { kind: 'counterAdded', object: to.id, counter, count, by: res.controller },
+        );
+      }
+      if (events.length === 0) return done(next);
+      moved = patchObject(moved, from.id, { counters: fromCounters });
+      moved = patchObject(moved, to.id, { counters: toCounters });
+      return done(moved, events);
+    }
+
     case 'removeAllPlayerCounters': {
       const removed: GameEvent[] = [];
       for (const id of resolvePlayers(state, effect.player, ctx, targets)) {
@@ -2597,7 +2625,12 @@ function runEffect(
         if (Object.keys(obj.counters).length > 0)
           cleared = patchObject(cleared, id, { counters: {} });
       }
-      return done(cleared, removed);
+      // Nexus Mentality: "for each counter removed this way" counts every counter that came off.
+      const total = removed.reduce((n, e) => (e.kind === 'counterRemoved' ? n + e.count : n), 0);
+      return {
+        ...done(cleared, removed),
+        ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
+      };
     }
 
     case 'proliferate':
