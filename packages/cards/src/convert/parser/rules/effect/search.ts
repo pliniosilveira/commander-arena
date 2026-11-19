@@ -225,6 +225,9 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for an enchantment card, reveal it, then shuffle and put that card on top',
     'search your library for an instant or sorcery card, reveal it, then shuffle and put it on top of your library',
     'search your library for a card, then shuffle and put that card on top',
+    // CR 701.23, 202.3: any number of cards with a total mana value, put at once, with the shuffle in the same sentence.
+    'search your library for any number of creature cards with total mana value 6 or less, put them onto the battlefield, then shuffle',
+    'search your library for any number of nonland permanent cards with total mana value 4 or less, put them onto the battlefield tapped, then shuffle',
     // Issue 160 (D-626): "up to X", with X defined right after the noun.
     'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put those cards onto the battlefield tapped, then shuffle',
     'search your library for an artifact card, reveal that card, then shuffle and put the card on top',
@@ -253,6 +256,9 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a card, reveal those cards, put it into your hand, then shuffle',
     'search your library for up to X basic land cards, put those cards onto the battlefield tapped, then shuffle',
     'search your library for up to X basic land cards, where X is the number of tapped creatures you control, put it onto the battlefield tapped, then shuffle',
+    'search your library for any number of creature cards with total mana value 6 or less, put it onto the battlefield, then shuffle',
+    'search your library for any number of creature cards with total mana value 6 or less, put one onto the battlefield and the other into your hand, then shuffle',
+    'search your graveyard, hand, and/or library for any number of creature cards with total mana value 6 or less and put them onto the battlefield',
     // Issue 104: with several zones the shuffle is another sentence ("If you search your library this way, shuffle."), and nothing is revealed.
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, put it onto the battlefield, then shuffle",
     "search your graveyard, hand, and/or library for a card named God-Pharaoh's Gift, reveal it, put it onto the battlefield",

@@ -332,7 +332,15 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         ...(d.purpose === 'putOnTop'
           ? range(d.min, d.max).flatMap((n) => orderedChoices(d.legal, n, MAX_LISTED_CHOICES))
           : range(d.min, d.max).flatMap((n) =>
-              firstCombinations(d.legal, n, MAX_LISTED_CHOICES, sharesTypeOf(d.shareLandType)),
+              firstCombinations(d.legal, n, MAX_LISTED_CHOICES, (chosen) => {
+                if (!sharesTypeOf(d.shareLandType)(chosen)) return false;
+                // CR 202.3 (D-230): the mana values may not add up to more than the limit; checked while combining so a long list still reaches the sets that fit.
+                const total = d.totalManaValue;
+                return (
+                  total === undefined ||
+                  chosen.reduce((sum, id) => sum + (total.values[id] ?? 0), 0) <= total.limit
+                );
+              }),
             )
         )
           // CR 202.3 (D-230): a choice whose mana values add up to more than the limit is no answer.

@@ -325,6 +325,11 @@ export interface IrFilter {
    */
   readonly sharedLandType?: true;
   /**
+   * "any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): any number of the cards of a library search, with mana values that add up to at most this.
+   * Like `sharedLandType` it is about the cards found together; the search lowering takes it off (the engine's `search.totalManaValue`), any other filter that has it is not lowered.
+   */
+  readonly anyNumberTotalManaValue?: number;
+  /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
    */

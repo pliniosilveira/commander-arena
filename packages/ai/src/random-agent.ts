@@ -204,7 +204,8 @@ export function createRandomHandlers(draw: (n: number) => number): DecisionHandl
       if (
         d.orSingle !== undefined ||
         d.shareLandType !== undefined ||
-        d.minCardTypes !== undefined
+        d.minCardTypes !== undefined ||
+        d.totalManaValue !== undefined
       ) {
         return pick(preferredActions(d), draw);
       }

@@ -3773,6 +3773,12 @@ export type Effect =
        * less finds nothing (the player still searches and shuffles, CR 701.23c).
        */
       readonly maxAmount?: Amount;
+      /**
+       * "Search your library for any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): any number of cards of `filter` may be found (none
+       * included, CR 701.23b) as long as their mana values add up to at most this. A card's mana value in a library counts an {X} as 0 (CR 202.3e). `max` is 1 and unread, the
+       * destinations are one `rest`, and no `sharedLandType`, `zones` or `maxAmount`.
+       */
+      readonly totalManaValue?: number;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

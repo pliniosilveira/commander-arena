@@ -25,6 +25,7 @@ import { counterBlocked } from './counter-prevention';
 import { derive } from './derive';
 import { discardPrompt } from './discard-cost';
 import { discardOne } from './madness';
+import { manaValueOfCost } from './mana-value';
 import { describeSearch } from './search-prompt';
 import { matchesFilter } from './select';
 import { sourceInfo } from './source-info';
@@ -162,6 +163,7 @@ export function runSearch(
         thisWay: library ? { searched: 1 } : {},
       };
     }
+    const total = search.totalManaValue;
     const decision: Omit<ChooseCardsDecision, 'id'> = {
       kind: 'chooseCards',
       seat,
@@ -172,10 +174,31 @@ export function runSearch(
       // CR 701.23b: with a stated quality the player may find fewer, so `min` is 0. CR 701.23d: a
       // search "simply for a quantity of cards" ("a card", "three cards") must find that many, or
       // as many as the library holds.
-      min: hasStatedQuality(search.filter) ? 0 : Math.min(search.max, legal.length),
-      max: Math.min(search.max, legal.length),
+      min:
+        hasStatedQuality(search.filter) || total !== undefined
+          ? 0
+          : Math.min(search.max, legal.length),
+      // CR 202.3: "any number of ... with total mana value N or less": as many as the library holds; the answer is checked against the total.
+      max: total === undefined ? Math.min(search.max, legal.length) : legal.length,
       reveal: search.reveal,
       prompt: describeSearch(search),
+      // CR 202.3e: a card in a library has no X announced, so an {X} in its cost counts as 0 (`manaValueOfCost`).
+      ...(total === undefined
+        ? {}
+        : {
+            totalManaValue: {
+              limit: total,
+              values: Object.fromEntries(
+                legal.map((id) => {
+                  const card = state.objects[id];
+                  return [
+                    id,
+                    card === undefined ? 0 : manaValueOfCost(derive(state, card).manaCost, card),
+                  ];
+                }),
+              ),
+            },
+          }),
       // D-262: the answer is checked against the land types of the cards offered (`validCardsChoice`).
       ...(search.sharedLandType === true
         ? { shareLandType: Object.fromEntries(legal.map((id) => [id, landTypesOf(state, id)])) }
