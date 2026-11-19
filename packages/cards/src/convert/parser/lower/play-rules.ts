@@ -135,6 +135,7 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:additionalLandDrops',
   'static:lookAtTopOfLibrary',
   'static:attackTax',
+  'static:cantAttackYou',
   'static:blockTax',
   'static:optionalUntap',
   'static:crewSaddleBonus',

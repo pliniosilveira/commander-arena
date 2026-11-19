@@ -58,6 +58,9 @@ const MANA_CHOICE = satisfy(
   (colors) => colors.length >= 2 && new Set(colors).size === colors.length,
 );
 
+/** The number words "in any combination of colors" takes. */
+const COMBINATION_COUNT: Readonly<Record<string, number>> = { two: 2, three: 3, four: 4 };
+
 /** The symbols of a combination as a multiset, for telling two combinations apart. */
 const multiset = (symbols: readonly string[]): string => [...symbols].sort().join('');
 
@@ -133,6 +136,7 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     // Stage P34 (D-152, CR 106.1b, 605.3b): two mana each of a color chosen on its own; the fixed mana once for each of a count (CR 106.1).
     'add two mana in any combination of colors',
     'add three mana in any combination of colors',
+    'add four mana in any combination of colors',
     // Issue 25 (D-319, CR 106.1b): two mana of different colors, never colorless and never the same color twice.
     'add two mana of different colors',
     'add three mana of different colors',
@@ -162,6 +166,7 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add one mana of any color that a creature you control could produce',
     'add one mana of any color that a land you could produce',
     'add one mana in any combination of colors',
+    'add five mana in any combination of colors',
     'add two mana in any combination of color',
     'add two mana of any combination of colors',
     'add two mana of different color',
@@ -214,10 +219,10 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
             ),
             // Stage P34 (D-152, CR 106.1b, 605.3b): "two mana in any combination of colors", each of a color chosen on its own.
             map(
-              pattern(/(two|three) mana in any combination of colors(?![\p{L}\p{N}])/iu),
+              pattern(/(two|three|four) mana in any combination of colors(?![\p{L}\p{N}])/iu),
               (m) => ({
                 kind: 'anyCombination' as const,
-                count: (m[1] ?? '').toLowerCase() === 'two' ? 2 : 3,
+                count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
               }),
             ),
             // Issue 25 (D-319, CR 106.1b, 605.3b): "two mana of different colors": each a color chosen on its own, no color twice (colorless is not a color).

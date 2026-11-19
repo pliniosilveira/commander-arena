@@ -7,7 +7,7 @@
  * (CR 401.5), the attack tax (CR 508.1h) and the optional untap (CR 502.3). Names start with "SYNTHETIC "; oracleId is null. The text describes
  * what the AST does; it is not Oracle text and none of these copies a real card's definition.
  */
-import type { Ability } from '../../ast/types';
+import type { Ability, ObjectFilter } from '../../ast/types';
 import type { CardDefinition } from '../definition';
 import { singleFace } from './helpers';
 
@@ -24,6 +24,12 @@ const attackTax = (symbols: string[], planeswalkers?: true): Ability => ({
     cost: [{ kind: 'mana', symbols }],
     ...(planeswalkers ? { planeswalkers } : {}),
   },
+});
+
+/** "[Creatures] can't attack you [or planeswalkers you control]" (CR 508.1a, 506.3). */
+const cantAttackYou = (attackers: ObjectFilter, planeswalkers?: true): Ability => ({
+  kind: 'static',
+  static: { kind: 'cantAttackYou', attackers, ...(planeswalkers ? { planeswalkers } : {}) },
 });
 
 /** "You may choose not to untap this permanent during your untap step." (CR 502.3). */
@@ -142,6 +148,24 @@ export const SYNTHETIC_PLAY_RULE_LIST: readonly CardDefinition[] = [
     oracleText:
       "Creatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
     abilities: [attackTax(['1'], true)],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Skyward Ward',
+    manaCost: ['3', 'G'],
+    types: ['enchantment'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: "Creatures with flying can't attack you or planeswalkers you control.",
+    abilities: [cantAttackYou({ types: ['creature'], keywords: ['flying'] }, true)],
+  }),
+  singleFace({
+    name: 'SYNTHETIC Skyward Ward Player',
+    manaCost: ['3', 'G'],
+    types: ['enchantment'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: "Creatures with flying can't attack you.",
+    abilities: [cantAttackYou({ types: ['creature'], keywords: ['flying'] })],
   }),
   singleFace({
     name: 'SYNTHETIC Tax Blood',

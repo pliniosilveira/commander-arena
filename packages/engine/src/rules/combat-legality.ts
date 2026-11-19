@@ -51,7 +51,52 @@ export function attackCandidates(
   if (targets.length === 0) return [];
   return state.battlefield
     .filter((id) => canAttack(state, getObject(state, id), seat))
-    .map((attacker) => ({ attacker, targets: narrowedTargets(state, attacker, targets) }));
+    .map((attacker) => ({
+      attacker,
+      targets: narrowedTargets(
+        state,
+        attacker,
+        withoutForbiddenTargets(state, getObject(state, attacker), targets),
+      ),
+    }))
+    .filter((c) => c.targets.length > 0);
+}
+
+/**
+ * CR 508.1a, 506.3 (101.2): "Creatures with flying can't attack you or planeswalkers you control." The targets of `attacker` left once every
+ * `cantAttackYou` ability on the battlefield (read from the derived abilities, CR 604.1) has taken away the player its controller is and, with
+ * `planeswalkers`, the planeswalkers that player controls. Only the declaration reads it: a creature already attacking stays attacking.
+ */
+function withoutForbiddenTargets(
+  state: GameState,
+  attacker: GameObject,
+  targets: readonly AttackTarget[],
+): AttackTarget[] {
+  const bans: { controller: SeatId; planeswalkers: boolean }[] = [];
+  for (const id of state.battlefield) {
+    const source = getObject(state, id);
+    const controller = controllerOf(state, source);
+    for (const a of derive(state, source).abilities) {
+      if (a.kind !== 'static' || a.static.kind !== 'cantAttackYou') continue;
+      if (
+        matchesFilter(
+          state,
+          attacker,
+          { ...a.static.attackers, zone: 'battlefield' },
+          { controller, source: id },
+        )
+      ) {
+        bans.push({ controller, planeswalkers: a.static.planeswalkers === true });
+      }
+    }
+  }
+  if (bans.length === 0) return [...targets];
+  return targets.filter((t) => {
+    if (t.kind === 'player') return !bans.some((b) => b.controller === t.seat);
+    const obj = state.objects[t.object];
+    if (obj === undefined || !derive(state, obj).types.includes('planeswalker')) return true;
+    return !bans.some((b) => b.planeswalkers && b.controller === controllerOf(state, obj));
+  });
 }
 
 /** The group requirements ("creatures your opponents control attack each combat if able", D-179) that name `obj` as one of their creatures now. */

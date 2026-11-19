@@ -480,6 +480,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'crewSaddleBonus':
     case 'untapInOthersStep':
       return playRuleNeeds(effect);
+    case 'cantAttackYou':
+      return ['static:cantAttackYou'];
     case 'additionalCost':
     case 'optionalSacrificeCopies':
     case 'freeCast':
@@ -784,6 +786,34 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
     return {
       ok: true,
       value: [{ kind: 'static', static: { kind: 'doubleTriggers', subject: subject.value } }],
+      rule: ability.rule,
+    };
+  }
+  // "Creatures with flying can't attack you or planeswalkers you control." (CR 508.1a, 506.3): the creatures the subject names, read as the attackers are declared
+  // (so the filter may name a keyword), and the controller of the ability as the defender it protects.
+  if (first.kind === 'cantAttackYou') {
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:cantAttackYou']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    if (statement.subject.det !== 'each') return failure(statement.subject);
+    const group = groupSubject(statement.subject, true);
+    if (!group.ok) return group;
+    if (group.value.kind !== 'filter' || group.value.other === true) return failure(ability);
+    if (readsCombat(group.value.filter)) return failure(statement.subject);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'cantAttackYou',
+            attackers: group.value.filter,
+            ...(first.planeswalkers === true ? { planeswalkers: true as const } : {}),
+          },
+        },
+      ],
       rule: ability.rule,
     };
   }

@@ -4570,6 +4570,18 @@ export type StaticEffect =
       readonly planeswalkers?: true;
     }
   /**
+   * "Creatures with flying can't attack you or planeswalkers you control." (CR 508.1a, 506.3, 101.2): while the permanent has the ability, a creature the
+   * `attackers` filter matches (read for the controller of the permanent as "you", with the permanent as the source, in the state as the attackers are
+   * declared, keywords and all) can't be declared as an attacker of the controller of the permanent and, with `planeswalkers`, of a planeswalker that
+   * controller controls. A battle is never covered. It restricts the declaration only (CR 508.1): a creature that is already attacking stays attacking if it
+   * gains the quality later, and one put onto the battlefield attacking was never declared. A creature that can attack another player still may.
+   */
+  | {
+      readonly kind: 'cantAttackYou';
+      readonly attackers: ObjectFilter;
+      readonly planeswalkers?: true;
+    }
+  /**
    * "Creatures can't block unless their controller pays {1} for each of those creatures." (CR 509.1b, 509.1d, 118.12a, D-149): while the permanent has the
    * ability, each creature declared as a blocker costs `cost` (mana only, no {X}) to its own controller, paid as the blockers are declared; the
    * total is locked in once the blockers are chosen (CR 509.1d), and a declaration the defending player could not pay for is refused (a

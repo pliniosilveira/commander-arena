@@ -395,6 +395,29 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'attackTax':
       checkAttackTax(s, path, out);
       break;
+    case 'cantAttackYou':
+      // CR 508.1a (D-139): the creatures it covers are read on the battlefield as the attackers are declared: no zone, owner, stack kind or combat.
+      checkFilter(s.attackers, `${path}.attackers`, out);
+      if (
+        filterSome(
+          s.attackers,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.attackers`,
+          'the attackers are creatures on the battlefield: no zone, owner, stackKind or combat',
+        );
+      }
+      if (s.planeswalkers !== undefined && s.planeswalkers !== true) {
+        issue(out, `${path}.planeswalkers`, 'planeswalkers is true or absent');
+      }
+      break;
     case 'additionalLandDrops':
       // CR 305.2 (D-125): a positive whole number of extra land plays.
       if (!Number.isSafeInteger(s.count) || s.count < 1) {

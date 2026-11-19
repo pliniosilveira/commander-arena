@@ -1317,6 +1317,11 @@ export type IrStaticEffect =
    * are plain, hybrid or Phyrexian (never X), and whether the planeswalkers of the controller are covered too.
    */
   | { readonly kind: 'attackTax'; readonly cost: IrCost; readonly planeswalkers?: true }
+  /**
+   * "Creatures with flying can't attack you or planeswalkers you control." (CR 508.1a, 506.3): the creatures are the subject of the statement, the
+   * defender is the controller of the ability and, with `planeswalkers`, the planeswalkers that player controls.
+   */
+  | { readonly kind: 'cantAttackYou'; readonly planeswalkers?: true }
   /** "You may choose not to untap ~ during your untap step." (stage P24, D-125, CR 502.3). The subject is `~`. */
   | { readonly kind: 'optionalUntap' }
   /** "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a, 702.171a). The subject is `~`. */

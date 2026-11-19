@@ -880,6 +880,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookAtTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
+    // "Creatures with flying can't attack you or planeswalkers you control." (CR 508.1a, 506.3).
+    'cantAttackYou',
     // D-125: "You may choose not to untap ~ during your untap step."
     'optionalUntap',
     // Galadriel group 3: "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a).
@@ -1509,6 +1511,8 @@ export const STATIC_KINDS = [
   'lookAtTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
+  /** "Creatures with flying can't attack you or planeswalkers you control." (CR 508.1a, 506.3): `cantAttackYou`. */
+  'cantAttackYou',
   /** "You may choose not to untap ~ during your untap step." (CR 502.3, D-125). */
   'optionalUntap',
   /** "This creature saddles Mounts and crews Vehicles as though its power were 2 greater." (CR 702.122a, 702.171a, Galadriel group 3). */
