@@ -5563,11 +5563,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'none'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'graveyard', 'none'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield, into the hand, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand, into the graveyard, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {

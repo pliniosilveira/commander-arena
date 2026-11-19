@@ -236,3 +236,80 @@ describe('Crawling Sensation (whenever one or more land cards are put into your 
     expect(insects(g)).toHaveLength(1);
   });
 });
+
+/** The names of the cards in a zone of `seat`, top (or first) first. */
+function zoneNames(
+  state: GameState,
+  seat: 0 | 1,
+  zone: 'graveyard' | 'library' | 'hand',
+): string[] {
+  return (state.seats[seat]?.[zone] ?? []).map((id) => {
+    const obj = state.objects[id];
+    const card = obj?.card == null ? undefined : state.cards[obj.card];
+    return card === undefined ? '?' : (state.definitions[card.definition]?.name ?? '?');
+  });
+}
+
+describe('Old Stickfingers (reveal cards from the top of your library until you reveal X creature cards)', () => {
+  const STICK = real('Old Stickfingers');
+
+  test('read as a revealUntil of X creature cards that puts them into the graveyard (CR 701.20)', () => {
+    expect(STICK.faces[0]?.abilities[0]).toMatchObject({
+      kind: 'triggered',
+      trigger: { kind: 'castSpell', self: true },
+      effect: {
+        kind: 'revealUntil',
+        filter: { types: ['creature'] },
+        count: { kind: 'x' },
+        put: 'graveyard',
+      },
+    });
+  });
+
+  const game = (top: readonly string[], rest: readonly string[] = FILLER) =>
+    scenario()
+      .define(STICK)
+      .define(BEAR)
+      .seat(0)
+      .hand(STICK.name)
+      .battlefield('Swamp')
+      .battlefield('Forest')
+      .battlefield('Plains', { count: 6 })
+      .library(...top, ...rest)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('X = 2: revealed up to the second creature card; the creature cards go to the graveyard, the others to the bottom of the library', () => {
+    const g = game(['Plains', BEAR.name, 'Mountain', 'Serra Angel', 'Forest'], ['Swamp']);
+    g.act(0).cast(STICK.name, { x: 2, pay: true });
+    settle(g);
+    expect(zoneNames(g.state, 0, 'graveyard').sort()).toEqual([BEAR.name, 'Serra Angel']);
+    const library = zoneNames(g.state, 0, 'library');
+    // The cards that were not revealed stay on top, in order; the two revealed lands are at the bottom (in a random order).
+    expect(library.slice(0, 2)).toEqual(['Forest', 'Swamp']);
+    expect([...library.slice(2)].sort()).toEqual(['Mountain', 'Plains']);
+    // Old Stickfingers' power and toughness are the number of creature cards in the graveyard.
+    g.expect.pt(STICK.name, 2, 2);
+    g.expect.invariants();
+  });
+
+  test('X = 0 reveals nothing', () => {
+    const g = game([BEAR.name, 'Plains'], ['Swamp']);
+    g.act(0).cast(STICK.name, { x: 0, pay: true });
+    settle(g);
+    // Nothing was revealed or moved; Old Stickfingers itself is a 0/0 (no creature card in the graveyard) and is put into the graveyard by a state-based action.
+    expect(zoneNames(g.state, 0, 'graveyard')).toEqual([STICK.name]);
+    expect(zoneNames(g.state, 0, 'library')).toEqual([BEAR.name, 'Plains', 'Swamp']);
+  });
+
+  test('fewer than X creature cards: the library is revealed to its end and every creature card goes to the graveyard', () => {
+    const g = game(['Plains', BEAR.name, 'Island'], []);
+    g.act(0).cast(STICK.name, { x: 3, pay: true });
+    settle(g);
+    expect(zoneNames(g.state, 0, 'graveyard')).toEqual([BEAR.name]);
+    expect([...zoneNames(g.state, 0, 'library')].sort()).toEqual(['Island', 'Plains']);
+    g.expect.pt(STICK.name, 1, 1);
+  });
+});

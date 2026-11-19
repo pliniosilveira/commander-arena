@@ -3447,10 +3447,12 @@ export type Effect =
        * `exile` (D-664, CR 701.13, 701.20a, 400.7, Creative Technique: "Exile that card and put the rest on the bottom of your library in a random order"): the card found is
        * exiled, face up, and is what `moved` names ("the exiled card": `castFree`); the rest of the cards revealed still go on the bottom of the library in a random order.
        *
+       * `graveyard` (Death Toll deck group B, CR 701.20, 401.4, Old Stickfingers: "Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order"): every card found goes into its owner's graveyard (it is put there, not milled); the rest still go on the bottom in a random order.
+       *
        * `none` (D-659, "You may put that card onto the battlefield. If you don't, put it into your hand."): the card found is not moved by this effect; it stays in the library
        * (revealed) and is what `moved` names for the effects after it, which put it somewhere or not; the rest go to the bottom as always.
        */
-      readonly put: 'battlefield' | 'hand' | 'exile' | 'none';
+      readonly put: 'battlefield' | 'hand' | 'exile' | 'graveyard' | 'none';
       readonly tapped?: true;
       /**
        * "Reveal cards from the top of your library until you reveal a creature card for each wild vote" (CR 701.20, 701.38b, issue 103, Selvala's Stampede): the cards are

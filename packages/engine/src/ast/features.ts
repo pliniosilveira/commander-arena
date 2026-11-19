@@ -137,6 +137,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseFromCommandZone',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
+    /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
+    'revealUntilGraveyard',
+    // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
+    'revealUntilGraveyard',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
@@ -2163,6 +2167,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAlsoGraveyard: true,
   chooseFromCommandZone: true,
   revealUntilCount: true,
+  revealUntilGraveyard: true,
   spellXAtMost: true,
   copyEntersWithX: true,
   lookTakeAll: true,
