@@ -371,7 +371,10 @@ export type ThisWayKind =
   // Nexus Mentality: "Draw a card for each counter removed this way": the counters the `removeAllCounters` effects of this resolution took off (CR 122.1, 608.2c).
   | 'countersRemoved'
   // Issue 159 (Enter the God-Eternals): "you gain life equal to the damage dealt this way": the damage the `dealDamage` effects of this resolution dealt (what was prevented is not counted, CR 615.6).
-  | 'damageDealt';
+  | 'damageDealt'
+  // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
+  // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
+  | 'exiledPowerOwn';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -2772,6 +2775,12 @@ export type Effect =
       readonly objects: ObjectSelector;
       readonly counter: string;
       readonly count: Amount;
+      /**
+       * "Each player creates a 0/0 ... token and puts a number of +1/+1 counters on it equal to the total power of creatures they controlled that were exiled this way" (Oversimplify,
+       * CR 122.6, 608.2c, 608.2h): `count` is read once for each object, for the player who controls that object, so the `thisWay` count `exiledPowerOwn` is that player's own total.
+       * The only amount that reads the player this way is `exiledPowerOwn` (`validateCard` refuses it elsewhere).
+       */
+      readonly perController?: true;
     }
   /**
    * "Double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, CR 122.6): each object `objects` names that has

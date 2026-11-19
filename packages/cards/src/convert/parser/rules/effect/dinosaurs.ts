@@ -103,6 +103,11 @@ export const EFFECT_DOUBLE_PT = defineRule<Clauses>({
 /** One creature: a target or "it" or `~`, never a group or "up to". */
 const ONE_CREATURE = ['noun.target-permanent', 'noun.self', 'noun.it'] as const;
 const isOne = (noun: IrNoun): boolean => !noun.plural && !noun.upTo && noun.count === undefined;
+/** "Up to one target creature" (Primal Might): the creature fought is optional, and nothing is fought when no target was chosen (CR 701.14b, 115.1). */
+const isOneOrUpToOne = (noun: IrNoun): boolean =>
+  !noun.plural &&
+  (noun.count === undefined ||
+    (noun.upTo && noun.count.kind === 'number' && noun.count.value === 1));
 
 /**
  * `effect.fight`: "target creature you control fights target creature you don't control", "~ fights target creature" (CR 701.14 Fight:
@@ -123,6 +128,9 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     // Frontier Siege (issue 103, "you may" is read apart): the permanent is made to fight.
     "have it fight target creature you don't control",
     'have target creature you control fight target creature an opponent controls',
+    // Primal Might: the creature fought is an "up to one" target.
+    "it fights up to one target creature you don't control",
+    "target creature you control fights up to one target creature you don't control",
   ],
   rejects: [
     "have it fights target creature you don't control",
@@ -131,7 +139,8 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
     'have it fight each creature',
     'target creature fights',
     'target creatures fight each other',
-    'target creature you control fights up to one target creature',
+    'target creature you control fights up to two target creatures',
+    'up to one target creature you control fights up to one target creature',
     'target creature you control fight target creature',
     'two target creatures fight each other',
     '~ fights',
@@ -145,7 +154,7 @@ export const EFFECT_FIGHT = defineRule<Clauses>({
       sequence(
         satisfy(family<IrNoun>('noun', { only: ONE_CREATURE }), isOne),
         literal(' fights '),
-        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOne),
+        satisfy(family<IrNoun>('noun', { only: ['noun.target-permanent'] }), isOneOrUpToOne),
       ),
       // "have it fight target creature": the causative form, with the bare verb.
       map(

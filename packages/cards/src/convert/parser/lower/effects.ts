@@ -102,6 +102,7 @@ import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
 import { QUANDRIX_LOWERINGS } from './quandrix';
+import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
 import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
@@ -2060,6 +2061,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
   ...ANGEL_LOWERINGS,
+  ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
   ...AURA_GRAVEYARD_LOWERINGS,
