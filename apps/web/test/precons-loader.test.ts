@@ -163,6 +163,15 @@ test('every shipped snapshot is read without problems and listed', () => {
   expect(precons.list.map((info) => info.id)).toEqual(SHIPPED.snapshots.map((s) => s.id));
 });
 
+test.each(SHIPPED.snapshots)(
+  'shipped $id names its set and year and has no product in its name',
+  (snapshot) => {
+    expect(snapshot.set, 'set').toMatch(/\S/);
+    expect(snapshot.year, 'year').toBeGreaterThanOrEqual(1993);
+    expect(snapshot.name).not.toMatch(/\s[-–—]\s/);
+  },
+);
+
 test.each(SHIPPED.snapshots)('shipped $id is a legal, fully supported deck', async (snapshot) => {
   const result = await buildPreconDeck(snapshot, serviceFor);
   if (!result.ok)

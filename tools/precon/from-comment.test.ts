@@ -108,30 +108,67 @@ describe('the snapshot comment', () => {
 });
 
 describe('precon:from-comment', () => {
-  test('writes the snapshot and the decklist of the issue', async () => {
+  test('writes the snapshot with its set and year, and the decklist of the issue', async () => {
     const m = await made();
     const out = path.join(m.dir, 'repo-snapshots');
     const decks = path.join(m.dir, 'repo-decks');
     const { io, out: lines } = capture();
     const code = await fromComment(
       [
-        '--comment',
-        m.commentFile,
-        '--body',
-        m.bodyFile,
-        '--snapshots-dir',
-        out,
-        '--decks-dir',
-        decks,
+        ...['--comment', m.commentFile, '--body', m.bodyFile],
+        ...['--set', 'SYNTHETIC Set Commander', '--year', '2026'],
+        ...['--snapshots-dir', out, '--decks-dir', decks],
       ],
       io,
     );
     expect(code).toBe(0);
     expect(JSON.parse(lines.at(-1) ?? '{}')).toEqual({ ok: true, id: 'synthetic-deck' });
-    expect(await readFile(path.join(out, 'synthetic-deck.json'), 'utf8')).toBe(
-      await readFile(path.join(m.work, 'synthetic-deck.json'), 'utf8'),
-    );
+    const written = JSON.parse(await readFile(path.join(out, 'synthetic-deck.json'), 'utf8'));
+    const generated = JSON.parse(await readFile(path.join(m.work, 'synthetic-deck.json'), 'utf8'));
+    expect(written).toEqual({ ...generated, set: 'SYNTHETIC Set Commander', year: 2026 });
+    expect(Object.keys(written).indexOf('set')).toBe(Object.keys(written).indexOf('decklist') + 1);
     expect(await readFile(path.join(decks, 'synthetic-deck.txt'), 'utf8')).toBe(`${DECK}\n`);
+  });
+
+  test('a new deck without its set and year is refused and nothing is written', async () => {
+    const m = await made();
+    const out = path.join(m.dir, 'repo-snapshots');
+    const { io, err } = capture();
+    const code = await fromComment(
+      [
+        ...[
+          '--comment',
+          m.commentFile,
+          '--body',
+          m.bodyFile,
+          '--snapshots-dir',
+          out,
+          '--decks-dir',
+          out,
+        ],
+      ],
+      io,
+    );
+    expect(code).toBe(1);
+    expect(err.join('\n')).toMatch(/needs its set and year/);
+    await expect(readFile(path.join(out, 'synthetic-deck.json'), 'utf8')).rejects.toThrow();
+  });
+
+  test('an update keeps the set and year the snapshot already has', async () => {
+    const m = await made();
+    const out = path.join(m.dir, 'repo-snapshots');
+    const args = ['--comment', m.commentFile, '--body', m.bodyFile, '--snapshots-dir', out];
+    await fromComment(
+      [...args, '--decks-dir', out, '--set', 'SYNTHETIC Set', '--year', '2025'],
+      capture().io,
+    );
+    expect(await fromComment([...args, '--decks-dir', out], capture().io)).toBe(0);
+    expect(JSON.parse(await readFile(path.join(out, 'synthetic-deck.json'), 'utf8'))).toMatchObject(
+      {
+        set: 'SYNTHETIC Set',
+        year: 2025,
+      },
+    );
   });
 
   test('a comment for another list than the issue has is refused and nothing is written', async () => {
@@ -145,6 +182,10 @@ describe('precon:from-comment', () => {
         other.commentFile,
         '--body',
         m.bodyFile,
+        '--set',
+        'SYNTHETIC Set',
+        '--year',
+        '2026',
         '--snapshots-dir',
         out,
         '--decks-dir',
