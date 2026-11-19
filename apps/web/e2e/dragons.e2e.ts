@@ -199,7 +199,9 @@ test('A card exiled to be played: a tile at the left of the battlefield says "Ca
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   const rite = 'SYNTHETIC Impulse Rite';
-  const chip = page.getByRole('region', { name: 'Cast from exile' }).locator('.board-exile-play');
+  const chip = page
+    .getByRole('region', { name: 'Playable from other zones' })
+    .locator('.board-exile-play');
   // The deck is Mountains and Rites, so the top card is nearly always a land; the Rite is cast while the land drop of the turn is still
   // there, so the land it exiles can be played. A seed that exiles a card that cannot be played now is not the one: the next is tried.
   let reached = false;
@@ -243,7 +245,7 @@ test('A card exiled to be played: a tile at the left of the battlefield says "Ca
   const name = (await chip.first().locator('.board-exile-play-name').textContent()) ?? '';
   await chip.first().click();
   await settled(page);
-  await expect(page.getByRole('region', { name: 'Cast from exile' })).toBeHidden();
+  await expect(page.getByRole('region', { name: 'Playable from other zones' })).toBeHidden();
   await expect(logText(page)).toContainText(new RegExp(`You (cast|play) ${name}`));
   expect(errors).toEqual([]);
 });

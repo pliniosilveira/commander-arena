@@ -16,7 +16,7 @@ const game = (seed: number) => `/?autostart=synthetic-kicker,swamp-forest&seed=$
 const primary = (page: Page) => page.locator('[data-dec-primary]');
 const kicker = (page: Page) => page.getByRole('dialog', { name: 'Kicker' });
 const logText = (page: Page) => page.getByRole('log');
-const chip = (page: Page, name: string) => page.locator('.board-flashback-chip', { hasText: name });
+const chip = (page: Page, name: string) => page.locator('.board-exile-play', { hasText: name });
 
 /** Plays on until `ready` holds; cards matching `keep` stay in the hand. */
 async function playUntil(

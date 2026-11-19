@@ -181,7 +181,8 @@ test('Hideaway: the look must take one card, which is exiled face down and playe
   // The log names no card; the card is in exile, face down, marked for its controller, who may look at it.
   await expect(logText(page)).toContainText('You exile a card face down (Hideaway).');
   await expect(logText(page)).not.toContainText(`${taken}: library to exile`);
-  const chip = page.locator('.board-exile-chip', { hasText: 'Hideaway' });
+  // A chip, or a tile at the right of the battlefield when the Cache's ability can already be activated.
+  const chip = page.locator('.board-exile-chip, .board-exile-play', { hasText: 'Hideaway' });
   await expect(chip).toHaveCount(1);
   await expect(chip).toContainText(taken);
   await page.screenshot({ path: `${SHOTS}/hideaway-exiled.png` });

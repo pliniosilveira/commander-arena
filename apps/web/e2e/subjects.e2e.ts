@@ -183,7 +183,7 @@ test('a sorcery that may be cast from the graveyard: a chip, a second cast, two 
   await expect(life(page, 1)).toHaveText(String(foe - 1));
 
   // The resolved sorcery is in the graveyard, and its own text lets the player cast it from there.
-  const strip = page.getByRole('region', { name: 'Cast from your graveyard' });
+  const strip = page.getByRole('region', { name: 'Playable from other zones' });
   await expect(strip).toBeVisible();
   const chip = strip.getByRole('button', { name: `Cast from graveyard: ${shade}` });
   await expect(chip).toContainText('Cast from graveyard');

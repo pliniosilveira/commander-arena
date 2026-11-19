@@ -1,16 +1,22 @@
 /**
- * The cards the viewer may cast or play from exile right now, shared by the strip at the left of the
- * battlefield (`ExilePlayStrip`) and by `OtherZonesStrip`, which must not list them a second time among
- * the status chips. Exile is shared; the cards the viewer may cast or play from there are those the
+ * The cards the viewer may cast or play from another zone right now (exile, their graveyard, the top of their library), listed by the
+ * strip at the right of the battlefield (`ExilePlayStrip`); `OtherZonesStrip` reads the exile ones so that it does not list them a second
+ * time among the status chips. Exile is shared; the cards the viewer may cast or play from there are those the
  * engine lists, which include a card of another player that an effect let the viewer play (D-187,
  * CR 406.3: "You may look at and play those cards").
  */
 import type { GameView, ObjectId, ObjectView, PriorityDecision } from '@commander-arena/engine';
-import { exileCastObjects } from '../decisions/layouts';
+import { graveyardPlayObjects } from '../decisions/flashback';
+import { exileCastObjects, libraryBadge } from '../decisions/layouts';
 import { objectIndex } from '../decisions/lookup';
+import { playableObjects } from '../decisions/priority';
 
 export interface ExilePlayable {
   readonly cards: readonly ObjectView[];
+  /** The cards of the viewer's graveyard the decision offers something for (flashback, escape, unearth, D-133). */
+  readonly graveyard: readonly ObjectView[];
+  /** The top card of the viewer's library when a permanent lets them cast it from there (D-151, CR 601.3): none or one. */
+  readonly library: readonly ObjectView[];
   /** For a Hideaway card: the permanent whose ability plays it, which a click on the tile uses (CR 702.75a). */
   readonly via: ReadonlyMap<ObjectId, ObjectId>;
   readonly exile: ReadonlySet<ObjectId>;
@@ -51,5 +57,17 @@ export function exilePlayable(view: GameView, clickable: ReadonlySet<ObjectId>):
     }
   }
   const cards = view.exile.filter((o) => via.has(o.id) || (exile.has(o.id) && clickable.has(o.id)));
-  return { cards, exile, via, priority, index };
+  const mine = view.seats[view.viewer];
+  const usable =
+    priority === null ? new Set<ObjectId>() : graveyardPlayObjects(priority, mine?.graveyard ?? []);
+  const graveyard = (mine?.graveyard ?? []).filter((o) => usable.has(o.id) && clickable.has(o.id));
+  const top = mine?.libraryTop;
+  const library =
+    priority !== null &&
+    top !== undefined &&
+    clickable.has(top.id) &&
+    libraryBadge(playableObjects(priority), index, top.id) !== null
+      ? [top]
+      : [];
+  return { cards, graveyard, library, exile, via, priority, index };
 }

@@ -476,7 +476,7 @@
   justify-content: center;
   gap: 2px;
   width: 112px;
-  height: 72px;
+  min-height: 72px;
   padding: 4px 6px;
   overflow: hidden;
   text-align: left;
@@ -1222,32 +1222,6 @@
 }
 
 /* ---- Hand ------------------------------------------------------------------------------- */
-
-/* Cards castable from another zone (flashback in the graveyard, an Adventure in exile): chips above the hand. */
-.board-flashback {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: center;
-  padding: 4px 12px;
-  background: var(--bg-sunken);
-  border-top: 1px solid var(--line);
-}
-
-.board-flashback-chip {
-  padding: 2px 10px;
-  color: var(--text);
-  font-size: calc(12px * var(--text-scale));
-  background: var(--bg-raised);
-  border: 1px solid var(--target);
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.board-flashback-chip b {
-  font-weight: 700;
-}
 
 .board-hand {
   position: relative;

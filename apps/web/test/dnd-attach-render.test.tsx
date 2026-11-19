@@ -168,7 +168,7 @@ describe('flashback', () => {
           <ZoneViewer title="Your graveyard" objects={grave} onClose={() => {}} />
         </DecisionLayer>,
       );
-      const chip = html.match(/<button[^>]*board-flashback-chip[^>]*>/)?.[0] ?? '';
+      const chip = html.match(/<button[^>]*board-exile-play[^>]*>/)?.[0] ?? '';
       expect(chip).toContain('draggable="true"');
       expect(chip).toContain(`data-object-id="${card.id}"`);
       const listed =
