@@ -116,4 +116,45 @@ export const EFFECT_REMOVE_COUNTERS_SELF = defineRule<Clauses>({
   ),
 });
 
-export const QUANDRIX_G_EFFECT_RULES = [EFFECT_DISTRIBUTE_COUNTERS, EFFECT_REMOVE_COUNTERS_SELF];
+/**
+ * `effect.choose-parity-return`: "Choose odd or even. Return each creature with power of the chosen quality to its owner's hand." (CR 608.2d: the controller chooses as the instruction
+ * resolves; CR 208.1: a creature's power is a number, odd or even, zero being even; CR 400.3: the owner's hand). Two sentences that `splitSentences` keeps together. The engine's
+ * `chooseOne` of the two returns, each of the creatures whose power is odd or even as the instruction runs. Not read: "all creatures", another zone, a quality of toughness or mana value, "target
+ * creature", a missing second sentence, "choose odd or even" alone.
+ */
+export const EFFECT_CHOOSE_PARITY_RETURN = defineRule<Clauses>({
+  id: 'effect.choose-parity-return',
+  family: 'effect',
+  leading: ['choose'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 208.1 (Power/Toughness)',
+    'CR 400.3 (General)',
+  ],
+  examples: [
+    'choose odd or even. Return each creature with power of the chosen quality to its owner’s hand',
+    "choose odd or even. Return each creature with power of the chosen quality to its owner's hand",
+  ],
+  rejects: [
+    'choose odd or even',
+    'choose odd or even. Return each creature with toughness of the chosen quality to its owner’s hand',
+    'choose odd or even. Return all creatures with power of the chosen quality to their owners’ hands',
+    'choose odd or even. Destroy each creature with power of the chosen quality',
+    'choose odd or even. Return each creature with power of the chosen quality to its owner’s library',
+    'choose odd or even. Return target creature with power of the chosen quality to its owner’s hand',
+    'choose a number. Return each creature with power of the chosen quality to its owner’s hand',
+  ],
+  parse: single(
+    'effect.choose-parity-return',
+    pattern(
+      /choose odd or even\. return each creature with power of the chosen quality to its owner['’]s hand(?![\p{L}\p{N}])/iu,
+    ),
+    () => ({ verb: 'chooseParityReturn', args: {} }),
+  ),
+});
+
+export const QUANDRIX_G_EFFECT_RULES = [
+  EFFECT_DISTRIBUTE_COUNTERS,
+  EFFECT_REMOVE_COUNTERS_SELF,
+  EFFECT_CHOOSE_PARITY_RETURN,
+];

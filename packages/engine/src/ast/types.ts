@@ -577,6 +577,11 @@ export interface ObjectFilter {
   readonly power?: NumberComparison;
   readonly toughness?: NumberComparison;
   readonly manaValue?: NumberComparison;
+  /**
+   * "Return each creature with power of the chosen quality" (Zimone's Hypothesis, after "choose odd or even"): the object's power now is an odd number or an even number (zero is even).
+   * An object with no power matches neither.
+   */
+  readonly powerParity?: 'odd' | 'even';
   /** Only objects that are not this ability's source ("another creature"). */
   readonly other?: boolean;
   /**

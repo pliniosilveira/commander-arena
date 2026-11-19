@@ -318,6 +318,12 @@ export function matchesFilterWith(
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;
   if (filter.colors && !filter.colors.every((c) => d.colors.includes(c))) return false;
   if (!compares(filter.power, d.power)) return false;
+  // "Each creature with power of the chosen quality" (Zimone's Hypothesis): the power now is odd or even; 0 is even and so is any multiple of 2, negative or not.
+  if (filter.powerParity !== undefined) {
+    if (d.power === null || d.power === undefined) return false;
+    const odd = Math.abs(d.power) % 2 === 1;
+    if (odd !== (filter.powerParity === 'odd')) return false;
+  }
   if (!compares(filter.toughness, d.toughness)) return false;
   if (!compares(filter.manaValue, d.manaValue)) return false;
   // CR 202.3 (D-230): "mana value X or less, where X is ...": the limit is worked out by the caller (`select.ts`); without it the filter fails closed.

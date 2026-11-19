@@ -871,6 +871,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'discardedThisWay',
     // D-139: "two or more colors" (`ObjectFilter.colorCount`).
     'colorCount',
+    // Zimone's Hypothesis: "power of the chosen quality" (`ObjectFilter.powerParity`).
+    'powerParity',
     // D-139: "mana value X" and "whose controller was dealt combat damage by this creature this turn".
     'manaValueX',
     'controllerDamagedBySource',
@@ -1589,6 +1591,8 @@ export const SELECTOR_KINDS = [
   'discardedThisWay',
   /** "Permanents that are two or more colors", "monocolored" (CR 105.2, D-139): the engine's `ObjectFilter.colorCount`. */
   'colorCount',
+  /** "Each creature with an odd power" (Zimone's Hypothesis): the engine's `ObjectFilter.powerParity`. */
+  'powerParity',
   /** "With mana value X" (CR 202.3, D-139): the engine's `ObjectFilter.manaValueX`. */
   'manaValueX',
   /** "Whose controller was dealt combat damage by this creature this turn" (CR 510.2, D-139): the engine's `ObjectFilter.controllerDealtDamageBySource`. */

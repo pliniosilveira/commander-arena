@@ -998,6 +998,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
+  'condition.and': permanent((e) => `At the beginning of your end step, if ${e}, draw a card.`),
+  'condition.prime-number-of': permanent(
+    (e) => `At the beginning of your end step, if ${e}, draw a card.`,
+  ),
   'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
   'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(

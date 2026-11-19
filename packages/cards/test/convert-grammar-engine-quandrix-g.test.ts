@@ -531,4 +531,91 @@ describe('Zimone, All-Questioning', () => {
   });
 });
 
+describe("Zimone's Hypothesis", () => {
+  const hypothesis = real("Zimone's Hypothesis");
+  const HYP = hypothesis.name;
+  const game = () =>
+    scenario()
+      .define(hypothesis)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(HYP)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island')
+      .battlefield(BEARS, { label: 'bears' }) // 2/2
+      .battlefield('Llanowar Elves', { label: 'elves' }) // 1/1
+      .battlefield('Serra Angel', { label: 'angel' }) // 4/4
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Raging Goblin', { label: 'goblin' }) // 1/1
+      .battlefield(SPIDER, { label: 'spider' }) // 2/4
+      .at('precombatMain', { active: 0, priority: 0 })
+      .build();
+
+  test('no counter, odd: every creature with an odd power (1) goes to its owner’s hand, whoever controls it', () => {
+    const g = game();
+    g.act(0).cast(HYP, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents();
+    g.act(0).chooseOption('odd');
+    g.expect.zone('Llanowar Elves', 'hand', { seat: 0 });
+    g.expect.zone('Raging Goblin', 'hand', { seat: 1 });
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone(SPIDER, 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+
+  test('even: the creatures with an even power (2 and 4) go to their owners’ hands', () => {
+    const g = game();
+    g.act(0).cast(HYP, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents();
+    g.act(0).chooseOption('even');
+    g.expect.zone(BEARS, 'hand', { seat: 0 });
+    g.expect.zone('Serra Angel', 'hand', { seat: 0 });
+    g.expect.zone(SPIDER, 'hand', { seat: 1 });
+    g.expect.zone('Llanowar Elves', 'battlefield', { seat: 0 });
+    g.expect.zone('Raging Goblin', 'battlefield', { seat: 1 });
+  });
+
+  test("the counter is put first: an opponent's 1/1 becomes 2/2, so it is even and not odd (CR 608.2c: in order)", () => {
+    const g = game();
+    g.act(0).cast(HYP, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents('goblin');
+    g.expect.counters('goblin', { '+1/+1': 1 });
+    g.act(0).chooseOption('odd');
+    // the Goblin is 2/2 now: even, it stays; the Elves still have 1 power: odd, it returns
+    g.expect.zone('Raging Goblin', 'battlefield', { seat: 1 });
+    g.expect.zone('Llanowar Elves', 'hand', { seat: 0 });
+  });
+
+  test('zero is even', () => {
+    const zero = parsed('SYNTHETIC Zero Even', 'Creature — Wizard', '', {
+      manaCost: '{1}',
+      power: '0',
+      toughness: '3',
+    });
+    const g = scenario()
+      .define(hypothesis)
+      .define(zero)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(HYP)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island')
+      .battlefield(zero.name)
+      .battlefield('Llanowar Elves')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, priority: 0 })
+      .build();
+    g.act(0).cast(HYP, { pay: true });
+    g.passAll();
+    g.act(0).choosePermanents();
+    g.act(0).chooseOption('even');
+    g.expect.zone(zero.name, 'hand', { seat: 0 });
+    g.expect.zone('Llanowar Elves', 'battlefield', { seat: 0 });
+  });
+});
+
 // END

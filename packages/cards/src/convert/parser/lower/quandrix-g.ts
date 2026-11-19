@@ -70,7 +70,36 @@ export const REMOVE_COUNTERS_SELF: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Choose odd or even. Return each creature with power of the chosen quality to its owner's hand." (CR 608.2d, 208.1, 400.3): the engine's `chooseOne` of two instructions, each the
+ * return of every creature whose power is odd (or even) as that instruction runs; the creatures are those on the battlefield, whoever controls them, and each goes to its owner's hand.
+ */
+export const CHOOSE_PARITY_RETURN: Lowering<IrClause, Effects> = {
+  head: 'chooseParityReturn',
+  id: 'lower.choose-parity-return',
+  needs: ['effect:chooseOne', 'effect:moveToZone', 'selector:powerParity'],
+  lower(clause) {
+    const give = (powerParity: 'odd' | 'even') => ({
+      label: powerParity,
+      effect: {
+        kind: 'moveToZone' as const,
+        objects: {
+          kind: 'each' as const,
+          filter: { zone: 'battlefield' as const, types: ['creature' as const], powerParity },
+        },
+        to: 'hand' as const,
+      },
+    });
+    return {
+      ok: true,
+      value: [{ kind: 'chooseOne', options: [give('odd'), give('even')] }],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const QUANDRIX_G_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DISTRIBUTE_COUNTERS,
   REMOVE_COUNTERS_SELF,
+  CHOOSE_PARITY_RETURN,
 ];

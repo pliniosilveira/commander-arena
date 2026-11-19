@@ -1587,10 +1587,26 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
   id: 'lower.add-counters',
   needs: ['effect:addCounters'],
   takesObjectTest: true,
+  // "You may put a +1/+1 counter on a creature" is read (below) as the choice of up to one creature; any other optional counters instruction is refused.
+  acceptsOptional: true,
   lower(clause, ctx) {
     const counter = arg(clause, 'counter');
     if (counter?.kind !== 'counterSpec') return failure(clause);
     const objectsArg = arg(clause, 'objects');
+    if (
+      clause.optional &&
+      !(
+        objectsArg?.kind === 'noun' &&
+        objectsArg.det === 'a' &&
+        objectsArg.filter.controller === undefined &&
+        !objectsArg.plural &&
+        objectsArg.count === undefined &&
+        objectsArg.ref !== undefined &&
+        arg(clause, 'player') === undefined
+      )
+    ) {
+      return failure(clause);
+    }
     // "Target player puts a +1/+1 counter on each creature they control" (CR 115.1, 122.6): the player is a target of its own (read first, so it is the slot "they" names), and the
     // permanents are the `each` selector of that player's.
     const putter = arg(clause, 'player');
@@ -1613,6 +1629,11 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
       (objectsArg.upTo === true ||
         (objectsArg.filter.controller === 'you' &&
           !objectsArg.plural &&
+          objectsArg.count === undefined) ||
+        // "You may put a +1/+1 counter on a creature" (Zimone's Hypothesis, Quandrix Unlimited deck, group G): a creature of any player, none chosen is not doing it.
+        (clause.optional &&
+          objectsArg.filter.controller === undefined &&
+          !objectsArg.plural &&
           objectsArg.count === undefined))
     ) {
       const filter = lowerFilter(objectsArg);
@@ -1620,15 +1641,16 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
       const count = amountArg(clause, 'count', ctx);
       if (!count.ok) return count;
       ctx.chosenObjectRefs.add(objectsArg.ref);
+      const anyPlayer = clause.optional && objectsArg.filter.controller === undefined;
       return {
         ok: true,
         value: [
           {
             kind: 'chooseObjects',
             id: objectsArg.ref,
-            filter: { ...filter.value, controller: 'you' },
+            filter: anyPlayer ? filter.value : { ...filter.value, controller: 'you' },
             count: 1,
-            ...(objectsArg.upTo === true ? {} : { exactly: true as const }),
+            ...(objectsArg.upTo === true || anyPlayer ? {} : { exactly: true as const }),
           },
           {
             kind: 'addCounters',

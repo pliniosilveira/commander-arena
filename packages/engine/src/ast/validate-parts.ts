@@ -526,6 +526,9 @@ export function checkFilter(
       issue(out, `${path}.${key}`, 'only an ability has a creature that dealt the damage');
     }
   }
+  if (f.powerParity !== undefined && !isOneOf(f.powerParity, ['odd', 'even'])) {
+    issue(out, `${path}.powerParity`, "powerParity must be 'odd' or 'even'");
+  }
   // D-111: power, toughness and mana value comparisons.
   for (const key of ['power', 'toughness', 'manaValue', 'colorCount'] as const) {
     const c = f[key];
@@ -3976,11 +3979,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (e.filter.zone !== undefined && e.filter.zone !== 'battlefield') {
         issue(out, `${path}.filter.zone`, 'chooseObjects selects permanents on the battlefield');
       }
-      if (e.filter.controller !== 'you') {
+      // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
+      // controller's own permanents.
+      if (e.filter.controller !== 'you' && !(e.filter.controller === undefined && e.exactly !== true)) {
         issue(
           out,
           `${path}.filter.controller`,
-          'chooseObjects must select permanents the controller controls',
+          'chooseObjects must select permanents the controller controls (or, with no controller said, any permanent when the choice is not exactly)',
         );
       }
       checkFilter(e.filter, `${path}.filter`, out, scope);

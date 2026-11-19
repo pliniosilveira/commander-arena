@@ -291,6 +291,14 @@ const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
 
 /**
+ * "Then choose odd or even. Return each creature with power of the chosen quality to its owner's hand." (Zimone's Hypothesis, CR 608.2d): the choice and the instruction that reads it are one
+ * instruction, kept together for `effect.choose-parity-return`.
+ */
+const CHOOSE_ODD_OR_EVEN = /^(?:then )?choose odd or even\.$/i;
+const RETURN_CHOSEN_PARITY =
+  /^return each creature with power of the chosen quality to its owner['’]s hand\.$/i;
+
+/**
  * "Prevent all combat damage that would be dealt to you this turn. For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying." (CR 615.5):
  * the second sentence is the additional effect of the prevention the first makes, so the two are read as one instruction (`effect.prevent-all-create-tokens`).
  */
@@ -641,6 +649,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
+        (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
