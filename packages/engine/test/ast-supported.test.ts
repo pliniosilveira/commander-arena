@@ -9,6 +9,7 @@ import { FIXTURE_CARDS, fixtureCard, syntheticCard } from '../src/cards/fixtures
 /** The executable keywords (CR 702), each proven by a scenario test (see the list below). */
 const EXECUTABLE_KEYWORDS = [
   'crew', // scenario-xx-crew
+  'station', // scenario-xx-station
   'deathtouch', // scenario-05, scenario-xx-combat-deathtouch
   'defender', // scenario-xx-combat-attack-restrictions
   'doubleStrike', // scenario-06
@@ -132,6 +133,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   flashback: { kind: 'flashback', cost: [{ kind: 'mana', symbols: ['2'] }] },
   ward: { kind: 'ward', cost: [{ kind: 'mana', symbols: ['2'] }] },
   crew: { kind: 'crew', power: 2 },
+  station: { kind: 'station' },
   landwalk: { kind: 'landwalk', landType: 'Island' },
   fear: { kind: 'fear' },
   intimidate: { kind: 'intimidate' },

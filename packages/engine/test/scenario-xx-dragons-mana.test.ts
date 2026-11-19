@@ -25,7 +25,7 @@ describe('the cards are valid', () => {
     expect(validateCard(syntheticCard(name))).toEqual([]);
   });
 
-  test('"for each" mana belongs to a spell or a triggered ability, not to a mana ability', () => {
+  test('"for each" mana in a mana ability reads what the game says as it resolves: no X, no permanent given up as a cost (CR 605.3b)', () => {
     const card = syntheticCard(HASTY);
     const face = card.faces[0];
     if (face === undefined) throw new Error('no face');
@@ -38,13 +38,24 @@ describe('the cards are valid', () => {
             {
               kind: 'mana',
               cost: [{ kind: 'tap' }],
-              production: { kind: 'fixed', mana: ['R'], times: 2 },
+              production: { kind: 'fixed', mana: ['R'], times: { kind: 'x' } },
+            },
+            {
+              kind: 'mana',
+              cost: [{ kind: 'sacrifice', what: { kind: 'this' } }],
+              production: {
+                kind: 'fixed',
+                mana: ['R'],
+                times: { kind: 'countOf', filter: { types: ['creature'], controller: 'you' } },
+              },
             },
           ],
         },
       ],
     };
-    expect(JSON.stringify(validateCard(bad as never))).toContain('never a count');
+    const text = JSON.stringify(validateCard(bad as never));
+    expect(text).toContain('what the game says now');
+    expect(text).toContain('could change with what is given up');
   });
 
   test('the count of a combination is from 2 to 4', () => {
