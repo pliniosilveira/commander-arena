@@ -36,6 +36,7 @@ import { isHandCyclingStatic, lowerHandCyclingStatic } from './eternal-might';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerGraveyardAbilityCostReduction } from './gisa-g4';
 import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
+import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
@@ -563,6 +564,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:allCreatureTypes'];
     case 'handCycling':
       return ['static:grantKeywordToHandCards'];
+    case 'graveyardFlashback':
+      return ['static:grantFlashbackToGraveyardCards'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'attackTax':
@@ -850,6 +853,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isKeepsDamage(first)) return lowerKeepsDamage(ability);
   // Issue 104 (CR 702.29a, 613.1f): "Each creature card in your hand has cycling {1}{U}."
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
+  // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
+  if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
   const parts: IrStaticPart[] = [
     { subject: statement.subject, effects: statement.effects },
     ...(statement.also ?? []),
@@ -1122,6 +1127,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:loseTypes',
   'static:allCreatureTypes',
   'static:grantKeywordToHandCards',
+  'static:grantFlashbackToGraveyardCards',
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
   'static:setPt',

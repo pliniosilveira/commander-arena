@@ -192,8 +192,8 @@ export const STATIC_GROUP_ENTERS_TAPPED = defineRule<IrStatic>({
  * `static.spells-cant-be-countered`: "Creature spells you control can't be countered." (stage P40, D-186, CR 101.2, 604.1, 701.6a: while the
  * permanent has the ability, a spell of its controller that the subject describes is not countered; it stays on the stack and resolves). The
  * subject is the kind of spell and "you control": a card type or a subtype ("Creature spells", "Dragon spells"), a list of them, "noncreature",
- * or none ("Spells you control"). The spell's own "can't be countered" is `static.self`. Not read: another controller ("Spells your opponents
- * control", "Spells can't be countered"), "you cast", a quality of the spell ("with mana value 4 or greater", "that target ..."), "unless", and "or"
+ * or none ("Spells you control"). The spell's own "can't be countered" is `static.self`. Without "you control" ("Spells can't be countered.") every spell is
+ * meant, whoever controls it. Not read: another controller ("Spells your opponents control"), "you cast", a quality of the spell ("with mana value 4 or greater", "that target ..."), "unless", and "or"
  * in a list of types.
  */
 export const STATIC_SPELLS_CANT_BE_COUNTERED = defineRule<IrStatic>({
@@ -205,13 +205,14 @@ export const STATIC_SPELLS_CANT_BE_COUNTERED = defineRule<IrStatic>({
     "Creature spells you control can't be countered.",
     'Creature spells you control can’t be countered.',
     "Spells you control can't be countered.",
+    "Spells can't be countered.",
+    "Creature spells can't be countered.",
     "Noncreature spells you control can't be countered.",
     "Dragon spells you control can't be countered.",
     "Instant and sorcery spells you control can't be countered.",
   ],
   rejects: [
     "Creature spells you control can't be countered",
-    "Creature spells can't be countered.",
     "Creature spells your opponents control can't be countered.",
     "Creature spells you cast can't be countered.",
     "Creature spell you control can't be countered.",
@@ -226,15 +227,17 @@ export const STATIC_SPELLS_CANT_BE_COUNTERED = defineRule<IrStatic>({
     // The subject and "you control can't be countered" are read as one, quietly: a line that merely starts like a subject (a cost reduction,
     // "Creature spells you cast cost {1} less") was never this statement, and its diagnostic must not move.
     const r = sequence(
-      quiet(sequence(spellSubject(), pattern(/ you control can['’]t be countered/iu))),
+      quiet(sequence(spellSubject(), pattern(/(?: you control)? can['’]t be countered/iu))),
       literal('.'),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [[filter]] = r.value;
+    const [[filter, words]] = r.value;
+    const youControl = /you control/iu.test(words[0]);
     const subject: IrNoun = {
       kind: 'noun',
       det: 'each',
-      filter: { ...filter, controller: 'you' },
+      // "Spells can't be countered." (CR 101.2, 701.6a): no "you control" names every spell, whoever controls it.
+      filter: youControl ? { ...filter, controller: 'you' } : filter,
       upTo: false,
       plural: true,
       other: false,

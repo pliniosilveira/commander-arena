@@ -1941,6 +1941,12 @@ export type ContinuousChange =
       readonly exileInstead?: true;
     }
   /**
+   * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (`gainFlashbackFromManaCost`, CR 702.34a, 611.2a, 611.2c):
+   * each card the effect's `objects` names, in its owner's graveyard, has flashback with the cost equal to its mana cost until the effect ends. No layer: read where casting is
+   * decided (`rules/flashback-grant.ts`).
+   */
+  | { readonly kind: 'flashbackFromManaCost' }
+  /**
    * "Gain control of target creature" (`gainControl`, D-189, CR 613.1b): `seat` controls each permanent the effect's `objects` names while the effect
    * lasts. Layer 2: `controllerOf` (`rules/control.ts`) reads it, after the stored controller (the player the permanent entered under, CR 110.2) and
    * before anything else; of several the one with the latest timestamp decides (CR 613.7), and one that ends leaves the others. It never changes the

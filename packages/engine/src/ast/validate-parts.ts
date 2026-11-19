@@ -5915,6 +5915,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.duration`, 'the abilities are gained until end of turn');
       }
       break;
+    case 'gainFlashbackFromManaCost':
+      // CR 702.34a: "each instant and sorcery card in your graveyard gains flashback until end of turn": a filter of the cards, for the rest of the turn.
+      checkFilter(e.what, `${path}.what`, out);
+      if (
+        e.what?.zone !== undefined ||
+        e.what?.controller !== undefined ||
+        e.what?.owner !== undefined
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards name no zone, controller or owner (they are cards of your graveyard)',
+        );
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the flashback is gained until end of turn');
+      }
+      break;
     case 'mayCastSpells':
       // Issue 159: "you may cast Zombie spells from your graveyard this turn": a filter of the spells, for the rest of the turn.
       checkFilter(e.spells, `${path}.spells`, out);

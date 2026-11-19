@@ -10,6 +10,7 @@ import {
   buybackCostOf,
   flashbackCostOf,
   kickerLikeCostOf,
+  manaCostAsFlashbackCost,
   multikickerCostOf,
   replicateCostOf,
 } from './rules/alt-costs';
@@ -393,7 +394,11 @@ export function checkInvariants(state: GameState): string[] {
       problems.push(`${id} has transformed but is not on the battlefield`);
     }
     if (obj.stack?.flashback === true) {
-      if (obj.stack.kind !== 'spell' || flashbackCostOf(face) === null) {
+      // CR 702.34a: a printed flashback, or flashback with the cost equal to the mana cost that something gave the card.
+      if (
+        obj.stack.kind !== 'spell' ||
+        (flashbackCostOf(face) === null && manaCostAsFlashbackCost(face) === null)
+      ) {
         problems.push(`${id} was cast with flashback but is not a spell with flashback`);
       }
       if (obj.zone !== 'stack')

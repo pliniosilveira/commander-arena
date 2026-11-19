@@ -1524,6 +1524,11 @@ export type IrStaticEffect =
    * `cost` (a mana cost). The subject of the statement is `you`.
    */
   | { readonly kind: 'handCycling'; readonly cardTypes: readonly string[]; readonly cost: IrCost }
+  /**
+   * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 118.9, 613.1f): the cards of the graveyard of the
+   * controller that `cards` names (a noun with no zone and no controller). The subject of the statement is `you`.
+   */
+  | { readonly kind: 'graveyardFlashback'; readonly cards: IrNoun }
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */
