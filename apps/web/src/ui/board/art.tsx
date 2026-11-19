@@ -69,7 +69,14 @@ export function Art({
   tokenDefinition,
 }: ArtProps) {
   const tokenUrl = useTokenArt(tokenDefinition, version);
-  const url = tokenDefinition === undefined ? imageUrl(name, isToken, version, back) : tokenUrl;
+  // Issue 32: a token that is a copy of a card has the card's mana cost (no real token has one) and no token card of its
+  // own on Scryfall, so it is drawn with the art of the card it copies.
+  const copiesACard = tokenDefinition !== undefined && tokenDefinition.manaCost !== null;
+  const url = copiesACard
+    ? imageUrl(name, false, version, back)
+    : tokenDefinition === undefined
+      ? imageUrl(name, isToken, version, back)
+      : tokenUrl;
   if (url === null) return null;
   return <LoadedArt key={url} url={url} className={className} style={style} />;
 }

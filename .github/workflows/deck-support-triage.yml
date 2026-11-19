@@ -48,7 +48,8 @@ concurrency:
 jobs:
   triage:
     name: is the request complete?
-    if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.snapshot_only) || startsWith(github.event.issue.title, 'deck support') }}
+    # A title such as "Deck support: make the check loop cheap" is a discussion about the routine, not a request (the button writes "deck support <deck name>").
+    if: ${{ (github.event_name == 'workflow_dispatch' && !inputs.snapshot_only) || (startsWith(github.event.issue.title, 'deck support') && !startsWith(github.event.issue.title, 'deck support:') && !startsWith(github.event.issue.title, 'deck support triage')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -184,6 +185,33 @@ jobs:
             gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -f body="$body"
           else
             gh issue comment "$NUMBER" --body "$body"
+          fi
+      # Issue 284: the rulings of every unsupported card of a complete request, fetched once here (a runner can reach Scryfall, the agent's session cannot), so a
+      # build does not start one `Scryfall lookup` run per card. One comment of github-actions with the marker `<!-- deck-support-rulings -->` and the sha256 of
+      # the description; the routine reads it with `pnpm corpus:rulings-from-comment`. A failure here never fails the triage: the routine falls back to the lookup.
+      - name: Fetch the rulings of the unsupported cards
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(jq -r .complete "$RUNNER_TEMP/result.json")" != "true" ]; then
+            echo "the request is not complete: no rulings fetched"
+            exit 0
+          fi
+          NUMBER=$(cat "$RUNNER_TEMP/number")
+          digest=$(sha256sum "$RUNNER_TEMP/issue.md" | cut -d' ' -f1)
+          code=0
+          node tools/corpus/fetch-rulings-cli.ts --body "$RUNNER_TEMP/issue.md" --out "$RUNNER_TEMP/rulings.md" --digest "$digest" > "$RUNNER_TEMP/rulings.json" || code=$?
+          cat "$RUNNER_TEMP/rulings.json" || true
+          if [ "$code" != 0 ] || [ ! -s "$RUNNER_TEMP/rulings.md" ]; then
+            echo "no rulings comment (exit $code)"
+            exit 0
+          fi
+          existing=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${NUMBER}/comments" --paginate --jq '[.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- deck-support-rulings -->")))][0].id // empty' | head -n 1)
+          if [ -n "$existing" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing}" -F body=@"$RUNNER_TEMP/rulings.md" > /dev/null || echo "the rulings comment could not be updated"
+          else
+            gh issue comment "$NUMBER" --body-file "$RUNNER_TEMP/rulings.md" || echo "the rulings comment could not be posted"
           fi
 
   snapshot:
