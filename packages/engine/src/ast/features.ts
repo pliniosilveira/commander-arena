@@ -698,7 +698,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map'],
+  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -1169,6 +1169,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Clue',
     'Gold',
     'Map',
+    'Gingerbrute',
     'custom',
     'copyOf',
     'tapped',
@@ -1360,6 +1361,8 @@ export const RESTRICTABLE_BY_EFFECT: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // Issue 81 (Gingerbrute): "can't be blocked this turn except by creatures with haste".
+  'cantBeBlockedExceptByHaste',
   'attacksEachCombat',
   'mustBeBlocked',
   // Galadriel group 3: "Its activated abilities can't be activated this turn."
@@ -1975,6 +1978,7 @@ export const TOKEN_KINDS = [
   'Clue',
   'Gold',
   'Map',
+  'Gingerbrute',
   'Blood',
   'custom',
   /** "A token that's a copy of target creature" (CR 707.2): the engine's `copyOf`. */

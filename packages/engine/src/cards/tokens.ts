@@ -25,7 +25,51 @@ const artifactToken = (
   abilities,
 });
 
+/**
+ * The Gingerbrute token (issue 81, Ginger, Queen of Sweets; the reminder text of the cards that make it): "It's a {1} 1/1 Food Golem artifact creature with haste, \"{1}: This token can't
+ * be blocked this turn except by creatures with haste,\" and \"{2}, {T}, Sacrifice this token: You gain 3 life.\"" It is a Food (CR 111.10b: the Food ability) and a creature with mana
+ * value 1, which is its mana cost.
+ */
+export const GINGERBRUTE_TOKEN: TokenDefinition = {
+  name: 'Gingerbrute',
+  manaCost: ['1'],
+  supertypes: [],
+  types: ['artifact', 'creature'],
+  subtypes: ['Food', 'Golem'],
+  colors: [],
+  power: 1,
+  toughness: 1,
+  loyalty: null,
+  defense: null,
+  oracleText:
+    '{1}: This token can\u2019t be blocked this turn except by creatures with haste.\n{2}, {T}, Sacrifice this token: You gain 3 life.',
+  abilities: [
+    { kind: 'keyword', keyword: { kind: 'haste' } },
+    {
+      kind: 'activated',
+      cost: [{ kind: 'mana', symbols: ['1'] }],
+      effect: {
+        kind: 'restrict',
+        objects: { kind: 'this' },
+        restriction: 'cantBeBlockedExceptByHaste',
+        duration: 'untilEndOfTurn',
+      },
+    },
+    {
+      kind: 'activated',
+      cost: [
+        { kind: 'mana', symbols: ['2'] },
+        { kind: 'tap' },
+        { kind: 'sacrifice', what: { kind: 'this' } },
+      ],
+      effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 3 },
+    },
+  ],
+};
+
 export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
+  // Issue 81: the token of Ginger, Queen of Sweets and the cards like it.
+  Gingerbrute: GINGERBRUTE_TOKEN,
   // CR 111.10a: "{T}, Sacrifice this token: Add one mana of any color."
   Treasure: artifactToken('Treasure', '{T}, Sacrifice this token: Add one mana of any color.', [
     {

@@ -1027,7 +1027,7 @@ export interface IrQuotedAbility extends IrNode {
 export interface IrToken extends IrNode {
   readonly kind: 'token';
   // CR 111.10
-  readonly predefined?: 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map' | 'Blood';
+  readonly predefined?: 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map' | 'Gingerbrute' | 'Blood';
   readonly power?: number;
   readonly toughness?: number;
   /** "X/X creature token": use the X value bound by the enclosing ability's where-X clause. */

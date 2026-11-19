@@ -895,3 +895,108 @@ describe('Synthetic Destiny: the creatures come back, as many as were exiled, at
     g.expect.invariants();
   });
 });
+
+// ---- Ginger, Queen of Sweets: "When Ginger enters, you become the monarch. {2}, {T}, Sacrifice Ginger: You gain 6 life. At the beginning of each upkeep, if you're the monarch, create a
+// Gingerbrute token." (CR 725, 603.4, 111.10) and the Gingerbrute: "{1}: This token can't be blocked this turn except by creatures with haste."
+
+const GINGER = parsed(
+  'SYNTHETIC Parsed Ginger',
+  'Legendary Artifact Creature — Food Noble',
+  "When ~ enters, you become the monarch.\n{2}, {T}, Sacrifice ~: You gain 6 life.\nAt the beginning of each upkeep, if you're the monarch, create a Gingerbrute token.",
+  { manaCost: '{3}', power: '3', toughness: '3' },
+);
+
+describe('Ginger: a Gingerbrute at each upkeep while you are the monarch', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(GINGER)
+      .hand(GINGER.name)
+      .battlefield('Plains', 'Plains', 'Plains')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  const gingerbrutes = (g: ReturnType<typeof start>) =>
+    g.state.battlefield.filter(
+      (id) => g.state.objects[id]?.token?.characteristics.name === 'Gingerbrute',
+    );
+
+  test('each upkeep makes one while you are the monarch', () => {
+    const g = start();
+    g.act(0).cast(GINGER.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.monarch(0);
+    g.advanceTo('upkeep', { turn: 2 });
+    g.passAll();
+    expect(gingerbrutes(g)).toHaveLength(1);
+    g.expect.invariants();
+  });
+
+  test('the token is a 1/1 Food Golem artifact creature with haste, worth {1}', () => {
+    const g = start();
+    g.act(0).cast(GINGER.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.advanceTo('upkeep', { turn: 2 });
+    g.passAll();
+    g.expect.derived('Gingerbrute', {
+      types: ['artifact', 'creature'],
+      subtypes: ['Food', 'Golem'],
+      keywords: ['haste'],
+    });
+    g.expect.pt('Gingerbrute', 1, 1);
+  });
+
+  test('it can be sacrificed for 3 life like any Food', () => {
+    const g = start();
+    g.act(0).cast(GINGER.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.advanceTo('upkeep', { turn: 2 });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 3 });
+    g.act(0).activate('Gingerbrute[0]', { ability: 2, pay: true });
+    g.passAll();
+    g.expect.life(0, 23);
+  });
+  test("with {1} it can't be blocked this turn except by creatures with haste", () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(GINGER)
+      .hand(GINGER.name)
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears', 'Raging Goblin')
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(GINGER.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.advanceTo('upkeep', { turn: 2 });
+    g.passAll();
+    g.advanceTo('precombatMain', { turn: 3 });
+    g.act(0).activate('Gingerbrute[0]', { ability: 1, pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(['Gingerbrute[0]']);
+    g.passAll();
+    const bears = g
+      .act(1)
+      .try.declareBlockers([{ blocker: 'Grizzly Bears', attacker: 'Gingerbrute[0]' }]);
+    expect(bears.ok).toBe(false);
+    const goblin = g
+      .act(1)
+      .try.declareBlockers([{ blocker: 'Raging Goblin', attacker: 'Gingerbrute[0]' }]);
+    expect(goblin.ok).toBe(true);
+  });
+});

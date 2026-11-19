@@ -70,7 +70,7 @@ const COUNT = choice(
   ),
 );
 
-const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Blood'] as const;
+const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute', 'Blood'] as const;
 type Predefined = (typeof PREDEFINED)[number];
 
 /** "tapped " between the count and the token ("two tapped Treasure tokens", CR 110.5b: they enter tapped). */
@@ -117,6 +117,7 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Food token',
     'a Clue token',
     'a Gold token',
+    'a Gingerbrute token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
