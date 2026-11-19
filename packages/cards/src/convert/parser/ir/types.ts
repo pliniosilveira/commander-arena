@@ -550,6 +550,7 @@ export type IrAmount =
         | 'milledCreature'
         | 'discardedMost'
         | 'discardedTypeCount'
+        | 'exiledCreatures'
         | 'damageDealt'
         | 'countersRemoved';
       readonly words: readonly string[];

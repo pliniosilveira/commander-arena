@@ -307,6 +307,11 @@ export interface ChosenValues {
 export interface TokenData {
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
+  /** The back face of a double-faced token (the Incubator, CR 111.10i): what `face` 1 reads. */
+  readonly back?: {
+    readonly characteristics: Characteristics;
+    readonly abilities: readonly Ability[];
+  };
   /**
    * The card whose prepare spell this token has, when it is a copy of a preparation card or of a token that has one (CR 722.2b: the existence and values of the
    * prepare spell are part of the copiable values, D-225). Absent for every other token.

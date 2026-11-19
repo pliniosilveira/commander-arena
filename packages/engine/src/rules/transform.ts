@@ -26,9 +26,15 @@ export function runTransform(
   const abilityStamp = ability?.stack?.kind === 'ability' ? ability.timestamp : null;
   for (const id of resolveObjects(state, node.objects, ctx, targets)) {
     const obj = next.objects[id];
-    // A token is not a double-faced card (CR 712.9); a card on any other zone is not a permanent.
-    if (obj?.zone !== 'battlefield' || obj.card === null) continue;
-    const face = transformedFace(definitionOf(next, obj.card), obj.face);
+    // A token is not a double-faced card (CR 712.9) unless it is a double-faced token (CR 701.27a, 111.10i: the Incubator); a card on any other zone is not a permanent.
+    if (obj?.zone !== 'battlefield') continue;
+    if (obj.card === null && obj.token?.back === undefined) continue;
+    const face =
+      obj.card === null
+        ? obj.face === 0
+          ? 1
+          : 0
+        : transformedFace(definitionOf(next, obj.card), obj.face);
     if (face === null) continue; // CR 712.9, 712.10: nothing happens
     // CR 701.27f: an ability of the permanent that tries to transform it does so only if it has not
     // transformed since the ability was put on the stack.

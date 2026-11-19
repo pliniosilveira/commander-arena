@@ -83,6 +83,7 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
@@ -1083,6 +1084,7 @@ export const EFFECT_RULES = [
   ...COPY_SPELL_TWICE_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
+  ...INCUBATE_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   EFFECT_DAMAGE,

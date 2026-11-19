@@ -8247,19 +8247,10 @@
     "fb3f5097-0da0-458c-8508-60823567e2da": {
       "name": "Sunfall",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Exile all creatures. Incubate X, where X is the number of creatures exiled this way.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "a9b6e373"
+      "ast": "eb348dce"
     },
     "fb60739e-1dc3-481d-a056-ad72e665c680": {
       "name": "Rite of Replication",
@@ -8385,7 +8376,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 714,
+      "supported": 715,
       "total": 738
     }
   }

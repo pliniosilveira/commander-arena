@@ -1244,3 +1244,64 @@ describe('Proteus Staff: the creature goes to the bottom and its controller gets
     g.expect.invariants();
   });
 });
+
+// ---- Sunfall: "Exile all creatures. Incubate X, where X is the number of creatures exiled this way." (CR 701.53a, 111.10i, 701.27a: the Incubator is a double-faced token; transforming
+// it turns over the same permanent, so its counters stay).
+
+const SUNFALL = parsed(
+  'SYNTHETIC Parsed Sunfall',
+  'Sorcery',
+  'Exile all creatures. Incubate X, where X is the number of creatures exiled this way.',
+  { manaCost: '{3}{W}{W}', colors: ['W'] },
+);
+
+describe('Sunfall: an Incubator with a counter for each creature exiled, which transforms into a creature', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(SUNFALL)
+      .hand(SUNFALL.name)
+      .battlefield(
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Plains',
+        'Grizzly Bears',
+      )
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Giant Spider')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('every creature is exiled and an Incubator enters with that many +1/+1 counters', () => {
+    const g = start();
+    g.act(0).cast(SUNFALL.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone('Giant Spider', 'exile', { seat: 1 });
+    g.expect.counters('Incubator', { '+1/+1': 2 });
+    g.expect.derived('Incubator', { types: ['artifact'], subtypes: ['Incubator'] });
+    g.expect.invariants();
+  });
+
+  test('{2}: transform turns it into a 2/2 Phyrexian artifact creature, counters kept', () => {
+    const g = start();
+    g.act(0).cast(SUNFALL.name, { pay: true });
+    g.passAll();
+    g.act(0).activate('Incubator', { pay: true });
+    g.passAll();
+    g.expect.derived('Phyrexian Token', {
+      types: ['artifact', 'creature'],
+      subtypes: ['Phyrexian'],
+    });
+    g.expect.counters('Phyrexian Token', { '+1/+1': 2 });
+    g.expect.pt('Phyrexian Token', 2, 2);
+  });
+});

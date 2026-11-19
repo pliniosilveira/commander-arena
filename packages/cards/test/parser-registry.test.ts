@@ -1062,6 +1062,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.controller-reveals-until-puts': spell(
     (e) => `Put target creature on the bottom of its owner's library. ${cap(e)}.`,
   ),
+  'amount.where-x-exiled-creatures': spell((e) => `Exile all creatures. Incubate X, ${e}.`),
+  'effect.incubate': spell((e) => `Exile all creatures. ${cap(e)}.`),
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),

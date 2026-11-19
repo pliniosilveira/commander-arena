@@ -3159,6 +3159,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Gold',
   'Map',
   'Gingerbrute',
+  'Incubator',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */

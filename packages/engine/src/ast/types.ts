@@ -1486,12 +1486,24 @@ export type AlternativeCost =
 /** A token defined by the effect that creates it (CR 111.3): its characteristics and abilities. */
 export interface TokenDefinition extends Characteristics {
   readonly abilities: readonly Ability[];
+  /**
+   * The back face of a double-faced token (CR 111.10i, 701.27a, issue 81: the Incubator token): the permanent is the same object when it transforms, so counters and the rest stay. The back face
+   * has no back face of its own. `transform` turns the token over; the characteristics and abilities of the face that is up are the ones it has (layer 1).
+   */
+  readonly back?: Omit<TokenDefinition, 'back' | 'prepareOf'>;
   /** The card whose prepare spell a token copy of a preparation card has (CR 722.2b, D-225). Only the engine sets it, when it copies. */
   readonly prepareOf?: CardId;
 }
 
 /** Predefined tokens (CR 111.10) the engine knows by name. See `cards/tokens.ts`. */
-export type TokenPreset = 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map' | 'Gingerbrute';
+export type TokenPreset =
+  | 'Treasure'
+  | 'Food'
+  | 'Clue'
+  | 'Gold'
+  | 'Map'
+  | 'Gingerbrute'
+  | 'Incubator';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }

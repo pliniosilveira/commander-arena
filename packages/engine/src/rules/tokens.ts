@@ -88,7 +88,14 @@ export function makeTokens(
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
-  const { abilities, prepareOf, ...characteristics } = definition;
+  const { abilities, prepareOf, back, ...characteristics } = definition;
+  const backFace =
+    back === undefined
+      ? undefined
+      : (() => {
+          const { abilities: backAbilities, ...backCharacteristics } = back;
+          return { characteristics: backCharacteristics, abilities: backAbilities };
+        })();
   for (let i = 0; i < count; i += 1) {
     const [id, s1] = allocateObjectId(state);
     const [timestamp, s2] = allocateTimestamp(s1);
@@ -134,7 +141,12 @@ export function makeTokens(
       damage: 0,
       damagedByDeathtouch: false,
       timestamp,
-      token: { characteristics, abilities, ...(prepareOf === undefined ? {} : { prepareOf }) },
+      token: {
+        characteristics,
+        abilities,
+        ...(backFace === undefined ? {} : { back: backFace }),
+        ...(prepareOf === undefined ? {} : { prepareOf }),
+      },
       attachedTo: null,
       protector: null,
       stack: null,

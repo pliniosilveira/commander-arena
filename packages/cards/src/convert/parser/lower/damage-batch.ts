@@ -3,7 +3,7 @@
  * contract as effects.ts: each declares the engine features it needs and is checked before it runs.
  */
 import type { IrClause } from '../ir/types';
-import { type Effects, eachObject, failure } from './clauses';
+import { amountArg, type Effects, eachObject, failure } from './clauses';
 import type { Lowering } from './types';
 
 /** "Tap those creatures" (CR 701.26a): the engine's `tap` of the `triggerSources` of a `combatDamageBatch` trigger. Refused in any other ability. */
@@ -50,7 +50,29 @@ const OWNER_PUTS_ON_LIBRARY: Lowering<IrClause, Effects> = {
     eachObject(clause, ctx, (objects) => ({ kind: 'ownerPutsOnLibrary', objects })),
 };
 
+/**
+ * "Incubate N" (CR 701.53a, 111.10i, issue 81): the Incubator token, which enters with N +1/+1 counters: the engine's `createToken` of the preset, then the counters on the token made (`moved`).
+ */
+const INCUBATE: Lowering<IrClause, Effects> = {
+  head: 'incubate',
+  id: 'lower.incubate',
+  needs: ['effect:createToken', 'token:Incubator', 'effect:addCounters', 'selector:moved'],
+  lower(clause, ctx) {
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [
+        { kind: 'createToken', token: { kind: 'preset', preset: 'Incubator' }, count: 1 },
+        { kind: 'addCounters', objects: { kind: 'moved' }, counter: '+1/+1', count: count.value },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const DAMAGE_BATCH_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  INCUBATE,
   OWNER_PUTS_ON_LIBRARY,
   TAP_TRIGGER_SOURCES,
   STUN_TRIGGER_SOURCES,
