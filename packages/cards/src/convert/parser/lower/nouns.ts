@@ -265,7 +265,13 @@ function lowerFilterAt(
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
   const resolving = filter.manaValueX === true || filter.controllerDamagedBySource === true;
-  if (resolving && (inner || noun.det !== 'each')) return bad([]);
+  // D2 group (CR 107.3a, 601.2b, 601.2c): "target creature with mana value X" reads the X announced before the targets are chosen; the engine reads it in the target
+  // slot of a spell's own text (`validateCard` refuses it anywhere else).
+  const aimedAtX =
+    filter.manaValueX === true &&
+    filter.controllerDamagedBySource !== true &&
+    noun.det === 'target';
+  if (resolving && (inner || (noun.det !== 'each' && !aimedAtX))) return bad([]);
   if (filter.manaValueX === true) parts.push('selector:manaValueX');
   if (filter.controllerDamagedBySource === true) parts.push('selector:controllerDamagedBySource');
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
@@ -722,7 +728,16 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         void _amount;
         subject = { ...noun, filter: rest };
       }
-      if (noun.filter.manaValueAtMostX === true) {
+      if (noun.filter.manaValueAtMostX === true && ctx.xIs === null && ctx.entersX) {
+        // CR 107.3m (D2 group, Kinetic Ooze): "destroy up to one target artifact or enchantment with mana value X or less" in the enters trigger of the permanent itself: the X of the
+        // spell it came from.
+        const missing = missingFeatures(['selector:manaValueAtMost', 'amount:enteredX']);
+        if (missing.length > 0) return failure(noun, missing);
+        atMost = { kind: 'enteredX' };
+        const { manaValueAtMostX: _x, ...rest } = noun.filter;
+        void _x;
+        subject = { ...noun, filter: rest };
+      } else if (noun.filter.manaValueAtMostX === true) {
         const defined = ctx.xIs;
         if (defined === null) return failure(noun, []);
         const missing = missingFeatures(['selector:manaValueAtMost']);
@@ -741,6 +756,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         atMost === undefined
           ? lowered
           : { ...lowered, value: { ...lowered.value, manaValueAtMost: atMost } };
+      // "target creature with mana value X" (CR 107.3a, 601.2b): the spell announces the X its target is read against (`SpellText.x`).
+      if (filter.value.manaValueX === true) ctx.usesX = true;
       // "for each opponent, exile up to one target ... that player controls" (stage P33, D-150, CR 115.1, 601.2c): one slot with at most one
       // target of each opponent, whose bounds are those of the slot ("up to one" for each).
       // "up to that many target creatures" (stage P41, D-188, CR 603.12): as many targets, at most, as the permanents the resolution that created

@@ -102,6 +102,7 @@ import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
 import { QUANDRIX_LOWERINGS } from './quandrix';
+import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
@@ -2068,6 +2069,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...NIV_LOWERINGS,
   ...QUANDRIX_LOWERINGS,
+  // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
+  ...QUANDRIX_D2_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
   ...FLASH_PERMISSION_LOWERINGS,

@@ -411,6 +411,11 @@ class Binder {
         return { ...amount, of: this.noun(amount.of) };
       case 'lifeTotalOf':
         return { ...amount, of: this.noun(amount.of) };
+      case 'commanderCasts':
+        // CR 903.8: "target player draws ... for each time they've cast a commander": the player is the one the text named before.
+        return amount.player === undefined
+          ? amount
+          : { ...amount, player: this.noun(amount.player) };
       case 'half':
       case 'multiple':
       case 'minus':

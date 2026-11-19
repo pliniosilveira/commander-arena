@@ -372,7 +372,10 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // CR 107.3a: every value from the least to the most the controller could pay, one action each;
       // the announcement can be taken back (CR 733): the cast or activation is rewound.
       return [
-        ...range(d.min, d.max).map((value) => ({ kind: 'chooseX' as const, value })),
+        ...(d.values ?? range(d.min, d.max)).map((value) => ({
+          kind: 'chooseX' as const,
+          value,
+        })),
         // D-151: "pay any amount of {R}" is asked while an ability resolves: there is no cast to rewind.
         ...(d.purpose === 'payAnyAmount' || d.purpose === 'drawUpTo'
           ? []

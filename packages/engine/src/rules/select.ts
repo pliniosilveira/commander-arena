@@ -319,9 +319,14 @@ function subjectSubtypesOf(
 }
 
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */
-function xFilterContext(state: GameState, ctx: SelectContext): { x?: number } {
-  const x = ctx.x ?? (ctx.source === null ? null : state.objects[ctx.source]?.stack?.x);
-  return x === null || x === undefined ? {} : { x };
+function xFilterContext(state: GameState, ctx: SelectContext): { x?: number; xUnannounced?: true } {
+  const source = ctx.source === null ? undefined : state.objects[ctx.source];
+  const x = ctx.x ?? source?.stack?.x;
+  if (x !== null && x !== undefined) return { x };
+  // CR 601.2b: a spell still in a zone it can be cast from (its card is checked before it is cast) has announced no X yet.
+  return source !== undefined && source.zone !== 'stack' && source.zone !== 'battlefield'
+    ? { xUnannounced: true }
+    : {};
 }
 
 /** The players the source dealt combat damage to this turn (D-139, CR 510.2). */
@@ -355,6 +360,14 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  // CR 107.3m: the X of the spell the permanent that has the ability came from, which the permanent remembers (`castX`), or its last-known information.
+  if (amount.kind === 'enteredX') {
+    const source =
+      ctx.source === null
+        ? undefined
+        : (state.objects[ctx.source] ?? state.lki[ctx.source]?.object);
+    return source?.castX ?? 0;
+  }
   if (amount.kind === 'countOf') {
     const owner = amount.filter.owner;
     const countedContext =

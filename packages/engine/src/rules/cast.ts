@@ -39,7 +39,7 @@ import type { ChosenTarget } from '../state/chosen';
 import type { NewDecision } from '../state/decisions';
 import type { GameEvent } from '../state/events';
 import { definitionOf, getObject, getSeat, loseLifeBy, patchObject, patchSeat } from '../state/ops';
-import type { GameState, PendingTrigger } from '../state/types';
+import type { GameObject, GameState, PendingTrigger } from '../state/types';
 import {
   afterManaPaid,
   payCosts,
@@ -61,6 +61,7 @@ import {
   namedAlternativeCostOf,
   replicateCostOf,
 } from './alt-costs';
+import { amountOf } from './amounts';
 import { becameTargetEvents } from './becomes-target';
 import {
   answerBehold,
@@ -130,7 +131,12 @@ import { setPending } from './set-pending';
 import { sourceInfo } from './source-info';
 import { spellSpendTarget } from './spend-target';
 import { striveTargetCap } from './strive';
-import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
+import {
+  maxTargetCountX,
+  slotCanBeFilled,
+  targetAnswerError,
+  targetChoiceSpecs,
+} from './target-choice';
 import { payableSpellTargets } from './target-payable';
 import { collectTriggers } from './triggers';
 import { hasX, largestPayableX } from './x-value';
@@ -738,6 +744,16 @@ export function answerCostChoice(state: GameState, first: boolean): Result {
 }
 
 /**
+ * "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the most X the face's spell text lets the caster announce; unlimited when it says nothing.
+ */
+function xLimitOf(state: GameState, spell: GameObject, seat: SeatId, source: ObjectId): number {
+  const limit = faceOf(state, spell)?.spell?.xAtMost;
+  return limit === undefined
+    ? Number.MAX_SAFE_INTEGER
+    : Math.max(0, amountOf(state, limit, { controller: seat, source }, []));
+}
+
+/**
  * CR 601.2b, 107.3a (D-103): a spell with an {X} in its mana cost or "pay X life" announces X, after the
  * kicker and before the targets. The decision offers every value up to the largest the caster could pay
  * for the whole cost; when that is 0, or the spell has no X to announce (CR 107.3b: cast without paying
@@ -759,6 +775,8 @@ function toX(state: GameState, events: GameEvent[]): Result {
   });
   const max = Math.min(
     targetCap,
+    // CR 107.3a, 601.2b: "X can't be greater than the number of players in the game."
+    xLimitOf(state, spell, casting.seat, casting.object),
     largestSpellX(state, {
       seat: casting.seat,
       spell,
@@ -769,6 +787,24 @@ function toX(state: GameState, events: GameEvent[]): Result {
       ...(stack.replicated === undefined ? {} : { replicas: stack.replicated }),
     }),
   );
+  // CR 601.2b, 601.2c: "target creature with mana value X": X is announced first, and the spell needs a legal target for it, so only those values are offered.
+  const specs = targetSpecsOf(state, spell);
+  const readsX = specs.some(
+    (spec) =>
+      spec.what.kind === 'object' && JSON.stringify(spec.what.filter).includes('"manaValueX"'),
+  );
+  const least = Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max);
+  const targetable = (x: number): boolean => {
+    const aimed = patchObject(state, casting.object, { stack: { ...stack, x } });
+    return specs.every((spec) =>
+      slotCanBeFilled(aimed, spec, { controller: casting.seat, source: casting.object }),
+    );
+  };
+  const values: number[] = [];
+  if (readsX) {
+    for (let x = least; x <= max; x += 1) if (targetable(x)) values.push(x);
+    if (values.length === 0) return fail('No creature has a mana value that X could be');
+  }
   if (max === 0) {
     const zero = patchObject(state, casting.object, { stack: { ...stack, x: 0 } });
     return toTargets(zero, events);
@@ -785,8 +821,9 @@ function toX(state: GameState, events: GameEvent[]): Result {
         sourceOracleText: info?.oracleText ?? '',
         purpose: 'spell',
         // D-282 (CR 202.3e): "Your opponents can't cast spells with mana value 3 or less" takes the X that leaves the spell inside it out of the offer.
-        min: Math.min(leastAllowedX(state, casting.seat, spell, true) ?? 0, max),
+        min: least,
         max,
+        ...(readsX ? { values } : {}),
         perX,
       },
     ),

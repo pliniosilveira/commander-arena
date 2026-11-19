@@ -50,6 +50,16 @@ const COUNT = choice(
       span,
     }),
   ),
+  // Quandrix Unlimited deck, group D2 (The Goose Mother, CR 107.1a): "create half X, rounded up Food tokens" (`normalizeOracleText` writes the rounding after the X).
+  map(
+    spanned(pattern(/half X, rounded (up|down)(?![\p{L}\p{N}])/iu)),
+    ({ value, span }): IrAmount => ({
+      kind: 'half',
+      of: { kind: 'x', span },
+      round: (value[1] ?? 'down').toLowerCase() as 'down' | 'up',
+      span,
+    }),
+  ),
   map(spanned(positiveCount), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
   map(spanned(pattern(/X(?![\p{L}\p{N}])/u)), ({ span }): IrAmount => ({ kind: 'x', span })),
   // Issue 160 (D-626, CR 120.3): "Whenever ~ is dealt damage, create that many 1/1 ... tokens": the damage of the event that caused the trigger. The engine's `triggerDamage`,
@@ -83,7 +93,8 @@ function predefinedToken(count: Parser<IrAmount>, pluralOnly = false): Parser<Ba
         ),
         TOKEN_WORD,
       ),
-      ([amount, , , , plural]) => (amount.kind !== 'x' && !pluralOnly) || plural,
+      ([amount, , , , plural]) =>
+        (amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural,
     ),
     ([amount, , tapped, predefined]): Bare => ({
       kind: 'token',
@@ -282,7 +293,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
         ),
       ),
       ([amount, , , pt, , , , , plural]) =>
-        ((amount.kind !== 'x' && !pluralOnly) || plural) &&
+        ((amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural) &&
         ((pt[1] === 'X' && pt[2] === 'X') || (pt[1] !== 'X' && pt[2] !== 'X')),
     ),
     ([

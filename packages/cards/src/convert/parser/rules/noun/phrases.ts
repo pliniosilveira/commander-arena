@@ -784,9 +784,22 @@ export function permanentPhrase(
   };
   // A choice of types is read for one object ("target artifact or enchantment"); plurals ("all
   // artifacts and enchantments") join with "and" and are not read.
-  return plural
+  const phrase: Parser<IrFilter> = plural
     ? choice(quiet(pluralAndOr), single)
     : choice(choose, quiet(modifiedChoice), quiet(typeOrSubtype), quiet(subtypeChoice), single);
+  // "target artifact or enchantment with mana value X or less" (D2 group, Kinetic Ooze, CR 202.3): the mana value is at most the X a "where X is ..." defines, or the X of the spell
+  // the permanent came from; the lowering says which, and refuses a text with neither.
+  return (ctx, pos) => {
+    const r = phrase(ctx, pos);
+    if (!r.ok || plural) return r;
+    const atMost = optional(quiet(MANA_VALUE_X_OR_LESS), false)(ctx, r.pos);
+    if (!atMost.ok || !atMost.value) return r;
+    return {
+      ok: true,
+      value: { ...r.value, manaValueAtMostX: true as const, raw: ctx.text.slice(pos, atMost.pos) },
+      pos: atMost.pos,
+    };
+  };
 }
 
 /**

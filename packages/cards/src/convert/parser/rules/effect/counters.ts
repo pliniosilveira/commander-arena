@@ -141,13 +141,15 @@ const DOUBLE_COUNTER_OPERANDS = [
   'noun.target-permanent',
   'noun.each-permanent',
   'noun.all-permanents',
+  // Quandrix Unlimited deck, group D2 (Kinetic Ooze): "any number of other target creatures".
+  'noun.any-number-targets',
 ] as const;
 
 /**
  * `effect.double-counters`: "double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, 122.6): each object gets as
  * many more counters of the kind as it has as the effect resolves. The counters are put by the controller of the spell or ability, so they go
  * through the same placement as "put a +1/+1 counter on" does. Not read: a doubling of a quantity that is not a counter kind ("double the
- * number of counters" with no kind, which is every kind), "any number of" targets, or one with a trailing clause.
+ * number of counters" with no kind, which is every kind) or one with a trailing clause.
  */
 export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
   id: 'effect.double-counters',
@@ -161,13 +163,13 @@ export const EFFECT_DOUBLE_COUNTERS = defineRule<Clauses>({
     'double the number of -1/-1 counters on target creature',
     'double the number of charge counters on ~',
     'double the number of +1/+1 counters on each creature you control',
+    'double the number of +1/+1 counters on any number of other target creatures',
   ],
   rejects: [
     'double the number of counters on target creature',
     'double the number of +1/+1 counters on target creature you control and draw a card',
     'double the number of +1/+1 counters on',
     'double the number of +1/+1 counters',
-    'double the number of +1/+1 counters on any number of other target creatures',
     'double the +1/+1 counters on ~',
     'double the number of +1/+1 counters on ~ until end of turn',
     'double the power and toughness of ~ until end of turn',

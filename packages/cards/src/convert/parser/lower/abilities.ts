@@ -683,7 +683,11 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     const until = event.args.duration;
     const gained = event.args.gains;
     if (what?.kind !== 'noun' || until?.kind !== 'flag') return failure(ability);
-    const blocked = gate(ability, ['ability:replacement', 'replacement:entersAsCopy']);
+    const blocked = gate(ability, [
+      'ability:replacement',
+      'replacement:entersAsCopy',
+      ...(event.args.withX === undefined ? [] : (['ability:copyEntersWithX'] as const)),
+    ]);
     if (blocked !== null) return blocked;
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
@@ -714,6 +718,10 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       duration: until.value ? 'untilEndOfTurn' : 'permanent',
       ...(gains.length > 0 ? { gains } : {}),
       ...(exceptTypes?.kind === 'typeList' ? { addSubtypes: [...exceptTypes.subtypes] } : {}),
+      // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters on it".
+      ...(event.args.withX?.kind === 'flag' && event.args.withX.value
+        ? { withX: { counter: '+1/+1' } }
+        : {}),
       // Issue 104 (CR 707.9b, 702.128b): "except if ~ was embalmed, the token has no mana cost, it's white, and it's a Zombie in addition to its other types".
       ...(event.args.embalmed?.kind === 'flag' && event.args.embalmed.value
         ? {

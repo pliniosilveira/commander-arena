@@ -84,6 +84,8 @@ export function lowerCondition(
       // CR 107.3a, 608.2c (issue 233): the X announced for the spell; only a spell with an {X} in its cost has one (`validateCard` checks it).
       const blocked = missingFeatures(['condition:xAtLeast']);
       if (blocked.length > 0) return failure(c, blocked);
+      // CR 107.3m (D2 group, Kinetic Ooze): in the enters trigger of the permanent itself the X is the one of the spell it came from (`validateCard` checks the cost has an {X}).
+      if (ctx?.entersX === true) return ok({ kind: 'xAtLeast', value: test.atLeast });
       if (ctx?.owner !== 'spell') return failure(c, []);
       ctx.usesX = true;
       return ok({ kind: 'xAtLeast', value: test.atLeast });

@@ -1309,6 +1309,8 @@ export type Instruction =
       readonly manaValueAtMost?: number;
       /** The most the mana values of the cards taken may add up to (`take.totalManaValue`, D-230). */
       readonly totalManaValue?: number;
+      /** Every card the filter matches is taken, with no question (`take.all`, Animist's Awakening: "Put all land cards from among them onto the battlefield"). */
+      readonly all?: true;
       /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
       /** Every card of the top is revealed to everyone (`revealAll`, D-396, CR 701.20a): "Reveal the top five cards of your library". */

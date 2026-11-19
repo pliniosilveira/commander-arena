@@ -120,6 +120,11 @@ export interface FilterContext {
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
   /**
+   * The spell is looked at before its X is announced (CR 601.2b: X comes before the targets), so "with mana value X" may hold for any mana value: the question "can it be cast
+   * at all?" asks it, and the X offered is limited to those that leave a legal target (`rules/cast.ts`).
+   */
+  readonly xUnannounced?: true;
+  /**
    * The players this ability's source dealt combat damage to this turn, for `controllerDealtDamageBySource` (D-139): read from the turn
    * log by the caller; without it the flag matches nothing.
    */
@@ -328,7 +333,13 @@ export function matchesFilterWith(
     if (d.manaValue > ctx.manaValueLimit) return false;
   }
   // CR 107.3a, 202.3 (D-139): "with mana value X", the X of the ability that is resolving.
-  if (filter.manaValueX === true && (ctx.x === undefined || d.manaValue !== ctx.x)) return false;
+  if (filter.manaValueX === true) {
+    if (ctx.x !== undefined) {
+      if (d.manaValue !== ctx.x) return false;
+    } else if (ctx.xUnannounced !== true || d.manaValue === null || d.manaValue === undefined) {
+      return false;
+    }
+  }
   // CR 510.2 (D-139): "whose controller was dealt combat damage by this creature this turn".
   if (
     filter.controllerDealtDamageBySource === true &&

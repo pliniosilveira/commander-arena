@@ -395,6 +395,8 @@ export function checkFilter(
       // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
       (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
+      // CR 107.3m: "with mana value X or less" in the enters trigger of the permanent itself: the X of the spell it came from (`validateCard` checks the trigger and the cost).
+      a?.kind === 'enteredX' ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
@@ -514,7 +516,9 @@ export function checkFilter(
   for (const key of ['manaValueX', 'controllerDealtDamageBySource'] as const) {
     if (f[key] === undefined) continue;
     if (f[key] !== true) issue(out, `${path}.${key}`, `${key} must be true`);
-    else if (ownerScope === undefined) {
+    else if (ownerScope === undefined && key === 'manaValueX' && where.xTarget === true) {
+      // The X of the spell is announced before its targets are chosen (CR 601.2b, 601.2c); the spell checks that it has one.
+    } else if (ownerScope === undefined) {
       issue(out, `${path}.${key}`, `${key} is only read in the 'each' selector of an effect`);
     } else if (key === 'manaValueX' && !ownerScope.xAllowed) {
       issue(out, `${path}.${key}`, 'mana value X is used but nothing in this ability has an X');
@@ -588,6 +592,8 @@ export function checkFilter(
 interface FilterWhere {
   readonly onStack?: boolean;
   readonly inTargets?: boolean;
+  /** CR 107.3a, 202.3: the filter of a target slot of a spell with an {X} in its text: "target creature with mana value X" reads the X announced (D2 group). */
+  readonly xTarget?: boolean;
 }
 
 /** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
@@ -730,7 +736,14 @@ export function declareTargets(
     const what = spec.what;
     switch (what?.kind) {
       case 'object':
-        checkFilter(what.filter, `${p}.what.filter`, out);
+        checkFilter(
+          what.filter,
+          `${p}.what.filter`,
+          out,
+          undefined,
+          undefined,
+          countXAllowed ? { xTarget: true } : {},
+        );
         if (
           what.filter.manaValueAtMost !== undefined &&
           typeof what.filter.manaValueAtMost === 'object' &&
@@ -1715,7 +1728,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'commanderColors':
     case 'commanderManaValue':
+      break;
     case 'commanderCasts':
+      // CR 903.8: "they've cast": the player a selector names, which may be a target of the effect.
+      if (a.player !== undefined) {
+        if (a.of !== undefined) issue(out, `${path}.player`, 'player and of are two readings');
+        checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      }
       break;
     case 'lifeTotalOf':
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
@@ -5202,6 +5221,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen', 'topChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
+      }
+      // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield": every matching card goes, in a reveal of the top, onto the battlefield.
+      if (
+        e.take?.all !== undefined &&
+        (e.take.all !== true ||
+          e.revealAll !== true ||
+          e.take.to !== 'battlefield' ||
+          e.take.min !== undefined ||
+          e.take.totalManaValue !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take.all`,
+          'all is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield, with no min or total mana value',
+        );
       }
       break;
     case 'copyCardAndCast':

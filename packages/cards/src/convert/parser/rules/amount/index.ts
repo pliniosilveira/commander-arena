@@ -6,6 +6,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
+import { HALF_X_AMOUNT_RULES } from './half-x';
 import { HAND_OF_THAT_PLAYER_AMOUNT_RULES } from './hand-of-that-player';
 import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { AMOUNT_FOR_EACH_DIED } from './history';
@@ -482,6 +483,8 @@ export const AMOUNT_RULES = [
   AMOUNT_FOR_EACH_MANA_SPENT,
   // Lorehold Spirit deck, group 2 (issue 86): "for each past vote".
   ...LOREHOLD_G2_AMOUNT_RULES,
+  // Quandrix Unlimited deck, group D2: "half X, rounded down".
+  ...HALF_X_AMOUNT_RULES,
 ];
 
 /** The amounts of a damage or life clause: a number or X, never an article. */
