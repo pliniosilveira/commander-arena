@@ -741,6 +741,26 @@ export function lowerStaticAmount(
     const lowered = lowerAmount(amount, ctx, rule);
     return lowered.ok ? { ok: true, value: { kind: 'commanderCasts' }, rule } : lowered;
   }
+  // "+X/+0, where X is the greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, which reads the printed power of cards
+  // in a zone outside the battlefield (a greatest power among permanents would read layer 7 itself, CR 613.8: refused).
+  if (amount.kind === 'aggregate' && amount.how === 'greatest' && amount.stat === 'power') {
+    const missing = missingFeatures(['amount:greatestPowerAmong']);
+    if (missing.length > 0) return { ok: false, needs: missing, at: amount.span, rule };
+    const zone = amount.of.filter.zone;
+    if (
+      zone === undefined ||
+      zone === 'battlefield' ||
+      zone === 'stack' ||
+      amount.asCast === true ||
+      staticCannotRead(amount.of.filter)
+    ) {
+      return { ok: false, needs: [], at: amount.span, rule };
+    }
+    const filter = countFilter(amount.of);
+    return filter.ok
+      ? { ok: true, value: { kind: 'greatestPowerAmong', filter: filter.value }, rule }
+      : filter;
+  }
   return lowerStaticPtStep(1, amount, ctx, rule);
 }
 
@@ -798,6 +818,7 @@ export const AMOUNT_NEEDS = [
   'amount:commanderCasts',
   'amount:lifeTotalOf',
   'amount:colorsAmong',
+  'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
   'amount:half',
   'amount:multiple',

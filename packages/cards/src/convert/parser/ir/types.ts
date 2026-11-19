@@ -614,6 +614,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'discardedSpellThisWay' }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
+    // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
+    | { readonly kind: 'destroyedThisWay' }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }

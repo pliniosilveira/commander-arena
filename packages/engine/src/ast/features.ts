@@ -1202,6 +1202,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeTotalOf',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
+    // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
+    'greatestPowerAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
@@ -2019,6 +2021,8 @@ export const AMOUNT_KINDS = [
   'lifeTotalOf',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
+  /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
+  'greatestPowerAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */

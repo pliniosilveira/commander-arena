@@ -147,6 +147,8 @@ const LEAD_CONDITIONS = [
   'condition.discarded-spell-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
+  // Death Toll deck, group D: "If a creature is destroyed this way, you gain life equal to its toughness." after a destroy.
+  'condition.destroyed-this-way',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,

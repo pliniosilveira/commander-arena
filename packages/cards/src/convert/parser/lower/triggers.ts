@@ -1334,7 +1334,9 @@ function lowerTriggeredAbility(
   // `mayPay`, which asks its own question, so neither sentence is the ability's "you may".
   const offerSentence = (s: Sentence) =>
     s.clauses.some((c) => c.verb === 'pay' || c.verb === 'payXAtMost');
-  const boughtSentence = (s: Sentence) => s.condition?.test.kind === 'didPrevious';
+  // Death Toll deck, group D: "you may destroy another target creature. If a creature is destroyed this way, ..." is the same offer, and its sentence reads what the destroy did.
+  const boughtSentence = (s: Sentence) =>
+    s.condition?.test.kind === 'didPrevious' || s.condition?.test.kind === 'destroyedThisWay';
   // "You may discard a card. If you do, draw a card." and "You may exile it. When you do, ..." (stage P30, D-135): the offer is the
   // engine's `may` effect and what follows it is a `conditional` or a `reflexive`; neither sentence is the ability's "you may".
   const mayOffer = (s: Sentence, i: number) => {

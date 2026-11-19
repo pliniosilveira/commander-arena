@@ -22,6 +22,7 @@ import { definitionOf, getSeat, objectsInZone } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
+import { copiableValues } from './copiable';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
@@ -146,6 +147,36 @@ export function commandersManaValue(state: GameState, seat: GameObject['controll
   return best;
 }
 
+/**
+ * CR 613.4c, 208.2, 604.3: "the greatest power among creature cards in your graveyard": the largest power the cards of the filter's zone that match it have, 0 with none.
+ * The cards are matched through `typeViewOf` like a count (layers 1, 4 and 5). The power read is the printed one, or what the card's own characteristic-defining ability
+ * gives a `*` (it works in every zone, CR 604.3): never a layer 7 result of another object, so the amount cannot loop (CR 613.8).
+ */
+function greatestPrintedPowerFor(state: GameState, filter: ObjectFilter, source: GameObject): number {
+  const zone = filter.zone ?? 'graveyard';
+  const chosen = chosenOf(state, source.id);
+  const ctx = {
+    controller: controllerOf(state, source),
+    source: source.id,
+    ...(chosen === undefined ? {} : { sourceChosen: chosen }),
+  };
+  let best = 0;
+  for (const id of objectsInZone(state, zone)) {
+    const obj = state.objects[id];
+    if (obj === undefined) continue;
+    const view = typeViewOf(state, obj);
+    if (!matchesFilterWith(state, obj, () => view, filter, ctx)) continue;
+    const values = copiableValues(state, obj);
+    const printed = values.characteristics.power;
+    const power =
+      printed === '*'
+        ? (characteristicPtOf(state, obj, values.abilities)?.power ?? 0)
+        : (printed ?? 0);
+    best = Math.max(best, power);
+  }
+  return best;
+}
+
 /** CR 903.8 (D-229): the times the commanders of `seat` were cast from the command zone this game, all of them added. */
 export function commandersCastCount(state: GameState, seat: GameObject['controller']): number {
   let total = 0;
@@ -174,6 +205,8 @@ export function staticAmountOf(
   if (amount.kind === 'commanderCasts')
     return commandersCastCount(state, controllerOf(state, source));
   if (amount.kind === 'colorsAmong') return colorsAmongForSource(state, amount.filter, source);
+  if (amount.kind === 'greatestPowerAmong')
+    return greatestPrintedPowerFor(state, amount.filter, source);
   if (amount.kind === 'times')
     return amount.factor * countForSource(state, amount.of.filter, source, keywordsOf);
   // D-131: "the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards".

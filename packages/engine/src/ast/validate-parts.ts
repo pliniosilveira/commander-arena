@@ -2141,7 +2141,7 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' = 'countOf',
+  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -2167,6 +2167,19 @@ function checkCountOnly(
       out,
       `${path}.filter.zone`,
       'only permanents on the battlefield have their colors counted',
+    );
+  }
+  if (
+    kind === 'greatestPowerAmong' &&
+    filterSome(
+      amount.filter,
+      (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
+    )
+  ) {
+    issue(
+      out,
+      `${path}.filter.zone`,
+      'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, readsCombatOrSource)) {
@@ -2236,6 +2249,14 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not colors');
     }
     checkCountOnly(amount, path, out, 'colorsAmong', false);
+    return;
+  }
+  // CR 613.4c: "the greatest power among creature cards in your graveyard": plain (+X/+X) only, of cards outside the battlefield.
+  if (amount?.kind === 'greatestPowerAmong') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not a greatest power');
+    }
+    checkCountOnly(amount, path, out, 'greatestPowerAmong', false);
     return;
   }
   if (amount?.kind === 'sum') {
@@ -3855,6 +3876,8 @@ export const MAY_EFFECT_KINDS = [
   'revealTop',
   // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
   'removeCounters',
+  // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
+  'destroy',
 ];
 
 /**

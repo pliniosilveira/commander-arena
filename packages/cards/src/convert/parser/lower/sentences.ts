@@ -941,13 +941,31 @@ function lowerMay(
   ctx: LowerContext,
 ): LowerResult<Effects> | null {
   const next = sentences[i + 1];
-  const follows = next?.condition?.test.kind === 'didPrevious' || next?.reflexive === true;
+  // Death Toll deck, group D (CR 608.2c, 701.8): "you may destroy another target creature. If a creature is destroyed this way, ...": the sentence after the offer runs when
+  // the destroy really destroyed a permanent.
+  const destroyed = next?.condition?.test.kind === 'destroyedThisWay';
+  const follows =
+    next?.condition?.test.kind === 'didPrevious' || next?.reflexive === true || destroyed;
   if (next === undefined || !follows) return null;
   if (
     !sentence.clauses.every((c) => c.optional) ||
     sentence.clauses.some((c) => c.verb === 'pay')
   ) {
     return null;
+  }
+  if (destroyed) {
+    // The condition says "a creature": the engine counts every permanent the destroy destroyed, so the offer must name creatures only (anything else is refused, never guessed).
+    const [only] = sentence.clauses;
+    const objects = only?.args.objects;
+    if (
+      sentence.clauses.length !== 1 ||
+      only?.verb !== 'destroy' ||
+      objects?.kind !== 'noun' ||
+      objects.filter.types?.join() !== 'creature' ||
+      objects.filter.anyOf !== undefined
+    ) {
+      return refuse(sentence);
+    }
   }
   const reflexive = next.reflexive === true;
   const blocked = missingFeatures([
@@ -983,7 +1001,13 @@ function lowerMay(
       only.to === 'exile' &&
       only.objects.kind === 'choose' &&
       only.objects.optional === true);
-  if (only === undefined || more.length > 0 || (!MAY_KINDS.has(only.kind) && !chooseAny)) {
+  // "you may destroy ... If a creature is destroyed this way": checked above to be a destroy of creatures, which is the offer here, and not an offer "if you do" may read.
+  const mayDestroy = destroyed && only?.kind === 'destroy';
+  if (
+    only === undefined ||
+    more.length > 0 ||
+    (!MAY_KINDS.has(only.kind) && !chooseAny && !mayDestroy)
+  ) {
     return refuse(sentence);
   }
   const may: Effect = chooseAny ? only : { kind: 'may', effect: only };
@@ -1005,9 +1029,12 @@ function lowerMay(
     const after = lowerClauses(next.clauses, ctx);
     ctx.xIs = outer;
     if (!after.ok) return after;
+    // "If a creature is destroyed this way": what the destroy counted, not whether the offer was accepted (an indestructible target is accepted and not destroyed).
+    const test = next.condition === undefined ? null : lowerCondition(next.condition, false, ctx);
+    if (destroyed && (test === null || !test.ok)) return test ?? refuse(next);
     const conditional: Effect = {
       kind: 'conditional',
-      condition: { kind: 'didPrevious' },
+      condition: destroyed && test?.ok === true ? test.value : { kind: 'didPrevious' },
       effect: oneEffect(after.value),
     };
     return {

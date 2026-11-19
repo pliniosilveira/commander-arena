@@ -452,6 +452,13 @@ export type StaticPtAmount =
    */
   | { readonly kind: 'colorsAmong'; readonly filter: ObjectFilter }
   /**
+   * "The greatest power among creature cards in your graveyard" (CR 613.4c, 208.2, 604.3): the largest power the cards the filter matches have, a static ability's +X/+0.
+   * `filter` names a zone other than the battlefield and the stack (the cards of a graveyard), reads no power, toughness, keyword, combat or source power, and the power read
+   * is the one printed on the card (the value a characteristic-defining ability gives it, CR 604.3, for a `*`), never a layer 7 result: that keeps layer 7 free of loops
+   * (CR 613.8). Plain (+X/+X) only; no card matched is 0.
+   */
+  | { readonly kind: 'greatestPowerAmong'; readonly filter: ObjectFilter }
+  /**
    * "Each creature you control gets +1/+0 for each time it has attacked this turn" (D-187, CR 508.1): how many times the creature this static ability
    * affects was declared as an attacker this turn (a creature that attacks in two combat phases counts twice), read from the turn log (`TurnLog.attacked`).
    * Plain (+N/+N) only, in a `modifyPt` whose subject is a group of permanents, so "it" is each of them; read for the permanent being looked at.
