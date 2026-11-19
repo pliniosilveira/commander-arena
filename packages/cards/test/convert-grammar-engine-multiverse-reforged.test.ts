@@ -498,3 +498,70 @@ describe('Restless Anchorage: a land that becomes a flying Bird and makes Maps w
     g.expect.zone('Map', 'battlefield', { seat: 0 });
   });
 });
+
+// ---- Nissa, Leyline Tamer: "Landfall — Whenever a land you control enters, draw a card. Then if this is the first time this ability has resolved this turn, reveal cards from the top of your
+// library until you reveal a creature card. Put that card onto the battlefield and the rest on the bottom of your library in a random order." (CR 701.20, 401.4, 603.4).
+
+const LEYLINE = parsed(
+  'SYNTHETIC Parsed Leyline Tamer',
+  'Legendary Creature — Elf Wizard',
+  'Deathtouch, vigilance\nLandfall — Whenever a land you control enters, draw a card. Then if this is the first time this ability has resolved this turn, reveal cards from the top of your library until you reveal a creature card. Put that card onto the battlefield and the rest on the bottom of your library in a random order.',
+  { manaCost: '{3}{G}', colors: ['G'], power: '3', toughness: '3' },
+);
+
+const DIG = parsed(
+  'SYNTHETIC Parsed Land Dig',
+  'Sorcery',
+  'Put a land card from your hand onto the battlefield.',
+  { manaCost: '{W}', colors: ['W'] },
+);
+
+describe('Nissa: the reveal happens only the first time the ability resolves each turn', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(LEYLINE)
+      .battlefield(LEYLINE.name)
+      .hand('Forest')
+      .library('Plains', 'Giant Spider', 'Plains', 'Grizzly Bears', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('the first land draws and puts the first creature card revealed onto the battlefield', () => {
+    const g = start();
+    g.act(0).playLand('Forest');
+    g.passAll();
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'library', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('the second land of the turn only draws', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(LEYLINE)
+      .define(DIG)
+      .battlefield(LEYLINE.name, 'Plains')
+      .hand('Forest', 'Mountain', DIG.name)
+      .library('Plains', 'Giant Spider', 'Plains', 'Grizzly Bears', 'Plains', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).playLand('Forest');
+    g.passAll();
+    // The first land entered: the Spider came onto the battlefield. A second land enters now (put there by a spell): only a card is drawn.
+    g.act(0).cast(DIG.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'library', { seat: 0 });
+    g.expect.invariants();
+  });
+});

@@ -341,7 +341,7 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
  * the card found and the rest go), kept together so `effect.reveal-until` reads them as one. Only both in a row.
  */
 const REVEAL_UNTIL =
-  /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
+  /^(?:then if this is the (?:first|second|third|fourth) time this ability has resolved this turn, )?(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD = /^put (?:that card|those [\p{L}]+ cards) [^.]*\.$/iu;
 /**
  * "Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the
