@@ -33,7 +33,12 @@ export function declineCastFree(state: GameState): ResolveOutcome | null {
   const res = state.resolution;
   if (a === null || res === null) return null;
   return continueResolution({ ...state, pending: null, resolution: { ...res, queue: a.rest } }, [
-    { kind: 'optionalAnswered', seat: res.controller, source: res.source, accepted: false },
+    {
+      kind: 'optionalAnswered',
+      seat: a.head.seat ?? res.controller,
+      source: res.source,
+      accepted: false,
+    },
   ]);
 }
 
@@ -45,13 +50,15 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
   const a = asking(state);
   const res = state.resolution;
   if (a === null || res === null) return fail('Nothing is asking');
-  const begun = beginCast(state, res.controller, card, 'free', 0, true);
+  // "... then they may cast that card": the player the effect names casts it (and controls the spell).
+  const caster = a.head.seat ?? res.controller;
+  const begun = beginCast(state, caster, card, 'free', 0, true);
   if (!begun.ok) return begun;
   const resolving = begun.state.resolution;
   if (resolving === null) return fail('The resolution is gone');
   const accepted: GameEvent = {
     kind: 'optionalAnswered',
-    seat: res.controller,
+    seat: caster,
     source: res.source,
     accepted: true,
   };
@@ -60,8 +67,16 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
     a.head.remaining === undefined ? 0 : a.head.remaining === 'any' ? 'any' : a.head.remaining - 1;
   const again: readonly Instruction[] =
     left === 'any' || left > 0 ? [{ ...a.head, remaining: left, chosen: null }] : [];
-  return ok({ ...begun.state, resolution: { ...resolving, queue: [...again, ...a.rest] } }, [
-    accepted,
-    ...begun.events,
-  ]);
+  // CR 608.2c (issue 100): a spell was cast, which "if you do" reads (`performed`).
+  return ok(
+    {
+      ...begun.state,
+      resolution: {
+        ...resolving,
+        queue: [...again, ...a.rest],
+        performed: (resolving.performed ?? 0) + 1,
+      },
+    },
+    [accepted, ...begun.events],
+  );
 }

@@ -652,6 +652,11 @@ export interface ObjectFilter {
    */
   readonly manaValueAtMost?: Amount;
   /**
+   * "a spell with lesser mana value" (CR 202.3, Baral and Kari Zev): as `manaValueAtMost` with the limit not included: the mana value of the object is less than the amount
+   * (the same amounts, `manaValueOf` of the `triggerSubject` of a `castSpell` trigger among them). A filter has one mana value limit.
+   */
+  readonly manaValueBelow?: Amount;
+  /**
    * Only objects whose power is less than the power of this ability's source (CR 702.134a, Mentor, D-120):
    * "target attacking creature with power less than this creature's power". The source's power is read as it
    * is now, or from last-known information if it has left the battlefield (CR 113.7a). Refused where
@@ -711,6 +716,11 @@ export interface ObjectFilter {
    * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
    */
   readonly sharesCreatureTypeWith?: 'triggerSubject';
+  /**
+   * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
+   * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
+   */
+  readonly sharesCardTypeWith?: 'triggerSubject';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
@@ -734,6 +744,11 @@ export interface ObjectFilter {
    * static ability and where `derive` matches filters.
    */
   readonly targetsObject?: ObjectFilter;
+  /**
+   * "A spell that targets a player" (CR 115.1, 601.2c, Shiko and Narset, Unified: "copy that spell if it targets a permanent or player", read as a disjunction of `targetsObject`
+   * of a permanent and this): a spell or ability on the stack with at least one chosen target that is a player. Read as `targetsObject` is, with the same limits.
+   */
+  readonly targetsPlayer?: true;
   /**
    * "A spell that targets only this creature" (CR 115.9c, D-437): a spell or ability on the stack whose chosen targets are one object, whatever
    * the number of times it was chosen (an object chosen for two instances of the word "target" is still one), and that object is one this filter matches
@@ -1391,7 +1406,7 @@ export interface TokenDefinition extends Characteristics {
 }
 
 /** Predefined tokens (CR 111.10) the engine knows by name. See `cards/tokens.ts`. */
-export type TokenPreset = 'Treasure' | 'Food' | 'Clue';
+export type TokenPreset = 'Treasure' | 'Food' | 'Clue' | 'Gold';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -1913,6 +1928,17 @@ export type Effect =
   | {
       readonly kind: 'mayCastSpells';
       readonly spells: ObjectFilter;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
+   * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 613.1f, 611.2a, 611.2c): the instant
+   * and sorcery cards that `what` describes in the controller's graveyard as the effect resolves have flashback until the end of the turn, with the cost equal to their own mana cost
+   * (CR 118.9). The cards are fixed as the effect resolves (CR 611.2c: an effect that changes characteristics affects the objects there then), so a card that enters the graveyard
+   * later this turn does not get it, and a card that leaves it is a new object (CR 400.7) with nothing. `what` names no zone, controller or owner. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'gainFlashbackFromManaCost';
+      readonly what: ObjectFilter;
       readonly duration: 'untilEndOfTurn';
     }
   /**
@@ -2527,7 +2553,12 @@ export type Effect =
        */
       readonly putWithSource?: true;
     }
-  | { readonly kind: 'counter'; readonly objects: ObjectSelector }
+  /**
+   * "Counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard" (CR 701.6a, 614.1a): with `exileInstead` each spell
+   * countered is exiled, not put into its owner's graveyard; the card exiled is what `moved` names afterwards ("then you may cast it without paying its mana cost"), and `moved`
+   * is empty when nothing was countered (a spell that can't be countered stays on the stack).
+   */
+  | { readonly kind: 'counter'; readonly objects: ObjectSelector; readonly exileInstead?: true }
   /**
    * "Counter [it] unless its controller pays [cost]" (CR 702.21a Ward, 701.6): the controller of
    * each spell or ability named is asked, as this resolves, whether to pay; if they decline, or
@@ -3153,9 +3184,12 @@ export type Effect =
          * `tapped` or not ("You may reveal a creature card ... and put it onto the battlefield"), or into exile face down
          * (`exileFaceDown`, Hideaway, CR 702.75a: "exile one of them face down"): remembered by the permanent the ability belongs to
          * (`linkedExile`) and visible only to the player who controls that permanent, for as long as it stays on the battlefield; the
-         * cards taken are not revealed.
+         * cards taken are not revealed. `castFree` ("You may cast an instant or sorcery spell with mana value less than or equal to this creature's power from among
+         * them without paying its mana cost", CR 608.2g, 118.9): the controller may cast one card that matches (and that they could cast now) from the library, where
+         * it still is, without paying its mana cost; nothing is revealed but the spell. `max` is 1, with no `min`, `tapped`, `totalManaValue` or `hidden`; the cards not
+         * cast are the rest.
          */
-        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown';
+        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.
@@ -3225,6 +3259,12 @@ export type Effect =
        * so they go on the stack together and resolve after it, the last one cast first. Only with `objects` a `moved` reference, and not with `play`.
        */
       readonly max?: number | 'any';
+      /**
+       * "Its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost" (CR 608.2g, 118.9):
+       * the player who may cast, when it is not the controller of the effect: one player the selector names (`controllerOf` of a target, `triggerPlayer`...). They are the one asked and
+       * the one who casts the spell (and controls it), whoever owns the card. Only with `objects` a `moved` reference, whose cards are in exile.
+       */
+      readonly player?: PlayerSelector;
     }
   /**
    * "You may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it
@@ -3620,6 +3660,11 @@ export type Trigger =
        * (a spell cast this turn counts, whoever it was cast by, whatever it is: the filter reads the spell that triggers, not the count). Not with `self`.
        */
       readonly nth?: number;
+      /**
+       * "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i, 603.2): only the first spell of the card types `filter` names (`types` or the `types` of its `anyOf`
+       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type.
+       */
+      readonly firstOfKind?: true;
       /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
       readonly duringTurn?: 'opponent';
       /**
@@ -4885,6 +4930,11 @@ export type Condition =
    */
   | { readonly kind: 'castFromZone'; readonly zone: Zone }
   /**
+   * "When this creature enters, if you cast it, ..." (CR 601.2a, 603.4): the source, a permanent that has just entered (or what it was as it left), came from a spell that
+   * was cast (from any zone), not from an effect that put it onto the battlefield and not from a copy of a spell. The intervening "if" of an enters trigger of the permanent itself.
+   */
+  | { readonly kind: 'wasCast' }
+  /**
    * "This spell costs {3} less to cast if it targets a tapped creature" (CR 601.2c, 601.2f, D-207): at least one of the targets the source spell has chosen
    * is an object the filter matches (a player never is). The targets are chosen before the total cost is determined (CR 601.2c comes before 601.2f), so
    * the condition of a `costReduction` of the spell itself reads them. Only for the source spell (`this`); with no target chosen it does not hold.
@@ -5348,6 +5398,14 @@ export type StaticEffect =
       readonly what: ObjectFilter;
       readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
     }
+  /**
+   * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 613.1f, 604.3, 611.3a): a static ability of a permanent
+   * on the battlefield that gives the instant and sorcery cards in its controller's graveyard that `what` matches flashback, with the cost equal to the card's own mana cost (CR 118.9: an
+   * alternative cost). Read where casting is decided (`rules/flashback-grant.ts`); the card is cast from the graveyard and exiled when it leaves the stack, as with a printed flashback. A card
+   * with no mana cost is not offered (a cost equal to nothing cannot be paid). A card that has a flashback cost of its own is cast for that one. `what` is a filter of the card as it is in the
+   * graveyard, with no zone, controller, owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | { readonly kind: 'grantFlashbackToGraveyardCards'; readonly what: ObjectFilter }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';

@@ -312,6 +312,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCastSpells',
     // Issue 159: "this creature gains all activated abilities of that card until end of turn".
     'gainActivatedAbilitiesOf',
+    // "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a).
+    'gainFlashbackFromManaCost',
     // D-139: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand".
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
@@ -465,6 +467,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
+    // Issue 100: "whenever you cast your first instant or sorcery spell each turn" (`castSpell` with `firstOfKind`).
+    'castFirstOfKind',
     // D-565: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
     'castDuringOpponentTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -651,7 +655,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue'],
+  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -778,6 +782,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'targetCountAtLeast',
     // D-206: "an instant or sorcery spell that targets a creature" (`ObjectFilter.targetsObject`).
     'targetsObject',
+    // "copy that spell if it targets a permanent or player" (`ObjectFilter.targetsPlayer`).
+    'targetsPlayer',
     // D-437: "a spell that targets only this creature" and "a spell that targets this creature" (`ObjectFilter.targetsOnly`, `isSource`).
     'targetsOnly',
     'isSource',
@@ -803,6 +809,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
     'manaValueAtMost',
+    // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
+    'manaValueBelow',
+    'sharesCardTypeWith',
     // D-111: `ObjectFilter` comparisons with power, toughness and mana value, and the trigger subject
     // "equipped / enchanted creature" (`attached`).
     'power',
@@ -943,6 +952,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardLeftYourGraveyard',
     'manaSpentAtLeast',
     'castFromZone',
+    // CR 603.4: "When this creature enters, if you cast it".
+    'wasCast',
     'spellTargets',
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
@@ -1012,6 +1023,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'allCreatureTypes',
     // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
     'grantKeywordToHandCards',
+    // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
+    'grantFlashbackToGraveyardCards',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1098,6 +1111,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Treasure',
     'Food',
     'Clue',
+    'Gold',
     'custom',
     'copyOf',
     'tapped',
@@ -1392,6 +1406,8 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
+  /** "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i): the engine's `castSpell` with `firstOfKind`. */
+  'castFirstOfKind',
   /** "Whenever you cast your first spell during each opponent's turn" (D-565): `castSpell` with `duringTurn`. */
   'castDuringOpponentTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
@@ -1470,6 +1486,8 @@ export const SELECTOR_KINDS = [
   'searchZones',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
+  /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
+  'targetsPlayer',
   /** "That targets only this creature" (CR 115.9c, D-437): the engine's `ObjectFilter.targetsOnly`. */
   'targetsOnly',
   /** "This creature" as the object a filter describes, "that targets this creature" (D-437): the engine's `ObjectFilter.isSource`. */
@@ -1507,6 +1525,10 @@ export const SELECTOR_KINDS = [
   'triggerCard',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
+  /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */
+  'manaValueBelow',
+  /** "That shares a card type with it" (CR 205.2a, issue 100): the engine's `ObjectFilter.sharesCardTypeWith`. */
+  'sharesCardTypeWith',
   /** "Power 4 or greater", "toughness 2 or less", "mana value 3" (D-111): the engine's `ObjectFilter` `power`, `toughness`, `manaValue`. */
   'power',
   'toughness',
@@ -1660,6 +1682,8 @@ export const CONDITION_KINDS = [
   'manaSpentAtLeast',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
   'castFromZone',
+  /** "When this creature enters, if you cast it" (CR 603.4): the engine's `wasCast`. */
+  'wasCast',
   /** "If it targets a tapped creature" (CR 601.2f, D-207): the engine's `spellTargets`. */
   'spellTargets',
   /** "During the declare attackers step" (CR 506.1, D-139): the engine's `duringStep`. */
@@ -1759,6 +1783,8 @@ export const STATIC_KINDS = [
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
   'grantKeywordToHandCards',
+  /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
+  'grantFlashbackToGraveyardCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
@@ -1856,6 +1882,7 @@ export const TOKEN_KINDS = [
   'Treasure',
   'Food',
   'Clue',
+  'Gold',
   'Map',
   'Blood',
   'custom',
@@ -2178,6 +2205,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCast: true,
   mayCastSpells: true,
   gainActivatedAbilitiesOf: true,
+  gainFlashbackFromManaCost: true,
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
@@ -2269,6 +2297,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   triggerCondition: true,
   becomesTargetSpell: true,
   castNth: true,
+  castFirstOfKind: true,
   castDuringOpponentTurn: true,
   tappedBy: true,
   notAsAttacker: true,

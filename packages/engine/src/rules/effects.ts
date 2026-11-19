@@ -86,6 +86,7 @@ import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { runExileUntilFound } from './exile-until-found';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
@@ -1032,6 +1033,10 @@ function runEffect(
         canBeCountered(state, id),
       );
       for (const id of ids) events.push({ kind: 'countered', object: id });
+      // CR 701.6a, 614.1a: "exile it instead of putting it into its owner's graveyard": the card exiled is `moved` for the instructions after this one.
+      if (effect.exileInstead === true) {
+        return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 
@@ -1646,6 +1651,9 @@ function runEffect(
     case 'gainActivatedAbilitiesOf':
       // CR 613.1f (issue 159): "this creature gains all activated abilities of that card until end of turn" (rules/may-effects.ts).
       return runGainActivatedAbilitiesOf(state, effect, ctx, targets);
+    case 'gainFlashbackFromManaCost':
+      // CR 702.34a, 611.2c: "Each instant and sorcery card in your graveyard gains flashback until end of turn" (rules/flashback-grant.ts).
+      return runGainFlashbackFromManaCost(state, res, effect);
     case 'mayCastSpells':
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);
@@ -2427,8 +2435,12 @@ function runEffect(
       );
     }
 
-    case 'castFree':
+    case 'castFree': {
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
+      // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
+      const [caster] =
+        effect.player === undefined ? [] : resolvePlayers(state, effect.player, ctx, targets);
+      if (effect.player !== undefined && caster === undefined) return done(state);
       return done(
         state,
         [],
@@ -2437,12 +2449,14 @@ function runEffect(
             kind: 'castFree',
             objects: effect.objects,
             play: effect.play === true,
+            ...(caster === undefined ? {} : { seat: caster }),
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
             chosen: null,
           },
         ],
       );
+    }
 
     case 'fight': {
       // CR 701.14 (D-145): creatures fight. The creatures are read as the effect begins.

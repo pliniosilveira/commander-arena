@@ -1,0 +1,92 @@
+Commander
+1x Shiko and Narset, Unified
+
+Mainboard
+1x Abrade
+1x Adaptive Training Post
+1x Adarkar Wastes
+1x Aligned Heart
+1x Ancestral Vision
+1x Arcane Signet
+1x Archmage Emeritus
+1x Ash Barrens
+1x Azorius Signet
+1x Baral and Kari Zev
+1x Baral's Expertise
+1x Battlefield Forge
+1x Big Score
+1x Boros Signet
+1x Caldera Pyremaw
+1x Cascade Bluffs
+1x Clifftop Retreat
+1x Command Tower
+1x Compulsive Research
+1x Consider
+1x Curse of Opulence
+1x Curse of the Swine
+1x Deep Analysis
+1x Dismantling Wave
+1x Electrodominance
+1x Elsha, Threefold Master
+1x Evolving Wilds
+1x Exotic Orchard
+1x Expansion // Explosion
+1x Expressive Iteration
+1x Faithless Looting
+1x Fellwar Stone
+1x Ferrous Lake
+1x Frantic Search
+1x Ghostly Prison
+1x Glacial Fortress
+1x Goblin Electromancer
+1x Guttersnipe
+1x Haughty Djinn
+1x Irrigated Farmland
+1x Izzet Signet
+1x Lier, Disciple of the Drowned
+1x Magma Opus
+1x Mana Geyser
+1x Manaform Hellkite
+1x Mangara, the Diplomat
+1x Monastery Mentor
+1x Mystic Monastery
+1x Narset's Reversal
+1x Opt
+1x Path of Ancestry
+1x Perilous Landscape
+1x Ponder
+1x Pongify
+1x Prairie Stream
+1x Preordain
+1x Prismari Command
+1x Reliquary Tower
+1x Rite of Replication
+1x Rugged Prairie
+1x Shiny Impetus
+1x Shivan Reef
+1x Skycloud Expanse
+1x Sol Ring
+1x Storm-Kiln Artist
+1x Sublime Epiphany
+1x Sulfur Falls
+1x Swords to Plowshares
+1x Talisman of Progress
+1x Tempest Technique
+1x Temple of Enlightenment
+1x Temple of Epiphany
+1x Temple of Triumph
+1x Think Twice
+1x Third Path Iconoclast
+1x Time Wipe
+1x Transcendent Dragon
+1x Transforming Flourish
+1x Vanquish the Horde
+1x Velomachus Lorehold
+1x Veyran, Voice of Duality
+1x Voracious Bibliophile
+1x Whirlwind of Thought
+1x Will of the Jeskai
+1x Young Pyromancer
+4x Plains
+5x Island
+5x Mountain

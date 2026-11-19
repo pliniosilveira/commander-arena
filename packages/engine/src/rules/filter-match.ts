@@ -134,6 +134,8 @@ export interface FilterContext {
    * The subtypes of the object the trigger is about, as it last was (`sharesCreatureTypeWith`, D-261, CR 603.10a, 113.7a): read by the caller; absent fails the flag closed.
    */
   readonly subjectSubtypes?: readonly Subtype[];
+  /** The card types of the spell the trigger is about (`sharesCardTypeWith`, CR 205.2a): read by the caller; absent fails the flag closed. */
+  readonly subjectTypes?: readonly CardType[];
   /**
    * What another object is, for the filters that read objects attached to this one or the one this is attached to (`attachedTo`, `enchanted`, D-422): the caller says how
    * (`derive` for a rule that reads the game, the view after layers 1, 4 and 5 for `derive` itself). Absent fails those filters closed.
@@ -321,7 +323,7 @@ export function matchesFilterWith(
   if (!compares(filter.toughness, d.toughness)) return false;
   if (!compares(filter.manaValue, d.manaValue)) return false;
   // CR 202.3 (D-230): "mana value X or less, where X is ...": the limit is worked out by the caller (`select.ts`); without it the filter fails closed.
-  if (filter.manaValueAtMost !== undefined) {
+  if (filter.manaValueAtMost !== undefined || filter.manaValueBelow !== undefined) {
     if (ctx.manaValueLimit === undefined || d.manaValue === null || d.manaValue === undefined) {
       return false;
     }
@@ -410,6 +412,11 @@ export function matchesFilterWith(
           theirs.some((t) => sameCreatureType(t, s)),
       );
     if (!shared) return false;
+  }
+  // CR 205.2a, 603.3d: "that shares a card type with it": a card type that both have.
+  if (filter.sharesCardTypeWith !== undefined) {
+    const theirs = ctx.subjectTypes;
+    if (theirs === undefined || !d.types.some((t) => theirs.includes(t))) return false;
   }
   if (filter.anyOf !== undefined) {
     // A disjunction (CR 115.1: "artifact or enchantment" names one set of legal targets). The

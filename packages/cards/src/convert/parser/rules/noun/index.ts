@@ -63,6 +63,7 @@ import { PLAYER_NOUN_RULES } from './players';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
+import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
@@ -776,6 +777,8 @@ export const NOUN_RULES = [
   NOUN_TARGET_SPELL,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".
   ...GALADRIEL_G3_NOUN_RULES,
+  // Issue 100 (Sublime Epiphany): "target activated or triggered ability".
+  ...STACK_ABILITY_NOUN_RULES,
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers", before `noun.any-number-targets`, which would stop at "creatures".
   ...HYLDA_G3_NOUN_RULES,
   // Stage P32 (D-147): "target commander" before `noun.target-permanent`, whose phrase would stop at "commander".

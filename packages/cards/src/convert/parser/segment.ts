@@ -219,6 +219,14 @@ const RETURN_EXILED_SENTENCE =
 const EXILE_ON_RESOLVE =
   /(?:^|, )exile that card instead of putting it into your graveyard as it resolves\.$/i;
 
+/**
+ * "Copy that spell if it targets a permanent or player, and you may choose new targets for the copy. If you don't copy a spell this way, draw a card." (Shiko and Narset, Unified, CR 608.2c): the
+ * second sentence is the "otherwise" of the condition of the first, so the two are read as one (`effect.copy-spell`).
+ */
+const NOT_COPIED_SENTENCE = /^if you don['’]t copy a spell this way, draw a card\.$/i;
+const COPY_IF_TARGETS =
+  /(?:^|, )copy that spell if it targets a permanent or player(?:,? and you may choose new targets for the copy)?\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
@@ -226,6 +234,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   const beforeText = text.slice(before.start, before.end);
   if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
+  if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
@@ -242,6 +251,12 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/** "You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost." (Velomachus Lorehold, CR 608.2g): the middle sentence of the same instruction (`effect.look-cast-free`). */
+const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
+/** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
+const EXILE_COUNTERED_THEN_CAST =
+  /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard, then you may cast it without paying its mana cost\.$/i;
+const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
  * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
@@ -469,6 +484,14 @@ const BOTTOM_RIDER =
   /^if that spell would be put into a graveyard, put it on the bottom of its owner['’]s library instead\.$/i;
 
 /**
+ * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 118.9): the second sentence says what the
+ * flashback the first gives costs, so the two are one instruction (`effect.gain-flashback-from-mana-cost`).
+ */
+const GAINS_FLASHBACK =
+  /^each [^.,]* cards? in your graveyard gains flashback until end of turn\.$/i;
+const FLASHBACK_COST_IS_MANA_COST = /^the flashback cost is equal to its mana cost\.$/i;
+
+/**
  * "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (D-303, CR 700.3):
  * three sentences that are one instruction (what is revealed, who separates it and where each pile goes), kept together so `effect.reveal-separate-piles` reads them as one. Only all
  * three in a row.
@@ -643,9 +666,11 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
-        (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)))
+        (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)) ||
+        (said(a, GAINS_FLASHBACK) && said(b, FLASHBACK_COST_IS_MANA_COST)))
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;
@@ -653,7 +678,10 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       a !== undefined &&
       c !== undefined &&
       ((said(a, LOOK_AT_TOP) &&
-        (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL) || said(b, PUT_FROM_AMONG_ONTO))) ||
+        (said(b, TAKE_FROM_AMONG) ||
+          said(b, PUT_ANY_TOTAL) ||
+          said(b, PUT_FROM_AMONG_ONTO) ||
+          said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {

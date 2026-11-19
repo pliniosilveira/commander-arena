@@ -880,6 +880,29 @@ function lowerRepeatProcess(
  */
 function lowerLoneMay(sentence: IrSentence, ctx: LowerContext): LowerResult<Effects> | null {
   const [clause, ...more] = sentence.clauses;
+  // Issue 100 (CR 608.2g): "..., you may cast a spell ... without paying its mana cost": the free cast asks the controller itself (and may be declined), so the "you may" of the
+  // trigger that made the clause optional is already said by the engine's `castFree`, not a `may` of its own (whose answer `didPrevious` could not read).
+  if (clause?.verb === 'castFree' && clause.optional && more.length === 0) {
+    if (
+      sentence.condition !== undefined ||
+      sentence.instead === true ||
+      sentence.where !== undefined
+    ) {
+      return refuse(sentence);
+    }
+    const play = clause.args.play;
+    const offered =
+      play?.kind !== 'flag'
+        ? clause
+        : {
+            ...clause,
+            args: {
+              ...clause.args,
+              mayWritten: { kind: 'flag' as const, value: true, span: play.span, rule: play.rule },
+            },
+          };
+    return lowerClauses([{ ...offered, optional: false }], ctx);
+  }
   if (clause === undefined || more.length > 0 || !clause.optional || clause.verb !== 'shuffle') {
     return null;
   }
@@ -1108,8 +1131,12 @@ function lowerYouDont(
     last.objects.kind === 'choose' &&
     last.objects.fromMoved === true &&
     last.objects.optional === true;
+  // Issue 100 (Baral and Kari Zev, CR 608.2c, 608.2g): "You may cast a spell ... without paying its mana cost. If you don't, ...": the free cast is the offer (it starts what "if you do" reads
+  // again, `rules/cast-free.ts`), and "you don't" is that no spell was cast: declined, or none could be.
+  const afterFreeCast =
+    previous?.effects.length === 1 && last?.kind === 'castFree' && last.max === undefined;
   if (
-    !afterChoice ||
+    !(afterChoice || afterFreeCast) ||
     sentence.instead === true ||
     sentence.where !== undefined ||
     sentence.reflexive === true ||
@@ -1123,6 +1150,10 @@ function lowerYouDont(
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
   const after = lowerClauses(sentence.clauses, ctx);
   if (!after.ok) return after;
+  // "... create a token. It gains haste until end of turn.": the tokens made inside the conditional are what "it" of the next sentence names (the engine's `moved`, empty when none was made).
+  if (after.value.some((e) => e.kind === 'createToken' || e.kind === 'createCopies')) {
+    ctx.tokensMade = true;
+  }
   return {
     ok: true,
     value: [
@@ -1133,6 +1164,45 @@ function lowerYouDont(
       },
     ],
     rule: sentence.clauses[0]?.rule ?? sentence.rule,
+  };
+}
+
+/**
+ * "If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn." (issue 100, CR 608.2c, 611.2a): the sentence after the
+ * "If you don't" conditional that makes a token and says what the token gains. The tokens exist only inside that conditional, so what they gain is done there (the engine's `moved`
+ * means the tokens made). Null when the sentence is not such a rider; one that does not fit is refused, never guessed.
+ */
+function lowerTokenRiderOfYouDont(
+  sentence: IrSentence,
+  previous: Step | undefined,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [only] = previous?.effects ?? [];
+  if (
+    previous?.effects.length !== 1 ||
+    only?.kind !== 'conditional' ||
+    only.condition.kind !== 'not' ||
+    only.condition.term.kind !== 'didPrevious' ||
+    !ctx.tokensMade ||
+    sentence.condition !== undefined ||
+    sentence.clauses.some((c) => c.optional) ||
+    !sentence.clauses.every((c) => c.verb === 'grantKeywordToMade' || c.verb === 'grantKeyword')
+  ) {
+    return null;
+  }
+  const lowered = lowerClauses(sentence.clauses, ctx);
+  if (!lowered.ok) return lowered;
+  // Only what the tokens made gain: a keyword granted to `moved`, which is those tokens here.
+  if (!lowered.value.every((e) => e.kind === 'grantKeyword' && e.objects.kind === 'moved')) {
+    return refuse(sentence);
+  }
+  const inner = only.effect;
+  const effects =
+    inner.kind === 'sequence' ? [...inner.effects, ...lowered.value] : [inner, ...lowered.value];
+  return {
+    ok: true,
+    value: [{ ...only, effect: { kind: 'sequence', effects } }],
+    rule: lowered.rule,
   };
 }
 
@@ -1738,6 +1808,14 @@ function lowerStep(
     if (!putOrElse.ok) return stop(putOrElse);
     steps.push({ effects: putOrElse.value, replaceable: false });
     return { last: i + 1 };
+  }
+  // Issue 100: "... If you don't, create a token. It gains haste until end of turn.": the rider is about the token, which is made only when the player did not, so it joins that instruction.
+  const rider = lowerTokenRiderOfYouDont(sentence, steps[steps.length - 1], ctx);
+  if (rider !== null) {
+    if (!rider.ok) return stop(rider);
+    steps.pop();
+    steps.push({ effects: rider.value, replaceable: false });
+    return { last: i };
   }
   // "You may put a land card from among them into your hand. If you don't, put a +1/+1 counter on this creature." (D-411, CR 608.2c).
   const notTaken = lowerYouDont(sentence, steps[steps.length - 1], ctx);

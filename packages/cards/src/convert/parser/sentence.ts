@@ -335,6 +335,12 @@ const PLAYER_MAY: Parser<NonNullable<IrSentence['mayBy']>> = quiet((ctx, pos) =>
   )(ctx, pos);
 });
 
+/** "Each player may discard ..." at the start of a spell's sentence (CR 608.2d, 101.4): each player is asked whether to discard, and the rest of the sentence is theirs if they do. */
+const EACH_PLAYER_MAY_DISCARD: Parser<NonNullable<IrSentence['mayBy']>> = (ctx, pos) => {
+  const ahead = quiet(pattern(/(?=each player may discard )/iu))(ctx, pos);
+  return ahead.ok ? PLAYER_MAY(ctx, pos) : ahead;
+};
+
 /** " unless you pay {E}{E}" (stage P51, D-209, CR 107.14): the payment of energy only, which a spell's sentence reads (the other costs stay a trigger's). */
 const UNLESS_ENERGY: Parser<IrCondition> = (ctx, pos) => {
   // Looked at quietly first: a sentence that does not end so stops where it always did.
@@ -459,15 +465,19 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     const may: Parser<'you' | NonNullable<IrSentence['mayBy']> | null> =
       options.may === 'discard' && !reflexive
         ? optional(
-            map(
-              (c, p) => {
-                const ahead = pattern(
-                  // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
-                  /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
-                )(c, p);
-                return ahead.ok ? literal('you may ')(c, p) : ahead;
-              },
-              () => 'you' as const,
+            choice<'you' | NonNullable<IrSentence['mayBy']>>(
+              map(
+                (c, p) => {
+                  const ahead = pattern(
+                    // Issue 244 (Return to Dust): "you may exile up to one other target ..." after a test of how the spell was cast.
+                    /(?=you may (?:sacrifice |discard |shuffle\.|put it onto the battlefield|exile up to one other target ))/iu,
+                  )(c, p);
+                  return ahead.ok ? literal('you may ')(c, p) : ahead;
+                },
+                () => 'you' as const,
+              ),
+              // "Each player may discard their hand and draw five cards." (CR 608.2d, 101.4): the players of a spell are asked in turn order too (`playersMay`).
+              EACH_PLAYER_MAY_DISCARD,
             ),
             null,
           )

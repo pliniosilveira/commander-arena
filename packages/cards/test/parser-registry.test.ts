@@ -382,6 +382,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
   'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
+  // CR 603.4: "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, ..." is read after "if", like every condition.
+  'condition.this-counter-count': permanent(
+    (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
+  ),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
@@ -394,6 +398,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
   'condition.gift-promised': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Issue 100 (Transcendent Dragon): the intervening "if" of an enters trigger of the permanent itself.
+  'condition.was-cast': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.opponent-controls-at-least': permanent(
     (e) =>
       `{4}{B}{B}: Return this card from your graveyard to the battlefield. This ability costs {4} less to activate if ${e}.`,
@@ -692,6 +698,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.roll-highest': whenever,
   'keyword.buyback': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
+  'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'noun.up-to-one-target-spell': spell(
     (e) =>
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
@@ -699,6 +706,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.crew-saddle-bonus': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
+  'static.graveyard-cards-have-flashback': asIs,
   'condition.resolved-times': permanent(
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
@@ -857,6 +865,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cards-leave-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
+  // Issue 100 (Baral and Kari Zev): "you cast your first instant or sorcery spell each turn".
+  'trigger.cast-first-of-kind': whenever,
   'trigger.enters-one-or-more-creatures': whenever,
   'trigger.you-create-tokens': whenever,
   'condition.cards-in-graveyard': permanent((e) => `As long as ${e}, ~ has flying.`),

@@ -1,5 +1,5 @@
 {
-  "parserVersion": 159,
+  "parserVersion": 160,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -1379,6 +1379,14 @@
       "reasons": [],
       "ast": "9491d3d2"
     },
+    "2c3e6377-d09c-46b6-8a83-ada4a2930b14": {
+      "name": "Will of the Jeskai",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cc529a9d"
+    },
     "2c438ecb-b127-4450-9395-2d1eea294f30": {
       "name": "Domineering Will",
       "group": "acceptance",
@@ -1855,6 +1863,14 @@
       "reasons": [],
       "ast": "80ba00b7"
     },
+    "386a6fa7-db5b-4e82-bd25-fd86d910ed0c": {
+      "name": "Baral and Kari Zev",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4e6ece74"
+    },
     "38a55562-1e2d-4240-9454-219a4a25d38d": {
       "name": "Lord Windgrace",
       "group": "acceptance",
@@ -1930,8 +1946,8 @@
           "ability": 1,
           "text": "When ~ enters, if you cast it, you gain protection from everything until your next turn.",
           "reason": "unrecognised",
-          "slot": "condition",
-          "closestRule": "ability.triggered"
+          "slot": "amount",
+          "closestRule": "effect.player.life"
         }
       ],
       "reasons": [],
@@ -2089,6 +2105,14 @@
       "reasons": [],
       "ast": "0a62fcba"
     },
+    "40ed32a6-ad56-48c7-aecf-b4238c34c212": {
+      "name": "Shiko and Narset, Unified",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d3e38b40"
+    },
     "40f66e21-5b60-4e42-927d-65397e7ad544": {
       "name": "Citadel Siege",
       "group": "acceptance",
@@ -2137,6 +2161,14 @@
       "reasons": [],
       "ast": "c81b8dec"
     },
+    "43832745-5d7d-4957-8e30-2072ad012564": {
+      "name": "Velomachus Lorehold",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c32e7528"
+    },
     "43b5794a-4ed6-471d-bc45-22fac486895d": {
       "name": "Thunderdrum Soloist",
       "group": "acceptance",
@@ -2152,6 +2184,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5ec25026"
+    },
+    "44036bb5-f300-40bd-9180-6b246315d886": {
+      "name": "Haughty Djinn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2bed1389"
     },
     "4405db13-7b36-4dc2-9a5d-1d31d568abf5": {
       "name": "Ojutai Exemplars",
@@ -2288,6 +2328,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "216b592d"
+    },
+    "4a59d86e-405d-4c70-b2a5-c64f5cecfd9e": {
+      "name": "Electrodominance",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c88fd573"
     },
     "4a71f404-e48d-4c86-882e-4e21c8210dea": {
       "name": "Topplegeist",
@@ -2634,6 +2682,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d69f2299"
+    },
+    "56148ae7-a9df-4771-8d53-d9ffb815c884": {
+      "name": "Sublime Epiphany",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "06819c9f"
     },
     "561af57d-d43d-4d98-9ef6-18a0843f22ae": {
       "name": "Defend the Rider",
@@ -4868,6 +4924,14 @@
       "reasons": [],
       "ast": "799e936a"
     },
+    "9fb7e7ca-ad2f-4677-859c-7a9adf8fb5fd": {
+      "name": "Transforming Flourish",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "92a237c4"
+    },
     "9fcb920c-b8d7-4a79-a335-f63050182cca": {
       "name": "Call of the Ring",
       "group": "acceptance",
@@ -5044,6 +5108,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "aee4fe3b"
+    },
+    "a6657fcf-f08c-4b03-8ec8-cb0b194eb553": {
+      "name": "Adaptive Training Post",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "71629b01"
     },
     "a66c35fc-d5db-4cfd-9b85-d70b001d83d3": {
       "name": "Dragoon's Lance",
@@ -5632,6 +5704,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "811ae435"
+    },
+    "ba0d3df2-3acf-46d7-8d64-8d67d1579adc": {
+      "name": "Curse of Opulence",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0d33da74"
     },
     "bad6a5a9-7010-418d-b042-182926aa999d": {
       "name": "Norn's Choirmaster",
@@ -6396,6 +6476,14 @@
       "reasons": [],
       "ast": "127c070a"
     },
+    "d55f6c70-321f-4fb4-bd33-0850ae1a7c36": {
+      "name": "Narset's Reversal",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9973e81f"
+    },
     "d57a6b19-bd06-4b07-8ee1-0b45612ba9e4": {
       "name": "Veyran, Voice of Duality",
       "group": "acceptance",
@@ -6483,6 +6571,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f77bb13d"
+    },
+    "d8ccbd72-6429-43cb-a0a9-ab56e97a2d53": {
+      "name": "Elsha, Threefold Master",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b98a5bcd"
     },
     "d90af00a-d322-4265-9954-7b1e80702e18": {
       "name": "Skyclave Apparition",
@@ -6893,6 +6989,14 @@
       "reasons": [],
       "ast": "4704e4be"
     },
+    "e83a629e-2d74-48e2-ad4d-f390067cc51a": {
+      "name": "Transcendent Dragon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "23fcdc63"
+    },
     "e88027a6-24cc-4a8b-86db-734f26149ea8": {
       "name": "Oran-Rief, the Vastwood",
       "group": "acceptance",
@@ -7222,6 +7326,14 @@
       "reasons": [],
       "ast": "9c2254f5"
     },
+    "f224db3d-cdd2-43f2-b625-4b861efa6449": {
+      "name": "Lier, Disciple of the Drowned",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bdc8732e"
+    },
     "f22665cd-4710-48df-83c1-3c9081097cb5": {
       "name": "Hedge Shredder",
       "group": "training",
@@ -7489,6 +7601,14 @@
       "reasons": [],
       "ast": "ae60a746"
     },
+    "f947808c-a1cc-41ea-9d06-e1279a0da527": {
+      "name": "Compulsive Research",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a03e1f12"
+    },
     "f955bc96-d602-4142-a9a2-87009cc7028c": {
       "name": "Awakening Zone",
       "group": "acceptance",
@@ -7677,8 +7797,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 634,
-      "total": 653
+      "supported": 649,
+      "total": 668
     }
   }
 }
