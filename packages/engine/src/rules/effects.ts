@@ -51,6 +51,7 @@ import { runExchangeControl, runGainControl, runReturnControl } from './control-
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
+import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
   asking,
@@ -1939,21 +1940,24 @@ function runEffect(
       if (count <= 0) return done(state);
       // CR 122.6, 101.2 (D-380): a permanent that can't have counters of the kind gets none, and nothing happens to it.
       const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (!obj) continue;
         if (blocks(state, blockers, obj, effect.counter)) continue;
+        // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
+        const put = bonusCounters(state, bonuses, obj, effect.counter, count);
         next = patchObject(next, id, {
           counters: {
             ...obj.counters,
-            [effect.counter]: (obj.counters[effect.counter] ?? 0) + count,
+            [effect.counter]: (obj.counters[effect.counter] ?? 0) + put,
           },
         });
         events.push({
           kind: 'counterAdded',
           object: id,
           counter: effect.counter,
-          count,
+          count: put,
           by: ctx.controller,
         });
       }
@@ -2210,14 +2214,15 @@ function runEffect(
       let afterCounters = state;
       const monstrousEvents: GameEvent[] = [];
       if (count > 0 && !blocks(state, counterBlockers(state), source, '+1/+1')) {
+        const put = counterCountOn(state, source, '+1/+1', count);
         afterCounters = patchObject(afterCounters, source.id, {
-          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + count },
+          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + put },
         });
         monstrousEvents.push({
           kind: 'counterAdded',
           object: source.id,
           counter: '+1/+1',
-          count,
+          count: put,
           by: ctx.controller,
         });
       }

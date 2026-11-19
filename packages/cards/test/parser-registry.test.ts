@@ -452,6 +452,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.any-number-of-targets': spell((e) => `~ deals 4 damage divided as you choose among ${e}.`),
   // Stage P33 (D-149, D-150): the Angels slice. The statements and the replacement are lines of their own; the triggers follow "Whenever";
   // the conditions follow "if" (an intervening "if", a trailing "if" or the "Activate only if" of an ability); the nouns are operands.
+  'replacement.counters-plus': asIs,
   'replacement.life-gain-bonus': asIs,
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,

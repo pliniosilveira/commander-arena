@@ -37,6 +37,7 @@ import { SYNTHETIC_COMMANDER_LIST } from './synthetic-commanders';
 import { SYNTHETIC_CONTROL_LIST } from './synthetic-control';
 import { SYNTHETIC_COPY_LIST } from './synthetic-copies';
 import { SYNTHETIC_COST_LIST } from './synthetic-costs';
+import { SYNTHETIC_COUNTERS_PLUS_LIST } from './synthetic-counters-plus';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_CURSE_LIST } from './synthetic-curse';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
@@ -437,6 +438,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_GRAVEYARD_COPY_LIST,
   ...SYNTHETIC_HASHATON_G7_LIST,
   ...SYNTHETIC_HASHATON_G3_LIST,
+  ...SYNTHETIC_COUNTERS_PLUS_LIST,
   ...SYNTHETIC_HASHATON_G8_LIST,
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
   ...SYNTHETIC_DANITHA_G4_LIST,
