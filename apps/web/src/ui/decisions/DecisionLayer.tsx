@@ -46,6 +46,9 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
   const pinned = useApp((s) => s.preview.pinned);
   const undoDepth = useApp((s) => s.snapshot?.undoDepth ?? 0);
   const manaTaps = useApp((s) => s.manaTaps);
+  const options = useApp((s) => s.options);
+  // The screen before the mulligan of a game started from the menu, until Start game is pressed.
+  const [introSeen, setIntroSeen] = useState<unknown>(null);
   const thinking = useOpponentThinking();
   const actions = useActions();
   const store = useStoreApi();
@@ -133,8 +136,12 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
       : NO_DND;
   const closeChooser = () => update((u) => ({ ...u, chooser: null }));
 
+  const intro =
+    options?.intro === true && introSeen !== options && pending?.kind === 'mulligan'
+      ? { onStart: () => setIntroSeen(options) }
+      : null;
   useDecisionKeys({
-    bar: interactive ? model.bar : null,
+    bar: interactive && intro === null ? model.bar : null,
     pinned: pinned !== null,
     chooserOpen: ui.chooser !== null,
     canUndo: undoDepth > 0 && !passing,
@@ -148,7 +155,7 @@ export function DecisionLayer({ children }: { children: ReactNode }) {
 
   const overlayProps =
     interactive && view !== null && pending !== null
-      ? { view, pending, ui, model, update, act, error }
+      ? { view, pending, ui, model, update, act, error, intro }
       : null;
   const showToast = error !== null && !(pending !== null && INLINE_ERROR.has(pending.kind));
 

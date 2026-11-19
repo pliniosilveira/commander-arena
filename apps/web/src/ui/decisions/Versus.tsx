@@ -40,13 +40,12 @@ function Side({
 }
 
 /**
- * "[Your deck] x [Opponent's deck]" above the opening hand, with a Cancel in the top left corner that leaves the game, so a
- * hand is judged knowing both decks. The decks come from the deck picker's list; a deck that is not
- * in it (a hidden test deck) shows its commander from the command zone, without art.
+ * "[Your deck] x [Opponent's deck]": both decks as tall cells with the commander art. The decks come
+ * from the deck picker's list; a deck that is not in it (a hidden test deck) shows its commander
+ * from the command zone, without art.
  */
 export function Versus({ view }: { view: GameView }) {
   const options = useApp((s) => s.options);
-  const backToMenu = useApp((s) => s.backToMenu);
   const { choices } = useDeckChoices();
   const commanderOf = (seat: GameView['seats'][number] | undefined) =>
     seat?.command.find((o) => o.emblem !== true);
@@ -54,9 +53,6 @@ export function Versus({ view }: { view: GameView }) {
   const theirs = commanderOf(view.seats.find((s) => s.id !== view.viewer));
   return (
     <div className="dec-versus-wrap">
-      <button type="button" className="dec-btn dec-versus-cancel" onClick={backToMenu}>
-        Cancel
-      </button>
       <div className="dec-versus" data-versus>
         <Side
           who="you"

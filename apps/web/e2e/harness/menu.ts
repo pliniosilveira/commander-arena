@@ -60,12 +60,30 @@ export async function chooseDeckById(dialog: Locator, tab: DeckTab, id: string):
   await select(dialog);
 }
 
-/** Starts a game with the decks the dialogs mark first: the first precon for you, the second for the opponent. */
-export async function startDefaultGame(page: Page, seed?: string): Promise<void> {
+/** The versus screen before the opening hand of a game started from the menu. */
+export const versusScreen = (page: Page): Locator => page.getByRole('dialog', { name: 'Versus' });
+
+/** Presses Start game on the versus screen: the opening hand follows. */
+export async function startFromVersus(page: Page): Promise<void> {
+  await versusScreen(page).getByRole('button', { name: 'Start game' }).click();
+}
+
+/**
+ * Starts a game with the decks the dialogs mark first: the first precon for you, the second for the
+ * opponent. It goes past the versus screen (`stopAtVersus` stays on it).
+ */
+export async function startDefaultGame(
+  page: Page,
+  seed?: string,
+  stopAtVersus = false,
+): Promise<void> {
   if (seed !== undefined) await page.getByLabel('Seed').fill(seed);
   const mine = await openStartFlow(page);
   await select(mine);
   const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
   await expect(theirs).toBeVisible();
   await select(theirs);
+  if (stopAtVersus) return;
+  await expect(versusScreen(page)).toBeVisible({ timeout: 30_000 });
+  await startFromVersus(page);
 }

@@ -6,6 +6,7 @@ import {
   openStartFlow,
   select,
   startDefaultGame,
+  startFromVersus,
 } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { fakeScryfall } from './harness/synthetic-scryfall';
@@ -179,6 +180,7 @@ test.describe('a saved deck as the opponent', () => {
     await select(mine);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
     await chooseDeck(theirs, 'My Decks', /SYNTHETIC Saved/);
+    await startFromVersus(page);
     await expect(page.getByText('Your opening hand')).toBeVisible({ timeout: 30_000 });
     await page.getByRole('button', { name: 'Keep', exact: true }).click();
     // The opponent's commander is the saved deck's, in the opponent's command zone.

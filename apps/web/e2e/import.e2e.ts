@@ -5,6 +5,7 @@ import {
   openStartFlow,
   select,
   startDefaultGame,
+  startFromVersus,
 } from './harness/menu';
 import { fakeScryfall } from './harness/synthetic-scryfall';
 
@@ -172,6 +173,7 @@ test('an imported deck whose cards are all supported is saved and played from th
   await chooseDeck(mine, 'My Decks', /SYNTHETIC Hundred/);
   const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
   await select(theirs);
+  await startFromVersus(page);
 
   // The first decision is the mulligan, with cards of this deck in the opening hand.
   const mulligan = page.getByRole('dialog', { name: 'Opening hand' });
