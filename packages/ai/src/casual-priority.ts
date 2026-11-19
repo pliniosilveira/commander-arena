@@ -129,6 +129,10 @@ export function worthCasting(view: GameView, spell: ObjectView): boolean {
   if (isHelpfulSpell(spell) && TARGETS_CREATURE.test(spell.oracleText)) {
     return ownCreatureCount(view) > 0;
   }
+  // A protection spell for "target permanent you control" needs a permanent of ours, not one of the opponent's.
+  if (isHelpfulSpell(spell) && TARGETS_PERMANENT.test(spell.oracleText)) {
+    return view.battlefield.some((o) => o.controller === view.viewer);
+  }
   if (TARGETS_CREATURE.test(spell.oracleText)) return opposingCreatures(view).length > 0;
   if (TARGETS_PERMANENT.test(spell.oracleText)) {
     return view.battlefield.some((o) => o.controller !== view.viewer);

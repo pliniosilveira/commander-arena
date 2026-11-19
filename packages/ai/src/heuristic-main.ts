@@ -20,7 +20,7 @@
  *  4. What is left is the casual rules without the plays above (flashback, escape, special actions,
  *     activations such as a regeneration or a pump ability), then pass.
  *
- * WINDOWS (any other priority decision) for instant-speed plays:
+ * WINDOWS (any other priority decision) for instant-speed plays (the end-step set is vetted on the sample like a main-phase set):
  *  - after blockers are declared (declare-blockers step, empty stack): each instant-speed candidate is
  *    cast on the sample and the combat is played out; it is cast when it beats passing by `TRICK_MARGIN`
  *    (reason `trick`, or `removal-attacker` for a removal spell). A pump that changes nothing is held;
@@ -50,13 +50,15 @@ import type { Think } from './heuristic-budget';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { canPayAll, costSymbols, ownUnits } from './heuristic-mana';
-import { protectionPlay } from './heuristic-protect';
+import { protectionPlay, protectionReserve } from './heuristic-protect';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
 
 export interface PriorityChoice {
   readonly action: Action;
   readonly reason: Reason;
+  /** The mana symbols the payment of this cast keeps open for a protection spell (`heuristic-protect.ts`). */
+  readonly reserve?: readonly string[];
 }
 
 /** A trick or a window removal must beat passing by this much (score points; a card in hand is worth 1.2). */
@@ -103,6 +105,8 @@ function bestSet(
   view: GameView,
   plays: readonly Play[],
   units: ReturnType<typeof ownUnits>,
+  /** Mana symbols that must stay payable besides the set (a protection spell held open). */
+  hold: readonly string[] | null = null,
 ): Play[] {
   const pool = [...plays]
     .sort((a, b) => worthOf(view, b) - worthOf(view, a) || (a.obj.id < b.obj.id ? -1 : 1))
@@ -113,7 +117,9 @@ function bestSet(
     const spend = set.reduce((sum, p) => sum + spendOf(p), 0);
     const value = set.reduce((sum, p) => sum + worthOf(view, p), 0);
     if (spend < best.spend || (spend === best.spend && value <= best.value)) continue;
-    if (canPayAll(set.map(sym), units)) best = { set, spend, value };
+    if (canPayAll(hold === null ? set.map(sym) : [...set.map(sym), hold], units)) {
+      best = { set, spend, value };
+    }
   }
   return best.set;
 }
@@ -196,8 +202,20 @@ function mainPhase(
     };
   }
   const units = ownUnits(view);
-  const plays = withCommanderRule(view, mainPlays(view, spellPlays(view, d, activations)), units);
+  const castable = spellPlays(view, d, activations);
+  const plays = withCommanderRule(view, mainPlays(view, castable), units);
   let set = bestSet(view, plays, units);
+  // Mana for a protection spell stays open when that costs no mana the set would spend (the hold is kept only then).
+  let hold: readonly string[] | null = null;
+  const reserve = protectionReserve(view, castable);
+  if (reserve !== null) {
+    const held = bestSet(view, plays, units, reserve);
+    const spent = (xs: readonly Play[]): number => xs.reduce((sum, p) => sum + spendOf(p), 0);
+    if (held.length > 0 && spent(held) >= spent(set)) {
+      set = held;
+      hold = reserve;
+    }
+  }
   if (set.length === 0) {
     // The estimate may not know a source of mana; the engine lists only plays it can pay, so the dearest goes.
     const dearest = [...plays].sort(
@@ -215,7 +233,7 @@ function mainPhase(
       : isRemovalSpell(first.obj)
         ? 'removal'
         : 'curve';
-    return { action: castAction(first), reason };
+    return { action: castAction(first), reason, ...(hold === null ? {} : { reserve: hold }) };
   }
   const rest = casualRemainder(view, d, think, activations);
   if (rest.kind === 'pass') {
@@ -345,7 +363,8 @@ function windowPlay(
     const fit = plays.filter((p) => !isCounter(p.obj) && !isHelpfulSpell(p.obj));
     const ok = fit.filter((p) => !isRemovalSpell(p.obj) || bestRemovalTarget(view, p.obj) !== null);
     const set = bestSet(view, ok, ownUnits(view));
-    const first = order(view, set)[0];
+    // Each play is cast on the sample first, as in the main phase: one that leaves the board clearly worse is dropped.
+    const first = vetPlays(view, order(view, set), think, answer, castAction)[0];
     if (first !== undefined) return { action: castAction(first), reason: 'end-step' };
   }
   return null;
