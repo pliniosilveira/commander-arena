@@ -14,7 +14,7 @@ import { CasualAgent, GreedyAgent, HeuristicAgent, RandomLegalAgent } from '../s
 import { CTX } from './helpers';
 
 const PERMANENT = ['artifact', 'creature', 'enchantment', 'land', 'planeswalker', 'battle'].map(
-  (t) => ({ types: [t] }),
+  (t) => ({ types: [t as 'artifact'] }),
 );
 
 const effect = (n: number): Effect => ({
