@@ -7532,19 +7532,10 @@
     "e70a01dd-4dbe-4811-ac93-1c6d0142e06e": {
       "name": "Winter, Cynical Opportunist",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "At the beginning of your end step, you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield with a finality counter on it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.flicker"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d983044e"
+      "ast": "690e6368"
     },
     "e7a7ba65-ad14-41d5-889b-9bbeae9ab3f7": {
       "name": "Crippling Fear",
@@ -8394,7 +8385,7 @@
       "total": 58
     },
     "acceptance": {
-      "supported": 721,
+      "supported": 722,
       "total": 742
     }
   }
