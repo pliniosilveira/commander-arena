@@ -55,20 +55,24 @@ export function recordAttacks(
  */
 export function runAttackRandomOpponent(
   state: GameState,
-  _node: Extract<Effect, { kind: 'attackRandomOpponent' }>,
+  node: Extract<Effect, { kind: 'attackRandomOpponent' }>,
   source: ObjectId | null,
   controller: SeatId,
 ): StepOutcome {
   const creature = source === null ? undefined : state.objects[source];
   if (source === null || creature?.zone !== 'battlefield') return done(state);
+  // `anyOpponent`: no opponent is left out for having been attacked, and no creature is tapped when there is no opponent.
   const attacked = new Set(
-    (state.lastCombatAttacks?.[controller] ?? [])
-      .filter((a) => a.object === source)
-      .map((a) => a.player),
+    node.anyOpponent === true
+      ? []
+      : (state.lastCombatAttacks?.[controller] ?? [])
+          .filter((a) => a.object === source)
+          .map((a) => a.player),
   );
   const candidates = opponentsOf(state, controller).filter((seat) => !attacked.has(seat));
   const events: GameEvent[] = [];
   if (candidates.length === 0) {
+    if (node.anyOpponent === true) return done(state);
     if (creature.tapped) return done(state);
     events.push({ kind: 'tapped', object: source, by: controller });
     return done(patchObject(state, source, { tapped: true }), events);

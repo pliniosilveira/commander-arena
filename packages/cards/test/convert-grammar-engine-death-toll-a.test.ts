@@ -89,6 +89,49 @@ describe('delirium statics: "as long as there are four or more card types among 
   });
 });
 
+describe('Ursine Monstrosity (at the beginning of combat: mill a card, choose an opponent at random, it must attack them; indestructible and +1/+1 per card type)', () => {
+  const URSINE = real('Ursine Monstrosity');
+  const build = (yard: readonly string[], top: string) =>
+    scenario()
+      .define(URSINE)
+      .define(SORC)
+      .define(INST)
+      .define(CRE)
+      .define(ART)
+      .seat(0)
+      .battlefield(URSINE.name, { label: 'bear' })
+      .graveyard(...yard)
+      .library(top, ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the milled card counts, the bear gets +1/+1 per type and must attack the opponent (CR 205.2a, 508.1d)', () => {
+    // Graveyard: a sorcery and a creature; the milled card is an artifact, so three types: 3/3 becomes 6/6.
+    const g = build([SORC.name, CRE.name], ART.name);
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    g.expect.pt('bear', 6, 6);
+    g.expect.zone(ART.name, 'graveyard', { seat: 0 });
+    g.expect.derived('bear', { keywords: ['trample', 'indestructible'] });
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(() => g.act(0).declareAttackers([])).toThrow();
+    g.act(0).declareAttackers([{ attacker: 'bear', target: { player: 1 } }]);
+    g.expect.invariants();
+  });
+
+  test('a milled card of a type the graveyard already has adds nothing; the bonus ends with the turn', () => {
+    const g = build([SORC.name], SORC.name);
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    g.expect.pt('bear', 4, 4);
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.expect.pt('bear', 3, 3);
+    g.expect.derived('bear', { keywords: ['trample'] });
+  });
+});
+
 describe('Deluge of Doom (all creatures get -X/-X, X the card types among cards in your graveyard)', () => {
   const DELUGE = real('Deluge of Doom');
   const BIG = parsed('SYNTHETIC Big Beast', 'Creature — Beast', '', {
