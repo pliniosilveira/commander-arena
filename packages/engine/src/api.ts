@@ -252,7 +252,8 @@ function playLand(
     landsPlayedThisTurn: getSeat(moved.state, seat).landsPlayedThisTurn + 1,
   });
   if (graveyardUse !== null) {
-    next = markGraveyardPlay(next, graveyardUse.object.id);
+    // A permission that is not used up ("You may play Forests from your graveyard") is not marked.
+    if (graveyardUse.unlimited !== true) next = markGraveyardPlay(next, graveyardUse.object.id);
     next = applyGraveyardRider(next, moved.newObject, riderOf(graveyardUse, true));
   }
   const events: GameEvent[] = [

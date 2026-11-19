@@ -538,6 +538,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedValue'
         | 'playersDrew'
         | 'tapped'
         | 'discarded'
@@ -614,6 +615,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'discardedSpellThisWay' }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
+    // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
+    | { readonly kind: 'destroyedThisWay' }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
@@ -1288,7 +1291,8 @@ export interface IrTrigger extends IrNode {
   readonly mana?: string;
   /**
    * 'combatDamageBatch': "two or more ..." (stage P31, CR 603.2c): the fewest sources; left out for "one or more". 'attackBatch' (stage
-   * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
+   * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out). 'playsCard' (Death Toll deck, group D, CR 205.2a): the fewest card
+   * types the card played has ("a card with two or more card types").
    */
   readonly atLeast?: number;
   /**
@@ -1491,6 +1495,8 @@ export type IrStaticEffect =
     }
   /** "You may look at the top card of your library any time." (stage P24, D-125, CR 401.5). The subject is `you`. */
   | { readonly kind: 'lookAtTopOfLibrary' }
+  /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
+  | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of
@@ -1669,7 +1675,13 @@ export type IrStaticEffect =
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`
    * describes (as the card it is); `gainsHaste` is the second sentence. The subject is `you`.
    */
-  | { readonly kind: 'castFromTop'; readonly spells: IrFilter; readonly gainsHaste: boolean }
+  | {
+      readonly kind: 'castFromTop';
+      readonly spells: IrFilter;
+      readonly gainsHaste: boolean;
+      /** "... by sacrificing a nonland permanent in addition to paying their other costs" (Death Toll deck, group D, CR 601.2b, 118.8): the permanent each such spell sacrifices. */
+      readonly sacrifice?: IrFilter;
+    }
   /**
    * "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it
    * gains "When this permanent is put into a graveyard from the battlefield, exile it and you gain 2 life."" and "... you may cast an artifact spell from your graveyard.

@@ -697,6 +697,13 @@ export function lowerCondition(
       if (ctx?.didSearch !== true) return failure(c, []);
       return ok({ kind: 'thisWayAtLeast', what: 'searched', count: 1 });
     }
+    case 'destroyedThisWay': {
+      // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did. The engine counts the permanents the destroy really
+      // destroyed (an indestructible one, or one a regeneration shield saved, is not counted); the sentence that offers the destroy checks that the permanents it names are creatures.
+      const blocked = missingFeatures(['condition:thisWayAtLeast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      return ok({ kind: 'thisWayAtLeast', what: 'destroyed', count: 1 });
+    }
     case 'discardedSpellThisWay': {
       // "If you discarded an instant or sorcery card this way" (D-358, CR 608.2c): what a discard before it in the same text did.
       const blocked = missingFeatures(['condition:thisWayAtLeast']);

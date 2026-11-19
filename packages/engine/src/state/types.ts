@@ -900,6 +900,12 @@ export interface CastingContext {
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
    */
   readonly flashTargets?: ObjectFilter;
+  /**
+   * A modal spell whose choice of modes depends on the kicker ("Choose one. If this spell was kicked, choose any number instead.", CR 601.2b, 702.33a, 700.2a) asks the kicker before the
+   * modes: `pending` while the kicker question (or its automatic answer) is being settled, `answered` once it is and the modes (then the rest of the cast) follow. Absent for every
+   * other cast.
+   */
+  readonly kickerFirst?: 'pending' | 'answered';
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
@@ -1883,6 +1889,8 @@ export interface ThisWayCounts {
   readonly exiledNonland?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
+  /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */
+  readonly destroyedValue?: number;
   readonly playersDrew?: number;
   /** The permanents tapped by `tap` effects, for "the number of Myr tapped this way" (D-139). */
   readonly tapped?: number;

@@ -608,6 +608,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     }
     case 'landfall':
       return 'Whenever a land enters under your control';
+    case 'playsCard':
+      // CR 305.1, 601.2 (Death Toll deck, group D): a land played or a spell cast, with at least this many card types.
+      return trigger.minCardTypes === undefined || trigger.minCardTypes <= 1
+        ? 'Whenever you play a card'
+        : `Whenever you play a card with ${trigger.minCardTypes} or more card types`;
     case 'cycled':
       // D-179 (CR 702.29c): the card that was cycled.
       return 'When you cycle this card';

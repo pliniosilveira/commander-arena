@@ -363,8 +363,17 @@ export function stateAmountOf(
       const obj = state.objects[id] ?? state.lki[id]?.object;
       return obj?.counters[amount.counter] ?? 0;
     }
-    case 'aggregate':
-      return aggregateOf(state, amount, ctx);
+    case 'aggregate': {
+      // CR 109.4, 608.2c: "the greatest power among creatures they control", the player a target of the spell or ability: read now, with the targets.
+      const controlled = amount.filter.controlledBy;
+      return aggregateOf(
+        state,
+        amount,
+        controlled === undefined
+          ? ctx
+          : { ...ctx, controllers: resolvePlayers(state, controlled, ctx, targets) },
+      );
+    }
     case 'cardTypesAmong':
       return cardTypesAmongOf(state, amount.filter, ctx);
     case 'devotion':

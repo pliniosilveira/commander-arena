@@ -150,6 +150,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
+    case 'destroyedValue':
+      // Convert to Slime: "the total mana value of permanents destroyed this way".
+      return 'the total mana value of the permanents destroyed this way';
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';

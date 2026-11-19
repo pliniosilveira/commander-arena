@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- "If this spell was kicked, choose any number instead" is read as one mode to all of them: the engine never casts a modal spell with no mode chosen, so choosing none is not offered.
 - The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
 - `putIntoGraveyard` reads your own graveyard only and does not hand its cards to the ability: Hedge Shredder ("put them onto the battlefield tapped") and a Room's "for each card type among those cards" stay unsupported.
 - `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; the scenario DSL has two seats, so the split for three or more players is not exercised by a test.

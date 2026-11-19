@@ -33,6 +33,7 @@ import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
 import { DEATH_TOLL_B_CONDITION_RULES } from './death-toll-b';
+import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
@@ -583,6 +584,8 @@ export const CONDITION_RULES = [
   ...LIBRARY_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".
   ...CHOOSER_CONDITION_RULES,
+  // Death Toll deck, group D: "a creature is destroyed this way".
+  ...DEATH_TOLL_D_CONDITION_RULES,
   // Stage P63 (D-216): "you created a token this turn".
   ...EDHREC_CONDITION_RULES,
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".

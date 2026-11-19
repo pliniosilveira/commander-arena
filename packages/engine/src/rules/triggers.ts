@@ -467,6 +467,11 @@ function occurrences(
         event.stackObject !== null
         ? [{ subject: event.stackObject, seat: event.seat, player: event.seat }]
         : [];
+    case 'playsCard':
+      // CR 305.1, 601.2: a land played (the land is the subject, as it is on the battlefield) or a spell cast (as it is on the stack), by the player the event names.
+      return event.kind === 'landPlayed' || event.kind === 'spellCast'
+        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        : [];
     case 'tokenCreated':
       // CR 111.2 (D-465): a token enters under the control of the player who creates it; one occurrence for each token.
       return event.kind === 'tokenCreated'
@@ -902,6 +907,14 @@ function matches(
         controllerOf(state, subject) === candidate.controller &&
         derive(state, subject).types.includes('land')
       );
+    case 'playsCard':
+      // CR 305.1, 601.2, 205.2a: "you play a card with two or more card types": the player is the controller of the ability, the card types are those of the card as it is played
+      // (the land on the battlefield, the spell on the stack).
+      return (
+        subject !== null &&
+        occ.seat === candidate.controller &&
+        derive(state, subject).types.length >= (trigger.minCardTypes ?? 1)
+      );
     case 'castSpell':
       if (subject === null) return false;
       // CR 702.85a (D-120): "When you cast this spell" is the spell's own ability, for that spell only.
@@ -1032,6 +1045,7 @@ function isRelevant(event: GameEvent): boolean {
     case 'attackersDeclared':
     case 'blockersDeclared':
     case 'spellCast':
+    case 'landPlayed': // CR 305.1: "whenever you play a card"
     case 'spellCopied': // D-218: "whenever you cast or copy"
     case 'exerted': // CR 701.43d
     case 'cycled':

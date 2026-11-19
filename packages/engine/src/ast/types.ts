@@ -268,7 +268,7 @@ export type Amount =
    * What an earlier instruction of this same resolution did (D-131), as `lifeLostThisWay` does for life: "for each
    * creature sacrificed this way" (`sacrificed`: the permanents the earlier `sacrifice` effects made their
    * controllers sacrifice), "for each creature destroyed this way" (`destroyed`: the permanents an earlier
-   * `destroy` effect destroyed, indestructible or regenerated ones not counted) and "for each opponent who drew a
+   * `destroy` effect destroyed, indestructible or regenerated ones not counted; `destroyedValue`: their mana values added) and "for each opponent who drew a
    * card this way" (`playersDrew`: the players who drew at least one card in an earlier `draw` effect) and, D-139, "gets +X/+0
    * where X is the number of Myr tapped this way" (`tapped`: the permanents an earlier `tap` effect tapped). Counted over
    * the whole resolution so far; valid only after an effect of that kind in the same sequence.
@@ -365,6 +365,8 @@ export type ThisWayKind =
   | 'destroyed'
   // D-230: "for each nontoken creature you controlled that was destroyed this way" (Ceaseless Conflict): the creatures the controller of the effect controlled as they were destroyed.
   | 'destroyedOwnNontoken'
+  // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way" (Convert to Slime): the mana values the permanents a `destroy` destroyed had on the battlefield, added.
+  | 'destroyedValue'
   // D-231: "When one or more nonland cards are exiled this way, put that many +1/+1 counters" (Augusta): the nonland cards `exileOwnGraveyardCard` exiled (CR 603.12).
   | 'exiledNonland'
   | 'playersDrew'
@@ -451,6 +453,13 @@ export type StaticPtAmount =
    * `filter` names no zone but the battlefield, and reads no power, toughness, keyword, combat or source power (as a `countOf` here).
    */
   | { readonly kind: 'colorsAmong'; readonly filter: ObjectFilter }
+  /**
+   * "The greatest power among creature cards in your graveyard" (CR 613.4c, 208.2, 604.3): the largest power the cards the filter matches have, a static ability's +X/+0.
+   * `filter` names a zone other than the battlefield and the stack (the cards of a graveyard), reads no power, toughness, keyword, combat or source power, and the power read
+   * is the one printed on the card (the value a characteristic-defining ability gives it, CR 604.3, for a `*`), never a layer 7 result: that keeps layer 7 free of loops
+   * (CR 613.8). Plain (+X/+X) only; no card matched is 0.
+   */
+  | { readonly kind: 'greatestPowerAmong'; readonly filter: ObjectFilter }
   /**
    * "Each creature you control gets +1/+0 for each time it has attacked this turn" (D-187, CR 508.1): how many times the creature this static ability
    * affects was declared as an attacker this turn (a creature that attacks in two combat phases counts twice), read from the turn log (`TurnLog.attacked`).
@@ -3187,8 +3196,9 @@ export type Effect =
    * "Goad target creature" (D-639, CR 701.15a-d): each creature `objects` names is goaded by the controller of the effect until their next turn begins (CR 500.1, the
    * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
+   * `forever` (CR 701.15a, 611.2b): "The tokens are goaded for the rest of the game": the goad has no end, so the creatures stay goaded as long as they are in the game.
    */
-  | { readonly kind: 'goad'; readonly objects: ObjectRef }
+  | { readonly kind: 'goad'; readonly objects: ObjectRef; readonly forever?: true }
   /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
@@ -3876,6 +3886,12 @@ export type Trigger =
   | { readonly kind: 'becomesBlocked'; readonly what: TriggerSubject }
   /** "Whenever a land enters under your control" (landfall). */
   | { readonly kind: 'landfall' }
+  /**
+   * "Whenever you play a card with two or more card types" (CR 305.1, 601.2, 205.2a, 603.2): once each time the controller plays a card, as a land (a land play, a special action) or as a
+   * spell (cast). The card is the subject (`triggerSubject`): the land as it is on the battlefield, the spell as it is on the stack. `minCardTypes` is the least number of card types
+   * (artifact, battle, creature, enchantment, instant, kindred, land, planeswalker, sorcery: not supertypes or subtypes) the card has, 1 or more; none is any card.
+   */
+  | { readonly kind: 'playsCard'; readonly minCardTypes?: number }
   /**
    * "Whenever the Ring tempts you" (CR 701.54d, D-196): once each time the Ring tempts the controller of the ability, as they have done what
    * CR 701.54a says, even when some or all of it was impossible (no creature to choose). The creature they chose is in the event, not the
@@ -6167,6 +6183,12 @@ export type StaticEffect =
       readonly kind: 'castFromTopOfLibrary';
       readonly spells: ObjectFilter;
       readonly gainsHaste?: true;
+      /**
+       * "You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs." (CR 601.2b, 601.2f, 118.8): a spell cast
+       * from the library through this ability has the sacrifice of one permanent `sacrifice` matches (the caster controls it) as an additional cost, paid as the others are; with no
+       * such permanent the spell cannot be cast that way. A cast of the card from another zone is not changed by it.
+       */
+      readonly sacrifice?: ObjectFilter;
     }
   /**
    * "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it gains
@@ -6183,6 +6205,13 @@ export type StaticEffect =
       readonly entersTapped?: true;
       readonly gains?: Ability;
     }
+  /**
+   * "You may play Forests from your graveyard." and "You may play lands from your graveyard." (CR 305.1, 601.2a, 604.1, 113.6): while the permanent has the ability, its controller may
+   * play a land card of their graveyard that `lands` matches (as the card it is: its types and subtypes; `zone`, `owner` and `controller` are not read; none is any land), as a
+   * land play. When a land may be played, and how many, are those of the turn (CR 305.2, 505.6b): the permission only adds where the land may come from, and it is not used up
+   * (unlike `playFromGraveyardOnceEachTurn`, which it may stand beside).
+   */
+  | { readonly kind: 'playLandsFromGraveyard'; readonly lands?: ObjectFilter }
   /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative

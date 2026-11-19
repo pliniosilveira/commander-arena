@@ -243,6 +243,8 @@ describe('the dimensions', () => {
       'unspentManaStays',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
+      // CR 305.1: "You may play Forests from your graveyard."
+      'playLandsFromGraveyard',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
       // D-282: "Your opponents can't cast spells with mana value 3 or less."

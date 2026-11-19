@@ -199,6 +199,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   ringTempted: { kind: 'ringTempted' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
+  playsCard: { kind: 'playsCard', minCardTypes: 2 },
   activatesAbility: { kind: 'activatesAbility', who: 'you' },
   scries: { kind: 'scries', who: 'you' },
   surveils: { kind: 'surveils', who: 'you' },

@@ -421,6 +421,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attacks',
     'castSpell',
     'landfall',
+    // CR 305.1, 601.2: "Whenever you play a card with two or more card types".
+    'playsCard',
     'upkeep',
     'endStep',
     'permanentSacrificed',
@@ -1154,6 +1156,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
     'playFromGraveyardOnceEachTurn',
+    // CR 305.1: "You may play Forests from your graveyard."
+    'playLandsFromGraveyard',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -1213,6 +1217,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeTotalOf',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
+    // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
+    'greatestPowerAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
@@ -1959,6 +1965,8 @@ export const STATIC_KINDS = [
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
   'playFromGraveyardOnceEachTurn',
+  /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
+  'playLandsFromGraveyard',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
 ] as const;
@@ -2036,6 +2044,8 @@ export const AMOUNT_KINDS = [
   'lifeTotalOf',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
+  /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
+  'greatestPowerAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
@@ -2401,6 +2411,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
+  playsCard: true,
   activatesAbility: true,
   scries: true,
   surveils: true,

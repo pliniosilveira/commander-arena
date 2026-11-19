@@ -1483,6 +1483,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
+  destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
@@ -1507,7 +1508,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
-  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken'];
+  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
@@ -1745,6 +1746,27 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'an aggregate needs a filter');
+      } else if (a.filter.controlledBy !== undefined) {
+        // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": the player is a target the effect declared, read as the amount
+        // is worked out (with the targets), as a count's is; a player named any other way is not read here.
+        const { controlledBy, ...rest } = a.filter;
+        if (kindOf(controlledBy) !== 'target') {
+          issue(
+            out,
+            `${path}.filter.controlledBy`,
+            'an aggregate names the player whose objects it reads by a target of the ability or spell (controlledBy: target)',
+          );
+        } else {
+          checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
+        }
+        if (rest.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'controlledBy replaces controller: set one of them',
+          );
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
       }
@@ -2141,7 +2163,7 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' = 'countOf',
+  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -2167,6 +2189,19 @@ function checkCountOnly(
       out,
       `${path}.filter.zone`,
       'only permanents on the battlefield have their colors counted',
+    );
+  }
+  if (
+    kind === 'greatestPowerAmong' &&
+    filterSome(
+      amount.filter,
+      (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
+    )
+  ) {
+    issue(
+      out,
+      `${path}.filter.zone`,
+      'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, readsCombatOrSource)) {
@@ -2236,6 +2271,14 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not colors');
     }
     checkCountOnly(amount, path, out, 'colorsAmong', false);
+    return;
+  }
+  // CR 613.4c: "the greatest power among creature cards in your graveyard": plain (+X/+X) only, of cards outside the battlefield.
+  if (amount?.kind === 'greatestPowerAmong') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not a greatest power');
+    }
+    checkCountOnly(amount, path, out, 'greatestPowerAmong', false);
     return;
   }
   if (amount?.kind === 'sum') {
@@ -3858,6 +3901,8 @@ export const MAY_EFFECT_KINDS = [
   'revealTop',
   // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
   'removeCounters',
+  // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
+  'destroy',
 ];
 
 /**
@@ -4690,6 +4735,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'goad':
       // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.forever !== undefined && e.forever !== true) {
+        issue(out, `${path}.forever`, 'forever must be true when present');
+      }
       break;
     case 'regenerate':
       // CR 701.19a: a shield for each permanent the selector names, until end of turn.
