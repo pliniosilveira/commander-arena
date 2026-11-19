@@ -543,6 +543,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedValue'
         | 'playersDrew'
         | 'tapped'
         | 'discarded'
@@ -566,6 +567,8 @@ export type IrAmount =
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
   | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
+  // Death Toll deck, Polluted Cistern (CR 205.2a, 603.2c): "for each card type among those cards", the card types of the cards a batch trigger saw, each once
+  | { readonly kind: 'cardTypesAmongThoseCards'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
   | { readonly kind: 'shortfall'; readonly limit: number; readonly span: Span }
   // Stage P39 (D-184, CR 601.2h): "the amount of mana spent to cast it", "for each mana from an artifact source spent to cast it"; `fromType` is the
@@ -623,6 +626,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'discardedSpellThisWay' }
     // "If you search your library this way" (Lorehold group 1, CR 608.2c, 701.23): what a search before it in the same text did
     | { readonly kind: 'searchedThisWay' }
+    // "If a creature is destroyed this way" (Death Toll deck, CR 608.2c, 701.8): what a destroy before it in the same text did
+    | { readonly kind: 'destroyedThisWay' }
     | { readonly kind: 'unlessPays'; readonly who: IrNoun; readonly cost: readonly IrCost[] }
     // D-258 (the Bruna deck, CR 118.12a): "unless you return an untapped Plains you control to its owner's hand": the `return` clause of one permanent the controller chooses
     | { readonly kind: 'unlessReturn'; readonly clause: IrClause }
@@ -776,6 +781,8 @@ export interface IrCondition extends IrNode {
     // Prismari deck, group 3 (D-661, CR 202.3, 608.2c): "the total mana value of the cards exiled this way is 13 or less": the cards the instructions before it exiled, added up; lowered
     // only after an instruction that exiled cards.
     | { readonly kind: 'movedTotalManaValue'; readonly atMost: number }
+    // Death Toll deck, group B (CR 205.2a, 608.2c): "two cards that share all their card types were milled this way": the cards the instruction before it milled; lowered only after a mill.
+    | { readonly kind: 'movedShareAllCardTypes' }
     | { readonly kind: 'cardLeftYourGraveyard' }
     // Stage P50 (D-207): "it targets a tapped creature" (CR 601.2c, 601.2f)
     | { readonly kind: 'spellTargets'; readonly noun: IrNoun }
@@ -1297,7 +1304,8 @@ export interface IrTrigger extends IrNode {
   readonly mana?: string;
   /**
    * 'combatDamageBatch': "two or more ..." (stage P31, CR 603.2c): the fewest sources; left out for "one or more". 'attackBatch' (stage
-   * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
+   * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out). 'playsCard' (Death Toll deck, group D, CR 205.2a): the fewest card
+   * types the card played has ("a card with two or more card types").
    */
   readonly atLeast?: number;
   /**
@@ -1329,6 +1337,10 @@ export interface IrTrigger extends IrNode {
    * tapped together, whatever their number. The player who taps is the `actor` ("you tap").
    */
   readonly batch?: true;
+  /** 'putIntoGraveyard' (Death Toll deck group B, CR 603.2): "from your library" (the cards came from the library), not "from anywhere". */
+  readonly fromLibrary?: true;
+  /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */
+  readonly eachAttackedPlayer?: true;
 }
 
 export interface IrRestriction extends IrNode {
@@ -1429,6 +1441,16 @@ export type IrStaticEffect =
   // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control": the creatures the subject names cannot be declared attacking the controller or their planeswalkers
   | { readonly kind: 'cantAttackYou' }
   | { readonly kind: 'noMaxHandSize' }
+  /**
+   * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3): the engine's
+   * `creatureOffBattlefield` of the card itself. `subtypes` are the creature types as written (capitalised).
+   */
+  | {
+      readonly kind: 'creatureOffBattlefield';
+      readonly power: number;
+      readonly toughness: number;
+      readonly subtypes: readonly string[];
+    }
   /** "~ is the chosen type in addition to its other types." (stage P15, D-100, CR 205.1b, 613.1d). */
   | { readonly kind: 'chosenType' }
   /**
@@ -1486,6 +1508,8 @@ export type IrStaticEffect =
     }
   /** "You may look at the top card of your library any time." (stage P24, D-125, CR 401.5). The subject is `you`. */
   | { readonly kind: 'lookAtTopOfLibrary' }
+  /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
+  | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of
@@ -1675,7 +1699,13 @@ export type IrStaticEffect =
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`
    * describes (as the card it is); `gainsHaste` is the second sentence. The subject is `you`.
    */
-  | { readonly kind: 'castFromTop'; readonly spells: IrFilter; readonly gainsHaste: boolean }
+  | {
+      readonly kind: 'castFromTop';
+      readonly spells: IrFilter;
+      readonly gainsHaste: boolean;
+      /** "... by sacrificing a nonland permanent in addition to paying their other costs" (Death Toll deck, group D, CR 601.2b, 118.8): the permanent each such spell sacrifices. */
+      readonly sacrifice?: IrFilter;
+    }
   /**
    * "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it
    * gains "When this permanent is put into a graveyard from the battlefield, exile it and you gain 2 life."" and "... you may cast an artifact spell from your graveyard.
@@ -1886,6 +1916,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'dieResult',
   'triggerTargetCount',
   'triggerAttackerCount',
+  'cardTypesAmongThoseCards',
   'shortfall',
   'exiledStillThere',
   'aurasAttachedToIt',

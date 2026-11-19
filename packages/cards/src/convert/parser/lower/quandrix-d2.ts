@@ -40,6 +40,34 @@ const REVEAL_UNTIL_X: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library
+ * in a random order." (Death Toll deck group B, CR 701.20, 401.4, 107.3a): the engine's `revealUntil` with a `count` (the X) that puts the cards found into the graveyard.
+ */
+const REVEAL_UNTIL_X_GRAVEYARD: Lowering<IrClause, Effects> = {
+  head: 'revealUntilXGraveyard',
+  id: 'lower.reveal-until-x-graveyard',
+  needs: [
+    'effect:revealUntil',
+    'ability:revealUntilCount',
+    'ability:revealUntilGraveyard',
+    'amount:x',
+  ],
+  lower(clause, ctx) {
+    const card = arg(clause, 'card');
+    if (card?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    const count = amountArg(clause, 'count', ctx);
+    if (!count.ok) return count;
+    return {
+      ok: true,
+      value: [{ kind: 'revealUntil', filter: filter.value, count: count.value, put: 'graveyard' }],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Reveal the top X cards of your library. Put all land cards from among them onto the battlefield tapped and the rest on the bottom of your library in a random order." (CR 701.20,
  * 401.4, 107.3a): the engine's `lookAtTop` of a reveal (`revealAll`) that takes every card of the kind (`take.all`) onto the battlefield tapped. The cards put are `moved`.
  */
@@ -194,6 +222,7 @@ const REVEAL_UNTIL_PUTS_OWN: Lowering<IrClause, Effects> = {
 
 export const QUANDRIX_D2_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REVEAL_UNTIL_X,
+  REVEAL_UNTIL_X_GRAVEYARD,
   REVEAL_TOP_PUT_ALL,
   UNTAP_MOVED,
   REVEAL_UNTIL_THAT_MANY,

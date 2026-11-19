@@ -12,7 +12,7 @@
  * (CR 613.3) from the printed abilities in every zone (D-110), and a permanent that chose a creature type
  * adds it in layer 4 (D-100).
  */
-import type { Ability } from '../ast/types';
+import type { Ability, StaticEffect } from '../ast/types';
 import type { CardType, Color, Subtype, Supertype } from '../characteristics';
 import { definitionOf } from '../state/ops';
 import type { ContinuousEffect, GameObject, GameState } from '../state/types';
@@ -29,6 +29,16 @@ import { applyColorLayer, applyTypeLayer, effectsOn } from './derive-layers';
 import type { FilterSubject } from './filter-match';
 import { backFaceManaCost } from './layouts';
 import { manaValueOfCost } from './mana-value';
+
+/** The `creatureOffBattlefield` static ability among the printed abilities of an object, if it has one. */
+export function offBattlefieldCreature(
+  printed: readonly Ability[],
+): Extract<StaticEffect, { readonly kind: 'creatureOffBattlefield' }> | null {
+  for (const a of printed) {
+    if (a.kind === 'static' && a.static.kind === 'creatureOffBattlefield') return a.static;
+  }
+  return null;
+}
 
 /**
  * Layer 4 (CR 613.1d) from the permanent's own static abilities: "~ is the chosen type in addition to its
@@ -51,6 +61,21 @@ function withStaticTypes(
   if (isImpendingNotCreature(obj)) {
     // CR 702.176a: not a creature while it has a time counter; its creature subtypes go with the type (CR 205.1a).
     return [...effects, ...impendingTypeEffects(obj)].sort((a, b) => a.timestamp - b.timestamp);
+  }
+  // CR 604.3, 613.1d (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types": a characteristic-defining
+  // ability of the card, in every zone but the battlefield, applied first in layer 4 (CR 613.3) like Changeling.
+  if (obj.zone !== 'battlefield') {
+    const off = offBattlefieldCreature(printed);
+    if (off !== null) {
+      const own: ContinuousEffect = {
+        id: `static:${obj.id}:creatureOffBattlefield`,
+        timestamp: obj.timestamp,
+        objects: [obj.id],
+        until: 'permanent',
+        change: { kind: 'setTypes', types: ['creature'], subtypes: off.subtypes, additive: true },
+      };
+      return [own, ...effects];
+    }
   }
   const type = obj.chosen?.creatureType;
   if (type === undefined || obj.zone !== 'battlefield') return effects;

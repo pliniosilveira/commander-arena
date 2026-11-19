@@ -93,6 +93,8 @@ describe('amounts that read an object', () => {
       'lifeTotalOf',
       // D-179: "for each color among permanents you control".
       'colorsAmong',
+      // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
+      'greatestPowerAmong',
       // D-518: "the number of card types among cards in your graveyard".
       'cardTypesAmong',
       'timesAttacked',
@@ -116,6 +118,8 @@ describe('amounts that read an object', () => {
       // Issue 81 (Shark Typhoon): the X of the cycling cost, in "when you cycle this card".
       'triggerCycleX',
       'triggerAttackerCount',
+      // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
+      'cardTypesAmongTriggerCards',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).

@@ -38,9 +38,9 @@ export function runGoad(
       id: `ce${timestamp}`,
       timestamp,
       objects: [id],
-      // Issue 81 (Dack Fayden): "They're goaded for the rest of the game" has no end.
+      // CR 611.2b: "for the rest of the game" has no end.
       until:
-        node.forTheRestOfTheGame === true
+        node.forever === true
           ? 'permanent'
           : { kind: 'turnStart', seat: ctx.controller, turnsTaken: taken + 1 },
       change: { kind: 'goaded', by: ctx.controller },

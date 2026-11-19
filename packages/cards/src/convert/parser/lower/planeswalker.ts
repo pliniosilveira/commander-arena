@@ -48,7 +48,7 @@ export const SET_LIFE_TOTAL: Lowering<IrClause, Effects> = {
 };
 
 /** The abilities of the emblem the quoted text says, in the engine's AST (CR 114.4). */
-function lowerEmblemAbilities(
+export function lowerEmblemAbilities(
   quoted: IrQuotedAbility,
   ctx: LowerContext,
 ): LowerResult<readonly Ability[]> {
@@ -98,10 +98,16 @@ export const GET_EMBLEM: Lowering<IrClause, Effects> = {
     if (quoted?.kind !== 'quoted') return failure(clause);
     const abilities = lowerEmblemAbilities(quoted, ctx);
     if (!abilities.ok) return abilities;
+    // "Target opponent gets an emblem with ..." (Ob Nixilis Reignited): the player the clause names gets it.
+    const who = arg(clause, 'who');
+    if (who !== undefined && who.kind !== 'noun') return failure(clause);
+    const player = who === undefined ? undefined : playerSelectorOf(who, ctx);
+    if (player !== undefined && !player.ok) return player;
     const effect: Effect = {
       kind: 'createEmblem',
       abilities: [...abilities.value],
       text: quoted.text ?? '',
+      ...(player === undefined ? {} : { player: player.value }),
     };
     return { ok: true, value: [effect], rule: clause.rule };
   },

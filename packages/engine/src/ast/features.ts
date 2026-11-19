@@ -133,10 +133,14 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAmongMoved',
     // D-544: "You may put a land card from your hand or graveyard onto the battlefield." (`ChooseSelector.alsoGraveyard`: the cards of both places are the candidates).
     'chooseAlsoGraveyard',
+    // Death Toll deck: "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (`ChooseSelector.minCardTypes`, and `fromMoved` among the cards exiled).
+    'chooseMinCardTypes',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
+    // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
+    'revealUntilGraveyard',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
@@ -168,6 +172,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   effectKinds: [
     'sequence',
+    // Death Toll deck, group C: "... If an Insect card was milled this way, put a loyalty counter on ~ and repeat this process." (`repeatWhile`, CR 608.2c).
+    'repeatWhile',
     'chooseObjects',
     'chooseCreatureType',
     'dealDamage',
@@ -193,6 +199,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-445: "Monstrosity N" (CR 701.37).
     'monstrosity',
     'exileRandomFromGraveyard',
+    'chooseRandomFromGraveyard',
     // D-393 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
     'exileRandomFromHand',
     // D-232: Spirit of Resilience's "become a copy of an artifact or creature card from among those cards".
@@ -426,6 +433,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attacks',
     'castSpell',
     'landfall',
+    // CR 305.1, 601.2: "Whenever you play a card with two or more card types".
+    'playsCard',
     'upkeep',
     'endStep',
     'permanentSacrificed',
@@ -439,6 +448,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "one or more cards leave your graveyard", "one or more cards are put into exile from your library and/or your graveyard".
     'leftGraveyard',
     'exiledFromLibraryOrGraveyard',
+    // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere" (once for each card, or a batch "for the first time each turn").
+    'putIntoGraveyard',
+    // CR 709.5h: "When you unlock this door" (Room).
+    'doorUnlocked',
     'becomesTarget',
     'chapter',
     // D-111: steps and phases, draws, combat damage dealt, leaving the battlefield.
@@ -998,6 +1011,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'didPrevious',
     // D-661: "if the total mana value of the cards exiled this way is 13 or less" (`movedTotalManaValue`).
     'movedTotalManaValue',
+    // CR 205.2a: "If two cards that share all their card types were milled this way" (`movedShareAllCardTypes`).
+    'movedShareAllCardTypes',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -1129,6 +1144,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cantBeBlockedBy',
     'takeFromLinkedExile',
     'castAsThoughFlash',
+    // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
+    'creatureOffBattlefield',
     // D-145: "can't attack or block unless you control another creature with power 4 or greater"; "Enchanted creature loses all
     // abilities and is a green Elk creature" (`loseAllAbilities`, `setColors`, `setTypes` without `additive`).
     'restrictionUnless',
@@ -1159,6 +1176,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
     'playFromGraveyardOnceEachTurn',
+    // CR 305.1: "You may play Forests from your graveyard."
+    'playLandsFromGraveyard',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -1221,6 +1240,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lifeTotalOf',
     // D-179: "for each color among permanents you control" (a static ability's +N/+N).
     'colorsAmong',
+    // CR 613.4c: "the greatest power among creature cards in your graveyard" (a static ability's +X/+0).
+    'greatestPowerAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
@@ -1245,6 +1266,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 81 (Shark Typhoon): the X of the cycling cost, in a "when you cycle this card" trigger.
     'triggerCycleX',
     'triggerAttackerCount',
+    // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
+    'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -1446,10 +1469,14 @@ export const ABILITY_FEATURES = [
   'chooseAmongMoved',
   /** "You may put a land card from your hand or graveyard onto the battlefield" (D-544, CR 608.2d, 110.2a): the engine's `ChooseSelector.alsoGraveyard` of a `moveToZone` onto the battlefield. */
   'chooseAlsoGraveyard',
+  /** "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (Death Toll deck, CR 205.2a, 608.2d): the engine's `ChooseSelector.minCardTypes` of a `moveToZone` into exile, then `fromMoved` among the cards exiled. */
+  'chooseMinCardTypes',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
   'revealUntilCount',
+  /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
+  'revealUntilGraveyard',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
@@ -1778,6 +1805,8 @@ export const CONDITION_KINDS = [
   'didPrevious',
   /** "If the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c, D-661): the engine's `movedTotalManaValue`. */
   'movedTotalManaValue',
+  /** "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c): the engine's `movedShareAllCardTypes`. */
+  'movedShareAllCardTypes',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -1937,6 +1966,8 @@ export const STATIC_KINDS = [
   'takeFromLinkedExile',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
+  /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */
+  'creatureOffBattlefield',
   /** "Can't attack or block unless you control another creature with power 4 or greater" (CR 508.1a, D-145): the engine's `restrictionUnless`. */
   'restrictionUnless',
   /** "Enchanted creature loses all abilities" (CR 613.1f, D-145): the engine's static `loseAllAbilities`. */
@@ -1976,6 +2007,8 @@ export const STATIC_KINDS = [
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
   'playFromGraveyardOnceEachTurn',
+  /** "You may play Forests from your graveyard" (CR 305.1, 604.1): `playLandsFromGraveyard`. */
+  'playLandsFromGraveyard',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
 ] as const;
@@ -2055,6 +2088,8 @@ export const AMOUNT_KINDS = [
   'lifeTotalOf',
   /** "For each color among permanents you control" (CR 105.2, D-179): the engine's `colorsAmong`, a static ability's +N/+N. */
   'colorsAmong',
+  /** "The greatest power among creature cards in your graveyard" (CR 613.4c, 604.3): the engine's `greatestPowerAmong`, a static ability's +X/+0. */
+  'greatestPowerAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
@@ -2089,6 +2124,8 @@ export const AMOUNT_KINDS = [
   'triggerCycleX',
   /** "that many" in a "whenever one or more Sphinxes attack" trigger (issue 81): the engine's `triggerAttackerCount`. */
   'triggerAttackerCount',
+  /** "For each card type among those cards" (CR 205.2a, 603.2c): the engine's `cardTypesAmongTriggerCards`, of a batch `putIntoGraveyard` trigger. */
+  'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
@@ -2202,8 +2239,10 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
+  chooseMinCardTypes: true,
   chooseFromCommandZone: true,
   revealUntilCount: true,
+  revealUntilGraveyard: true,
   spellXAtMost: true,
   copyEntersWithX: true,
   lookTakeAll: true,
@@ -2256,6 +2295,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   gainLevel: true,
   monstrosity: true,
   exileRandomFromGraveyard: true,
+  chooseRandomFromGraveyard: true,
   exileRandomFromHand: true,
   becomeCopyOfCard: true,
   gainLife: true,
@@ -2273,6 +2313,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   connive: true,
   createCopies: true,
   playersMay: true,
+  repeatWhile: true,
   addMana: true,
   addCounters: true,
   doubleCounters: true,
@@ -2402,6 +2443,8 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   entersBatch: true,
   leftGraveyard: true,
   exiledFromLibraryOrGraveyard: true,
+  putIntoGraveyard: true,
+  doorUnlocked: true,
   becomesTarget: true,
   chapter: true,
   step: true,
@@ -2428,6 +2471,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   classLevel: true,
   crimeCommitted: true,
   tokenCreated: true,
+  playsCard: true,
   activatesAbility: true,
   scries: true,
   surveils: true,

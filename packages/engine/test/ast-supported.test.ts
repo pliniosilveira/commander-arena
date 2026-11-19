@@ -323,6 +323,8 @@ describe('supported feature gate', () => {
         'dies',
         'diesBatch',
         'discarded',
+        // CR 709.5h: "When you unlock this door".
+        'doorUnlocked',
         'drawn',
         'endStep',
         'entersBatch',
@@ -337,6 +339,7 @@ describe('supported feature gate', () => {
         'lifeLost',
         'noncombatDamageDealt',
         'permanentSacrificed',
+        'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".
         'playerAttacksOpponent',
         'ringTempted',
@@ -351,6 +354,7 @@ describe('supported feature gate', () => {
         'tappedForMana',
         'tapsForMana',
         'tokenCreated',
+        'playsCard',
         'unblockedAttackBatch',
         'upkeep',
       ].sort(),

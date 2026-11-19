@@ -36,6 +36,7 @@ import { finalChapterOf, isSaga } from './rules/saga';
 import { objectOrLki, sourceInfo } from './rules/source-info';
 import { foretellCostOf, isForetold, suspendOf } from './rules/special-legality';
 import { landPlaysAllowed, topCardVisibleTo } from './rules/statics';
+import { doorsOf } from './rules/unlock-legality';
 import type { ChosenTarget } from './state/chosen';
 import type { AttackTarget } from './state/combat-types';
 import type { PendingDecision } from './state/decisions';
@@ -361,6 +362,12 @@ export interface ObjectView {
    * options `face` means. Absent when `face` is.
    */
   readonly layout?: CardLayout;
+  /**
+   * For a Room on the battlefield (CR 709.5c): the halves that are unlocked, 0 the left half and 1 the right half (an empty list when both are locked); `faces` has the two halves as
+   * printed. A locked half gives the permanent no name, mana cost or rules text (CR 709.5), so `name`, `manaCost`, `oracleText` and the abilities are those of the unlocked halves.
+   * Whether a locked half can be unlocked now is the priority decision's: it lists an `unlockDoor` option. Absent for every other object.
+   */
+  readonly unlockedDoors?: readonly number[];
   /** D-277 (CR 701.42a, 712.4a): present on a melded permanent only: the two front faces it is made of and its mana value. See `MeldView`. */
   readonly meld?: MeldView;
   /**
@@ -829,6 +836,9 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
           layout: def.layout,
           faces: def.faces.map(({ abilities: _abilities, spell: _spell, ...printed }) => printed),
         }
+      : {}),
+    ...(obj.zone === 'battlefield' && down === null && doorsOf(state, obj) !== null
+      ? { unlockedDoors: obj.unlockedDoors ?? [] }
       : {}),
     ...(obj.meldedWith === undefined || obj.card === null
       ? {}

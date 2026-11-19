@@ -448,11 +448,19 @@ function movesLinkedExile(effect: Effect): boolean {
 
 /** Whether the effect moves a card chosen from the permanent's linked exile (the engine's `choose` selector with the zone `exile`). */
 function choosesFromLinkedExile(effect: Effect): boolean {
-  const text = JSON.stringify(effect);
-  return (
-    (text.includes('"kind":"choose"') && text.includes('"zone":"exile"')) ||
-    movesLinkedExile(effect)
-  );
+  return choosesFromExile(effect) || movesLinkedExile(effect);
+}
+
+/**
+ * Whether the node holds, at any depth, a `choose` selector of cards in exile that is not a choice among the cards the effect before it exiled (`fromMoved`: "put a permanent card from
+ * among them onto the battlefield", Death Toll deck), which reads no linked exile.
+ */
+function choosesFromExile(node: unknown): boolean {
+  if (Array.isArray(node)) return node.some(choosesFromExile);
+  if (typeof node !== 'object' || node === null) return false;
+  const o = node as { kind?: unknown; filter?: { zone?: unknown }; fromMoved?: unknown };
+  if (o.kind === 'choose' && o.filter?.zone === 'exile' && o.fromMoved !== true) return true;
+  return Object.values(node).some(choosesFromExile);
 }
 
 /** The effect with each of its `exile` effects marked `linked`. */

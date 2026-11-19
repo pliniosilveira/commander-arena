@@ -31,6 +31,8 @@ import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
+import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
@@ -52,6 +54,7 @@ import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
   makeNoun,
@@ -1120,8 +1123,11 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
       '~ enters and whenever you cast a creature spell',
       '~ enters and whenever you cast a noncreature spell',
       '~ enters and whenever you cast your first spell with {X} in its mana cost each turn',
+      // Death Toll deck, group D: the second event may be a card played (a land played or a spell cast).
+      '~ enters and whenever you play a card with two or more card types',
     ],
     rejects: [
+      '~ enters and whenever you play a card',
       '~ enters and whenever you cast',
       '~ enters and whenever ~ attacks',
       '~ enters and you cast a creature spell',
@@ -1140,7 +1146,9 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
           (t) => t.subject?.det === 'self',
         ),
         literal(' and whenever '),
-        family<IrTrigger>('trigger', { only: ['trigger.cast', 'trigger.cast-x'] }),
+        family<IrTrigger>('trigger', {
+          only: ['trigger.cast', 'trigger.cast-x', 'trigger.play-card'],
+        }),
       )(ctx, pos);
       if (!r.ok) return r;
       const [enters, , cast] = r.value;
@@ -1192,6 +1200,8 @@ export const TRIGGER_RULES = [
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  // CR 709.5h: "you unlock this door" (a Room).
+  ...ROOM_TRIGGER_RULES,
   // Jeskai free-cast cards (issue 100): "you cast your first instant or sorcery spell each turn".
   ...JESKAI_CASTFREE_TRIGGER_RULES,
   // Stage P30 (D-135): "enters untapped" and "dies or is put into exile from the battlefield" read the words after the event
@@ -1230,6 +1240,8 @@ export const TRIGGER_RULES = [
   ...HASHATON_G1_TRIGGER_RULES,
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token".
   ...GISA_G2_TRIGGER_RULES,
+  // Death Toll deck, group D: "you play a card with two or more card types".
+  ...DEATH_TOLL_D_TRIGGER_RULES,
   // Wizened Mentor (issue 104): "an opponent activates an ability of a permanent that isn't a mana ability".
   ...ACTIVATES_ABILITY_TRIGGER_RULES,
   // Hylda deck, group 1 (issue 42, D-510, D-513): "you tap an untapped creature an opponent controls", "you scry".
@@ -1238,5 +1250,7 @@ export const TRIGGER_RULES = [
   ...GALADRIEL_G1_TRIGGER_RULES,
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result".
   ...GALADRIEL_G3_TRIGGER_RULES,
+  // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
+  ...DEATH_TOLL_B_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

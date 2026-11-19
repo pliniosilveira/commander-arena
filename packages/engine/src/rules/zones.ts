@@ -91,6 +91,7 @@ import { withoutRun } from './enters-run';
 import { faceDownEntry } from './face-down';
 import { applyGraveyardRider } from './graveyard-play';
 import { timesKickedOf } from './kicks';
+import { isRoomDefinition } from './layouts';
 import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
@@ -844,6 +845,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     derive(state, old).types.includes('creature')
       ? ('suspend' as const)
       : undefined);
+  const castDoor =
+    to === 'battlefield' &&
+    !becomesToken &&
+    !entersDown &&
+    old.zone === 'stack' &&
+    old.stack?.kind === 'spell' &&
+    old.card !== null &&
+    isRoomDefinition(definitionOf(state, old.card))
+      ? faceIndex
+      : null;
   const created: GameObject = {
     id: newId,
     card: becomesToken ? null : old.card,
@@ -899,6 +910,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     request.toSeat !== old.owner
       ? { adventureBy: request.toSeat }
       : {}),
+    // CR 709.5d (Room): a permanent with a shared type line is given the unlocked designation of the half that was cast as it enters; one that was not cast enters with neither.
+    ...(castDoor === null ? {} : { unlockedDoors: [castDoor] }),
     // CR 614.12a, 607.2d: what the controller chose as it entered (D-100), the new object's own.
     ...(to === 'battlefield' && choice !== null && request.entersChosen != null
       ? { chosen: request.entersChosen }
@@ -1067,6 +1080,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       turnLog: { ...next.turnLog, graveyarded: [...next.turnLog.graveyarded, also.id] },
     };
   }
+  // CR 603.2, 404.1: a card put into a graveyard from anywhere ("whenever a land card is put into your graveyard ... for the first time each turn").
+  if (to === 'graveyard' && created.card !== null) {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        graveyardEntries: [
+          ...next.turnLog.graveyardEntries,
+          { seat: old.owner, types: derive(next, getObject(next, newId)).types },
+        ],
+      },
+    };
+  }
   // CR 400.7 (D-206): a card that left a graveyard ("if a card left your graveyard this turn").
   if (old.zone === 'graveyard' && to !== 'graveyard' && old.card !== null) {
     next = {
@@ -1133,6 +1159,16 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     });
   }
   events.push(...copyEvents);
+  // CR 709.5h: a half unlocked as the permanent enters counts as unlocked, for the abilities that trigger when a door is.
+  if (castDoor !== null) {
+    events.push({
+      kind: 'doorUnlocked',
+      seat: controller,
+      object: newId,
+      door: castDoor,
+      cost: [],
+    });
+  }
   for (const [counter, count] of Object.entries(counters)) {
     // CR 122.6a (D-149): the player who controls the object puts the counters it enters with.
     events.push({

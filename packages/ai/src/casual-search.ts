@@ -12,6 +12,7 @@ import {
   type ObjectView,
 } from '@commander-arena/engine';
 import { chooseCopyCard, chooseEscapeExile, chooseSplitExiled } from './casual-alt-costs';
+import { chooseCardTypeCover } from './casual-card-types';
 import { chooseCardsToLose } from './casual-choices';
 import { chooseCostDiscard, isWardDiscard } from './casual-costs';
 import { chooseAnyNumberToDiscard, chooseBehold } from './casual-dragons';
@@ -225,6 +226,8 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'discard' && d.min === 0 && d.forCost !== true && d.orSingle === undefined) {
     return chooseAnyNumberToDiscard(view, d);
   }
+  // CR 205.2a: "any number of cards from your graveyard with four or more card types among them": the smallest set that reaches the minimum.
+  if (d.minCardTypes !== undefined) return chooseCardTypeCover(view, d);
   if (d.purpose === 'move' || d.purpose === 'lookTake') return chooseToTake(view, d);
   // CR 608.2g (D-145): a spell cast or a card played without paying its cost: always one, the best.
   if (d.purpose === 'cast') return chooseFreeCast(view, d);

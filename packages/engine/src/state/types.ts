@@ -8,6 +8,7 @@
 import type {
   Ability,
   Cost,
+  DoorValues,
   Effect,
   InlineChoice,
   Keyword,
@@ -158,6 +159,13 @@ export interface GameObject {
    * object does (it is a new object, at level 1, when it changes zones, CR 400.7).
    */
   readonly level?: number;
+  /**
+   * The unlocked designations of a permanent with a shared type line, a Room (CR 709.5c, 709.5d, 709.5e): the indexes (0 the left half, 1 the right half, sorted) of the halves
+   * that are unlocked; a half not listed is locked and has no name, mana cost or rules text (CR 709.5). It is a designation, not a copiable value, and the object's own: set as
+   * the permanent enters from the half that was cast, changed by the unlock special action or an effect, and a new object after any zone change (CR 400.7) has none. Read through
+   * `rules/rooms.ts`. Absent for every other object and for a Room with both halves locked.
+   */
+  readonly unlockedDoors?: readonly number[];
   /**
    * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
    * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
@@ -312,6 +320,8 @@ export interface TokenData {
     readonly characteristics: Characteristics;
     readonly abilities: readonly Ability[];
   };
+  /** The two halves of a token that is a copy of a Room (CR 709.5, 709.5b): part of the copiable values, see `CopiableValues.doors`. Absent for every other token. */
+  readonly doors?: readonly [DoorValues, DoorValues];
   /**
    * The card whose prepare spell this token has, when it is a copy of a preparation card or of a token that has one (CR 722.2b: the existence and values of the
    * prepare spell are part of the copiable values, D-225). Absent for every other token.
@@ -905,6 +915,12 @@ export interface CastingContext {
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
    */
   readonly flashTargets?: ObjectFilter;
+  /**
+   * A modal spell whose choice of modes depends on the kicker ("Choose one. If this spell was kicked, choose any number instead.", CR 601.2b, 702.33a, 700.2a) asks the kicker before the
+   * modes: `pending` while the kicker question (or its automatic answer) is being settled, `answered` once it is and the modes (then the rest of the cast) follow. Absent for every
+   * other cast.
+   */
+  readonly kickerFirst?: 'pending' | 'answered';
   /** Mana symbols of the total cost, locked in at CR 601.2f. Empty until the payment stage. */
   readonly totalCost: readonly string[];
   readonly commanderTax: number;
@@ -1233,6 +1249,9 @@ export type Instruction =
       readonly among?: readonly ObjectId[];
       /** With `among` (`ChooseSelector.fromAnyGraveyard`, issue 159): the cards may be in the graveyard of any player. */
       readonly anyOwner?: true;
+      /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
+      readonly anyNumber?: true;
+      readonly minCardTypes?: number;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1904,6 +1923,8 @@ export interface ThisWayCounts {
   readonly exiledNonland?: number;
   /** The nontoken creatures the controller of the effect controlled that a `destroy` destroyed (D-230). */
   readonly destroyedOwnNontoken?: number;
+  /** The total mana value of the permanents a `destroy` destroyed, each as it last existed on the battlefield (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way". */
+  readonly destroyedValue?: number;
   readonly playersDrew?: number;
   /** The permanents tapped by `tap` effects, for "the number of Myr tapped this way" (D-139). */
   readonly tapped?: number;
@@ -2182,6 +2203,12 @@ export type ContinuousChange =
 export interface CopiableValues {
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
+  /**
+   * For an object with a shared type line, a Room (CR 709.5, 709.5b): the values of its left and right half, which exist whatever the unlocked designations are (they are part
+   * of the copiable values, also on the stack). `characteristics` and `abilities` are those of the object as a card (both halves combined, CR 709.4) or as a spell (the half
+   * that was cast); on the battlefield `rules/rooms.ts` replaces them by those of the unlocked halves (CR 709.5: a locked half has no name, mana cost or rules text).
+   */
+  readonly doors?: readonly [DoorValues, DoorValues];
 }
 
 /**
@@ -2348,6 +2375,14 @@ export interface TurnLog {
    * A card that goes from one graveyard to another is not here (it stays in a graveyard: no zone change of that kind is made).
    */
   readonly leftGraveyard: readonly SeatId[];
+  /**
+   * Each card put into a graveyard this turn from anywhere (CR 603.2, 400.7), in order: the seat that owns it and its card types in the graveyard. A token is not a card and is
+   * not here. "For the first time each turn" of a trigger about cards put into your graveyard reads it.
+   */
+  readonly graveyardEntries: readonly {
+    readonly seat: SeatId;
+    readonly types: readonly CardType[];
+  }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];
   /**
@@ -2383,6 +2418,7 @@ export const EMPTY_TURN_LOG: TurnLog = {
   graveyarded: [],
   died: [],
   leftGraveyard: [],
+  graveyardEntries: [],
   modesChosen: [],
   castSpells: [],
 };

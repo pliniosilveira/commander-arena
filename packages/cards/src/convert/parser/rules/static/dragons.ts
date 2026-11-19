@@ -117,8 +117,16 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may cast creature spells from the top of your library.',
     'You may cast artifact spells with mana value 3 or less from the top of your library.',
     'You may cast spells from the top of your library.',
+    // Death Toll deck, group D (CR 601.2b, 118.8): an additional cost for each such spell.
+    'You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs.',
   ],
   rejects: [
+    'You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs',
+    'You may cast spells from the top of your library by sacrificing a creature in addition to paying their other costs.',
+    'You may cast spells from the top of your library by sacrificing a nonland permanent.',
+    'You may cast spells from the top of your library by sacrificing a nonland permanent instead of paying their mana costs.',
+    'You may cast creature spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs. If you cast a creature spell this way, it gains haste until end of turn.',
+    'You may cast spells from the top of your library by sacrificing two nonland permanents in addition to paying their other costs.',
     'You may cast creature spells from the top of your library',
     'You may cast creature spells from the top of your graveyard.',
     'You may cast creature spells from the top of an opponent’s library.',
@@ -145,10 +153,13 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
         map(comparisonSuffix(['power', 'toughness', 'manaValue']), (c) => c),
         undefined,
       ),
-      pattern(new RegExp(` from the top of your library\\.${''}`, 'iu')),
+      pattern(
+        / from the top of your library(?:\.| by sacrificing a nonland permanent in addition to paying their other costs\.)/iu,
+      ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, types, , compared] = r.value;
+    const [, types, , compared, ended] = r.value;
+    const sacrifice = /by sacrificing/iu.test(ended[0] ?? '');
     const base: IrFilter = {
       ...(types.length > 0 ? { types } : {}),
       raw: ctx.text.slice(pos, r.pos),
@@ -159,13 +170,22 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
       / if you cast a creature spell this way, it gains haste until end of turn\./iu,
     )(ctx, r.pos);
     if (haste.ok && !types.includes('creature')) return fail(ctx, r.pos);
+    // The sacrifice is said of "spells" in general, with nothing after it: a line that also gives haste is another ability.
+    if (haste.ok && sacrifice) return fail(ctx, r.pos);
     const end = haste.ok ? haste.pos : r.pos;
     return {
       ok: true,
       value: {
         kind: 'static',
         subject: youNoun(id, pos),
-        effects: [{ kind: 'castFromTop', spells, gainsHaste: haste.ok }],
+        effects: [
+          {
+            kind: 'castFromTop',
+            spells,
+            gainsHaste: haste.ok,
+            ...(sacrifice ? { sacrifice: { notTypes: ['land'], raw: 'a nonland permanent' } } : {}),
+          },
+        ],
         span: { start: pos, end },
         rule: id,
       },

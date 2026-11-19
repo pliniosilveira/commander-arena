@@ -166,6 +166,8 @@ export interface PermanentOptions extends PlaceOptions {
   readonly ringBearer?: true;
   /** The level of a Class on the battlefield (CR 716.2, D-235). */
   readonly level?: number;
+  /** The unlocked halves of a Room on the battlefield (CR 709.5c): 0 the left half, 1 the right half. Neither by default. */
+  readonly unlocked?: readonly number[];
 }
 
 export interface AtOptions {
@@ -307,6 +309,8 @@ export interface TryVerbs {
   foretell(card: CardRef): TryResult;
   /** Turn a face-down permanent face up (D-310), any permanent on the battlefield the seat names. */
   turnFaceUp(card: CardRef): TryResult;
+  /** Unlock the half `door` (0 the left half, 1 the right half) of a Room (CR 709.5e). */
+  unlock(card: CardRef, door: number): TryResult;
   playLand(card: CardRef, options?: PlayLandOptions): TryResult;
   cast(card: CardRef, options?: Pick<CastOptions, 'alternative' | 'face'>): TryResult;
   tapForMana(card: CardRef, options?: TapOptions): TryResult;
@@ -447,6 +451,8 @@ export interface Actor {
   foretell(card: CardRef, options?: SpecialOptions): CastHandle;
   /** Turn a face-down permanent face up (CR 116.2b, 701.40b, D-310): the special action, paid as `suspend`. */
   turnFaceUp(card: CardRef, options?: SpecialOptions): CastHandle;
+  /** Unlock a half of a Room you control (CR 709.5e): the special action, paid as `suspend`. */
+  unlock(card: CardRef, door: number, options?: SpecialOptions): CastHandle;
   pass(): Actor;
   concede(): Actor;
   /** Mulligan decisions (CR 103.5). */
@@ -535,6 +541,7 @@ export type ActionSpec =
   | { readonly suspend: CardRef }
   | { readonly foretell: CardRef }
   | { readonly turnFaceUp: CardRef }
+  | { readonly unlock: CardRef; readonly door: number }
   | {
       readonly tap: CardRef;
       readonly color?: ManaColor;

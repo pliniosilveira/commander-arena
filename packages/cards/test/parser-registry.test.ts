@@ -116,6 +116,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P24: the play rules are lines of their own.
   'static.additional-land': asIs,
   'static.look-at-top': asIs,
+  'static.play-lands-from-graveyard': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,
@@ -601,6 +602,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // D-295 to D-298 (the Niv-Mizzet deck, group B): the header of a modal spell, the damage to one or two targets and the sentence about what a target was.
   'modal.choose-widen': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
+  // Death Toll deck, group D: the header of a kicked modal spell, and what a destroy of the same text did.
+  'modal.choose-kicked': spell((e) => `${e}\n• Draw a card.\n• You gain 1 life.\n• Scry 1.`),
+  'condition.destroyed-this-way': permanent(
+    (e) => `When ~ enters, you may destroy another target creature. If ${e}, you gain 1 life.`,
+  ),
   'noun.one-or-two-targets': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.one-or-two-targets-bare': spell(
     (e) => `~ deals 2 damage divided as you choose among ${e}.`,
@@ -662,6 +668,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'noun.player-or-planeswalker': spell((e) => `~ deals 1 damage to ${e}.`),
   'noun.each-permanent-of-player': spell((e) => `~ deals 1 damage to target player and ${e}.`),
+  'amount.for-each-card-type': spell((e) => `Target creature gets +1/+1 until end of turn ${e}.`),
+  'amount.for-each-card-type-among-those-cards': permanent(
+    (e) =>
+      `Whenever one or more cards are put into your graveyard from your library, each opponent loses 1 life ${e}.`,
+  ),
+  'trigger.unlock-this-door': whenever,
   'amount.for-each-color': permanent((e) => `Equipped creature gets +1/+1 ${e}.`),
   'static.opponents-cant-cast': asIs,
   'static.opponents-cant-cast-spells': asIs,
@@ -689,6 +701,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a land you control enters, if ${e}, you gain 1 life.`,
   ),
   'token.named-legendary': spell((e) => `Create ${e}.`),
+  // Death Toll deck, group C: a token whose own characteristic-defining ability defines its power and toughness; the card whose own ability is a creature off the battlefield.
+  'token.defined-pt': spell((e) => `Create ${e}.`),
+  'static.creature-off-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
@@ -705,6 +720,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Gisa deck, group 2 (D-464, D-465): "you commit a crime", "you create or sacrifice a token", "Skeletons and Zombies you control".
   'trigger.commit-crime': whenever,
   'trigger.create-token': whenever,
+  'trigger.play-card': whenever,
   'trigger.activate-ability': whenever,
   // Hylda deck, group 1 (D-510, D-513): "you tap an untapped creature an opponent controls", "you scry", "it isn't being declared as an attacker".
   'trigger.tap-untapped': whenever,
@@ -763,6 +779,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.total-mana-value-exiled-this-way': spell(
     (e) =>
       `As many times as you choose, you may exile the top card of your library. If ${e}, you may cast any number of spells from among those cards without paying their mana costs.`,
+  ),
+  // Death Toll deck, group B (CR 205.2a): the condition leads the sentence that follows a mill.
+  'condition.two-milled-cards-share-all-types': spell(
+    (e) => `Mill two cards. If ${e}, you gain 1 life.`,
   ),
   // Prismari deck, group 3 (D-662): a delayed ability for the turn, after the exile of a card.
   'effect.delayed-combat-damage-copy-exiled': permanent(
@@ -889,6 +909,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P68 (D-229): the Hofri Ghostforge deck. The triggers follow "Whenever"; the conditions follow a trigger or "As long as"; the costs are costs of an
   // activated ability; the rider follows the "Add" sentence; the amount follows a pump; the static is a line of its own.
   'trigger.cards-leave-graveyard': whenever,
+  // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
+  'trigger.put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   'trigger.cast-x': whenever,

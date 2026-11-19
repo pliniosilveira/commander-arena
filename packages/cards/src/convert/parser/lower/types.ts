@@ -100,6 +100,8 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
+  /** The sentence of "If they don't" after a "may" sentence the asked player does themselves is being lowered: "they" and "that player" are the player who declined (`declinedPlayer`). */
+  declinedPlayer: boolean;
   /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
   attackedPlayer: {
     readonly selector: PlayerSelector;
@@ -263,6 +265,11 @@ export interface LowerContext {
    */
   movedToHand: boolean;
   /**
+   * True right after a clause that was the exile of "any number of cards from your graveyard with four or more card types among them" (Death Toll deck, Winter, Cynical Opportunist,
+   * CR 608.2c): "them" of "put a permanent card from among them onto the battlefield" are the cards that exile moved. Any other clause lowered after it makes it false again.
+   */
+  exiledAnyCardTypes: boolean;
+  /**
    * What "it" means in "If you do, return it to the battlefield ... at the beginning of the next end step" (stage P48, D-205, CR 603.7c, 400.7j): the reference of the
    * target the last instruction exiled, which the engine's `moved` names. Null before an exile of a target and after any other move, destroy or sacrifice.
    */
@@ -272,6 +279,11 @@ export interface LowerContext {
    * and "those cards" only after an instruction that exiled cards, and "the rest" only after the spells were cast from among them. Null before the first.
    */
   lastEffectKind: string | null;
+  /**
+   * True after an instruction that picked cards of the controller's graveyard at random (Death Toll deck group B, CR 608.2c): what the engine's `moved` names are cards of the graveyard of
+   * the controller, which "put it into your hand" may move to their owner's hand, which is theirs. Set by the lowering of `chooseRandomGraveyardCard`, never cleared inside one ability.
+   */
+  randomYardCard: boolean;
   /**
    * What "that creature" means after a sacrifice (stage P36, D-178, CR 603.12, 608.2h): the reference of the noun the last sacrifice of one chosen
    * permanent named, which the engine's `sacrificed` names. Null before a sacrifice of one.
@@ -323,6 +335,7 @@ export function newContext(
     lastToken: null,
     lowered: 0,
     thatPlayer: null,
+    declinedPlayer: false,
     attackedPlayer: null,
     enchantedPlayerTrigger: false,
     xIs: null,
@@ -343,8 +356,10 @@ export function newContext(
     destroyed: false,
     createdToken: null,
     movedToHand: false,
+    exiledAnyCardTypes: false,
     exiledRef: null,
     lastEffectKind: null,
+    randomYardCard: false,
     namedInQuotes: false,
     readAsCast: false,
     createdPer: null,

@@ -129,6 +129,58 @@ describe('a combat in which it did not attack counts as a combat it did not atta
   });
 });
 
+describe('"Choose an opponent at random. This creature attacks that player this combat if able." (no exclusion of the last combat, nothing to tap)', () => {
+  const ANY = 'SYNTHETIC Reckless Bear';
+  const any = singleFaceCard({
+    name: ANY,
+    manaCost: ['2', 'G'],
+    types: ['creature'],
+    subtypes: ['Bear'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    power: 3,
+    toughness: 3,
+    oracleText: '',
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'beginCombat', whose: 'you' },
+        effect: { kind: 'attackRandomOpponent', creature: { kind: 'this' }, anyOpponent: true },
+      },
+    ],
+  });
+  const game = () =>
+    scenario()
+      .seat(0)
+      .define(any)
+      .library(...LIBRARY)
+      .battlefield(ANY)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the node validates', () => {
+    expect(validateCard(any)).toEqual([]);
+  });
+
+  test('it is required to attack, and again in the next combat of its controller even though that opponent was attacked before (CR 508.1d)', () => {
+    const g = game();
+    g.advanceTo('declareAttackers', { attack: false });
+    expect(() => g.act(0).declareAttackers([])).toThrow();
+    g.act(0).declareAttackers([{ attacker: ANY, target: { player: 1 } }]);
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.advanceTo('precombatMain');
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    expect(g.object(g.id(ANY)).tapped).toBe(false);
+    expect(
+      g.state.continuousEffects.filter((e) => e.change.kind === 'mustAttackPlayer'),
+    ).toHaveLength(1);
+  });
+});
+
 describe('the random choice comes from the seeded generator', () => {
   test('one candidate is that one; several are picked by the generator, the same for the same seed', () => {
     expect(pickRandom([1], createRng(7))[0]).toBe(1);

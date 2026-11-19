@@ -31,7 +31,7 @@ const spell = singleFaceCard({
           rest: 'stay',
         },
         { kind: 'shuffle', player: { kind: 'you' } },
-        { kind: 'goad', objects: { kind: 'moved' }, forTheRestOfTheGame: true },
+        { kind: 'goad', objects: { kind: 'moved' }, forever: true },
         { kind: 'assignControlToOpponents', objects: { kind: 'moved' } },
       ],
     },

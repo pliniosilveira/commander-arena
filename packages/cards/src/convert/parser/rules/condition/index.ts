@@ -32,6 +32,8 @@ import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
+import { DEATH_TOLL_B_CONDITION_RULES } from './death-toll-b';
+import { DEATH_TOLL_D_CONDITION_RULES } from './death-toll-d';
 import { DINOSAUR_CONDITION_RULES } from './dinosaurs';
 import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
@@ -574,12 +576,16 @@ export const CONDITION_RULES = [
   ...PRISMARI_G2_CONDITION_RULES,
   // Prismari deck, group 3 (issue 87, D-661): "the total mana value of the cards exiled this way is 13 or less".
   ...PRISMARI_G3_CONDITION_RULES,
+  // Death Toll deck, group B (CR 205.2a): "two cards that share all their card types were milled this way".
+  ...DEATH_TOLL_B_CONDITION_RULES,
   // Issue 25 (D-318): "you've cast three or more spells this turn".
   ...SPELLS_CAST_CONDITION_RULES,
   // Issue 25 (D-331): "there are no cards in your library", "your library has no cards in it".
   ...LIBRARY_CONDITION_RULES,
   // Stage P52 (D-210): "the player doesn't", "a creature card was discarded this way".
   ...CHOOSER_CONDITION_RULES,
+  // Death Toll deck, group D: "a creature is destroyed this way".
+  ...DEATH_TOLL_D_CONDITION_RULES,
   // Stage P63 (D-216): "you created a token this turn".
   ...EDHREC_CONDITION_RULES,
   // Stage P68 (D-229): "there are fewer than eight cards in your graveyard".

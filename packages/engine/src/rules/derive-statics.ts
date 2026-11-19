@@ -169,6 +169,8 @@ export interface LibraryCastSource {
   readonly object: GameObject;
   readonly spells: ObjectFilter;
   readonly gainsHaste: boolean;
+  /** The permanent sacrificed as an additional cost of a spell cast this way ("by sacrificing a nonland permanent"); absent for none. */
+  readonly sacrifice?: ObjectFilter;
 }
 
 /**
@@ -181,6 +183,9 @@ export interface GraveyardPlaySource {
   readonly land: boolean;
   readonly entersTapped: boolean;
   readonly gains: Ability | undefined;
+  /** `playLandsFromGraveyard`: the land cards that may be played (any land when absent); the permission is not used up by a use. */
+  readonly lands?: ObjectFilter;
+  readonly unlimited?: true;
 }
 
 /**
@@ -336,7 +341,12 @@ function libraryCastsOf(object: GameObject, abilities: readonly Ability[]): Libr
   const out: LibraryCastSource[] = [];
   for (const a of abilities) {
     if (a.kind === 'static' && a.static.kind === 'castFromTopOfLibrary') {
-      out.push({ object, spells: a.static.spells, gainsHaste: a.static.gainsHaste === true });
+      out.push({
+        object,
+        spells: a.static.spells,
+        gainsHaste: a.static.gainsHaste === true,
+        ...(a.static.sacrifice === undefined ? {} : { sacrifice: a.static.sacrifice }),
+      });
     }
   }
   return out;
@@ -355,6 +365,18 @@ function graveyardPlaysOf(
         land: a.static.land === true,
         entersTapped: a.static.entersTapped === true,
         gains: a.static.gains,
+      });
+    }
+    // CR 305.1: "You may play Forests from your graveyard.": a permission of lands only, never used up.
+    if (a.kind === 'static' && a.static.kind === 'playLandsFromGraveyard') {
+      out.push({
+        object,
+        cast: undefined,
+        land: true,
+        entersTapped: false,
+        gains: undefined,
+        unlimited: true,
+        ...(a.static.lands === undefined ? {} : { lands: a.static.lands }),
       });
     }
   }

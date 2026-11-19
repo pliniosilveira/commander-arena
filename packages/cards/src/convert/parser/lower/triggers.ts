@@ -372,6 +372,22 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'landfall':
       return ok({ kind: 'landfall' });
+    case 'playsCard': {
+      // "Whenever you play a card with two or more card types" (Death Toll deck, group D, CR 305.1, 601.2, 205.2a): the player is the controller of the ability.
+      if (t.actor?.det !== 'you' || t.atLeast === undefined) return failure(t);
+      const blocked = missingFeatures(['trigger:playsCard']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'playsCard', minCardTypes: t.atLeast });
+    }
+    case 'doorUnlocked': {
+      // "When you unlock this door" (CR 709.5h): an ability of one half of a Room, triggered by the controller unlocking that half; `validateCard` refuses it on a card that is not a Room.
+      if (t.actor?.det !== 'you') return failure(t);
+      const blocked = missingFeatures(['trigger:doorUnlocked']);
+      return blocked.length > 0
+        ? failure(t, blocked)
+        : ok({ kind: 'doorUnlocked', who: 'you', door: 'this' });
+    }
     case 'cycled': {
       // "When you cycle this card" (stage P37, D-180, CR 702.29c): the card with the ability, which the engine finds in the zone it wound up in.
       if (t.actor?.det !== 'you' || t.subject?.det !== 'self') return failure(t);
@@ -576,6 +592,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         atLeast: t.atLeast,
         ...(what === undefined ? {} : { what }),
         ...(t.attackedEnchantedPlayer === true ? { attackedEnchantedPlayer: true as const } : {}),
+        ...(t.eachAttackedPlayer === true ? { eachAttackedPlayer: true as const } : {}),
       });
     }
     case 'entersBatch': {
@@ -631,6 +648,25 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const missing = missingFeatures([`trigger:${t.event}`]);
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: t.event, who: 'you' });
+    }
+    case 'putIntoGraveyard': {
+      // "Whenever a land card is put into your graveyard from anywhere" (Death Toll deck, group B, CR 603.2, 603.2c): the kind of card is a filter on the card in the graveyard.
+      const missing = missingFeatures(['trigger:putIntoGraveyard']);
+      if (missing.length > 0) return failure(t, missing);
+      const kind = t.subject?.filter;
+      const filter =
+        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+          ? null
+          : lowerFilter(t.subject);
+      if (filter !== null && !filter.ok) return filter;
+      return ok({
+        kind: 'putIntoGraveyard',
+        who: 'you',
+        from: t.fromLibrary === true ? 'library' : 'anywhere',
+        ...(filter === null ? {} : { filter: filter.value }),
+        ...(t.batch === true ? { batch: true as const } : {}),
+        ...(t.firstEachTurn === true ? { firstTimeEachTurn: true as const } : {}),
+      });
     }
     case 'sacrifice': {
       // "you sacrifice" is the controller of this ability, "a player sacrifices" any player.
@@ -1349,7 +1385,9 @@ function lowerTriggeredAbility(
   // `mayPay`, which asks its own question, so neither sentence is the ability's "you may".
   const offerSentence = (s: Sentence) =>
     s.clauses.some((c) => c.verb === 'pay' || c.verb === 'payXAtMost');
-  const boughtSentence = (s: Sentence) => s.condition?.test.kind === 'didPrevious';
+  // Death Toll deck, group D: "you may destroy another target creature. If a creature is destroyed this way, ..." is the same offer, and its sentence reads what the destroy did.
+  const boughtSentence = (s: Sentence) =>
+    s.condition?.test.kind === 'didPrevious' || s.condition?.test.kind === 'destroyedThisWay';
   // "You may discard a card. If you do, draw a card." and "You may exile it. When you do, ..." (stage P30, D-135): the offer is the
   // engine's `may` effect and what follows it is a `conditional` or a `reflexive`; neither sentence is the ability's "you may".
   const mayOffer = (s: Sentence, i: number) => {
@@ -1384,7 +1422,10 @@ function lowerTriggeredAbility(
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
       // D-411: "you may put a land card from among them into your hand": the engine's choice of none or one card is the question.
-      c.verb === 'putFromAmong');
+      c.verb === 'putFromAmong' ||
+      // Death Toll deck, group D (CR 608.2c, 608.2d): "you may mill three cards. Then if ..., ...": with sentences after it that do not depend on the offer, the "you may" is the
+      // engine's `may` of the mill alone (the ability's own `optional` would cover the whole effect); a trigger of the one offer keeps the ability's `optional`.
+      (c.verb === 'mill' && sentences.length > 1));
   // D-660 (Ajani's Chosen): "If that enchantment is an Aura, you may attach it to the token": the offer is the `may` of the attach, which sits beside the condition (the ability's own
   // `optional` could not). Without a condition the "you may" of an attach stays the ability's.
   const conditionalAttach = (s: Sentence) =>
@@ -1579,6 +1620,8 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:diesBatch',
   'trigger:discarded',
   'trigger:exerted',
+  'trigger:playsCard',
+  'trigger:doorUnlocked',
   'static:exertOnAttack',
   'trigger:tappedForMana',
   'trigger:tapsForMana',
@@ -1593,6 +1636,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersBatch',
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',
+  'trigger:putIntoGraveyard',
   'trigger:castNth',
   'trigger:castFirstOfKind',
   'trigger:crimeCommitted',

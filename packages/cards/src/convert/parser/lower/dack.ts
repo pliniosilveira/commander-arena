@@ -45,7 +45,7 @@ const GOAD_MOVED_FOREVER: Lowering<IrClause, Effects> = {
     if (ctx.lastEffectKind !== 'shuffle') return failure(clause);
     return {
       ok: true,
-      value: [{ kind: 'goad', objects: { kind: 'moved' }, forTheRestOfTheGame: true }],
+      value: [{ kind: 'goad', objects: { kind: 'moved' }, forever: true }],
       rule: clause.rule,
     };
   },

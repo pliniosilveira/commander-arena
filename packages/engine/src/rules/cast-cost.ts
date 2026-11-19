@@ -57,6 +57,7 @@ import { lifeOf } from './enters';
 import { faceDownSpellFields, isFaceDown } from './face-down';
 import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
+import { libraryCastSacrificeOf } from './library-cast-cost';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { payMechanismsOf, payOptionSources } from './pay-options';
@@ -413,9 +414,12 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   );
   // CR 118.8, 601.2b (D-181): one of the two ways of the additional cost choice, the one the caster announced.
   const option = request.costOption ?? spell.stack?.costOption;
+  // CR 601.2b, 118.8: "You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs."
+  const librarySacrifice = zone === 'library' ? libraryCastSacrificeOf(state, seat, spell) : null;
   const additional: readonly Cost[] = [
     ...(face?.additionalCosts ?? []),
     ...(option === undefined ? [] : (face?.additionalCostChoice?.[option] ?? [])),
+    ...(librarySacrifice === null ? [] : [{ kind: 'sacrifice' as const, what: librarySacrifice }]),
   ];
   symbols.push(...manaSymbolsOf(additional));
   let sacrifice: ObjectFilter | null = null;

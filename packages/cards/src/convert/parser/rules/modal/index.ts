@@ -166,6 +166,48 @@ export const MODAL_CHOOSE_WIDEN = defineRule<IrModeHeader>({
 });
 
 /**
+ * `modal.choose-kicked`: "Choose one. If ~ was kicked, choose any number instead." (CR 700.2, 700.2a, 702.33d: the controller chooses the modes as the spell is cast, and the
+ * kicker is paid as part of casting it; the engine's `maxIf` reads `kicked` then). One mode is chosen, or any of the modes while the spell is kicked; the engine always asks for at
+ * least one (a spell is cast with a mode chosen), so choosing none is not offered. The card's own name or "this spell" is `~` after normalization.
+ */
+export const MODAL_CHOOSE_KICKED = defineRule<IrModeHeader>({
+  id: 'modal.choose-kicked',
+  family: 'modal',
+  leading: ['choose'],
+  cites: ['CR 700.2 (General)', 'CR 700.2a (General)', 'CR 702.33d (Kicker)'],
+  examples: [
+    'Choose one. If ~ was kicked, choose any number instead.',
+    'choose one. if ~ was kicked, choose any number instead.',
+  ],
+  rejects: [
+    'Choose one. If ~ was kicked, choose any number instead',
+    'Choose one. If ~ was kicked, choose both instead.',
+    'Choose one. If ~ was kicked, choose two instead.',
+    'Choose one. If ~ was kicked with its first kicker, choose any number instead.',
+    'Choose one. If it was kicked, choose any number of them instead.',
+    'Choose two. If ~ was kicked, choose any number instead.',
+    'Choose one. If ~ was not kicked, choose any number instead.',
+    'Choose one. If you control a commander as you cast ~, choose any number instead.',
+    'Choose one —',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      literal('choose one. if '),
+      family<IrCondition>('condition', { only: ['condition.kicked'] }),
+      literal(', choose any number instead.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 1, widen: r.value[1] },
+      span: { start: pos, end: r.pos },
+      rule: 'modal.choose-kicked',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
+/**
  * `modal.choose-not-repeated`: "Choose one that hasn't been chosen this turn —" (CR 700.2, 603.3c: the modes of a triggered ability are chosen as it
  * goes on the stack; a mode that the same permanent chose earlier this turn may not be chosen again, and the ability is removed from the stack when
  * none is left). One mode.
@@ -377,6 +419,7 @@ export const MODAL_RULES = [
   MODAL_CHOOSE,
   MODAL_CHOOSE_COMMANDER,
   MODAL_CHOOSE_WIDEN,
+  MODAL_CHOOSE_KICKED,
   MODAL_CHOOSE_NOT_REPEATED,
   MODAL_CHOOSE_NOT_REPEATED_SOURCE,
   MODAL_CHOOSE_REPEATABLE,

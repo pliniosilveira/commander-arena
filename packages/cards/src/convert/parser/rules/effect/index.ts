@@ -48,6 +48,9 @@ import { DANITHA_G1B_EFFECT_RULES } from './danitha-g1b';
 import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
 import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
+import { DEATH_TOLL_B_EFFECT_RULES } from './death-toll-b';
+import { DEATH_TOLL_C_EFFECT_RULES } from './death-toll-c';
+import { DEATH_TOLL_WINTER_EFFECT_RULES } from './death-toll-winter';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
@@ -1093,6 +1096,9 @@ export const EFFECT_RULES = [
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
+  // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
+  ...DEATH_TOLL_C_EFFECT_RULES,
+  ...DEATH_TOLL_WINTER_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,
@@ -1192,6 +1198,8 @@ export const EFFECT_RULES = [
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,
+  // Death Toll deck, group B: "choose a card at random in your graveyard", "return two creature cards at random from your graveyard to the battlefield".
+  ...DEATH_TOLL_B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,
   // Galadriel deck, group 2 (D-542): "put up to two land cards from among them into your hand".

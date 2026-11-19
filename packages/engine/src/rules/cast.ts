@@ -326,6 +326,16 @@ function toModes(state: GameState, events: GameEvent[]): Result {
   const spell = getObject(state, casting.object);
   const modal = modalOfSpellText(faceOf(state, spell)?.spell);
   if (modal === null) return toKicker(state, events);
+  // CR 601.2b, 702.33a, 700.2a: "Choose one. If this spell was kicked, choose any number instead.": how many modes may be chosen depends on whether the kicker is paid, so the intention to
+  // pay it is announced first (the order the modes and the optional costs are announced in is not fixed by the rule when one depends on the other), and the modes are chosen with it known.
+  if (
+    casting.kickerFirst === undefined &&
+    modal.choose.maxIf?.condition.kind === 'kicked' &&
+    (kickerCostOf(faceOf(state, spell)) !== null ||
+      multikickerCostOf(faceOf(state, spell)) !== null)
+  ) {
+    return toKicker({ ...state, casting: { ...casting, kickerFirst: 'pending' } }, events);
+  }
   const ctx = { controller: casting.seat, source: casting.object };
   const sets = affordableModeSets(state, casting, legalModeSets(state, modal, ctx));
   const only = sets[0];
@@ -412,6 +422,8 @@ export function answerModes(state: GameState, modes: readonly number[]): Result 
 function toKicker(state: GameState, events: GameEvent[]): Result {
   const casting = state.casting;
   if (!casting) return fail('No cast in progress');
+  // The kicker was announced before the modes (see `toModes`): the modes are chosen, the rest of the cast goes on.
+  if (casting.kickerFirst === 'answered') return toReplicate(state, events);
   const { seat } = casting;
   const before = casting.snapshot;
   const obj = getObject(before, casting.from);
@@ -445,7 +457,7 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
       targetsPossible(before, seat, spell, overloaded, false, only, alternative === 'bestow') &&
       canPayRequest(before, seat, spell, { ...request, kicked: false });
     if (kickedOk && !unkickedOk) {
-      return toReplicate(
+      return afterKicker(
         patchObject(state, casting.object, { stack: { ...stack, kicked: true } }),
         events,
       );
@@ -498,7 +510,18 @@ function toKicker(state: GameState, events: GameEvent[]): Result {
       events,
     );
   }
-  return toReplicate(next, events);
+  return afterKicker(next, events);
+}
+
+/**
+ * The cast goes on after the kicker is settled: to the modes when the kicker was announced before them (`toModes`), otherwise to Replicate.
+ */
+function afterKicker(state: GameState, events: GameEvent[]): Result {
+  const casting = state.casting;
+  if (casting?.kickerFirst === 'pending') {
+    return toModes({ ...state, casting: { ...casting, kickerFirst: 'answered' } }, events);
+  }
+  return toReplicate(state, events);
 }
 
 /**
@@ -904,7 +927,7 @@ export function answerKicker(state: GameState, kicked: boolean): Result {
   const next = patchObject({ ...state, pending: null }, casting.object, {
     stack: { ...stack, kicked },
   });
-  return toReplicate(next, []);
+  return afterKicker(next, []);
 }
 
 /**
@@ -920,7 +943,7 @@ export function answerKicks(state: GameState, value: number): Result {
   const next = patchObject({ ...state, pending: null }, casting.object, {
     stack: { ...stack, kicked: value > 0, ...(value > 0 ? { kicks: value } : {}) },
   });
-  return toReplicate(next, []);
+  return afterKicker(next, []);
 }
 
 /**

@@ -22,7 +22,7 @@ import {
   playerDealtDamageHolds,
 } from './condition-reads';
 import { controllerOf } from './control';
-import { countForSource } from './derive-count';
+import { cardTypesAmongForSource, countForSource } from './derive-count';
 import { typeViewOf } from './derive-view';
 import { designationHolders } from './designations';
 import { matchesFilterWith } from './filter-match';
@@ -104,8 +104,14 @@ export function staticConditionHolds(
             ? have <= c.value
             : have === c.value;
       }
-      if (condition.amount.kind !== 'countOf') return false;
-      const n = countForSource(state, condition.amount.filter, source);
+      // CR 205.2a (delirium): the card types among the cards of a zone outside the battlefield.
+      const n =
+        condition.amount.kind === 'cardTypesAmong'
+          ? cardTypesAmongForSource(state, condition.amount.filter, source)
+          : condition.amount.kind === 'countOf'
+            ? countForSource(state, condition.amount.filter, source)
+            : null;
+      if (n === null) return false;
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;
     }

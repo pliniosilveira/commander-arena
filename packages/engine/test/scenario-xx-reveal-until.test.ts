@@ -276,10 +276,16 @@ describe('validation', () => {
     expect(
       validateCard(withEffect({ kind: 'revealUntil', filter: { types: ['land'] }, put: 'hand' })),
     ).toEqual([]);
+    // Death Toll deck, group B: the card found may go into the graveyard (Old Stickfingers).
+    expect(
+      validateCard(
+        withEffect({ kind: 'revealUntil', filter: { types: ['land'] }, put: 'graveyard' }),
+      ),
+    ).toEqual([]);
     for (const bad of [
       { kind: 'revealUntil', filter: { types: ['land'], zone: 'graveyard' }, put: 'hand' },
       { kind: 'revealUntil', filter: { types: ['land'], controller: 'you' }, put: 'hand' },
-      { kind: 'revealUntil', filter: { types: ['land'] }, put: 'graveyard' },
+      { kind: 'revealUntil', filter: { types: ['land'] }, put: 'library' },
       { kind: 'revealUntil', filter: { types: ['land'] }, put: 'hand', tapped: true },
       { kind: 'revealUntil', filter: { types: ['land'] }, put: 'battlefield', tapped: false },
     ]) {

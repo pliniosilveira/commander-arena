@@ -405,6 +405,50 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       if (s.gainsHaste !== undefined && s.gainsHaste !== true) {
         issue(out, `${path}.gainsHaste`, 'gainsHaste must be true when present');
       }
+      // CR 601.2b, 118.8: the permanent sacrificed as an additional cost, a filter of permanents the caster controls.
+      if (s.sacrifice !== undefined) {
+        checkFilter(s.sacrifice, `${path}.sacrifice`, out);
+        if (
+          filterSome(
+            s.sacrifice,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.controller !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.sacrifice`,
+            'the permanent sacrificed is one the caster controls: no zone, owner, controller, stackKind, or anything read from the game',
+          );
+        }
+      }
+      return true;
+    case 'playLandsFromGraveyard':
+      // CR 305.1: the land cards that may be played from the graveyard, as the card in the graveyard is.
+      if (s.lands !== undefined) {
+        checkFilter(s.lands, `${path}.lands`, out);
+        if (
+          filterSome(
+            s.lands,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.controller !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.lands`,
+            'the land is a card in your graveyard: no zone, owner, controller, stackKind, or anything read from the game',
+          );
+        }
+      }
       return true;
     case 'playFromGraveyardOnceEachTurn':
       // CR 601.2a, 305.1 (D-232): the spells (as the card in the graveyard is) and/or the land that may be played from the graveyard, once each turn.

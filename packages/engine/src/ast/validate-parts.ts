@@ -741,6 +741,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerSpellX',
   'triggerCycleX',
   'triggerAttackerCount',
+  'cardTypesAmongTriggerCards',
   'dieResult',
   'votesFor',
   'exiledStillThere',
@@ -1544,6 +1545,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   sacrificedOwn: 'a sacrifice effect',
   destroyed: 'a destroy effect',
   destroyedOwnNontoken: 'a destroy effect',
+  destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
@@ -1570,7 +1572,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
-  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken'];
+  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
@@ -1809,6 +1811,27 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       if (a.filter === undefined || a.filter === null) {
         issue(out, `${path}.filter`, 'an aggregate needs a filter');
+      } else if (a.filter.controlledBy !== undefined) {
+        // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": the player is a target the effect declared, read as the amount
+        // is worked out (with the targets), as a count's is; a player named any other way is not read here.
+        const { controlledBy, ...rest } = a.filter;
+        if (kindOf(controlledBy) !== 'target') {
+          issue(
+            out,
+            `${path}.filter.controlledBy`,
+            'an aggregate names the player whose objects it reads by a target of the ability or spell (controlledBy: target)',
+          );
+        } else {
+          checkPlayerSelector(controlledBy, `${path}.filter.controlledBy`, scope, out);
+        }
+        if (rest.controller !== undefined) {
+          issue(
+            out,
+            `${path}.filter.controller`,
+            'controlledBy replaces controller: set one of them',
+          );
+        }
+        checkFilter(rest, `${path}.filter`, out);
       } else {
         checkFilter(a.filter, `${path}.filter`, out);
       }
@@ -2079,6 +2102,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'cardTypesAmongTriggerCards':
+      // CR 603.2c: the cards a batch trigger saw put into a graveyard.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          "'cardTypesAmongTriggerCards' needs a trigger about a batch of cards (a batch putIntoGraveyard, leftGraveyard or batch discarded trigger)",
+        );
+      }
+      break;
     case 'triggerTargetCount':
       if (scope.triggerTargetCount !== true) {
         issue(
@@ -2225,7 +2258,7 @@ function checkCountOnly(
   path: string,
   out: Out,
   /** D-179: the amount that reads colors (`colorsAmong`) is checked the same way, as it reads the same objects. */
-  kind: 'countOf' | 'colorsAmong' = 'countOf',
+  kind: 'countOf' | 'colorsAmong' | 'greatestPowerAmong' = 'countOf',
   /** D-149: a "+N/+N" count (layer 7c) may name a keyword, read after layer 6; a characteristic-defining ability (layer 7a) may not. */
   allowKeywords = false,
 ): void {
@@ -2251,6 +2284,19 @@ function checkCountOnly(
       out,
       `${path}.filter.zone`,
       'only permanents on the battlefield have their colors counted',
+    );
+  }
+  if (
+    kind === 'greatestPowerAmong' &&
+    filterSome(
+      amount.filter,
+      (f) => f.zone === undefined || f.zone === 'battlefield' || f.zone === 'stack',
+    )
+  ) {
+    issue(
+      out,
+      `${path}.filter.zone`,
+      'only the printed power of cards outside the battlefield and the stack is read (CR 613.8)',
     );
   }
   if (filterSome(amount.filter, readsCombatOrSource)) {
@@ -2327,6 +2373,14 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'a characteristic-defining ability counts objects, not colors');
     }
     checkCountOnly(amount, path, out, 'colorsAmong', false);
+    return;
+  }
+  // CR 613.4c: "the greatest power among creature cards in your graveyard": plain (+X/+X) only, of cards outside the battlefield.
+  if (amount?.kind === 'greatestPowerAmong') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not a greatest power');
+    }
+    checkCountOnly(amount, path, out, 'greatestPowerAmong', false);
     return;
   }
   if (amount?.kind === 'sum') {
@@ -2796,6 +2850,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'didPrevious':
     case 'thisWayAtLeast':
     case 'movedTotalManaValue':
+    case 'movedShareAllCardTypes':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -3142,6 +3197,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
+    // Death Toll deck group B: the cards `chooseRandomFromGraveyard` picked are "it" ("If it's a creature card, put it onto the battlefield").
+    e?.kind === 'chooseRandomFromGraveyard' ||
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
@@ -3329,8 +3386,31 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
-  if (sel.anyNumber !== undefined || sel.greatest !== undefined) {
+  if (
+    sel.greatest !== undefined ||
+    (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
+  ) {
     issue(out, path, 'anyNumber and greatest belong to a sacrifice choice (D-135)');
+  }
+  // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
+  if (sel.minCardTypes !== undefined) {
+    if (!isCount(sel.minCardTypes) || sel.minCardTypes < 2 || sel.minCardTypes > 8) {
+      issue(out, `${path}.minCardTypes`, 'minCardTypes is a whole number of card types, 2 to 8');
+    }
+    if (
+      sel.anyNumber !== true ||
+      sel.optional !== true ||
+      sel.count !== undefined ||
+      sel.filter?.zone !== 'graveyard' ||
+      sel.fromMoved !== undefined ||
+      sel.alsoGraveyard !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.minCardTypes`,
+        "minCardTypes goes with anyNumber and optional, with no count, for cards chosen from the graveyard (zone 'graveyard') and not from among moved cards",
+      );
+    }
   }
   if (sel.filter?.controller !== 'you') {
     issue(
@@ -3350,7 +3430,7 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
     );
   }
   // D-207, CR 607.2a: "a card exiled with this artifact": the permanent's own linked exile, so an ability's.
-  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability') {
+  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability' && sel.fromMoved !== true) {
     issue(
       out,
       `${path}.filter.zone`,
@@ -3380,11 +3460,12 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.fromMoved !== undefined) {
     if (sel.fromMoved !== true)
       issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
-    if (sel.filter?.zone !== 'graveyard') {
+    // Death Toll deck: "exile any number of cards ... If you do, put a permanent card from among them onto the battlefield": the cards the effect before it exiled.
+    if (sel.filter?.zone !== 'graveyard' && sel.filter?.zone !== 'exile') {
       issue(
         out,
         `${path}.filter.zone`,
-        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411): set zone to 'graveyard'",
+        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411) or exile: set zone to 'graveyard' or 'exile'",
       );
     }
     if (scope.movedAvailable !== true) {
@@ -3954,6 +4035,8 @@ export const MAY_EFFECT_KINDS = [
   'revealTop',
   // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
   'removeCounters',
+  // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
+  'destroy',
 ];
 
 /**
@@ -4033,6 +4116,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       if (!isCount(c.compare?.value)) {
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
+      break;
+    case 'movedShareAllCardTypes':
+      // CR 205.2a (Demonic Covenant): the cards an earlier moving effect of the sequence moved, compared by their card types.
+      checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
       break;
     case 'ringBearerChosen':
       issue(
@@ -4520,6 +4607,48 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkCosts(e.cost, `${path}.cost`, out);
       }
       break;
+    case 'repeatWhile': {
+      // CR 608.2c (Grist, the Hunger Tide): the effects, then `then` and the effects again while the test holds. The last effect is a mill, so each pass takes cards out of a
+      // library and the repeat ends; the test reads the cards that mill moved.
+      if (!Array.isArray(e.effects) || e.effects.length === 0) {
+        issue(out, `${path}.effects`, 'a repeated process needs at least one effect');
+        break;
+      }
+      if (e.effects[e.effects.length - 1]?.kind !== 'mill') {
+        issue(
+          out,
+          `${path}.effects`,
+          'the repeated process ends with a mill (each pass takes cards out of a library, so the repeat ends)',
+        );
+      }
+      checkEffect({ kind: 'sequence', effects: e.effects }, `${path}.effects`, scope, out);
+      const after = { ...scope, movedAvailable: true };
+      checkEffectCondition(e.condition, `${path}.condition`, after, out);
+      if (e.condition?.kind !== 'objectMatches' || kindOf(e.condition.of) !== 'moved') {
+        issue(
+          out,
+          `${path}.condition`,
+          'the test of a repeated process reads the cards the mill moved (objectMatches of moved)',
+        );
+      }
+      if (e.beforeAgain !== undefined) {
+        if (!Array.isArray(e.beforeAgain) || e.beforeAgain.length === 0) {
+          issue(
+            out,
+            `${path}.beforeAgain`,
+            'beforeAgain is a list of at least one effect when present',
+          );
+        } else {
+          checkEffect(
+            { kind: 'sequence', effects: e.beforeAgain },
+            `${path}.beforeAgain`,
+            after,
+            out,
+          );
+        }
+      }
+      break;
+    }
     case 'playersMay': {
       // D-210 (CR 608.2d): each player named is asked whether to do the effect; the effect and what is done otherwise are ordinary effects.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
@@ -4751,8 +4880,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'goad':
       // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
-      if (e.forTheRestOfTheGame !== undefined && e.forTheRestOfTheGame !== true) {
-        issue(out, `${path}.forTheRestOfTheGame`, 'forTheRestOfTheGame must be true when present');
+      if (e.forever !== undefined && e.forever !== true) {
+        issue(out, `${path}.forever`, 'forever must be true when present');
       }
       break;
     case 'regenerate':
@@ -5064,6 +5193,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           }
         });
       }
+      if (e.player !== undefined) checkPlayerSelector(e.player, `${path}.player`, scope, out);
       if (typeof e.text !== 'string') issue(out, `${path}.text`, 'the emblem needs its text');
       break;
     case 'empowerJace':
@@ -5242,7 +5372,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'a commander chosen from the command zone is put onto the battlefield',
           );
         }
-        if (zone === 'exile' && e.to === 'battlefield') {
+        if (
+          zone === 'exile' &&
+          e.to === 'battlefield' &&
+          (e.objects as ChooseSelector).fromMoved !== true
+        ) {
           issue(
             out,
             `${path}.to`,
@@ -5262,12 +5396,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
           );
         }
-        // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
+        // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand); onto the battlefield from exile too.
         const among = e.objects as ChooseSelector;
         if (
           among.fromMoved === true &&
           e.to !== 'hand' &&
-          !(e.to === 'battlefield' && among.fromAnyGraveyard === true)
+          !(e.to === 'battlefield' && among.fromAnyGraveyard === true) &&
+          !(e.to === 'battlefield' && zone === 'exile')
         ) {
           issue(
             out,
@@ -5497,19 +5632,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen', 'topChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
-      // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield": every matching card goes, in a reveal of the top, onto the battlefield.
+      // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield" and "Put all land cards revealed this way into your hand": every matching card goes, in a reveal of the top.
       if (
         e.take?.all !== undefined &&
         (e.take.all !== true ||
           e.revealAll !== true ||
-          e.take.to !== 'battlefield' ||
+          (e.take.to !== 'battlefield' && e.take.to !== 'hand') ||
           e.take.min !== undefined ||
           e.take.totalManaValue !== undefined)
       ) {
         issue(
           out,
           `${path}.take.all`,
-          'all is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield, with no min or total mana value',
+          'all is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield or into the hand, with no min or total mana value',
         );
       }
       break;
@@ -5694,11 +5829,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'none'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'graveyard', 'none'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield, into the hand, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand, into the graveyard, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {
@@ -5758,6 +5893,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'exileRandomFromGraveyard':
       // CR 701.13 (D-235): no fields.
+      break;
+    case 'chooseRandomFromGraveyard':
+      // CR 608.2c (Death Toll deck group B): one or more cards of the controller's graveyard, described by a filter of cards.
+      if (!Number.isSafeInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'count is a whole number of one or more');
+      }
+      if (e.filter !== undefined) {
+        checkFilter(e.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            e.filter,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards are in your graveyard: no zone, controller, owner, stackKind, or anything read from the game',
+          );
+        }
+      }
       break;
     case 'exileRandomFromHand':
       // CR 701.13 (D-393): one player exiles one card of their own hand at random, and `moved` names it, so the selector names one player.

@@ -56,7 +56,7 @@ export const EFFECT_REVEAL_UNTIL_OPPONENTS = defineRule<Clauses>({
 
 /**
  * `effect.goad-moved-forever`: "they're goaded for the rest of the game" (CR 701.15a): the creatures the instruction before it put onto the battlefield are goaded by the controller with
- * no end. The engine's `goad` of `moved` with `forTheRestOfTheGame`; the lowering refuses it after any instruction but a reveal. Not read: "it", "until your next turn", another duration.
+ * no end. The engine's `goad` of `moved` with `forever`; the lowering refuses it after any instruction but a reveal. Not read: "it", "until your next turn", another duration.
  */
 export const EFFECT_GOAD_MOVED_FOREVER = defineRule<Clauses>({
   id: 'effect.goad-moved-forever',

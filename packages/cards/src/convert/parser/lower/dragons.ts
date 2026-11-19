@@ -318,6 +318,25 @@ export function lowerDragonStatic(ability: Static): LowerResult<readonly Ability
     rule: ability.rule,
   });
   if (!spells.ok) return spells;
+  // "... by sacrificing a nonland permanent in addition to paying their other costs": the permanent each such spell sacrifices (CR 601.2b, 118.8).
+  let sacrificed: ObjectFilter | null = null;
+  if (effect.sacrifice !== undefined) {
+    const { zone: _zone, stackKind: _kind, ...asked } = effect.sacrifice;
+    void _zone;
+    void _kind;
+    const filter = lowerFilter({
+      kind: 'noun',
+      det: 'a',
+      filter: asked,
+      upTo: false,
+      plural: false,
+      other: false,
+      span: ability.span,
+      rule: ability.rule,
+    });
+    if (!filter.ok) return filter;
+    sacrificed = filter.value;
+  }
   return {
     ok: true,
     value: [
@@ -327,6 +346,7 @@ export function lowerDragonStatic(ability: Static): LowerResult<readonly Ability
           kind: 'castFromTopOfLibrary',
           spells: spells.value,
           ...(effect.gainsHaste ? { gainsHaste: true as const } : {}),
+          ...(sacrificed === null ? {} : { sacrifice: sacrificed }),
         },
       },
     ],

@@ -2,6 +2,7 @@
 import type { ManaColor, ObjectId, ObjectView, PayManaDecision } from '@commander-arena/engine';
 import { turnUpPayPrompt } from '../../game/face-down-text';
 import { SPECIAL_CANCEL, specialPayPrompt } from '../../game/later-text';
+import { unlockPayPrompt } from '../../game/room-text';
 import { ATTACK_TAX_CANCEL, attackTaxPrompt } from './attack-tax';
 import { BLOCK_TAX_CANCEL, blockTaxPrompt } from './block-tax';
 import { type Index, nameOf, stackName } from './lookup';
@@ -278,6 +279,10 @@ export function payBarPrompt(d: PayManaDecision, index: Index): string {
   if (d.purpose === 'turnFaceUp') {
     return `${turnUpPayPrompt(d.totalCost, nameOf(index, d.source))}: tap your mana sources.`;
   }
+  // Unlocking a half of a Room (CR 709.5e): its cost, paid before the half is unlocked.
+  if (d.purpose === 'unlockDoor') {
+    return `${unlockPayPrompt(d.totalCost, index.get(d.source), d.door ?? 0)}: tap your mana sources.`;
+  }
   if (d.purpose === 'suspend' || d.purpose === 'foretell') {
     const prompt = specialPayPrompt(
       d.purpose,
@@ -330,7 +335,12 @@ export function payCancelLabel(d: Pick<PayManaDecision, 'purpose' | 'upkeep'>): 
   // The cost of blocking (CR 509.1d, D-149): `cancel` asks for the blockers again, nothing is countered.
   if (d.purpose === 'blockTax') return BLOCK_TAX_CANCEL;
   // Suspend and Foretell (D-128): nothing has happened yet; priority comes back.
-  if (d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'turnFaceUp') {
+  if (
+    d.purpose === 'suspend' ||
+    d.purpose === 'foretell' ||
+    d.purpose === 'turnFaceUp' ||
+    d.purpose === 'unlockDoor'
+  ) {
     return SPECIAL_CANCEL;
   }
   // Echo and Cumulative upkeep (D-127): not paying sacrifices the permanent.

@@ -303,6 +303,27 @@ export function chosenCardMoveText(effect: Extract<Effect, { kind: 'moveToZone' 
     if (noun === null) return null;
     return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them into your hand`;
   }
+  // Death Toll deck (CR 205.2a, 608.2d): "You may exile any number of cards from your graveyard with four or more card types among them": a set of cards under a card type minimum.
+  if (objects.kind === 'choose' && effect.to === 'exile' && objects.minCardTypes !== undefined) {
+    if (objects.filter.zone !== 'graveyard' || objects.anyNumber !== true) return null;
+    return `${objects.optional === true ? 'You may exile' : 'Exile'} any number of cards from your graveyard with ${numberWord(objects.minCardTypes)} or more card types among them`;
+  }
+  // Death Toll deck (CR 608.2c, 122.6): "Put a permanent card from among them onto the battlefield with a finality counter on it": a choice among the cards the exile before it moved.
+  if (
+    objects.kind === 'choose' &&
+    objects.fromMoved === true &&
+    effect.to === 'battlefield' &&
+    objects.filter.zone === 'exile'
+  ) {
+    const { zone: _zone, controller: _owner, ...kind } = objects.filter;
+    const noun = fromAmongNoun(kind);
+    if (noun === null || (objects.count ?? 1) !== 1) return null;
+    const counter =
+      effect.withCounters === undefined
+        ? ''
+        : ` with ${effect.withCounters.count === 1 ? 'a' : numberWord(effect.withCounters.count)} ${effect.withCounters.counter} counter${effect.withCounters.count === 1 ? '' : 's'} on it`;
+    return `${objects.optional === true ? 'You may put' : 'Put'} ${noun} from among them onto the battlefield${effect.tapped === true ? ' tapped' : ''}${counter}`;
+  }
   // Issue 104 (CR 406.1, 608.2d): "You may exile a creature card from your graveyard": a card the controller chooses among those of their hand or graveyard and exiles.
   if (objects.kind === 'choose' && effect.to === 'exile') {
     const { zone, controller: _owner, ...kind } = objects.filter;
@@ -419,6 +440,32 @@ export function hasJobSelect(abilities: readonly Ability[]): boolean {
 /** True when the abilities have Living weapon (CR 702.92). */
 export function hasLivingWeapon(abilities: readonly Ability[]): boolean {
   return abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'livingWeapon');
+}
+
+/**
+ * Every effect of a kind inside an effect, in the order of the text, looking through sequences, conditions, "may" and reflexive triggers: an ability with two moves of cards
+ * ("exile any number of cards ... If you do, put a permanent card from among them onto the battlefield") has a question for each.
+ */
+export function findEffects<K extends Effect['kind']>(
+  effect: Effect,
+  kind: K,
+): Extract<Effect, { kind: K }>[] {
+  const own = effect.kind === kind ? [effect as Extract<Effect, { kind: K }>] : [];
+  switch (effect.kind) {
+    case 'sequence':
+      return [...own, ...effect.effects.flatMap((part) => findEffects(part, kind))];
+    case 'conditional':
+      return [
+        ...own,
+        ...findEffects(effect.effect, kind),
+        ...(effect.else === undefined ? [] : findEffects(effect.else, kind)),
+      ];
+    case 'may':
+    case 'reflexive':
+      return [...own, ...findEffects(effect.effect, kind)];
+    default:
+      return own;
+  }
 }
 
 /**

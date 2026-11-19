@@ -322,10 +322,20 @@ export function runInstruction(
       const offered = instruction.effect;
       const player = instruction.as ?? res.controller;
       if (
-        offered.kind === 'sacrifice' &&
-        offered.objects.kind === 'choose' &&
-        offered.player === undefined &&
-        sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0
+        (offered.kind === 'sacrifice' &&
+          offered.objects.kind === 'choose' &&
+          offered.player === undefined &&
+          sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0) ||
+        // CR 701.9 (Discard): a player with no card in hand cannot discard one, so they do not and the "if they don't" instruction is done for them (Professor Onyx's last
+        // loyalty ability rules: an opponent with an empty hand loses the life). Nobody is asked about a discard of nothing when "if they don't" follows; without it the question is
+        // asked as it always was (it is what the players who did the thing are counted from, Mog, Moogle Warrior).
+        (offered.kind === 'discard' &&
+          instruction.otherwise !== undefined &&
+          offered.player.kind === 'you' &&
+          offered.random !== true &&
+          offered.hand !== true &&
+          offered.anyNumber !== true &&
+          getSeat(state, player).hand.length === 0)
       ) {
         return instruction.otherwise === undefined
           ? done(state)
@@ -693,6 +703,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
     ...(res.triggerDamage === undefined ? {} : { triggerDamage: res.triggerDamage }),
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
+    ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
     ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
@@ -799,8 +810,18 @@ function runEffect(
       return {
         ...done(together.state, events, together.instructions),
         lastMoved: [],
+        // CR 608.2c, 701.8: "you may destroy ...": doing it is destroying at least one permanent, which "if you do" reads.
+        performed: destroyed.size > 0 ? 1 : 0,
         thisWay: {
           destroyed: destroyed.size,
+          // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way": each as it last existed on the battlefield (before it moved); a token has the value its copiable
+          // mana cost gives it (a token that is no copy has none: 0).
+          destroyedValue: [...destroyed].reduce((total, id) => {
+            const obj = state.objects[id];
+            return obj === undefined
+              ? total
+              : total + manaValueOfCost(derive(state, obj).manaCost, obj);
+          }, 0),
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
           destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
@@ -991,6 +1012,10 @@ function runEffect(
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
+                // CR 205.2a: "any number of cards ... with four or more card types among them".
+                ...(effect.objects.minCardTypes === undefined
+                  ? {}
+                  : { anyNumber: true as const, minCardTypes: effect.objects.minCardTypes }),
                 ...(effect.objects.exceptSacrificed === true
                   ? {
                       among: Object.keys(state.objects).filter(
@@ -1543,9 +1568,19 @@ function runEffect(
     }
 
     case 'createEmblem': {
-      // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem.
-      const r = createEmblem(state, res.controller, effect.abilities, effect.text);
-      return done(r.state, r.events);
+      // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem, or each player the effect names ("Target opponent gets an emblem with ...": they own and control it).
+      let withEmblems = state;
+      const emblemEvents: GameEvent[] = [];
+      const getting =
+        effect.player === undefined
+          ? [res.controller]
+          : resolvePlayers(state, effect.player, ctx, targets);
+      for (const seat of getting) {
+        const r = createEmblem(withEmblems, seat, effect.abilities, effect.text);
+        withEmblems = r.state;
+        emblemEvents.push(...r.events);
+      }
+      return done(withEmblems, emblemEvents);
     }
 
     case 'empowerJace':
@@ -2128,6 +2163,7 @@ function runEffect(
             ...values.characteristics,
             abilities: [...values.abilities, ...(effect.abilities ?? [])],
             ...(prepareOf === null ? {} : { prepareOf }),
+            ...(values.doors === undefined ? {} : { doors: values.doors }),
           },
           count: 1,
           original: true,
@@ -2280,6 +2316,21 @@ function runEffect(
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
     }
 
+    case 'repeatWhile': {
+      // CR 608.2c (Grist, the Hunger Tide): the effects, then the test as an instruction of its own (read after them, so `moved` is what the last of them moved); when it holds
+      // `then` is done and this effect comes up again. The test is a `conditional`, so it ends the repeat when nothing was milled (the library ran out) or no card matches.
+      const again: Effect = {
+        kind: 'conditional',
+        condition: effect.condition,
+        effect: { kind: 'sequence', effects: [...(effect.beforeAgain ?? []), effect] },
+      };
+      return done(
+        state,
+        [],
+        [...effect.effects, again].map((e) => ({ kind: 'effect' as const, effect: e })),
+      );
+    }
+
     case 'playersMay': {
       // D-210 (CR 608.2d, 101.4): each player named, in order, is asked whether to do it.
       const asked: Instruction[] = resolvePlayers(state, effect.players, ctx, targets).map(
@@ -2391,6 +2442,25 @@ function runEffect(
       const [picked] = shuffled;
       if (picked === undefined) return done(state);
       return moving({ ...state, rng }, moveInstructions([picked], 'exile'));
+    }
+
+    case 'chooseRandomFromGraveyard': {
+      // CR 608.2c, 400.7 (Death Toll deck group B): `count` cards of the controller's graveyard that match, picked by the game's random number generator; they are what `moved` names.
+      const candidates = getSeat(state, res.controller).graveyard.filter((id) => {
+        const card = state.objects[id];
+        return (
+          card !== undefined &&
+          (effect.filter === undefined ||
+            matchesFilter(
+              state,
+              card,
+              { ...effect.filter, zone: 'graveyard' },
+              { controller: res.controller, source: res.source },
+            ))
+        );
+      });
+      const [shuffled, rng] = shuffle(candidates, state.rng);
+      return { ...done({ ...state, rng }), lastMoved: shuffled.slice(0, effect.count) };
     }
 
     case 'exileRandomFromHand':
@@ -2942,6 +3012,7 @@ function runEffect(
         ...values.characteristics,
         abilities: values.abilities,
         ...(prepareOf === null ? {} : { prepareOf }),
+        ...(values.doors === undefined ? {} : { doors: values.doors }),
       };
       const opponents = resolvePlayers(state, { kind: 'eachOpponent' }, ctx, targets);
       return {

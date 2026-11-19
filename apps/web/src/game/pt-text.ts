@@ -94,6 +94,15 @@ function partOf(amount: PtAmount | StaticPtAmount, ctx: AmountContext = {}): Par
       ? { sign: '+', mag: 'X', where: UNKNOWN }
       : { sign: '+', mag: '1', each: `for each color among ${among}` };
   }
+  if (amount.kind === 'greatestPowerAmong') {
+    // CR 613.4c: "+X/+0, where X is the greatest power among creature cards in your graveyard".
+    const among = thingsPhrase(amount.filter, true);
+    return {
+      sign: '+',
+      mag: 'X',
+      where: among === null ? UNKNOWN : `the greatest power among ${among}`,
+    };
+  }
   if (amount.kind === 'times') {
     const { factor, of } = amount;
     if (typeof of === 'number') return partOf(factor * of, ctx);

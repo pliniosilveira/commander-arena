@@ -148,11 +148,31 @@ function walk(c: Condition, path: string, out: AstIssue[]): void {
         }
         return;
       }
+      // CR 205.2a (delirium): the card types among the cards of a graveyard or exile, which no layer changes.
+      if (typeof amount !== 'number' && amount?.kind === 'cardTypesAmong') {
+        const zone = amount.filter?.zone;
+        if (zone === 'battlefield' || zone === 'stack') {
+          issue(
+            out,
+            `${path}.amount.filter`,
+            "a static ability's condition counts the card types of cards outside the battlefield and the stack",
+          );
+        }
+        const problem = amount.filter === undefined ? null : filterProblem(amount.filter);
+        if (problem !== null) {
+          issue(
+            out,
+            `${path}.amount.filter`,
+            `a static ability's condition cannot read ${problem}: it would depend on the layer it applies in (CR 613.8)`,
+          );
+        }
+        return;
+      }
       if (typeof amount === 'number' || amount?.kind !== 'countOf') {
         issue(
           out,
           `${path}.amount`,
-          "a static ability's condition compares a count of objects (countOf) with a number",
+          "a static ability's condition compares a count of objects (countOf) with a number or the card types among cards (cardTypesAmong)",
         );
         return;
       }

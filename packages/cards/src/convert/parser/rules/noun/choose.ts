@@ -283,9 +283,12 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
     'a permanent with the greatest mana value among permanents they control',
     'an artifact with the greatest mana value among artifacts they control',
     'a nonland permanent with the greatest mana value among nonland permanents they control',
+    'a creature with the greatest power among creatures that player controls',
   ],
   rejects: [
     'a creature with the greatest power among creatures you control',
+    'a creature with the greatest power among creatures that player',
+    'a creature with the greatest power among creatures that players control',
     'a creature with the greatest power among artifacts they control',
     'a creature with the greatest power among creatures',
     'a creature with the greatest power among creature they control',
@@ -309,7 +312,7 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
           map(permanentPhrase(true, 'all'), withoutZone),
           (filter) => filter.controller === undefined,
         ),
-        literal(' they control'),
+        choice(literal(' they control'), literal(' that player controls')),
       )(ctx, pos);
       if (!head.ok) return head;
       const [, once, word, among] = head.value;

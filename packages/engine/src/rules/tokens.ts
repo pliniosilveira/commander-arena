@@ -88,7 +88,7 @@ export function makeTokens(
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
-  const { abilities, prepareOf, back, ...characteristics } = definition;
+  const { abilities, prepareOf, doors, back, ...characteristics } = definition;
   const backFace =
     back === undefined
       ? undefined
@@ -146,6 +146,7 @@ export function makeTokens(
         abilities,
         ...(backFace === undefined ? {} : { back: backFace }),
         ...(prepareOf === undefined ? {} : { prepareOf }),
+        ...(doors === undefined ? {} : { doors }),
       },
       attachedTo: null,
       protector: null,

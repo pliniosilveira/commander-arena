@@ -478,6 +478,15 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'creatureOffBattlefield':
+      // CR 604.3: a characteristic-defining ability of the card itself: a power and toughness (whole numbers, not negative) and at least one creature type.
+      if (!isCount(s.power) || !isCount(s.toughness)) {
+        issue(out, path, 'the power and toughness are whole numbers, 0 or more');
+      }
+      if (!Array.isArray(s.subtypes) || s.subtypes.length === 0) {
+        issue(out, `${path}.subtypes`, 'name at least one creature type');
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':
@@ -823,6 +832,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'landfall':
       break;
+    case 'playsCard':
+      // CR 305.1, 601.2: at least one card type (a card has one or more); none is any card.
+      if (t.minCardTypes !== undefined && (!isCount(t.minCardTypes) || t.minCardTypes < 1)) {
+        issue(out, `${path}.minCardTypes`, 'minCardTypes must be a positive integer when present');
+      }
+      break;
     case 'ringTempted':
       if (t.bearerChosen !== undefined && t.bearerChosen !== true) {
         issue(out, `${path}.bearerChosen`, 'must be true when present');
@@ -1012,6 +1027,57 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
     case 'exiledFromLibraryOrGraveyard':
       // D-229: the cards of the controller's own graveyard (and library): `who` is "you".
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      break;
+    case 'doorUnlocked':
+      // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (t.door !== 'this') issue(out, `${path}.door`, 'door must be "this"');
+      break;
+    case 'putIntoGraveyard':
+      // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (!isOneOf(t.from, ['anywhere', 'library'])) {
+        issue(out, `${path}.from`, `from must be "anywhere" or "library", not ${String(t.from)}`);
+      }
+      if (t.batch !== undefined && t.batch !== true) {
+        issue(out, `${path}.batch`, 'batch must be true when present');
+      }
+      if (t.firstTimeEachTurn !== undefined) {
+        if (t.firstTimeEachTurn !== true || t.batch !== true) {
+          issue(
+            out,
+            `${path}.firstTimeEachTurn`,
+            'firstTimeEachTurn must be true, and it goes with batch',
+          );
+        }
+        // Only the card types of an earlier card are kept for it (`TurnLog.graveyardEntries`).
+        if (
+          t.filter !== undefined &&
+          Object.keys(t.filter).some((k) => k !== 'types' && k !== 'notTypes')
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'firstTimeEachTurn reads card types only: the filter has types or notTypes',
+          );
+        }
+      }
+      // The card is read where it went (its owner's graveyard): no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the card put into the graveyard is read there: the filter names no zone, controller or owner',
+          );
+        }
+      }
       break;
     case 'diesBatch':
       // D-206: one or more permanents that `what` names die together: a filter of battlefield permanents, as they were.
@@ -1226,6 +1292,11 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'activatesAbility':
       return 'stack';
     case 'tokenCreated':
+      return 'permanent';
+    case 'putIntoGraveyard':
+      // One card for each occurrence; a batch is about several cards and has no one subject.
+      return t.batch === true ? undefined : 'permanent';
+    case 'doorUnlocked':
       return 'permanent';
     default:
       return undefined;
@@ -1545,6 +1616,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(subject === undefined ? {} : { triggerSubject: subject }),
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
         ...(a.trigger.kind === 'leftGraveyard' ||
+        (a.trigger.kind === 'putIntoGraveyard' && a.trigger.batch === true) ||
         (a.trigger.kind === 'discarded' && a.trigger.batch === true)
           ? { triggerCards: true }
           : {}),
