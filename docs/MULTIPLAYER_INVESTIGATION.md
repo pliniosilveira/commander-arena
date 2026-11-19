@@ -45,6 +45,18 @@ Anomalies seen in the views of the agents (decisions in which each appeared):
 | A seat that has lost was asked for a decision | 1 | 3 |
 | A stack object is controlled by a player who has lost | 2 | 0 |
 
+Second run: agent `casual`, 10 games per seat count, first seed 1, same limits.
+
+| | 3 seats | 4 seats |
+| --- | --- | --- |
+| Games ending with a winner | 7 of 10 | 7 of 10 |
+| Engine crash (`State-based actions and triggers did not settle`) | 3 (seeds 2, 5, 9) | 3 (seeds 4, 6, 9) |
+| Actions the engine rejected | 2 (`You cannot pay that cost`) | 0 |
+| Average final turn | 38 | 45 |
+| First loss seen at turn | 23 to 42 | 19 to 56 |
+
+The same anomalies as in the first run appeared (permanents under a player who has lost: 1940 decisions with 3 seats, 5226 with 4; the active seat a player who has lost: 28 with 4 seats; stack objects of a player who has lost: 10 with 4 seats). The casual agent eliminates players much earlier than the random one, and the crash is far more frequent: 6 of 20 games. It is not known yet whether the crash is specific to more than two seats; the same seeds were not played with two.
+
 ## Reading of the results
 
 - The engine plays multiplayer to the end in most games: it is closer than the docs suggested. That does not prove the rules right.
@@ -53,8 +65,8 @@ Anomalies seen in the views of the agents (decisions in which each appeared):
 
 ## Limits of this probe
 
-- Only the random agent was run. The casual and heuristic agents may eliminate players earlier and may expose AI problems (target choice, hidden-hand samples, decision time).
-- The seeds of the crash and of the three turn caps were not recorded: rerun with `--verbose`, then rebuild one with `replayGame`.
+- Only the random and casual agents were run. The heuristic agent may expose AI problems (target choice, hidden-hand samples, decision time).
+- The crash seeds are recorded above; none has been rebuilt with `replayGame` yet, and the three turn caps of the random run were not recorded.
 - The fallback count of the wrapper is fixed at construction and under-counts; it is zero for the random agent anyway.
 - No timing was measured; a 10-game run of 3 seats takes about two minutes with the random agent.
 - The probe's agents are wrapped, so a failing seed must be replayed without the wrapper to confirm it.
@@ -96,8 +108,8 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 ## Open work from the probe
 
-- Rerun with `--agent casual` and `--verbose`; record the seeds of the crash and the turn caps.
-- Reproduce the `did not settle` crash with `replayGame` and find what loops.
+- Reproduce the `did not settle` crash with `replayGame` (seeds above) and find what loops; play the same seeds with two seats to see whether it is multiplayer-specific.
+- Look at the two `You cannot pay that cost` rejections of the casual agent with 3 seats.
 - Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
 - Scenario DSL with 3 and 4 seats.
 - Choose 20 to 30 multiplayer-sensitive cards and write a scenario for each.
