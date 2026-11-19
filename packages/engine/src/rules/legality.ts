@@ -691,7 +691,7 @@ export function canCast(
   ) {
     return false;
   }
-  const spell = castAs(obj, seat, face);
+  const spell = castAs(obj, seat, face, alternative);
   const types = derive(state, spell).types;
   if (types.includes('land')) return false;
   // CR 101.2 (D-149): "You can't cast ~ during your first, second, or third turns of the game".

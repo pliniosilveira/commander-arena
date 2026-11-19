@@ -186,6 +186,7 @@ const ALTERNATIVE_KINDS: readonly AlternativeCost['kind'][] = [
   'madness',
   'miracle',
   'foretell',
+  'morph',
   'tapPermanents',
   'sacrificeFromGraveyard',
 ];

@@ -214,10 +214,46 @@ export const KEYWORD_HARMONIZE = defineRule<readonly IrKeyword[]>({
   parse: altCostKeyword('keyword.harmonize', 'harmonize', true),
 });
 
+/**
+ * `keyword.morph`: "Morph {3}{R}{R}{R}" (CR 702.37a: "You may cast this card as a 2/2 face-down creature with no text, no name, no subtypes, and no mana cost by paying {3}
+ * rather than paying its mana cost"; CR 702.37e: it is turned face up for the morph cost). The cost on the line is the morph cost, what turns the permanent face up; the {3}, the
+ * face-down spell and permanent and the special action are the engine's. The reminder text in parentheses is dropped before the line is read. The cost is a plain mana cost
+ * (a morph cost that is not mana, such as "Morph—Reveal a blue card in your hand.", is not read, and neither is Megamorph or Disguise).
+ */
+export const KEYWORD_MORPH = defineRule<readonly IrKeyword[]>({
+  id: 'keyword.morph',
+  family: 'keyword',
+  leading: ['morph'],
+  cites: [
+    'CR 702.37a (Morph)',
+    'CR 702.37e (Morph)',
+    'CR 708.4 (Face-Down Spells and Permanents)',
+    'CR 118.9 (Alternative Costs)',
+  ],
+  examples: ['Morph {B}', 'Morph {U}', 'Morph {3}{R}{R}{R}', 'morph {1}{G}'],
+  rejects: [
+    'Morph',
+    'Morph {X}{R}',
+    'Morph {R/G}',
+    'Morph—Reveal a blue card in your hand.',
+    'Morph—Pay 3 life.',
+    'Morph {B}.',
+    'Morph {B}, morph {1}',
+    'Morph {B}, flying',
+    'Morph {B} {1}',
+    'Morphs {B}',
+    'Flying, morph {B}',
+    'Megamorph {B}',
+    'Disguise {B}',
+  ],
+  parse: altCostKeyword('keyword.morph', 'morph'),
+});
+
 export const LATER_KEYWORD_RULES = [
   KEYWORD_SUSPEND,
   KEYWORD_MADNESS,
   KEYWORD_FORETELL,
+  KEYWORD_MORPH,
   KEYWORD_MIRACLE,
   KEYWORD_HARMONIZE,
 ];

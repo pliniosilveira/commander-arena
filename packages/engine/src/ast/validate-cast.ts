@@ -236,10 +236,14 @@ export function checkCastFace(
   }
   // CR 702.35a, 702.94a, 702.143a (D-128, D-274): madness, miracle and foretell are ways to cast a card, so they are on a
   // card that is not a land (a land is played, never cast).
-  for (const kind of ['madness', 'miracle', 'foretell'] as const) {
+  for (const kind of ['madness', 'miracle', 'foretell', 'morph'] as const) {
     if (alternatives.some((a) => a?.kind === kind) && face.types.includes('land')) {
       issue(out, `${path}.alternativeCosts`, `${kind} is on a spell, not on a land`);
     }
+  }
+  // CR 702.37a, 701.40b: a card cast face down is a creature (a 2/2), and a face-down permanent is turned face up as a creature card: morph is on a creature card.
+  if (alternatives.some((a) => a?.kind === 'morph') && !face.types.includes('creature')) {
+    issue(out, `${path}.alternativeCosts`, 'morph is on a creature card (CR 702.37a)');
   }
   // CR 702.62a (D-128): suspend exiles the card to cast it later, so it is on a card that is not a land, and a face
   // has at most one.
