@@ -2,7 +2,7 @@
  * Conditions of the Quandrix Unlimited deck, group G (Zimone, All-Questioning): "you control a prime number of lands" and two conditions joined by "and" (CR 603.4: an
  * intervening "if" is checked as the ability triggers and again as it resolves, whole).
  */
-import { fail, literal, pattern, sequence } from '../../combinators';
+import { fail, literal, pattern, quiet, sequence } from '../../combinators';
 import type { IrAmount, IrCondition, IrNoun } from '../../ir/types';
 import { permanentPhrase } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
@@ -106,7 +106,8 @@ export const CONDITION_AND = defineRule<IrCondition>({
   ],
   parse: (ctx, pos) => {
     const term = family<IrCondition>('condition', { only: JOINABLE });
-    const r = sequence(term, pattern(/ and /iu), term)(ctx, pos);
+    // Quiet: a conjunction that is not read leaves the diagnostics of the single condition as they were.
+    const r = quiet(sequence(term, pattern(/ and /iu), term))(ctx, pos);
     if (!r.ok) return r;
     const [first, , second] = r.value;
     return {

@@ -64,8 +64,8 @@ const STEPS: readonly Line[] = [
   {
     kind: 'creature',
     text: 'At the beginning of your draw step, if ~ is tapped, it deals 1 damage to you.',
-    expect: no('it deals 1 damage to you.', 'noun.it', { reason: 'unboundReference' }),
-    note: 'replay: 1 card; the condition is read since stage P29 ("~ is tapped"), the "it" of the damage is not about anything',
+    expect: OK,
+    note: 'replay: 1 card (Mana Vault); the condition is read since stage P29 ("~ is tapped") and "it" is the permanent the intervening "if" names (Quandrix Unlimited deck, group G)',
   },
 ];
 
