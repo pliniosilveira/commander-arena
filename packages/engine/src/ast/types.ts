@@ -525,6 +525,12 @@ export interface ObjectFilter {
    */
   readonly exiledWithSource?: true;
   /**
+   * "Creature put onto the battlefield with this Aura" (CR 303.4, 400.7, 702.5a; Animate Dead): the object is a permanent that an effect of the source of the filter (an Aura) put
+   * onto the battlefield with `moveToZone.putWithSource`, and it is still that same object (one that left and came back is a new object, CR 400.7). Read where the filter is matched
+   * against the game with the source: an enchant ability's filter (the Aura it belongs to is the source), a target slot, an `each` selector. The filter's zone is the battlefield.
+   */
+  readonly putWithSource?: true;
+  /**
    * "A card named Regna, the Redeemer" (CR 201.2, D-489): the object's name (the name of its front face outside the battlefield, CR 711.4 analogue) is exactly this text. Read where the
    * filter is matched against the game (a target slot, an `each` selector, a search of a library); refused in a static ability, as `attacking` is.
    */
@@ -827,6 +833,12 @@ export type ObjectRef =
    * is `controllerOf` of this in a condition. Nothing when the source is attached to nothing.
    */
   | { readonly kind: 'attached' }
+  /**
+   * "That creature" for the permanent an effect of this permanent put onto the battlefield with `moveToZone.putWithSource` (CR 400.7, 603.10a; Animate Dead): the permanents on the
+   * battlefield that were put there with the permanent the ability belongs to, as it is, or as it was when it has left (an Aura's "When this Aura leaves the battlefield, that
+   * creature's controller sacrifices it"). Nothing when it put none there, or when they have left (a permanent that left and came back is a new object).
+   */
+  | { readonly kind: 'putWithThis' }
   /**
    * "The exiled card" of a linked ability (D-145, CR 607.2a, 702.75a Hideaway): the cards the permanent the ability belongs to exiled with its
    * linked ability (`exile.linked`, or the exile of Hideaway) that are still in exile, in the order they were exiled. Nothing when the
@@ -2110,6 +2122,18 @@ export type Effect =
    */
   | { readonly kind: 'revealTopDuel'; readonly players: PlayerSelector }
   /**
+   * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura.\"" (CR 702.5a, 613.1f, 611.2a, 303.4c; Animate Dead): the
+   * Aura `objects` names (`this`) stops having the enchant ability `loses` and has the enchant ability `gains` instead, for as long as it stays on the battlefield (a layer 6 continuous
+   * effect with its own timestamp; the permanent that leaves and returns is a new object, CR 400.7). What it may be attached to, and what state-based actions check (CR 704.5m), is read
+   * from the abilities it has now, so after this a graveyard card is no longer a legal object for it. Nothing happens when the Aura is not on the battlefield, or does not have `loses`.
+   */
+  | {
+      readonly kind: 'replaceEnchant';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'this' }>;
+      readonly loses: Extract<Keyword, { readonly kind: 'enchant' }>;
+      readonly gains: Extract<Keyword, { readonly kind: 'enchant' }>;
+    }
+  /**
    * "Put a Dragon creature card from your hand onto the battlefield tapped and attacking" (CR 508.4, 506.3, D-151): the second half, after an
    * effect of the same sequence that put the creature onto the battlefield (`moveToZone` with `tapped`): each creature `objects` names ('moved') that
    * is on the battlefield and is not attacking now starts attacking. It attacks the player the source of this ability attacks (or the first
@@ -2490,6 +2514,12 @@ export type Effect =
         | { readonly kind: 'target'; readonly id: string }
         | { readonly kind: 'moved' }
         | Extract<ObjectRef, { readonly kind: 'boundObjects' }>;
+      /**
+       * "Return enchanted creature card to the battlefield under your control" for an Aura that then enchants it (CR 400.7, 303.4; Animate Dead): the permanent the card becomes remembers it
+       * was put onto the battlefield with the source of this ability (`GameObject.putWith`, read by `ObjectFilter.putWithSource` and `ObjectRef` `putWithThis`). Only with `to` `battlefield`
+       * and a source that is a permanent (the ability of an Aura).
+       */
+      readonly putWithSource?: true;
     }
   | { readonly kind: 'counter'; readonly objects: ObjectSelector }
   /**
@@ -4050,9 +4080,9 @@ export type Keyword =
   | { readonly kind: 'cycling'; readonly cost: readonly Cost[] }
   /**
    * CR 702.5a (Enchant): "Enchant [object]" restricts what an Aura spell can target (CR 303.4a) and
-   * what it can stay attached to (CR 704.5m). `filter` describes the objects; it is read on the
-   * battlefield, relative to the Aura's controller ("Enchant creature you control" sets
-   * `controller: 'you'`). Only permanents are supported: `zone` is unset or 'battlefield'.
+   * what it can stay attached to (CR 704.5m). `filter` describes the objects; it is read relative to the Aura's controller ("Enchant creature you control" sets
+   * `controller: 'you'`). `zone` is unset (the battlefield) or `graveyard` ("Enchant creature card in a graveyard", Animate Dead: the spell targets such a card, the Aura enters
+   * attached to it, CR 608.3c, and stays legal while that card is a card of the graveyard that matches the filter, CR 704.5m; `GameObject.attachedTo` then names the card).
    */
   | {
       readonly kind: 'enchant';
@@ -4932,6 +4962,11 @@ export type Condition =
    * (`functionsIn: 'graveyard'`).
    */
   | { readonly kind: 'thisInYourGraveyard' }
+  /**
+   * "If it's on the battlefield" (CR 603.4, 400.7; Animate Dead): the permanent the condition belongs to is on the battlefield now, the same object that triggered (an object that has
+   * left is a new object elsewhere, so this reads the live object, never last-known information). Read as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'thisOnBattlefield' }
   /**
    * "If you control your Ring-bearer" (CR 701.54e, D-196): the controller of the condition has a creature that is on the battlefield under their
    * control and is their Ring-bearer. Not for a static ability.

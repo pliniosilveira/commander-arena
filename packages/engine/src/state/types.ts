@@ -206,6 +206,12 @@ export interface GameObject {
    */
   readonly linkedExile?: readonly ObjectId[];
   /**
+   * The permanent (an Aura) an effect of which put this permanent onto the battlefield with `moveToZone.putWithSource` (CR 400.7, 303.4; Animate Dead: "enchant creature put onto the
+   * battlefield with this Aura"): its object id as it was, read by `ObjectFilter.putWithSource` and the `putWithThis` reference, also after that permanent has left. It is this object's own: a
+   * permanent that leaves and returns is a new object with none. Absent otherwise.
+   */
+  readonly putWith?: ObjectId;
+  /**
    * Present on a card in exile that a Hideaway ability exiled face down (CR 702.75a, D-145): the permanent whose ability exiled it, whose
    * controller may look at it for as long as that permanent is still on the battlefield as the same object (nobody may when it left). It is
    * the exile object's own: a new object after any zone change (CR 400.7) has none. Absent otherwise.
@@ -1699,6 +1705,8 @@ export type Instruction =
       readonly linkTo?: ObjectId;
       /** The Aura enters attached to this permanent (CR 303.4f, `auraEntry`, D-149). */
       readonly attachTo?: ObjectId;
+      /** The permanent it becomes remembers it was put onto the battlefield with this permanent (`moveToZone.putWithSource`, `GameObject.putWith`). */
+      readonly putWith?: ObjectId;
       /** The card exiled is returned to the battlefield when this permanent leaves it (`exile.until`, CR 610.3): an `ExileReturn` is recorded. */
       readonly untilLeaves?: ObjectId;
       /** "Until an opponent becomes the monarch" (D-231, CR 610.3): the permanent whose ability exiled the card; the card comes back when an opponent of its controller becomes the monarch. */
@@ -1962,6 +1970,15 @@ export type ContinuousChange =
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
+  /**
+   * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp
+   * the enchant ability `loses` is taken away and the one `gains` is added.
+   */
+  | {
+      readonly kind: 'replaceEnchant';
+      readonly loses: Extract<Keyword, { readonly kind: 'enchant' }>;
+      readonly gains: Extract<Keyword, { readonly kind: 'enchant' }>;
+    }
   /** "Lose hexproof and shroud and can't have them" (`loseHexproofShroud`, D-649, CR 613.1f): layer 6, applied after every grant whatever its timestamp. */
   | { readonly kind: 'loseHexproofShroud' }
   /**

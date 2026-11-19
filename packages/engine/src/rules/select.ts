@@ -655,6 +655,12 @@ export function resolveObjects(
       const host = source?.attachedTo ?? null;
       return host !== null && state.objects[host] !== undefined ? [host] : [];
     }
+    case 'putWithThis': {
+      // CR 400.7, 603.10a (Animate Dead): the permanents on the battlefield that were put there with the object the ability belongs to, which may have left already (its id is what they remember).
+      const from = ctx.source;
+      if (from === null) return [];
+      return state.battlefield.filter((id) => state.objects[id]?.putWith === from);
+    }
     case 'linkedExile': {
       // CR 607.2a, 702.75a (D-145): the cards the source exiled with its linked ability that are still in exile, in the order exiled.
       // The link is the permanent's own: a source that left (a new object) has none.

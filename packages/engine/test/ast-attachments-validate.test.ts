@@ -79,15 +79,29 @@ describe('Auras (CR 303.4a, 702.5a)', () => {
     expect(messages(def)).toEqual([expect.stringContaining('an Aura is an enchantment')]);
   });
 
-  test('the enchant filter must be about permanents on the battlefield', () => {
+  test('the enchant filter must be about permanents on the battlefield or cards in a graveyard', () => {
     for (const filter of [
-      { zone: 'graveyard', types: ['creature'] },
+      { zone: 'exile', types: ['creature'] },
+      { zone: 'hand' },
       { stackKind: 'spell' },
       { anyOf: [{ zone: 'graveyard' }] },
+      // A card in a graveyard has no controller and was not put onto the battlefield with an Aura (CR 702.5a, 108.4a).
+      { zone: 'graveyard', controller: 'you' },
+      { zone: 'graveyard', putWithSource: true },
     ] as ObjectFilter[]) {
       const def = aura([{ kind: 'keyword', keyword: { kind: 'enchant', filter } }]);
       expect(validateCardStructure(def), JSON.stringify(filter)).not.toEqual([]);
     }
+  });
+
+  test('"Enchant creature card in a graveyard" is a well-formed enchant ability (CR 702.5a)', () => {
+    const def = aura([
+      {
+        kind: 'keyword',
+        keyword: { kind: 'enchant', filter: { zone: 'graveyard', types: ['creature'] } },
+      },
+    ]);
+    expect(validateCardStructure(def)).toEqual([]);
   });
 
   test('two enchant abilities are structurally fine but not run (CR 702.5c)', () => {

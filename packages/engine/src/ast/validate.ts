@@ -126,6 +126,19 @@ function checkKeyword(k: Keyword, path: string, out: AstIssue[]): void {
         if (Object.keys(k.filter).length > 0) {
           issue(out, `${path}.filter`, 'an Aura that enchants a player has an empty filter');
         }
+      } else if (k.filter.zone === 'graveyard') {
+        // CR 702.5a, 303.4a (Animate Dead): "Enchant creature card in a graveyard": the spell targets such a card, which the Aura is attached to while it stays there.
+        checkFilter(k.filter, `${path}.filter`, out);
+        if (k.filter.stackKind !== undefined || k.filter.controller !== undefined) {
+          issue(out, `${path}.filter`, 'a card in a graveyard has no controller and is no spell');
+        }
+        if (k.filter.putWithSource === true) {
+          issue(
+            out,
+            `${path}.filter`,
+            'only a permanent was put onto the battlefield with an Aura',
+          );
+        }
       } else {
         checkBattlefieldFilter(k.filter, `${path}.filter`, out);
       }

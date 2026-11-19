@@ -145,6 +145,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'reflexiveMoved',
     'attachedToMoved',
     'delayedReturnAttached',
+    // CR 400.7, 303.4: "Return enchanted creature card to the battlefield ..., attach this Aura to it" (Animate Dead): `moveToZone.putWithSource`, the permanent remembers the Aura.
+    'putWithSource',
   ],
   effectKinds: [
     'sequence',
@@ -370,6 +372,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
     'revealTopDuel',
+    // CR 702.5a, 613.1f: "it loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (Animate Dead).
+    'replaceEnchant',
     // D-151: "you may behold a Dragon" (CR 701.4).
     'behold',
     // D-151: "you may pay any amount of {R}. When you do, ..." (CR 603.12).
@@ -752,6 +756,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
     'exiledWithSource',
+    // Animate Dead: "enchant creature put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`), "that creature's controller sacrifices it" (`ObjectRef` `putWithThis`).
+    'putWithSource',
+    'putWithThis',
     // D-422: "Aura attached to it", "creatures that aren't enchanted", "enchanted creature" (`ObjectFilter.attachedTo`, `enchanted`, `hostOfSource`).
     'attachedTo',
     'enchanted',
@@ -964,6 +971,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     'thisInYourGraveyard',
+    // CR 603.4 (Animate Dead): "if it's on the battlefield".
+    'thisOnBattlefield',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
     // D-151: Dethrone ("attacking the player with the most life or tied for most life") and Pack tactics ("total power 6 or greater").
@@ -1361,6 +1370,8 @@ export const ABILITY_FEATURES = [
   'attachedToMoved',
   /** "Return this card to the battlefield attached to that creature at the beginning of the next end step" (CR 603.7c, 303.4f, issue 89): a delayed `moveToZone` of `thisCard` with `attachTo` `moved`. */
   'delayedReturnAttached',
+  /** "Return enchanted creature card to the battlefield ... attach this Aura to it" (CR 400.7, 303.4, Animate Dead): `moveToZone` with `putWithSource`. */
+  'putWithSource',
 ] as const;
 export type AbilityFeatureKind = (typeof ABILITY_FEATURES)[number];
 
@@ -1435,6 +1446,10 @@ export const SELECTOR_KINDS = [
   'enteredThisTurn',
   /** "Target card exiled with this creature" (CR 607.2a, Lorehold group 2): the engine's `ObjectFilter.exiledWithSource`. */
   'exiledWithSource',
+  /** "Creature put onto the battlefield with this Aura" (CR 400.7, 303.4, Animate Dead): the engine's `ObjectFilter.putWithSource`. */
+  'putWithSource',
+  /** "That creature" for what this permanent put onto the battlefield (CR 400.7, 603.10a, Animate Dead): the engine's `ObjectRef` `putWithThis`. */
+  'putWithThis',
   /** "Aura attached to it", "attached to enchanted creature", "attached to a creature" (CR 303.4, 301.5, 701.3, D-422): the engine's `ObjectFilter.attachedTo`. */
   'attachedTo',
   /** "Creatures that aren't enchanted" (CR 303.4, D-422): the engine's `ObjectFilter.enchanted`. */
@@ -1679,6 +1694,8 @@ export const CONDITION_KINDS = [
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
+  /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
+  'thisOnBattlefield',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
   'chosenOption',
   /** "Attacks the player with the most life or tied for most life" (D-151): the engine's `attackingMostLife`. */
@@ -2037,6 +2054,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   reflexiveMoved: true,
   attachedToMoved: true,
   delayedReturnAttached: true,
+  putWithSource: true,
   activateOnlyIf: true,
   xCost: true,
   modal: true,
@@ -2186,6 +2204,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileUntilCast: true,
   revealTop: true,
   revealTopDuel: true,
+  replaceEnchant: true,
   behold: true,
   payAnyAmount: true,
 };

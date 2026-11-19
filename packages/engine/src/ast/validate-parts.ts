@@ -304,6 +304,7 @@ export function checkFilter(
     'castFromHand',
     'enteredThisTurn',
     'exiledWithSource',
+    'putWithSource',
     'singleTarget',
     'modified',
     'goaded',
@@ -435,6 +436,14 @@ export function checkFilter(
       out,
       `${path}.exiledWithSource`,
       "only a card in exile was exiled with a permanent: the filter's zone is 'exile'",
+    );
+  }
+  // CR 400.7 (Animate Dead): "put onto the battlefield with this Aura" is a permanent.
+  if (f.putWithSource === true && f.zone !== undefined && f.zone !== 'battlefield') {
+    issue(
+      out,
+      `${path}.putWithSource`,
+      'only a permanent on the battlefield was put onto the battlefield with another',
     );
   }
   if (f.enteredThisTurn === true && f.zone !== undefined && f.zone !== 'battlefield') {
@@ -639,6 +648,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.putFromBattlefieldThisTurn !== undefined ||
   f.enteredThisTurn !== undefined ||
   f.exiledWithSource !== undefined ||
+  f.putWithSource !== undefined ||
   f.singleTarget !== undefined ||
   f.modified !== undefined ||
   f.goaded !== undefined ||
@@ -1133,6 +1143,12 @@ export function checkRef(
       // D-139: "enchanted creature", "equipped creature": the permanent this Aura or Equipment is attached to (an ability's).
       if (scope.owner === 'spell') {
         issue(out, path, "'attached' is only valid in abilities of an Aura or an Equipment");
+      }
+      break;
+    case 'putWithThis':
+      // CR 400.7 (Animate Dead): "that creature", what the permanent put onto the battlefield with `moveToZone.putWithSource`: the permanent's own, so an ability's.
+      if (scope.owner === 'spell') {
+        issue(out, path, "'putWithThis' is only valid in abilities of a permanent");
       }
       break;
     case 'linkedExile':
@@ -2823,6 +2839,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
+      break;
+    case 'thisOnBattlefield':
+      // CR 603.4 (Animate Dead): no parameters; the permanent the ability belongs to.
       break;
     case 'xAtLeast': // issue 233: the X of the spell is at least a whole number of 1 or more
       if (!Number.isSafeInteger(c.value) || c.value < 1) {
@@ -4973,6 +4992,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             `${path}.to`,
             "moveToZone puts into exile only a choice of cards in the hand or the graveyard; exile anything else with the 'exile' effect",
           );
+        }
+      }
+      // CR 400.7 (Animate Dead): the permanent put onto the battlefield remembers the permanent whose ability put it there.
+      if (e.putWithSource !== undefined) {
+        if (e.putWithSource !== true) {
+          issue(out, `${path}.putWithSource`, 'putWithSource must be true when present');
+        }
+        if (e.to !== 'battlefield' || scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.putWithSource`,
+            'only an ability of a permanent that puts a card onto the battlefield remembers it',
+          );
+        }
+        if (kindOf(e.objects) === 'choose') {
+          issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
         }
       }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.

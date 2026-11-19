@@ -55,8 +55,22 @@ export function auraTargetSpec(face: CardFace | null): TargetSpec | null {
     return { id: ENCHANT_TARGET_ID, what: { kind: 'player', filter: 'any' } };
   return {
     id: ENCHANT_TARGET_ID,
-    what: { kind: 'object', filter: { ...enchant.filter, zone: 'battlefield' } },
+    what: { kind: 'object', filter: { ...enchant.filter, zone: enchantZone(enchant.filter) } },
   };
+}
+
+/**
+ * Where the objects an enchant ability allows are (CR 702.5a): the battlefield, or, for "Enchant creature card in a graveyard" (Animate Dead), a graveyard. An Aura attached to such a card is
+ * legal while the card is in a graveyard and the enchant ability, as the Aura has it now, still allows it (CR 704.5m).
+ */
+export function enchantZone(filter: ObjectFilter): 'battlefield' | 'graveyard' {
+  return filter.zone === 'graveyard' ? 'graveyard' : 'battlefield';
+}
+
+/** The zone of the objects the permanent that is an Aura now may enchant, from the enchant ability it has now; the battlefield for an Aura that enchants players and for anything else. */
+export function enchantZoneOf(state: GameState, aura: GameObject): 'battlefield' | 'graveyard' {
+  const filter = enchantFilterOf(state, aura);
+  return filter === null ? 'battlefield' : enchantZone(filter);
 }
 
 /**
@@ -108,21 +122,25 @@ export function canEnchantPlayer(state: GameState, aura: GameObject, seat: SeatI
  * 301.5c). Both must be on the battlefield. Anything else cannot be attached (CR 701.3b).
  */
 export function canAttach(state: GameState, attachment: GameObject, host: GameObject): boolean {
-  if (attachment.zone !== 'battlefield' || host.zone !== 'battlefield') return false;
+  if (attachment.zone !== 'battlefield') return false;
   if (attachment.id === host.id) return false;
-  // CR 702.16d (D-229): protection from a color: it can't be enchanted by Auras or equipped by Equipment of that color.
-  if (hasProtectionFrom(state, host, attachment.id)) return false;
   const d = derive(state, attachment);
   if (d.subtypes.includes('Aura')) {
     const filter = enchantFilterOf(state, attachment);
-    return (
-      filter !== null &&
-      matchesFilter(state, host, filter, {
-        controller: controllerOf(state, attachment),
-        source: attachment.id,
-      })
+    if (filter === null) return false;
+    // CR 702.5a, 303.4a (Animate Dead): "Enchant creature card in a graveyard": the host is a card in a graveyard, which is no permanent and has no protection (CR 702.16b).
+    const zone = enchantZone(filter);
+    if (host.zone !== zone) return false;
+    // CR 702.16d (D-229): protection from a color: it can't be enchanted by Auras or equipped by Equipment of that color.
+    if (zone === 'battlefield' && hasProtectionFrom(state, host, attachment.id)) return false;
+    return matchesFilter(
+      state,
+      host,
+      { ...filter, zone },
+      { controller: controllerOf(state, attachment), source: attachment.id },
     );
   }
+  if (host.zone !== 'battlefield' || hasProtectionFrom(state, host, attachment.id)) return false;
   if (d.subtypes.includes('Equipment')) return derive(state, host).types.includes('creature');
   return false;
 }
@@ -171,7 +189,15 @@ export function attachEntered(
   entered: ObjectId,
   host: ObjectId,
 ): { state: GameState; events: GameEvent[] } {
-  if (state.objects[host]?.zone !== 'battlefield') return { state, events: [] };
+  const hostObject = state.objects[host];
+  if (hostObject === undefined) return { state, events: [] };
+  // CR 608.3c (Animate Dead): an Aura that enchants a card in a graveyard enters attached to the card it targeted.
+  const there =
+    hostObject.zone === 'battlefield' ||
+    (hostObject.zone === 'graveyard' &&
+      state.objects[entered] !== undefined &&
+      enchantZoneOf(state, state.objects[entered]) === 'graveyard');
+  if (!there) return { state, events: [] };
   return {
     state: patchObject(state, entered, { attachedTo: host }),
     events: [{ kind: 'attached', object: entered, to: host }],
