@@ -165,6 +165,7 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         o.abilityIndex === action.abilityIndex &&
         sameColor(o.color, action.color) &&
         sameChoice(o.combination, action.combination) &&
+        sameChoice(o.extraColors, action.extraColors) &&
         o.sacrifice === action.sacrifice &&
         o.tapped === action.tapped
       );
@@ -753,6 +754,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.combination ?? null,
             action.sacrifice,
             action.tapped,
+            action.extraColors ?? null,
           );
           if ('error' in why) return fail(`That is not a legal play now. ${why.error}`);
         }
@@ -786,6 +788,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
             action.combination ?? null,
             action.sacrifice,
             action.tapped,
+            action.extraColors ?? null,
           );
           if ('error' in r) return fail(r.error);
           const next = {

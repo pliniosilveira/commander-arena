@@ -60,6 +60,7 @@ import { SYNTHETIC_DOUBLING_LIST } from './synthetic-doubling';
 import { SYNTHETIC_DRAGONS_LIST } from './synthetic-dragons';
 import { SYNTHETIC_EDHREC_LIST } from './synthetic-edhrec';
 import { SYNTHETIC_EMBALM_LIST } from './synthetic-embalm';
+import { SYNTHETIC_ENCHANTED_LAND_MANA_LIST } from './synthetic-enchanted-land-mana';
 import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
@@ -472,6 +473,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_POPULATE_LIST,
   ...SYNTHETIC_ALL_TYPES_XX_LIST,
   ...SYNTHETIC_BLOCK_POWER_LIST,
+  ...SYNTHETIC_ENCHANTED_LAND_MANA_LIST,
   ...SYNTHETIC_POWER_ABOVE_TARGET_LIST,
   ...SYNTHETIC_UNBLOCKED_LIST,
   ...SYNTHETIC_RETURN_CONTROL_LIST,

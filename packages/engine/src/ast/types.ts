@@ -3804,14 +3804,19 @@ export type Trigger =
    * "Whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b, 605.4, D-139): a triggered mana ability. It triggers as a
    * mana ability of a permanent that `what` matches is activated with {T} in its cost (CR 106.12: tapping a permanent for mana) by the
    * controller of this ability (`by` is `you`: the added mana is its controller's), and, with `mana`, only when that ability made mana of that
-   * type. Its effect is `addMana` of fixed mana and nothing else (no target, no choice, no "may", no intervening "if"), and it does not
+   * type. Its effect is `addMana` of fixed mana, or of `anyColor` (one mana of any color, which the player names as the mana ability is activated: `extraColors` of the
+   * action, CR 106.1b, 605.3b), and nothing else (no target, no "may", no intervening "if"), and it does not
    * use the stack: it resolves as soon as the mana ability that triggered it has, and the mana is added to the same pool (CR 605.4a).
    * The planner that pays costs counts the mana as made by the source, so it never taps more than it must.
    */
   | {
       readonly kind: 'tappedForMana';
       readonly what: ObjectFilter;
-      readonly by: 'you';
+      /**
+       * `you`: the permanent is tapped by the controller of this ability. `tapper` (CR 106.12, 605.1b, 303.4): whoever taps it, and the mana is theirs ("Whenever enchanted land is tapped for
+       * mana, its controller adds an additional one mana of any color": an Aura's controller need not control the land, and only the player who controls the land can tap it).
+       */
+      readonly by: 'you' | 'tapper';
       readonly mana?: ManaColor;
     }
   /**

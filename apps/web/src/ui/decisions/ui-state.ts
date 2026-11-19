@@ -8,6 +8,7 @@ import {
   type DamageAssignment,
   type DecisionId,
   defaultDivision,
+  type ManaColor,
   type ObjectId,
   type PendingDecision,
   type SeatId,
@@ -58,6 +59,10 @@ export interface ChooserAnchor {
   readonly sacrifice?: ObjectId;
   /** While paying, for a source that taps a permanent and also asks a color (D-625): the permanent already chosen, the color is asked next. */
   readonly tapped?: ObjectId;
+  /** While paying, for a source whose land also asks the color of the additional mana (CR 605.1b): the color already chosen, the additional mana is asked next. */
+  readonly color?: ManaColor;
+  /** The same for a combination already chosen. */
+  readonly combination?: readonly ManaColor[];
   /** The card the popover points at, in the coordinates of the decision layer (issue 85). */
   readonly left: number;
   readonly top: number;

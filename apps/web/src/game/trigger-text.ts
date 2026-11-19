@@ -637,6 +637,13 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       return `Whenever ${words} or more ${things} deal combat damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
     }
     case 'tappedForMana': {
+      // CR 106.12, 605.1b, 303.4: "Whenever enchanted land is tapped for mana", for whoever taps the land the Aura is attached to; any other permanent a player may tap has no words yet.
+      if (trigger.by === 'tapper') {
+        if (trigger.what.hostOfSource !== true || trigger.mana !== undefined) return null;
+        const { hostOfSource: _host, ...kind } = trigger.what;
+        const core = nounCore(kind, 'permanent');
+        return core === null ? null : `Whenever enchanted ${core} is tapped for mana`;
+      }
       // D-139 (CR 605.1b): "Whenever you tap a creature for mana".
       // "a Forest", not "a Forest land": a land type names its type (CR 205.3i), as on the cards. `nounCore`
       // leaves the type noun out after a subtype for a creature only, so the land's subtype is worded as one.

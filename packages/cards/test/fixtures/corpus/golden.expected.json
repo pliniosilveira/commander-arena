@@ -35,8 +35,8 @@
           "ability": 2,
           "text": "Whenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color.",
           "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
+          "slot": "effect",
+          "closestRule": "effect.controller-adds-additional-mana"
         }
       ],
       "reasons": [],
@@ -3546,19 +3546,10 @@
     "706ae742-1807-44b7-a4fa-f2e26f61519a": {
       "name": "Wild Growth",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever enchanted land is tapped for mana, its controller adds an additional {G}.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "trigger.becomes-target"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ab936c3f"
+      "ast": "330d8a17"
     },
     "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
       "name": "Reality Shift",
@@ -6341,19 +6332,10 @@
     "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
       "name": "Fertile Ground",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever enchanted land is tapped for mana, its controller adds an additional one mana of any color.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "trigger.becomes-target"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "7c961f07"
+      "ast": "84f6e9ec"
     },
     "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
       "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
@@ -7831,7 +7813,7 @@
   },
   "summary": {
     "training": {
-      "supported": 149,
+      "supported": 150,
       "total": 174
     },
     "holdout": {
@@ -7839,7 +7821,7 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 622,
+      "supported": 623,
       "total": 653
     }
   }

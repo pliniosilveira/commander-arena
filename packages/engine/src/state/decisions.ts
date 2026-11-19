@@ -64,6 +64,11 @@ export type PriorityOption =
        */
       readonly combination?: readonly ManaColor[];
       /**
+       * For a mana ability whose land has triggered mana abilities of "adds an additional one mana of any color" (CR 605.1b, 106.1b): the colors they add, one option for each choice
+       * (`Action.extraColors`). Absent when there is nothing to choose.
+       */
+      readonly extraColors?: readonly ManaColor[];
+      /**
        * For a mana ability whose cost sacrifices a kind of permanent ("Sacrifice a Spirit: Add {R}.", D-222, CR 601.2b) when the player has more than one to give
        * up: one option for each permanent they may give up, this one. Absent when the cost sacrifices nothing, only the source, or when there is one candidate.
        */
@@ -208,6 +213,12 @@ export interface PayManaDecision extends DecisionBase {
      * as `combination` (a one-entry list needs no question).
      */
     readonly combinations?: readonly (readonly ManaColor[])[];
+    /**
+     * Set when a triggered mana ability of "adds an additional one mana of any color" (CR 605.1b, 106.1b) is on the permanent the source is, so the player has a choice to make:
+     * the additional mana on offer (one list for each choice, in the order of those abilities). A manual tap of the source must name one of them as `extraColors`; `payAuto`
+     * lets the planner choose the color the payment needs.
+     */
+    readonly extraColors?: readonly (readonly ManaColor[])[];
     /**
      * Set when the ability's cost sacrifices a kind of permanent ("Sacrifice a Spirit: Add {R}.", D-222, CR 601.2b) and the player has more than one to give up:
      * the permanents they may choose. A manual tap of the source must name one of them as `sacrifice`; `payAuto` gives up the one the planner prefers (a token

@@ -21,9 +21,17 @@ export function manaChoiceLabel(
   abilityIndex: number,
   color: ManaColor | null,
   combination: readonly ManaColor[] | undefined,
+  extraColors?: readonly ManaColor[],
 ): string {
-  if (combination !== undefined) return `Add ${comboText(combination)}`;
-  return color === null ? `Ability ${abilityIndex + 1}` : `Add ${color}`;
+  // CR 605.1b, 106.1b: "adds an additional one mana of any color" on the land: the choice of the additional mana is part of the label.
+  const extra = extraColors === undefined ? '' : `, plus an additional ${extraColors.join('')}`;
+  if (combination !== undefined) return `Add ${comboText(combination)}${extra}`;
+  if (color === null) {
+    return extraColors === undefined
+      ? `Ability ${abilityIndex + 1}`
+      : `Ability ${abilityIndex + 1}${extra}`;
+  }
+  return `Add ${color}${extra}`;
 }
 
 /** "Pay 1 life": what a label says for a source whose mana costs life; empty for none. */

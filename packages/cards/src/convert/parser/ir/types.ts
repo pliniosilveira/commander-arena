@@ -1250,6 +1250,11 @@ export interface IrTrigger extends IrNode {
    * P33, D-150, CR 508.1): the fewest attackers declared that match `subject` (all of them when it is left out).
    */
   readonly atLeast?: number;
+  /**
+   * 'tappedForMana' "Whenever enchanted land is tapped for mana" (CR 106.12, 605.1b, 303.4): the permanent the Aura is attached to (the `subject` says its kind) is tapped for mana by whoever
+   * controls it, and the mana is theirs: the engine's `tappedForMana` with `by: 'tapper'` and `hostOfSource`.
+   */
+  readonly enchantedTapped?: true;
   /** 'attackBatch' "Whenever enchanted player is attacked" (issue 160, D-629, CR 303.4m, 508.1b): the player the Aura enchants was declared as attacked. */
   readonly attackedEnchantedPlayer?: true;
   /**

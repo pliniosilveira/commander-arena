@@ -164,6 +164,17 @@ describe('the other new kinds', () => {
     expect(say(dies)).toBe('Whenever the permanent this is attached to dies');
   });
 
+  test('whenever enchanted land is tapped for mana, said of the land the Aura is attached to', () => {
+    const tapper: Trigger = {
+      kind: 'tappedForMana',
+      what: { types: ['land'], hostOfSource: true },
+      by: 'tapper',
+    };
+    expect(say(tapper)).toBe('Whenever enchanted land is tapped for mana');
+    // Any other permanent a player may tap has no words: null, never a guess.
+    expect(say({ ...tapper, what: { types: ['land'] } } as Trigger)).toBeNull();
+  });
+
   test('a shape the words do not cover gives null, never a guess', () => {
     expect(say({ kind: 'futureKind' } as unknown as Trigger)).toBeNull();
     const owned = { kind: 'dies', what: { owner: { kind: 'you' } } } as unknown as Trigger;

@@ -34,6 +34,7 @@ import { CONTROL_TRIGGER_RULES } from './control';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
 import { DRAGON_TRIGGER_RULES } from './dragons';
 import { EDHREC_TRIGGER_RULES } from './edhrec';
+import { ENCHANTED_MANA_TRIGGER_RULES } from './enchanted-mana';
 import { ENCHANTED_PLAYER_TRIGGER_RULES } from './enchanted-player';
 import { EVENT_TRIGGER_RULES } from './events';
 import { EXERT_TRIGGER_RULES } from './exert';
@@ -1173,6 +1174,7 @@ export const TRIGGER_RULES = [
   // Stage P33 (D-150): gaining life, counters put on a permanent, attacking with several creatures.
   ...ANGEL_TRIGGER_RULES,
   ...UNBLOCKED_TRIGGER_RULES,
+  ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".

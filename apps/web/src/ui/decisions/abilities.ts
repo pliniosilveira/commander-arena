@@ -35,6 +35,7 @@ export function manaAction(
     abilityIndex: o.abilityIndex,
     color: o.color,
     ...(o.combination === undefined ? {} : { combination: o.combination }),
+    ...(o.extraColors === undefined ? {} : { extraColors: o.extraColors }),
     ...(o.sacrifice === undefined ? {} : { sacrifice: o.sacrifice }),
     ...(o.tapped === undefined ? {} : { tapped: o.tapped }),
   };
@@ -125,9 +126,9 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
     if (o.kind !== 'activateAbility' || o.source !== id) continue;
     const life = lifeNote(lifeCostOf(card, o.color, o.combination));
     const base =
-      o.color === null && o.combination === undefined
+      o.color === null && o.combination === undefined && o.extraColors === undefined
         ? `Mana ability ${o.abilityIndex + 1}`
-        : manaChoiceLabel(o.abilityIndex, o.color, o.combination);
+        : manaChoiceLabel(o.abilityIndex, o.color, o.combination, o.extraColors);
     // D-222: one item for each permanent a cost "Sacrifice a Spirit" may give up.
     // D-625: one item for each permanent a cost "Tap an untapped creature you control" may tap.
     const what =
@@ -137,7 +138,7 @@ export function menuItems(decision: PriorityDecision, id: ObjectId, index?: Inde
           ? `${base}, tapping ${index === undefined ? 'it' : nameOf(index, o.tapped)}`
           : base;
     items.push({
-      key: `mana-${o.abilityIndex}-${o.combination?.join('') ?? o.color ?? 'x'}${o.sacrifice === undefined ? '' : `-${o.sacrifice}`}${o.tapped === undefined ? '' : `-t${o.tapped}`}`,
+      key: `mana-${o.abilityIndex}-${o.combination?.join('') ?? o.color ?? 'x'}${o.extraColors === undefined ? '' : `+${o.extraColors.join('')}`}${o.sacrifice === undefined ? '' : `-${o.sacrifice}`}${o.tapped === undefined ? '' : `-t${o.tapped}`}`,
       label: life === '' ? what : `${what} (${life.toLowerCase()})`,
       action: manaAction(id, o),
     });

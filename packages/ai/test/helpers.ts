@@ -4415,6 +4415,8 @@ const RANKED_CARD_NAMES = [
   'SYNTHETIC Humbling Sweep',
   'SYNTHETIC Shapeshifter Choir',
   'SYNTHETIC Greedy Gem',
+  'SYNTHETIC Prismatic Growth',
+  'SYNTHETIC Verdant Surge',
 ] as const;
 
 /**

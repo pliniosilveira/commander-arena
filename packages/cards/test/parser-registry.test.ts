@@ -478,6 +478,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,
   'trigger.unblocked-opponent-attackers': whenever,
+  'trigger.enchanted-tapped-for-mana': whenever,
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,
