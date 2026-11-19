@@ -19,10 +19,9 @@ function real(): CardDefinition {
   const card = GOLDEN.find((c) => c.name === NAME);
   if (card === undefined) throw new Error(`${NAME} is not in the golden corpus`);
   const imported = importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
-  // Face 0 (Yavimaya Bloomsage) reads whole. Face 1 (Channel) does not: "any time you could activate a mana ability, you may pay 1 life" needs a new subsystem (a mana ability
-  // the player is granted for the turn, usable while paying costs), so the card stays unsupported and is flagged.
-  expect(imported.support.unparsed.map((u) => u.face)).toEqual([1]);
-  expect(imported.support.status).not.toBe('supported');
+  // Both faces read whole: face 0 (Yavimaya Bloomsage) with the prepare line of this group, face 1 (Channel) with the mana ability the player is granted for the turn.
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
   return imported.definition;
 }
 

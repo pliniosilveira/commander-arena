@@ -283,3 +283,35 @@ describe('coverage', () => {
     expect(checked).toBeGreaterThan(50);
   });
 });
+
+describe('spells with {X} in their mana cost (Quandrix Unlimited group E)', () => {
+  const xSpell = { stackKind: 'spell', xInManaCost: true } as const;
+
+  test('a cast trigger on a spell with {X} in its mana cost', () => {
+    expect(triggerWording({ kind: 'castSpell', filter: xSpell, by: 'you' }, ctx)).toBe(
+      'Whenever you cast a spell with {X} in its mana cost',
+    );
+  });
+
+  test('"your first spell with {X} in its mana cost each turn"', () => {
+    expect(
+      triggerWording(
+        { kind: 'castSpell', filter: { ...xSpell, firstXSpellThisTurn: true }, by: 'you' },
+        ctx,
+      ),
+    ).toBe('Whenever you cast your first spell with {X} in its mana cost each turn');
+  });
+
+  test('a first spell with more words than that is not said (it would leave something out)', () => {
+    expect(
+      triggerWording(
+        {
+          kind: 'castSpell',
+          filter: { ...xSpell, firstXSpellThisTurn: true, types: ['creature'] },
+          by: 'you',
+        },
+        ctx,
+      ),
+    ).toBeNull();
+  });
+});
