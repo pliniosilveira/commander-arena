@@ -246,5 +246,7 @@ export function chooseCardsFromZone(view: GameView, d: ChooseCardsDecision): Act
   if (d.purpose === 'discard' && (d.forCost === true || isWardDiscard(view, d))) {
     return chooseCostDiscard(view, d);
   }
+  // CR 202.3: "any number of creature cards with total mana value 6 or less": the most expensive cards that fit, as for a take with a total.
+  if (d.purpose === 'search' && d.totalManaValue !== undefined) return chooseToTake(view, d);
   return d.purpose === 'search' ? chooseToFind(view, d) : chooseToDiscard(view, d);
 }

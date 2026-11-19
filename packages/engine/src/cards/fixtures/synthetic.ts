@@ -97,6 +97,7 @@ import { SYNTHETIC_HASHATON_G9_LIST } from './synthetic-hashaton-g9';
 import { SYNTHETIC_HASHATON_G10_LIST } from './synthetic-hashaton-g10';
 import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
+import { SYNTHETIC_HULK_SEARCH_LIST } from './synthetic-hulk-search';
 import { SYNTHETIC_HYLDA_G1_LIST } from './synthetic-hylda-g1';
 import { SYNTHETIC_HYLDA_G2_LIST } from './synthetic-hylda-g2';
 import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
@@ -536,6 +537,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_RING_LIST,
   ...SYNTHETIC_SNOW_LIST,
   ...SYNTHETIC_BRUNA_SEARCH_LIST,
+  ...SYNTHETIC_HULK_SEARCH_LIST,
   ...SYNTHETIC_PLANESWALKER_LIST,
   ...SYNTHETIC_PRIDE_WALKER_LIST,
   ...SYNTHETIC_MANA_TRIGGERS_LIST,

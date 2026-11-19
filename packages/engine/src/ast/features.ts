@@ -848,6 +848,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
     'searchZones',
+    // "Search your library for any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3; `search.totalManaValue`).
+    'searchTotalManaValue',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -1616,6 +1618,8 @@ export const SELECTOR_KINDS = [
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
   'searchZones',
+  /** "Any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): the engine's `search.totalManaValue`. */
+  'searchTotalManaValue',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */

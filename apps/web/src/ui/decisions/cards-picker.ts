@@ -28,7 +28,9 @@ import { unlessPaysPrompt, wardPrompt } from './optional';
 import { togglePermanent } from './permanents';
 
 type Range = Pick<ChooseCardsDecision, 'min' | 'max'> &
-  Partial<Pick<ChooseCardsDecision, 'orSingle' | 'shareLandType' | 'minCardTypes'>>;
+  Partial<
+    Pick<ChooseCardsDecision, 'orSingle' | 'shareLandType' | 'minCardTypes' | 'totalManaValue'>
+  >;
 
 /**
  * Toggles a card, keeping the order of the picks. Clicking a chosen card takes it back (the later
@@ -41,6 +43,14 @@ export function toggleFound(
   id: ObjectId,
 ): readonly ObjectId[] {
   return togglePermanent(chosen, decision, id);
+}
+
+/** True when the picks have a mana value over the limit the decision sets (none: false). */
+function overTotal(chosen: readonly ObjectId[], decision: Range): boolean {
+  const total = decision.totalManaValue;
+  return (
+    total !== undefined && chosen.reduce((n, id) => n + (total.values[id] ?? 0), 0) > total.limit
+  );
 }
 
 /**
@@ -57,6 +67,8 @@ export function foundReady(chosen: readonly ObjectId[], decision: Range): boolea
   if (decision.minCardTypes !== undefined && !coversCardTypes(chosen, decision.minCardTypes)) {
     return false;
   }
+  // CR 202.3: "any number of cards with total mana value N or less": the cards picked may not add up to more, which the engine would refuse otherwise.
+  if (overTotal(chosen, decision)) return false;
   const { orSingle } = decision;
   if (orSingle !== undefined && chosen.length !== decision.max) {
     const [only] = chosen;
@@ -74,6 +86,9 @@ export function foundHint(chosen: readonly ObjectId[], decision: Range): string 
     chosen.length <= decision.max
   ) {
     return 'Choose lands that share a land type';
+  }
+  if (overTotal(chosen, decision)) {
+    return `Choose cards with total mana value ${decision.totalManaValue?.limit ?? 0} or less`;
   }
   if (decision.minCardTypes !== undefined) {
     return `Choose cards with ${decision.minCardTypes.count} or more card types among them, or none`;

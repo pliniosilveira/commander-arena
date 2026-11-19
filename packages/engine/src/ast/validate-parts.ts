@@ -3925,6 +3925,26 @@ function checkSearch(
       );
     }
   }
+  // CR 202.3: "any number of ... cards with total mana value N or less": a positive limit; one 'rest' destination, nothing else that changes how many are found.
+  if (e.totalManaValue !== undefined) {
+    if (!isCount(e.totalManaValue) || e.totalManaValue < 1) {
+      issue(out, `${path}.totalManaValue`, 'totalManaValue is a positive integer');
+    }
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.maxAmount !== undefined ||
+      e.zones !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.totalManaValue`,
+        "a search with a total mana value has a max of 1 (unread), one destination of 'rest', and no shared land type, zones or maxAmount",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {

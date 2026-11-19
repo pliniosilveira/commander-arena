@@ -726,3 +726,30 @@ describe('a search for lands that share a land type', () => {
     expect(foundHint(['o30', 'o32'], search)).toBeNull();
   });
 });
+
+// CR 202.3: "Search your library for any number of creature cards with total mana value 6 or less": Confirm is not offered for cards that add up to more.
+describe('a search for any number of cards with a total mana value', () => {
+  const search: ChooseCardsDecision = {
+    id: 'd10',
+    seat: 0,
+    kind: 'chooseCards',
+    source: 'o99',
+    purpose: 'search',
+    zone: 'library',
+    legal: ['o30', 'o31', 'o32'],
+    totalManaValue: { limit: 6, values: { o30: 4, o31: 2, o32: 3 } },
+    min: 0,
+    max: 3,
+    reveal: false,
+    prompt: 'Choose any number of creature cards with total mana value 6 or less',
+  };
+
+  test('none and a total within the limit are ready; a total over it is not, with a hint', () => {
+    expect(foundReady([], search)).toBe(true);
+    expect(foundReady(['o30', 'o31'], search)).toBe(true);
+    expect(foundReady(['o31', 'o32'], search)).toBe(true);
+    expect(foundReady(['o30', 'o32'], search)).toBe(false);
+    expect(foundHint(['o30', 'o32'], search)).toBe('Choose cards with total mana value 6 or less');
+    expect(foundHint(['o30', 'o31'], search)).toBeNull();
+  });
+});
