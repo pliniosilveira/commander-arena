@@ -32,6 +32,7 @@ import { HOFRI_STATIC_RULES } from './hofri';
 import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { MELD_STATIC_RULES } from './meld';
+import { OMNATH_STATIC_RULES } from './omnath';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
@@ -114,6 +115,7 @@ export const STATIC_RULES = [
   ...DRAGON_STATIC_RULES,
   // Stage P37 (D-180): lands that enter untapped, opponents that can't cast spells during your turn.
   ...KORVOLD_STATIC_RULES,
+  ...OMNATH_STATIC_RULES,
   // Stage P70 (D-282): "Your opponents can't cast spells with mana value 3 or less."
   ...MELD_STATIC_RULES,
   // Stage P43 (D-193): all damage that would be dealt to you and other permanents you control dealt to ~ instead, damage that stays through cleanup steps.

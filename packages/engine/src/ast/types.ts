@@ -466,6 +466,11 @@ export type StaticPtAmount =
    * Plain (+N/+N) only, in a `modifyPt` whose subject is a group of permanents, so "it" is each of them; read for the permanent being looked at.
    */
   | { readonly kind: 'timesAttacked' }
+  /**
+   * "Omnath gets +1/+1 for each unspent mana you have" (issue 81, CR 106.4, 613.4c): the number of mana in the pool of the controller of the ability, read each time the characteristics
+   * are worked out. Plain (+N/+N) only, in a `modifyPt` of the permanent itself.
+   */
+  | { readonly kind: 'unspentMana' }
   | CountAmount
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
@@ -5658,6 +5663,11 @@ export type StaticEffect =
    * (the next step end finds it).
    */
   | { readonly kind: 'unspentManaStays'; readonly colors: readonly ManaColor[] }
+  /**
+   * "If you would lose unspent mana, that mana becomes colorless instead" (Omnath, Locus of the Void; issue 81, CR 106.4, 500.5, 614.1a): as steps and phases end, the mana in the pool of the
+   * controller of this ability is not lost: each mana in it becomes colorless mana ({C}) and stays, which `emptyManaPools` reads. It is the ability of the permanent.
+   */
+  | { readonly kind: 'unspentManaBecomesColorless' }
   /**
    * "You may look at the top card of your library any time." (CR 401.5, D-125): while the permanent is on the
    * battlefield with the ability, its controller may look at the top card of their own library. Nothing is

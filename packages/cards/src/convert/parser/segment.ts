@@ -1074,7 +1074,10 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     REPLACEMENT_ESCAPES.test(text) ||
     REPLACEMENT_UMBRA_ARMOR.test(text) ||
     REPLACEMENT_IF_ENTERS.test(text) ||
-    (/ would /.test(text) && / instead\b/.test(text))
+    // Issue 81 (Omnath): "If you would lose unspent mana, that mana becomes colorless instead." is a static ability of the permanent about its controller's pool (`static.unspent-mana-colorless`).
+    (/ would /.test(text) &&
+      / instead\b/.test(text) &&
+      !/^if you would lose unspent mana, that mana becomes colorless instead\.$/iu.test(text))
   ) {
     return { ...base, head: 'replacement' };
   }

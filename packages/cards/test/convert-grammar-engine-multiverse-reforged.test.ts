@@ -1000,3 +1000,49 @@ describe('Ginger: a Gingerbrute at each upkeep while you are the monarch', () =>
     expect(goblin.ok).toBe(true);
   });
 });
+
+// ---- Omnath, Locus of the Void: "Omnath gets +1/+1 for each unspent mana you have. If you would lose unspent mana, that mana becomes colorless instead. Landfall — Whenever a land you
+// control enters, add {C}{C}." (CR 106.4, 500.5, 613.4c, 305.1).
+
+const OMNATH = parsed(
+  'SYNTHETIC Parsed Omnath Void',
+  'Legendary Creature — Elemental',
+  '~ gets +1/+1 for each unspent mana you have.\nIf you would lose unspent mana, that mana becomes colorless instead.\nLandfall — Whenever a land you control enters, add {C}{C}.',
+  { manaCost: '{3}{R}{G}', colors: ['R', 'G'], power: '3', toughness: '3' },
+);
+
+describe('Omnath: unspent mana grows it and is never lost, only made colorless', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(OMNATH)
+      .battlefield(OMNATH.name, 'Forest')
+      .hand('Mountain')
+      .library('Plains', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test('a land entering adds two colorless mana, and each mana is +1/+1', () => {
+    const g = start();
+    g.expect.pt(OMNATH.name, 3, 3);
+    g.act(0).playLand('Mountain');
+    g.passAll();
+    g.expect.pool(0, { C: 2 });
+    g.expect.pt(OMNATH.name, 5, 5);
+    g.expect.invariants();
+  });
+
+  test('the mana in the pool is still there after the step ends, as colorless mana', () => {
+    const g = start();
+    g.act(0).tapForMana('Forest');
+    g.expect.pool(0, { G: 1 });
+    g.expect.pt(OMNATH.name, 4, 4);
+    g.advanceTo('beginningOfCombat');
+    g.expect.pool(0, { C: 1 });
+    g.expect.pt(OMNATH.name, 4, 4);
+  });
+});

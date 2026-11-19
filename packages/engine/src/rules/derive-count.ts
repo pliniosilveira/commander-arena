@@ -169,6 +169,9 @@ export function staticAmountOf(
   if (amount.kind === 'timesAttacked') {
     return state.turnLog.attacked.filter((id) => id === recipient.id).length;
   }
+  // CR 106.4 (issue 81, Omnath): the mana in the pool of the controller.
+  if (amount.kind === 'unspentMana')
+    return getSeat(state, controllerOf(state, source)).manaPool.length;
   if (amount.kind === 'commanderManaValue')
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')

@@ -386,6 +386,14 @@ function effectOf(
         unless: unless.value,
       });
     }
+    case 'ptUnspentMana':
+      // CR 106.4, 613.4c (issue 81, Omnath): +1 for each mana in the controller's pool, worked out as the characteristics are.
+      return ok({
+        kind: 'modifyPt',
+        subject,
+        power: effect.power ? { kind: 'unspentMana' } : 0,
+        toughness: effect.toughness ? { kind: 'unspentMana' } : 0,
+      });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.
       return ok({
@@ -552,6 +560,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:modifyPt', 'amount:commanderManaValue'];
     case 'ptTimesAttacked':
       return ['static:modifyPt', 'amount:timesAttacked'];
+    case 'ptUnspentMana':
+      return ['static:modifyPt', 'amount:unspentMana'];
     case 'loseAllAbilities':
       return ['static:loseAllAbilities'];
     case 'setColors':
@@ -603,6 +613,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['replacement:othersEnterWithCounters'];
     case 'unspentManaStays':
       return ['static:unspentManaStays'];
+    case 'unspentManaBecomesColorless':
+      return ['static:unspentManaBecomesColorless'];
     case 'castFromTop':
       return ['static:castFromTopOfLibrary'];
     case 'graveyardPlay':

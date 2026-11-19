@@ -2245,6 +2245,13 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
     return;
   }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
+  // Issue 81 (Omnath, CR 106.4): "for each unspent mana you have": plain (+N/+N) only.
+  if (amount?.kind === 'unspentMana') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not unspent mana');
+    }
+    return;
+  }
   if (amount?.kind === 'commanderManaValue' || amount?.kind === 'commanderCasts') {
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not a commander');

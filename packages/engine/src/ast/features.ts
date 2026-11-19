@@ -1147,6 +1147,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'blockTax',
     // D-151: "You don't lose unspent red mana as steps and phases end."
     'unspentManaStays',
+    // Issue 81 (Omnath, Locus of the Void): "If you would lose unspent mana, that mana becomes colorless instead."
+    'unspentManaBecomesColorless',
     // D-151: "You may cast creature spells with power 4 or greater from the top of your library."
     'castFromTopOfLibrary',
     // D-232: "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell ... from your graveyard."
@@ -1216,6 +1218,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardTypesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
+    // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
+    'unspentMana',
     'affected',
     'half',
     'multiple',
@@ -1954,6 +1958,8 @@ export const STATIC_KINDS = [
   'blockTax',
   /** "You don't lose unspent red mana as steps and phases end" (CR 500.5, D-151): `unspentManaStays`. */
   'unspentManaStays',
+  /** "If you would lose unspent mana, that mana becomes colorless instead" (CR 106.4, 614.1a, issue 81): `unspentManaBecomesColorless`. */
+  'unspentManaBecomesColorless',
   /** "You may cast creature spells with power 4 or greater from the top of your library" (CR 601.3, D-151): `castFromTopOfLibrary`. */
   'castFromTopOfLibrary',
   /** "Once during each of your turns, you may cast an artifact spell from your graveyard" (CR 601.2a, 305.1, D-232): `playFromGraveyardOnceEachTurn`. */
@@ -2040,6 +2046,8 @@ export const AMOUNT_KINDS = [
   'cardTypesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
+  /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
+  'unspentMana',
   /** "Double the power and toughness of each creature you control" (CR 701.10, D-145): the engine's `affected` power or toughness amount. */
   'affected',
   /** "Half the number of ..., rounded down" (D-131): the engine's `half`. */

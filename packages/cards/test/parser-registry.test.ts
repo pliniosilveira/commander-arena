@@ -774,6 +774,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 25 (D-339): the line of its own, with the card's wording.
   'static.triggers-additional-time-cause': asIs,
   'static.triggers-additional-time-attacking': asIs,
+  'static.pt-unspent-mana': asIs,
+  'static.unspent-mana-colorless': asIs,
   'keyword.equip-quality': asIs,
   // Stage P70 (D-259): the equip of a commander is a line of its own.
   'keyword.equip-commander': asIs,

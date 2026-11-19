@@ -1656,6 +1656,12 @@ export type IrStaticEffect =
    * the controller's pool does not empty as a step or a phase ends. The subject is `you`.
    */
   | { readonly kind: 'unspentManaStays'; readonly colors: readonly string[] }
+  /** "If you would lose unspent mana, that mana becomes colorless instead." (issue 81, Omnath, CR 106.4, 614.1a): the mana in the controller's pool is made colorless instead of lost. The subject is `you`. */
+  | { readonly kind: 'unspentManaBecomesColorless' }
+  /**
+   * "~ gets +1/+1 for each unspent mana you have." (issue 81, Omnath, CR 106.4, 613.4c): +1 to each stat whose flag is set, for each mana in the controller's pool (the engine's `unspentMana`).
+   */
+  | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
   /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`

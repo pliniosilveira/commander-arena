@@ -238,6 +238,8 @@ describe('the dimensions', () => {
       'blockTax',
       // D-151: unspent mana that stays, casting from the top of the library.
       'unspentManaStays',
+      // Issue 81: "If you would lose unspent mana, that mana becomes colorless instead."
+      'unspentManaBecomesColorless',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
       // D-179: "Your opponents can't cast spells during your turn."
