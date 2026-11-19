@@ -58,6 +58,7 @@ import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
+import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
 import { VRASKA_CONDITION_RULES } from './vraska';
 import { CONDITION_X_AT_LEAST } from './x-at-least';
@@ -589,6 +590,8 @@ export const CONDITION_RULES = [
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
+  // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
+  ...UNBOUND_I_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".

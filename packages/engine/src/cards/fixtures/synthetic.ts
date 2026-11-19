@@ -180,6 +180,7 @@ import { SYNTHETIC_TRIGGER_LIST } from './synthetic-triggers';
 import { SYNTHETIC_TRIGGER_MORE_LIST } from './synthetic-triggers-more';
 import { SYNTHETIC_TURNLOG_LIST } from './synthetic-turnlog';
 import { SYNTHETIC_UNBLOCKED_LIST } from './synthetic-unblocked';
+import { SYNTHETIC_UNBOUND_I_LIST } from './synthetic-unbound-i';
 import { SYNTHETIC_UNTIL_LEAVES_LIST } from './synthetic-until-leaves';
 import { SYNTHETIC_UPKEEP_LIST } from './synthetic-upkeep';
 import { SYNTHETIC_VEHICLE_LIST } from './synthetic-vehicles';
@@ -470,6 +471,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_GISA_G4_LIST,
   ...SYNTHETIC_GISA_G2_LIST,
   ...SYNTHETIC_ACTIVATES_ABILITY_LIST,
+  ...SYNTHETIC_UNBOUND_I_LIST,
   ...SYNTHETIC_SEARCH_ZONES_LIST,
   ...SYNTHETIC_HYLDA_G3_LIST,
   ...SYNTHETIC_UNTIL_LEAVES_LIST,

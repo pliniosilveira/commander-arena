@@ -4837,6 +4837,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'doubleSpellX':
+      // CR 107.3 (Unbound Flourishing): the spell whose casting caused the trigger.
+      if (kindOf(e.spell) === 'triggerSubject') {
+        checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
+      } else {
+        issue(out, `${path}.spell`, 'doubleSpellX names the spell that was cast (triggerSubject)');
+      }
+      break;
     case 'exileSpellWithTimeCounters':
       // D-651 (CR 608.2n, 122.1): the spell's own text; a whole number of counters of 1 or more.
       if (scope.owner !== 'spell') {

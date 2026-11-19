@@ -870,6 +870,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   'trigger.cast-x': whenever,
+  // Quandrix Unlimited deck, group I (Unbound Flourishing): one trigger for a spell cast and an ability activated, and the "if" on the cost that goes with it.
+  'trigger.cast-or-activate': whenever,
+  'condition.cost-contains-x': permanent(
+    (e) =>
+      `Whenever you cast an instant or sorcery spell or activate an ability, if ${e}, copy that spell or ability.`,
+  ),
   'trigger.enters-one-or-more-creatures': whenever,
   'trigger.you-create-tokens': whenever,
   'condition.cards-in-graveyard': permanent((e) => `As long as ${e}, ~ has flying.`),

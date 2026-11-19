@@ -621,6 +621,7 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'ringBearerChosen', other: true });
     }
+    case 'costContainsX':
     case 'notDeclaredAttacker':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
       // as a condition of anything else there is nothing to read it from.
