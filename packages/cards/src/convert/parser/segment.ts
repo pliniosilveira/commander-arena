@@ -362,6 +362,15 @@ const MAY_CAST_IF_LESSER =
   /^you may cast it without paying its mana cost if it['’]s a spell with lesser mana value\.$/i;
 const ELSE_CAST_INTO_HAND = /^if you don['’]t cast it, put it into your hand\.$/i;
 /**
+ * "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of
+ * that type from among the exiled cards without paying its mana cost." (CR 701.13, 608.2d, 611.2a): three sentences that are one instruction ("them" and "the exiled cards" are the
+ * cards the first one exiles), kept together so `effect.exile-top-put-cast-each-type` reads them as one. Only all three in a row.
+ */
+const EXILE_TOP_CARDS = /^exile the top [^.]* cards of your library\.$/i;
+const MAY_PUT_FROM_AMONG_ONTO = /^you may put [^.]* from among them onto the battlefield\.$/i;
+const UNTIL_EOT_EACH_TYPE =
+  /^until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost\.$/i;
+/**
  * "Look at the top card of your library. If it's a land card or a creature card with mana value less than or equal to the number of loyalty counters on ~, you may put that card onto
  * the battlefield." (Galadriel deck, group 1, CR 401.2): the second sentence of the instruction of `LOOK_AT_TOP_CARD` that puts the card onto the battlefield (`effect.look-top-put`).
  */
@@ -402,6 +411,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, EXILE_TOP_CARDS) &&
+      said(b, MAY_PUT_FROM_AMONG_ONTO) &&
+      said(c, UNTIL_EOT_EACH_TYPE)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;

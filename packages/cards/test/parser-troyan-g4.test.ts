@@ -94,3 +94,71 @@ describe('Rashmi, Eternities Crafter (CR 601.2i, 603.2, 701.20a, 608.2g)', () =>
     expect(missing.needs).toContain('effect:revealTopCast');
   });
 });
+
+const EXILE8 = { kind: 'exileTop', count: 8 };
+const CAST_EACH_TYPE = {
+  kind: 'mayCastEachType',
+  objects: { kind: 'moved' },
+  lasts: 'endOfTurn',
+};
+const PUT_LAND = {
+  kind: 'moveToZone',
+  objects: {
+    kind: 'choose',
+    filter: { types: ['land'], zone: 'exile', controller: 'you' },
+    optional: true,
+    fromMoved: true,
+  },
+  to: 'battlefield',
+};
+const AUGURY =
+  'Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost.';
+
+describe("Aminatou's Augury (CR 701.13, 608.2d, 611.2a, 601.2, 118.9)", () => {
+  test('the real text: the exile, the permission for each type, then the choice of a land among the exiled cards', () => {
+    // the permission is written before the choice: the choice of a land replaces what `moved` names, and the permission names the cards the exile moved
+    expect(readAll(AUGURY, 'sorcery').spell?.effect).toEqual({
+      kind: 'sequence',
+      effects: [EXILE8, CAST_EACH_TYPE, PUT_LAND],
+    });
+  });
+
+  test('another number of cards, and the typographic text of the card data (SYNTHETIC)', () => {
+    expect(readAll(AUGURY.replace('eight', 'four'), 'sorcery').spell?.effect).toMatchObject({
+      effects: [{ kind: 'exileTop', count: 4 }, CAST_EACH_TYPE, PUT_LAND],
+    });
+    expect(readAll(AUGURY.replace('eight', '10'), 'sorcery').spell?.effect).toMatchObject({
+      effects: [{ kind: 'exileTop', count: 10 }, CAST_EACH_TYPE, PUT_LAND],
+    });
+  });
+
+  test.each([
+    // a different card put onto the battlefield, or put elsewhere
+    AUGURY.replace('a land card', 'a creature card').replace('a creature card', 'two land cards'),
+    AUGURY.replace('onto the battlefield', 'into your hand'),
+    // each card type, a kind of spell, another duration, the mana cost paid
+    AUGURY.replace('each nonland card type', 'each card type'),
+    AUGURY.replace('Until end of turn', 'Until your next turn'),
+    AUGURY.replace(' without paying its mana cost', ''),
+    // one card, or the library of another player
+    AUGURY.replace('top eight cards', 'top card'),
+    AUGURY.replace('your library', "target player's library"),
+    // only the permission, with no exile before it
+    'Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost.',
+    // only the exile and the choice
+    'Exile the top eight cards of your library. You may put a land card from among them onto the battlefield.',
+  ])('another text is dropped, never half read (SYNTHETIC): %s', (text) => {
+    const parsed = read(text, 'sorcery');
+    expect(parsed.spell).toBeNull();
+    expect(parsed.unparsed).toHaveLength(1);
+  });
+
+  test('the lowerings name the engine features they need, and drop the spell when one is missing', () => {
+    for (const feature of ['effect:mayCastEachType', 'effect:exileTop', 'selector:choose']) {
+      expect(DECLARED_NEEDS).toContain(feature);
+    }
+    expect(withoutFeature('effect:mayCastEachType', AUGURY, 'sorcery').needs).toContain(
+      'effect:mayCastEachType',
+    );
+  });
+});

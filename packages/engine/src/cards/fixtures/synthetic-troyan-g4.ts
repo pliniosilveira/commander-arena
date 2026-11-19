@@ -18,8 +18,8 @@ export const SYNTHETIC_TROYAN_G4_LIST: readonly CardDefinition[] = [
     supertypes: ['legendary'],
     types: ['creature'],
     subtypes: ['Elf', 'Druid'],
-    colors: ['G', 'U'],
-    colorIdentity: ['G', 'U'],
+    colors: ['U', 'G'],
+    colorIdentity: ['U', 'G'],
     power: 2,
     toughness: 3,
     oracleText:
@@ -39,5 +39,55 @@ export const SYNTHETIC_TROYAN_G4_LIST: readonly CardDefinition[] = [
         },
       },
     ],
+  }),
+  // "Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a
+  //  spell of that type from among the exiled cards without paying its mana cost." (the land is put first in the text; it is the same, the permissions name the exiled cards)
+  singleFace({
+    name: 'SYNTHETIC Types Augury',
+    manaCost: ['4', 'U'],
+    types: ['sorcery'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText:
+      'Exile the top eight cards of your library. You may put a land card from among them onto the battlefield. Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost.',
+    spell: {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'exileTop', count: 8 },
+          { kind: 'mayCastEachType', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+          {
+            kind: 'moveToZone',
+            objects: {
+              kind: 'choose',
+              filter: { types: ['land'], zone: 'exile', controller: 'you' },
+              optional: true,
+              fromMoved: true,
+            },
+            to: 'battlefield',
+          },
+        ],
+      },
+    },
+  }),
+  // A creature that is also an artifact, to be cast as either type.
+  singleFace({
+    name: 'SYNTHETIC Types Golem',
+    manaCost: ['3'],
+    types: ['artifact', 'creature'],
+    subtypes: ['Golem'],
+    colors: [],
+    colorIdentity: [],
+    power: 2,
+    toughness: 2,
+    oracleText: '',
+  }),
+  singleFace({
+    name: 'SYNTHETIC Plain Trinket',
+    manaCost: ['2'],
+    types: ['artifact'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: '',
   }),
 ];

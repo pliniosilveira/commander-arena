@@ -911,6 +911,8 @@ export const EFFECT_RULES = [
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
   ...DINOSAUR_EFFECT_RULES,
+  // Troyan deck, group 4 (issue 337): "Exile the top eight cards of your library. You may put a land card ..." starts like the plain exile of the top cards, and is tried first.
+  ...TROYAN_G4_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
@@ -974,7 +976,6 @@ export const EFFECT_RULES = [
   ...GISA_G3_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
-  ...TROYAN_G4_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,
   // Issue 26 (D-411): "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_EFFECT_RULES,

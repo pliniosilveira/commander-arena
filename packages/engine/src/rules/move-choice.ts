@@ -30,11 +30,13 @@ function cardCandidates(
   source: ObjectId | null,
   filter: ObjectFilter,
   alsoGraveyard = false,
+  among?: readonly ObjectId[],
 ): ObjectId[] {
-  // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile.
+  // CR 607.2a (D-207): "a card exiled with this artifact": the cards the permanent exiled with its linked ability that are still in exile. With `among` ("You may put a land
+  // card from among them onto the battlefield"), the cards the effect before it exiled that are still there.
   if (filter.zone === 'exile') {
     const { controller: _you, ...described } = filter;
-    const linked = source === null ? [] : (state.objects[source]?.linkedExile ?? []);
+    const linked = among ?? (source === null ? [] : (state.objects[source]?.linkedExile ?? []));
     return linked.filter((id) => {
       const obj = state.objects[id];
       return (
@@ -119,6 +121,7 @@ export function runChooseMove(
         res.source,
         instruction.filter,
         instruction.alsoGraveyard === true,
+        instruction.among,
       ).filter(
         // D-411: only the cards the effect before it moved.
         (id) => instruction.among === undefined || instruction.among.includes(id),
@@ -153,7 +156,9 @@ export function runChooseMove(
         reveal: zone !== 'hand',
         prompt: `Choose ${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'} ${
           instruction.among !== undefined
-            ? 'from among the cards put into your graveyard'
+            ? zone === 'exile'
+              ? 'from among the exiled cards'
+              : 'from among the cards put into your graveyard'
             : zone === 'exile'
               ? 'exiled with this permanent'
               : instruction.alsoGraveyard === true

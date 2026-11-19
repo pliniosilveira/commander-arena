@@ -59,6 +59,7 @@ import { runEnterToken } from './enter-token';
 import { markExileOnResolve } from './exile-on-resolve';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runMayCastEachType } from './free-cast-effect';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
 import { lifeAmountFor, resolveMayPayCost } from './life-amounts';
@@ -1439,6 +1440,9 @@ function runEffect(
     case 'mayPlay':
       // D-151: "You may play that card this turn" (rules/impulse.ts).
       return runMayPlay(state, res, effect);
+    case 'mayCastEachType':
+      // CR 601.2, 118.9, 611.2a: "for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (rules/free-cast.ts).
+      return runMayCastEachType(state, res, effect);
     case 'mayCast':
       // CR 601.2, 611.2a (D-135): "You may cast target [card] from your graveyard this turn" (rules/may-effects.ts).
       return runMayCast(state, res, effect, ctx, targets);

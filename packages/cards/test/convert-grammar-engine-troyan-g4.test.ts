@@ -110,3 +110,51 @@ describe('Rashmi, Eternities Crafter', () => {
     g.expect.zone('Lightning Bolt', 'hand', { seat: 0 });
   });
 });
+
+describe("Aminatou's Augury", () => {
+  const AUGURY_CARD = real("Aminatou's Augury");
+  const AUGURY = AUGURY_CARD.name;
+  const EIGHT = ['Island', 'Island', 'Island', 'Island', 'Island', 'Island', 'Island', 'Island'];
+  const game = (top: readonly string[]) =>
+    scenario()
+      .define(AUGURY_CARD)
+      .seat(0)
+      .library(...top, ...FILL)
+      .hand(AUGURY)
+      .battlefield(...EIGHT)
+      .seat(1)
+      .library(...FILL)
+      .build();
+  const PAD = ['Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp'];
+
+  test('the card is supported and valid', () => {
+    expect(validateCard(AUGURY_CARD)).toEqual([]);
+  });
+
+  test('the land is put onto the battlefield first; then a creature and an instant are cast for free, at their timing', () => {
+    const g = game([BEARS, 'Lightning Bolt', 'Forest', ...PAD.slice(0, 5)]);
+    g.act(0).cast(AUGURY, { pay: true });
+    g.passAll();
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards('Forest');
+    g.expect.zone('Forest', 'battlefield', { seat: 0 });
+    g.act(0).cast(BEARS, { alternative: 'free', pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.act(0).cast('Lightning Bolt', { alternative: 'free', targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.life(1, 37);
+    g.expect.invariants();
+  });
+
+  test('one spell of each type: a second creature is not cast; a land is not cast', () => {
+    const g = game([BEARS, ANGEL, 'Forest', ...PAD.slice(0, 5)]);
+    g.act(0).cast(AUGURY, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards();
+    g.act(0).cast(BEARS, { alternative: 'free', pay: true });
+    g.passAll();
+    expect(g.act(0).try.cast(ANGEL, { alternative: 'free' }).ok).toBe(false);
+    expect(g.act(0).try.cast('Forest', { alternative: 'free' }).ok).toBe(false);
+  });
+});

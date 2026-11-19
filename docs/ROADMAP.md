@@ -54,6 +54,7 @@ Supported play can differ from the CR here. Code comments point to this table.
 | Search by several players happens one after the other; Spectacle's "opponent" excludes a player who left | 701.23i, 702.137 | `rules/search.ts`, `alt-costs.ts` | two seats only |
 | Loops of mandatory actions are not detected (two players with "can't lose" never end the game; a runner's turn limit stops it) | 104.4b | state-based actions | none |
 | An effect added at a high layer to a card outside the battlefield, and a creature with no printed power that becomes a creature, get no P/T without `setPt` | 613 | `rules/derive-layers.ts` | none |
+| `mayCastEachType`: casting a card with several types uses the type permission that keeps the most other exiled cards castable, not the one the player picks | 601.2 | `rules/free-cast.ts` | Aminatou's Augury |
 
 Rules the engine does not implement and no supported card reaches (refused): state-based actions 704.5k, 704.5r (counter caps), 704.5t, u, x, y, z and aa, and the Siege rule 704.5v. A "your opponents can't win the game" static is accepted and changes nothing, which is right (CR 104.2a).
 

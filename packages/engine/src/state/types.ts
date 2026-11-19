@@ -435,8 +435,8 @@ export interface StackData {
   };
   /**
    * True when the spell was cast as the effect of a resolving ability allows (CR 608.2g, Cascade, D-120), which
-   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own.
-   * Absent otherwise, and for an ability.
+   * lets any card be cast without paying its mana cost, not only a card with that alternative cost of its own, or by the permission of an effect that lets a card in exile
+   * be cast without paying it (`mayCastEachType`). Absent otherwise, and for an ability.
    */
   readonly byEffect?: true;
   /**
@@ -1797,6 +1797,13 @@ export type ContinuousChange =
    * is a land, until the effect ends. No layer: read where casting and playing are decided (`rules/legality.ts`, `mayPlayFromExile`).
    */
   | { readonly kind: 'playPermission'; readonly seat: SeatId }
+  /**
+   * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,
+   * CR 601.2, 118.9, 611.2a): one of these for each card type, each naming the exiled cards (`objects`). `seat` may cast one card in exile it names that has the card type
+   * `type`, without paying its mana cost, at the timing of the spell, and the permission is used up by that cast (`rules/free-cast.ts`: it is removed). No layer: read where
+   * casting is decided (`rules/legality.ts`).
+   */
+  | { readonly kind: 'freeCastPermission'; readonly seat: SeatId; readonly type: CardType }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }
