@@ -988,6 +988,8 @@ export interface IrBasePt extends IrNode {
   readonly toughness: number;
   /** "base power and toughness X/X" (CR 107.3, 613.4b): the X of the ability; `power` and `toughness` are 0 and are not read. */
   readonly x?: true;
+  /** "become equal to ~'s power and toughness" (CR 613.4b, 611.2c): the source's power and toughness as the effect resolves; `power` and `toughness` are 0 and are not read. */
+  readonly fromSource?: true;
 }
 
 /**
