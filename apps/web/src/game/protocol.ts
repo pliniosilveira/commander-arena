@@ -11,6 +11,7 @@ import type {
   SeatId,
 } from '@commander-arena/engine';
 import type { LookedCard } from './looked-cards';
+import type { RevealedCard } from './revealed-cards';
 
 /** The human is always seat 0 and the AI seat 1 in v1. */
 export const HUMAN: SeatId = 0;
@@ -125,6 +126,11 @@ export interface Snapshot {
    * taken (D-139, `looked-cards.ts`); absent otherwise. Never the opponent's.
    */
   readonly lookedCards?: readonly LookedCard[];
+  /**
+   * The cards revealed since the previous snapshot (the latest reveal; `revealed-cards.ts`). Public to both
+   * players. Absent when nothing was revealed.
+   */
+  readonly revealed?: readonly RevealedCard[];
   /** Everything applied since the previous snapshot: the human's action, then the AI's. */
   readonly steps: readonly AppliedStep[];
   readonly log: readonly LogEntry[];

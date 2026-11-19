@@ -19,11 +19,15 @@ import { designationKind } from '../../game/designations';
 import { realCardOf } from '../../game/face-down-text';
 import { controlFact } from '../../game/korvold-text';
 import { laterFacts } from '../../game/later-text';
+import type { RevealedCard } from '../../game/revealed-cards';
 import { roomFacts } from '../../game/room-text';
 import { castCostChanged, costsX, costText, symbolsText, withX } from '../decisions/cast-cost';
 import { faceCostText, faceFacts, faceRole } from '../decisions/layouts';
 import { chosenModeTexts } from '../decisions/modes-picker';
 import { kickedWords, replicatedWords, typeLine } from '../format';
+import { ManaCost } from '../mana';
+import { objectIndex } from '../panels/objects';
+import { stackWording } from '../panels/stack-wording';
 import { useApp, useDefinedPt, useStaticNotes } from '../store-context';
 import './board.css';
 import { CardFace } from './CardFace';
@@ -347,10 +351,84 @@ function PreviewDetails({ object }: { object: ObjectView }) {
   );
 }
 
+/**
+ * What the object on the stack says: for a triggered or activated ability what set it off and what it does, the
+ * modes chosen and the targets (the stack panel's words, `stack-wording.ts`), so the card on top of the stack is
+ * explained here and not only named.
+ */
+function StackWords({ object }: { object: ObjectView }) {
+  const view = useApp((s) => s.snapshot?.view ?? null);
+  const log = useApp((s) => s.log);
+  const activated = useMemo(() => activatedStackIds(log), [log]);
+  const index = useMemo(() => (view === null ? new Map() : objectIndex(view)), [view]);
+  if (view === null || object.zone !== 'stack') return null;
+  const w = stackWording(object, index, view.viewer, activated.has(object.id));
+  const lines: string[] = [];
+  if (w.when !== null)
+    lines.push(
+      w.sayX(
+        `${w.when}${w.gist === '' ? '' : `, ${w.gist.charAt(0).toLowerCase()}${w.gist.slice(1)}`}`,
+      ),
+    );
+  if (w.does !== null) lines.push(w.sayX(w.does));
+  if (w.monarchWords !== null) lines.push(w.monarchWords);
+  if (w.modes !== null) lines.push(w.sayX(w.modes));
+  if (w.targets.length > 0) lines.push(`Targets: ${w.shares ?? w.targets.join(', ')}`);
+  if (lines.length === 0) return null;
+  return (
+    <section className="board-preview-stack" aria-label="On the stack" data-preview-stack-words>
+      <p className="board-preview-face-head">
+        <span className="board-preview-face-role">
+          {w.triggered ? 'Triggered' : 'On the stack'}
+        </span>
+        <b>{object.name}</b>
+      </p>
+      {lines.map((line) => (
+        <p key={line} className="board-preview-face-text">
+          {line}
+        </p>
+      ))}
+    </section>
+  );
+}
+
+/** The cards a reveal showed (CR 701.20): who revealed them and from where, each with its cost, type line and text. */
+function RevealedList({ cards }: { cards: readonly RevealedCard[] }) {
+  const viewer = useApp((s) => s.snapshot?.view.viewer ?? null);
+  const first = cards[0];
+  if (first === undefined) return null;
+  const who = first.seat === viewer ? 'You reveal' : 'Opponent reveals';
+  return (
+    <div className="board-preview-revealed" data-preview-revealed>
+      <div className="board-preview-bar">
+        <span className="board-flag">Revealed. Esc clears</span>
+      </div>
+      <p className="board-preview-title">
+        {who} from {first.from}
+      </p>
+      <ol>
+        {cards.map((card) => (
+          <li key={card.key}>
+            <p className="board-preview-face-head">
+              <b>{card.name}</b>
+              <ManaCost cost={card.manaCost} />
+            </p>
+            <p className="board-dim">{typeLine(card)}</p>
+            {card.oracleText === '' ? null : (
+              <p className="board-preview-face-text">{card.oracleText}</p>
+            )}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 export function PreviewPanel() {
   const view = useApp((s) => s.snapshot?.view ?? null);
   const pinnedId = useApp((s) => s.preview.pinned);
   const hoveredId = useApp((s) => s.preview.hovered);
+  const revealed = useApp((s) => s.preview.revealed);
   const { id, source } =
     view === null ? { id: null, source: 'none' } : previewChoice(view, pinnedId, hoveredId);
   const log = useApp((s) => s.log);
@@ -359,6 +437,14 @@ export function PreviewPanel() {
   const pinned = source === 'pinned' && object !== null;
   // The card behind the viewer's own face-down permanent (D-315), or null.
   const real = object === null ? null : realCardOf(object);
+  // A reveal is read when the player holds no object (pinned or hovered) and nothing newer than it is on the stack.
+  if (revealed.length > 0 && (source === 'none' || source === 'stack')) {
+    return (
+      <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
+        <RevealedList cards={revealed} />
+      </aside>
+    );
+  }
   return (
     <aside className="preview-panel board-preview" aria-label="Card preview" aria-live="polite">
       {object === null ? (
@@ -395,6 +481,7 @@ export function PreviewPanel() {
           <div className="board-preview-card" data-preview-id={object.id}>
             <CardFace object={real ?? object} variant="full" activated={activated.has(object.id)} />
           </div>
+          <StackWords object={object} />
           <PreviewDetails object={object} />
           <FaceList object={object} />
           <MeldList object={object} />
