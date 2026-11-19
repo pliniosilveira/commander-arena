@@ -202,6 +202,8 @@ const NEW_TARGETS_SENTENCE = /^you may choose new targets for the copy\.$/i;
  */
 const NEW_TARGETS_COPIES_SENTENCE = /^you may choose new targets for the copies\.$/i;
 const COPY_FOR_EACH = /(?:^|, )copy (?:it|that spell) for each time [^.]*\.$/i;
+/** "Copy target instant or sorcery spell an opponent controls twice." (issue 81, Venser, Fervent Forger): its permission to choose new targets for the copies is the next sentence. */
+const COPY_TWICE = /(?:^|, )copy target [^.]* an opponent controls twice\.$/i;
 
 /**
  * "Copy that spell for each other creature you control that the spell could target. Each copy targets a different one of those creatures." (Feather group 3, D-438, CR 707.10e): the
@@ -238,7 +240,8 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
-    COPY_FOR_EACH.test(text.slice(before.start, before.end))
+    (COPY_FOR_EACH.test(text.slice(before.start, before.end)) ||
+      COPY_TWICE.test(text.slice(before.start, before.end)))
   );
 }
 

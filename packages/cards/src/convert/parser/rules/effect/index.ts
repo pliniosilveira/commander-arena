@@ -36,6 +36,7 @@ import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
 import { EFFECT_COPY_SPELL } from './copy-spell';
+import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
@@ -1078,6 +1079,7 @@ export const EFFECT_RULES = [
   // Quandrix Unlimited deck, group D2: "reveal the top X cards ... put all land cards from among them onto the battlefield tapped", "reveal cards until you reveal X land cards".
   ...REVEAL_X_CARDS_EFFECT_RULES,
   ...REVEAL_THAT_MANY_EFFECT_RULES,
+  ...COPY_SPELL_TWICE_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,

@@ -162,7 +162,8 @@ export const EFFECT_END_STEP_MADE_TOKENS = defineRule<Clauses>({
 
 /**
  * `effect.leave-made-tokens`: "sacrifice those tokens", "exile those tokens" (CR 701.21a, 406.1): the tokens the instruction before made, as the instruction of a delayed
- * sentence ("At the beginning of the next end step, sacrifice those tokens."). The engine's `sacrifice` or `exile` of `moved`. Not read: "it", "them", another object.
+ * sentence ("At the beginning of the next end step, sacrifice those tokens."; issue 81, Venser: "..., sacrifice them."). The engine's `sacrifice` or `exile` of `moved`; the lowering checks that the
+ * instruction before it made the tokens, so "them" is never another group. Not read: "it", another object.
  */
 export const EFFECT_LEAVE_MADE_TOKENS = defineRule<Clauses>({
   id: 'effect.leave-made-tokens',
@@ -173,10 +174,14 @@ export const EFFECT_LEAVE_MADE_TOKENS = defineRule<Clauses>({
     'CR 603.7c (Delayed Triggered Abilities)',
     'CR 400.7j (General)',
   ],
-  examples: ['sacrifice those tokens', 'exile those tokens'],
+  examples: ['sacrifice those tokens', 'exile those tokens', 'sacrifice them'],
   rejects: [
     'sacrifice those token',
     'sacrifice these tokens',
+    'sacrifice them and draw a card',
+    // "exile them" is the first half of "exile them, then meld them" (`effect.meld`).
+    'exile them',
+    'sacrifice they',
     'sacrifice those creatures',
     'sacrifice those tokens and draw a card',
     'destroy those tokens',
@@ -184,15 +189,14 @@ export const EFFECT_LEAVE_MADE_TOKENS = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.leave-made-tokens';
-    const r = spanned(pattern(new RegExp(`(sacrifice|exile) those tokens${BOUNDARY}`, 'iu')))(
-      ctx,
-      pos,
-    );
+    const r = spanned(
+      pattern(new RegExp(`(sacrifice (?:those tokens|them)|exile those tokens)${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
     if (!r.ok) return r;
     // Not "... at the beginning of the next end step": that is `effect.end-step-made-tokens`.
     if (/^ at the beginning/iu.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
     const verb =
-      (r.value.value[1] ?? '').toLowerCase() === 'sacrifice'
+      (r.value.value[1] ?? '').toLowerCase().startsWith('sacrifice')
         ? 'sacrificeMadeTokens'
         : 'exileMadeTokens';
     return { ok: true, value: [makeClause(id, verb, {}, r.value.span)], pos: r.pos };

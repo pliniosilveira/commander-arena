@@ -1090,3 +1090,85 @@ describe('"Return target spell or creature to its owner\'s hand": a creature or 
     g.expect.invariants();
   });
 });
+
+// ---- Venser, Fervent Forger, mode one: "Copy target instant or sorcery spell an opponent controls twice. You may choose new targets for the copies." (CR 707.10, 707.10c: each copy is a
+// spell its copier controls, put on the stack above the original and resolving first).
+
+const TWICE = parsed(
+  'SYNTHETIC Parsed Twice',
+  'Instant',
+  'Copy target instant or sorcery spell an opponent controls twice. You may choose new targets for the copies.',
+  { manaCost: '{U}{U}', colors: ['U'] },
+);
+
+describe('Copy target spell an opponent controls twice', () => {
+  test("the copies are the caster's: each one resolves for them", () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(TWICE)
+      .hand(TWICE.name)
+      .battlefield('Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .hand("Angel's Mercy")
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 1, turn: 2 })
+      .build();
+    g.act(1).cast("Angel's Mercy", { pay: true });
+    g.act(1).pass();
+    g.act(0).cast(TWICE.name, { targets: [{ name: "Angel's Mercy", zone: 'stack' }], pay: true });
+    g.passAll();
+    g.passAll();
+    g.passAll();
+    g.passAll();
+    // Two copies resolve for the player who made them, then the original for its caster.
+    g.expect.life(0, 34);
+    g.expect.life(1, 27);
+    g.expect.invariants();
+  });
+});
+
+// ---- Venser, Fervent Forger: "Flash. When Venser enters, choose one — • Copy target instant or sorcery spell an opponent controls twice. You may choose new targets for the copies. •
+// Create two tokens that are copies of target permanent an opponent controls. They gain haste. At the beginning of the next end step, sacrifice them." (CR 700.2, 707.2, 603.7).
+
+const VENSER = parsed(
+  'SYNTHETIC Parsed Venser',
+  'Legendary Creature — Human Sorcerer',
+  'Flash\nWhen ~ enters, choose one —\n• Copy target instant or sorcery spell an opponent controls twice. You may choose new targets for the copies.\n• Create two tokens that are copies of target permanent an opponent controls. They gain haste. At the beginning of the next end step, sacrifice them.',
+  { manaCost: '{3}{U}', colors: ['U'], power: '2', toughness: '2' },
+);
+
+describe("Venser: copy an opponent's permanent twice, with haste, until the end step", () => {
+  test('two token copies with haste, sacrificed at the next end step', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(VENSER)
+      .hand(VENSER.name)
+      .battlefield('Island', 'Island', 'Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Giant Spider')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(VENSER.name, { pay: true });
+    g.passAll();
+    // Only the second mode has a legal target (no spell is on the stack), so the engine chooses it and the only permanent.
+    const spiders = () =>
+      g.state.battlefield.filter(
+        (id) => g.state.objects[id]?.token?.characteristics.name === 'Giant Spider',
+      );
+    expect(spiders()).toHaveLength(2);
+    g.expect.derived(spiders()[0] as never, { keywords: ['haste', 'reach'] });
+    g.advanceTo('end');
+    g.passAll();
+    expect(spiders()).toHaveLength(0);
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+});
