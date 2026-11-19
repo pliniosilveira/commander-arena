@@ -115,6 +115,7 @@ import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
+import { SYNTHETIC_LIVING_DEATH_LIST } from './synthetic-living-death';
 import { SYNTHETIC_LOREHOLD_G1_LIST } from './synthetic-lorehold-g1';
 import { SYNTHETIC_LOREHOLD_G2_LIST } from './synthetic-lorehold-g2';
 import { SYNTHETIC_LOREHOLD_G3_LIST } from './synthetic-lorehold-g3';
@@ -538,6 +539,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_SNOW_LIST,
   ...SYNTHETIC_BRUNA_SEARCH_LIST,
   ...SYNTHETIC_HULK_SEARCH_LIST,
+  ...SYNTHETIC_LIVING_DEATH_LIST,
   ...SYNTHETIC_PLANESWALKER_LIST,
   ...SYNTHETIC_PRIDE_WALKER_LIST,
   ...SYNTHETIC_MANA_TRIGGERS_LIST,

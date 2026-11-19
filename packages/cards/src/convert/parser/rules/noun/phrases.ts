@@ -1043,24 +1043,28 @@ interface CardWords {
 export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
-  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' = 'from',
+  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' | 'fromTheirs' = 'from',
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
-    preposition === 'fromThatPlayer'
-      ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
-        map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
-      : preposition === 'inAny'
-        ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
-          map(literal(' in a graveyard'), () => undefined)
-        : preposition === 'in'
-          ? map(literal(' in your graveyard'), () => 'you' as const)
-          : choice(
-              map(literal(' from your graveyard'), () => 'you' as const),
-              map(literal(' from a graveyard'), () => undefined),
-              map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-              // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-              ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-            );
+    preposition === 'fromTheirs'
+      ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
+        // graveyard, so no owner. The caller reads it only after "each player".
+        map(literal(' from their graveyard'), () => undefined)
+      : preposition === 'fromThatPlayer'
+        ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
+          map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
+        : preposition === 'inAny'
+          ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
+            map(literal(' in a graveyard'), () => undefined)
+          : preposition === 'in'
+            ? map(literal(' in your graveyard'), () => 'you' as const)
+            : choice(
+                map(literal(' from your graveyard'), () => 'you' as const),
+                map(literal(' from a graveyard'), () => undefined),
+                map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+                ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+              );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),

@@ -25,6 +25,7 @@ import { CARD_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, connectorOf, listWithJoins, makeClause, VERB_LIST_JOIN } from './operands';
+import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled';
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
@@ -544,6 +545,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'defending player sacrifices a creature of their choice',
     'each player sacrifices all permanents they control that are one or more colors',
     'each opponent sacrifices all creatures they control',
+    // Living Death (CR 404.1, 608.2c): each player's own graveyard, then what they exiled this way.
+    'each player exiles all creature cards from their graveyard',
+    'each player puts all cards they exiled this way onto the battlefield',
+    'each player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield',
     'target player mills two cards',
     'each opponent mills X cards',
     'you mill three cards',
@@ -611,6 +616,12 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its controller investigate',
     'you investigates',
     'you sacrifice a creature of their choice',
+    'you exile all creature cards from your graveyard',
+    'each opponent exiles all creature cards from their graveyard',
+    'each player exiles a creature card from their graveyard',
+    'each player exiles all creature cards from your graveyard',
+    'each player puts all cards they exiled this way onto the battlefield tapped',
+    'you put all cards they exiled this way onto the battlefield',
     'each player sacrifices a creature of your choice',
     'each player sacrifices target creature of their choice',
     'each player sacrifices a creature an opponent controls of their choice',
@@ -677,6 +688,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         alone('effect.player.manifest', manifestAction),
         part('effect.player.energy', energyAction),
         alone('effect.player.sacrifice', sacrificeAction),
+        alone('effect.player.exile-graveyard', exileGraveyardCardsAction),
+        alone('effect.player.put-exiled', putExiledCardsAction),
         alone('effect.player.investigate', investigateAction),
         alone('effect.player.shuffle', shuffleAction),
         alone('effect.player.create-token', createAction),

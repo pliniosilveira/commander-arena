@@ -270,6 +270,11 @@ export interface LowerContext {
    */
   exiledAnyCardTypes: boolean;
   /**
+   * True after "each player exiles all creature cards from their graveyard" (Living Death, CR 608.2c): the cards that exile moved are what "all cards they exiled this way" names, kept
+   * through a sacrifice and false after any other instruction that moves, destroys or exiles.
+   */
+  exiledOwnGraveyards: boolean;
+  /**
    * What "it" means in "If you do, return it to the battlefield ... at the beginning of the next end step" (stage P48, D-205, CR 603.7c, 400.7j): the reference of the
    * target the last instruction exiled, which the engine's `moved` names. Null before an exile of a target and after any other move, destroy or sacrifice.
    */
@@ -357,6 +362,7 @@ export function newContext(
     createdToken: null,
     movedToHand: false,
     exiledAnyCardTypes: false,
+    exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
     randomYardCard: false,
