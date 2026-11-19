@@ -67,6 +67,7 @@ import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
+import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import {
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_ADD_MANA,
@@ -989,6 +990,7 @@ export const EFFECT_RULES = [
   ...PILES_EFFECT_RULES,
   // D-396 (CR 701.20a): "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard."
   ...REVEAL_TAKE_EFFECT_RULES,
+  ...LOOK_ELSE_EFFECT_RULES,
   // Stage P31 (D-140): before `effect.tap`, which reads "tap" and stops at the count.
   ...ARTIFACT_EFFECT_RULES,
   EFFECT_TAP,

@@ -642,6 +642,7 @@ describe('unmatched abilities', () => {
       'effect.lead-double-pt',
       'effect.reveal-separate-piles',
       'effect.reveal-take',
+      'effect.look-take-else-hand',
       'effect.tap-chosen',
       'effect.untap-chosen',
       'effect.untap-those',

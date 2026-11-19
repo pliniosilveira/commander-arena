@@ -65,6 +65,7 @@ import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
 import { KORVOLD_LOWERINGS } from './korvold';
+import { LOOK_ELSE_LOWERINGS } from './look-else';
 import { MELD_LOWERINGS } from './meld';
 import { NIV_LOWERINGS } from './niv';
 import { NIV_GROUP_3_C_LOWERINGS } from './niv-group-3-c';
@@ -571,7 +572,7 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
   head: 'putFromZone',
   id: 'lower.put-from-zone',
   needs: ['effect:moveToZone', 'selector:choose', 'ability:chooseAlsoGraveyard'],
-  lower(clause) {
+  lower(clause, ctx) {
     const objects = arg(clause, 'objects');
     const to = zoneOf(clause);
     const may = arg(clause, 'may');
@@ -599,11 +600,20 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
     const optional = may?.kind === 'flag' && may.value;
     // D-544 (CR 608.2d): "from your hand or graveyard": the cards of both places are the candidates.
     const both = arg(clause, 'alsoGraveyard');
+    // CR 107.3a, 202.3: "a permanent card with mana value X or less": the X of the spell, read as the cards are chosen (`ObjectFilter.manaValueAtMost`).
+    let limit: Amount | undefined;
+    if (arg(clause, 'manaValueAtMost') !== undefined) {
+      const blocked = missingFeatures(['selector:manaValueAtMost']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const lowered = amountArg(clause, 'manaValueAtMost', ctx);
+      if (!lowered.ok) return lowered;
+      limit = lowered.value;
+    }
     const move: Effect = {
       kind: 'moveToZone',
       objects: {
         kind: 'choose',
-        filter: filter.value,
+        filter: limit === undefined ? filter.value : { ...filter.value, manaValueAtMost: limit },
         ...(optional ? { optional: true as const } : {}),
         ...(both?.kind === 'flag' && both.value ? { alsoGraveyard: true as const } : {}),
       },
@@ -1610,6 +1620,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GRAVEYARD_CHOICE_LOWERINGS,
   ...PILES_LOWERINGS,
   ...REVEAL_TAKE_LOWERINGS,
+  ...LOOK_ELSE_LOWERINGS,
   ...DAWNBREAK_LOWERINGS,
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,

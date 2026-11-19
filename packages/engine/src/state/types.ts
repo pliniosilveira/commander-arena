@@ -1181,6 +1181,8 @@ export type Instruction =
       readonly totalManaValue?: number;
       /** The cards taken are not revealed (`take.hidden`, D-324): "Put two of them into your hand". */
       readonly hidden?: true;
+      /** "If you don't, put a card from among them into your hand" (`take.elseAnyToHand`, CR 608.2c): when nothing was taken, one card of any kind goes to the hand, unrevealed. */
+      readonly elseAnyToHand?: true;
       /** Every card of the top is revealed to everyone (`revealAll`, D-396, CR 701.20a): "Reveal the top five cards of your library". */
       readonly revealAll?: true;
       /** With `revealAll`: the cards have been revealed (the event came out), so the instruction asks the question now (D-396). */

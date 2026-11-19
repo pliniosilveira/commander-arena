@@ -195,11 +195,8 @@ function walkEffect(
           : effect.objects.kind === 'choose'
             ? effect.objects.filter
             : selectedFilter(effect.objects, targets);
-      // D-149: an Aura card named by a target, `moved`, `each` or the like chooses what it enchants as it enters (CR 303.4f: `rules/aura-entry.ts`);
-      // one picked by a `choose` selector from the hand or the graveyard is still not run.
-      if (effect.to === 'battlefield' && effect.objects.kind === 'choose') {
-        auraEntryIssue(named, `${path}.objects`, out);
-      }
+      // D-149: an Aura card named by a target, `moved`, `each` or the like chooses what it enchants as it enters (CR 303.4f: `rules/aura-entry.ts`), and so does one
+      // picked by a `choose` selector from the hand or the graveyard (`rules/move-choice.ts`).
       moved.current = named;
       return;
     }

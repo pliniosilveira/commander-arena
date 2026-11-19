@@ -547,6 +547,8 @@ export interface ObjectFilter {
    * creature dealt to that player" (CR 202.3, 601.2c, D-230): the mana value of the object is at most the amount, read when the filter is read (as the targets are chosen
    * and again as the ability resolves; CR 608.2b). The amount is one that needs no target and no earlier instruction: the power of this ability's source (`powerOf` `this`), a
    * `triggerDamage`, a number the game reads (`countOf`, `commanderCasts`...). Not in a static ability or a trigger's subject.
+   * `{ kind: 'x' }` ("put a permanent card with mana value X or less from your hand onto the battlefield", CR 107.3a): the X announced for the spell or ability the effect belongs to,
+   * in the `choose` selector of a `moveToZone` only. The mana value of a card in a hand counts an {X} in its cost as 0 (CR 202.3e).
    */
   readonly manaValueAtMost?: Amount;
   /**
@@ -2630,6 +2632,12 @@ export type Effect =
          * already (`exileFaceDown`). With `min` equal to `max` and as many cards matching as `min`, nothing is asked: they are all taken.
          */
         readonly hidden?: true;
+        /**
+         * "You may put a land card from among them onto the battlefield tapped. If you don't, put a card from among them into your hand" (Planar Genesis, CR 608.2c, 608.2d): when
+         * no card was taken above (the player declined, or no card matched), the player must put one card of any kind from among the cards looked at into their hand,
+         * without revealing it. Only with `to: 'battlefield'`, `hidden` and no `min`; the rest then go where `rest` says.
+         */
+        readonly elseAnyToHand?: true;
       };
       /**
        * What happens to the cards looked at and not taken: the bottom of the library in a random order, the graveyard, or (D-151, "look at the top card of
