@@ -133,14 +133,11 @@ describe('Menu', () => {
     ] as const;
     const dialog = (
       list: typeof decks | readonly [(typeof decks)[0]],
-      value: string,
       initialTab?: 'saved' | 'precon',
     ) =>
       renderToStaticMarkup(
         <DeckDialog
           title="Choose your deck"
-          name="human-deck"
-          value={value}
           prompt="Select the deck you'll play in this game."
           decks={list}
           {...(initialTab === undefined ? {} : { initialTab })}
@@ -152,24 +149,24 @@ describe('Menu', () => {
         />,
       );
     // The dialog opens on the tab of the marked deck.
-    const withSaved = dialog(decks, 's1');
+    const withSaved = dialog(decks);
     expect(withSaved).toContain('role="dialog"');
     expect(withSaved).toContain('Choose your deck');
     expect(withSaved).toContain('Saved One');
     expect(withSaved).toContain('No commander marked');
     expect(withSaved).not.toContain('Precon One');
-    const onlyPrecons = dialog([decks[0]], 'p1', 'precon');
+    const onlyPrecons = dialog([decks[0]], 'precon');
     expect(onlyPrecons).toContain('Precon One');
     expect(onlyPrecons).toContain('Commander: Cmd One');
     expect(onlyPrecons).not.toContain('Back');
-    expect(onlyPrecons).toContain('>Select<');
+    expect(onlyPrecons).not.toContain('>Select<');
     expect(onlyPrecons).toContain('aria-label="Search decks"');
     for (const label of ['Random all', 'Random precon', 'Random mine'])
       expect(onlyPrecons).toContain(label);
     // No deck was saved: its random button is disabled.
     expect(onlyPrecons).toMatch(/<button[^>]*disabled=""[^>]*>Random mine/);
     expect(onlyPrecons).not.toMatch(/<button[^>]*disabled=""[^>]*>Random precon/);
-    expect(onlyPrecons).toContain('name="human-deck"');
+    expect(onlyPrecons).toContain('data-deck-id="p1"');
   });
 
   test('the random buttons pick from the whole list, the precons or the saved decks', () => {
