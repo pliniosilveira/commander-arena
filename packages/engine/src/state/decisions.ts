@@ -574,6 +574,15 @@ export interface ChooseCardsDecision extends DecisionBase {
    */
   readonly shareLandType?: Readonly<Record<ObjectId, readonly string[]>>;
   /**
+   * For a move "you may exile any number of cards from your graveyard with four or more card types among them" (CR 205.2a, `ChooseSelector.minCardTypes`): the cards chosen
+   * together must have at least `count` different card types, given the card types of each card of `legal` (the answer is checked against them). The empty answer (`min` 0) is
+   * always legal: it is the player declining. Absent for every other question.
+   */
+  readonly minCardTypes?: {
+    readonly count: number;
+    readonly types: Readonly<Record<ObjectId, readonly string[]>>;
+  };
+  /**
    * For `'reveal'` (D-225, CR 614.12, 701.20a: "As this land enters, you may reveal a Mountain or Plains card from your hand"): the player who accepted chooses which
    * of the cards of `legal` (all in their hand, more than one) to reveal; exactly one (`min` = `max` = 1), and `source` is the land that is entering (or the spell
    * or ability that creates it, for a token). `face` is the face of a modal double-faced land being played. Absent for every other question.

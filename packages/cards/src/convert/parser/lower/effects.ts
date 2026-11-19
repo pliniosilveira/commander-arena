@@ -54,6 +54,7 @@ import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
 import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
 import { DEATH_TOLL_C_LOWERINGS } from './death-toll-c';
+import { DEATH_TOLL_WINTER_LOWERINGS } from './death-toll-winter';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
@@ -2118,6 +2119,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DEATH_TOLL_B_LOWERINGS,
   // D-411: "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_LOWERINGS,
+  // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield".
+  ...DEATH_TOLL_WINTER_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".
   ...GRAVEYARD_COPY_LOWERINGS,
   // D-445: "Monstrosity 5".

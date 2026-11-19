@@ -230,6 +230,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     ctx.createdToken = only?.kind === 'createToken' && only.controller === undefined ? only : null;
     // Issue 159: "a creature card put into a graveyard this way": the clause before it was a destroy.
     ctx.destroyed = lowered.value.length === 1 && lowered.value[0]?.kind === 'destroy';
+    // Death Toll deck (Winter): "put a permanent card from among them onto the battlefield" after the exile of any number of cards with a card type minimum.
+    ctx.exiledAnyCardTypes =
+      lowered.value.length === 1 &&
+      lowered.value[0]?.kind === 'moveToZone' &&
+      lowered.value[0].objects.kind === 'choose' &&
+      lowered.value[0].objects.minCardTypes !== undefined;
     // D-412: "If you put a Town card into your hand this way": the clause before it moved cards to the hand.
     ctx.movedToHand =
       lowered.value.length === 1 &&
@@ -1073,7 +1079,12 @@ function lowerMay(
     sentence.clauses.map((c) => ({
       ...c,
       // Issue 104: "you may exile a creature card from your graveyard" is a choice of none or one card, the offer itself.
-      optional: (c.verb === 'exileOneOfThem' || c.verb === 'exileChosenCard') && c.optional,
+      // Death Toll deck (Winter): "you may exile any number of cards from your graveyard with four or more card types among them" is the same kind of offer (none, or the cards chosen).
+      optional:
+        (c.verb === 'exileOneOfThem' ||
+          c.verb === 'exileChosenCard' ||
+          c.verb === 'exileGraveyardCardTypes') &&
+        c.optional,
     })),
     ctx,
   );

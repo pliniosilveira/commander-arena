@@ -133,6 +133,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseAmongMoved',
     // D-544: "You may put a land card from your hand or graveyard onto the battlefield." (`ChooseSelector.alsoGraveyard`: the cards of both places are the candidates).
     'chooseAlsoGraveyard',
+    // Death Toll deck: "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (`ChooseSelector.minCardTypes`, and `fromMoved` among the cards exiled).
+    'chooseMinCardTypes',
     // Issue 103: "You may put a commander you own from the command zone onto the battlefield." (`ChooseSelector` of cards in the command zone).
     'chooseFromCommandZone',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
@@ -1435,6 +1437,8 @@ export const ABILITY_FEATURES = [
   'chooseAmongMoved',
   /** "You may put a land card from your hand or graveyard onto the battlefield" (D-544, CR 608.2d, 110.2a): the engine's `ChooseSelector.alsoGraveyard` of a `moveToZone` onto the battlefield. */
   'chooseAlsoGraveyard',
+  /** "You may exile any number of cards from your graveyard with four or more card types among them. If you do, put a permanent card from among them onto the battlefield" (Death Toll deck, CR 205.2a, 608.2d): the engine's `ChooseSelector.minCardTypes` of a `moveToZone` into exile, then `fromMoved` among the cards exiled. */
+  'chooseMinCardTypes',
   /** "You may put a commander you own from the command zone onto the battlefield" (issue 103, CR 903.3, 608.2d): a `ChooseSelector` of the cards of the command zone of the controller. */
   'chooseFromCommandZone',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
@@ -2186,6 +2190,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
+  chooseMinCardTypes: true,
   chooseFromCommandZone: true,
   revealUntilCount: true,
   revealUntilGraveyard: true,

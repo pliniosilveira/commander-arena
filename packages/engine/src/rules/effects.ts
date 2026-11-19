@@ -996,6 +996,10 @@ function runEffect(
                 // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
                 ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
                 ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
+                // CR 205.2a: "any number of cards ... with four or more card types among them".
+                ...(effect.objects.minCardTypes === undefined
+                  ? {}
+                  : { anyNumber: true as const, minCardTypes: effect.objects.minCardTypes }),
                 ...(effect.objects.exceptSacrificed === true
                   ? {
                       among: Object.keys(state.objects).filter(

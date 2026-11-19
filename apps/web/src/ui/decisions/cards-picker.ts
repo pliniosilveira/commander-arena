@@ -12,8 +12,14 @@ import type {
   ObjectId,
   ObjectView,
 } from '@commander-arena/engine';
-import { sharesLandType } from '@commander-arena/engine';
-import { cardNoun, chosenCardMoveText, findEffect, lookAtTopText } from '../../game/artifacts-text';
+import { coversCardTypes, sharesLandType } from '@commander-arena/engine';
+import {
+  cardNoun,
+  chosenCardMoveText,
+  findEffect,
+  findEffects,
+  lookAtTopText,
+} from '../../game/artifacts-text';
 import { castFreeText } from '../../game/dinosaurs-text';
 import { beholdQuality, beholdReminder } from '../../game/dragons-text';
 import { findUnless } from '../../game/unless-text';
@@ -22,7 +28,7 @@ import { unlessPaysPrompt, wardPrompt } from './optional';
 import { togglePermanent } from './permanents';
 
 type Range = Pick<ChooseCardsDecision, 'min' | 'max'> &
-  Partial<Pick<ChooseCardsDecision, 'orSingle' | 'shareLandType'>>;
+  Partial<Pick<ChooseCardsDecision, 'orSingle' | 'shareLandType' | 'minCardTypes'>>;
 
 /**
  * Toggles a card, keeping the order of the picks. Clicking a chosen card takes it back (the later
@@ -46,6 +52,11 @@ export function foundReady(chosen: readonly ObjectId[], decision: Range): boolea
   if (decision.shareLandType !== undefined && !sharesLandType(chosen, decision.shareLandType)) {
     return false;
   }
+  // CR 205.2a: "any number of cards ... with four or more card types among them": the cards picked together need that many card types (none is declining), which the engine would
+  // refuse otherwise.
+  if (decision.minCardTypes !== undefined && !coversCardTypes(chosen, decision.minCardTypes)) {
+    return false;
+  }
   const { orSingle } = decision;
   if (orSingle !== undefined && chosen.length !== decision.max) {
     const [only] = chosen;
@@ -63,6 +74,9 @@ export function foundHint(chosen: readonly ObjectId[], decision: Range): string 
     chosen.length <= decision.max
   ) {
     return 'Choose lands that share a land type';
+  }
+  if (decision.minCardTypes !== undefined) {
+    return `Choose cards with ${decision.minCardTypes.count} or more card types among them, or none`;
   }
   if (decision.orSingle !== undefined) {
     return `Choose ${plural(decision.max, 'card')}, or one card marked “${ALONE}”`;
@@ -128,7 +142,7 @@ export function castVerb(decision: Pick<ChooseCardsDecision, 'prompt'>): 'cast' 
 /** The label of the Confirm button: a search that finds nothing says so. */
 export function confirmLabel(
   decision: Pick<ChooseCardsDecision, 'purpose'> &
-    Partial<Pick<ChooseCardsDecision, 'prompt' | 'min' | 'to'>>,
+    Partial<Pick<ChooseCardsDecision, 'prompt' | 'min' | 'to' | 'minCardTypes'>>,
   chosen: readonly ObjectId[],
   to: TakeTo = 'hand',
 ): string {
@@ -161,6 +175,10 @@ export function confirmLabel(
   }
   if (decision.purpose === 'exile') return 'Exile';
   // D-139: put a card from the hand or graveyard onto the battlefield; take a looked-at card into the hand.
+  // Death Toll deck (CR 205.2a): "exile any number of cards ... with four or more card types among them": the cards chosen go into exile.
+  if (decision.purpose === 'move' && decision.minCardTypes !== undefined) {
+    return chosen.length === 0 ? 'Exile none' : 'Exile';
+  }
   if (decision.purpose === 'move') return chosen.length === 0 ? 'Put none' : 'Put onto battlefield';
   if (decision.purpose === 'lookTake') {
     // CR 702.75a: Hideaway exiles the card it must take; "put it onto the battlefield" may take none.
@@ -209,6 +227,11 @@ export function foundDetail(decision: ChooseCardsDecision, chosen: readonly Obje
     return `${chosen.length} of ${decision.max} chosen. One card marked “${ALONE}” is enough by itself.`;
   }
   const count = foundCount(chosen, decision);
+  // CR 205.2a: "with four or more card types among them": say how many card types the picks have so far, and that none is a way out.
+  if (decision.minCardTypes !== undefined) {
+    const types = new Set(chosen.flatMap((id) => decision.minCardTypes?.types[id] ?? []));
+    return `${chosen.length} chosen, ${plural(types.size, 'card type')} among them (${decision.minCardTypes.count} needed). Confirm with none to decline.`;
+  }
   // D-151 (CR 701.9): "Discard any number of cards": say what Confirm does with none chosen.
   if (decision.purpose === 'discard' && decision.min === 0) {
     return chosen.length === 0
@@ -228,7 +251,7 @@ export function foundDetail(decision: ChooseCardsDecision, chosen: readonly Obje
  */
 export function foundBadge(
   decision: Pick<ChooseCardsDecision, 'purpose' | 'max'> &
-    Partial<Pick<ChooseCardsDecision, 'prompt' | 'to'>>,
+    Partial<Pick<ChooseCardsDecision, 'prompt' | 'to' | 'minCardTypes'>>,
   chosen: readonly ObjectId[],
   id: ObjectId,
   to: TakeTo = 'hand',
@@ -244,6 +267,7 @@ export function foundBadge(
   if (decision.purpose === 'pair') return 'Chosen';
   if (decision.purpose === 'separate') return 'Pile 1';
   if (decision.purpose === 'exile') return 'Exile';
+  if (decision.purpose === 'move' && decision.minCardTypes !== undefined) return 'Exile';
   if (decision.purpose === 'move') return 'Put';
   if (decision.purpose === 'lookTake') {
     return to === 'exileFaceDown' ? 'Exile' : to === 'battlefield' ? 'Put' : 'Take';
@@ -562,7 +586,13 @@ function discardUnlessPrompt(decision: ChooseCardsDecision, index: Index): strin
  * the stack, or the engine's own words with the source when the view does not show them.
  */
 function movePrompt(decision: ChooseCardsDecision, index: Index): string {
-  const effect = sourceEffect(decision, index, 'moveToZone');
+  // An ability with two moves of cards (Winter: the exile, then the permanent put onto the battlefield from among the cards exiled) has a question for each: the one that
+  // chooses among the cards of the zone the decision is about.
+  const onStack = index.get(decision.source)?.ability?.effect;
+  const moves = onStack === undefined ? [] : findEffects(onStack, 'moveToZone');
+  const effect =
+    moves.find((m) => m.objects.kind === 'choose' && m.objects.filter.zone === decision.zone) ??
+    sourceEffect(decision, index, 'moveToZone');
   const words = effect === null ? null : chosenCardMoveText(effect);
   const base = words ?? decision.prompt.replace(/\.$/, '');
   return `${base} (${stackName(index, decision.source)}).`;
@@ -596,6 +626,9 @@ function castPrompt(decision: ChooseCardsDecision, index: Index): string {
 
 /** The title of the picker panel: "Exile to cast X", "Discard to cast X", "Discard to pay for X's ability", or the default. */
 export function discardTitle(decision: ChooseCardsDecision, index: Index): string {
+  if (decision.purpose === 'move' && decision.minCardTypes !== undefined) {
+    return `Exile cards for ${nameOf(index, decision.source)}`;
+  }
   if (decision.purpose === 'move')
     return `Put onto the battlefield for ${nameOf(index, decision.source)}`;
   // D-303 (CR 700.3): the cards revealed by Fact or Fiction and its kind.

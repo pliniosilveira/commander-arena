@@ -633,6 +633,8 @@ describe('unmatched abilities', () => {
       'effect.reveal-put-all-hand',
       'effect.look-take-one-graveyard',
       'effect.repeat-process-times',
+      'effect.exile-graveyard-card-types',
+      'effect.put-permanent-from-among-exiled',
       'effect.damage',
       'effect.damage-count',
       'effect.bite',

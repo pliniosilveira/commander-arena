@@ -8,6 +8,7 @@
 
 import type { ObjectId } from './ids';
 import { arrangementActions, orderedChoices } from './rules/arrange-choices';
+import { cardTypeCovers } from './rules/card-types-choice';
 import { defaultDivision } from './rules/combat-flow';
 import { crewChoices } from './rules/crew-choices';
 import { sharesLandType } from './rules/share-type';
@@ -309,6 +310,17 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           ...[...single, ...full]
             .slice(0, MAX_LISTED_CHOICES)
             .map((objects) => ({ kind: 'chooseCards' as const, objects })),
+          { kind: 'concede' },
+        ];
+      }
+      // CR 205.2a: "any number of cards with four or more card types among them": every subset cannot be listed (a graveyard holds dozens of cards), so the answers
+      // listed are nothing, the small sets that reach the minimum and everything that qualifies; any other legal set is accepted all the same (see card-types-choice.ts).
+      if (d.minCardTypes !== undefined) {
+        return [
+          ...cardTypeCovers(d.legal, d.minCardTypes, MAX_LISTED_CHOICES).map((objects) => ({
+            kind: 'chooseCards' as const,
+            objects,
+          })),
           { kind: 'concede' },
         ];
       }
