@@ -300,6 +300,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
         ...(head.kind === 'chooseObjects' && head.chosen !== null
           ? { chosenObjects: { ...res.chosenObjects, [head.id]: head.chosen } }
           : {}),
+        // CR 608.2d: the permanents a `sparePermanents` kept, for the instructions after it ("each of those creatures").
+        ...(out.chosenObjects === undefined
+          ? {}
+          : { chosenObjects: { ...res.chosenObjects, ...out.chosenObjects } }),
       },
     };
     // D-191: the answers to the replacement questions of the damage belong to the one instruction that asked them.

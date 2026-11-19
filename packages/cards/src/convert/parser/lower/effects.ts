@@ -102,6 +102,7 @@ import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
+import { CANT_ATTACK_WHILE_COUNTER, KEEP_ONE_WITH_COUNTER } from './vow';
 import { VRASKA_LOWERINGS } from './vraska';
 
 /**
@@ -1873,6 +1874,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   LOSE_HEXPROOF_SHROUD,
   BECOMES,
   GAIN_ALL_CREATURE_TYPES,
+  KEEP_ONE_WITH_COUNTER,
+  CANT_ATTACK_WHILE_COUNTER,
   SET_PT,
   FLICKER,
   DELAYED_RETURN,

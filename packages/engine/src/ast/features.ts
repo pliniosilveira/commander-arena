@@ -198,6 +198,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'loseAllAbilities',
     // D-649: "creatures your opponents control lose hexproof and shroud and can't have hexproof or shroud" (CR 702.11b, 702.18a).
     'loseHexproofShroud',
+    // CR 508.1a, 611.2b: "Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it" (`cantAttackController`).
+    'cantAttackController',
     // `setTypes` runs both the replacing form and `additive: true` (CR 205.1b, Crew's "becomes an
     // artifact creature"); `additive` is an option of the node, not a kind, so it has no `FeatureRef`.
     'setTypes',
@@ -2021,6 +2023,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   chooseObjects: true,
   grantPlayerHexproof: true,
+  cantAttackController: true,
   grantPlayerProtectionEverything: true,
   preventPlayerLifeTotalChange: true,
   mill: true,

@@ -30,6 +30,7 @@ import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { attachEntered, attachObject } from './attach';
+import { runCantAttackController } from './attack-bans';
 import { runAttackRandomOpponent } from './attack-random-opponent';
 import { runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
@@ -2216,9 +2217,20 @@ function runEffect(
             effect.own === undefined
               ? undefined
               : resolvePlayers(state, effect.own.players, ctx, targets),
+            effect.own === undefined
+              ? {}
+              : {
+                  ...(effect.own.onlyTypes === true ? { onlyTypes: true as const } : {}),
+                  ...(effect.own.counter === undefined ? {} : { counter: effect.own.counter }),
+                  ...(effect.own.keptAs === undefined ? {} : { keptAs: effect.own.keptAs }),
+                },
           ),
         ],
       );
+
+    case 'cantAttackController':
+      // CR 508.1a, 506.3, 611.2b, 611.2c: one effect for each creature the selector names as this resolves that has the counter, for the controller of this effect (`rules/attack-bans.ts`).
+      return runCantAttackController(state, effect, ctx, targets);
 
     case 'exileFromTriggerCards': {
       // CR 603.2c, 608.2d, 400.7 (Lorehold group 1): "you may exile one of them from your graveyard": the controller chooses none or one of the cards that triggered this ability

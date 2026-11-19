@@ -179,6 +179,14 @@ function sparePrompt(decision: Partial<Pick<ChoosePermanentDecision, 'seat' | 's
   const whose = decision.spare?.player === decision.seat ? 'you control' : 'an opponent controls';
   // D-484 (CR 608.2d, 701.21a): "Each opponent chooses a permanent they control of each permanent type and sacrifices the rest": the player keeps one of their own, and sacrifices every other.
   if (decision.spare?.own === true) {
+    // Promise of Loyalty (CR 608.2d, 701.21a, 122.1): only the creatures are sacrificed, and the one kept gets a counter.
+    if (decision.spare.onlyTypes === true) {
+      const counter =
+        decision.spare.counter === undefined
+          ? ''
+          : ` It gets ${/^[aeiou]/.test(decision.spare.counter) ? 'an' : 'a'} ${decision.spare.counter} counter.`;
+      return `Choose ${/^[aeiou]/.test(type) ? 'an' : 'a'} ${type} you control to keep.${counter} You sacrifice every other ${type} you control.`;
+    }
     return `Choose ${/^[aeiou]/.test(type) ? 'an' : 'a'} ${type} you control to keep. You sacrifice every other permanent you control.`;
   }
   return `Choose ${/^[aeiou]/.test(type) ? 'an' : 'a'} ${type} ${whose} to keep. Each player then sacrifices all other nonland permanents they control.`;

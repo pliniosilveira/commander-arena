@@ -525,7 +525,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Those creatures" after a count is read only for a grant of a keyword.
 - "Each creature deals N damage to its controller" has no "owner" or "equal to its power" form.
 - "For each creature exiled this way, its controller" is read only for an exile with targets, not for destroy or sacrifice.
-- Promise of Loyalty is unsupported: it needs a restriction against one player tied to a vow counter, and `sparePermanents.own` for one type with a counter.
 - An Omen (Tarkir: Dragonstorm) follows its reminder text, shuffled into its owner's library as it resolves; the Comprehensive Rules text for Omen could not be checked, and a copy of an Omen spell is not looked at.
 - Selvala's Stampede: with no wild vote nothing is revealed but the library is still shuffled; the rulings of that case could not be checked.
 - The colors of the mana spent to cast a spell (Converge) are read only for the spell itself, not for "that spell" in a cast trigger.

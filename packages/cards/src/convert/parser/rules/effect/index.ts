@@ -138,6 +138,7 @@ import { SEARCH_PAIR_RULES } from './search-pair';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { VOTE_EFFECT_RULES } from './vote';
+import { VOW_RULES } from './vow';
 import { VRASKA_EFFECT_RULES } from './vraska';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
@@ -1118,6 +1119,7 @@ export const EFFECT_RULES = [
   ...RESTRICT_RULES,
   ...BECOMES_RULES,
   ...GROUP_BASE_PT_RULES,
+  ...VOW_RULES,
   ...SEARCH_RULES,
   ...PREVENT_RULES,
   ...TRANSFORM_RULES,

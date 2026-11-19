@@ -1511,8 +1511,17 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         ['artifact', 'battle', 'creature', 'enchantment', 'land', 'planeswalker'].every((t) =>
           (effect.types as readonly string[]).includes(t),
         );
-      if (!all) return UNSAID;
       const who = effect.own.players.kind === 'eachOpponent' ? 'Each opponent' : 'Each player';
+      // Promise of Loyalty (CR 608.2d, 701.21a, 122.1): one type, a counter on the one kept, the rest of that type sacrificed.
+      if (
+        effect.own.onlyTypes === true &&
+        effect.own.counter !== undefined &&
+        effect.types.length === 1 &&
+        effect.types[0] === 'creature'
+      ) {
+        return `${who} puts ${/^[aeiou]/.test(effect.own.counter) ? 'an' : 'a'} ${effect.own.counter} counter on a creature they control and sacrifices the rest`;
+      }
+      if (!all) return UNSAID;
       return `${who} chooses a permanent they control of each permanent type and sacrifices the rest`;
     }
     case 'copySpell': {

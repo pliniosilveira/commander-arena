@@ -1930,7 +1930,23 @@ export type Effect =
        * `types` they control (none when they control none; the same permanent may be chosen for several of its types), and then sacrifices every other permanent they control,
        * lands included, all of them together. Without `own` the controller of the effect chooses for every player and the lands are kept (Tragic Arrogance).
        */
-      readonly own?: { readonly players: PlayerSelector };
+      readonly own?: {
+        readonly players: PlayerSelector;
+        /**
+         * "Each player puts a vow counter on a creature they control and sacrifices the rest." (Promise of Loyalty; CR 608.2d, 701.21a, 122.1): only the permanents of `types` are
+         * sacrificed (with `own` alone every permanent is, lands included), so a player keeps the permanents of other types.
+         */
+        readonly onlyTypes?: true;
+        /**
+         * The counter each permanent kept gets, put by the player who controls it as the choices are made (CR 122.1, 101.4): "puts a vow counter on a creature they control". A
+         * permanent that can't have counters of the kind gets none.
+         */
+        readonly counter?: string;
+        /**
+         * The name the permanents kept go by for the rest of the resolution (`chosen` of that id, CR 608.2d): "Each of those creatures ...". Set only with `counter` or `onlyTypes`.
+         */
+        readonly keptAs?: string;
+      };
     }
   /**
    * "[Cost]: Level 2" (CR 716.2a, 716.2c, D-235): "This Class's level becomes N": the permanent the ability belongs to has level `level`, a designation that stays while it is on
@@ -2676,6 +2692,19 @@ export type Effect =
       readonly kind: 'loseHexproofShroud';
       readonly objects: ObjectSelector;
       readonly duration: Duration;
+    }
+  /**
+   * "Each of those creatures can't attack you or planeswalkers you control for as long as it has a vow counter on it." (Promise of Loyalty; CR 508.1a, 506.3, 611.2b, 611.2c): each
+   * creature `objects` names on the battlefield as the effect resolves (fixed then: a creature that gets the counter later is not one of them) can't be declared attacking the
+   * controller of the effect as a player nor, with `planeswalkers`, the planeswalkers that player controls, for as long as it has a counter named `whileCounter`. The effect
+   * for a creature ends, for good, as it has none (or leaves the battlefield); a creature with none as the effect begins is not affected. Whoever controls the creature does not matter.
+   * The spell or ability of a permanent that is gone when it resolves still protects its controller: the player is read as the effect resolves.
+   */
+  | {
+      readonly kind: 'cantAttackController';
+      readonly objects: ObjectSelector;
+      readonly planeswalkers?: true;
+      readonly whileCounter: string;
     }
   /**
    * "Target creature becomes a Frog" (a subtype), "becomes an artifact" (a card type): layer 4
