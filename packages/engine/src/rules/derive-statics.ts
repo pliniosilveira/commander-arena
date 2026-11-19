@@ -168,6 +168,8 @@ export interface LibraryCastSource {
   readonly object: GameObject;
   readonly spells: ObjectFilter;
   readonly gainsHaste: boolean;
+  /** The permanent sacrificed as an additional cost of a spell cast this way ("by sacrificing a nonland permanent"); absent for none. */
+  readonly sacrifice?: ObjectFilter;
 }
 
 /**
@@ -335,7 +337,12 @@ function libraryCastsOf(object: GameObject, abilities: readonly Ability[]): Libr
   const out: LibraryCastSource[] = [];
   for (const a of abilities) {
     if (a.kind === 'static' && a.static.kind === 'castFromTopOfLibrary') {
-      out.push({ object, spells: a.static.spells, gainsHaste: a.static.gainsHaste === true });
+      out.push({
+        object,
+        spells: a.static.spells,
+        gainsHaste: a.static.gainsHaste === true,
+        ...(a.static.sacrifice === undefined ? {} : { sacrifice: a.static.sacrifice }),
+      });
     }
   }
   return out;

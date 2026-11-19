@@ -6094,6 +6094,12 @@ export type StaticEffect =
       readonly kind: 'castFromTopOfLibrary';
       readonly spells: ObjectFilter;
       readonly gainsHaste?: true;
+      /**
+       * "You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs." (CR 601.2b, 601.2f, 118.8): a spell cast
+       * from the library through this ability has the sacrifice of one permanent `sacrifice` matches (the caster controls it) as an additional cost, paid as the others are; with no
+       * such permanent the spell cannot be cast that way. A cast of the card from another zone is not changed by it.
+       */
+      readonly sacrifice?: ObjectFilter;
     }
   /**
    * "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it gains

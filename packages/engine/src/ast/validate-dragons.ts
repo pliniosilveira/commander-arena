@@ -402,6 +402,27 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       if (s.gainsHaste !== undefined && s.gainsHaste !== true) {
         issue(out, `${path}.gainsHaste`, 'gainsHaste must be true when present');
       }
+      // CR 601.2b, 118.8: the permanent sacrificed as an additional cost, a filter of permanents the caster controls.
+      if (s.sacrifice !== undefined) {
+        checkFilter(s.sacrifice, `${path}.sacrifice`, out);
+        if (
+          filterSome(
+            s.sacrifice,
+            (f) =>
+              f.zone !== undefined ||
+              f.owner !== undefined ||
+              f.controller !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.sacrifice`,
+            'the permanent sacrificed is one the caster controls: no zone, owner, controller, stackKind, or anything read from the game',
+          );
+        }
+      }
       return true;
     case 'playLandsFromGraveyard':
       // CR 305.1: the land cards that may be played from the graveyard, as the card in the graveyard is.

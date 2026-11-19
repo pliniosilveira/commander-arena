@@ -1658,7 +1658,13 @@ export type IrStaticEffect =
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`
    * describes (as the card it is); `gainsHaste` is the second sentence. The subject is `you`.
    */
-  | { readonly kind: 'castFromTop'; readonly spells: IrFilter; readonly gainsHaste: boolean }
+  | {
+      readonly kind: 'castFromTop';
+      readonly spells: IrFilter;
+      readonly gainsHaste: boolean;
+      /** "... by sacrificing a nonland permanent in addition to paying their other costs" (Death Toll deck, group D, CR 601.2b, 118.8): the permanent each such spell sacrifices. */
+      readonly sacrifice?: IrFilter;
+    }
   /**
    * "Once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. If you do, it
    * gains "When this permanent is put into a graveyard from the battlefield, exile it and you gain 2 life."" and "... you may cast an artifact spell from your graveyard.
