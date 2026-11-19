@@ -201,9 +201,10 @@ describe("Elementalist's Palette: mana for each charge counter, to be spent on c
     });
   });
 
-  test('a count that is not the counters on the permanent is refused, not read as one mana', () => {
-    expect(dropped('{T}: Add {G} for each creature you control.', 'artifact').reason).toBe(
-      'notRunnable',
-    );
+  test('a count whose cost gives up a permanent is refused, not read as one mana (CR 605.3a: the count could change)', () => {
+    expect(
+      dropped('{T}, Sacrifice a creature: Add {G} for each creature you control.', 'artifact')
+        .reason,
+    ).toBe('notRunnable');
   });
 });
