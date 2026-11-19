@@ -348,4 +348,67 @@ describe("Elusive Otter // Grove's Bounty", () => {
   });
 });
 
+describe('Ingenious Prodigy', () => {
+  const prodigy = real('Ingenious Prodigy');
+  const PRODIGY = prodigy.name;
+  const board = (counters: Record<string, number>) =>
+    scenario()
+      .define(prodigy)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(PRODIGY, { counters })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('enters with X +1/+1 counters (CR 107.3m): X = 2 makes it a 2/3', () => {
+    const g = scenario()
+      .define(prodigy)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(PRODIGY)
+      .battlefield('Island', 'Island', 'Island')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(PRODIGY, { x: 2, pay: true });
+    g.passAll();
+    g.expect.counters(PRODIGY, { '+1/+1': 2 });
+    g.expect.pt(PRODIGY, 2, 3);
+    g.expect.derived(PRODIGY, { keywords: ['skulk'] });
+  });
+
+  test('upkeep with a counter on it: you may remove one, and if you do you draw a card', () => {
+    const g = board({ '+1/+1': 2 });
+    g.advanceTo('upkeep', { turn: 5 });
+    g.expect.stack([`${PRODIGY} (ability)`]);
+    const hand = g.state.seats[0]?.hand.length ?? 0;
+    g.pass();
+    g.pass();
+    g.act(0).accept();
+    g.expect.counters(PRODIGY, { '+1/+1': 1 });
+    g.expect.handSize(0, hand + 1);
+    g.expect.invariants();
+  });
+
+  test('declining the offer removes no counter and draws no card', () => {
+    const g = board({ '+1/+1': 2 });
+    g.advanceTo('upkeep', { turn: 5 });
+    const hand = g.state.seats[0]?.hand.length ?? 0;
+    g.pass();
+    g.pass();
+    g.act(0).decline();
+    g.expect.counters(PRODIGY, { '+1/+1': 2 });
+    g.expect.handSize(0, hand);
+  });
+
+  test('with no +1/+1 counter on it the ability does not trigger (the intervening if, CR 603.4)', () => {
+    const g = board({ charge: 1 });
+    g.advanceTo('upkeep', { turn: 5 });
+    g.expect.stack([]);
+  });
+});
+
 // END

@@ -3766,6 +3766,8 @@ export const MAY_EFFECT_KINDS = [
   'becomeCopyOfCard',
   // Galadriel group 1: "you may reveal the top card of your library. If a land card is revealed this way, ...".
   'revealTop',
+  // Ingenious Prodigy (Quandrix Unlimited deck, group G): "you may remove a +1/+1 counter from ~. If you do, draw a card." (CR 122.1, 608.2c).
+  'removeCounters',
 ];
 
 /**

@@ -2810,12 +2810,14 @@ function runEffect(
       // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
       const wanted = amountOf(state, effect.count, ctx, targets);
       if (wanted <= 0) return done(state);
+      let anyRemoved = false;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (obj?.zone !== 'battlefield') continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;
+        anyRemoved = true;
         const left = had - removed;
         const { [effect.counter]: _gone, ...rest } = obj.counters;
         next = patchObject(next, id, {
@@ -2828,7 +2830,8 @@ function runEffect(
           count: removed,
         });
       }
-      return done(next, events);
+      // CR 608.2c: removing a counter is something done, which "if you do" reads.
+      return { ...done(next, events), performed: anyRemoved ? 1 : 0 };
     }
 
     case 'modifyPt':

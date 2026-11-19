@@ -5,7 +5,7 @@ import type { Amount } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { lowerAmount } from './amounts';
 import { arg, type Effects, failure, operand } from './clauses';
-import { declareDividedTarget } from './nouns';
+import { declareDividedTarget, objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
 /**
@@ -42,4 +42,35 @@ export const DISTRIBUTE_COUNTERS: Lowering<IrClause, Effects> = {
   },
 };
 
-export const QUANDRIX_G_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [DISTRIBUTE_COUNTERS];
+/**
+ * "Remove a +1/+1 counter from ~" (CR 122.1, 122.2): the engine's `removeCounters` of the permanent with the ability (`~`, or "it" in an ability about itself); it does something
+ * only when a counter of the kind was there, which "If you do" reads (CR 608.2c).
+ */
+export const REMOVE_COUNTERS_SELF: Lowering<IrClause, Effects> = {
+  head: 'removeCountersSelf',
+  id: 'lower.remove-counters-self',
+  needs: ['effect:removeCounters'],
+  lower(clause, ctx) {
+    const counter = arg(clause, 'counter');
+    const count = arg(clause, 'count');
+    const from = arg(clause, 'from');
+    if (counter?.kind !== 'counterSpec' || from?.kind !== 'noun' || count?.kind !== 'number') {
+      return failure(clause);
+    }
+    const objects = objectSelectorOf(from, ctx);
+    if (!objects.ok) return objects;
+    if (objects.value.kind !== 'this') return failure(clause);
+    return {
+      ok: true,
+      value: [
+        { kind: 'removeCounters', objects: objects.value, counter: counter.name, count: count.value },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+export const QUANDRIX_G_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  DISTRIBUTE_COUNTERS,
+  REMOVE_COUNTERS_SELF,
+];
