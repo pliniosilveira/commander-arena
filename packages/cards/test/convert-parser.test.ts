@@ -675,6 +675,7 @@ describe('unmatched abilities', () => {
       'effect.tap-or-untap',
       'effect.you-and-permanents-gain-hexproof',
       'effect.cast-as-though-flash',
+      'effect.player-mana-ability',
       'effect.spend-only-qualities',
       'effect.mana-rider-copy',
       'effect.copy-spell-for-each',
