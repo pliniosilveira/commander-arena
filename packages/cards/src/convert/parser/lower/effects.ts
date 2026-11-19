@@ -1223,6 +1223,16 @@ function playerVerb(
           rule: clause.rule,
         };
       }
+      // CR 701.9, 101.4 (Plaguecrafter): "each player who can't discards a card": the players choose in turn and the cards go together.
+      if (verb === 'discard' && player.value.kind === 'couldntSacrificeThisWay') {
+        const blocked = missingFeatures(['selector:discardTogether']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        return {
+          ok: true,
+          value: [{ kind: 'discard', player: player.value, count: amount.value, together: true }],
+          rule: clause.rule,
+        };
+      }
       // D-327: "Mill a card. You may play that card this turn.": the cards the controller milled are what "that card" of the sentence after it names.
       if (verb === 'mill' && player.value.kind === 'you') ctx.exiled = 'milled';
       const effect: Effect =

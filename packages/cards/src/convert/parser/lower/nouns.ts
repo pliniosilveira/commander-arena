@@ -59,6 +59,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
   discardedThisWay: 'selector:discardedThisWay',
+  // CR 701.21a: "each player who can't" after a sacrifice (Plaguecrafter).
+  couldntSacrificeThisWay: 'selector:couldntSacrificeThisWay',
   // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
 };
@@ -1240,6 +1242,12 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'discardedThisWay' });
+    }
+    case 'couldntSacrificeThisWay': {
+      // CR 701.21a: only after a sacrifice of the same text, whose players it names.
+      if (ctx.thisWay !== 'sacrificed') return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'couldntSacrificeThisWay' });
     }
     case 'attackedPlayers': {
       // D-269 (CR 508.6): the permanent of the ability, which `~` is: only an ability of a permanent has attacked.

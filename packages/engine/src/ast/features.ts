@@ -948,6 +948,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
     'discardedThisWay',
+    // CR 701.21a (Plaguecrafter): "each player who can't" (`PlayerSelector` `couldntSacrificeThisWay`) and `discard.together`.
+    'couldntSacrificeThisWay',
+    'discardTogether',
     // D-139: "two or more colors" (`ObjectFilter.colorCount`).
     'colorCount',
     // Zimone's Hypothesis: "power of the chosen quality" (`ObjectFilter.powerParity`).
@@ -1740,6 +1743,10 @@ export const SELECTOR_KINDS = [
   'giftRecipient',
   /** "Each player who discarded a card this way" (CR 701.9, D-210): the engine's `PlayerSelector` `discardedThisWay`. */
   'discardedThisWay',
+  /** "Each player who can't" after a sacrifice (CR 701.21a, Plaguecrafter): the engine's `PlayerSelector` `couldntSacrificeThisWay`. */
+  'couldntSacrificeThisWay',
+  /** "Each player who can't discards a card" (CR 701.9, 101.4): all the cards chosen are discarded at once, the engine's `discard.together`. */
+  'discardTogether',
   /** "Permanents that are two or more colors", "monocolored" (CR 105.2, D-139): the engine's `ObjectFilter.colorCount`. */
   'colorCount',
   /** "Each creature with an odd power" (Zimone's Hypothesis): the engine's `ObjectFilter.powerParity`. */

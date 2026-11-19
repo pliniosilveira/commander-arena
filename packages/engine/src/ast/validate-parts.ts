@@ -1440,6 +1440,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'couldntSacrificeThisWay':
+      // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
+      if (!(scope.thisWay ?? []).includes('sacrificed')) {
+        issue(
+          out,
+          path,
+          "'couldntSacrificeThisWay' needs a sacrifice effect before it in the same sequence",
+        );
+      }
+      break;
     case 'all':
       // D-131: "you and target opponent": two or more selectors, each a selector of its own (not another `all`).
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -6131,6 +6141,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             `${path}.random`,
             'random is true, and goes with neither anyNumber nor "unless you discard"',
           );
+        }
+      }
+      // CR 701.9, 101.4 (Plaguecrafter): the players choose in turn and all the chosen cards go together; nobody chooses a random or a whole-hand discard.
+      if (e.kind === 'discard' && e.together !== undefined) {
+        if (e.together !== true || e.random !== undefined || e.hand !== undefined) {
+          issue(out, `${path}.together`, 'together is true, and goes with neither random nor hand');
         }
       }
       if (e.kind === 'draw' && (e as { unless?: unknown }).unless !== undefined) {

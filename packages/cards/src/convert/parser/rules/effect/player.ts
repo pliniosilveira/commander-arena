@@ -434,6 +434,8 @@ const createAction: Action = (subject, you, rule) =>
 export const PLAYER_SUBJECTS = [
   // Stage P52 (D-210): "each player who discarded a card this way draws a card".
   'noun.each-player-discarded',
+  // CR 701.21a: "each player who can't discards a card" after a sacrifice.
+  'noun.each-player-cant-sacrifice',
   // D-269: "each player ~ attacked this turn loses the game".
   'noun.each-player-attacked',
   'noun.you-and-player',

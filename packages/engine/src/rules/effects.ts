@@ -2384,10 +2384,15 @@ function runEffect(
       const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
       if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);
+      // CR 701.9, 101.4 (Plaguecrafter, `discard.together`): with several players, one instruction for the first that keeps the others' turns to choose; all the chosen cards go at once.
+      const group =
+        effect.together === true && seats.length > 1
+          ? { later: seats.slice(1), held: [] }
+          : undefined;
       return done(
         state,
         [],
-        seats.map((seat) => ({
+        (group === undefined ? seats : seats.slice(0, 1)).map((seat) => ({
           kind: 'discard' as const,
           seat,
           count,
@@ -2395,6 +2400,7 @@ function runEffect(
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
+          ...(group === undefined ? {} : { together: group }),
           chosen: null,
         })),
       );

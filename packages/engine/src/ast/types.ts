@@ -1046,6 +1046,12 @@ export type PlayerSelector =
    */
   | { readonly kind: 'discardedThisWay' }
   /**
+   * "Each player who can't" after "each player sacrifices a creature or planeswalker of their choice" (CR 701.21a, 101.4, Plaguecrafter): the players for whom a `sacrifice` effect of
+   * this same resolution had nothing to sacrifice (no permanent they control matched, so they sacrificed nothing), in the order CR 101.4 gives. A player who chose to sacrifice nothing
+   * ("any number") is not one of them. Valid after a `sacrifice` effect in the same sequence.
+   */
+  | { readonly kind: 'couldntSacrificeThisWay' }
+  /**
    * "Each player this creature attacked this turn" (D-269, CR 508.6): the players the creature the ability belongs to was declared as an attacker
    * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An
    * attack on a planeswalker or a battle is not an attack on its controller or protector. Read from the turn log under the id the ability's source
@@ -2849,6 +2855,11 @@ export type Effect =
        * instruction comes up (so the plural selectors discard each their own hand); nobody chooses. `count` is 0 and unread. Never with `anyNumber`, `unless` or `random`.
        */
       readonly hand?: true;
+      /**
+       * "Each player who can't discards a card" (CR 701.9, 101.4, Plaguecrafter): with several players named, each chooses their cards in turn order, knowing nothing of the others' choices, and
+       * only when the last has chosen are all the chosen cards discarded at once. Left out, each player's discard happens as that player's turn to act comes. Never with `random` or `hand`.
+       */
+      readonly together?: true;
     }
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
