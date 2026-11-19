@@ -558,6 +558,10 @@ export function castManaPlan(
     types: derived.types,
     subtypes: derived.subtypes,
     ...(anyType ? { anyType: true as const } : {}),
+    // CR 106.6, 107.3: "Spend this mana only on costs that contain {X}": the mana cost of the spell has an {X} (a spell cast for another cost does not pay it).
+    ...(hasX(spellXCostOf(state, spell, alternativeOfStack(spell.stack)))
+      ? { hasX: true as const }
+      : {}),
   };
   const options = extraSources === undefined ? {} : { extraSources };
   const reserve = handReserve(state, seat, spell);

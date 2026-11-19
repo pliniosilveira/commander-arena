@@ -182,3 +182,28 @@ describe('near misses are not read', () => {
     expect(dropped(text, 'enchantment').reason).toBe('unrecognised');
   });
 });
+
+describe("Elementalist's Palette: mana for each charge counter, to be spent on costs with {X}", () => {
+  test('real wordings', () => {
+    const [mana] = abilities(
+      '{T}: Add {C} for each charge counter on ~. Spend this mana only on costs that contain {X}.',
+      'artifact',
+    );
+    expect(mana).toEqual({
+      kind: 'mana',
+      cost: [{ kind: 'tap' }],
+      production: {
+        kind: 'fixed',
+        mana: ['C'],
+        times: { kind: 'countersOn', of: { kind: 'this' }, counter: 'charge' },
+      },
+      spendOnly: { xCost: true },
+    });
+  });
+
+  test('a count that is not the counters on the permanent is refused, not read as one mana', () => {
+    expect(dropped('{T}: Add {G} for each creature you control.', 'artifact').reason).toBe(
+      'notRunnable',
+    );
+  });
+});

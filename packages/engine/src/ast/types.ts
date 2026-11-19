@@ -6110,6 +6110,11 @@ export interface ManaAbility {
      * on no spell. Replaces `subtypes`: a card gives one or the other, never both.
      */
     readonly chosenType?: true;
+    /**
+     * "Spend this mana only on costs that contain {X}." (Quandrix Unlimited deck, group E, CR 106.6, 107.3; Elementalist's Palette): the mana can pay only the mana cost of a spell
+     * with an {X} in it or the activation cost of an ability with an {X} in it. Alone: no `types`, `subtypes` or `chosenType`.
+     */
+    readonly xCost?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

@@ -103,6 +103,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnly',
     // Issue 199: "Spend this mana only to cast a creature spell of the chosen type." (`ManaAbility.spendOnly.chosenType`)
     'manaSpendOnlyChosenType',
+    // Quandrix Unlimited group E: "Spend this mana only on costs that contain {X}." (`ManaAbility.spendOnly.xCost`) and "Add {C} for each charge counter on this artifact." (`times` of a fixed production).
+    'manaSpendOnlyXCost',
+    'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
     // D-256: "Do this only once each turn." (`TriggeredAbility.doOnlyOnceEachTurn`, CR 603.2h)
@@ -1337,6 +1340,10 @@ export const ABILITY_FEATURES = [
   'manaSpendOnly',
   /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
   'manaSpendOnlyChosenType',
+  /** "Spend this mana only on costs that contain {X}" (CR 106.6, 107.3): `ManaAbility.spendOnly.xCost`. */
+  'manaSpendOnlyXCost',
+  /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
+  'manaCountOwnCounters',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
   'functionsInGraveyard',
   /** "Do this only once each turn" (D-256): the engine's `doOnlyOnceEachTurn` of a triggered ability (CR 603.2h). */
@@ -2052,6 +2059,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaInstead: true,
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
+  manaSpendOnlyXCost: true,
+  manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
   manaSpentRider: true,

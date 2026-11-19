@@ -24,6 +24,7 @@ import {
 } from '@commander-arena/engine';
 import type { IrAbility, IrClause, IrFilter, IrModes, IrQuotedAbility } from '../ir/types';
 import { lowerAmount } from './amounts';
+import { amountArg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause, lowerMana } from './effects';
@@ -70,6 +71,9 @@ const plainClause = (clause: IrClause) =>
  * color, a quality or a mix of the two kinds in one choice says more than the engine's restriction and is not lowered.
  */
 function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
+  // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
+  const xCost = clause.args.xCost;
+  if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
   const spells = clause.args.spells;
   if (spells?.kind !== 'noun' || !plainClause(clause)) return null;
   const kinds = spellKindsOf(spells.filter);
@@ -256,9 +260,29 @@ function lowerManaAbility(
   if (!costs.ok) return costs;
   const restrictions = restrictionsOf(ability, false);
   if (!restrictions.ok) return restrictions;
-  const production = lowerMana(spec);
+  let production = lowerMana(spec);
+  // "Add {C} for each charge counter on ~." (Quandrix Unlimited group E, CR 605.1a, 106.1): the fixed mana as many times as the counters on the permanent itself, read as the ability is
+  // activated. Any other count would be dropped by this reading, so it is not read (a mana ability reads no target, no X and no other object).
+  const countsOwnCounters = add.args.times !== undefined;
+  if (countsOwnCounters) {
+    if (production.kind !== 'fixed') return failure(ability);
+    const times = amountArg(add, 'times', trial);
+    if (!times.ok) return times;
+    const count = times.value;
+    if (
+      typeof count !== 'object' ||
+      count.kind !== 'countersOn' ||
+      count.of.kind !== 'this' ||
+      trial.usesX
+    ) {
+      return failure(ability);
+    }
+    production = { ...production, times: count };
+  }
   const needs: FeatureRef[] = [
     'ability:mana',
+    ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
+    ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
@@ -811,7 +835,9 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'manaProduction:couldProduce',
   'manaProduction:combination',
   'manaProduction:chosenColor',
-  'ability:manaSpendOnly',
+  'ability:manaSpendOnlyChosenType',
+  'ability:manaSpendOnlyXCost',
+  'ability:manaCountOwnCounters',
   'ability:manaSpendOnlyChosenType',
   'ability:manaSpentRider',
   'ability:manaDistinctColors',

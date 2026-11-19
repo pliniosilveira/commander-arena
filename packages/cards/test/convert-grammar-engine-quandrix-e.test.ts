@@ -28,13 +28,14 @@ const nev = real('Nev, the Practical Dean');
 const owlin = real('Owlin Spiralmancer');
 const library = real('Lattice Library');
 const infiniscope = real('Brass Infiniscope');
+const palette = real("Elementalist's Palette");
 
 const DRAW = 'SYNTHETIC X Draw'; // {X}{U}: draw X cards
 const FIRST = `${DRAW}[0]`; // two are in hand: the first of them
 const BOLT = 'Lightning Bolt'; // no {X}
 const LIBRARY = Array.from({ length: 12 }, () => 'Forest');
 
-test.each([zimone, nev, owlin, library, infiniscope])('$name is a valid card', (card) => {
+test.each([zimone, nev, owlin, library, infiniscope, palette])('$name is a valid card', (card) => {
   expect(validateCard(card)).toEqual([]);
 });
 
@@ -268,5 +269,81 @@ describe('Brass Infiniscope: the next spell with {X} this turn draws a card and 
     g.act(0).tapForMana(infiniscope.name);
     expect(g.state.delayedTriggers).toHaveLength(1);
     expect(g.state.delayedTriggers[0]?.untilEndOfTurn).toBe(true);
+  });
+});
+
+describe("Elementalist's Palette", () => {
+  const board = (charge: number) =>
+    scenario()
+      .define(palette)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(BOLT, DRAW, 'SYNTHETIC X Cannon')
+      .battlefield(palette.name, charge === 0 ? {} : { counters: { charge } })
+      .battlefield('Island')
+      .battlefield('Mountain')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Giant Spider')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('casting a spell with {X} in its mana cost puts two charge counters on it', () => {
+    const g = board(0);
+    g.act(0).cast(DRAW).x(0).pay();
+    g.expect.stack([`${palette.name} (ability)`, DRAW]);
+    g.passAll();
+    g.expect.counters(palette.name, { charge: 2 });
+  });
+
+  test('a spell with no {X} puts none', () => {
+    const g = board(0);
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
+    g.expect.stack([BOLT]);
+  });
+
+  test('{T}: add {C} for each charge counter (CR 605.1a)', () => {
+    const g = board(3);
+    g.act(0).tapForMana(palette.name, { ability: 2 });
+    g.expect.pool(0, { C: 3 });
+    g.expect.tapped(palette.name);
+  });
+
+  test('the mana pays for a spell with {X} in its mana cost (CR 106.6, 107.3)', () => {
+    const g = board(3);
+    g.act(0).tapForMana(palette.name, { ability: 2 });
+    g.act(0).cast(DRAW).x(3).pay();
+    g.expect.pool(0, {});
+    g.expect.tapped('Island');
+  });
+
+  test('it cannot pay for a spell with no {X}: it stays in the pool', () => {
+    const g = board(3);
+    g.act(0).tapForMana(palette.name, { ability: 2 });
+    g.act(0)
+      .cast(BOLT, { targets: [{ player: 1 }] })
+      .pay();
+    g.expect.pool(0, { C: 3 });
+    g.expect.tapped('Mountain');
+  });
+
+  test('it pays for the activation cost of an ability with {X} in it (CR 602.2b)', () => {
+    const g = scenario()
+      .define(palette)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(palette.name, { counters: { charge: 4 } })
+      .battlefield('SYNTHETIC X Cannon')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Giant Spider')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).tapForMana(palette.name, { ability: 2 });
+    g.act(0).activate('SYNTHETIC X Cannon').x(4).targets(['Giant Spider']).pay();
+    g.passAll();
+    g.expect.zone('Giant Spider', 'graveyard', { seat: 1 });
   });
 });

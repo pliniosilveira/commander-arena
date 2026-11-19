@@ -55,12 +55,22 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   });
   checkManaProduction(a.production, `${path}.production`, out);
   // D-151: "for each ..." mana is added as a spell or a triggered ability resolves; a mana ability makes its mana before it can read anything (CR 605.1a).
+  // CR 605.1a: the count of a mana ability is read as it is activated and comes from the permanent itself: the counters on it ("Add {C} for each charge counter on this
+  // artifact", Elementalist's Palette). No other count: a mana ability reads no target, no X and no other object.
   if (a.production?.kind === 'fixed' && a.production.times !== undefined) {
-    issue(
-      out,
-      `${path}.production.times`,
-      'a mana ability adds a fixed amount of mana, never a count',
-    );
+    const times = a.production.times;
+    const ownCounters =
+      typeof times === 'object' &&
+      times !== null &&
+      times.kind === 'countersOn' &&
+      kindOf(times.of) === 'this';
+    if (!ownCounters) {
+      issue(
+        out,
+        `${path}.production.times`,
+        'a mana ability adds a fixed amount of mana, never a count but the counters on the permanent itself',
+      );
+    }
   }
   // D-650: the mana that stays through steps and phases is the mana of a spell or a triggered ability's instruction; a mana ability's mana empties as any mana does.
   if (a.production?.kind === 'fixed' && a.production.staysUntilEndOfTurn !== undefined) {
@@ -113,7 +123,23 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
-      if (only.types === undefined && only.subtypes === undefined && only.chosenType !== true) {
+      if (only.xCost !== undefined && only.xCost !== true) {
+        issue(out, `${path}.spendOnly.xCost`, 'xCost must be true when present');
+      }
+      if (only.xCost === true) {
+        if (
+          only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined
+        ) {
+          issue(out, `${path}.spendOnly`, 'spendOnly xCost names no types or subtypes');
+        }
+      } else if (
+        only.types === undefined &&
+        only.subtypes === undefined &&
+        only.chosenType !== true
+      ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }
       // Issue 199: "of the chosen type" stands in for the subtypes.
