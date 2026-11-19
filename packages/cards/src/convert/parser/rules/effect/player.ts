@@ -19,7 +19,7 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrArg, IrClause, IrNoun, IrToken, Span } from '../../ir/types';
-import { NUMBER_OR_X } from '../amount/index';
+import { NUMBER_OR_X, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL as FOR_EACH, scaled } from '../amount/scaled';
 import { CARD_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
@@ -287,6 +287,33 @@ const energyAction: Action = (subject, you, rule) =>
         rule,
         'gainEnergy',
         { player: subject, amount: { kind: 'number', value: value[1][0].length / 3, span } },
+        span,
+      ),
+  );
+
+/** "get an experience counter", "gets two experience counters" (CR 122.1: the player puts that many experience counters on themselves; Meren of Clan Nel Toth). */
+const experienceAction: Action = (subject, you, rule) =>
+  map(
+    spanned(
+      sequence(
+        verbWord('get', you),
+        choice(
+          map(pattern(/an experience counter(?![\p{L}\p{N}])/iu), () => 1),
+          map(
+            sequence(
+              satisfy(quantity, (n) => n >= 2),
+              pattern(/ experience counters(?![\p{L}\p{N}])/iu),
+            ),
+            ([n]) => n,
+          ),
+        ),
+      ),
+    ),
+    ({ value, span }) =>
+      actionClause(
+        rule,
+        'gainExperience',
+        { player: subject, amount: { kind: 'number', value: value[1], span } },
         span,
       ),
   );
@@ -568,6 +595,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     // Stage P51 (D-209, CR 107.14): energy counters.
     'you get {E}{E}',
     'target player gets {E}',
+    // CR 122.1: experience counters.
+    'you get an experience counter',
+    'you get two experience counters',
+    'target player gets an experience counter',
     'you draw a card, then discard a card at random',
     'target opponent discards a card at random',
     // D-269, CR 104.3e: an effect says that a player loses the game.
@@ -599,6 +630,12 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you and target opponent each lose the game',
     'each player ~ attacked loses the game',
     'each opponent loses the game and you win the game',
+    'you get an experience counters',
+    'you get 1 experience counters',
+    'you get an experience',
+    'you get a experience counter',
+    'you gets an experience counter',
+    'you get an energy counter',
     'you get {E}{R}',
     'you get {E} {E}',
     'you get E',
@@ -687,6 +724,7 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         part('effect.player.mill', millAction),
         alone('effect.player.manifest', manifestAction),
         part('effect.player.energy', energyAction),
+        part('effect.player.experience', experienceAction),
         alone('effect.player.sacrifice', sacrificeAction),
         alone('effect.player.exile-graveyard', exileGraveyardCardsAction),
         alone('effect.player.put-exiled', putExiledCardsAction),

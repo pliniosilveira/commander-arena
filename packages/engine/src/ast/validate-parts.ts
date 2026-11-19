@@ -1906,6 +1906,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'lifeTotalOf':
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
       break;
+    case 'experienceCounters':
+      // CR 122.1 (Meren of Clan Nel Toth): the controller's own experience counters now; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
+      break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
@@ -2871,6 +2874,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisWayAtLeast':
     case 'movedTotalManaValue':
     case 'movedShareAllCardTypes':
+    case 'manaValueAtMostAmount':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -4174,6 +4178,29 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
       break;
+    case 'manaValueAtMostAmount': {
+      // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of a target, the object that was moved or the one that caused the trigger, against an amount read now.
+      const ofKind = kindOf(c.of);
+      if (ofKind !== 'target' && ofKind !== 'moved' && ofKind !== 'triggerSubject') {
+        issue(
+          out,
+          `${path}.of`,
+          'manaValueAtMostAmount reads a target, the object that was moved or the object that caused the trigger',
+        );
+      } else if (ofKind === 'triggerSubject') {
+        if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {
+          issue(
+            out,
+            `${path}.of`,
+            'triggerSubject is only read where the trigger names a permanent or a spell that was cast',
+          );
+        }
+      } else {
+        checkRef(c.of, 'object', `${path}.of`, scope, out);
+      }
+      checkAmount(c.amount, `${path}.amount`, scope, out);
+      break;
+    }
     case 'movedShareAllCardTypes':
       // CR 205.2a (Demonic Covenant): the cards an earlier moving effect of the sequence moved, compared by their card types.
       checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
@@ -6176,6 +6203,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'gainLife':
     case 'loseLife':
     case 'gainEnergy':
+    case 'gainExperience':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
       if (kindOf(e.amount) === 'lifeLostThisTurn') {

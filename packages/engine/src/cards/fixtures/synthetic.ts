@@ -67,6 +67,7 @@ import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
+import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -540,6 +541,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_BRUNA_SEARCH_LIST,
   ...SYNTHETIC_HULK_SEARCH_LIST,
   ...SYNTHETIC_LIVING_DEATH_LIST,
+  ...SYNTHETIC_EXPERIENCE_LIST,
   ...SYNTHETIC_PLANESWALKER_LIST,
   ...SYNTHETIC_PRIDE_WALKER_LIST,
   ...SYNTHETIC_MANA_TRIGGERS_LIST,

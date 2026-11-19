@@ -2367,6 +2367,18 @@ function runEffect(
       return done(next, events);
     }
 
+    case 'gainExperience': {
+      // CR 122.1 (Meren of Clan Nel Toth): "You get an experience counter": the player puts that many experience counters on themselves.
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const had = getSeat(next, seat).experience ?? 0;
+        next = patchSeat(next, seat, { experience: had + amount });
+        events.push({ kind: 'experienceChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
     case 'connive': {
       // CR 701.50a, 701.50b, 701.50c (D-209, D-223): each permanent named connives, the players in APNAP order choosing among theirs (rules/connive.ts).
       return done(
@@ -2878,7 +2890,15 @@ function runEffect(
         if ((seat.energy ?? 0) > 0) {
           removed.push({ kind: 'energyChanged', seat: id, from: seat.energy ?? 0, to: 0 });
         }
-        next = patchSeat(next, id, { poison: 0, energy: 0 });
+        if ((seat.experience ?? 0) > 0) {
+          removed.push({
+            kind: 'experienceChanged',
+            seat: id,
+            from: seat.experience ?? 0,
+            to: 0,
+          });
+        }
+        next = patchSeat(next, id, { poison: 0, energy: 0, experience: 0 });
       }
       return done(next, removed);
     }

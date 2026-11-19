@@ -318,6 +318,12 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsDrawnThisTurn' }, rule };
     }
+    case 'experienceCounters': {
+      // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller has now, read as the instruction runs; `validateCard` refuses it in a static ability.
+      const blocked = needs('experienceCounters');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'experienceCounters' }, rule };
+    }
     case 'spellsCastThisTurn': {
       // CR 601.2i (D-638): the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('spellsCastThisTurn');
@@ -861,6 +867,7 @@ export const AMOUNT_NEEDS = [
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',
+  'amount:experienceCounters',
   'amount:spellsCastThisTurn',
   'amount:greatestManaValueCast',
   'amount:exiledAsCost',

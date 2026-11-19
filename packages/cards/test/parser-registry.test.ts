@@ -359,6 +359,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.mana-value-of': spell((e) => `Exile target creature. You lose life ${e}.`),
   'amount.times-kicked': spell((e) => `Draw a card ${e}.`),
   // Feather deck group 1 (D-450): the count of a pump, or of a draw, after "for each".
+  // Meren of Clan Nel Toth: experience counters.
+  'amount.experience-counters': permanent(
+    (e) =>
+      `At the beginning of your end step, choose target creature card in your graveyard. If that card's mana value is less than or equal to ${e}, return it to the battlefield.`,
+  ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
@@ -847,6 +852,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-from-graveyard': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
+  ),
+  // Meren of Clan Nel Toth: the condition leads the sentence that returns the card chosen before it.
+  'condition.that-mana-value-at-most': permanent(
+    (e) =>
+      `At the beginning of your end step, choose target creature card in your graveyard. If ${e}, return it to the battlefield.`,
   ),
   // Yavimaya Bloomsage.
   'condition.that-object-power': spell(

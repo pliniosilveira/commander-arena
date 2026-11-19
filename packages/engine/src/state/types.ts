@@ -641,6 +641,11 @@ export interface SeatState {
    */
   readonly energy?: number;
   /**
+   * The experience counters the player has (CR 122.1, Meren of Clan Nel Toth), kept for the rest of the game (the second kind of counter a player can have, beside poison);
+   * gained with "you get an experience counter" and read as "the number of experience counters you have". Absent until the first time (a player has none). Public.
+   */
+  readonly experience?: number;
+  /**
    * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): set by the `noMaxHandSizeForGame` effect; the player discards nothing in a cleanup step
    * from then on, as with a permanent that says it (`hasNoMaximumHandSize`). Absent until the first time. Public.
    */

@@ -510,7 +510,11 @@ const RETURN: Lowering<IrClause, Effects> = {
       /^it$/iu.test(chosen.filter.raw.trim()) &&
       !ctx.itIsCard
     ) {
-      return failure(clause);
+      // Meren of Clan Nel Toth: "Choose target creature card in your graveyard. ... return it to the battlefield": "it" is the card the earlier instruction chose from a graveyard (CR 608.2c).
+      const spec = ctx.targets.find((t) => t.id === chosen.ref);
+      if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
+        return failure(clause);
+      }
     }
     if (chosen?.kind === 'noun' && chosen.det === 'a') {
       return lowerChosenReturn(clause, chosen, zone);
@@ -1143,7 +1147,15 @@ const CHOOSE_CREATURE_TYPE: Lowering<IrClause, Effects> = {
 };
 
 function playerVerb(
-  verb: 'draw' | 'discard' | 'gainLife' | 'loseLife' | 'gainEnergy' | 'shuffle' | 'mill',
+  verb:
+    | 'draw'
+    | 'discard'
+    | 'gainLife'
+    | 'loseLife'
+    | 'gainEnergy'
+    | 'gainExperience'
+    | 'shuffle'
+    | 'mill',
 ): Lowering<IrClause, Effects> {
   return {
     head: verb,
@@ -2115,6 +2127,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('discard'),
   playerVerb('gainLife'),
   playerVerb('gainEnergy'),
+  playerVerb('gainExperience'),
   playerVerb('loseLife'),
   PLAYER_LOCK,
   playerVerb('mill'),

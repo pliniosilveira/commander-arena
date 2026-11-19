@@ -222,6 +222,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
+    // CR 122.1: "You get an experience counter" (`gainExperience`).
+    'gainExperience',
     // "You have no maximum hand size for the rest of the game" (CR 402.2).
     'noMaxHandSizeForGame',
     'connive',
@@ -1024,6 +1026,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'movedTotalManaValue',
     // CR 205.2a: "If two cards that share all their card types were milled this way" (`movedShareAllCardTypes`).
     'movedShareAllCardTypes',
+    // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have" (`manaValueAtMostAmount`).
+    'manaValueAtMostAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -1286,6 +1290,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    // CR 122.1: "the number of experience counters you have".
+    'experienceCounters',
     // D-638: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
     'spellsCastThisTurn',
     // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
@@ -1827,6 +1833,8 @@ export const CONDITION_KINDS = [
   'movedTotalManaValue',
   /** "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c): the engine's `movedShareAllCardTypes`. */
   'movedShareAllCardTypes',
+  /** "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c): the engine's `manaValueAtMostAmount`. */
+  'manaValueAtMostAmount',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -2152,6 +2160,8 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
+  'experienceCounters',
   /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-638): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */
@@ -2332,6 +2342,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
+  gainExperience: true,
   noMaxHandSizeForGame: true,
   connive: true,
   createCopies: true,
