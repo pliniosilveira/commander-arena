@@ -1,4 +1,4 @@
-# Multiplayer investigation (3 and 4 seats)
+# Adding more opponents: investigation (3 and 4 seats)
 
 Status: phase 0, an investigation. Nothing here is a decision; the SPEC (section 1, "v2") only says that nothing in v1 may assume exactly two players. This note records what was read in the code and what the first probe found, so the next step starts from facts. Counts and timings depend on the machine and the seeds listed below.
 
@@ -59,7 +59,7 @@ The same anomalies as in the first run appeared (permanents under a player who h
 
 ## Reading of the results
 
-- The engine plays multiplayer to the end in most games: it is closer than the docs suggested. That does not prove the rules right.
+- The engine plays games with more opponents to the end in most games: it is closer than the docs suggested. That does not prove the rules right.
 - A player who loses is not removed from the game. Their permanents stay and the turn order does not skip them. These are the first things to fix, and they explain the 4-seat crash and turn caps only if a reproduction shows it.
 - First losses appeared late (turn 40 to 94), because random agents rarely kill anyone. The leaving-the-game paths are exercised little by this run.
 
@@ -94,7 +94,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 0. Investigation (this note): the probe with the casual agent, the seeds of the crash and the turn caps, an inventory of `'opponent'` and seat assumptions.
 1. Engine: leaving the game, skipping a player who has lost, several defenders, full APNAP, commander damage per player. Tests first. An S-class gap needs a proposal on an issue and the human's approval (`AGENTS.md`, "Card support").
-2. Cards: re-test the multiplayer-sensitive supported cards with 3 and 4 seats and reclassify those that fail.
+2. Cards: re-test the supported cards that depend on the number of opponents with 3 and 4 seats and reclassify those that fail.
 3. AI: a target policy and several hidden-hand samples; `ai:arena` with 3 and 4 seats.
 4. UI: board, arrows, target choice, commander damage and the end screen.
 5. Performance, soak and the release in the menu.
@@ -108,8 +108,8 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 ## Open work from the probe
 
-- Reproduce the `did not settle` crash with `replayGame` (seeds above) and find what loops; play the same seeds with two seats to see whether it is multiplayer-specific.
+- Reproduce the `did not settle` crash with `replayGame` (seeds above) and find what loops; play the same seeds with two seats to see whether it is specific to more than two seats.
 - Look at the two `You cannot pay that cost` rejections of the casual agent with 3 seats.
 - Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
 - Scenario DSL with 3 and 4 seats.
-- Choose 20 to 30 multiplayer-sensitive cards and write a scenario for each.
+- Choose 20 to 30 cards that depend on the number of opponents and write a scenario for each.
