@@ -49,6 +49,16 @@ export interface SlotPlan {
   readonly free?: true;
 }
 
+/**
+ * The activated ability on the stack that this targets decision is for, when it is one (a planeswalker's "+1: Put a +1/+1 counter on up to one target creature"):
+ * what its own text does decides, like a trigger, not the opponent-first default that suits removal.
+ */
+export function activatedAbilityOf(view: GameView, d: TargetsDecision): StackAbility | undefined {
+  if (d.forTrigger === true) return undefined;
+  const ability = findObject(view, d.source)?.ability;
+  return ability?.kind === 'activated' ? ability : undefined;
+}
+
 /** The triggered ability on the stack that this targets decision is for, when it is one. */
 export function triggeredAbilityOf(view: GameView, d: TargetsDecision): StackAbility | undefined {
   if (d.forTrigger !== true) return undefined;
