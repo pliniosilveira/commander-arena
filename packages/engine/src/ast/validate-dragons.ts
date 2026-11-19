@@ -59,6 +59,21 @@ export function checkDragonsEffect(
         issue(out, `${path}.lookAt`, 'lookAt must be true when present');
       }
       return true;
+    case 'mayCastEachType':
+      // CR 601.2, 118.9: a free cast of one card of each card type, among the cards an earlier effect of the sequence exiled.
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "a permission to cast by type names the exiled cards: 'moved'",
+        );
+      } else {
+        checkRef(e.objects, 'object', `${path}.objects`, scope, out);
+      }
+      if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
+        issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
+      }
+      return true;
     case 'exileUntilCast':
       // CR 701.57 (D-151): whole-number limits on the card found and on the card cast, and what happens to the rest.
       for (const key of ['foundAtMost', 'castAtMost'] as const) {
@@ -70,6 +85,10 @@ export function checkDragonsEffect(
       if (!isOneOf(e.rest, ['bottomRandom', 'stayExiled'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
+      return true;
+    case 'revealTopCast':
+      // CR 701.20a, 608.2g: the limit on the mana value of the card revealed, an amount read as the effect runs.
+      checkAmount(e.manaValueBelow, `${path}.manaValueBelow`, scope, out);
       return true;
     case 'revealTop':
       // CR 701.20 (D-151): the players who reveal, the cards in the library that go on, and where they go.

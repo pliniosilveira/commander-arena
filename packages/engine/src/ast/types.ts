@@ -1850,6 +1850,30 @@ export type Effect =
       readonly rest: 'bottomRandom' | 'stayExiled';
     }
   /**
+   * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9, 611.2a):
+   * until the moment `lasts` names, the controller of this effect may cast, for each card type a spell can have (artifact, battle, creature, enchantment, instant,
+   * kindred, planeswalker, sorcery), one of the cards in exile `objects` names (`moved`: what an earlier `exileTop` exiled) that has that type, without paying its mana cost.
+   * It is cast at the timing of its type, not as this resolves (an instant at any time they have priority, a sorcery only at sorcery timing), with its additional costs
+   * paid and an {X} of 0 (CR 107.3b); no alternative cost can be used. Each type is used once: a card with several types is cast as any one of them, and uses that type's
+   * permission only, so another card of an unused type of it can still be cast. The permission names the cards as they are now: a card that leaves exile is a new object
+   * (CR 400.7), and a land card is not cast.
+   */
+  | {
+      readonly kind: 'mayCastEachType';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      readonly lasts: PlayUntil;
+    }
+  /**
+   * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand"
+   * (CR 701.20a Reveal, 608.2g, 118.9, 107.3b, 202.3e): the controller reveals the top card of their library (nothing happens with an empty library; the card stays on top
+   * while the question is asked). When it is not a land card, its mana value (an {X} in a library counts as 0) is less than `manaValueBelow` and it could be cast now (a legal
+   * target for each of its targets, additional costs payable), they may cast it without paying its mana cost, from the library, as CR 608.2g says: the steps of CR 601.2a-i,
+   * no timing restriction, no player receives priority and the effect goes on resolving (an {X} is 0, CR 107.3b). When they do not, or cannot, it is put into their hand (a land
+   * card too). `manaValueBelow` is read as the effect runs; "lesser mana value" than the spell that caused a cast trigger is `manaValueOf` the `triggerSubject`, which keeps the
+   * spell as it last was on the stack once it has left (CR 113.7a, 608.2h: the spell may have been countered in response to the trigger).
+   */
+  | { readonly kind: 'revealTopCast'; readonly manaValueBelow: Amount }
+  /**
    * CR 707.10, 707.10c (D-129): "Copy target instant or sorcery spell. You may choose new targets for the copy." Puts
    * a copy of the spell `spell` names onto the stack under the control of the effect's controller. A copy of a spell
    * is a spell that is not cast (it triggers nothing that watches casting): it copies the characteristics and every

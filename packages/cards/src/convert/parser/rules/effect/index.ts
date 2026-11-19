@@ -117,6 +117,7 @@ import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
+import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 
@@ -912,6 +913,8 @@ export const EFFECT_RULES = [
   ...BITE_RULES,
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
   ...DINOSAUR_EFFECT_RULES,
+  // Troyan deck, group 4 (issue 337): "Exile the top eight cards of your library. You may put a land card ..." starts like the plain exile of the top cards, and is tried first.
+  ...TROYAN_G4_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,

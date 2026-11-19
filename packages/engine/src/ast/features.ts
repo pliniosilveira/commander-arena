@@ -310,6 +310,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'enterAttacking',
     // D-151: "exile cards until you exile a nonland card. You may cast it ... If you don't, put it into your hand", Discover (CR 701.57).
     'exileUntilCast',
+    // "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand" (CR 701.20a, 608.2g).
+    'revealTopCast',
+    // "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9).
+    'mayCastEachType',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // D-151: "you may behold a Dragon" (CR 701.4).
@@ -1897,6 +1901,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   extraBeginningPhase: true,
   enterAttacking: true,
   exileUntilCast: true,
+  revealTopCast: true,
+  mayCastEachType: true,
   revealTop: true,
   behold: true,
   payAnyAmount: true,

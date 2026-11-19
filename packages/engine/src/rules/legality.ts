@@ -27,6 +27,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardPlayPermission } from './graveyard-play';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
@@ -322,7 +323,10 @@ export function castZone(
   // and an Adventure the player cast from a card they do not own is theirs to cast from exile (CR 715.3d: its controller exiles it, and that player may
   // play it).
   const theirs =
-    obj.zone === 'exile' && (obj.adventureBy === seat || mayPlayFromExile(state, seat, obj));
+    obj.zone === 'exile' &&
+    (obj.adventureBy === seat ||
+      mayPlayFromExile(state, seat, obj) ||
+      freeCastSlots(state, seat, obj, faceIndex).length > 0);
   if (obj.owner !== seat && !theirs) return null;
   // CR 715.3d (D-187): an Adventure its caster did not own is on an adventure for that caster only, not for its owner.
   if (obj.zone === 'exile' && obj.adventureBy !== undefined && obj.adventureBy !== seat)
@@ -369,7 +373,12 @@ export function castZone(
   }
   // D-151: "You may play that card this turn": a card in exile with such a permission is cast as though it were in the hand.
   if (obj.zone === 'exile') {
-    return alternative === undefined && mayPlayFromExile(state, seat, obj) ? 'exile' : null;
+    if (alternative === undefined && mayPlayFromExile(state, seat, obj)) return 'exile';
+    // CR 601.2, 118.9 (`mayCastEachType`): "you may cast a spell of that type from among the exiled cards without paying its mana cost", at the timing of its type.
+    if (alternative === 'free' && freeCastSlots(state, seat, obj, faceIndex).length > 0) {
+      return 'exile';
+    }
+    return null;
   }
   if (obj.zone === 'hand') return 'hand';
   // A card in the command zone is one card, never a melded permanent (D-277).
@@ -533,8 +542,16 @@ export function canCast(
   const zone = castZone(state, seat, obj, alternative, face);
   if (zone === null) return false;
   // Free and the named alternatives (overload, ...) are listed on the face, with a condition (D-121).
+  // `mayCastEachType`: a card in exile is cast for free by the permission of an effect, not because its face lists the alternative cost.
+  const byPermission =
+    alternative === 'free' &&
+    obj.zone === 'exile' &&
+    obj.onAdventure !== true &&
+    obj.prepareOf === undefined &&
+    freeCastSlots(state, seat, obj, face).length > 0;
   if (
     (alternative === 'free' || isNamedAlternative(alternative)) &&
+    !byPermission &&
     !alternativeCostAllowed(state, seat, obj, face, alternative)
   ) {
     return false;
@@ -622,11 +639,14 @@ export function canCastDuringResolution(
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
     // effect names it); the spell is cast from there and its owner stays the card's owner.
     if (obj.zone !== 'graveyard') return false;
-  } else if (obj.zone !== 'exile' && obj.zone !== 'hand') {
+  } else if (obj.zone !== 'exile' && obj.zone !== 'hand' && obj.zone !== 'library') {
     // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
-    // its mana cost"); Cascade, Suspend and Madness cast cards from exile.
+    // its mana cost"); Cascade, Suspend and Madness cast cards from exile; "reveal the top card of your library. You may cast it" (`revealTopCast`)
+    // casts the card from the library.
     return false;
   }
+  // CR 608.2g: a card in a library is cast by the player whose library it is, as the effect that revealed it says (`revealTopCast`).
+  if (obj.zone === 'library' && (obj.owner !== seat || alternative !== 'free')) return false;
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
   if (obj.zone === 'hand' && obj.owner !== seat) return false;
@@ -738,6 +758,8 @@ export function alternativeCastObjects(
     ...zoneList(state, 'hand', seat),
     ...zoneList(state, 'command', seat),
     ...onAdventure,
+    // `mayCastEachType`: the exiled cards a permission lets the seat cast without paying their mana costs.
+    ...(kind === 'free' ? freeCastCards(state, seat) : []),
   ];
   return faceOptions(state, candidates, (obj, face) => canCast(state, seat, obj, kind, face));
 }

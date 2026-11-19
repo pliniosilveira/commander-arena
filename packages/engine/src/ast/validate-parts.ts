@@ -2840,7 +2840,7 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
     );
   }
   // D-207, CR 607.2a: "a card exiled with this artifact": the permanent's own linked exile, so an ability's.
-  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability') {
+  if (sel.filter?.zone === 'exile' && scope.owner !== 'ability' && sel.fromMoved !== true) {
     issue(
       out,
       `${path}.filter.zone`,
@@ -2870,11 +2870,11 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   if (sel.fromMoved !== undefined) {
     if (sel.fromMoved !== true)
       issue(out, `${path}.fromMoved`, 'fromMoved must be true when present');
-    if (sel.filter?.zone !== 'graveyard') {
+    if (sel.filter?.zone !== 'graveyard' && sel.filter?.zone !== 'exile') {
       issue(
         out,
         `${path}.filter.zone`,
-        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411): set zone to 'graveyard'",
+        "a choice among the cards an earlier effect moved is among cards in your graveyard (D-411) or in exile: set zone to 'graveyard' or 'exile'",
       );
     }
     if (scope.movedAvailable !== true) {
@@ -4234,7 +4234,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         // choose what to enchant (CR 303.4f): not run (`ast/supported.ts`).
         const zone = (e.objects as ChooseSelector).filter?.zone;
         const fromCards = zone === 'hand' || zone === 'graveyard';
-        if (zone === 'exile' && e.to === 'battlefield') {
+        if (
+          zone === 'exile' &&
+          e.to === 'battlefield' &&
+          (e.objects as ChooseSelector).fromMoved !== true
+        ) {
           issue(
             out,
             `${path}.to`,
@@ -4254,12 +4258,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
           );
         }
-        // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand).
-        if ((e.objects as ChooseSelector).fromMoved === true && e.to !== 'hand') {
+        // D-411: "You may put a land card from among them into your hand" is where a choice among moved cards goes (the hand); the cards a `exileTop` exiled may also be
+        // put onto the battlefield ("You may put a land card from among them onto the battlefield").
+        if (
+          (e.objects as ChooseSelector).fromMoved === true &&
+          e.to !== 'hand' &&
+          !(zone === 'exile' && e.to === 'battlefield')
+        ) {
           issue(
             out,
             `${path}.to`,
-            'a choice among the cards an earlier effect moved is put into the hand (D-411)',
+            'a choice among the cards an earlier effect moved is put into the hand (D-411), or, from exile, onto the battlefield',
+          );
+        }
+        if (
+          (e.objects as ChooseSelector).fromMoved === true &&
+          zone === 'graveyard' &&
+          e.to !== 'hand'
+        ) {
+          issue(
+            out,
+            `${path}.to`,
+            'a choice among the cards a mill moved is put into the hand (D-411)',
           );
         }
       } else {

@@ -533,6 +533,8 @@ describe('unmatched abilities', () => {
       'effect.cast-free',
       'effect.for-each-create',
       'effect.damage-divided',
+      'effect.reveal-top-cast',
+      'effect.exile-top-put-cast-each-type',
       'effect.exile-top',
       'effect.may-play',
       'effect.extra-combat',
