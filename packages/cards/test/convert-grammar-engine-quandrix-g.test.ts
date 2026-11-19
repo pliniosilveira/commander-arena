@@ -411,4 +411,62 @@ describe('Ingenious Prodigy', () => {
   });
 });
 
+describe('Quandrix Apprentice', () => {
+  const apprentice = real('Quandrix Apprentice');
+  const LABELS = ['a', 'b', 'c', 'd'] as const;
+  const game = (top: readonly string[]) => {
+    const b = scenario().define(apprentice).seat(0).hand(BOLT);
+    b.battlefield(apprentice.name, 'Mountain');
+    for (const [i, name] of top.entries()) b.library(name, { label: LABELS[i] ?? `x${i}` });
+    for (let i = 0; i < 3; i++) b.library('Plains', { label: `z${i}` });
+    return b
+      .seat(1)
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+  };
+
+  test('casting an instant: a land of the top three goes to the hand, the rest go to the bottom in the order the owner chooses', () => {
+    const g = game(['Grizzly Bears', 'Forest', 'Serra Angel']);
+    g.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
+    g.expect.stack([`${apprentice.name} (ability)`, BOLT]);
+    g.passAll();
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards('b');
+    g.expect.zone('Forest', 'hand', { seat: 0 });
+    g.expect.pending('arrangeCards', 0);
+    g.act(0).arrange({ top: [], other: ['c', 'a'] });
+    expect(g.state.seats[0]?.library).toEqual(
+      ['z0', 'z1', 'z2', 'c', 'a'].map((l) => g.id(l)),
+    );
+    g.expect.invariants();
+  });
+
+  test('you may take none: all three go to the bottom', () => {
+    const g = game(['Grizzly Bears', 'Forest', 'Serra Angel']);
+    g.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.act(0).chooseCards();
+    g.act(0).arrange({ top: [], other: ['b', 'a', 'c'] });
+    g.expect.zone('Forest', 'library', { seat: 0 });
+    g.expect.handSize(0, 0);
+    expect(g.state.seats[0]?.library.length).toBe(6);
+  });
+
+  test('a creature spell is not an instant or a sorcery: nothing is looked at', () => {
+    const g = scenario()
+      .define(apprentice)
+      .seat(0)
+      .hand(BEARS)
+      .battlefield(apprentice.name, 'Forest', 'Forest')
+      .library('Forest', 'Plains', 'Plains')
+      .seat(1)
+      .library('Island')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(BEARS, { pay: true });
+    g.expect.stack([BEARS]);
+  });
+});
+
 // END

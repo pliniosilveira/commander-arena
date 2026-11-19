@@ -1322,6 +1322,9 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
     const toBattlefield = onto?.kind === 'flag' && onto.value;
     const top = arg(clause, 'onTop');
     const onTop = top?.kind === 'flag' && top.value;
+    // "Put the rest on the bottom of your library in any order" (CR 401.4): the engine's `bottomChosen`.
+    const ordered = arg(clause, 'chosenOrder');
+    const chosenOrder = ordered?.kind === 'flag' && ordered.value;
     let atMost: Amount | undefined;
     if (arg(clause, 'manaValueAtMost') !== undefined) {
       const lowered = amountArg(clause, 'manaValueAtMost', ctx);
@@ -1339,7 +1342,13 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       },
       // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
       // (stage P34, D-152): the card looked at stays on top of the library unless it is taken.
-      rest: toGraveyard.value ? 'graveyard' : onTop ? 'top' : 'bottomRandom',
+      rest: toGraveyard.value
+        ? 'graveyard'
+        : onTop
+          ? 'top'
+          : chosenOrder
+            ? 'bottomChosen'
+            : 'bottomRandom',
     };
     // D-658 (Armored Skyhunter, CR 301.5, 701.3): "If an Equipment is put onto the battlefield this way, you may attach it to a creature you control": the creature is chosen as
     // the effect resolves (none: the Equipment stays unattached), and only for an Equipment.
