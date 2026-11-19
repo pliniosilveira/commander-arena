@@ -139,6 +139,16 @@ const sacrificeChoose = (
   ...(player === undefined ? {} : { player }),
 });
 
+/** "Each player sacrifices a creature or planeswalker of their choice." (the count of one is left out, as the grammar leaves it out) */
+const CREATURE_OR_WALKER_EDICT: Effect = {
+  kind: 'sacrifice',
+  objects: {
+    kind: 'choose',
+    filter: { anyOf: [{ types: ['creature'] }, { types: ['planeswalker'] }] },
+  },
+  player: { kind: 'eachPlayer' },
+};
+
 const OPPONENT_TARGET: TargetSpec = { id: 't1', what: { kind: 'player', filter: 'opponent' } };
 const MY_CREATURE: TargetSpec = {
   id: 't1',
@@ -270,6 +280,51 @@ export const SYNTHETIC_PLAYER_EFFECT_LIST: readonly CardDefinition[] = [
     3,
     'When this enters, each player sacrifices a creature of their choice.',
     [enters(sacrificeChoose({ kind: 'eachPlayer' }, 1))],
+  ),
+  // "When ~ enters, each player sacrifices a creature or planeswalker of their choice. Each player who can't discards a card." (CR 701.21a, 101.4, 701.9)
+  creature(
+    'SYNTHETIC Plague Reaper',
+    ['2', 'B'],
+    'B',
+    'Human',
+    3,
+    2,
+    "When this enters, each player sacrifices a creature or planeswalker of their choice. Each player who can't discards a card.",
+    [
+      enters({
+        kind: 'sequence',
+        effects: [
+          CREATURE_OR_WALKER_EDICT,
+          {
+            kind: 'discard',
+            player: { kind: 'couldntSacrificeThisWay' },
+            count: 1,
+            together: true,
+          },
+        ],
+      }),
+    ],
+  ),
+  // "Each player sacrifices a creature or planeswalker of their choice. Each player who can't discards a card." (a spell, so that no player has the Reaper to sacrifice)
+  spell(
+    'SYNTHETIC Culling Edict',
+    ['1', 'B'],
+    'B',
+    "Each player sacrifices a creature or planeswalker of their choice. Each player who can't discards a card.",
+    {
+      effect: {
+        kind: 'sequence',
+        effects: [
+          CREATURE_OR_WALKER_EDICT,
+          {
+            kind: 'discard',
+            player: { kind: 'couldntSacrificeThisWay' },
+            count: 1,
+            together: true,
+          },
+        ],
+      },
+    },
   ),
   // "Each player sacrifices two creatures of their choice. You create a tapped 2/2 black Zombie creature token for each creature sacrificed this way."
   spell(

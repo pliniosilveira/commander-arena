@@ -899,6 +899,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
   ),
+  // CR 701.21a: the players a sacrifice found nothing to sacrifice for, as the subject of the next sentence.
+  'noun.each-player-cant-sacrifice': permanent(
+    (e) =>
+      `When ~ enters, each player sacrifices a creature of their choice. ${cap(e)} discards a card.`,
+  ),
   // D-269: the players a permanent attacked this turn, as the subject of "loses the game".
   'noun.each-player-attacked': permanent(
     (e) => `At the beginning of your end step, ${e} loses the game.`,

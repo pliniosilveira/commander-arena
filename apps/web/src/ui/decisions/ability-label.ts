@@ -527,6 +527,8 @@ function recipientText(
       return 'the chosen player';
     case 'discardedThisWay':
       return 'each player who discarded a card this way';
+    case 'couldntSacrificeThisWay':
+      return "each player who can't";
     case 'attackedPlayers':
       // D-269 (CR 508.6).
       return 'each player this creature attacked this turn';
@@ -698,6 +700,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
+    case 'couldntSacrificeThisWay':
     case 'attackedPlayers':
       return { who: 'they', third: false };
     case 'all':

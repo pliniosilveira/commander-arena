@@ -942,6 +942,7 @@ describe('unmatched abilities', () => {
       'noun.any-number-target-players',
       'noun.x-permanents',
       'noun.each-player-discarded',
+      'noun.each-player-cant-sacrifice',
       'noun.each-player-attacked',
       'noun.paired-creatures',
       'noun.player',

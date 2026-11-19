@@ -148,6 +148,7 @@ export interface IrNoun extends IrNode {
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
+    | 'couldntSacrificeThisWay' // "each player who can't" after a sacrifice (CR 701.21a): the players the sacrifice before it found nothing for
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with

@@ -312,6 +312,33 @@ export function runDiscard(
     };
     return { state, events: [], front: [], needs: decision };
   }
+  // CR 101.4, 701.9 (`discard.together`): the choice of one of several players is held until the last has chosen; then every chosen card is discarded at once, each as an
+  // instruction of its player that has its `chosen` set.
+  const group = instruction.together;
+  if (group !== undefined) {
+    const held = [...group.held, { seat, cards: chosen }];
+    const nextSeat = group.later[0];
+    if (nextSeat !== undefined) {
+      return done(
+        state,
+        [],
+        [
+          {
+            ...instruction,
+            seat: nextSeat,
+            chosen: null,
+            together: { later: group.later.slice(1), held },
+          },
+        ],
+      );
+    }
+    const { together: _held, ...single } = instruction;
+    return done(
+      state,
+      [],
+      held.map((h) => ({ ...single, seat: h.seat, chosen: h.cards })),
+    );
+  }
   let next = random === null ? state : { ...state, rng: random.rng };
   const events: GameEvent[] = [];
   let discardedCards = 0;
