@@ -115,6 +115,7 @@ describe('amounts that read an object', () => {
       'triggerSpellX',
       // Issue 81 (Shark Typhoon): the X of the cycling cost, in "when you cycle this card".
       'triggerCycleX',
+      'triggerAttackerCount',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
