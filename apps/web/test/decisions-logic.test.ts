@@ -186,8 +186,10 @@ describe('targeting', () => {
     // Slot a is full, so the same target type goes to slot b only if legal there.
     picks = toggleTarget(specs, picks, t(3, ''));
     expect(picks).toEqual([t(2, 'a'), t(3, 'b')]);
-    // Not legal anywhere that has room: ignored.
-    expect(toggleTarget(specs, picks, t(1, ''))).toBe(picks);
+    // Slot a takes one target, so a click on another target legal there changes it (a copy's target is chosen already).
+    expect(toggleTarget(specs, picks, t(1, ''))).toEqual([t(3, 'b'), t(1, 'a')]);
+    // Not legal in any slot: ignored.
+    expect(toggleTarget(specs, picks, t(9, ''))).toBe(picks);
   });
 
   test('a chosen target is taken back by clicking it', () => {
@@ -217,8 +219,8 @@ describe('targeting', () => {
     const picks = [t(1, 'a')];
     const { objects, seats } = clickableTargets(specs, picks);
     expect(objects).toEqual(new Set([o(1), o(2), o(3)]));
-    // Slot a is full, so its player target is no longer offered.
-    expect(seats.size).toBe(0);
+    // Slot a is full but takes one target, so its player target stays offered: a click changes the target.
+    expect(seats).toEqual(new Set([1]));
     expect(clickableTargets(specs, []).seats).toEqual(new Set([1]));
   });
 
