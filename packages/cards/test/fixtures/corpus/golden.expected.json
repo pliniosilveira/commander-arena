@@ -1,5 +1,5 @@
 {
-  "parserVersion": 158,
+  "parserVersion": 159,
   "cards": {
     "008011e2-7b82-4962-af6e-be627112f37f": {
       "name": "Theft of Dreams",
@@ -35,8 +35,8 @@
           "ability": 2,
           "text": "Whenever enchanted Forest is tapped for mana, its controller adds an additional one mana of the chosen color.",
           "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
+          "slot": "effect",
+          "closestRule": "effect.controller-adds-additional-mana"
         }
       ],
       "reasons": [],
@@ -797,19 +797,10 @@
     "17e905ca-c0bd-473d-95a7-e180ba5fea43": {
       "name": "Mirror Entity",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{X}: Until end of turn, creatures you control have base power and toughness X/X and gain all creature types.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.lose-hexproof-shroud"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "fc0da47b"
+      "ast": "48dd03ac"
     },
     "180eda7c-fca2-403b-85cd-8ffebaf9f408": {
       "name": "Palace Jailer",
@@ -1010,6 +1001,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "16010b8f"
+    },
+    "1fbb2a7c-8093-4729-b8fe-cf032d99470f": {
+      "name": "Fell the Mighty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "456e19ff"
     },
     "1ff25f67-36a7-4cfa-a2b1-2135b5b6fb67": {
       "name": "Scavenging Ooze",
@@ -3478,19 +3477,10 @@
     "706ae742-1807-44b7-a4fa-f2e26f61519a": {
       "name": "Wild Growth",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever enchanted land is tapped for mana, its controller adds an additional {G}.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "trigger.becomes-target"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ab936c3f"
+      "ast": "330d8a17"
     },
     "70dc830e-d05b-4fc7-88dd-879e140b3fbf": {
       "name": "Reality Shift",
@@ -4617,19 +4607,10 @@
     "98492d7d-3b9e-4ae1-ac45-1b508d6d2670": {
       "name": "Coveted Jewel",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever one or more creatures an opponent controls attack you and aren't blocked, that player draws three cards and gains control of ~. Untap it.",
-          "reason": "unrecognised",
-          "slot": "trigger",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d071894b"
+      "ast": "59ec418c"
     },
     "985f9dd7-e693-48ff-9dd6-a1a3cbaa236b": {
       "name": "Magma Opus",
@@ -6239,6 +6220,14 @@
       "reasons": [],
       "ast": "073e63aa"
     },
+    "cf14d4e5-5965-45ad-97f7-26facf2884b5": {
+      "name": "Fertile Ground",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "84f6e9ec"
+    },
     "cf5bd3a4-3899-4c25-ad1f-f1778c1d9c60": {
       "name": "Rona, Herald of Invasion // Rona, Tolarian Obliterator",
       "group": "acceptance",
@@ -7680,7 +7669,7 @@
   },
   "summary": {
     "training": {
-      "supported": 149,
+      "supported": 150,
       "total": 174
     },
     "holdout": {
@@ -7688,8 +7677,8 @@
       "total": 56
     },
     "acceptance": {
-      "supported": 630,
-      "total": 651
+      "supported": 634,
+      "total": 653
     }
   }
 }
