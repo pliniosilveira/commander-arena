@@ -795,10 +795,8 @@ const TYPHOON = parsed(
 );
 
 describe('Shark Typhoon: a Shark for each noncreature spell, or when it is cycled', () => {
-  const sharks = (g: {
-    state: { battlefield: readonly number[] | readonly string[]; objects: any };
-  }) =>
-    (g.state.battlefield as readonly string[])
+  const sharks = (g: ReturnType<typeof scenario>['build'] extends () => infer G ? G : never) =>
+    g.state.battlefield
       .map((id) => g.state.objects[id]?.token?.characteristics)
       .filter((c) => c?.name === 'Shark');
 
