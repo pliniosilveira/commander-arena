@@ -190,7 +190,7 @@ describe('with and without a keyword (CR 702)', () => {
 });
 
 describe('what a card may say', () => {
-  test('a static ability may not use a keyword in its subject: it would depend on layer 6 itself (CR 613.8)', () => {
+  test('a static ability may use a keyword in its subject (CR 613.8: layer 7 reads layer 6)', () => {
     const base = syntheticCard(CAPTAIN);
     const face = base.faces[0];
     if (face === undefined) throw new Error('no face');
@@ -216,9 +216,9 @@ describe('what a card may say', () => {
         },
       ],
     };
-    const issues = validateCard(bad);
-    expect(issues.length).toBeGreaterThan(0);
-    expect(issues.map((i) => i.message).join(' ')).toMatch(/keyword/);
+    // Allowed since the First Flight statics: layer 7 depends on layer 6, never the other way round (CR 613.8),
+    // pinned by scenario-xx-flying-statics.test.ts.
+    expect(validateCard(bad)).toEqual([]);
   });
 
   test('a keyword in a filter must be one without parameters', () => {
