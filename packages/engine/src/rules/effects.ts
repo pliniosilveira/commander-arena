@@ -31,6 +31,7 @@ import type {
 import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
+import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject } from './attach';
 import { runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
@@ -260,6 +261,7 @@ export function runInstruction(
   if (instruction.kind === 'proliferate') return runProliferate(state, res, instruction);
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
+  if (instruction.kind === 'assignControl') return runAssignControl(state, res, instruction);
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'protectionColor') {
     return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
@@ -1965,6 +1967,13 @@ function runEffect(
       return tapped
         ? { ...done(next, events), thisWay: { tapped: changed }, performed: changed }
         : done(next, events);
+    }
+
+    case 'assignControlToOpponents': {
+      // CR 613.1b, 611.2a (issue 81, Dack Fayden): the controller chooses a different opponent for each permanent moved, then each opponent gains control of theirs.
+      const objects = resolveObjects(state, effect.objects, ctx, targets);
+      const free = opponentsOf(state, res.controller);
+      return done(state, [], [{ kind: 'assignControl', objects, free, pairs: [], chosen: null }]);
     }
 
     case 'reselectAttack': {

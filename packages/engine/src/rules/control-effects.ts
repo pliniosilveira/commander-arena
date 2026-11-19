@@ -97,6 +97,37 @@ function controllersOf(state: GameState, ids: readonly ObjectId[]): Map<ObjectId
   return out;
 }
 
+/**
+ * Gives each permanent of `pairs` to the seat paired with it (issue 81, Dack Fayden: `assignControlToOpponents`): one layer 2 effect with no duration for each, made one after the
+ * other (CR 613.7b, 611.2a), a permanent that is not on the battlefield skipped. The events and the combat changes are those of `gainControl`.
+ */
+export function gainControlOfEach(
+  state: GameState,
+  pairs: readonly (readonly [ObjectId, SeatId])[],
+): { state: GameState; events: GameEvent[] } {
+  const live = pairs.filter(([id]) => state.objects[id]?.zone === 'battlefield');
+  if (live.length === 0) return { state, events: [] };
+  const before = controllersOf(
+    state,
+    live.map(([id]) => id),
+  );
+  let next = state;
+  const made: ContinuousEffect[] = [];
+  for (const [id, seat] of live) {
+    const [timestamp, stamped] = allocateTimestamp(next);
+    next = stamped;
+    made.push({
+      id: `ce${timestamp}`,
+      timestamp,
+      objects: [id],
+      until: 'permanent',
+      change: { kind: 'control', seat },
+    });
+  }
+  next = { ...next, continuousEffects: [...next.continuousEffects, ...made] };
+  return controlChanges(next, before);
+}
+
 /** Runs `gainControl`: records one layer 2 effect for the permanents the selector names right now (CR 611.2c, 613.7b). */
 export function runGainControl(
   state: GameState,

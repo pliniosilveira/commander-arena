@@ -597,6 +597,7 @@ export type GameEvent =
         | 'cardType'
         | 'option'
         | 'attackTarget'
+        | 'assignOpponent'
         | 'effect'
         | 'riot'
         | 'vote'

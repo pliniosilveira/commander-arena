@@ -1061,6 +1061,18 @@ export type Instruction =
       readonly chosen: string | null;
     }
   /**
+   * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (`assignControlToOpponents`, issue 81,
+   * Dack Fayden): `objects` are the permanents in order and `free` the opponents not yet chosen; `pairs` are the choices made so far (a permanent and the seat chosen for it). `chosen` is the
+   * option answered (`seat:<n>`), null until then. See rules/assign-control.ts.
+   */
+  | {
+      readonly kind: 'assignControl';
+      readonly objects: readonly ObjectId[];
+      readonly free: readonly SeatId[];
+      readonly pairs: readonly (readonly [ObjectId, SeatId])[];
+      readonly chosen: string | null;
+    }
+  /**
    * "The Ring tempts you" (`ringTempts`, CR 701.54a, D-196): the controller of the effect gets the emblem if they have none (CR 701.54c), the
    * Ring has tempted them one more time, and they choose a creature they control to be their Ring-bearer (a `choosePermanent` decision of
    * purpose 'ringBearer', unless they control no creature or just one). `chosen` is the answer, null until then and until the emblem is

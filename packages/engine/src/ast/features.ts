@@ -353,6 +353,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
     'reselectAttack',
+    // Issue 81 (Dack Fayden): "choose a different opponent for each of those permanents; each opponent gains control of theirs".
+    'assignControlToOpponents',
     // D-175: "create a Food token or a Treasure token": the controller chooses one of the instructions as it resolves (CR 608.2d).
     'chooseOne',
     // D-194: "starting with you, each player votes for profit or security" (CR 701.38a).
@@ -2356,6 +2358,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   castFree: true,
   castCard: true,
   reselectAttack: true,
+  assignControlToOpponents: true,
   chooseOne: true,
   chooseCreatureType: true,
   vote: true,

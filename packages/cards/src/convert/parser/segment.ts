@@ -425,6 +425,20 @@ const IF_THEY_DONT_CANT_ATTACK =
   /^if they don['’]t, creatures they control can['’]t attack [\p{L}]+ you control this turn\.$/iu;
 
 /**
+ * "When ~ enters, reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have. Put those creature cards onto the battlefield,
+ * then shuffle." and "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (Dack Fayden, issue 81): each
+ * pair is one instruction, kept together for `effect.reveal-until-opponents` and `effect.assign-control-to-opponents`.
+ */
+const REVEAL_UNTIL_OPPONENTS_FIRST =
+  /(?:^|, )reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have\.$/i;
+const PUT_THOSE_CREATURES_SHUFFLE =
+  /^put those creature cards onto the battlefield, then shuffle\.$/i;
+const FOR_EACH_PERMANENT_DIFFERENT_OPPONENT =
+  /^for each of those permanents, choose a different opponent\.$/i;
+const EACH_OPPONENT_GAINS_CONTROL =
+  /^each opponent gains control of the permanent for which they were chosen\.$/i;
+
+/**
  * "An opponent chooses one of the exiled cards. You put that card on the bottom of your library and return the other to the battlefield tapped." (stage P72, D-232): the second
  * sentence says what happens to the card the first one makes the opponent choose, so the two are read as one instruction.
  */
@@ -803,6 +817,22 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, THEY_MAY_PAY) &&
       said(b, IF_THEY_DONT_CANT_ATTACK)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, REVEAL_UNTIL_OPPONENTS_FIRST) &&
+      said(b, PUT_THOSE_CREATURES_SHUFFLE)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, FOR_EACH_PERMANENT_DIFFERENT_OPPONENT) &&
+      said(b, EACH_OPPONENT_GAINS_CONTROL)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

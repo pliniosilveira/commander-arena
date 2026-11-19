@@ -942,6 +942,20 @@ export function answerResolutionReselect(state: GameState, option: string): Reso
 }
 
 /**
+ * Records the opponent the controller chose for a permanent (`assignControlToOpponents`, issue 81, Dack Fayden) on the instruction that asked, and continues. Null when no such question is waiting.
+ */
+export function answerResolutionAssign(state: GameState, option: string): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'assignControl') return null;
+  const updated: Instruction = { ...head, chosen: option };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
  * Records the answer to "create a Food token or a Treasure token" (CR 608.2d, D-175) on the instruction that asked: the index of the
  * option whose words were chosen. Then continues. Null when no such question is waiting.
  */

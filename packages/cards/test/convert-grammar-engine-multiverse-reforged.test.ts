@@ -1461,3 +1461,37 @@ describe('The Ur-Sphinx: eminence and the attack trigger', () => {
     g.expect.invariants();
   });
 });
+
+// ---- Dack Fayden: "When ~ enters, reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have. Put those creature cards onto the
+// battlefield, then shuffle. They're goaded for the rest of the game. For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they
+// were chosen." (CR 701.20, 701.24, 701.15a, 613.1b, 611.2a).
+
+const DACK = parsed(
+  'SYNTHETIC Parsed Dack',
+  'Legendary Creature — Human Advisor',
+  "When ~ enters, reveal cards from the top of your library until you reveal X creature cards, where X is the number of opponents you have. Put those creature cards onto the battlefield, then shuffle. They're goaded for the rest of the game. For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen.",
+  { manaCost: '{2}{R}', colors: ['R'], power: '2', toughness: '2' },
+);
+
+describe('Dack Fayden: a creature for the opponent, goaded for good', () => {
+  test('the first creature revealed goes to the only opponent, and the rest stay in the library', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(DACK)
+      .hand(DACK.name)
+      .battlefield('Mountain', { count: 3 })
+      .library('Plains', 'Grizzly Bears', 'Giant Spider', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(DACK.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 1 });
+    g.expect.zone('Giant Spider', 'library', { seat: 0 });
+    expect(g.state.continuousEffects.some((e) => e.change.kind === 'goaded')).toBe(true);
+    g.expect.invariants();
+  });
+});

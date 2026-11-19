@@ -815,6 +815,7 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'cardType'
     | 'option'
     | 'attackTarget'
+    | 'assignOpponent'
     | 'effect'
     | 'riot'
     | 'replacement'
@@ -873,6 +874,8 @@ export interface ChooseOptionDecision extends DecisionBase {
    * `player:<seat>` or `permanent:<object id>`). The creature's current target is one of them. Absent for the other purposes.
    */
   readonly attacker?: ObjectId;
+  /** For purpose `'assignOpponent'` (issue 81, Dack Fayden): the permanent an opponent is being chosen for; `options` are `seat:<n>` for the opponents not yet chosen. */
+  readonly assignFor?: ObjectId;
   readonly attackTargets?: readonly AttackTarget[];
   /**
    * For purpose `'meldOrder'` (D-279, CR 712.21a, 712.21b): a melded permanent left the battlefield for a graveyard, a library or exile, and `seat`

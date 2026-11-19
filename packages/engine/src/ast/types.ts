@@ -3205,7 +3205,22 @@ export type Effect =
    * turn it resolves in not counted): it attacks each combat if able and attacks a player other than that controller if able (CR 701.15b). The set is fixed
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
    */
-  | { readonly kind: 'goad'; readonly objects: ObjectRef }
+  | {
+      readonly kind: 'goad';
+      readonly objects: ObjectRef;
+      /** "They're goaded for the rest of the game" (issue 81, Dack Fayden, CR 701.15a): the goad never ends (until the creature leaves the battlefield). */
+      readonly forTheRestOfTheGame?: true;
+    }
+  /**
+   * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (issue 81, Dack Fayden, CR 613.1b, 611.2a, 101.4):
+   * for each permanent `objects` names (the ones an earlier effect moved), in order, the controller of the effect chooses an opponent not yet chosen for another one of them (a
+   * `chooseOption` decision of purpose `assignOpponent`; no question when one opponent is left, and a permanent with none left stays where it is); then each opponent gains control of the
+   * permanent they were chosen for, with no duration, one layer 2 effect for each. A permanent that left the battlefield meanwhile is skipped.
+   */
+  | {
+      readonly kind: 'assignControlToOpponents';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+    }
   /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the

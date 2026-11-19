@@ -4737,9 +4737,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, path, "'attackRandomOpponent' needs an ability of a permanent, not a spell");
       }
       break;
+    case 'assignControlToOpponents':
+      // Issue 81 (Dack Fayden): the permanents an earlier effect moved.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (kindOf(e.objects) !== 'moved') {
+        issue(
+          out,
+          `${path}.objects`,
+          "the permanents are the ones an effect before moved ('moved')",
+        );
+      }
+      break;
     case 'goad':
       // D-639 (CR 701.15a): each creature the selector names is goaded by the controller of the effect.
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.forTheRestOfTheGame !== undefined && e.forTheRestOfTheGame !== true) {
+        issue(out, `${path}.forTheRestOfTheGame`, 'forTheRestOfTheGame must be true when present');
+      }
       break;
     case 'regenerate':
       // CR 701.19a: a shield for each permanent the selector names, until end of turn.
