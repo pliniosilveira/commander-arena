@@ -61,6 +61,8 @@ export interface SelectContext {
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
+  /** The permanents that dealt the combat damage of a `combatDamageBatch` trigger (`triggerSources`), or the cards that triggered a batch of cards. */
+  readonly triggerCards?: readonly ObjectId[];
   /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-643). */
   readonly triggerAttackedAt?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
@@ -744,6 +746,9 @@ export function resolveObjects(
         );
       });
     }
+    case 'triggerSources':
+      // CR 400.7, 603.2c: the creatures that dealt the damage, only while each is still the permanent that did.
+      return (ctx.triggerCards ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
       // CR 712.21c (D-277): for a melded permanent that died, both cards.

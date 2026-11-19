@@ -176,6 +176,8 @@ export interface LowerContext {
   itDied: boolean;
   /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
+  /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
+  damageBatchTrigger: boolean;
   /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
@@ -358,6 +360,7 @@ export function newContext(
     returnedDyingCard: false,
     itDied: false,
     diesTrigger: false,
+    damageBatchTrigger: false,
     cardName,
     selfName: '',
   };

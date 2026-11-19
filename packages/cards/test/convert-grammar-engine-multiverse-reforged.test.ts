@@ -306,3 +306,88 @@ describe('Occult Epiphany: a Spirit for each card type among the cards discarded
     expect(spirits(g)).toBe(0);
   });
 });
+
+// ---- Tamiyo, Upriser Crowned: "Whenever one or more creatures deal combat damage to you while you're the monarch, tap those creatures and put a stun counter on each of them." (CR 725.2,
+// 603.2c, 510.2, 122.1d, 400.7: the creatures that dealt the damage, as long as they are still the same permanents; "while you're the monarch" is read as the damage is dealt, before the
+// monarch moves to the player who dealt it).
+
+const UPRISER = parsed(
+  'SYNTHETIC Parsed Upriser Crowned',
+  'Legendary Creature — Moonfolk Warrior',
+  "Flying, double strike, haste\nWhen ~ enters, you become the monarch.\nWhenever one or more creatures deal combat damage to you while you're the monarch, tap those creatures and put a stun counter on each of them.",
+  { manaCost: '{W}', colors: ['W'], power: '2', toughness: '2' },
+);
+
+describe('Tamiyo: creatures that damage the monarch are tapped and stunned', () => {
+  const start = () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(UPRISER)
+      .hand(UPRISER.name)
+      .battlefield('Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears', 'Giant Spider')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(UPRISER.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.monarch(0);
+    return g;
+  };
+
+  /** The opponent attacks me with the creatures named; their combat damage triggers Tamiyo's ability and the monarch's, and the triggers are put on the stack and resolved. */
+  const attackMe = (g: ReturnType<typeof start>, attackers: readonly string[]) => {
+    g.advanceTo('declareAttackers', { turn: 2 });
+    g.act(1).attack(attackers);
+    g.passAll();
+    g.act(0).noBlocks();
+    g.passAll();
+    const pending = g.state.pending;
+    if (pending?.kind === 'orderTriggers') {
+      g.act(0).orderTriggers(...pending.triggers.map((_t, i) => i));
+    }
+    g.passAll();
+  };
+
+  test('both attackers get a stun counter and the opponent becomes the monarch', () => {
+    const g = start();
+    attackMe(g, ['Grizzly Bears', 'Giant Spider']);
+    g.expect.counters('Grizzly Bears', { stun: 1 });
+    g.expect.counters('Giant Spider', { stun: 1 });
+    g.expect.tapped('Grizzly Bears');
+    g.expect.tapped('Giant Spider');
+    g.expect.monarch(1);
+    g.expect.invariants();
+  });
+
+  test('only the creatures that dealt the damage are stunned', () => {
+    const g = start();
+    attackMe(g, ['Grizzly Bears']);
+    g.expect.counters('Grizzly Bears', { stun: 1 });
+    g.expect.counters('Giant Spider', {});
+    g.expect.monarch(1);
+  });
+
+  test('nothing happens while you are not the monarch (Tamiyo was put onto the battlefield, so nobody is)', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(UPRISER)
+      .battlefield(UPRISER.name)
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    attackMe(g, ['Grizzly Bears']);
+    g.expect.counters('Grizzly Bears', {});
+    g.expect.life(0, 18);
+  });
+});

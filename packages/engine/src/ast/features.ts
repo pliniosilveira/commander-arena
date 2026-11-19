@@ -848,6 +848,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisCard',
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
+    // Issue 81 (Tamiyo): "those creatures" of a combat damage batch trigger.
+    'triggerSources',
     'manaValueAtMost',
     // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
     'manaValueBelow',
@@ -1593,6 +1595,8 @@ export const SELECTOR_KINDS = [
   'thisCard',
   /** "That card" of a trigger about a permanent that went to a graveyard (CR 400.7, D-230): the engine's `triggerCard`. */
   'triggerCard',
+  /** "Those creatures" of a combat damage batch trigger (CR 603.2c, issue 81): the engine's `triggerSources`. */
+  'triggerSources',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
   /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */

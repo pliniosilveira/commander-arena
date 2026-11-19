@@ -1049,6 +1049,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Draw X cards, then discard X cards. Create a 1/1 white Spirit creature token with flying ${e}.`,
   ),
+  'trigger.combat-damage-batch-to-you': permanent((e) => `Whenever ${e}, you gain 1 life.`),
+  'effect.tap-and-stun-those-creatures': permanent(
+    (e) =>
+      `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
+  ),
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),

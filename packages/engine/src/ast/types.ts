@@ -868,6 +868,11 @@ export type ObjectRef =
    */
   | { readonly kind: 'triggerCard' }
   /**
+   * "Those creatures" in the body of a `combatDamageBatch` trigger (Tamiyo, Upriser Crowned; CR 603.2c, 510.2, 400.7): the permanents `what` names that dealt the combat damage that
+   * triggered the ability, as long as each is still the same permanent on the battlefield (one that left is a new object, or none, and is skipped).
+   */
+  | { readonly kind: 'triggerSources' }
+  /**
    * "The sacrificed creature", "it" for the permanent or permanents sacrificed to pay the cost of this activated ability
    * (D-133, CR 602.2c, 118.3): the objects as they were on the battlefield, read from last-known information once they are gone
    * (CR 113.7a, 608.2h), which is always the case when the effect resolves. Valid only as the object of an amount that reads a
@@ -4082,8 +4087,14 @@ export type Trigger =
   | {
       readonly kind: 'combatDamageBatch';
       readonly what: ObjectFilter;
-      readonly to: 'player' | 'opponent';
+      /** `you`: only the controller of this ability ("deal combat damage to you", Tamiyo, Upriser Crowned); the others as above. */
+      readonly to: 'player' | 'opponent' | 'you';
       readonly atLeast?: number;
+      /**
+       * "... while you're the monarch" (CR 725.2, 603.2: part of the event): the controller of this ability was the monarch as the damage was dealt, before the damage moved the
+       * designation to the player who dealt it. Read from the `monarchChanged` event of the same damage, or the monarch now when there is none.
+       */
+      readonly whileMonarch?: true;
     }
   /**
    * "Whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b, 605.4, D-139): a triggered mana ability. It triggers as a

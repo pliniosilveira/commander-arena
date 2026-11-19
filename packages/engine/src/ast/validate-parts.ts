@@ -128,6 +128,8 @@ export interface Scope {
   readonly sacrificedCost?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
   readonly tappedCost?: boolean;
+  /** True in the effect of a triggered ability of a `combatDamageBatch` trigger: `triggerSources` names the creatures that dealt the damage. */
+  readonly triggerSources?: boolean;
   /** True in the effect of a triggered ability about the cards that left a graveyard (`becomeCopyOfCard`, D-232). */
   readonly triggerCards?: boolean;
   /** True in the effect of an activated ability whose cost exiles cards from the graveyard (`splitCostExiled`, D-232). */
@@ -1212,6 +1214,16 @@ export function checkRef(
     case 'thisCard':
       // Read only where a node says so: the object of a moveToZone in an ability (Persist's "return it").
       issue(out, path, "'thisCard' is only valid as the object of moveToZone in an ability");
+      break;
+    case 'triggerSources':
+      // Tamiyo, Upriser Crowned: the creatures of the batch of combat damage that triggered the ability.
+      if (scope.triggerSources !== true) {
+        issue(
+          out,
+          path,
+          "'triggerSources' needs a triggered ability of a combatDamageBatch trigger",
+        );
+      }
       break;
     case 'triggerCard':
       // D-230: read only where a node says so: the object of a moveToZone or an exile in a triggered ability.

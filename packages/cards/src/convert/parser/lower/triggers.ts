@@ -292,6 +292,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'dealsCombatDamage': {
       const what = whatOf(t, ctx);
+      // `you` is the recipient of the batch trigger only (`combatDamageBatch`).
+      if (t.damaged === 'you') return failure(t);
       return what.ok
         ? ok({ kind: 'dealsCombatDamage', what: what.value, to: t.damaged ?? 'any' })
         : what;
@@ -308,7 +310,10 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'combatDamageBatch': {
       // "Whenever one or more artifact creatures you control deal combat damage to a player" (stage P31, D-140, CR 603.2c): one trigger
       // for each player damaged in one damage event, the creatures named by a filter of the controller's permanents.
-      if (t.subject === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
+      if (
+        t.subject === undefined ||
+        (t.damaged !== 'player' && t.damaged !== 'opponent' && t.damaged !== 'you')
+      ) {
         return failure(t);
       }
       const filter = lowerFilter(t.subject);
@@ -318,6 +323,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: filter.value,
         to: t.damaged,
         ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
+        ...(t.whileMonarch === true ? { whileMonarch: true as const } : {}),
       });
     }
     case 'tappedForMana': {
@@ -1270,6 +1276,7 @@ function lowerTriggeredAbility(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
+  ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

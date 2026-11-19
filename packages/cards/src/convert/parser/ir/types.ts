@@ -1253,7 +1253,9 @@ export interface IrTrigger extends IrNode {
    * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
    * damaged, `player` or `opponent` (never a creature). `playerOrPlaneswalker` (D-373): "to a player or planeswalker".
    */
-  readonly damaged?: 'player' | 'opponent' | 'creature' | 'playerOrPlaneswalker';
+  readonly damaged?: 'player' | 'opponent' | 'creature' | 'playerOrPlaneswalker' | 'you';
+  /** 'combatDamageBatch' "... while you're the monarch" (issue 81, CR 725.2): the controller was the monarch as the damage was dealt. */
+  readonly whileMonarch?: true;
   /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
   readonly another?: true;
   /** 'dealsCombatDamage' to a player: the player, so that "that player" has an antecedent. */

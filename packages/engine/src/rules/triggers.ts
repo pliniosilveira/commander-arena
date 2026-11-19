@@ -1304,6 +1304,13 @@ function batchTriggers(
       const seats = [...new Set(damage.map((d) => d.seat))];
       for (const seat of seats) {
         if (trigger.to === 'opponent' && seat === candidate.controller) continue;
+        if (trigger.to === 'you' && seat !== candidate.controller) continue;
+        // CR 725.2: "while you're the monarch" is true as the damage is dealt, which is before the monarch moves to the player who dealt it.
+        if (trigger.whileMonarch === true) {
+          const moved = events.find((e) => e.kind === 'monarchChanged');
+          const monarchThen = moved?.kind === 'monarchChanged' ? moved.from : state.monarch;
+          if (monarchThen !== candidate.controller) continue;
+        }
         const sources = [
           ...new Set(damage.filter((d) => d.seat === seat).map((d) => d.source)),
         ].filter((source) => {
@@ -1348,6 +1355,7 @@ function batchTriggers(
           ability,
           subject: null,
           player: seat,
+          cards: sources,
           ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
         });
       }
