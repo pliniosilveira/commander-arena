@@ -18,6 +18,7 @@ import { AMOUNT_NEEDS } from './amounts';
 import { ANGEL_NEEDS } from './angels';
 import { ARDEN_NEEDS } from './arden';
 import { ATTACHMENT_NEEDS } from './attachments';
+import { AURA_GRAVEYARD_NEEDS } from './aura-graveyard';
 import { CONDITION_NEEDS } from './conditions';
 import { COST_NEEDS } from './costs';
 import { DESTINY_NEEDS } from './destiny';
@@ -147,6 +148,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...ATTACHMENT_NEEDS,
     ...ANGEL_NEEDS,
     ...ARDEN_NEEDS,
+    ...AURA_GRAVEYARD_NEEDS,
     ...DRAGON_NEEDS,
     ...KORVOLD_NEEDS,
     ...GIDEON_NEEDS,

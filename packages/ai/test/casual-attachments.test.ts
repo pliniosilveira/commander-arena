@@ -4,7 +4,7 @@
 // opponent's only when it hurts; an Aura with no host on the right side is not cast; an Equipment
 // that is attached to nothing is equipped to the best bare creature, once per turn, in a main phase,
 // and one that is attached is left alone.
-import type { Action, PendingDecision } from '@commander-arena/engine';
+import type { Action, CardDefinition, PendingDecision } from '@commander-arena/engine';
 import { type ScenarioGame, scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { CasualAgent } from '../src/index';
@@ -216,5 +216,70 @@ describe('equipping', () => {
   test('with no creature to carry it the agent does nothing', async () => {
     const g = scenario().seat(0).battlefield(BLADE, 'Forest').seat(1).build();
     expect(await answer(g)).toEqual({ kind: 'pass' });
+  });
+});
+
+/** SYNTHETIC: an Aura with the text of the real one that enchants a creature card in a graveyard ("-1/-0" reads as hurting, which it is not for its controller). */
+const REANIMATE = 'SYNTHETIC Grave Aura';
+const grave: CardDefinition = {
+  oracleId: null,
+  name: REANIMATE,
+  layout: 'normal',
+  faces: [
+    {
+      name: REANIMATE,
+      manaCost: ['1', 'B'],
+      supertypes: [],
+      types: ['enchantment'],
+      subtypes: ['Aura'],
+      colors: ['B'],
+      power: null,
+      toughness: null,
+      loyalty: null,
+      defense: null,
+      oracleText: 'Enchant creature card in a graveyard\nEnchanted creature gets -1/-0.',
+      abilities: [
+        {
+          kind: 'keyword',
+          keyword: { kind: 'enchant', filter: { zone: 'graveyard', types: ['creature'] } },
+        },
+        {
+          kind: 'static',
+          static: { kind: 'modifyPt', subject: { kind: 'attached' }, power: -1, toughness: 0 },
+        },
+      ],
+      spell: null,
+    },
+  ],
+  colorIdentity: ['B'],
+  support: 'supported',
+};
+
+describe('an Aura that enchants a creature card in a graveyard (CR 303.4a)', () => {
+  const build = (graveyards: { mine: string[]; theirs: string[] }) =>
+    scenario()
+      .define(grave)
+      .seat(0)
+      .hand(REANIMATE)
+      .battlefield('Swamp', 'Swamp')
+      .graveyard(...graveyards.mine)
+      .seat(1)
+      .graveyard(...graveyards.theirs)
+      .build();
+
+  test('it is cast when a graveyard holds a creature card, and not when none does', async () => {
+    const some = build({ mine: [], theirs: [MID] });
+    expect(await answer(some)).toEqual({ kind: 'castSpell', object: some.id(REANIMATE) });
+    const none = build({ mine: ['Lightning Bolt'], theirs: [] });
+    expect(await answer(none)).toEqual({ kind: 'pass' });
+  });
+
+  test('it takes the creature card with the most power, from either graveyard', async () => {
+    const g = build({ mine: [SMALL], theirs: [BIG, MID] });
+    g.act(0).cast(REANIMATE);
+    const action = await answer(g);
+    if (action.kind !== 'chooseTargets') throw new Error('expected chooseTargets');
+    const [target] = action.targets;
+    expect(target?.kind === 'object' && cardName(g, target.id)).toBe(BIG);
   });
 });

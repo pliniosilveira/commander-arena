@@ -28,7 +28,19 @@ const HOSTILE_AURA = /gets? -\d|can't attack|can't block|doesn't untap|loses /i;
 
 export const isAura = (o: ObjectView): boolean => o.subtypes.includes('Aura');
 export const isEquipment = (o: ObjectView): boolean => o.subtypes.includes('Equipment');
-export const auraIsHostile = (o: ObjectView): boolean => HOSTILE_AURA.test(o.oracleText);
+/**
+ * "Enchant creature card in a graveyard" (CR 303.4a, Animate Dead): the Aura's spell targets a card of any graveyard, which it then puts onto the battlefield under its controller's
+ * control. The first Enchant line is read, as `enchantedNoun` reads it.
+ */
+const ENCHANT_GRAVEYARD_CARD =
+  /^enchant [^.\n]*\bcards? in (?:a|an opponent['’]s|your) graveyard/im;
+
+export const enchantsGraveyardCard = (o: ObjectView): boolean =>
+  ENCHANT_GRAVEYARD_CARD.test(o.oracleText);
+
+/** An Aura that hurts the enchanted permanent; one that returns the card it enchants is no curse for its controller, whatever it takes from the creature (Animate Dead's -1/-0). */
+export const auraIsHostile = (o: ObjectView): boolean =>
+  HOSTILE_AURA.test(o.oracleText) && !enchantsGraveyardCard(o);
 
 /**
  * "Enchanted" (D-429, CR 303.4): a permanent with an Aura attached to it, whoever controls the Aura. The view lists what is attached to a permanent
@@ -126,6 +138,12 @@ export function auraHasHost(view: GameView, aura: ObjectView): boolean {
   if (noun === null) return true;
   // Issue 159 (CR 702.5d): "Enchant player": a player is always there to enchant.
   if (noun === 'player') return true;
+  // CR 303.4a (Animate Dead): a card of that kind in any graveyard.
+  if (enchantsGraveyardCard(aura)) {
+    return view.seats.some((s) =>
+      s.graveyard.some((c) => noun === 'card' || c.types.some((t) => t === noun)),
+    );
+  }
   const hostile = auraIsHostile(aura);
   return view.battlefield.some(
     (o) =>
@@ -182,6 +200,11 @@ export function chooseAuraHost(
   }
   const hostile = auraIsHostile(aura);
   const all = candidates(view, slot);
+  // CR 303.4a (Animate Dead): a card of a graveyard that comes back under the agent's control: the best one, whoever it belongs to.
+  if (enchantsGraveyardCard(aura)) {
+    const best = byPower(all, true)?.target ?? slot.legal[0];
+    return best === undefined ? [] : [best];
+  }
   const mine = all.filter((c) => c.view.controller === view.viewer);
   const theirs = all.filter((c) => c.view.controller !== view.viewer);
   const [meant, other] = hostile ? [theirs, mine] : [mine, theirs];

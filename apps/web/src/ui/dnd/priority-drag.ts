@@ -25,7 +25,7 @@ import type {
 import { castAction, castLabel } from '../decisions/flashback';
 import { castPlayOptions } from '../decisions/layouts';
 import { type Index, nameOf } from '../decisions/lookup';
-import { enchantFilter, equipFilter, hostCandidates } from './hosts';
+import { enchantFilter, enchantsGraveyardCard, equipFilter, hostCandidates } from './hosts';
 import type { DragSource, DragSpec, DropResult, DropTarget, DropZone } from './types';
 
 type CastOption = Extract<PriorityOption, { kind: 'castSpell' }>;
@@ -86,6 +86,8 @@ function auraGesture(
 ): Gesture | null {
   const card = index.get(id);
   if (option.alternative !== undefined || card?.subtypes.includes('Aura') !== true) return null;
+  // CR 303.4a (Animate Dead): an Aura that enchants a card in a graveyard is cast by a click, and the cast asks for the card: no permanent to drop it on.
+  if (enchantsGraveyardCard(card)) return null;
   const hosts = hostCandidates(onBattlefield(index), enchantFilter(card), viewer, [id]);
   if (hosts.length === 0) return null;
   const start = castAction(option);

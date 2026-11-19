@@ -258,4 +258,31 @@ export function checkAttachmentFace(
       );
     }
   });
+  // CR 400.7, 607.2a (Animate Dead): "that creature" (`putWithThis`) and "put onto the battlefield with this Aura" (`ObjectFilter.putWithSource`) name what an ability of this same
+  // permanent put onto the battlefield (`moveToZone.putWithSource`): a face that reads the link needs the ability that makes it.
+  const reads = { link: false, makes: false };
+  scanLink(abilities, reads);
+  if (reads.link && !reads.makes) {
+    issue(
+      out,
+      `${path}.abilities`,
+      'putWithThis and putWithSource name what an ability of this permanent put onto the battlefield: a moveToZone with putWithSource is needed',
+    );
+  }
+}
+
+/** Whether a tree of abilities reads the link of `putWithSource` and whether it makes one (a `moveToZone` with the flag). */
+function scanLink(node: unknown, found: { link: boolean; makes: boolean }): void {
+  if (Array.isArray(node)) {
+    for (const item of node) scanLink(item, found);
+    return;
+  }
+  if (node === null || typeof node !== 'object') return;
+  const record = node as Record<string, unknown>;
+  if (record.kind === 'putWithThis') found.link = true;
+  if (record.putWithSource === true) {
+    if (record.kind === 'moveToZone') found.makes = true;
+    else found.link = true;
+  }
+  for (const value of Object.values(record)) scanLink(value, found);
 }

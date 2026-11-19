@@ -8,6 +8,7 @@
 import { describe, expect, test } from 'vitest';
 import type { Ability, Keyword } from '../src/ast/types';
 import { validateCardStructure } from '../src/ast/validate';
+import { canAttach } from '../src/rules/attach';
 import { controllerOf } from '../src/rules/control';
 import type { GameObject } from '../src/state/types';
 import { scenario } from '../src/testing/index';
@@ -210,6 +211,48 @@ describe('it enters attached to the card and its enters ability returns it (CR 6
   });
 });
 
+describe('what an Aura may be attached to follows the enchant ability it has now (CR 702.5a, 704.5m, 613.1f)', () => {
+  test('on the stack-resolved Aura a creature card of a graveyard is legal, a battlefield creature and a noncreature card are not', () => {
+    const g = board();
+    resolveSpell(g, BEARS, 1);
+    const entered = g.object(ANIMATE);
+    expect(canAttach(g.state, entered, g.object(target(BEARS, 1)))).toBe(true);
+    expect(canAttach(g.state, entered, g.object(target(VANILLA, 0)))).toBe(true);
+    expect(canAttach(g.state, entered, g.object(target(BOLT, 0)))).toBe(false);
+  });
+
+  test('after the enters ability a graveyard card is no longer legal and the creature it put there is', () => {
+    const g = board();
+    resolveSpell(g, BEARS, 1);
+    g.passAll();
+    const entered = g.object(ANIMATE);
+    expect(canAttach(g.state, entered, g.object(target(VANILLA, 0)))).toBe(false);
+    expect(canAttach(g.state, entered, g.object({ name: BEARS, zone: 'battlefield' }))).toBe(true);
+  });
+
+  test('a creature that was not put onto the battlefield with the Aura is not legal for it', () => {
+    const g = scenario()
+      .define(aura(abilities()))
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(ANIMATE)
+      .battlefield('Swamp', { count: 2 })
+      .battlefield(VANILLA)
+      .seat(1)
+      .library(...LIBRARY)
+      .graveyard(BEARS)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(ANIMATE, { targets: [target(BEARS, 1)], pay: true });
+    g.passAll();
+    const entered = g.object(ANIMATE);
+    expect(canAttach(g.state, entered, g.object({ name: VANILLA, zone: 'battlefield' }))).toBe(
+      false,
+    );
+    expect(canAttach(g.state, entered, g.object({ name: BEARS, zone: 'battlefield' }))).toBe(true);
+  });
+});
+
 describe("when the Aura leaves, that creature's controller sacrifices it (CR 603.10a, 701.21a)", () => {
   test("destroyed Aura: the creature is sacrificed and goes to its owner's graveyard", () => {
     const g = board();
@@ -317,8 +360,19 @@ describe('the structure check', () => {
         gains: WITH_THIS,
       },
     };
-    expect(messages([{ kind: 'keyword', keyword: IN_GRAVEYARD }, bad])).toEqual([
+    expect(messages([{ kind: 'keyword', keyword: IN_GRAVEYARD }, bad])).toContain(
       'loses is an enchant ability of permanents or cards',
+    );
+  });
+
+  test('what an ability put onto the battlefield is named only by a face that makes the link', () => {
+    const lone: Ability = {
+      kind: 'triggered',
+      trigger: { kind: 'leavesBattlefield', what: { kind: 'this' } },
+      effect: { kind: 'sacrifice', objects: { kind: 'putWithThis' }, byController: true },
+    };
+    expect(messages([{ kind: 'keyword', keyword: IN_GRAVEYARD }, lone])).toEqual([
+      'putWithThis and putWithSource name what an ability of this permanent put onto the battlefield: a moveToZone with putWithSource is needed',
     ]);
   });
 
