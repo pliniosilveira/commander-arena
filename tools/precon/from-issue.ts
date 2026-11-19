@@ -10,6 +10,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { readDeck } from '../corpus/decks.ts';
 import { downloadOracleCards } from '../corpus/download.ts';
+import { displayName } from './archidekt.ts';
 import { type Io, REPO_ROOT, run as runSnapshot } from './main.ts';
 import { encodeComment } from './snapshot-comment.ts';
 
@@ -54,7 +55,7 @@ export function readPreconIssue(body: string): PreconRequest | string {
   }
   if (id === undefined || name === undefined) return 'the issue does not give the id and the name';
   if (!ID.test(id)) return `"${id}" is not a usable id`;
-  return { id, name, update, decklist };
+  return { id, name: displayName(name), update, decklist };
 }
 
 /** "A Commander precon led by Giada, Font of Hope.": what the decklist itself says, never a guess. */

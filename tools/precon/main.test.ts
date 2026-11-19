@@ -137,6 +137,22 @@ describe('precon:snapshot', () => {
     ]);
   });
 
+  test('writes the name without the product suffix', async () => {
+    const t = await prepare(DECK);
+    const args = ['--file', t.forms.gz, '--deck', t.deckFile, '--out', t.out];
+    const named = [
+      '--id',
+      'synthetic-deck',
+      '--name',
+      'SYNTHETIC Deck - SYNTHETIC Product',
+      '--blurb',
+      'A SYNTHETIC deck.',
+    ];
+    expect(await run([...args, ...named], capture().io, { repoRoot: t.dir })).toBe(0);
+    const text = await readFile(path.join(t.out, 'synthetic-deck.json'), 'utf8');
+    expect(JSON.parse(text).name).toBe('SYNTHETIC Deck');
+  });
+
   test('names that are not in the bulk file are listed, exit 1, nothing written', async () => {
     const t = await prepare(`${DECK}1x SYNTHETIC Missing B\r\n1x SYNTHETIC Missing A\r\n`);
     const { io, err } = capture();
