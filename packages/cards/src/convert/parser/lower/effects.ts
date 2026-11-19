@@ -51,6 +51,7 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { FINALE_LOWERINGS } from './finale';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
@@ -530,17 +531,24 @@ const UNTAP_CHOSEN: Lowering<IrClause, Effects> = {
   head: 'untapChosen',
   id: 'lower.untap-chosen',
   needs: ['effect:untap', 'selector:choose', 'selector:upTo'],
-  lower(clause) {
+  lower(clause, ctx) {
     const objects = arg(clause, 'objects');
-    if (objects?.kind !== 'noun' || objects.det !== 'a' || objects.count?.kind !== 'number') {
+    if (
+      objects?.kind !== 'noun' ||
+      objects.det !== 'a' ||
+      (objects.count?.kind !== 'number' && objects.count?.kind !== 'x')
+    ) {
       return failure(clause);
     }
     const filter = lowerFilter(objects);
     if (!filter.ok) return filter;
+    // "Untap up to X lands, where X is ..." (CR 107.3c): the amount the sentence defines X as, read as the instruction runs.
+    const count = lowerAmount(objects.count, ctx, clause.rule);
+    if (!count.ok) return count;
     const chosen: ChooseSelector = {
       kind: 'choose',
       filter: filter.value,
-      count: objects.count.value,
+      count: count.value,
       upTo: true,
     };
     return { ok: true, value: [{ kind: 'untap', objects: chosen }], rule: clause.rule };
@@ -1615,6 +1623,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  ...FINALE_LOWERINGS,
   ...NIV_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,

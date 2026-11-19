@@ -59,6 +59,8 @@ export interface SelectContext {
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
+  /** The creatures the attack event of this trigger declared (`attackersGreatestPower`). */
+  readonly triggerAttackers?: readonly ObjectId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
   readonly owners?: readonly SeatId[];
   /** The seats a `controlledBy` selector of the filter names (D-179, see `FilterContext.controllers`). */

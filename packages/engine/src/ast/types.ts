@@ -165,6 +165,12 @@ export type Amount =
       readonly filter: ObjectFilter;
     }
   /**
+   * "The greatest power among those creatures" (CR 508.1, 603.2; D-149's attack batch): over the creatures the attack event of this `attackBatch` trigger declared as attackers,
+   * the largest power as the ability resolves (the creature as it last existed if it has left the battlefield, CR 608.2h; a creature put onto the battlefield attacking was never declared and
+   * is not one of them). 0 when none has a power; a negative result is read as 0 (CR 107.1b). Valid only in the effect of an `attackBatch` trigger (`validateCard`).
+   */
+  | { readonly kind: 'attackersGreatestPower' }
+  /**
    * "The number of card types among cards in your graveyard" (CR 205.2a, Delirium, an ability word: CR 207.2c, D-518): how many of the card types (artifact, battle, creature, enchantment,
    * instant, kindred, land, planeswalker, sorcery) the objects `filter` matches have between them, each counted once however many have it; supertypes and subtypes are not
    * card types. The filter names a zone other than the battlefield and the stack ("cards in your graveyard": `zone: 'graveyard'`, `controller: 'you'` for the graveyard of the
@@ -2240,6 +2246,11 @@ export type Effect =
    */
   | { readonly kind: 'gainEnergy'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): the controller of the effect has no maximum hand size from now on, so a cleanup step makes them
+   * discard nothing. Not a static ability: it works for the player, not a permanent, and does not end when a permanent leaves. No event; it stays in `SeatState.noMaximumHandSize`.
+   */
+  | { readonly kind: 'noMaxHandSizeForGame' }
+  /**
    * "Up to one target creature you control connives" (CR 701.50a, 701.50b, D-209): each creature the selector names that is still on the battlefield: its
    * controller draws a card, then discards a card (their choice); if the card discarded is a nonland card, they put a +1/+1 counter on it. A creature that left is
    * not conniving (nothing happens: the engine reads no last-known controller of it).
@@ -4176,6 +4187,11 @@ export type Condition =
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
    */
   | { readonly kind: 'dieResult'; readonly compare: NumberComparison }
+  /**
+   * "If X is 10 or more" (CR 107.3, 608.2c): the X announced for the spell that is resolving (CR 107.3a), against a whole number. Only in a `conditional` effect of a
+   * spell or ability that has an X (`validateCard` checks it).
+   */
+  | { readonly kind: 'xIs'; readonly compare: NumberComparison }
   /**
    * "If this card is in your graveyard" (CR 113.6b, 603.4, D-271): the source of the condition is an object that is in its owner's graveyard, and the
    * controller of the condition is that owner. Read from the object itself (not from last-known information: once the card leaves, it is a new object

@@ -174,6 +174,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
+    // "You have no maximum hand size for the rest of the game" (CR 402.2).
+    'noMaxHandSizeForGame',
     'connive',
     // D-213: "for each creature target player controls, create a token that's a copy of that creature, except ..." (`createCopies`).
     'createCopies',
@@ -835,6 +837,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
+    // "If X is 10 or more" (CR 107.3, 608.2c).
+    'xIs',
     'thisInYourGraveyard',
     // D-151: "Khans — ..." (the option the permanent chose as it entered).
     'chosenOption',
@@ -964,6 +968,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'toughnessOf',
     'countersOn',
     'aggregate',
+    // "The greatest power among those creatures" of an attack batch trigger (CR 508.1).
+    'attackersGreatestPower',
     'devotion',
     'commanderColors',
     // D-145: "the greatest mana value among your commanders", "double its power" (`affected`, a power or toughness of the creature affected).
@@ -1440,6 +1446,8 @@ export const CONDITION_KINDS = [
   'spellsCastThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
+  /** "If X is 10 or more" (CR 107.3, 608.2c): the engine's `xIs`. */
+  'xIs',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
   /** "Khans — ..." (D-151): the engine's `chosenOption`, a linked ability of "choose Khans or Dragons". */
@@ -1622,6 +1630,8 @@ export const AMOUNT_KINDS = [
   'countersOn',
   /** "The greatest power among creatures you control", "the total power of creatures you control" (D-131): the engine's `aggregate`. */
   'aggregate',
+  /** "The greatest power among those creatures" of an attack batch trigger (CR 508.1): the engine's `attackersGreatestPower`. */
+  'attackersGreatestPower',
   /** "Your devotion to black" (CR 700.5, D-131): the engine's `devotion`. */
   'devotion',
   /** "The number of colors in your commander's color identity" (CR 903.4, D-131): the engine's `commanderColors`. */
@@ -1802,6 +1812,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
+  noMaxHandSizeForGame: true,
   connive: true,
   createCopies: true,
   playersMay: true,

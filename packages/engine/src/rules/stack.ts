@@ -170,6 +170,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.triggerAttacked === undefined
         ? {}
         : { triggerAttacked: obj.stack.triggerAttacked }),
+      ...(obj.stack?.triggerAttackers === undefined
+        ? {}
+        : { triggerAttackers: obj.stack.triggerAttackers }),
     },
   };
   return continueResolution(state, events);

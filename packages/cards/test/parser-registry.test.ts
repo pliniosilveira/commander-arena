@@ -474,6 +474,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.entered-this-turn': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // Stage P69 (D-271): the die roll and the card in the graveyard (Arden Angel).
   'effect.roll-die': spell((e) => `${cap(e)}.`),
+  'condition.x-is': spell((e) => `Draw a card. If ${e}, instead draw two cards.`),
   'condition.die-result': spell((e) => `Roll a twenty-sided die. If ${e}, you gain 1 life.`),
   'condition.this-in-your-graveyard': permanent(
     (e) =>

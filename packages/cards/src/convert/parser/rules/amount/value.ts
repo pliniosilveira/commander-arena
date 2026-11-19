@@ -163,6 +163,19 @@ const COMMANDER_COLORS: Parser<IrAmount> = (ctx, pos) => {
     : r;
 };
 
+/**
+ * "the greatest power among those creatures" (CR 508.1, 603.2): the creatures an `attackBatch` trigger ("whenever you attack with one or more creatures") declared. Only the
+ * words "those creatures": the group the text names after "among" stays with `AGGREGATE`; whether the ability is such a trigger is the engine's check (`validateCard`).
+ */
+const ATTACKERS_GREATEST_POWER: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(
+    pattern(/the greatest power among (?:those|the) creatures(?![\p{L}\p{N}'’])/iu),
+  )(ctx, pos);
+  return r.ok
+    ? { ok: true, value: { kind: 'attackersGreatestPower', span: r.value.span }, pos: r.pos }
+    : r;
+};
+
 /** "the greatest mana value among your commanders" (stage P32, D-147, CR 903.3, 202.3): the controller's commanders, in any zone. */
 const COMMANDER_MANA_VALUE: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(pattern(/the greatest mana value among your commanders(?![\p{L}\p{N}'’])/iu))(
@@ -266,6 +279,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     NUMBER_OF_COUNTERS(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),
+    ATTACKERS_GREATEST_POWER,
     DEVOTION,
     COMMANDER_COLORS,
     COMMANDER_MANA_VALUE,

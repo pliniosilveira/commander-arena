@@ -461,6 +461,8 @@ export interface StackData {
   readonly triggerTargetCount?: number;
   /** For a triggered ability that reads `attackersAttackedYou` (D-149): the players its attack event was declared at. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** For an `attackBatch` triggered ability: the creatures its attack event declared as attackers (`attackersGreatestPower`). */
+  readonly triggerAttackers?: readonly ObjectId[];
   /**
    * For an activated ability whose cost sacrificed permanents (D-133): the ids they had on the battlefield, which the
    * `sacrificedCost` reference reads (from last-known information: they are gone). For a spell whose additional cost sacrificed any number of permanents
@@ -553,6 +555,11 @@ export interface SeatState {
    * (a player has none). Public.
    */
   readonly energy?: number;
+  /**
+   * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): set by the `noMaxHandSizeForGame` effect; the player discards nothing in a cleanup step
+   * from then on, as with a permanent that says it (`hasNoMaximumHandSize`). Absent until the first time. Public.
+   */
+  readonly noMaximumHandSize?: true;
   /** The commander cards chosen for this seat, in order. */
   readonly commanders: readonly CardId[];
   readonly handSizeMax: number | null;
@@ -704,6 +711,8 @@ export interface PendingTrigger {
   readonly cards?: readonly ObjectId[];
   /** For an `attackBatch` trigger (D-149): the players the creatures declared were attacking, in the order declared (a planeswalker or battle is no player). */
   readonly attacked?: readonly SeatId[];
+  /** For an `attackBatch` trigger that reads `attackersGreatestPower`: the creatures declared as attackers, in the order declared. */
+  readonly attackers?: readonly ObjectId[];
   /** For a chapter ability (CR 714.2): the chapter number that was reached. Absent otherwise. */
   readonly chapter?: number;
   /**
@@ -1661,6 +1670,8 @@ export interface ResolutionContext {
   readonly triggerTargetCount?: number;
   /** What `attackersAttackedYou` reads (D-149): `StackData.triggerAttacked`. */
   readonly triggerAttacked?: readonly SeatId[];
+  /** What `attackersGreatestPower` reads: `StackData.triggerAttackers`. */
+  readonly triggerAttackers?: readonly ObjectId[];
   /** What `sacrificedCost` means (D-133): `StackData.sacrificedAsCost`. */
   readonly costSacrificed?: readonly ObjectId[];
   /** The cards the cost of this activated ability exiled from the graveyard (D-232, `StackData.exiledAsCost`). */
