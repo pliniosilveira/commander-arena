@@ -196,6 +196,12 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'cardTypesAmongThoseCards': {
+      // CR 205.2a, 603.2c: "for each card type among those cards": the cards of a batch trigger; `validateCard` refuses it where the trigger has no cards.
+      const blocked = needs('cardTypesAmongTriggerCards');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'cardTypesAmongTriggerCards' }, rule };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -864,6 +870,7 @@ export const AMOUNT_NEEDS = [
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:cardTypesAmongTriggerCards',
   'amount:triggerSpellX',
   'amount:votesFor',
 ] as const;

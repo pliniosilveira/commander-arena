@@ -24,7 +24,13 @@
 
 import type { CardDefinition, CardFace } from '../cards/definition';
 import type { CardType } from '../characteristics';
-import { COLORS, type Color, type Subtype, type Supertype } from '../characteristics';
+import {
+  COLORS,
+  type Color,
+  isPermanentType,
+  type Subtype,
+  type Supertype,
+} from '../characteristics';
 import { definitionOf } from '../state/ops';
 import type { CopiableValues, GameObject, GameState } from '../state/types';
 import { meldedManaCost } from './melded';
@@ -90,7 +96,34 @@ export function combinedValues(def: CardDefinition): CopiableValues {
       oracleText: faces.map((f) => f.oracleText).join('\n//\n'),
     },
     abilities: faces.flatMap((f) => f.abilities),
+    // CR 709.5b: the two halves of a Room are part of its copiable values.
+    ...(isRoomDefinition(def) ? { doors: doorsOfDefinition(def) } : {}),
   };
+}
+
+/**
+ * Whether `def` is a split card with a shared type line, a Room (CR 709.5): both halves are permanent cards. Such a card is cast as either half (CR 709.3) and its permanent has
+ * unlocked designations (CR 709.5c), see `rules/rooms.ts`.
+ */
+export function isRoomDefinition(def: CardDefinition): boolean {
+  return (
+    def.layout === 'split' &&
+    def.faces.length === 2 &&
+    def.faces.every((face) => face.types.some((t) => isPermanentType(t)))
+  );
+}
+
+/** The values of one printed face (CR 707.2): its characteristics and abilities. */
+export function valuesOfPrintedFace(face: CardFace): CopiableValues {
+  const { abilities, spell: _spell, ...characteristics } = face;
+  return { characteristics, abilities };
+}
+
+/** The values of the two halves of a Room (CR 709.5b): part of its copiable values, wherever it is. */
+export function doorsOfDefinition(def: CardDefinition): readonly [CopiableValues, CopiableValues] {
+  const [left, right] = def.faces;
+  if (left === undefined || right === undefined) throw new Error(`${def.name} has no two halves`);
+  return [valuesOfPrintedFace(left), valuesOfPrintedFace(right)];
 }
 
 /** Whether the object, in this zone, has the combined characteristics of a split card. */

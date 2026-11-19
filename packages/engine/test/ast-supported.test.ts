@@ -323,6 +323,8 @@ describe('supported feature gate', () => {
         'dies',
         'diesBatch',
         'discarded',
+        // CR 709.5h: "When you unlock this door".
+        'doorUnlocked',
         'drawn',
         'endStep',
         'entersBatch',

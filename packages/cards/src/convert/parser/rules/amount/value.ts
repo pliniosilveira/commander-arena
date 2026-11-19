@@ -36,7 +36,7 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
-import { CARD_TYPES_AMONG_VALUE } from './card-types';
+import { CARD_TYPES_AMONG_THOSE_VALUE, CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
 import { DESTROYED_VALUE_AMOUNT } from './death-toll-d';
 import { HISTORY_VALUE } from './history';
@@ -292,6 +292,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     VOTES_AMOUNT,
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
+    CARD_TYPES_AMONG_THOSE_VALUE,
     NUMBER_OF_COUNTERS(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),

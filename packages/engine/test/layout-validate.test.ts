@@ -133,9 +133,9 @@ describe('what is refused, naming the layout', () => {
     ).toEqual([]);
   });
 
-  test('a split card that is a permanent (a Room, CR 709.5)', () => {
-    const room = withFace(SPLIT, 0, { types: ['enchantment'], spell: null });
-    expect(messages(room)[0]).toContain('layout split with a permanent half');
+  test('a split card with one permanent half is not a Room (CR 709.5)', () => {
+    const half = withFace(SPLIT, 0, { types: ['enchantment'], spell: null });
+    expect(messages(half)[0]).toContain('a split card is a Room (both halves permanents)');
   });
 
   test('a transforming card whose back face is a planeswalker or a battle', () => {

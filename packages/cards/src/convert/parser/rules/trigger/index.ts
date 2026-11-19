@@ -54,6 +54,7 @@ import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
+import { ROOM_TRIGGER_RULES } from './room';
 import {
   isPlainLandYouControl,
   makeNoun,
@@ -1199,6 +1200,8 @@ export const TRIGGER_RULES = [
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  // CR 709.5h: "you unlock this door" (a Room).
+  ...ROOM_TRIGGER_RULES,
   // Jeskai free-cast cards (issue 100): "you cast your first instant or sorcery spell each turn".
   ...JESKAI_CASTFREE_TRIGGER_RULES,
   // Stage P30 (D-135): "enters untapped" and "dies or is put into exile from the battlefield" read the words after the event

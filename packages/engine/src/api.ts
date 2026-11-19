@@ -120,6 +120,7 @@ import {
   answerTriggerOrder,
   answerTriggerTargets,
 } from './rules/trigger-stack';
+import { answerUnlockDoorPayment, beginUnlockDoor } from './rules/unlock-actions';
 import { answerResolutionVote } from './rules/vote-answer';
 import { moveObject } from './rules/zones';
 import type { Action } from './state/actions';
@@ -190,6 +191,9 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
     }
     if (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') {
       return action.kind === o.kind && action.object === o.object;
+    }
+    if (o.kind === 'unlockDoor') {
+      return action.kind === 'unlockDoor' && action.object === o.object && action.door === o.door;
     }
     if (o.kind === 'activate') {
       return (
@@ -780,6 +784,9 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         case 'turnFaceUp':
           // CR 116.2b, 701.40b (D-310): a special action; it asks for its payment, then turns the permanent face up.
           return beginTurnFaceUp(state, seat, action.object);
+        case 'unlockDoor':
+          // CR 709.5e (Room): a special action; it asks for its payment, then gives the permanent the unlocked designation.
+          return beginUnlockDoor(state, seat, action.object, action.door);
         case 'activate':
           return beginActivate(state, seat, action.object, action.abilityIndex);
         case 'activateAbility': {
@@ -864,6 +871,13 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           return fail('Pay the cost or cancel');
         }
         return answerSpecialPayment(state, seat, { ...d, purpose: d.purpose }, action);
+      }
+      // CR 709.5e: the unlock cost of a half of a Room.
+      if (d.purpose === 'unlockDoor') {
+        if (action.kind !== 'payAuto' && action.kind !== 'payManual' && action.kind !== 'cancel') {
+          return fail('Pay the cost or cancel');
+        }
+        return answerUnlockDoorPayment(state, seat, d, action);
       }
       // CR 701.40b (D-310): the cost of turning a face-down permanent face up.
       if (d.purpose === 'turnFaceUp') {

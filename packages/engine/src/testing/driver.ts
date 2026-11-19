@@ -33,6 +33,7 @@ import {
   specialAction,
   tapAction,
   toTarget,
+  unlockAction,
 } from './refs';
 import {
   type ActivateOptions,
@@ -287,6 +288,7 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
       suspend: (card) => tryApply(seat, specialAction(ctx, seat, 'suspend', card)),
       foretell: (card) => tryApply(seat, specialAction(ctx, seat, 'foretell', card)),
       turnFaceUp: (card) => tryApply(seat, specialAction(ctx, seat, 'turnFaceUp', card)),
+      unlock: (card, door) => tryApply(seat, unlockAction(ctx, card, door)),
       pass: () => tryApply(seat, { kind: 'pass' }),
       declareAttackers: (attacks) => tryApply(seat, declareAttackersAction(ctx, seat, attacks)),
       declareBlockers: (blocks) => tryApply(seat, declareBlockersAction(ctx, seat, blocks)),
@@ -351,6 +353,12 @@ export function createDriver(initial: GameState, options: DriverOptions = {}): S
       },
       foretell(card, o: SpecialOptions = {}) {
         apply(seat, specialAction(ctx, seat, 'foretell', card));
+        const h = handle();
+        if (o.pay && state.pending?.kind === 'payMana') h.pay();
+        return h;
+      },
+      unlock(card, door, o: SpecialOptions = {}) {
+        apply(seat, unlockAction(ctx, card, door));
         const h = handle();
         if (o.pay && state.pending?.kind === 'payMana') h.pay();
         return h;

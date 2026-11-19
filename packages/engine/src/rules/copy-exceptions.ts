@@ -91,5 +91,7 @@ export function withCopyExceptions(
         : {}),
     },
     abilities: [...copiedAbilities(values.abilities, exceptions), ...(exceptions.abilities ?? [])],
+    // CR 709.5b: the halves of a copied Room are part of the copiable values.
+    ...(values.doors === undefined ? {} : { doors: values.doors }),
   };
 }

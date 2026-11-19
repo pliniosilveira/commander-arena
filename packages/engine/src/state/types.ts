@@ -8,6 +8,7 @@
 import type {
   Ability,
   Cost,
+  DoorValues,
   Effect,
   InlineChoice,
   Keyword,
@@ -159,6 +160,13 @@ export interface GameObject {
    */
   readonly level?: number;
   /**
+   * The unlocked designations of a permanent with a shared type line, a Room (CR 709.5c, 709.5d, 709.5e): the indexes (0 the left half, 1 the right half, sorted) of the halves
+   * that are unlocked; a half not listed is locked and has no name, mana cost or rules text (CR 709.5). It is a designation, not a copiable value, and the object's own: set as
+   * the permanent enters from the half that was cast, changed by the unlock special action or an effect, and a new object after any zone change (CR 400.7) has none. Read through
+   * `rules/rooms.ts`. Absent for every other object and for a Room with both halves locked.
+   */
+  readonly unlockedDoors?: readonly number[];
+  /**
    * The monstrous designation (CR 701.37b, D-445): set by the monstrosity action, kept until the permanent leaves the battlefield. It has no rules meaning but to be a marker, is not an
    * ability and is not a copiable value; a new object after any zone change (CR 400.7) is not monstrous.
    */
@@ -307,6 +315,8 @@ export interface ChosenValues {
 export interface TokenData {
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
+  /** The two halves of a token that is a copy of a Room (CR 709.5, 709.5b): part of the copiable values, see `CopiableValues.doors`. Absent for every other token. */
+  readonly doors?: readonly [DoorValues, DoorValues];
   /**
    * The card whose prepare spell this token has, when it is a copy of a preparation card or of a token that has one (CR 722.2b: the existence and values of the
    * prepare spell are part of the copiable values, D-225). Absent for every other token.
@@ -2162,6 +2172,12 @@ export type ContinuousChange =
 export interface CopiableValues {
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
+  /**
+   * For an object with a shared type line, a Room (CR 709.5, 709.5b): the values of its left and right half, which exist whatever the unlocked designations are (they are part
+   * of the copiable values, also on the stack). `characteristics` and `abilities` are those of the object as a card (both halves combined, CR 709.4) or as a spell (the half
+   * that was cast); on the battlefield `rules/rooms.ts` replaces them by those of the unlocked halves (CR 709.5: a locked half has no name, mana cost or rules text).
+   */
+  readonly doors?: readonly [DoorValues, DoorValues];
 }
 
 /**

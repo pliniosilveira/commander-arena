@@ -26,6 +26,7 @@ import { activatablePlayerMana, PLAYER_MANA_ABILITY } from './player-mana';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
+import { unlockableDoors } from './unlock-legality';
 
 /** The alternative costs listed on a face, in the order their options are offered (D-121). */
 const ALTERNATIVES = [
@@ -80,6 +81,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const object of foretellableObjects(state, seat)) options.push({ kind: 'foretell', object });
   // CR 116.2b, 701.40b (D-310): turning a face-down permanent face up is a special action too, with priority and no other timing.
   for (const object of turnableObjects(state, seat)) options.push({ kind: 'turnFaceUp', object });
+  // CR 709.5e, 116: unlocking a locked half of a Room you control is a special action in a main phase of your turn with an empty stack.
+  for (const { object, door } of unlockableDoors(state, seat)) {
+    options.push({ kind: 'unlockDoor', object, door });
+  }
   // Activated abilities that are not mana abilities (CR 602): from the battlefield and from the hand.
   for (const { object, abilityIndex } of activatableAbilities(state, seat)) {
     options.push({ kind: 'activate', object, abilityIndex });

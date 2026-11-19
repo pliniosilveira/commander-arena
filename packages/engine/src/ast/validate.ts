@@ -1019,6 +1019,11 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-229: the cards of the controller's own graveyard (and library): `who` is "you".
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       break;
+    case 'doorUnlocked':
+      // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (t.door !== 'this') issue(out, `${path}.door`, 'door must be "this"');
+      break;
     case 'putIntoGraveyard':
       // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
@@ -1282,6 +1287,8 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'putIntoGraveyard':
       // One card for each occurrence; a batch is about several cards and has no one subject.
       return t.batch === true ? undefined : 'permanent';
+    case 'doorUnlocked':
+      return 'permanent';
     default:
       return undefined;
   }
@@ -1600,6 +1607,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(subject === undefined ? {} : { triggerSubject: subject }),
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
         ...(a.trigger.kind === 'leftGraveyard' ||
+        (a.trigger.kind === 'putIntoGraveyard' && a.trigger.batch === true) ||
         (a.trigger.kind === 'discarded' && a.trigger.batch === true)
           ? { triggerCards: true }
           : {}),

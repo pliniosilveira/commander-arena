@@ -440,6 +440,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exiledFromLibraryOrGraveyard',
     // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere" (once for each card, or a batch "for the first time each turn").
     'putIntoGraveyard',
+    // CR 709.5h: "When you unlock this door" (Room).
+    'doorUnlocked',
     'becomesTarget',
     'chapter',
     // D-111: steps and phases, draws, combat damage dealt, leaving the battlefield.
@@ -1240,6 +1242,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerTargetCount',
     // Quandrix Unlimited group E: "put X counters" in a cast trigger: the X of the spell that was cast.
     'triggerSpellX',
+    // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
+    'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -2078,6 +2082,8 @@ export const AMOUNT_KINDS = [
   'triggerTargetCount',
   /** "X" in a cast trigger (CR 107.3, 113.7a): the engine's `triggerSpellX`. */
   'triggerSpellX',
+  /** "For each card type among those cards" (CR 205.2a, 603.2c): the engine's `cardTypesAmongTriggerCards`, of a batch `putIntoGraveyard` trigger. */
+  'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
@@ -2390,6 +2396,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   leftGraveyard: true,
   exiledFromLibraryOrGraveyard: true,
   putIntoGraveyard: true,
+  doorUnlocked: true,
   becomesTarget: true,
   chapter: true,
   step: true,

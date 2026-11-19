@@ -80,4 +80,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-died',
   // CR 205.2a: the card types among the cards of a graveyard.
   'amount.for-each-card-type',
+  // CR 205.2a, 603.2c: the card types among the cards of a batch trigger ("those cards").
+  'amount.for-each-card-type-among-those-cards',
 ] as const;

@@ -6,6 +6,7 @@
  */
 import type { CardDefinition, CardFace } from '../cards/definition';
 import { isPermanentType } from '../characteristics';
+import { isRoomDefinition } from '../rules/layouts';
 import type { AstIssue } from './validate-parts';
 
 const isSpellFace = (face: CardFace): boolean =>
@@ -248,12 +249,59 @@ function meldStructureIssues(def: CardDefinition, out: AstIssue[]): void {
   }
 }
 
+/** Whether the trigger of a triggered ability is "When you unlock this door" (CR 709.5h). */
+function unlocksDoor(face: CardFace): { index: number }[] {
+  return face.abilities.flatMap((a, index) =>
+    a.kind === 'triggered' && a.trigger.kind === 'doorUnlocked' ? [{ index }] : [],
+  );
+}
+
+/**
+ * CR 709.5, 709.5a, 709.5h: a split card whose halves are permanents has a shared type line (the two halves have the same card types and subtypes, a Room); its halves are
+ * both permanents or neither; and only a Room has the abilities of "unlocking this door".
+ */
+function roomStructureIssues(def: CardDefinition, out: AstIssue[]): void {
+  const isRoom = isRoomDefinition(def);
+  if (def.layout === 'split') {
+    const permanents = def.faces.filter((face) => face.types.some((t) => isPermanentType(t)));
+    if (permanents.length > 0 && !isRoom) {
+      out.push({
+        path: 'faces',
+        message:
+          'a split card is a Room (both halves permanents) or has no permanent half (CR 709.5)',
+      });
+    }
+    const [left, right] = def.faces;
+    if (
+      isRoom &&
+      left !== undefined &&
+      right !== undefined &&
+      (left.types.join() !== right.types.join() || left.subtypes.join() !== right.subtypes.join())
+    ) {
+      out.push({
+        path: 'faces[1].types',
+        message: 'the halves of a Room share one type line (CR 709.5a)',
+      });
+    }
+  }
+  def.faces.forEach((face, i) => {
+    if (isRoom) return;
+    for (const { index } of unlocksDoor(face)) {
+      out.push({
+        path: `faces[${i}].abilities[${index}].trigger`,
+        message: 'only a Room (a split card with permanent halves) has doors to unlock (CR 709.5h)',
+      });
+    }
+  });
+}
+
 /** Structural rules of a layout that depend on what the faces are. */
 export function layoutStructureIssues(def: CardDefinition): AstIssue[] {
   const out: AstIssue[] = [];
   sagaStructureIssues(def, out);
   meldStructureIssues(def, out);
   classStructureIssues(def, out);
+  roomStructureIssues(def, out);
   // CR 715.2: the Adventure is an instant or sorcery card face; it resolves to exile, never onto
   // the battlefield (CR 715.3d).
   if (def.layout === 'adventure') {
@@ -304,17 +352,6 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
   const out: AstIssue[] = [];
   sagaSupportIssues(def, out);
   if (def.layout === 'split') {
-    // CR 709.5: a split card that is a permanent (a Room) has a shared type line and unlocked
-    // designations on the battlefield.
-    def.faces.forEach((face, i) => {
-      if (face.types.some((t) => isPermanentType(t))) {
-        out.push({
-          path: `faces[${i}].types`,
-          message:
-            'layout split with a permanent half (a Room, CR 709.5) is not implemented by the engine yet',
-        });
-      }
-    });
     // CR 702.102 (Fuse) casts both halves at once: not run.
     if (def.faces.some((face) => hasKeywordLine(face, 'Fuse'))) {
       out.push({

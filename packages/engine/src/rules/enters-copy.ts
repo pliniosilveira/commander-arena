@@ -80,6 +80,7 @@ export function becomeCopyAsItEnters(
               ...values.abilities,
               ...(rule.gains ?? []).map((keyword) => ({ kind: 'keyword' as const, keyword })),
             ],
+            ...(values.doors === undefined ? {} : { doors: values.doors }),
           },
         },
       },

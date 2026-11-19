@@ -164,6 +164,7 @@ import { SYNTHETIC_RETURN_CONTROL_LIST } from './synthetic-return-control';
 import { SYNTHETIC_REVEAL_LIST } from './synthetic-reveal';
 import { SYNTHETIC_REVEAL_DUEL_LIST } from './synthetic-reveal-duel';
 import { SYNTHETIC_RING_LIST } from './synthetic-ring';
+import { SYNTHETIC_ROOM_LIST } from './synthetic-rooms';
 import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
@@ -396,6 +397,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PREVENTION_LIST,
   ...SYNTHETIC_DAMAGE_ORDER_LIST,
   ...SYNTHETIC_LAYOUT_LIST,
+  ...SYNTHETIC_ROOM_LIST,
   ...SYNTHETIC_MANIFEST_LIST,
   ...SYNTHETIC_MORPH_LIST,
   ...SYNTHETIC_MELD_LIST,
