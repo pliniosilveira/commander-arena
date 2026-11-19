@@ -17,7 +17,7 @@ import { isBiteSpell, strongestOwnCreature } from './casual-bite';
 import { chooseSpellToCopy } from './casual-copies';
 import { chooseCreatureToHelp, helpfulSpellBeingCast } from './casual-helpful';
 import { hasMadness } from './casual-later';
-import { chooseTriggerTargets, triggeredAbilityOf } from './casual-triggers';
+import { activatedAbilityOf, chooseTriggerTargets, triggeredAbilityOf } from './casual-triggers';
 import { findObject, isCreature, isLand, manaValueOf, powerOf } from './casual-view';
 
 /** A hand with 2 to 5 lands is kept (CR 103.5); anything else is mulliganed while that is allowed. */
@@ -155,6 +155,11 @@ function chooseTargetsOf(view: GameView, d: TargetsDecision): Action {
   }
   if (attachment?.kind === 'equip') {
     return { kind: 'chooseTargets', targets: chooseEquipTarget(view, d) };
+  }
+  // An activated ability (a loyalty ability, "{T}: untap target land") is read from its own text: a counter or a keyword gain helps, so it goes on the agent's own side.
+  const activated = activatedAbilityOf(view, d);
+  if (activated !== undefined) {
+    return { kind: 'chooseTargets', targets: chooseTriggerTargets(view, d, activated) };
   }
   // A pump or a keyword gain goes on the agent's own best creature, not the opponent's.
   if (helpfulSpellBeingCast(view, d) !== undefined) {
