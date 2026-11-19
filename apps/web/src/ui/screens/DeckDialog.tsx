@@ -189,8 +189,8 @@ export function DeckDialog({
                   src={deck.commanderImage}
                   alt=""
                   loading="lazy"
-                  width={96}
-                  height={70}
+                  width={106}
+                  height={77}
                 />
               )}
               <span className="scr-deck-text">
