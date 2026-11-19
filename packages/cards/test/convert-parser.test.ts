@@ -841,6 +841,7 @@ describe('unmatched abilities', () => {
       'static.additional-land',
       'static.look-at-top',
       'static.attack-tax',
+      'static.cant-attack-you',
       'static.optional-untap',
       'static.untap-in-others-step',
       'static.self-cost-reduction',

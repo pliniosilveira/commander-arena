@@ -437,7 +437,8 @@ describe('lines the grammar does not read stay unsupported (never half-executed)
   test.each([
     ['Exile the top two cards of your library. You may play them.', 'Sorcery'],
     ['You may play that card this turn.', 'Sorcery'],
-    ['Add three mana in any combination of colors.', 'Sorcery'],
+    // Troyan group 1: "in any combination of colors" is now a counted chooseOne as an instruction; "different colors" has no such form.
+    ['Add three mana of different colors.', 'Sorcery'],
   ])('%s', (text, typeLine) => {
     const name = 'SYNTHETIC Parsed Unread';
     const imported = parseOnly(

@@ -184,8 +184,10 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Copy it. You may choose new targets for the copy.',
-    expect: no('it. You may choose new targets for the copy.', 'effect.copy-spell'),
-    note: 'SYNTHETIC: "it" is not a spell the grammar can name here',
+    expect: no('it. You may choose new targets for the copy.', 'effect.copy-spell', {
+      reason: 'unboundReference',
+    }),
+    note: 'SYNTHETIC: "it" is the spell of a cast trigger only (Troyan group 1); with no cast trigger it has no antecedent',
   },
 ];
 
