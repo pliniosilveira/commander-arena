@@ -1538,6 +1538,13 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
       }
       checkAmount(a, path, NO_SCOPE, out);
       break;
+    // CR 202.3 (Velomachus Lorehold shape): "mana value less than or equal to this creature's power", read as the effect runs.
+    case 'powerOf':
+      if (kindOf(a.of) !== 'this') {
+        issue(out, `${path}.of`, `${label} reads the power of this creature only`);
+      }
+      checkAmount(a, path, NO_SCOPE, out);
+      break;
     case 'half':
     case 'multiple':
       checkAmount({ ...a, of: 0 }, path, NO_SCOPE, out);
@@ -5097,12 +5104,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown'])
+        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree'])
       ) {
         issue(
           out,
           `${path}.take.to`,
-          `the cards taken go to the hand, the battlefield or exile face down, not ${JSON.stringify(e.take.to)}`,
+          `the cards taken go to the hand, the battlefield or exile face down, or are cast, not ${JSON.stringify(e.take.to)}`,
+        );
+      }
+      // CR 608.2g: "You may cast ... from among them without paying its mana cost": one spell, chosen from those that match.
+      if (
+        e.take?.to === 'castFree' &&
+        (e.take.max !== 1 ||
+          e.take.min !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.hidden !== undefined ||
+          e.revealAll !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a spell cast from among the cards looked at is one card (max 1), with no min, tapped, totalManaValue or hidden, and nothing revealed',
         );
       }
       if (

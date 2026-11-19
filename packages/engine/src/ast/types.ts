@@ -3141,9 +3141,12 @@ export type Effect =
          * `tapped` or not ("You may reveal a creature card ... and put it onto the battlefield"), or into exile face down
          * (`exileFaceDown`, Hideaway, CR 702.75a: "exile one of them face down"): remembered by the permanent the ability belongs to
          * (`linkedExile`) and visible only to the player who controls that permanent, for as long as it stays on the battlefield; the
-         * cards taken are not revealed.
+         * cards taken are not revealed. `castFree` ("You may cast an instant or sorcery spell with mana value less than or equal to this creature's power from among
+         * them without paying its mana cost", CR 608.2g, 118.9): the controller may cast one card that matches (and that they could cast now) from the library, where
+         * it still is, without paying its mana cost; nothing is revealed but the spell. `max` is 1, with no `min`, `tapped`, `totalManaValue` or `hidden`; the cards not
+         * cast are the rest.
          */
-        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown';
+        readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree';
         /**
          * The fewest cards that must be taken when some can be (D-145, Hideaway: "exile one of them"): the player is not asked "none"; 0 or
          * left out means "you may". At most `max`.

@@ -1326,6 +1326,14 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       atMost = lowered.value;
     }
+    // CR 608.2g (issue 100, "You may cast an instant or sorcery spell ... from among them without paying its mana cost"): the card taken is cast from the library.
+    const cast = arg(clause, 'castFree');
+    const castFree = cast?.kind === 'flag' && cast.value;
+    if (castFree) {
+      const blocked = missingFeatures(['effect:castFree']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
+    }
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
@@ -1333,6 +1341,7 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
         filter: filter.value,
         max: 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
+        ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
       },
       // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."

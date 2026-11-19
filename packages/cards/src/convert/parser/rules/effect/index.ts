@@ -76,6 +76,7 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
@@ -1034,6 +1035,8 @@ export const EFFECT_RULES = [
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
   ...COUNCIL_EFFECT_RULES,
   ...DINOSAUR_EFFECT_RULES,
+  // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
+  ...JESKAI_CASTFREE_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,

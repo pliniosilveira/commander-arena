@@ -38,6 +38,9 @@ function numberOf(amount: IrArg): number {
 
 const AT_LEAST = (n: number): Parser<IrArg> => satisfy(NUMBER, (a) => numberOf(a) >= n);
 
+/** A count of two or more: "look at the top seven cards". */
+export const AT_LEAST_TWO: Parser<IrArg> = AT_LEAST(2);
+
 function keywordAction(verb: 'scry' | 'surveil', cite: string) {
   const id = `effect.${verb}`;
   return defineRule<Clauses>({

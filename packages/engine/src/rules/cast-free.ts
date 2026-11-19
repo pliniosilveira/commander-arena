@@ -36,7 +36,7 @@ export function isLandCard(state: GameState, id: ObjectId): boolean {
 export function freeCandidates(
   state: GameState,
   res: ResolutionContext,
-  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter'>,
+  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards'>,
 ): ObjectId[] {
   const seat = res.controller;
   const ctx: SelectContext = {
@@ -47,16 +47,19 @@ export function freeCandidates(
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
   };
   const named: readonly ObjectId[] =
-    ins.objects.kind === 'choose'
-      ? (state.seats[seat]?.hand.filter((id) => {
-          const card = state.objects[id];
-          return (
-            card !== undefined &&
-            ins.objects.kind === 'choose' &&
-            matchesFilter(state, card, { ...ins.objects.filter, zone: 'hand' }, ctx)
-          );
-        }) ?? [])
-      : resolveObjects(state, ins.objects as ObjectRef, ctx, []);
+    // CR 608.2g: "from among them": the effect named the cards itself (those looked at), which are still where they were.
+    ins.cards !== undefined
+      ? ins.cards.filter((id) => state.objects[id]?.zone === 'library')
+      : ins.objects.kind === 'choose'
+        ? (state.seats[seat]?.hand.filter((id) => {
+            const card = state.objects[id];
+            return (
+              card !== undefined &&
+              ins.objects.kind === 'choose' &&
+              matchesFilter(state, card, { ...ins.objects.filter, zone: 'hand' }, ctx)
+            );
+          }) ?? [])
+        : resolveObjects(state, ins.objects as ObjectRef, ctx, []);
   return named.filter((id) => {
     const card = state.objects[id];
     if (card === undefined) return false;
@@ -100,7 +103,8 @@ export function runCastFree(
   }
   const legal = freeCandidates(state, res, ins);
   if (legal.length === 0) return done(state);
-  const zone = state.objects[legal[0] as ObjectId]?.zone === 'exile' ? 'exile' : 'hand';
+  const first = state.objects[legal[0] as ObjectId]?.zone;
+  const zone = first === 'exile' ? 'exile' : first === 'library' ? 'library' : 'hand';
   return {
     state,
     events: [],
@@ -118,7 +122,11 @@ export function runCastFree(
       prompt:
         ins.remaining === undefined
           ? `You may ${ins.play ? 'play' : 'cast'} ${
-              ins.objects.kind === 'choose' ? 'a card from your hand' : 'the exiled card'
+              ins.cards !== undefined
+                ? 'a card from among those you looked at'
+                : ins.objects.kind === 'choose'
+                  ? 'a card from your hand'
+                  : 'the exiled card'
             } without paying its mana cost`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${

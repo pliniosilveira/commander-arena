@@ -46,3 +46,45 @@ describe('Electrodominance: "You may cast a spell with mana value X or less from
     expect(dropped(text, 'artifact').reason).toBeDefined();
   });
 });
+
+describe('Velomachus Lorehold: "Whenever ~ attacks, look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to ~\'s power from among them without paying its mana cost. Put the rest on the bottom of your library in a random order." (CR 608.2g, 118.9, 202.3, 401.4)', () => {
+  const POWER = { kind: 'powerOf', of: { kind: 'this' } } as const;
+  const look = (kinds: object) => ({
+    kind: 'lookAtTop',
+    count: 7,
+    take: { filter: kinds, max: 1, to: 'castFree', manaValueAtMost: POWER },
+    rest: 'bottomRandom',
+  });
+
+  test('the real text: the attack trigger looks and casts from among the cards', () => {
+    const parsed = readAll(
+      "Whenever ~ attacks, look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost. Put the rest on the bottom of your library in a random order.",
+      'creature',
+      ['Elder', 'Dragon'],
+    );
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'attacks', what: { kind: 'this' } },
+        effect: look({ anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }] }),
+      },
+    ]);
+  });
+
+  test('another count and kind of spell (SYNTHETIC)', () => {
+    const parsed = readAll(
+      "Whenever ~ attacks, look at the top five cards of your library. You may cast a creature spell with mana value less than or equal to ~'s power from among them without paying its mana cost. Put the rest on the bottom of your library in a random order.",
+      'creature',
+    );
+    expect(parsed.abilities).toMatchObject([
+      { kind: 'triggered', effect: { ...look({ types: ['creature'] }), count: 5 } },
+    ]);
+  });
+
+  test.each([
+    "Whenever ~ attacks, look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost. Put the rest into your graveyard.",
+    'Whenever ~ attacks, look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to 3 from among them without paying its mana cost. Put the rest on the bottom of your library in a random order.',
+  ])('not read: %s', (text) => {
+    expect(dropped(text, 'creature').reason).toBeDefined();
+  });
+});

@@ -65,3 +65,45 @@ describe('Electrodominance', () => {
     g.expect.pending('priority', 0);
   });
 });
+
+describe('Velomachus Lorehold', () => {
+  const CARD = real('Velomachus Lorehold');
+  const NAME = CARD.name;
+  const ISLANDS = Array.from({ length: 7 }, () => 'Island');
+  const game = (library: readonly string[]) =>
+    scenario()
+      .define(CARD)
+      .seat(0)
+      .life(20)
+      .battlefield(NAME)
+      .library(...library, ...ISLANDS)
+      .seat(1)
+      .life(20)
+      .library(...ISLANDS)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('it reads as supported and is valid', () => {
+    expect(validateCard(CARD)).toEqual([]);
+  });
+
+  test('attacking: the instants and sorceries of the top seven with mana value 5 or less are offered, one is cast for free', () => {
+    const g = game([BOLT, 'Murder', 'Divination', BEARS]);
+    g.advanceTo('declareAttackers');
+    g.act(0).attack(NAME);
+    g.passAll();
+    const decision = g.state.pending;
+    expect(decision?.kind).toBe('chooseCards');
+    if (decision?.kind !== 'chooseCards') return;
+    expect(decision.purpose).toBe('cast');
+    // Divination is a sorcery, mana value 3: offered; the creature is not an instant or sorcery.
+    expect([...decision.legal].sort()).toEqual(
+      [g.id(BOLT), g.id('Murder'), g.id('Divination')].sort(),
+    );
+    g.act(0).chooseCards(BOLT);
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.expect.zone(BOLT, 'graveyard', { seat: 0 });
+    g.expect.life(1, 17);
+  });
+});
