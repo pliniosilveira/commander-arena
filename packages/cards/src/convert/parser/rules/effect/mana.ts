@@ -125,6 +125,7 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add one mana of any color',
     'add two mana of any one color',
     'add three mana of any one color',
+    'add X mana of any one color',
     "add one mana of any color in your commander's color identity",
     'add {r}{r}, {r}{w}, or {w}{w}',
     'add {g}{g} or {w}{w}',
@@ -216,6 +217,11 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
             // Stage P33 (D-150): one mana of the color the permanent chose (the engine's `chosenColor`).
             map(pattern(/one mana of the chosen color(?![\p{L}\p{N}])/iu), () => ({
               kind: 'chosenColor' as const,
+            })),
+            // CR 106.1b, 605.3b, 107.3c (The Eternity Elevator): "X mana of any one color", the X the sentence defines after it ("..., where X is the number of charge counters on ~").
+            map(pattern(/X mana of any one color(?![\p{L}\p{N}])/u), () => ({
+              kind: 'anyColor' as const,
+              byX: true as const,
             })),
             map(literal('one mana of any color'), () => ({ kind: 'anyColor' as const })),
             // Nykthos, Shrine to Nyx (CR 605.3b, 700.5): after "Choose a color.", as many mana of it as the devotion to it. Read here, lowered only after that sentence.

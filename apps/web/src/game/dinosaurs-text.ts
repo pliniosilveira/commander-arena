@@ -60,8 +60,11 @@ export function hideawayReminder(count: number): string {
 export function productionWords(production: ManaProduction): string | null {
   switch (production.kind) {
     case 'fixed':
+      // CR 605.3b: "Add {U} for each artifact you control" makes a counted number of mana: said as one it would be wrong, so it is left out.
+      if (production.times !== undefined) return null;
       return production.mana.length === 0 ? null : production.mana.map((m) => `{${m}}`).join('');
     case 'anyColor': {
+      if (production.times !== undefined) return null;
       const count = production.count ?? 1;
       return count === 1 ? 'one mana of any color' : `${numberWord(count)} mana of any one color`;
     }

@@ -327,6 +327,24 @@ function lowerCrew(ability: IrKeyword, ctx: LowerContext): LowerResult<readonly 
 }
 
 /**
+ * "Station" (CR 702.184a): the keyword; the engine expands it into the activated ability. Only a station card has it (a Spacecraft or a Planet, CR 702.184b, 721.1), so another
+ * face is read and refused with no gap named.
+ */
+function lowerStation(ability: IrKeyword, ctx: LowerContext): LowerResult<readonly Ability[]> {
+  if (ability.params.length > 0) return failure(ability);
+  if (!ctx.faceSubtypes.includes('Spacecraft') && !ctx.faceSubtypes.includes('Planet')) {
+    return failure(ability);
+  }
+  const blocked = gate(ability, ['ability:keyword', 'keyword:station']);
+  if (blocked !== null) return blocked;
+  return {
+    ok: true,
+    value: [{ kind: 'keyword', keyword: { kind: 'station' } }],
+    rule: 'keyword.station',
+  };
+}
+
+/**
  * "Toxic 1" (CR 702.164a), "Annihilator 2" (CR 702.86a), "Bushido 1" (CR 702.45a) and "Devour 2" (CR 702.82a, D-186): the keyword with its
  * number, a positive whole number. The engine reads Toxic where combat damage is dealt and expands
  * Annihilator and Bushido into their triggered abilities, so the lowering only builds the keyword.
@@ -456,6 +474,7 @@ export function lowerKeyword(
   }
   if (ability.name === 'canBeCommander') return lowerCanBeCommander(ability);
   if (ability.name === 'crew') return lowerCrew(ability, ctx);
+  if (ability.name === 'station') return lowerStation(ability, ctx);
   if (ability.name === 'enchant') return lowerEnchant(ability);
   if (ability.name === 'enchantPlayer') return lowerEnchantPlayer(ability);
   if (
@@ -971,6 +990,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:cumulativeUpkeep',
   'keyword:ward',
   'keyword:crew',
+  'keyword:station',
   'keyword:enchant',
   'keyword:landwalk',
   'ability:replacement',

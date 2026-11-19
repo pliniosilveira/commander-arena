@@ -956,6 +956,8 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const spec = arg(clause, 'mana');
     if (spec?.kind !== 'manaSpec') return failure(clause);
+    // CR 605.3b: "Add X mana of any one color, where X is ..." is read in a mana ability only (`lowerManaAbility`): a spell or a trigger has no way to ask the color of that many mana.
+    if (spec.what.kind === 'anyColor' && spec.what.byX === true) return failure(clause);
     // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
     // ends. A choice of mana would be chosen later than the sentence says, so only fixed mana.
     const staysFlag = arg(clause, 'stays');

@@ -30,6 +30,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   ward: ['Wrd', 'Ward'],
   protection: ['Pro', 'Protection'],
   crew: ['Crew', 'Crew'],
+  station: ['Stn', 'Station'],
   fear: ['Fear', 'Fear'],
   intimidate: ['Int', 'Intimidate'],
   shadow: ['Shd', 'Shadow'],

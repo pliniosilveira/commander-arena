@@ -21,9 +21,11 @@ import {
   type Cost,
   type Effect,
   type ManaAbility,
+  type ManaProduction,
 } from '@commander-arena/engine';
 import type { IrAbility, IrClause, IrFilter, IrModes, IrQuotedAbility } from '../ir/types';
 import { lowerAmount } from './amounts';
+import { amountArg } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause, lowerMana } from './effects';
@@ -230,7 +232,15 @@ function lowerManaAbility(
   if (spendClause !== undefined && spendOnly === null) return failure(spendClause);
   // A definition of X after the mana would be dropped by this reading, so it is not read (stage P28). Neither is a test on a
   // sentence (stage P32): "If you control a Dragon, add {R}" is not "Add {G}", and only `lowerManaInstead` reads the one that says "instead".
-  if (ability.body.sentences.some((s) => s.where !== undefined)) return failure(ability);
+  // The one definition of X a mana ability reads is the one of "Add X mana of any one color, where X is ..." (CR 107.3c), in the sentence of the mana.
+  const byX = spec?.kind === 'manaSpec' && spec.what.kind === 'anyColor' && spec.what.byX === true;
+  const defined = ability.body.sentences.filter((s) => s.where !== undefined);
+  if (
+    defined.length > 0 &&
+    !(byX && defined.length === 1 && defined[0] === ability.body.sentences[0])
+  ) {
+    return failure(ability);
+  }
   if (ability.body.sentences.some((s) => s.condition !== undefined || s.instead === true)) {
     return failure(ability);
   }
@@ -256,7 +266,38 @@ function lowerManaAbility(
   if (!costs.ok) return costs;
   const restrictions = restrictionsOf(ability, false);
   if (!restrictions.ok) return restrictions;
-  const production = lowerMana(spec);
+  // CR 605.1a, 605.3b: the mana of "Add {U} for each artifact you control" and "Add X mana of any one color, where X is the number of charge counters on ~" is counted as the
+  // ability resolves. Only fixed mana is added once for each (a choice of colors would be chosen once or for each, which the words do not say); a cost that gives a permanent up
+  // could change the count, so it is not read with one (`validateCard` refuses it too).
+  let counted: Amount | undefined;
+  const each = add.args.times;
+  if (each !== undefined) {
+    if (spec.what.kind !== 'symbols') return failure(ability);
+    const lowered = amountArg(add, 'times', trial);
+    if (!lowered.ok) return lowered;
+    counted = lowered.value;
+  }
+  const definedX = defined[0]?.where;
+  if (byX) {
+    if (definedX === undefined) return failure(ability);
+    trial.xIs = { amount: definedX, used: false };
+    const lowered = lowerAmount({ kind: 'x', span: spec.span }, trial, add.rule);
+    const used = trial.xIs.used;
+    trial.xIs = null;
+    if (!lowered.ok) return lowered;
+    if (!used || trial.usesX) return failure(ability);
+    counted = lowered.value;
+  }
+  if (counted !== undefined && costs.value.some((c) => c.kind === 'sacrifice')) {
+    return failure(ability);
+  }
+  const base = lowerMana(spec);
+  const production: ManaProduction =
+    counted === undefined
+      ? base
+      : base.kind === 'fixed'
+        ? { ...base, times: counted }
+        : { kind: 'anyColor', times: counted };
   const needs: FeatureRef[] = [
     'ability:mana',
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
@@ -398,6 +439,9 @@ function lowerManaInstead(
     other.verb !== 'addMana' ||
     spec?.kind !== 'manaSpec' ||
     spec.what.kind === 'devotionToChosenColor' ||
+    (spec.what.kind === 'anyColor' && spec.what.byX === true) ||
+    other.args.times !== undefined ||
+    one.args.times !== undefined ||
     !plainClause(other) ||
     first.condition !== undefined ||
     first.where !== undefined ||

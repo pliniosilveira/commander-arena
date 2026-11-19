@@ -1409,7 +1409,10 @@ function lowerTappedForMana(
   // CR 605.1b, 106.12: "its controller adds" is for the controller of the land tapped (`by: 'tapper'`), and "add" for the controller of the ability (`by: 'you'`).
   if ((clause.args.controller !== undefined) !== (trigger.by === 'tapper')) return failure(ability);
   // CR 106.1b, 605.3b: one mana of any color is chosen as the mana ability that triggered this one is activated.
-  if (spec.what.kind === 'anyColor' && (spec.what.count !== undefined || trigger.by !== 'tapper')) {
+  if (
+    spec.what.kind === 'anyColor' &&
+    (spec.what.count !== undefined || spec.what.byX === true || trigger.by !== 'tapper')
+  ) {
     return failure(ability);
   }
   const blocked = missingFeatures(['ability:triggered', 'trigger:tappedForMana', 'effect:addMana']);

@@ -96,7 +96,22 @@ export function parseFaceText(
   let commanderTaxLife: number | null = null;
   // The line each ability came from, for a refusal that is found only once every line is read (a linked exile, stage P31).
   const lineOf: { index: number; text: string; ruleId: string }[] = [];
+  // CR 721.2, 721.3 (Station): once a station symbol ("12+ | ...") has been read, the lines after it that carry no symbol of their own may be in its striation, which the text does
+  // not say; they are refused, never read as abilities that work at every count.
+  let afterStationSymbol = false;
   for (const [index, text] of lines.entries()) {
+    const symbol = STATION_SYMBOL.exec(text);
+    if (symbol === null && afterStationSymbol) {
+      unparsed.push(
+        unparsedAbility(faceIndex, index, text, {
+          reason: 'notRunnable',
+          stoppedAt: text,
+          closestRule: 'none',
+          recognised: [],
+        }),
+      );
+      continue;
+    }
     if (
       /^Rather than pay \{2\} for each previous time you've cast ~ from the command zone this game, pay 2 life that many times\.$/u.test(
         text,
@@ -116,16 +131,36 @@ export function parseFaceText(
       namedInQuotes,
       selfName,
     };
-    const asWritten = compileLine(text, lineOptions);
+    const threshold = symbol === null ? null : Number(symbol[1]);
+    const body = symbol === null ? text : (symbol[2] ?? '');
+    if (threshold !== null) afterStationSymbol = true;
+    const asWritten = compileLine(body, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not
     // read as written, and the line is read again without it. A line that reads today never changes; a wrong strip can only turn an unread
     // line into a read one. If the line still does not read, the diagnostic is the one of the line without its label (it says what is
     // really unread), under the text as written.
     const bare =
-      asWritten.ok || asWritten.failure.reason !== 'unrecognised' ? text : stripFlavorWord(text);
-    const result = bare === text ? asWritten : compileLine(bare, lineOptions);
+      asWritten.ok || asWritten.failure.reason !== 'unrecognised' ? body : stripFlavorWord(body);
+    const result = bare === body ? asWritten : compileLine(bare, lineOptions);
     if (!result.ok) {
       unparsed.push(unparsedAbility(faceIndex, index, text, result.failure));
+    } else if (threshold !== null) {
+      // CR 721.2a (Station): "N+ | [abilities]" is "as long as this permanent has N or more charge counters on it, it has [abilities]". A symbol on a face that is not a station
+      // card, a threshold of 0, a line that is not an ability and one with a power and toughness box (CR 721.2b: not built) are refused as a whole.
+      const stationCard = faceSubtypes.includes('Spacecraft') || faceSubtypes.includes('Planet');
+      if (result.kind !== 'abilities' || threshold < 1 || !stationCard) {
+        unparsed.push(
+          unparsedAbility(faceIndex, index, text, {
+            reason: 'notRunnable',
+            stoppedAt: text,
+            closestRule: 'none',
+            recognised: [],
+          }),
+        );
+        continue;
+      }
+      abilities.push({ kind: 'stationLevel', threshold, abilities: [...result.abilities] });
+      lineOf.push({ index, text, ruleId: result.ruleId });
     } else if (result.kind === 'abilities') {
       abilities.push(...result.abilities);
       for (const _ of result.abilities) lineOf.push({ index, text, ruleId: result.ruleId });
@@ -197,6 +232,9 @@ export function parseFaceText(
     lines,
   };
 }
+
+/** "12+ | {G}, {T}: Add {G}" (CR 721.2): the station symbol Scryfall writes as the number, a plus sign and a bar, before the ability it gates. */
+const STATION_SYMBOL = /^(\d+)\+ \| (.+)$/su;
 
 /**
  * A line of a spell that starts "If <test>, instead ..." or ends "... instead." (stage P36, D-178, CR 608.2c, 614.1a): "Threshold — If there are

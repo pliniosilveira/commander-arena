@@ -854,7 +854,8 @@ export interface IrManaSpec extends IrNode {
     // "{U} or {B}", "{R}, {G}, or {W}": one mana of a color chosen from at least two (CR 106.1b)
     | { readonly kind: 'oneOf'; readonly colors: readonly string[] }
     // "one mana of any color"; stage P32 (D-147): "two mana of any one color" has `count` 2 (CR 106.1b: every mana the same color)
-    | { readonly kind: 'anyColor'; readonly count?: number }
+    | { readonly kind: 'anyColor'; readonly count?: number; readonly byX?: true }
+    // "X mana of any one color, where X is the number of charge counters on ~" (CR 106.1b, 605.3b, 107.3c): `byX` is the number the sentence defines X as (a mana ability's only)
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
