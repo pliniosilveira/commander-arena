@@ -32,6 +32,7 @@ import { DASH_RETURN_ABILITY } from './derive-alt';
 import { shuffleLibrary } from './effect-support';
 import { runInstruction } from './effects';
 import { exiledAsItResolves, returnExiledSpell } from './exile-on-resolve';
+import { faceDownBy } from './face-down';
 import { isAdventureSpell, isOmenSpell } from './layouts';
 import { faceOf, targetSpecsOf } from './legality';
 import { chosenEffect, modalOfObject } from './modes';
@@ -396,6 +397,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !boughtBack &&
       obj.stack?.flashback !== true &&
       obj.stack?.exileInstead !== true;
+    const downBy = faceDownBy(obj);
     const moved = moveObject(next, {
       object: res.object,
       to: permanent
@@ -417,6 +419,8 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       ...(res.entersRiot === undefined ? {} : { entersRiot: res.entersRiot }),
       ...(res.entersRevealed === undefined ? {} : { entersRevealed: res.entersRevealed }),
       ...(adventure && timeCounters === null ? { onAdventure: true as const } : {}),
+      // CR 702.37c, 708.4: "When the spell resolves, it enters the battlefield with the same characteristics the spell had": a face-down spell becomes a face-down permanent.
+      ...(permanent && downBy !== null ? { entersFaceDown: downBy } : {}),
     });
     if (moved.kind === 'done') {
       next = moved.state;

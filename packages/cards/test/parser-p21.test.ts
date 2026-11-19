@@ -80,7 +80,7 @@ describe('keyword.line: the keywords of batch 2 (CR 702.118, 702.91, 702.134, 70
 
   test.each([
     ['Ninjutsu {1}{U}', 'D-117'],
-    ['Morph {3}', 'D-117'],
+    ['Megamorph {3}', 'D-117'],
     ['Flying, storm', 'one unread keyword leaves the whole line'],
     ['Skulk, storm', 'the same after a keyword of batch 2'],
   ])('"%s" stays unread (%s)', (text) => {

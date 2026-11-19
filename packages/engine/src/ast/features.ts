@@ -1209,6 +1209,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-274: Miracle (CR 702.94).
     'miracle',
     'foretell',
+    // CR 702.37 (Morph): cast face down for {3}; turned face up for the morph cost.
+    'morph',
     // D-149: "pay {W} and tap four untapped creatures you control with flying rather than pay this spell's mana cost".
     'tapPermanents',
     // D-667: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
@@ -2013,6 +2015,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'madness',
   'miracle',
   'foretell',
+  'morph',
   'tapPermanents',
   'retrace',
   'sacrificeFromGraveyard',

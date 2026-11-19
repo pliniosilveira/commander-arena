@@ -127,6 +127,7 @@ import { SYNTHETIC_MASS_LIST } from './synthetic-mass';
 import { SYNTHETIC_MELD_LIST } from './synthetic-meld';
 import { SYNTHETIC_MIRACLE_LIST } from './synthetic-miracle';
 import { SYNTHETIC_MODAL_LIST } from './synthetic-modal';
+import { SYNTHETIC_MORPH_LIST } from './synthetic-morph';
 import { SYNTHETIC_NIV_DRAW_LIST } from './synthetic-niv-draw';
 import { SYNTHETIC_NIV_GROUP_2B_B_LIST } from './synthetic-niv-group-2b-b';
 import { SYNTHETIC_NIV_GROUP_3_A_LIST } from './synthetic-niv-group-3-a';
@@ -391,6 +392,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DAMAGE_ORDER_LIST,
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_MANIFEST_LIST,
+  ...SYNTHETIC_MORPH_LIST,
   ...SYNTHETIC_MELD_LIST,
   ...SYNTHETIC_SAGA_LIST,
   ...SYNTHETIC_LIBRARY_LIST,

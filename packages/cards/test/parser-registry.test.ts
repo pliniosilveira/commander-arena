@@ -150,6 +150,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.miracle': asIs,
   'keyword.harmonize': asIs,
   'keyword.foretell': asIs,
+  // Morph (CR 702.37) is a line of its own.
+  'keyword.morph': asIs,
   // Stage P27: Storm and Replicate are lines of their own.
   'keyword.storm': asIs,
   'keyword.gravestorm': asIs,

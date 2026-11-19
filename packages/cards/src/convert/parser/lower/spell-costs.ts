@@ -291,6 +291,7 @@ const NAMED_ALTERNATIVES = [
   'madness',
   'miracle',
   'foretell',
+  'morph',
 ] as const;
 type NamedAlternative = (typeof NAMED_ALTERNATIVES)[number];
 
@@ -353,5 +354,6 @@ export const ALTERNATIVE_COST_NEEDS: readonly FeatureRef[] = [
   'castAlternative:madness',
   'castAlternative:miracle',
   'castAlternative:foretell',
+  'castAlternative:morph',
   'cost:mana',
 ];

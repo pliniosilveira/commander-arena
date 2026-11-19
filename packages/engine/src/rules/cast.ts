@@ -88,6 +88,7 @@ import { leastAllowedX } from './cast-restrictions';
 import { commanderCreatureTypes } from './commander-identity';
 import { crimeEvents } from './crime';
 import { derive } from './derive';
+import { faceDownSpellFields, nextFaceDownNumber } from './face-down';
 import { graveyardPlayPermission, markGraveyardPlay, riderOf } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import {
@@ -214,6 +215,11 @@ export function beginCast(
     obj.prepareOf === undefined ? moved.state : becomeUnprepared(moved.state, obj.prepareOf);
   let next = patchObject(unprepared, stackId, {
     controller: seat,
+    // CR 702.37c, 708.4: a card cast with its morph ability is turned face down before it is put onto the stack: the spell has the face-down characteristics, and the
+    // permanent it becomes is a face-down permanent (`finish` in rules/stack.ts).
+    ...(alternative === 'morph'
+      ? faceDownSpellFields('morph', nextFaceDownNumber(unprepared))
+      : {}),
     stack: {
       kind: 'spell',
       source: null,
@@ -276,7 +282,7 @@ export function beginCast(
   // The cost, the kicker and the legality look at the face being cast only (CR 709.3a, 712.11c).
   const { tax, taxLife } = spellCost(state, {
     seat,
-    spell: castAs(obj, seat, face),
+    spell: castAs(obj, seat, face, alternative),
     zone,
     alternative,
     excluded: obj.id,
