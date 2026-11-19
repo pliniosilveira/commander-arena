@@ -1,4 +1,4 @@
-// The Jeskai free-cast cards (deck support issue 100): the REAL Oracle text of the acceptance cards (fixtures/corpus/jeskai-castfree.jsonl, taken from the issue) goes through the
+// The Jeskai free-cast cards (deck support issue 100): the REAL Oracle text of the acceptance cards (fixtures/corpus/golden.jsonl, taken from the issue) goes through the
 // grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs.
 // Pins: CR 107.3a (the X announced), CR 202.3 (mana value), CR 608.2g and 118.9 (cast without paying its mana cost), CR 107.3b (X is 0 for it).
 import { readFileSync } from 'node:fs';
@@ -9,7 +9,7 @@ import { fromGoldenCard, importCard, parseGolden } from '../src/index';
 import { NO_OVERRIDES } from './convert-grammar-helpers';
 
 const CARDS = parseGolden(
-  readFileSync(new URL('./fixtures/corpus/jeskai-castfree.jsonl', import.meta.url), 'utf8'),
+  readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
 );
 
 /** The real card, imported through the grammar only; it must read as supported. */
