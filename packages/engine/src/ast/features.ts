@@ -347,6 +347,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'fight',
     // D-145: "deals X damage divided as you choose among any number of target creatures" (CR 601.2d): with `TargetSpec.divide`.
     'dealDividedDamage',
+    // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control" (CR 601.2d): with `TargetSpec.divide`.
+    'distributeCounters',
     // Lorehold group 1: "Each creature deals damage to itself equal to its power." (CR 120.3).
     'dealDamageToSelf',
     // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
@@ -2189,6 +2191,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,
+  distributeCounters: true,
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,

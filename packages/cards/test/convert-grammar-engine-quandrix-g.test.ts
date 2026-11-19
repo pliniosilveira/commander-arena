@@ -180,7 +180,7 @@ describe('Deekah, Fractal Theorist', () => {
     g.expect.noObject('Fractal');
   });
 
-  test('{3}{U}: target creature token can be targeted, a creature that is no token cannot', () => {
+  const withToken = () => {
     const g = start((b) =>
       b
         .seat(0)
@@ -191,12 +191,160 @@ describe('Deekah, Fractal Theorist', () => {
     g.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
     g.passAll();
     g.expect.zone('Fractal', 'battlefield', { seat: 0, count: 1 });
-    expect(() => g.act(0).activate(DEEKAH, { targets: ['bears'], pay: true })).toThrow();
+    return g;
+  };
+
+  test('{3}{U}: target creature token can target the Fractal', () => {
+    const g = withToken();
     g.act(0).activate(DEEKAH, { targets: ['Fractal'], pay: true });
     g.expect.stack([`${DEEKAH} (ability)`]);
     g.passAll();
     g.expect.stack([]);
     g.expect.invariants();
+  });
+
+  test('a creature that is no token is not a target of it', () => {
+    const g = withToken();
+    expect(() => g.act(0).activate(DEEKAH, { targets: ['bears'], pay: true })).toThrow();
+  });
+});
+
+describe("Elusive Otter // Grove's Bounty", () => {
+  const card = real("Elusive Otter // Grove's Bounty");
+  const OTTER = card.name;
+  const zero = parsed('SYNTHETIC Zero Power Blocker', 'Creature — Wizard', '', {
+    manaCost: '{1}',
+    power: '0',
+    toughness: '3',
+  });
+
+  test('creatures with power less than its power cannot block it, the others can', () => {
+    const g = scenario()
+      .define(card)
+      .define(zero)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(OTTER, { label: 'otter' })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(zero.name, { label: 'zero' })
+      .battlefield(BEARS, { label: 'bears' })
+      .at('precombatMain', { active: 0, priority: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack('otter');
+    g.advanceTo('declareBlockers');
+    g.expect.canBlock('zero', 'otter', false);
+    g.expect.canBlock('bears', 'otter', true);
+  });
+
+  test('its power is read as it is: prowess makes it 2, so a 1-power creature cannot block it either', () => {
+    const one = parsed('SYNTHETIC One Power Blocker', 'Creature — Wizard', '', {
+      manaCost: '{1}',
+      power: '1',
+      toughness: '3',
+    });
+    const g = scenario()
+      .define(card)
+      .define(one)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(OTTER, { label: 'otter' })
+      .hand(BOLT)
+      .battlefield('Mountain')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(one.name, { label: 'one' })
+      .at('precombatMain', { active: 0, priority: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack('otter');
+    g.advanceTo('declareBlockers');
+    g.expect.canBlock('one', 'otter', true);
+    const h = scenario()
+      .define(card)
+      .define(one)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(OTTER, { label: 'otter' })
+      .hand(BOLT)
+      .battlefield('Mountain')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(one.name, { label: 'one' })
+      .at('precombatMain', { active: 0, priority: 0 })
+      .build();
+    h.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
+    h.passAll();
+    h.expect.pt('otter', 2, 2); // prowess
+    h.advanceTo('declareAttackers');
+    h.act(0).attack('otter');
+    h.advanceTo('declareBlockers');
+    // no creature can block it, so the declareBlockers decision is not even offered
+    expect(h.state.pending?.kind).not.toBe('declareBlockers');
+  });
+
+  describe("Grove's Bounty", () => {
+    const board = () =>
+      scenario()
+        .define(card)
+        .seat(0)
+        .library(...LIBRARY)
+        .hand(OTTER)
+        .battlefield(BEARS, { label: 'a' })
+        .battlefield(SPIDER, { label: 'b' })
+        .battlefield('Forest', 'Forest', 'Forest', 'Forest')
+        .seat(1)
+        .library(...LIBRARY)
+        .battlefield('Llanowar Elves', { label: 'theirs' })
+        .battlefield('Mountain')
+        .hand(BOLT)
+        .at('precombatMain', { active: 0, priority: 0 })
+        .build();
+
+    test('X = 3 divided 1 and 2 among two creatures you control (CR 601.2d); the card goes on its adventure', () => {
+      const g = board();
+      g.act(0).cast(OTTER, { face: 1, x: 3, targets: ['a', 'b'], divide: [1, 2], pay: true });
+      g.passAll();
+      g.expect.counters('a', { '+1/+1': 1 });
+      g.expect.counters('b', { '+1/+1': 2 });
+      g.expect.zone(OTTER, 'exile', { seat: 0 });
+      g.expect.invariants();
+    });
+
+    test('the whole of X can go to one creature, and a creature you do not control is no target', () => {
+      const g = board();
+      g.act(0).cast(OTTER, { face: 1, x: 2, targets: ['b'], divide: [2], pay: true });
+      g.passAll();
+      g.expect.counters('b', { '+1/+1': 2 });
+      const h = board();
+      expect(() =>
+        h.act(0).cast(OTTER, { face: 1, x: 2, targets: ['theirs'], divide: [2], pay: true }),
+      ).toThrow();
+    });
+
+    test('the division must give out all of X, each target at least 1', () => {
+      expect(() => {
+        const g = board();
+        g.act(0).cast(OTTER, { face: 1, x: 3, targets: ['a', 'b'], divide: [1, 1], pay: true });
+      }).toThrow();
+      expect(() => {
+        const g = board();
+        g.act(0).cast(OTTER, { face: 1, x: 3, targets: ['a', 'b'], divide: [3, 0], pay: true });
+      }).toThrow();
+    });
+
+    test('a target that left the battlefield gets nothing; the others keep their share (CR 608.2b)', () => {
+      const g = board();
+      g.act(0).cast(OTTER, { face: 1, x: 3, targets: ['a', 'b'], divide: [1, 2], pay: true });
+      // the opponent kills creature a in response: its share is lost and not given to the other (CR 608.2b)
+      g.act(0).pass();
+      g.act(1).cast(BOLT, { targets: ['a'], pay: true });
+      g.passAll();
+      g.expect.noObject(BEARS, { zone: 'battlefield' });
+      g.expect.counters('b', { '+1/+1': 2 });
+      g.expect.invariants();
+    });
   });
 });
 

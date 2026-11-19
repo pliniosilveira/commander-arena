@@ -46,6 +46,7 @@ import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
 import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
+import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
 import { DRAGON_EFFECT_RULES } from './dragons';
 import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
@@ -1036,6 +1037,8 @@ export const EFFECT_RULES = [
   // Stage P32 (D-147): fights, doubling, the excess damage of trample, revealing until, casting for free, a token for each, divided damage.
   ...COUNCIL_EFFECT_RULES,
   ...DINOSAUR_EFFECT_RULES,
+  // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
+  ...QUANDRIX_G_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,

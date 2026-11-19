@@ -1957,6 +1957,29 @@ function runEffect(
       return done(next, events);
     }
 
+    case 'distributeCounters': {
+      // CR 601.2d, 608.2b, 122.6: the counters a spell divided as it was cast go on each target of the slot that is still legal, in the share the caster gave it. Each share is
+      // its own placement, so a replacement of counters put on a permanent applies to each (CR 616.1).
+      const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
+      for (const t of targets) {
+        if (t.specId !== effect.to.id || t.share === undefined || t.kind !== 'object') continue;
+        const put = putCountersOn(
+          state,
+          next,
+          t.id,
+          effect.counter,
+          t.share,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
     case 'doubleCounters': {
       // CR 701.10 (Double): "double the number of +1/+1 counters on it" puts that many more counters on each object, read as the effect
       // resolves, each its own, through the same placement as `addCounters` (counters put by the controller, CR 122.6).

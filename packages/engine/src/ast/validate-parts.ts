@@ -1066,7 +1066,19 @@ export function declareTargets(
           "only the targets of a spell's own text, an activated ability or a triggered ability (not a mode) can have a division",
         );
       }
-      checkStateAmount(spec.divide.total, `${p}.divide.total`, out, 'a division');
+      if (kindOf(spec.divide.total) === 'x') {
+        // CR 107.3a, 601.2b, 601.2d: "Distribute X +1/+1 counters among ...": the X is announced before the targets are chosen and the division, so the total is read as the X
+        // announced for the spell (`validateSpell` checks that the spell announces one). Only a spell's own text announces an X before its targets.
+        if (!countXAllowed) {
+          issue(
+            out,
+            `${p}.divide.total`,
+            "only a slot of a spell's own text (not an ability or a mode) divides the X announced for the spell",
+          );
+        }
+      } else {
+        checkStateAmount(spec.divide.total, `${p}.divide.total`, out, 'a division');
+      }
     }
     if (typeof spec.id === 'string' && spec.id !== '' && what !== undefined) {
       if (!declared.has(spec.id)) declared.set(spec.id, what.kind);
@@ -5966,6 +5978,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses what to give counters to as it resolves; `times` repeats it.
       if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
+      break;
+    case 'distributeCounters':
+      // CR 601.2d: the slot the effect names divides the counters; `checkDinosaursFace` checks that it has a `divide`.
+      if (kindOf(e.to) !== 'target') {
+        issue(
+          out,
+          `${path}.to`,
+          'distributeCounters puts the counters on the targets of a slot: a target reference',
+        );
+      } else {
+        checkRef(e.to, 'any', `${path}.to`, scope, out);
+      }
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
       break;
     case 'doubleCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);

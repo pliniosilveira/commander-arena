@@ -54,6 +54,7 @@ import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
+import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
 import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
@@ -2016,6 +2017,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   PREVENT_DAMAGE_PER_PREVENTED,
   ATTACH,
   ...DINOSAUR_LOWERINGS,
+  // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
+  ...QUANDRIX_G_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...ARDEN_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.

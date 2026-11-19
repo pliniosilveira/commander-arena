@@ -1707,6 +1707,17 @@ export type Effect =
       readonly to: { readonly kind: 'target'; readonly id: string };
     }
   /**
+   * "Distribute X +1/+1 counters among any number of target creatures you control" (CR 601.2d, 122.6, 608.2b): the counters of a kind a spell divided as it was cast, put on each
+   * target of the slot `to` names, if it is still legal as the spell resolves, in the share the caster gave it; a target that became illegal gets none, and its share is not given to the
+   * others. The counters are put by the controller through the same placement as `addCounters` (a replacement such as `countersPlus` applies to each target's share). `to` is a `target`
+   * of a slot whose `TargetSpec` has `divide`; with the total `{ kind: 'x' }` the spell announces an X (CR 107.3a).
+   */
+  | {
+      readonly kind: 'distributeCounters';
+      readonly to: { readonly kind: 'target'; readonly id: string };
+      readonly counter: string;
+    }
+  /**
    * "Each creature deals damage to itself equal to its power" (CR 120.3, 120.3a-e, 608.2c; Lorehold group 1): every object `objects` names is a source and its own
    * recipient, and is dealt damage equal to its power as the effect begins. Each is a source of its own damage, so deathtouch, lifelink, infect and wither apply as for any damage
    * (CR 120.3), a prevention effect for that source applies, and the damage is not combat damage. Powers are read before any damage is dealt (CR 608.2h: the information is determined once, when the effect is applied; CR 120.4a speaks of damage dealt at the same time).

@@ -1888,6 +1888,9 @@ function checkSpellText(s: SpellText, path: string, out: AstIssue[]): void {
   if (!xAllowed && (s.targets ?? []).some((t) => t.countX === true)) {
     issue(out, `${path}.x`, 'X targets need x: true (the spell announces an X)');
   }
+  if (!xAllowed && (s.targets ?? []).some((t) => kindOf(t.divide?.total) === 'x')) {
+    issue(out, `${path}.x`, 'a division of X needs x: true (the spell announces an X)');
+  }
   if (s.effect !== undefined) {
     checkEffect(s.effect, `${path}.effect`, { owner: 'spell', targets, xAllowed, ...HOOKS }, out);
   } else if (targets.size > 0) {
