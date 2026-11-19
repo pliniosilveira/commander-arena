@@ -687,6 +687,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a land you control enters, if ${e}, you gain 1 life.`,
   ),
   'token.named-legendary': spell((e) => `Create ${e}.`),
+  // Death Toll deck, group C: a token whose own characteristic-defining ability defines its power and toughness; the card whose own ability is a creature off the battlefield.
+  'token.defined-pt': spell((e) => `Create ${e}.`),
+  'static.creature-off-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
   'noun.each-of-them': spell((e) => `Tap up to two target creatures. Put a stun counter on ${e}.`),
