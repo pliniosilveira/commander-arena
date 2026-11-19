@@ -17,6 +17,10 @@ export function optionPrompt(
       >
     >,
 ): string {
+  // Issue 81 (Dack Fayden): "choose a different opponent" for each permanent put onto the battlefield.
+  if (d.purpose === 'assignOpponent') {
+    return `Choose a different opponent to gain control of a permanent (${d.sourceName}).`;
+  }
   // D-151: a choice among names the card gives, or the chapter a Saga with read ahead starts with.
   if (
     (d.purpose === 'option' ||

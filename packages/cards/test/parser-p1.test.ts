@@ -459,7 +459,7 @@ describe('tokens, sacrifice and counters as effects', () => {
     return effect;
   };
 
-  test('predefined tokens (CR 111.10): Treasure and Food run, Map is reported with what is missing', () => {
+  test('predefined tokens (CR 111.10): Treasure, Food and Map run, Blood is reported with what is missing', () => {
     expect(only('Create a Treasure token.')).toEqual({
       kind: 'createToken',
       token: { kind: 'preset', preset: 'Treasure' },
@@ -472,11 +472,17 @@ describe('tokens, sacrifice and counters as effects', () => {
     });
     // Food runs since the engine's activated abilities (D-075) and its preset was enabled.
     expect(food).toMatchObject({ ok: true });
+    // Issue 81: the Map token runs with `explore`.
     const map = compileLine('Create a Map token.', {
       rules: buildRuleSet(ALL_RULES),
       face: 'spell',
     });
-    expect(map).toMatchObject({ failure: { reason: 'notRunnable', needs: ['token:Map'] } });
+    expect(map).toMatchObject({ ok: true });
+    const blood = compileLine('Create a Blood token.', {
+      rules: buildRuleSet(ALL_RULES),
+      face: 'spell',
+    });
+    expect(blood).toMatchObject({ failure: { reason: 'notRunnable', needs: ['token:Blood'] } });
   });
 
   test('an inline creature token has power, toughness, colors and creature types, no abilities', () => {

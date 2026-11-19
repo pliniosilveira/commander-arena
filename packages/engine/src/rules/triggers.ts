@@ -272,7 +272,15 @@ function occurrences(
     case 'cycled':
       // CR 702.29c (D-179): the card that was cycled, where it wound up.
       return event.kind === 'cycled'
-        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              player: event.seat,
+              // The X of the cycling cost, for `triggerCycleX` (Shark Typhoon).
+              ...(event.x === undefined ? {} : { damage: event.x }),
+            },
+          ]
         : [];
     case 'exerted':
       // CR 701.43d, 603.12: the creature that was exerted as it attacked, with the ability linked to its exert ability.
@@ -886,15 +894,7 @@ function matches(
       ) {
         return false;
       }
-      const attackers = occ.attackers ?? [];
-      const counted =
-        trigger.what === undefined
-          ? attackers.length
-          : attackers.filter((id) => {
-              const creature = objectOrLki(state, id);
-              return creature !== null && matchesFilter(state, creature, trigger.what ?? {}, ctx);
-            }).length;
-      return counted >= trigger.atLeast;
+      return attackBatchCount(state, trigger, occ.attackers ?? [], ctx) >= trigger.atLeast;
     }
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
@@ -940,8 +940,13 @@ function matches(
           ...(trigger.filter.types ?? []),
           ...(trigger.filter.anyOf ?? []).flatMap((m) => m.types ?? []),
         ];
+        // Issue 81 (Plan for All Outcomes): "your first noncreature spell each turn": the card types the spell must not have (`notTypes`), with no type to name.
+        const unwanted = trigger.filter.notTypes ?? [];
         const same = state.turnLog.castSpells.filter(
-          (s) => s.seat === occ.seat && s.types.some((t) => wanted.includes(t)),
+          (s) =>
+            s.seat === occ.seat &&
+            (wanted.length === 0 || s.types.some((t) => wanted.includes(t))) &&
+            !s.types.some((t) => unwanted.includes(t)),
         );
         if (same.length !== 1) return false;
       }
@@ -1083,6 +1088,21 @@ function isRelevant(event: GameEvent): boolean {
     default:
       return false;
   }
+}
+
+/** CR 603.2c: how many creatures of a declaration an `attackBatch` trigger counts (all of them when it names no filter). */
+function attackBatchCount(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'attackBatch' }>,
+  attackers: readonly ObjectId[],
+  ctx: SelectContext,
+): number {
+  if (trigger.what === undefined) return attackers.length;
+  const filter = trigger.what;
+  return attackers.filter((id) => {
+    const creature = objectOrLki(state, id);
+    return creature !== null && matchesFilter(state, creature, filter, ctx);
+  }).length;
 }
 
 /** The battlefield as it was before the events happened, by undoing their zone changes. */
@@ -1388,6 +1408,15 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             subject: occ.subject,
             ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),
+            // CR 508.1 (issue 81, The Ur-Sphinx): "that many" is the creatures of the declaration the batch trigger counted.
+            ...(ability.trigger.kind === 'attackBatch' && occ.attackers !== undefined
+              ? {
+                  damage: attackBatchCount(state, ability.trigger, occ.attackers, {
+                    controller: candidate.controller,
+                    source: id,
+                  }),
+                }
+              : {}),
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),
@@ -1434,6 +1463,13 @@ function batchTriggers(
       const seats = [...new Set(damage.map((d) => d.seat))];
       for (const seat of seats) {
         if (trigger.to === 'opponent' && seat === candidate.controller) continue;
+        if (trigger.to === 'you' && seat !== candidate.controller) continue;
+        // CR 725.2: "while you're the monarch" is true as the damage is dealt, which is before the monarch moves to the player who dealt it.
+        if (trigger.whileMonarch === true) {
+          const moved = events.find((e) => e.kind === 'monarchChanged');
+          const monarchThen = moved?.kind === 'monarchChanged' ? moved.from : state.monarch;
+          if (monarchThen !== candidate.controller) continue;
+        }
         const sources = [
           ...new Set(damage.filter((d) => d.seat === seat).map((d) => d.source)),
         ].filter((source) => {
@@ -1478,6 +1514,7 @@ function batchTriggers(
           ability,
           subject: null,
           player: seat,
+          cards: sources,
           ...(readsTriggerDamage(ability) ? { damage: dealt } : {}),
         });
       }

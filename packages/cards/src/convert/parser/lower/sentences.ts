@@ -1597,6 +1597,11 @@ function countsWhatHappened(
     case 'tapped':
       // "X" after "tap X untapped Myr you control" (stage P31): the number the tap chose.
       return earlier.verb === 'tapChosen';
+    case 'exiledCreatures':
+      // Issue 81 (Sunfall): "where X is the number of creatures exiled this way": an `exile` before it in the same text.
+      return earlier.verb === 'exile';
+    case 'discardedTypeCount':
+    // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way": a `discard` before it in the same text.
     case 'discardedMost':
     // Issue 279 (Windfall): "the greatest number of cards a player discarded this way": a `discard` before it in the same text.
     case 'discarded':

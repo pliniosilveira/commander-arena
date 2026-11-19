@@ -364,6 +364,9 @@ const MANA_COLORS = ['W', 'U', 'B', 'R', 'G', 'C'];
 /** The static effects D-151 adds. True when `s` is one of them (it was checked here). */
 export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[]): boolean {
   switch (s?.kind) {
+    case 'unspentManaBecomesColorless':
+      // CR 106.4, 614.1a (issue 81, Omnath): no parameters; the permanent's own ability.
+      return true;
     case 'unspentManaStays':
       // CR 500.5, 106.4 (D-151): "You don't lose unspent red mana as steps and phases end": the colors of mana that stay.
       if (!Array.isArray(s.colors) || s.colors.length === 0) {

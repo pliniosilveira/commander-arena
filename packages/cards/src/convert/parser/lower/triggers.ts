@@ -292,6 +292,8 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     }
     case 'dealsCombatDamage': {
       const what = whatOf(t, ctx);
+      // `you` is the recipient of the batch trigger only (`combatDamageBatch`).
+      if (t.damaged === 'you') return failure(t);
       return what.ok
         ? ok({ kind: 'dealsCombatDamage', what: what.value, to: t.damaged ?? 'any' })
         : what;
@@ -308,7 +310,10 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'combatDamageBatch': {
       // "Whenever one or more artifact creatures you control deal combat damage to a player" (stage P31, D-140, CR 603.2c): one trigger
       // for each player damaged in one damage event, the creatures named by a filter of the controller's permanents.
-      if (t.subject === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
+      if (
+        t.subject === undefined ||
+        (t.damaged !== 'player' && t.damaged !== 'opponent' && t.damaged !== 'you')
+      ) {
         return failure(t);
       }
       const filter = lowerFilter(t.subject);
@@ -318,6 +323,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: filter.value,
         to: t.damaged,
         ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
+        ...(t.whileMonarch === true ? { whileMonarch: true as const } : {}),
       });
     }
     case 'tappedForMana': {
@@ -962,8 +968,14 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   const eventDamage = events.every(
     (e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt',
   );
-  if (!castTargetCount && !eventDamage) return ability;
-  const eventAmount = castTargetCount ? 'triggerTargetCount' : 'triggerDamage';
+  // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
+  const attackers = events.every((e) => e.event === 'attackBatch');
+  if (!castTargetCount && !eventDamage && !attackers) return ability;
+  const eventAmount = attackers
+    ? 'triggerAttackerCount'
+    : castTargetCount
+      ? 'triggerTargetCount'
+      : 'triggerDamage';
   let counted = false;
   const retarget = (amount: IrAmount): IrAmount => {
     switch (amount.kind) {
@@ -1167,6 +1179,8 @@ function lowerTriggeredAbility(
   ctx.castTriggerX = triggers.every(
     (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
   );
+  // Issue 81 (Shark Typhoon): "When you cycle this card, create an X/X ... token": X is the X of the cycling cost.
+  ctx.cycleTriggerX = triggers.every((t) => t.kind === 'cycled');
   // CR 603.4: the intervening "if" is checked as the event happens and again on resolution, so
   // the ability does not trigger when it is false. It is not a conditional effect inside the
   // ability. "It" is the source only when every event is about the source itself.
@@ -1306,6 +1320,7 @@ function lowerTriggeredAbility(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'this',
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
+  ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

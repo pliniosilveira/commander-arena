@@ -62,6 +62,8 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
     case 'thisCard':
     case 'triggerCard':
       return 'its';
+    case 'triggerSources':
+      return 'their';
     case 'sacrificedCost':
       // D-133: the permanent sacrificed to pay the cost ("the sacrificed creature's power").
       return "the sacrificed creature's";
@@ -97,6 +99,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
     case 'thisCard':
     case 'triggerCard':
       return 'it';
+    case 'triggerSources':
+      return 'those creatures';
     case 'sacrificedCost':
     case 'sacrificed':
       return 'the sacrificed creature';
@@ -147,6 +151,12 @@ function thisWayPhrase(what: ThisWayKind): string {
       return 'the number of permanents you sacrificed this way';
     case 'destroyed':
       return 'the number of permanents destroyed this way';
+    case 'exiledCreatures':
+      // Issue 81 (Mass Polymorph): the creatures an earlier exile exiled, tokens included.
+      return 'the number of creatures exiled this way';
+    case 'discardedTypeCount':
+      // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way".
+      return 'the number of card types among cards discarded this way';
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';

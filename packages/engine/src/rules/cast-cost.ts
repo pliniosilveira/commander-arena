@@ -131,7 +131,8 @@ export function isNamedAlternative(
     alternative === 'foretell' ||
     alternative === 'morph' ||
     alternative === 'tapPermanents' ||
-    alternative === 'sacrificeFromGraveyard'
+    alternative === 'sacrificeFromGraveyard' ||
+    alternative === 'impending'
   );
 }
 

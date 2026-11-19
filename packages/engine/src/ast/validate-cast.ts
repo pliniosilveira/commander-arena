@@ -144,6 +144,10 @@ export function checkCastFace(
   if (alternatives.some((a) => a?.kind === 'dash') && !face.types.includes('creature')) {
     issue(out, `${path}.alternativeCosts`, 'dash is on a creature card (CR 702.109a)');
   }
+  // CR 702.176a: impending is on a creature permanent card (the permanent is not a creature while it has a time counter).
+  if (alternatives.some((a) => a?.kind === 'impending') && !face.types.includes('creature')) {
+    issue(out, `${path}.alternativeCosts`, 'impending is on a creature card (CR 702.176a)');
+  }
   // CR 702.103a: bestow is on a creature card (the spell is an Aura spell with "enchant creature" when cast for it).
   if (alternatives.some((a) => a?.kind === 'bestow') && !face.types.includes('creature')) {
     issue(out, `${path}.alternativeCosts`, 'bestow is on a creature card (CR 702.103a)');

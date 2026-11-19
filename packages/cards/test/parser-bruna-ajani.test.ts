@@ -130,7 +130,7 @@ describe('a token named after the card that makes it (D-266)', () => {
 
   test('the near misses are not read (SYNTHETIC)', () => {
     for (const named of [
-      'Pridemate of Ajani', // the card's name is not the first word of the name
+      // "Pridemate of Ajani" (the card's short name last) is read since issue 81 (Kher Keep: "Kobolds of ~").
       'Ajani Pridemate',
       'Ajani',
       'Ajani’s',

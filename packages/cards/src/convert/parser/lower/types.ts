@@ -60,6 +60,8 @@ export interface LowerContext {
   castTrigger: boolean;
   /** The triggers are all "whenever you cast a spell with {X} in its mana cost": an X in the body is the X of that spell (Quandrix Unlimited group E, CR 107.3). */
   castTriggerX: boolean;
+  /** The triggers are all "When you cycle this card": an X in the body is the X announced for the cycling cost (issue 81, Shark Typhoon, CR 702.29a, 107.3). */
+  cycleTriggerX: boolean;
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
@@ -178,6 +180,8 @@ export interface LowerContext {
   itDied: boolean;
   /** True in any dies trigger body, including a trigger about another creature (D-599). */
   diesTrigger: boolean;
+  /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
+  damageBatchTrigger: boolean;
   /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
@@ -323,6 +327,7 @@ export function newContext(
     selfCast: false,
     castTrigger: false,
     castTriggerX: false,
+    cycleTriggerX: false,
     activateTrigger: false,
     removed: new Set(),
     madeAToken: false,
@@ -373,6 +378,7 @@ export function newContext(
     returnedDyingCard: false,
     itDied: false,
     diesTrigger: false,
+    damageBatchTrigger: false,
     cardName,
     selfName: '',
   };

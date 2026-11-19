@@ -1,5 +1,5 @@
 {
-  "parserVersion": 164,
+  "parserVersion": 165,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -1469,7 +1469,7 @@
     },
     "2b80faaf-92fd-4fa0-a3f6-8bb263e7ff1d": {
       "name": "Akroma, Angel of Fury",
-      "group": "holdout",
+      "group": "acceptance",
       "status": "supported",
       "unparsed": [],
       "reasons": [],
@@ -1725,6 +1725,14 @@
       "reasons": [],
       "ast": "da05cd21"
     },
+    "313aee0e-4090-4589-b323-a4edbda21c68": {
+      "name": "Fatehold Charm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cb702dea"
+    },
     "316d49a0-620b-4942-a5e8-04cff15e6c01": {
       "name": "Krav, the Unredeemed",
       "group": "acceptance",
@@ -1788,6 +1796,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "d40567b2"
+    },
+    "3321c134-bf5b-4f63-8035-fca0bbdfa86b": {
+      "name": "Jace, Multiverse Architect",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d61938d8"
     },
     "335a6c6a-030f-45d4-806c-467a22962eed": {
       "name": "Final Act",
@@ -2112,6 +2128,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "94f727e1"
+    },
+    "3b21abb0-9a58-4e62-9650-4b04ce2bfb12": {
+      "name": "Dack Fayden, Helping Hand",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3835abde"
     },
     "3b6f608d-f27d-44cd-b0a1-0e1e1aa1c98a": {
       "name": "On Wings of Gold",
@@ -2513,6 +2537,14 @@
       "reasons": [],
       "ast": "216b592d"
     },
+    "4a3fdb8e-4699-4bd9-84e6-3cc7fea0e1ef": {
+      "name": "The Ur-Sphinx",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "08f5a943"
+    },
     "4a59d86e-405d-4c70-b2a5-c64f5cecfd9e": {
       "name": "Electrodominance",
       "group": "acceptance",
@@ -2528,6 +2560,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5f95d697"
+    },
+    "4af61d45-7114-4eb4-a905-9e03caf87454": {
+      "name": "Avacyn, Angel of Horror",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "6654b4ca"
     },
     "4b1befff-48fa-47a3-832e-bdaf43495c02": {
       "name": "Ram Through",
@@ -2939,6 +2979,14 @@
       "reasons": [],
       "ast": "bdf7e65d"
     },
+    "579225b5-50e2-4891-8871-0bf6dbc07e33": {
+      "name": "Omnath, Locus of the Void",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b474ecff"
+    },
     "579cbd92-797f-4cdf-91ed-fca7a523eae5": {
       "name": "Deep Analysis",
       "group": "acceptance",
@@ -3200,6 +3248,14 @@
       "reasons": [],
       "ast": "5a43c693"
     },
+    "5ea93956-085d-409b-bd95-dd669fa69eeb": {
+      "name": "Ginger, Queen of Sweets",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bd4307c9"
+    },
     "5eb8bb1d-7567-4c24-913b-463b5fe463c4": {
       "name": "Gilt-Leaf's Embrace",
       "group": "acceptance",
@@ -3239,6 +3295,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e477ccf0"
+    },
+    "6067b8d0-5b00-402c-967d-e35a1304fafc": {
+      "name": "Nissa, Leyline Tamer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea278863"
     },
     "610af0f7-b5e3-43fb-9d02-7c59bd99034c": {
       "name": "Tear Asunder",
@@ -3377,6 +3441,14 @@
       "reasons": [],
       "ast": "422686ad"
     },
+    "640a7d2c-42c4-4ea7-bd5b-72f12a65785e": {
+      "name": "Synthetic Destiny",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "82bf0fdc"
+    },
     "642fa01d-025e-44dd-8360-5325e5a28282": {
       "name": "Dread Summons",
       "group": "acceptance",
@@ -3408,6 +3480,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "08f3d9ca"
+    },
+    "64df560a-905f-45d1-bc70-14d99e3112d3": {
+      "name": "Windcrag Siege",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4d3c85de"
     },
     "651c967c-8f71-4eb5-b22f-545e55ea050e": {
       "name": "Carnelian Orb of Dragonkind",
@@ -3770,6 +3850,14 @@
       "reasons": [],
       "ast": "9aa1a0df"
     },
+    "6df1c314-b97b-4bbc-8b7e-a07785347a49": {
+      "name": "Occult Epiphany",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "76dd22f1"
+    },
     "6e64f1e0-ddd6-4ee7-8797-086e234b02e8": {
       "name": "Steel Hellkite",
       "group": "training",
@@ -4107,6 +4195,14 @@
       "reasons": [],
       "ast": "72a49612"
     },
+    "79638767-fbc7-451a-b29f-d93f2ac6f102": {
+      "name": "Kher Keep",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e1a66262"
+    },
     "79ba18fd-f184-43c1-86df-56ee18ce806c": {
       "name": "Secluded Courtyard",
       "group": "acceptance",
@@ -4351,6 +4447,14 @@
       "reasons": [],
       "ast": "64c66651"
     },
+    "7e64b1dc-a238-4bff-98ff-2bea44340568": {
+      "name": "Overlord of the Mistmoors",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5c6a268e"
+    },
     "7f268b15-ac92-4e98-821b-78d15d9285d9": {
       "name": "Loyal Apprentice",
       "group": "acceptance",
@@ -4399,6 +4503,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c8c00319"
+    },
+    "7fd2cac5-cd29-4a47-9e89-9c6be39a0b67": {
+      "name": "Plan for All Outcomes",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d90f3ccc"
     },
     "800fb917-8898-4eba-9f94-aec6e9d75236": {
       "name": "Mazemind Tome",
@@ -4699,6 +4811,14 @@
       "reasons": [],
       "ast": "da1f8822"
     },
+    "8c0520fa-276b-4d21-b4a9-dce1fce59f6b": {
+      "name": "Shark Typhoon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2035ebb0"
+    },
     "8c31fec9-e4b3-4761-990e-7be38eb05604": {
       "name": "Karmic Guide",
       "group": "acceptance",
@@ -4796,6 +4916,14 @@
       "reasons": [],
       "ast": "33efe5d6"
     },
+    "8e0f2e26-1e14-422a-aafe-e1da38ab10a3": {
+      "name": "Tamiyo, Upriser Crowned",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "81cf60e8"
+    },
     "8e589dca-d31e-4d2f-81b1-18e5f9198795": {
       "name": "Timely Ward",
       "group": "acceptance",
@@ -4851,6 +4979,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8047fe32"
+    },
+    "91320daf-f69c-4350-b0fc-4bb37a6904b1": {
+      "name": "Restless Anchorage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "568550ce"
     },
     "92116bbd-c7ad-4033-8d98-3ea09fea8ae7": {
       "name": "Quandrix Apprentice",
@@ -4955,6 +5091,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "379cf205"
+    },
+    "97024e8e-dfde-4769-bc27-c3d6fad19e7c": {
+      "name": "Proteus Staff",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b46f1537"
     },
     "971b30a8-4ab4-4e96-9d50-597da4d52994": {
       "name": "Danitha, New Benalia's Light",
@@ -5091,6 +5235,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8b9bfe78"
+    },
+    "9b1ae6d8-0cf3-4a67-9241-37f4bc5ddbdd": {
+      "name": "Venser, Fervent Forger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bc2ae610"
     },
     "9b2cdbed-c733-409b-b0e4-2c8960c25111": {
       "name": "Maskwood Nexus",
@@ -5387,6 +5539,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "987374ea"
+    },
+    "a38828be-781e-4340-9c6f-f40b1d34773f": {
+      "name": "White Sun's Twilight",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9171f689"
     },
     "a3b39590-34b7-4fd0-877f-748e6df30e88": {
       "name": "Hateful Eidolon",
@@ -5925,6 +6085,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "ec1fcda8"
+    },
+    "b133129d-1ffb-4b78-9f5b-852d163cc9b7": {
+      "name": "Mass Polymorph",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "56cc0ec0"
     },
     "b14d05c0-fe10-4079-a90e-0aea1a8fd375": {
       "name": "Lifeblood Hydra",
@@ -6787,6 +6955,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "76d86017"
+    },
+    "cf9b0bb5-d545-4efd-9255-39b10c2be0ee": {
+      "name": "Jhoira, Weatherlight Corsair",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2cdda8aa"
     },
     "cfc9a2f9-92fa-4608-b98d-f9763c89fc40": {
       "name": "Ob Nixilis of the Black Oath",
@@ -8241,6 +8417,14 @@
       "reasons": [],
       "ast": "24a689f7"
     },
+    "fb3f5097-0da0-458c-8508-60823567e2da": {
+      "name": "Sunfall",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "eb348dce"
+    },
     "fb60739e-1dc3-481d-a056-ad72e665c680": {
       "name": "Rite of Replication",
       "group": "acceptance",
@@ -8361,12 +8545,12 @@
       "total": 176
     },
     "holdout": {
-      "supported": 54,
-      "total": 58
+      "supported": 53,
+      "total": 57
     },
     "acceptance": {
-      "supported": 723,
-      "total": 742
+      "supported": 747,
+      "total": 766
     }
   }
 }

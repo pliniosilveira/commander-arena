@@ -315,6 +315,11 @@ export interface ChosenValues {
 export interface TokenData {
   readonly characteristics: Characteristics;
   readonly abilities: readonly Ability[];
+  /** The back face of a double-faced token (the Incubator, CR 111.10i): what `face` 1 reads. */
+  readonly back?: {
+    readonly characteristics: Characteristics;
+    readonly abilities: readonly Ability[];
+  };
   /** The two halves of a token that is a copy of a Room (CR 709.5, 709.5b): part of the copiable values, see `CopiableValues.doors`. Absent for every other token. */
   readonly doors?: readonly [DoorValues, DoorValues];
   /**
@@ -1072,6 +1077,18 @@ export type Instruction =
       readonly chosen: string | null;
     }
   /**
+   * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (`assignControlToOpponents`, issue 81,
+   * Dack Fayden): `objects` are the permanents in order and `free` the opponents not yet chosen; `pairs` are the choices made so far (a permanent and the seat chosen for it). `chosen` is the
+   * option answered (`seat:<n>`), null until then. See rules/assign-control.ts.
+   */
+  | {
+      readonly kind: 'assignControl';
+      readonly objects: readonly ObjectId[];
+      readonly free: readonly SeatId[];
+      readonly pairs: readonly (readonly [ObjectId, SeatId])[];
+      readonly chosen: string | null;
+    }
+  /**
    * "The Ring tempts you" (`ringTempts`, CR 701.54a, D-196): the controller of the effect gets the emblem if they have none (CR 701.54c), the
    * Ring has tempted them one more time, and they choose a creature they control to be their Ring-bearer (a `choosePermanent` decision of
    * purpose 'ringBearer', unless they control no creature or just one). `chosen` is the answer, null until then and until the emblem is
@@ -1479,6 +1496,8 @@ export type Instruction =
       readonly seat: SeatId;
       readonly count: number;
       readonly chosen: readonly ObjectId[] | null;
+      /** Issue 81 (Jace, Multiverse Architect): the cards go on the bottom of the library, not on top (always one card). */
+      readonly toBottom?: true;
     }
   /** CR 603.5: an optional ability asks its controller before anything else happens. */
   | { readonly kind: 'confirmOptional'; readonly answer: boolean | null }
@@ -1777,6 +1796,8 @@ export type Instruction =
       readonly remaining?: number | 'any';
       /** The cards the question is about, when the effect names them itself: the cards of a library looked at ("cast a spell from among them"). Overrides `objects`. */
       readonly cards?: readonly ObjectId[];
+      /** `perOwner` (The Ur-Sphinx): `cards` are in a graveyard, not a library. */
+      readonly cardsZone?: 'graveyard';
       /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
       readonly seat?: SeatId;
       readonly chosen: readonly ObjectId[] | null;
@@ -1913,6 +1934,11 @@ export interface ThisWayCounts {
   readonly milledValue?: number;
   /** The creature cards milled by `mill` effects, for "for each creature card put into a graveyard this way" (Dread Summons). */
   readonly milledCreature?: number;
+  /** The creatures that `exile` effects exiled from the battlefield, tokens included (Mass Polymorph: "that many creature cards", CR 608.2c). */
+  readonly exiledCreatures?: number;
+  /** The card types of the cards `discard` effects discarded, each once, and how many they are (Occult Epiphany: "for each card type among cards discarded this way", CR 205.2a). */
+  readonly discardedTypes?: readonly string[];
+  readonly discardedTypeCount?: number;
   /** The creature cards, and the other cards, discarded by `discard` effects (D-210: "if a creature card was discarded this way"). */
   readonly discardedCreature?: number;
   readonly discardedNoncreature?: number;
@@ -2112,7 +2138,12 @@ export type ContinuousChange =
    * "Each of those creatures can't attack you or planeswalkers you control" (`sparePermanents.own.cantAttackYou`, CR 508.1a): the objects of the effect can't be declared attacking
    * the player `seat` or the planeswalkers `seat` controls. A restriction of the rules, not an ability: read in `rules/attack-bans.ts`, not in a layer.
    */
-  | { readonly kind: 'cantAttackPlayer'; readonly seat: SeatId }
+  | {
+      readonly kind: 'cantAttackPlayer';
+      readonly seat: SeatId;
+      /** Jace, Multiverse Architect: only the planeswalkers of this subtype `seat` controls are barred, not the player. */
+      readonly planeswalkerSubtype?: string;
+    }
   /**
    * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is
    * empty): read as a permanent enters the battlefield (`rules/enters-group.ts`, `enteredTappedByEffect`), for each permanent `filter` matches then, with `controller` as "you".

@@ -210,9 +210,10 @@ describe('X in an activated ability', () => {
   });
 
   test('X in the cost of a keyword (cycling, equip) or of a mana ability is refused', () => {
+    // Cycling announces its X since issue 81 (Shark Typhoon); equip still has none.
     const cycling: Ability = {
       kind: 'keyword',
-      keyword: { kind: 'cycling', cost: [{ kind: 'mana', symbols: ['X'] }] },
+      keyword: { kind: 'equip', cost: [{ kind: 'mana', symbols: ['X'] }] },
     };
     expect(issues(permanentWith([cycling], ['2'])).join('\n')).toContain(
       'X in the cost of a keyword is not implemented',

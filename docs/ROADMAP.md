@@ -139,6 +139,8 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- Explore emits no event and ignores APNAP order.
+- "Target spell or creature" is plain text in the web.
 - "If this spell was kicked, choose any number instead" is read as all modes: choosing none is not offered.
 - The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
 - `putIntoGraveyard` reads your own graveyard only; Hedge Shredder ("put them onto the battlefield tapped") stays unsupported. Effects that unlock or lock a Room half, and "fully unlocks" (CR 709.5f, 709.5g, 709.5i), are not built.

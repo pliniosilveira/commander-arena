@@ -92,6 +92,7 @@ import { sharesLandType } from './rules/share-type';
 import { answerSpecialPayment, beginSpecialAction } from './rules/special-actions';
 import {
   answerResolutionArrange,
+  answerResolutionAssign,
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
@@ -478,6 +479,11 @@ function answerChooseOption(
     // CR 508.7 (D-139): the attack target a creature is reselected to.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionReselect(state, option));
+  }
+  if (d.purpose === 'assignOpponent') {
+    // Issue 81 (Dack Fayden): the opponent the controller chose for a permanent.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionAssign(state, option));
   }
   if (d.purpose === 'effect') {
     // CR 608.2d (D-175): the instruction of a resolving effect that the controller chose among the ones it offered.

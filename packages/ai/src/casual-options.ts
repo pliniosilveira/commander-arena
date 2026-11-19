@@ -124,6 +124,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'pile') return choosePile(view, d);
   // CR 701.38a (D-194): a vote, from the words and the votes so far.
   if (d.purpose === 'vote') return chooseVote(d);
+  // Issue 81 (Dack Fayden): which opponent gains control of a permanent. Nothing in the agent's plans reads it, so the first opponent left, deterministic and always legal.
+  if (d.purpose === 'assignOpponent') return chooseFirstReplacement(d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);
   // CR 702.136a (D-185): the counter or haste of riot.

@@ -73,9 +73,19 @@ function valuesOfFace(def: CardDefinition, face: CardFace): CopiableValues {
 }
 
 const tokenValues = new WeakMap<object, CopiableValues>();
+const tokenBackValues = new WeakMap<object, CopiableValues>();
 
 /** The values a token's definition gives it, made once per token definition (a token's definition is never changed). */
-function valuesOfToken(token: NonNullable<GameObject['token']>): CopiableValues {
+function valuesOfToken(token: NonNullable<GameObject['token']>, back = false): CopiableValues {
+  // CR 111.10i, 712.8 (issue 81): the back face of a double-faced token, when it is turned over.
+  if (back && token.back !== undefined) {
+    let values = tokenBackValues.get(token);
+    if (values === undefined) {
+      values = { characteristics: token.back.characteristics, abilities: token.back.abilities };
+      tokenBackValues.set(token, values);
+    }
+    return values;
+  }
   let values = tokenValues.get(token);
   if (values === undefined) {
     values = {
@@ -95,7 +105,7 @@ function valuesOfToken(token: NonNullable<GameObject['token']>): CopiableValues 
  * an Adventure card its normal face unless it is on the stack as an Adventure (CR 715.4).
  */
 function printedValues(state: GameState, obj: GameObject): CopiableValues {
-  if (obj.token) return valuesOfToken(obj.token);
+  if (obj.token) return valuesOfToken(obj.token, obj.face === 1);
   // A copy of a spell has the printed values of the face it copies (CR 707.10, 707.2; D-129).
   const card = printedCard(obj);
   if (card === null) return NOTHING;

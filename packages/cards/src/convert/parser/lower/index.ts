@@ -168,6 +168,8 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     'token:Food',
     'token:Clue',
     'token:Map',
+    'token:Gingerbrute',
+    'token:Incubator',
     'token:Blood',
     'token:custom',
     'token:copyOf',

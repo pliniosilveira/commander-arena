@@ -405,6 +405,22 @@ function colorsThatStay(state: GameState, seat: SeatId): ReadonlySet<ManaColor> 
   return keep;
 }
 
+/** Whether a permanent `seat` controls makes the mana it would lose become colorless instead (`unspentManaBecomesColorless`). */
+function manaBecomesColorless(state: GameState, seat: SeatId): boolean {
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) !== seat) continue;
+    if (
+      derive(state, obj).abilities.some(
+        (a) => a.kind === 'static' && a.static.kind === 'unspentManaBecomesColorless',
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Empties every mana pool (CR 500.5, 106.4), but for the colors a static ability keeps (D-151) and the mana an effect said you don't lose as steps and phases end
  * (D-650: kept until the cleanup step ends, where the "until end of turn" effect that kept it is over).
@@ -417,6 +433,14 @@ export function emptyManaPools(
   const events: GameEvent[] = [];
   for (const seat of state.seats) {
     if (seat.manaPool.length === 0) continue;
+    // CR 106.4, 614.1a (issue 81, Omnath): "If you would lose unspent mana, that mana becomes colorless instead": nothing is lost, everything in the pool is colorless.
+    if (manaBecomesColorless(state, seat.id)) {
+      const colorless = seat.manaPool.map((m) =>
+        m.color === 'C' ? m : { ...m, color: 'C' as const },
+      );
+      next = patchSeat(next, seat.id, { manaPool: colorless });
+      continue;
+    }
     const keep = colorsThatStay(state, seat.id);
     const kept = seat.manaPool.filter((m) => keep.has(m.color) || (m.stays === true && !endOfTurn));
     const lost = seat.manaPool.length - kept.length;

@@ -568,3 +568,45 @@ export const DELAYED_RETURN_TO_HAND: Lowering<IrClause, Effects> = {
     };
   },
 };
+
+/**
+ * "Whenever ~ or another nontoken creature you control dies, return that card to the battlefield under your control at the beginning of the next end step." (issue 81, Avacyn, Angel
+ * of Horror; CR 603.7, 603.10a, 400.7): the engine's `delayedTrigger` at the end step of each turn whose effect puts the card of the trigger onto the battlefield under the control
+ * of the controller of the ability. Only the first and only instruction of a "dies" trigger, as the return to the hand is.
+ */
+export const DELAYED_RETURN_TO_BATTLEFIELD: Lowering<IrClause, Effects> = {
+  head: 'delayedReturnToBattlefield',
+  id: 'lower.delayed-return-to-battlefield',
+  needs: [
+    'effect:delayedTrigger',
+    'effect:moveToZone',
+    'selector:triggerCard',
+    'selector:triggerSubject',
+  ],
+  lower(clause, ctx): LowerResult<Effects> {
+    const what = operand(clause, 'objects');
+    const to = arg(clause, 'to');
+    if (what?.kind !== 'noun' || to?.kind !== 'zoneSpec' || to.zone !== 'battlefield') {
+      return failure(clause);
+    }
+    if (what.det !== 'triggerSubject' || !ctx.diesTrigger || ctx.lowered > 0) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'delayedTrigger',
+          at: { step: 'endStep', whose: 'each' },
+          effect: {
+            kind: 'moveToZone',
+            objects: { kind: 'triggerCard' },
+            to: 'battlefield',
+            controller: 'you',
+          },
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};

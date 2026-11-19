@@ -304,7 +304,12 @@ export function checkInvariants(state: GameState): string[] {
     }
     // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
     // treated as though it does not exist but stays as it was, with the face it had up).
-    if (card === null ? obj.face !== 0 : obj.face < 0 || obj.face >= Math.max(1, faces.length)) {
+    // A double-faced token (CR 111.10i, issue 81: the Incubator) has a face 1 when it has a back face.
+    if (
+      card === null
+        ? obj.face !== 0 && !(obj.face === 1 && obj.token?.back !== undefined)
+        : obj.face < 0 || obj.face >= Math.max(1, faces.length)
+    ) {
       problems.push(`${id} has face ${obj.face}, which its card does not have`);
     }
     if (

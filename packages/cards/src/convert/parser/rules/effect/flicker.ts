@@ -375,6 +375,62 @@ export const EFFECT_RETURN_TO_HAND_DELAYED = quietly(
   }),
 );
 
+/**
+ * `effect.return-to-battlefield-delayed` (issue 81, Avacyn, Angel of Horror): "return that card to the battlefield under your control at the beginning of the next end step" in the effect
+ * of a "dies" trigger (CR 603.7, 603.7c, 603.10a, 400.7): the card that died, put onto the battlefield under the control of the controller of the ability at the next end step. "It" is
+ * the card the dying permanent became (`it` is `effect.return-delayed`); the lowering refuses it outside a dies trigger. Not read: another time, another control, "tapped", a group of cards.
+ */
+export const EFFECT_RETURN_TO_BATTLEFIELD_DELAYED = quietly(
+  defineRule<Clauses>({
+    id: 'effect.return-to-battlefield-delayed',
+    family: 'effect',
+    leading: ['return'],
+    cites: [
+      'CR 603.7 (Handling Triggered Abilities)',
+      'CR 603.10a (Handling Triggered Abilities)',
+      'CR 400.7 (General)',
+    ],
+    examples: [
+      'return that card to the battlefield under your control at the beginning of the next end step',
+    ],
+    rejects: [
+      'return it to the battlefield under your control at the beginning of the next end step',
+      'return that card to the battlefield under your control',
+      "return that card to the battlefield under its owner's control at the beginning of the next end step",
+      'return that card to the battlefield under your control at the beginning of your next end step',
+      'return that card to the battlefield under your control at the beginning of the next upkeep',
+      'return that card to the battlefield tapped under your control at the beginning of the next end step',
+      'return them to the battlefield under your control at the beginning of the next end step',
+      'return that card to the battlefield under your control at the beginning of the next end step and draw a card',
+    ],
+    parse: (ctx, pos) => {
+      const r = sequence(
+        literal('return '),
+        family<IrNoun>('noun', { only: ['noun.that-card'] }),
+        pattern(
+          / to the battlefield under your control at the beginning of the next end step(?![\p{L}\p{N}])/iu,
+        ),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [, objects] = r.value;
+      const to: IrZoneSpec = {
+        kind: 'zoneSpec',
+        zone: 'battlefield',
+        whose: 'you',
+        span: { start: objects.span.end, end: r.pos },
+        rule: 'effect.return-to-battlefield-delayed',
+      };
+      const clause = makeClause(
+        'effect.return-to-battlefield-delayed',
+        'delayedReturnToBattlefield',
+        { objects, to },
+        { start: pos, end: r.pos },
+      );
+      return { ok: true, value: [clause], pos: r.pos };
+    },
+  }),
+);
+
 export const FLICKER_RULES = [
   EFFECT_FLICKER,
   EFFECT_RETURN_DELAYED,
@@ -382,4 +438,5 @@ export const FLICKER_RULES = [
   EFFECT_RETURN_THIS_CARD_ATTACHED_DELAYED,
   EFFECT_RETURN_AT_UPKEEP,
   EFFECT_RETURN_TO_HAND_DELAYED,
+  EFFECT_RETURN_TO_BATTLEFIELD_DELAYED,
 ];

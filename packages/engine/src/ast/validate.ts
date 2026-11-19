@@ -810,12 +810,18 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.firstOfKind !== undefined) {
         const typed =
           (t.filter?.types?.length ?? 0) > 0 ||
+          (t.filter?.notTypes?.length ?? 0) > 0 ||
           (t.filter?.anyOf?.some((m) => (m.types?.length ?? 0) > 0) ?? false);
         if (t.firstOfKind !== true) issue(out, `${path}.firstOfKind`, 'firstOfKind must be true');
         if (t.self !== undefined || t.nth !== undefined) {
           issue(out, `${path}.firstOfKind`, 'firstOfKind is not for a self trigger or with nth');
         }
-        if (!typed) issue(out, `${path}.filter`, 'firstOfKind names at least one card type');
+        if (!typed)
+          issue(
+            out,
+            `${path}.filter`,
+            'firstOfKind names at least one card type, or one it must not have',
+          );
       }
       if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
         issue(out, `${path}.duringTurn`, 'unknown active player condition');
@@ -909,8 +915,11 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the source of the damage is on the battlefield: no zone, owner or stackKind',
         );
       }
-      if (!isOneOf(t.to, ['player', 'opponent'])) {
+      if (!isOneOf(t.to, ['player', 'opponent', 'you'])) {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
+      }
+      if (t.whileMonarch !== undefined && t.whileMonarch !== true) {
+        issue(out, `${path}.whileMonarch`, 'whileMonarch is true when present');
       }
       if (t.atLeast !== undefined && (!isCount(t.atLeast) || t.atLeast < 2)) {
         issue(
@@ -1611,6 +1620,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         (a.trigger.kind === 'discarded' && a.trigger.batch === true)
           ? { triggerCards: true }
           : {}),
+        ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
+        ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
+        ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),

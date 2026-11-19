@@ -7,7 +7,7 @@
  * order. The card found is what `moved` names afterwards.
  */
 import type { Effect } from '../ast/types';
-import type { ObjectId } from '../ids';
+import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat } from '../state/ops';
 import type { GameState, ResolutionContext } from '../state/types';
@@ -24,8 +24,10 @@ export function runRevealUntil(
   res: ResolutionContext,
   effect: RevealUntil,
   wanted = 1,
+  /** Issue 81 (Jhoira, Proteus Staff): the player whose library is revealed, when it is not the controller of the effect. */
+  revealer: SeatId = res.controller,
 ): StepOutcome {
-  const seat = res.controller;
+  const seat = revealer;
   const revealed: ObjectId[] = [];
   const found: ObjectId[] = [];
   // Issue 103 (CR 701.20): "until you reveal a creature card for each wild vote": none are revealed when the number is 0 or less.
@@ -65,14 +67,29 @@ export function runRevealUntil(
     },
   ];
   // Issue 103 (CR 701.24): with `rest: 'stay'` the other cards revealed stay in the library for the `shuffle` effect that follows.
+  const leftOver = revealed.filter((id) => !found.includes(id));
   const bottom =
     effect.rest === 'stay'
       ? done(state)
-      : bottomInRandomOrder(
-          state,
-          seat,
-          revealed.filter((id) => !found.includes(id)),
-        );
+      : effect.rest === 'bottomChosen'
+        ? // CR 401.4 (issue 81, Proteus Staff): the owner of the library chooses the order the cards go on the bottom in; with fewer than two there is nothing to order.
+          leftOver.length > 1
+          ? done(
+              state,
+              [],
+              [
+                {
+                  kind: 'arrange' as const,
+                  purpose: 'bottom' as const,
+                  seat,
+                  count: leftOver.length,
+                  cards: leftOver,
+                  arranged: null,
+                },
+              ],
+            )
+          : bottomInRandomOrder(state, seat, leftOver)
+        : bottomInRandomOrder(state, seat, leftOver);
   const put =
     found.length === 0 || effect.put === 'none'
       ? []
@@ -81,7 +98,12 @@ export function runRevealUntil(
           effect.put,
           'top',
           effect.put === 'battlefield' && effect.tapped === true,
-          effect.put === 'battlefield' ? 'you' : undefined,
+          // "You put that card onto the battlefield under your control" (Jhoira): the controller of the effect; "the player puts that card" (Proteus Staff): the player who revealed it.
+          effect.put === 'battlefield'
+            ? effect.putUnder === 'revealer'
+              ? 'owner'
+              : 'you'
+            : undefined,
         );
   return {
     ...done(bottom.state, [...events, ...bottom.events], [...put, ...bottom.front]),

@@ -57,12 +57,12 @@ export interface SelectContext {
   readonly declinedPlayer?: SeatId;
   readonly triggerDamage?: number;
   readonly triggerTargetCount?: number;
-  /** What `cardTypesAmongTriggerCards` ("those cards") reads: the cards a batch trigger saw, as the objects they became (`StackData.triggerCards`, CR 603.2c). */
-  readonly triggerCards?: readonly ObjectId[];
   /** Targets already chosen for this spell or ability, including a candidate being checked. */
   readonly targets?: readonly ChosenTarget[];
   /** The players the attack event of this trigger was declared at (`attackersAttackedYou`, D-149). */
   readonly triggerAttacked?: readonly SeatId[];
+  /** The permanents that dealt the combat damage of a `combatDamageBatch` trigger (`triggerSources`), or the cards that triggered a batch of cards. */
+  readonly triggerCards?: readonly ObjectId[];
   /** Who each creature of the attack event of this trigger was declared attacking (`attackersAtYouAtLeast`, D-643). */
   readonly triggerAttackedAt?: readonly SeatId[];
   /** The seats an `owner` selector of the filter names (see `FilterContext.owners`). */
@@ -581,6 +581,27 @@ export function legalTargets(
     }
     return out;
   }
+  if (spec.what.kind === 'objectOrSpell') {
+    // CR 115.1 (issue 81): "target spell or creature": the permanents the filter matches, then the spells on the stack the spell filter matches. A spell never targets itself
+    // while it is being put on the stack.
+    const { filter: permanents, spell: spells } = spec.what;
+    for (const [filter, zone] of [
+      [permanents, 'battlefield'],
+      [spells, 'stack'],
+    ] as const) {
+      for (const id of objectsInZone(state, zone)) {
+        const obj = getObject(state, id);
+        if (obj.zone === 'stack' && (id === ctx.source || id === ctx.stackObject)) continue;
+        if (
+          matchesFilter(state, obj, { ...filter, zone }, ctx) &&
+          canBeTargetedBy(state, obj, ctx.controller, ctx.source)
+        ) {
+          out.push({ kind: 'object', id, specId });
+        }
+      }
+    }
+    return out;
+  }
   if (spec.what.kind === 'anyTarget') {
     // CR 115.4: any target is a creature, player, planeswalker or battle.
     for (const id of state.battlefield) {
@@ -746,6 +767,9 @@ export function resolveObjects(
         );
       });
     }
+    case 'triggerSources':
+      // CR 400.7, 603.2c: the creatures that dealt the damage, only while each is still the permanent that did.
+      return (ctx.triggerCards ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
     case 'triggerCard': {
       // CR 400.7, 603.10a (D-230): the card the permanent the event is about became in the graveyard, if it is still there.
       // CR 712.21c (D-277): for a melded permanent that died, both cards.

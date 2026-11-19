@@ -59,6 +59,12 @@ function tokenSelfName(oracleText: string, options: NormalizeOptions): string {
   const short = names.at(-1) ?? '';
   const whole = names[0] ?? '';
   if (short === whole) return short;
+  // Issue 81 (Kher Keep, CR 111.4): "named Kobolds of Kher Keep" ends with the whole name of the card, which a short given name ("Kher") would cut.
+  const endsWithWhole = new RegExp(
+    `\\bnamed (?:[\\p{Lu}][\\p{L}'’-]* )+of ${escapeRegExp(whole)}(?![\\p{L}\\p{N}])`,
+    'u',
+  );
+  if (endsWithWhole.test(oracleText)) return whole;
   const wholeInName = new RegExp(`\\bnamed ${escapeRegExp(whole)}(?![\\p{L}\\p{N}])`, 'u');
   return wholeInName.test(oracleText) ? '' : short;
 }

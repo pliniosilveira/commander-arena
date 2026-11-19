@@ -241,6 +241,8 @@ describe('the dimensions', () => {
       'blockTax',
       // D-151: unspent mana that stays, casting from the top of the library.
       'unspentManaStays',
+      // Issue 81: "If you would lose unspent mana, that mana becomes colorless instead."
+      'unspentManaBecomesColorless',
       'castFromTopOfLibrary',
       'playFromGraveyardOnceEachTurn',
       // CR 305.1: "You may play Forests from your graveyard."
@@ -332,7 +334,7 @@ describe('feature references', () => {
     // Food and Clue run their activated abilities through the ordinary activation path (CR 111.10).
     expect(isFeatureSupported('token:Food')).toBe(true);
     expect(isFeatureSupported('token:Clue')).toBe(true);
-    expect(isFeatureSupported('token:Map')).toBe(false);
+    expect(isFeatureSupported('token:Map')).toBe(true); // issue 81: the Map token and explore
     expect(isFeatureSupported('token:Blood')).toBe(false);
     // The intervening "if" (CR 603.4) is a `trigger:` feature; the condition is a `condition:`.
     expect(isFeatureSupported('trigger:interveningIf')).toBe(true);

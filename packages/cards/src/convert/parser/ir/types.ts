@@ -197,6 +197,11 @@ export interface IrNoun extends IrNode {
    * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
    */
   readonly orCard?: IrFilter;
+  /**
+   * "target spell or creature" (issue 81, Fatehold Charm, CR 115.1): a target noun whose targets are `filter` (permanents on the battlefield) or this filter (spells on the stack). The engine's
+   * slot of a permanent or a spell (`objectOrSpell`).
+   */
+  readonly orSpell?: IrFilter;
   /** `det` `players`: the player nouns that act together, in text order ("you", "target opponent"). */
   readonly members?: readonly IrNoun[];
   /**
@@ -545,6 +550,8 @@ export type IrAmount =
         | 'milledValue'
         | 'milledCreature'
         | 'discardedMost'
+        | 'discardedTypeCount'
+        | 'exiledCreatures'
         | 'damageDealt'
         | 'countersRemoved';
       readonly words: readonly string[];
@@ -558,6 +565,8 @@ export type IrAmount =
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
+  // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
+  | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
   // Death Toll deck, Polluted Cistern (CR 205.2a, 603.2c): "for each card type among those cards", the card types of the cards a batch trigger saw, each once
   | { readonly kind: 'cardTypesAmongThoseCards'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
@@ -1033,7 +1042,7 @@ export interface IrQuotedAbility extends IrNode {
 export interface IrToken extends IrNode {
   readonly kind: 'token';
   // CR 111.10
-  readonly predefined?: 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map' | 'Blood';
+  readonly predefined?: 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map' | 'Gingerbrute' | 'Blood';
   readonly power?: number;
   readonly toughness?: number;
   /** "X/X creature token": use the X value bound by the enclosing ability's where-X clause. */
@@ -1259,7 +1268,9 @@ export interface IrTrigger extends IrNode {
    * 'dealsCombatDamage': what the damage went to (stage P18, CR 120.2a); none is "any". 'noncombatDamageDealt' (issue 25, D-333, CR 120.2b): the player
    * damaged, `player` or `opponent` (never a creature). `playerOrPlaneswalker` (D-373): "to a player or planeswalker".
    */
-  readonly damaged?: 'player' | 'opponent' | 'creature' | 'playerOrPlaneswalker';
+  readonly damaged?: 'player' | 'opponent' | 'creature' | 'playerOrPlaneswalker' | 'you';
+  /** 'combatDamageBatch' "... while you're the monarch" (issue 81, CR 725.2): the controller was the monarch as the damage was dealt. */
+  readonly whileMonarch?: true;
   /** 'discarded': "another card" (D-374), a card other than the one with the ability. */
   readonly another?: true;
   /** 'dealsCombatDamage' to a player: the player, so that "that player" has an antecedent. */
@@ -1447,7 +1458,7 @@ export type IrStaticEffect =
    * {1} less to cast" (stage P13, CR 118.7, 601.2f): `amount` generic mana less. The statement's
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
-  | { readonly kind: 'costReduction'; readonly amount: IrAmount }
+  | { readonly kind: 'costReduction'; readonly amount: IrAmount; readonly inCommandZone?: true }
   /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
   | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
@@ -1598,7 +1609,12 @@ export type IrStaticEffect =
   /** "~ isn't a creature" (stage P68, D-229, CR 613.1d, 205.1a): the card types the subject loses. */
   | { readonly kind: 'loseTypes'; readonly cardTypes: readonly string[] }
   /** "If a triggered ability of ... triggers, that ability triggers an additional time." (stage P67, D-220, CR 603.2d). The subject is the permanents named. `cause` (stage P71, D-339): "If you casting or copying an instant or sorcery spell causes a triggered ability of a permanent you control to trigger, ..." names the spell whose cast or copy must cause the trigger. */
-  | { readonly kind: 'doubleTriggers'; readonly cause?: IrNoun }
+  | {
+      readonly kind: 'doubleTriggers';
+      readonly cause?: IrNoun;
+      /** Issue 81 (Windcrag Siege): "If a creature attacking causes a triggered ability ... to trigger". */
+      readonly causeAttacks?: true;
+    }
   /** "You have hexproof." (stage P33, D-150, CR 702.11b): the controller can't be the target of spells or abilities their opponents control. */
   | { readonly kind: 'playerHexproof' }
   /** "You can't lose the game" (stage P33, D-150, CR 104.3b). The subject is `you`. */
@@ -1672,6 +1688,12 @@ export type IrStaticEffect =
    * the controller's pool does not empty as a step or a phase ends. The subject is `you`.
    */
   | { readonly kind: 'unspentManaStays'; readonly colors: readonly string[] }
+  /** "If you would lose unspent mana, that mana becomes colorless instead." (issue 81, Omnath, CR 106.4, 614.1a): the mana in the controller's pool is made colorless instead of lost. The subject is `you`. */
+  | { readonly kind: 'unspentManaBecomesColorless' }
+  /**
+   * "~ gets +1/+1 for each unspent mana you have." (issue 81, Omnath, CR 106.4, 613.4c): +1 to each stat whose flag is set, for each mana in the controller's pool (the engine's `unspentMana`).
+   */
+  | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
   /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`
@@ -1740,6 +1762,8 @@ export interface IrStatic extends IrNode {
    * graveyard, and not on the battlefield; the words are no condition of the engine, they say where the ability works.
    */
   readonly functionsIn?: 'graveyard';
+  /** Issue 81 (Windcrag Siege, "• Mardu — ...", CR 607.2d): the ability works while the permanent has this option, chosen as it entered. Only an additional trigger carries it. */
+  readonly option?: string;
   /** Stage P29: the other subjects the statement names after the first ("~ gets +2/+2 and creatures you control have vigilance"). */
   readonly also?: readonly IrStaticPart[];
 }
@@ -1891,6 +1915,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'triggerDamage',
   'dieResult',
   'triggerTargetCount',
+  'triggerAttackerCount',
   'cardTypesAmongThoseCards',
   'shortfall',
   'exiledStillThere',

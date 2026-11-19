@@ -88,7 +88,14 @@ export function makeTokens(
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
-  const { abilities, prepareOf, doors, ...characteristics } = definition;
+  const { abilities, prepareOf, doors, back, ...characteristics } = definition;
+  const backFace =
+    back === undefined
+      ? undefined
+      : (() => {
+          const { abilities: backAbilities, ...backCharacteristics } = back;
+          return { characteristics: backCharacteristics, abilities: backAbilities };
+        })();
   for (let i = 0; i < count; i += 1) {
     const [id, s1] = allocateObjectId(state);
     const [timestamp, s2] = allocateTimestamp(s1);
@@ -137,6 +144,7 @@ export function makeTokens(
       token: {
         characteristics,
         abilities,
+        ...(backFace === undefined ? {} : { back: backFace }),
         ...(prepareOf === undefined ? {} : { prepareOf }),
         ...(doors === undefined ? {} : { doors }),
       },

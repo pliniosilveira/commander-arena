@@ -289,6 +289,16 @@ export type Amount =
    */
   | { readonly kind: 'triggerSpellX' }
   /**
+   * "When you cycle this card, create an X/X ... token" (Shark Typhoon, CR 702.29a, 702.29c, 107.3): the X announced for the cycling cost that made this trigger (0 when the cost has no X).
+   * Valid only in a `cycled` trigger.
+   */
+  | { readonly kind: 'triggerCycleX' }
+  /**
+   * "Whenever one or more Sphinxes you control attack, each player mills that many cards" (issue 81, The Ur-Sphinx, CR 508.1, 603.2): the number of creatures of the declaration the
+   * `attackBatch` trigger's filter names, read as the attack is declared. Valid only in the effect of an `attackBatch` trigger.
+   */
+  | { readonly kind: 'triggerAttackerCount' }
+  /**
    * "Each opponent loses 1 life for each card type among those cards" (Polluted Cistern, CR 205.2a, 603.2c, 608.2c): the number of card types (artifact, battle, creature, enchantment,
    * instant, kindred, land, planeswalker, sorcery) the cards that caused the trigger have between them, each counted once however many have it; supertypes and subtypes are no card type.
    * "Those cards" are the cards of the batch (`triggerCards`: the cards put into the graveyard together by a `putIntoGraveyard` trigger with `batch`), as they are now or as they last were.
@@ -376,6 +386,10 @@ export type ThisWayKind =
   | 'destroyedValue'
   // D-231: "When one or more nonland cards are exiled this way, put that many +1/+1 counters" (Augusta): the nonland cards `exileOwnGraveyardCard` exiled (CR 603.12).
   | 'exiledNonland'
+  // Mass Polymorph (CR 608.2c): "that many creature cards", the creatures an earlier `exile` effect of this resolution exiled from the battlefield, tokens included.
+  | 'exiledCreatures'
+  // Occult Epiphany (CR 205.2a, 608.2c): "for each card type among cards discarded this way": how many different card types the cards `discard` effects discarded have.
+  | 'discardedTypeCount'
   | 'playersDrew'
   | 'tapped'
   | 'discarded'
@@ -473,6 +487,11 @@ export type StaticPtAmount =
    * Plain (+N/+N) only, in a `modifyPt` whose subject is a group of permanents, so "it" is each of them; read for the permanent being looked at.
    */
   | { readonly kind: 'timesAttacked' }
+  /**
+   * "Omnath gets +1/+1 for each unspent mana you have" (issue 81, CR 106.4, 613.4c): the number of mana in the pool of the controller of the ability, read each time the characteristics
+   * are worked out. Plain (+N/+N) only, in a `modifyPt` of the permanent itself.
+   */
+  | { readonly kind: 'unspentMana' }
   | CountAmount
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
@@ -880,6 +899,11 @@ export type ObjectRef =
    */
   | { readonly kind: 'triggerCard' }
   /**
+   * "Those creatures" in the body of a `combatDamageBatch` trigger (Tamiyo, Upriser Crowned; CR 603.2c, 510.2, 400.7): the permanents `what` names that dealt the combat damage that
+   * triggered the ability, as long as each is still the same permanent on the battlefield (one that left is a new object, or none, and is skipped).
+   */
+  | { readonly kind: 'triggerSources' }
+  /**
    * "The sacrificed creature", "it" for the permanent or permanents sacrificed to pay the cost of this activated ability
    * (D-133, CR 602.2c, 118.3): the objects as they were on the battlefield, read from last-known information once they are gone
    * (CR 113.7a, 608.2h), which is always the case when the effect resolves. Valid only as the object of an amount that reads a
@@ -899,7 +923,7 @@ export type ObjectRef =
        * D-662 (CR 603.7c, 400.7): the zone the objects are expected in; left out, the battlefield (D-639). A card that left it is a new object with a new id and is not found.
        * Surge to Victory's delayed ability is about the card it exiled, `exile`.
        */
-      readonly zone?: 'exile';
+      readonly zone?: 'exile' | 'library';
     }
   /**
    * "That creature", "it" for the permanent an earlier `sacrifice` effect of the same resolution sacrificed (D-177, CR 701.21, 603.12, 608.2h): in
@@ -1077,6 +1101,15 @@ export interface TargetSpec {
         readonly kind: 'objectOrGraveyardCard';
         readonly filter: ObjectFilter;
         readonly card: ObjectFilter;
+      }
+    /**
+     * "Return target spell or creature to its owner's hand" (CR 115.1, 601.2c, 405.1, issue 81, Fatehold Charm): one slot whose target is a permanent on the battlefield that `filter`
+     * matches (no zone) or a spell on the stack that `spell` matches (`stackKind: 'spell'`, no zone). The slot is legal again as the ability resolves (CR 608.2b) where each now is.
+     */
+    | {
+        readonly kind: 'objectOrSpell';
+        readonly filter: ObjectFilter;
+        readonly spell: ObjectFilter;
       };
   readonly min?: number;
   readonly max?: number;
@@ -1350,7 +1383,8 @@ export type NamedAlternativeKind =
   | 'foretell'
   | 'morph'
   | 'tapPermanents'
-  | 'sacrificeFromGraveyard';
+  | 'sacrificeFromGraveyard'
+  | 'impending';
 
 /**
  * What a permanent remembers about how it got onto the battlefield (D-121, D-124): that its evoke, dash or
@@ -1358,7 +1392,7 @@ export type NamedAlternativeKind =
  * cast). Each is the new object's own: any zone change makes a new object without it (CR 400.7).
  */
 export type PermanentAlternativeKind =
-  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow'>
+  | Extract<NamedAlternativeKind, 'evoke' | 'dash' | 'escape' | 'bestow' | 'impending'>
   | 'unearth'
   | 'suspend';
 
@@ -1425,6 +1459,9 @@ export type PermanentAlternativeKind =
  *   paying its mana cost": the card is cast from its owner's graveyard, the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also sacrifices
  *   `count` permanents they control that match `filter` as part of it (the sacrifice is chosen with the same question as the sacrifice of an additional cost). The spell is an
  *   ordinary spell otherwise: it goes to the graveyard when it leaves the stack. Not on a land; not with Convoke, Improvise or Delve.
+ * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
+ *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
+ *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
  * The `castSpell` action chooses one with `alternative`; the card is cast from the zones it could be
  * cast from anyway. Additional costs, commander tax and cost reductions still apply to it (CR
  * 118.9d, 601.2f, 903.8). `condition` is read for the player casting, with the card as the source;
@@ -1438,9 +1475,16 @@ export type AlternativeCost =
   | {
       readonly kind: Exclude<
         NamedAlternativeKind,
-        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard'
+        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'impending'
       >;
       readonly cost: readonly Cost[];
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'impending';
+      readonly cost: readonly Cost[];
+      /** The time counters the permanent enters with: at least 1. */
+      readonly counters: number;
       readonly condition?: Condition;
     }
   | {
@@ -1480,6 +1524,11 @@ export interface DoorValues {
 
 export interface TokenDefinition extends Characteristics {
   readonly abilities: readonly Ability[];
+  /**
+   * The back face of a double-faced token (CR 111.10i, 701.27a, issue 81: the Incubator token): the permanent is the same object when it transforms, so counters and the rest stay. The back face
+   * has no back face of its own. `transform` turns the token over; the characteristics and abilities of the face that is up are the ones it has (layer 1).
+   */
+  readonly back?: Omit<TokenDefinition, 'back' | 'prepareOf'>;
   /** The two halves of a token copy of a Room (CR 709.5, 709.5b: part of the copiable values). Only the engine sets it, when it copies. */
   readonly doors?: readonly [DoorValues, DoorValues];
   /** The card whose prepare spell a token copy of a preparation card has (CR 722.2b, D-225). Only the engine sets it, when it copies. */
@@ -1487,7 +1536,14 @@ export interface TokenDefinition extends Characteristics {
 }
 
 /** Predefined tokens (CR 111.10) the engine knows by name. See `cards/tokens.ts`. */
-export type TokenPreset = 'Treasure' | 'Food' | 'Clue' | 'Gold';
+export type TokenPreset =
+  | 'Treasure'
+  | 'Food'
+  | 'Clue'
+  | 'Gold'
+  | 'Map'
+  | 'Gingerbrute'
+  | 'Incubator';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -3222,6 +3278,16 @@ export type Effect =
    */
   | { readonly kind: 'goad'; readonly objects: ObjectRef; readonly forever?: true }
   /**
+   * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (issue 81, Dack Fayden, CR 613.1b, 611.2a, 101.4):
+   * for each permanent `objects` names (the ones an earlier effect moved), in order, the controller of the effect chooses an opponent not yet chosen for another one of them (a
+   * `chooseOption` decision of purpose `assignOpponent`; no question when one opponent is left, and a permanent with none left stays where it is); then each opponent gains control of the
+   * permanent they were chosen for, with no duration, one layer 2 effect for each. A permanent that left the battlefield meanwhile is skipped.
+   */
+  | {
+      readonly kind: 'assignControlToOpponents';
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+    }
+  /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
    * battlefield (a card put there from any zone, a token) enters tapped while the effect lasts, read for the controller of the effect ("your opponents" is
@@ -3325,6 +3391,18 @@ export type Effect =
    * are not this node.
    */
   | { readonly kind: 'transform'; readonly objects: ObjectSelector }
+  /**
+   * "Target creature you control explores." (CR 701.44, issue 81): each permanent `objects` names that is on the battlefield explores, one after the other: its controller reveals the
+   * top card of their library; a land card goes into their hand, otherwise the permanent gets a +1/+1 counter and the controller may put the revealed card into their graveyard.
+   * An empty library reveals nothing, so the permanent gets the counter (CR 701.44a, 701.44b). The permanent explores even when the counter cannot be put on it.
+   */
+  | { readonly kind: 'explore'; readonly objects: ObjectSelector }
+  /**
+   * "The owner of up to one other target nonland permanent puts it on their choice of the top or bottom of their library" (CR 108.3, 401.4, issue 81, Plan for All Outcomes): each
+   * permanent `objects` names that is on the battlefield is put into its owner's library, where the owner (not the controller) chooses between the top and the bottom. The owners are
+   * asked one permanent at a time, in the order the selector names them. A token ceases to exist (CR 111.7).
+   */
+  | { readonly kind: 'ownerPutsOnLibrary'; readonly objects: ObjectSelector }
   /** CR 701.24 (Shuffle): each player `player` names shuffles their library ("Its controller shuffles"). */
   | { readonly kind: 'shuffle'; readonly player: PlayerSelector }
   /**
@@ -3444,6 +3522,12 @@ export type Effect =
         | ChooseSelector;
       readonly play?: true;
       /**
+       * "Each player mills three cards. For each player, you may cast a card that player milled this way without paying its mana cost" (issue 81, The Ur-Sphinx, CR 608.2g, 101.4):
+       * one question for each owner of the cards `moved` names (in a graveyard now), in turn order from the active player, each asking for one of that owner's cards, cast from the
+       * graveyard it is in. Only with `moved`, and with neither `play`, `max` nor `filter`.
+       */
+      readonly perOwner?: true;
+      /**
        * "You may cast an Aura spell from among them without paying its mana cost" (D-655, CR 608.2g): only the cards of `objects` this filter matches are offered, read for the
        * card as it is in exile (card types, subtypes, mana value, colors). With `objects` a `choose` selector the selector's own filter says it, so this is for `moved` and `linkedExile`.
        */
@@ -3515,6 +3599,18 @@ export type Effect =
       readonly kind: 'revealUntil';
       readonly filter: ObjectFilter;
       /**
+       * "Target opponent reveals cards from the top of their library until they reveal a historic permanent card" (issue 81, Jhoira, Weatherlight Corsair; "That creature's controller reveals ...",
+       * Proteus Staff, CR 701.20): whose library is revealed, when it is not the controller's own. The player is the one `from` names (one player: the first it names), read as the effect
+       * resolves; a player with no library to reveal does nothing. The cards revealed are theirs: the rest go on the bottom of THEIR library (`rest`), and the card found enters under the control
+       * of the controller of the effect (`put: 'battlefield'`, "You put that card onto the battlefield under your control") unless `putUnder` says the player who revealed it.
+       */
+      readonly from?: PlayerSelector;
+      /**
+       * "The player puts that card onto the battlefield" (Proteus Staff, CR 110.2a): the card found enters under the control of the player whose library was revealed, not the controller of the
+       * effect. Only with `from` and `put: 'battlefield'`.
+       */
+      readonly putUnder?: 'revealer';
+      /**
        * `exile` (D-664, CR 701.13, 701.20a, 400.7, Creative Technique: "Exile that card and put the rest on the bottom of your library in a random order"): the card found is
        * exiled, face up, and is what `moved` names ("the exiled card": `castFree`); the rest of the cards revealed still go on the bottom of the library in a random order.
        *
@@ -3533,9 +3629,10 @@ export type Effect =
       readonly count?: Amount;
       /**
        * `stay` ("then shuffle the rest into your library", CR 701.24): the cards revealed that were not put anywhere are not moved by this effect; they stay in the library, for the
-       * `shuffle` effect after it to place. Without it they go to the bottom in a random order (CR 401.5).
+       * `shuffle` effect after it to place. `bottomChosen` (issue 81, Proteus Staff: "the rest on the bottom of their library in any order", CR 401.4): the player whose library it is chooses the order
+       * they go on the bottom in (`rules/arrange.ts`). Without it they go to the bottom in a random order (CR 401.5).
        */
-      readonly rest?: 'stay';
+      readonly rest?: 'stay' | 'bottomChosen';
     }
   /**
    * "Look at the top N cards of your library, then put them back in any order": the controller
@@ -3580,6 +3677,21 @@ export type Effect =
    * top of their library in the order they choose, the first chosen on top.
    */
   | { readonly kind: 'putFromHandOnTop'; readonly count: Amount }
+  /**
+   * "Put a card from your hand on the bottom of your library" (Jace, Multiverse Architect, CR 401.4, issue 81): the controller chooses one card of their hand (the hand when it holds
+   * one) and puts it on the bottom of their library. Only one card: with more, the order they go in would matter and nothing asks it.
+   */
+  | { readonly kind: 'putFromHandOnBottom' }
+  /**
+   * "Creatures they control can't attack Jaces you control this turn" (CR 508.1a, 611.2a, Jace, Multiverse Architect, issue 81): the creatures `objects` names (fixed as the effect
+   * begins) can't be declared attacking a planeswalker of the subtype `subtype` that the controller of the effect controls, until end of turn. The player and their other
+   * planeswalkers can still be attacked.
+   */
+  | {
+      readonly kind: 'cantAttackPlaneswalkers';
+      readonly objects: ObjectSelector;
+      readonly subtype: string;
+    }
   /**
    * CR 701.23 (Search): `player` looks through their own library (so `filter` sets neither `zone`
    * nor `controller`) for up to `max` cards matching `filter`, may find fewer (CR 701.23b), and
@@ -3869,7 +3981,7 @@ export type Trigger =
       readonly nth?: number;
       /**
        * "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i, 603.2): only the first spell of the card types `filter` names (`types` or the `types` of its `anyOf`
-       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type.
+       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
        */
       readonly firstOfKind?: true;
       /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
@@ -4179,8 +4291,14 @@ export type Trigger =
   | {
       readonly kind: 'combatDamageBatch';
       readonly what: ObjectFilter;
-      readonly to: 'player' | 'opponent';
+      /** `you`: only the controller of this ability ("deal combat damage to you", Tamiyo, Upriser Crowned); the others as above. */
+      readonly to: 'player' | 'opponent' | 'you';
       readonly atLeast?: number;
+      /**
+       * "... while you're the monarch" (CR 725.2, 603.2: part of the event): the controller of this ability was the monarch as the damage was dealt, before the damage moved the
+       * designation to the player who dealt it. Read from the `monarchChanged` event of the same damage, or the monarch now when there is none.
+       */
+      readonly whileMonarch?: true;
     }
   /**
    * "Whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b, 605.4, D-139): a triggered mana ability. It triggers as a
@@ -4332,6 +4450,8 @@ export type Trigger =
  * - `cantBeBlocked`: it can't be blocked (CR 509.1b, an evasion restriction);
  * - `canBlockOnlyFlying`: it can block only creatures with flying (CR 509.1b, D-648: "This creature can block only creatures with flying"; flying, not reach: a creature with reach
  *   that does not fly is not one it can block);
+ * - `cantBeBlockedExceptByHaste`: it can't be blocked except by creatures with haste (CR 509.1b, issue 81, Gingerbrute: "{1}: This token can't be blocked this turn except by creatures with
+ *   haste"; the blocker's haste is read as the blockers are declared);
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -4348,6 +4468,7 @@ export type Restriction =
   | 'cantBlock'
   | 'cantAttack'
   | 'cantBeBlocked'
+  | 'cantBeBlockedExceptByHaste'
   | 'canBlockOnlyFlying'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'
@@ -5745,6 +5866,11 @@ export type StaticEffect =
    */
   | { readonly kind: 'unspentManaStays'; readonly colors: readonly ManaColor[] }
   /**
+   * "If you would lose unspent mana, that mana becomes colorless instead" (Omnath, Locus of the Void; issue 81, CR 106.4, 500.5, 614.1a): as steps and phases end, the mana in the pool of the
+   * controller of this ability is not lost: each mana in it becomes colorless mana ({C}) and stays, which `emptyManaPools` reads. It is the ability of the permanent.
+   */
+  | { readonly kind: 'unspentManaBecomesColorless' }
+  /**
    * "You may look at the top card of your library any time." (CR 401.5, D-125): while the permanent is on the
    * battlefield with the ability, its controller may look at the top card of their own library. Nothing is
    * revealed: the other players never learn it. It shows in the controller's view (`SeatView.libraryTop`),
@@ -5936,6 +6062,11 @@ export type StaticEffect =
       readonly kind: 'costReduction';
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
       readonly amount: Amount;
+      /**
+       * Eminence (issue 81, The Ur-Sphinx; CR 113.6, 903.8): "As long as ~ is in the command zone or on the battlefield": the reduction also applies while the card with it is one
+       * of its owner's commanders in the command zone, with that player as "you". Only with a filter of spells, not `this`.
+       */
+      readonly inCommandZone?: true;
     }
   /**
    * "Spells your opponents cast that target this creature cost {2} more to cast." (CR 601.2f, 601.2c, 604.2, 113.6, D-149): a static ability of a permanent (its own, or one a
@@ -6165,7 +6296,10 @@ export type StaticEffect =
   | {
       readonly kind: 'doubleTriggers';
       readonly subject: StaticSubject;
-      readonly cause?: { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter };
+      readonly cause?:
+        | { readonly kind: 'castOrCopySpell'; readonly spell: ObjectFilter }
+        // Issue 81 (Windcrag Siege, CR 603.2d, 508.1m): "If a creature attacking causes a triggered ability of a permanent you control to trigger": only a trigger whose event is a creature attacking (`attacks`, `attackBatch`) counts.
+        | { readonly kind: 'creatureAttacks' };
     }
   /**
    * "You can't cast ~ during your first, second, or third turns of the game." (CR 101.2, 601.2, 113.6, D-149): the ability of a card that works

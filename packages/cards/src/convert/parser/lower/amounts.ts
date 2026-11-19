@@ -127,6 +127,11 @@ export function lowerAmount(
         const blockedCast = needs('triggerSpellX');
         return blockedCast ?? { ok: true, value: { kind: 'triggerSpellX' }, rule };
       }
+      // CR 702.29a, 107.3 (issue 81, Shark Typhoon): in "When you cycle this card", X is the X announced for the cycling cost.
+      if (ctx.cycleTriggerX) {
+        const blockedCycle = needs('triggerCycleX');
+        return blockedCycle ?? { ok: true, value: { kind: 'triggerCycleX' }, rule };
+      }
       const blocked = needs('x');
       if (blocked !== null) return blocked;
       ctx.usesX = true;
@@ -195,6 +200,11 @@ export function lowerAmount(
         value: { kind: 'aurasAttachedToTriggerSubject', controlledBy: 'you' },
         rule,
       };
+    }
+    case 'triggerAttackerCount': {
+      const blocked = needs('triggerAttackerCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'triggerAttackerCount' }, rule };
     }
     case 'cardTypesAmongThoseCards': {
       // CR 205.2a, 603.2c: "for each card type among those cards": the cards of a batch trigger; `validateCard` refuses it where the trigger has no cards.
@@ -870,6 +880,7 @@ export const AMOUNT_NEEDS = [
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:triggerAttackerCount',
   'amount:cardTypesAmongTriggerCards',
   'amount:triggerSpellX',
   'amount:votesFor',

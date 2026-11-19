@@ -5,7 +5,7 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ObjectFilter, ObjectSelector } from '../ast/types';
+import type { Effect, ObjectFilter, ObjectRef, ObjectSelector } from '../ast/types';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
@@ -17,6 +17,7 @@ import {
   opponentsOf,
   patchObject,
   patchSeat,
+  seatsInOrder,
   setSeat,
 } from '../state/ops';
 import type {
@@ -24,11 +25,13 @@ import type {
   GameState,
   Instruction,
   ResolutionContext,
+  ThisWayCounts,
   TriggeredAbility,
 } from '../state/types';
 import { runSplitExiled, startSplit } from './activation-exile';
 import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
+import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject } from './attach';
 import { runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
@@ -41,6 +44,7 @@ import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
   runBecomeCopy,
+  runCantAttackPlaneswalkers,
   runContinuous,
   runEntersTappedGroup,
   runRequireAttack,
@@ -86,6 +90,7 @@ import { markExileOnResolve } from './exile-on-resolve';
 import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { runExileUntilFound } from './exile-until-found';
+import { runExplore } from './explore';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
 import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runGoad } from './goad';
@@ -112,6 +117,7 @@ import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
+import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantCastAsThoughFlash } from './player-flash';
@@ -255,6 +261,7 @@ export function runInstruction(
   if (instruction.kind === 'proliferate') return runProliferate(state, res, instruction);
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
+  if (instruction.kind === 'assignControl') return runAssignControl(state, res, instruction);
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'protectionColor') {
     return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
@@ -574,15 +581,22 @@ export function runInstruction(
       hidden.objects[result.newObject]?.zone === 'exile'
         ? instruction.exiledPower
         : undefined;
+    // CR 608.2c (Mass Polymorph: "that many creature cards"): every creature the `exile` effect really exiled counts, a token included (it is exiled, then ceases to exist, CR 111.7).
+    const exiledCreature =
+      instruction.exiledPower !== undefined &&
+      (result.newObject === null
+        ? movedObjects.length > 0
+        : hidden.objects[result.newObject]?.zone === 'exile');
     // D-135: an object that moved is something done, for "if you do".
     return {
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland || exiledPower !== undefined
+      ...(countedNonland || exiledPower !== undefined || exiledCreature
         ? {
             thisWay: {
               ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(exiledCreature ? { exiledCreatures: 1 } : {}),
               ...(exiledPower === undefined
                 ? {}
                 : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),
@@ -691,6 +705,7 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     ...(res.triggerTargetCount === undefined ? {} : { triggerTargetCount: res.triggerTargetCount }),
     ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttacked === undefined ? {} : { triggerAttacked: res.triggerAttacked }),
+    ...(res.triggerCards === undefined ? {} : { triggerCards: res.triggerCards }),
     ...(res.triggerAttackedAt === undefined ? {} : { triggerAttackedAt: res.triggerAttackedAt }),
     ...(res.lifeLost === undefined ? {} : { lifeLost: res.lifeLost }),
     ...(res.thisWay === undefined ? {} : { thisWay: res.thisWay }),
@@ -1514,6 +1529,10 @@ function runEffect(
         player = resolvePlayers(state, inner.player, ctx, targets)[0];
         if (player === undefined) return done(state);
         baked = { ...inner, player: { kind: 'triggerPlayer' } };
+      } else if (inner.kind === 'sequence') {
+        // CR 603.7c (issue 81, Synthetic Destiny): "reveal cards ... until you reveal that many creature cards" at the next end step: how many is what the effect before it did as it
+        // resolved (`thisWay`), fixed now, when the delayed ability is created.
+        baked = bindThisWay(inner, ctx.thisWay);
       }
       const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: baked };
       return done({
@@ -1983,6 +2002,13 @@ function runEffect(
       return tapped
         ? { ...done(next, events), thisWay: { tapped: changed }, performed: changed }
         : done(next, events);
+    }
+
+    case 'assignControlToOpponents': {
+      // CR 613.1b, 611.2a (issue 81, Dack Fayden): the controller chooses a different opponent for each permanent moved, then each opponent gains control of theirs.
+      const objects = resolveObjects(state, effect.objects, ctx, targets);
+      const free = opponentsOf(state, res.controller);
+      return done(state, [], [{ kind: 'assignControl', objects, free, pairs: [], chosen: null }]);
     }
 
     case 'reselectAttack': {
@@ -2629,6 +2655,29 @@ function runEffect(
     }
 
     case 'castFree': {
+      // CR 608.2g, 101.4 (issue 81, The Ur-Sphinx): "For each player, you may cast a card that player milled this way": one question for each owner of the cards just
+      // moved, in turn order from the active player, over the cards that owner has among them (those in a graveyard now).
+      if (effect.perOwner === true) {
+        const moved = resolveObjects(state, effect.objects as ObjectRef, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'graveyard',
+        );
+        const asks = seatsInOrder(state, state.turn.activeSeat).flatMap((owner) => {
+          const cards = moved.filter((id) => state.objects[id]?.owner === owner);
+          return cards.length === 0
+            ? []
+            : [
+                {
+                  kind: 'castFree' as const,
+                  objects: effect.objects,
+                  play: false,
+                  cards,
+                  cardsZone: 'graveyard' as const,
+                  chosen: null,
+                },
+              ];
+        });
+        return done(state, [], asks);
+      }
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
       // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
       const [caster] =
@@ -2675,6 +2724,18 @@ function runEffect(
 
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
+      // Issue 81 (Jhoira, Proteus Staff): the library may be another player's (`from`); with none to name nothing is revealed.
+      if (effect.from !== undefined) {
+        const revealer = resolvePlayers(state, effect.from, ctx, targets)[0];
+        if (revealer === undefined) return done(state);
+        return runRevealUntil(
+          state,
+          res,
+          effect,
+          effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets),
+          revealer,
+        );
+      }
       return runRevealUntil(
         state,
         res,
@@ -2713,6 +2774,14 @@ function runEffect(
       if (count <= 0) return done(state);
       return done(state, [], [{ kind: 'putOnTop', seat: res.controller, count, chosen: null }]);
     }
+
+    case 'putFromHandOnBottom':
+      // CR 401.4 (issue 81): one card of the hand goes on the bottom of the library (rules/arrange.ts).
+      return done(
+        state,
+        [],
+        [{ kind: 'putOnTop', seat: res.controller, count: 1, chosen: null, toBottom: true }],
+      );
 
     case 'search':
       // CR 701.23a: each player the effect names searches their own library, in turn; a "may"
@@ -2872,6 +2941,14 @@ function runEffect(
         [{ kind: 'behold', seat: res.controller, filter: effect.filter, chosen: null }],
       );
 
+    case 'ownerPutsOnLibrary':
+      // CR 108.3, 401.4: the owner of each permanent chooses the top or the bottom of their library (rules/owner-library-choice.ts).
+      return runOwnerLibraryChoice(state, resolveObjects(state, effect.objects, ctx, targets));
+
+    case 'explore':
+      // CR 701.44 (issue 81): the permanents explore one at a time (rules/explore.ts).
+      return runExplore(state, resolveObjects(state, effect.objects, ctx, targets), effect);
+
     case 'revealTop':
       // CR 701.20 (D-151): reveal the top card, and put it onto the battlefield if it matches (rules/reveal-top.ts).
       return runRevealTop(state, res, effect, ctx, targets);
@@ -2990,6 +3067,10 @@ function runEffect(
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.
       return runRequireAttack(state, effect, ctx);
 
+    case 'cantAttackPlaneswalkers':
+      // CR 508.1a, 611.2a (issue 81): the creatures named can't attack the controller's planeswalkers of a subtype this turn.
+      return runCantAttackPlaneswalkers(state, effect, ctx, targets);
+
     case 'requireAttackSource':
       // CR 508.1d, 611.2c: creatures of the named player attack this permanent if able, during that player's next turn.
       return runRequireAttackSource(state, effect, ctx, targets);
@@ -3090,4 +3171,17 @@ function putCountersOn(
     }),
     events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
   };
+}
+
+/** An effect with each `thisWay` amount in it replaced by the number the effects before it counted (CR 603.7c: a delayed ability is about what happened as it was created). */
+function bindThisWay<T>(value: T, counts: ThisWayCounts | undefined): T {
+  if (Array.isArray(value)) return value.map((item) => bindThisWay(item, counts)) as T;
+  if (typeof value !== 'object' || value === null) return value;
+  const record = value as Record<string, unknown>;
+  if (record.kind === 'thisWay' && typeof record.what === 'string') {
+    return (counts?.[record.what as keyof ThisWayCounts] ?? 0) as T;
+  }
+  return Object.fromEntries(
+    Object.entries(record).map(([key, item]) => [key, bindThisWay(item, counts)]),
+  ) as T;
 }
