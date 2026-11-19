@@ -85,6 +85,7 @@ import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
+import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_EFFECT_RULES } from './lorehold-g2';
@@ -1063,6 +1064,7 @@ export const EFFECT_RULES = [
   ...REVEAL_X_CARDS_EFFECT_RULES,
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
+  ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

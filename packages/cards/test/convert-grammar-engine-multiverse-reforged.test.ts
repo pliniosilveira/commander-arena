@@ -449,3 +449,52 @@ describe('the Map token: a creature you control explores', () => {
     g.expect.counters('Grizzly Bears', { '+1/+1': 1 });
   });
 });
+
+// ---- Restless Anchorage: "{1}{W}{U}: Until end of turn, this land becomes a 2/3 white and blue Bird creature with flying. It's still a land." and "Whenever this land attacks, create a Map
+// token." (CR 205.1a, 613.1d, 613.4b, 613.1f, 508.1m).
+
+const ANCHORAGE = parsed(
+  'SYNTHETIC Parsed Anchorage',
+  'Land',
+  "This land enters tapped.\n{T}: Add {W} or {U}.\n{1}{W}{U}: Until end of turn, this land becomes a 2/3 white and blue Bird creature with flying. It's still a land.\nWhenever this land attacks, create a Map token.",
+);
+
+describe('Restless Anchorage: a land that becomes a flying Bird and makes Maps when it attacks', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(ANCHORAGE)
+      .battlefield(ANCHORAGE.name, { tapped: false })
+      .battlefield('Plains', 'Island', 'Plains')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('it becomes a 2/3 white and blue Bird with flying and is still a land', () => {
+    const g = start();
+    g.act(0).activate(ANCHORAGE.name, { pay: true });
+    g.passAll();
+    g.expect.derived(ANCHORAGE.name, {
+      types: ['land', 'creature'],
+      subtypes: ['Bird'],
+      colors: ['W', 'U'],
+      keywords: ['flying'],
+    });
+    g.expect.pt(ANCHORAGE.name, 2, 3);
+    g.expect.invariants();
+  });
+
+  test('attacking as a creature makes a Map token', () => {
+    const g = start();
+    g.act(0).activate(ANCHORAGE.name, { pay: true });
+    g.passAll();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([ANCHORAGE.name]);
+    g.passAll();
+    g.expect.zone('Map', 'battlefield', { seat: 0 });
+  });
+});

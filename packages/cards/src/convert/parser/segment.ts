@@ -564,6 +564,9 @@ const IF_ITS_LAND_OR_MAY_PUT =
 /** "They become 5/5 Elemental creatures with flying and haste until end of turn. They're still lands." (Galadriel deck, group 1, CR 205.1b): the second sentence keeps the old types. */
 const THEY_BECOME = /^they become [^.]*\.$/i;
 const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
+/** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
+const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [^.]*\.$/i;
+const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
 /**
  * "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~." (Galadriel deck, group 3, CR 701.20a, 400.7j): the second sentence
  * reads the card the first one drew and revealed, so the two are read as one instruction (`effect.draw-reveal-remove`; the first may follow a loyalty cost).
@@ -680,6 +683,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
+        (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
