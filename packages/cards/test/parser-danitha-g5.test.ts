@@ -248,12 +248,27 @@ describe('Spiral into Solitude: "can’t attack or block" and "Blight 1" (CR 508
     });
   });
 
+  // Read since the First Flight decks (CR 508.1c: a restriction on whom the creature attacks).
+  test("Enchanted creature can't attack you or planeswalkers you control. is read", () => {
+    expect(
+      readAll(
+        "Enchanted creature can't attack you or planeswalkers you control.",
+        'enchantment',
+        AURA,
+      ).abilities,
+    ).toEqual([
+      {
+        kind: 'static',
+        static: { kind: 'cantAttackYou', creatures: { hostOfSource: true }, planeswalkers: true },
+      },
+    ]);
+  });
+
   test.each([
     // the restriction is said of the enchanted permanent only
     "Creatures you control can't attack.",
     "~ can't attack or block.",
     "Enchanted creature can't attack or block alone.",
-    "Enchanted creature can't attack you or planeswalkers you control.",
     "Enchanted creature can't attack or",
     // the blight
     '{1}{W}, Blight X, Sacrifice ~: Exile enchanted creature.',

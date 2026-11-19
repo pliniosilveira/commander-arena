@@ -1264,12 +1264,27 @@ describe('filter parts: nontoken, non-<type>, colorless, with and without a keyw
     ]);
   });
 
-  test('a keyword in the subject of a static ability is read and refused (CR 613.8: layer 6)', () => {
-    for (const text of [
-      'Creatures with flying you control get +1/+1.',
-      'Creatures without flying you control get +1/+1.',
-    ]) {
-      expect(drop(text, 'enchantment')).toMatchObject({ reason: 'notRunnable' });
+  // A keyword in the subject of a pump is read since the First Flight decks (parser-first-flight-flying-statics.test.ts
+  // reads it and the engine scenario tests run it).
+  test('a keyword in the subject of a static pump is read (CR 613.8: layer 7c)', () => {
+    for (const [text, keywords] of [
+      ['Creatures with flying you control get +1/+1.', { keywords: ['flying'] }],
+      ['Creatures without flying you control get +1/+1.', { notKeywords: ['flying'] }],
+    ] as const) {
+      expect(readAll(text, 'enchantment').abilities).toEqual([
+        {
+          kind: 'static',
+          static: {
+            kind: 'modifyPt',
+            subject: {
+              kind: 'filter',
+              filter: { types: ['creature'], ...keywords, controller: 'you' },
+            },
+            power: 1,
+            toughness: 1,
+          },
+        },
+      ]);
     }
   });
 
