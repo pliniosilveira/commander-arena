@@ -2654,6 +2654,14 @@ function runEffect(
       return done(state, [], [{ kind: 'putOnTop', seat: res.controller, count, chosen: null }]);
     }
 
+    case 'putFromHandOnBottom':
+      // CR 401.4 (issue 81): one card of the hand goes on the bottom of the library (rules/arrange.ts).
+      return done(
+        state,
+        [],
+        [{ kind: 'putOnTop', seat: res.controller, count: 1, chosen: null, toBottom: true }],
+      );
+
     case 'search':
       // CR 701.23a: each player the effect names searches their own library, in turn; a "may"
       // search is asked first (accepted stays null until answered, rules/search.ts). D-177, CR 400.7j: what the search

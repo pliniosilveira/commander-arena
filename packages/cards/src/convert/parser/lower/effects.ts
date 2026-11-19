@@ -2050,6 +2050,16 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   libraryVerb('lookAndReorder'),
   LOOK_AND_SPLIT,
   libraryVerb('putFromHandOnTop'),
+  {
+    head: 'putFromHandOnBottom',
+    id: 'lower.put-from-hand-on-bottom',
+    needs: ['effect:putFromHandOnBottom'],
+    lower: (clause) => ({
+      ok: true,
+      value: [{ kind: 'putFromHandOnBottom' }],
+      rule: clause.rule,
+    }),
+  },
   LOOK_TAKE,
   LOOK_TAKE_BOTTOM,
   LOOK_TAKE_ONE_TOP,

@@ -3529,6 +3529,11 @@ export type Effect =
    */
   | { readonly kind: 'putFromHandOnTop'; readonly count: Amount }
   /**
+   * "Put a card from your hand on the bottom of your library" (Jace, Multiverse Architect, CR 401.4, issue 81): the controller chooses one card of their hand (the hand when it holds
+   * one) and puts it on the bottom of their library. Only one card: with more, the order they go in would matter and nothing asks it.
+   */
+  | { readonly kind: 'putFromHandOnBottom' }
+  /**
    * CR 701.23 (Search): `player` looks through their own library (so `filter` sets neither `zone`
    * nor `controller`) for up to `max` cards matching `filter`, may find fewer (CR 701.23b), and
    * puts the cards found where `destinations` say, in the order they were chosen, under their own

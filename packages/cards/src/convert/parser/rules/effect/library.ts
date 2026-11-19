@@ -171,6 +171,31 @@ export const EFFECT_PUT_HAND_TOP = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.put-hand-bottom` (issue 81, Jace, Multiverse Architect): "put a card from your hand on the bottom of your library" (CR 401.4): the controller chooses one card of their hand and
+ * puts it on the bottom of their library. The engine's `putFromHandOnBottom`. Not read: more than one card, another place, a card from another zone.
+ */
+export const EFFECT_PUT_HAND_BOTTOM = defineRule<Clauses>({
+  id: 'effect.put-hand-bottom',
+  family: 'effect',
+  leading: ['put'],
+  cites: ['CR 401.4 (Library)'],
+  examples: ['put a card from your hand on the bottom of your library'],
+  rejects: [
+    'put two cards from your hand on the bottom of your library',
+    'put a card from your hand on top of your library',
+    'put a card from your graveyard on the bottom of your library',
+    'put a card from your hand on the bottom of target player’s library',
+    'put a card from your hand on the bottom of your library in any order',
+    'put that card on the bottom of your library',
+  ],
+  parse: single(
+    'effect.put-hand-bottom',
+    pattern(/put a card from your hand on the bottom of your library(?![\p{L}\p{N}])/iu),
+    () => ({ verb: 'putFromHandOnBottom', args: {} }),
+  ),
+});
+
 function takenNoun(
   ctx: { readonly text: string },
   pos: number,
@@ -716,4 +741,5 @@ export const LIBRARY_RULES = [
   EFFECT_LOOK_TAKE_ONE_BOTTOM,
   EFFECT_LOOK_SPLIT,
   EFFECT_PUT_HAND_TOP,
+  EFFECT_PUT_HAND_BOTTOM,
 ];

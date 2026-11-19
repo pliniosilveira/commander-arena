@@ -1460,6 +1460,8 @@ export type Instruction =
       readonly seat: SeatId;
       readonly count: number;
       readonly chosen: readonly ObjectId[] | null;
+      /** Issue 81 (Jace, Multiverse Architect): the cards go on the bottom of the library, not on top (always one card). */
+      readonly toBottom?: true;
     }
   /** CR 603.5: an optional ability asks its controller before anything else happens. */
   | { readonly kind: 'confirmOptional'; readonly answer: boolean | null }

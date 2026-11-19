@@ -6296,6 +6296,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'putFromHandOnTop':
       checkAmount(e.count, `${path}.count`, scope, out);
       break;
+    case 'putFromHandOnBottom':
+      break;
     case 'lookAndSplit':
       // D-216: the piles are whole numbers, and with a fixed count they add up to it (the cards looked at are all placed).
       checkAmount(e.count, `${path}.count`, scope, out);

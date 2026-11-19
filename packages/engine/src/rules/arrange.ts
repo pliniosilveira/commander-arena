@@ -151,7 +151,8 @@ function noCards(purpose: ArrangeInstruction['purpose'], seat: ArrangeInstructio
 
 const NUMBERS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
-function putOnTopPrompt(count: number): string {
+function putOnTopPrompt(count: number, toBottom = false): string {
+  if (toBottom) return 'Put a card from your hand on the bottom of your library.';
   if (count === 1) return 'Put a card from your hand on top of your library.';
   const word = NUMBERS[count] ?? String(count);
   return `Put ${word} cards from your hand on top of your library in any order. The first card you choose ends up on top.`;
@@ -182,7 +183,7 @@ export function runPutOnTop(
       min: count,
       max: count,
       reveal: false,
-      prompt: putOnTopPrompt(count),
+      prompt: putOnTopPrompt(count, instruction.toBottom === true),
     };
     return { state, events: [], front: [], needs: decision };
   }
@@ -193,7 +194,7 @@ export function runPutOnTop(
       kind: 'move' as const,
       object,
       to: 'library' as const,
-      position: 'top' as const,
+      position: instruction.toBottom === true ? ('bottom' as const) : ('top' as const),
       tapped: false,
       commanderChoice: null,
     })),

@@ -275,6 +275,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. Put one pile into your hand and the other into your graveyard." (CR 700.3).
     'revealAndSeparate',
     'putFromHandOnTop',
+    // Issue 81 (Jace, Multiverse Architect): "put a card from your hand on the bottom of your library".
+    'putFromHandOnBottom',
     'createToken',
     'search',
     'attach',
@@ -2269,6 +2271,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   lookAndSplit: true,
   revealAndSeparate: true,
   putFromHandOnTop: true,
+  putFromHandOnBottom: true,
   createToken: true,
   search: true,
   attach: true,

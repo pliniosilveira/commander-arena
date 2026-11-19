@@ -657,3 +657,40 @@ describe('Plan for All Outcomes: empower Jace on the first noncreature spell eac
     g.expect.invariants();
   });
 });
+
+// ---- Jace, Multiverse Architect: "+1: Draw two cards, then put a card from your hand on the bottom of your library." (CR 701.8, 401.4).
+
+const BRAIN = parsed(
+  'SYNTHETIC Parsed Brain',
+  'Sorcery',
+  'Draw two cards, then put a card from your hand on the bottom of your library.',
+  { manaCost: '{U}', colors: ['U'] },
+);
+
+describe('Jace +1: draw two, then put a card from your hand on the bottom of your library', () => {
+  test('the card chosen goes to the bottom, the other stays in hand', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(BRAIN)
+      .hand(BRAIN.name)
+      .battlefield('Island')
+      .library('Grizzly Bears', 'Giant Spider', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(BRAIN.name, { pay: true });
+    g.passAll();
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards('Giant Spider');
+    g.expect.zone('Giant Spider', 'library', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'hand', { seat: 0 });
+    const library = g.state.seats[0]?.library ?? [];
+    expect(library[library.length - 1] === g.id({ name: 'Giant Spider', zone: 'library' })).toBe(
+      true,
+    );
+    g.expect.invariants();
+  });
+});
