@@ -169,17 +169,23 @@ function checkDividedDamage(face: CardFace, path: string, out: AstIssue[]): void
     at: string,
   ): void => {
     const divided = (targets ?? []).filter((t) => t?.divide !== undefined).map((t) => t.id);
-    const named = dividing(effect).map(
-      (e) => (e.to as { id?: string } | undefined)?.id,
-    );
+    const named = dividing(effect).map((e) => (e.to as { id?: string } | undefined)?.id);
     for (const id of named) {
       if (typeof id === 'string' && !divided.includes(id)) {
-        issue(out, at, `dealDividedDamage or distributeCounters names the target "${id}", whose slot has no divide`);
+        issue(
+          out,
+          at,
+          `dealDividedDamage or distributeCounters names the target "${id}", whose slot has no divide`,
+        );
       }
     }
     for (const id of divided) {
       if (!named.includes(id)) {
-        issue(out, at, `the slot "${id}" divides something but no dealDividedDamage deals it (or distributeCounters puts its counters)`);
+        issue(
+          out,
+          at,
+          `the slot "${id}" divides something but no dealDividedDamage deals it (or distributeCounters puts its counters)`,
+        );
       }
     }
   };

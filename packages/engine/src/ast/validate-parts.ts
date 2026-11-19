@@ -3981,7 +3981,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       // A permanent of any player may be chosen only when the choice is not forced ("You may put a +1/+1 counter on a creature": none is a way to decline); `exactly` is for the
       // controller's own permanents.
-      if (e.filter.controller !== 'you' && !(e.filter.controller === undefined && e.exactly !== true)) {
+      if (
+        e.filter.controller !== 'you' &&
+        !(e.filter.controller === undefined && e.exactly !== true)
+      ) {
         issue(
           out,
           `${path}.filter.controller`,

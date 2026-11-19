@@ -74,7 +74,11 @@ export const EFFECT_REMOVE_COUNTERS_SELF = defineRule<Clauses>({
   id: 'effect.remove-counters-self',
   family: 'effect',
   leading: ['remove'],
-  cites: ['CR 122.1 (Counters)', 'CR 122.2 (Counters)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  cites: [
+    'CR 122.1 (Counters)',
+    'CR 122.2 (Counters)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
   examples: [
     'remove a +1/+1 counter from ~',
     'remove a +1/+1 counter from it',

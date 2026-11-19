@@ -63,7 +63,12 @@ export const REMOVE_COUNTERS_SELF: Lowering<IrClause, Effects> = {
     return {
       ok: true,
       value: [
-        { kind: 'removeCounters', objects: objects.value, counter: counter.name, count: count.value },
+        {
+          kind: 'removeCounters',
+          objects: objects.value,
+          counter: counter.name,
+          count: count.value,
+        },
       ],
       rule: clause.rule,
     };

@@ -1,12 +1,14 @@
 // The Quandrix Unlimited deck, group G: the REAL Oracle text of Guardian Augmenter, Ingenious Prodigy, Quandrix Apprentice, Zimone All-Questioning, Primo the Unbounded, Deekah,
 // Elusive Otter // Grove's Bounty and Zimone's Hypothesis (the corpus's golden.jsonl) goes through the grammar with no override, is defined in an engine scenario and is played
-// through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 903.3 (commanders), CR 702.11 (hexproof).
+// through applyAction, so the nodes the parser writes for the real text are what the engine runs. Pins: CR 903.3 (commanders), CR 702.11 (hexproof), CR 107.3m (enters with X counters), CR 208.4b (base power),
+// CR 601.2d (dividing among targets), CR 603.4 (an intervening if), CR 608.2c (if you do), CR 401.4 (the order of the cards put on the bottom), CR 608.2d (a choice as it resolves).
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed, parseOnly } from './convert-grammar-helpers';
+import { syntheticCard } from './convert-helpers';
 
 const GOLDEN = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -436,9 +438,7 @@ describe('Quandrix Apprentice', () => {
     g.expect.zone('Forest', 'hand', { seat: 0 });
     g.expect.pending('arrangeCards', 0);
     g.act(0).arrange({ top: [], other: ['c', 'a'] });
-    expect(g.state.seats[0]?.library).toEqual(
-      ['z0', 'z1', 'z2', 'c', 'a'].map((l) => g.id(l)),
-    );
+    expect(g.state.seats[0]?.library).toEqual(['z0', 'z1', 'z2', 'c', 'a'].map((l) => g.id(l)));
     g.expect.invariants();
   });
 
@@ -473,7 +473,10 @@ describe('Zimone, All-Questioning', () => {
   const zimone = real('Zimone, All-Questioning');
   const ZIMONE = zimone.name;
   const start = (lands: number, hand: readonly string[] = []) => {
-    const b = scenario().define(zimone).seat(0).library(...LIBRARY);
+    const b = scenario()
+      .define(zimone)
+      .seat(0)
+      .library(...LIBRARY);
     // Zimone is one of the permanents, not a land: `lands` basic lands on the battlefield.
     b.battlefield(ZIMONE, ...Array.from({ length: lands }, () => 'Forest'));
     if (hand.length > 0) b.hand(...hand);
@@ -618,4 +621,88 @@ describe("Zimone's Hypothesis", () => {
   });
 });
 
-// END
+describe('"it" after an intervening if about ~ (side effect of Ingenious Prodigy: Mana Vault now reads)', () => {
+  const vault = real('Mana Vault');
+
+  test('at the beginning of your draw step, if it is tapped, it deals 1 damage to you', () => {
+    const g = scenario()
+      .define(vault)
+      .seat(0)
+      .life(20)
+      .library(...LIBRARY)
+      .battlefield(vault.name, { tapped: true })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('draw', { turn: 5 });
+    g.expect.stack([`${vault.name} (ability)`]);
+    g.passAll();
+    g.expect.life(0, 19);
+  });
+
+  test('untapped, it does not trigger', () => {
+    const g = scenario()
+      .define(vault)
+      .seat(0)
+      .life(20)
+      .library(...LIBRARY)
+      .battlefield(vault.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+    g.advanceTo('draw', { turn: 5 });
+    g.expect.stack([]);
+  });
+});
+
+describe('a different wording is not read (a card is supported or unsupported, never partly)', () => {
+  const status = (type: string, text: string) =>
+    parseOnly(
+      syntheticCard({
+        name: 'SYNTHETIC Refused',
+        typeLine: type,
+        oracleText: text,
+        manaCost: '{X}{G}',
+        power: type.startsWith('Creature') ? '1' : undefined,
+        toughness: type.startsWith('Creature') ? '1' : undefined,
+      }),
+    ).support.status;
+
+  test.each([
+    ['Instant', 'Distribute X +1/+1 counters among target creatures you control.'],
+    ['Instant', 'Distribute X +1/+1 counters among up to three target creatures you control.'],
+    [
+      'Creature — Wizard',
+      '{T}: Distribute X +1/+1 counters among any number of target creatures you control.',
+    ],
+    [
+      'Creature — Wizard',
+      'At the beginning of your upkeep, you may remove a +1/+1 counter from target creature. If you do, draw a card.',
+    ],
+    [
+      'Creature — Wizard',
+      'At the beginning of your upkeep, you may remove all +1/+1 counters from ~. If you do, draw a card.',
+    ],
+    [
+      'Creature — Wizard',
+      'Whenever you cast an instant spell, create a 0/0 green Fractal creature token. Put that many +1/+1 counters on it.',
+    ],
+    [
+      'Creature — Wizard',
+      'At the beginning of your end step, if you control an even number of lands, draw a card.',
+    ],
+    [
+      'Instant',
+      'Choose odd or even. Return each creature with toughness of the chosen quality to its owner’s hand.',
+    ],
+    [
+      'Instant',
+      'You may put a +1/+1 counter on a creature. You may put a +1/+1 counter on a creature.',
+    ],
+    ['Creature — Wizard', 'Commanders you control have flash.'],
+  ])('%s: %s', (type, text) => {
+    expect(status(type, text)).not.toBe('supported');
+  });
+});

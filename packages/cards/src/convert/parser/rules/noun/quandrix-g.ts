@@ -61,7 +61,10 @@ export const NOUN_TARGET_CREATURE_TOKEN = defineRule<IrNoun>({
   ],
   parse: node<string, IrNoun>(
     'noun.target-creature-token',
-    map(pattern(new RegExp(`target creature token${BOUNDARY}(?!s| you control)`, 'iu')), (m) => m[0]),
+    map(
+      pattern(new RegExp(`target creature token${BOUNDARY}(?!s| you control)`, 'iu')),
+      (m) => m[0],
+    ),
     (raw) => ({
       kind: 'noun',
       det: 'target',

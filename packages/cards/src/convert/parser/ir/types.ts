@@ -403,7 +403,11 @@ export interface IrFilter {
 
 export type IrAmount =
   | { readonly kind: 'number'; readonly value: number; readonly span: Span }
-  | { readonly kind: 'x'; readonly span: Span; /** "twice X": X multiplied by this (an integer of 2 or more). */ readonly times?: number }
+  | {
+      readonly kind: 'x';
+      readonly span: Span /** "twice X": X multiplied by this (an integer of 2 or more). */;
+      readonly times?: number;
+    }
   // "for each creature you control"
   | { readonly kind: 'countOf'; readonly of: IrNoun; readonly span: Span }
   | { readonly kind: 'powerOf'; readonly of: IrNoun; readonly span: Span }
