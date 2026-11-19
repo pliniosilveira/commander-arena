@@ -13,7 +13,7 @@
 import type { CastAlternativeKind } from '../ast/features';
 import type { Cost } from '../ast/types';
 import type { CardFace } from '../cards/definition';
-import { manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
+import { flashbackCostOf, manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
 
 /** How much each point of X costs: generic mana (one per {X} symbol) and life ("pay X life"). */
 export interface XCost {
@@ -106,6 +106,9 @@ export function spellXCost(
     };
   }
   const printed = xSymbolCount(face.manaCost ?? []);
+  // CR 702.34a, 107.3a: a flashback cost equal to the mana cost (a card given flashback, not one that prints it) has the {X} of the mana cost, which is announced as for any cast.
+  const flashbackOfManaCost = alternative === 'flashback' && flashbackCostOf(face) === null;
+  if (flashbackOfManaCost) return { mana: printed, life, ...extra };
   // D-667 (CR 702.81a): a retrace cast pays the mana cost, so an {X} in it is announced as for any cast.
   if (alternative !== undefined && alternative !== 'retrace' && printed > 0) return NO_X;
   return { mana: printed, life, ...extra };

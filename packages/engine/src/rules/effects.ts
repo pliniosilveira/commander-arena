@@ -86,6 +86,7 @@ import { runExilePiles, startExilePiles } from './exile-piles';
 import { runExileRandomFromHand } from './exile-random-hand';
 import { runExileUntilFound } from './exile-until-found';
 import { fightOnce, isFightingCreature, runFightPairs } from './fight';
+import { runGainFlashbackFromManaCost } from './flashback-grant';
 import { runGoad } from './goad';
 import { runGraveyardPair, startGraveyardPair } from './graveyard-pair';
 import { bakeStillExiled, runExileTop, runMayPlay } from './impulse';
@@ -1646,6 +1647,9 @@ function runEffect(
     case 'gainActivatedAbilitiesOf':
       // CR 613.1f (issue 159): "this creature gains all activated abilities of that card until end of turn" (rules/may-effects.ts).
       return runGainActivatedAbilitiesOf(state, effect, ctx, targets);
+    case 'gainFlashbackFromManaCost':
+      // CR 702.34a, 611.2c: "Each instant and sorcery card in your graveyard gains flashback until end of turn" (rules/flashback-grant.ts).
+      return runGainFlashbackFromManaCost(state, res, effect);
     case 'mayCastSpells':
       // CR 601.2, 611.2a (issue 159): "You may cast Zombie spells from your graveyard this turn" (rules/may-effects.ts).
       return runMayCastSpells(state, res, effect);

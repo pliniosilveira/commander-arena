@@ -447,6 +447,27 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'grantFlashbackToGraveyardCards':
+      // CR 702.34a: "Each instant and sorcery card in your graveyard has flashback": the cards of the controller's graveyard a filter names, as the cards they are.
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':

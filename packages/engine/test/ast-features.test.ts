@@ -185,6 +185,8 @@ describe('the dimensions', () => {
       'allCreatureTypes',
       // Issue 104: "Each creature card in your hand has cycling {1}{U}."
       'grantKeywordToHandCards',
+      // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
+      'grantFlashbackToGraveyardCards',
       'noMaximumHandSize',
       // Issue 201: "Enchanted creature ... is goaded".
       'goaded',

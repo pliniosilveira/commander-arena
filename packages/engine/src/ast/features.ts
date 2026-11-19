@@ -312,6 +312,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCastSpells',
     // Issue 159: "this creature gains all activated abilities of that card until end of turn".
     'gainActivatedAbilitiesOf',
+    // "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a).
+    'gainFlashbackFromManaCost',
     // D-139: "look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand".
     'lookAtTop',
     // D-139: "you may reselect which player or permanent target attacking creature is attacking" (CR 508.7).
@@ -1010,6 +1012,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'allCreatureTypes',
     // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
     'grantKeywordToHandCards',
+    // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
+    'grantFlashbackToGraveyardCards',
     'noMaximumHandSize',
     // Issue 201: "Enchanted creature ... is goaded" (CR 701.15).
     'goaded',
@@ -1758,6 +1762,8 @@ export const STATIC_KINDS = [
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
   'grantKeywordToHandCards',
+  /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
+  'grantFlashbackToGraveyardCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
   'goaded',
   /** "You may play an additional land on each of your turns." (CR 305.2, D-125). */
@@ -2178,6 +2184,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   mayCast: true,
   mayCastSpells: true,
   gainActivatedAbilitiesOf: true,
+  gainFlashbackFromManaCost: true,
   lookAtTop: true,
   revealUntil: true,
   dealDividedDamage: true,

@@ -1915,6 +1915,17 @@ export type Effect =
       readonly duration: 'untilEndOfTurn';
     }
   /**
+   * "Each instant and sorcery card in your graveyard gains flashback until end of turn. The flashback cost is equal to its mana cost." (CR 702.34a, 613.1f, 611.2a, 611.2c): the instant
+   * and sorcery cards that `what` describes in the controller's graveyard as the effect resolves have flashback until the end of the turn, with the cost equal to their own mana cost
+   * (CR 118.9). The cards are fixed as the effect resolves (CR 611.2c: an effect that changes characteristics affects the objects there then), so a card that enters the graveyard
+   * later this turn does not get it, and a card that leaves it is a new object (CR 400.7) with nothing. `what` names no zone, controller or owner. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'gainFlashbackFromManaCost';
+      readonly what: ObjectFilter;
+      readonly duration: 'untilEndOfTurn';
+    }
+  /**
    * "Exile the top card of your library", "Exile the top two cards of your library", "Exile the top X cards of your library, where X is the
    * number of creatures you control with power 4 or greater" (CR 701.13 Exile, 401, D-151): the controller exiles the top `count` cards of their
    * library one after the other (fewer when it holds fewer; 0 or less does nothing). They are face up, and are what `moved` names afterwards
@@ -5329,6 +5340,14 @@ export type StaticEffect =
       readonly what: ObjectFilter;
       readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
     }
+  /**
+   * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 613.1f, 604.3, 611.3a): a static ability of a permanent
+   * on the battlefield that gives the instant and sorcery cards in its controller's graveyard that `what` matches flashback, with the cost equal to the card's own mana cost (CR 118.9: an
+   * alternative cost). Read where casting is decided (`rules/flashback-grant.ts`); the card is cast from the graveyard and exiled when it leaves the stack, as with a printed flashback. A card
+   * with no mana cost is not offered (a cost equal to nothing cannot be paid). A card that has a flashback cost of its own is cast for that one. `what` is a filter of the card as it is in the
+   * graveyard, with no zone, controller, owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | { readonly kind: 'grantFlashbackToGraveyardCards'; readonly what: ObjectFilter }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';

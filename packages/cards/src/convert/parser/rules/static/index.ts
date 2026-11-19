@@ -29,6 +29,7 @@ import { HASHATON_G2_STATIC_RULES } from './hashaton-group-2';
 import { HASHATON_G3_STATIC_RULES } from './hashaton-group-3';
 import { HASHATON_G6_STATIC_RULES } from './hashaton-group-6';
 import { HOFRI_STATIC_RULES } from './hofri';
+import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { MELD_STATIC_RULES } from './meld';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
@@ -88,6 +89,7 @@ export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
+  ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
   // CR 702.103: "~ and enchanted creature each get +1/+1 for each creature you control ..." (a bestow card).

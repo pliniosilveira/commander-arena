@@ -9,7 +9,14 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { alternativeOf, flashbackCostOf, hasAftermath, hasGift, hasModeCosts } from './alt-costs';
+import {
+  alternativeOf,
+  flashbackCostOf,
+  hasAftermath,
+  hasGift,
+  hasModeCosts,
+  manaCostAsFlashbackCost,
+} from './alt-costs';
 import { auraTargetSpec, BESTOW_TARGET_SPEC } from './attach';
 import {
   type CastAlternative,
@@ -28,6 +35,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { hasGrantedFlashback } from './flashback-grant';
 import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
@@ -437,7 +445,12 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const face = faceOf(state, obj);
     const spell = face?.types.includes('instant') || face?.types.includes('sorcery');
-    return spell === true && flashbackCostOf(face) !== null ? 'graveyard' : null;
+    if (spell !== true) return null;
+    // CR 702.34a: printed flashback, or flashback with the cost equal to the mana cost that an effect or a permanent gave the card (rules/flashback-grant.ts).
+    if (flashbackCostOf(face) !== null) return 'graveyard';
+    return manaCostAsFlashbackCost(face) !== null && hasGrantedFlashback(state, seat, obj)
+      ? 'graveyard'
+      : null;
   }
   if (alternative === 'escape') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;

@@ -76,6 +76,7 @@ import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
 import { HYLDA_G2_EFFECT_RULES } from './hylda-g2';
 import { HYLDA_G3_EFFECT_RULES } from './hylda-g3';
+import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LIBRARY_RULES } from './library';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
@@ -1019,6 +1020,7 @@ export const EFFECT_RULES = [
   ...HYLDA_G2_EFFECT_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "repeat this process once", "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and
   // "each creature deals damage to itself equal to its power" start like a plain exile, a plain shuffle and a plain damage, and are tried first.
+  ...JESKAI_FLASHBACK_EFFECT_RULES,
   ...LOREHOLD_G1_EFFECT_RULES,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller" starts like the plain "each" rules, and is tried first.
   ...CONTROLLER_DAMAGE_EFFECT_RULES,
