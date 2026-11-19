@@ -188,16 +188,26 @@ describe('keyword.flashback: "Flashback {M}" (CR 702.34a)', () => {
       closestRule: 'keyword.flashback',
       recognised: expect.arrayContaining(['keyword.flashback', 'cost.pay-life']),
     });
-    // The backlog's real text: the dash form ends with a period.
-    expect(dropped('Flashback—Sacrifice three creatures.', 'sorcery')).toMatchObject({
-      reason: 'notRunnable',
-      closestRule: 'keyword.flashback',
-      stoppedAt: 'Flashback—Sacrifice three creatures.',
-    });
-    expect(dropped('Flashback—Sacrifice a creature', 'sorcery')).toMatchObject({
-      reason: 'notRunnable',
+    // A cost the engine cannot pay with the flashback: a discard, and two sacrifices.
+    expect(dropped('Flashback—Discard a card', 'sorcery')).toMatchObject({
       closestRule: 'keyword.flashback',
     });
+  });
+
+  test('"Flashback—Sacrifice three creatures." (the backlog\'s real text, the dash form ends with a period) lowers to a sacrifice cost with a count (CR 118.9, 701.21a)', () => {
+    const parsed = readAll('Draw a card.\nFlashback—Sacrifice three creatures.', 'sorcery');
+    expect(parsed.abilities.at(-1)).toEqual(
+      flashback({ kind: 'sacrifice', what: { types: ['creature'] }, count: 3 }),
+    );
+    const one = readAll('Draw a card.\nFlashback—Sacrifice a creature', 'sorcery');
+    expect(one.abilities.at(-1)).toEqual(
+      flashback({ kind: 'sacrifice', what: { types: ['creature'] } }),
+    );
+    // With a mana cost besides the sacrifice.
+    const both = readAll('Draw a card.\nFlashback—{1}{B}, Sacrifice two creatures.', 'sorcery');
+    expect(both.abilities.at(-1)).toEqual(
+      flashback(mana('1', 'B'), { kind: 'sacrifice', what: { types: ['creature'] }, count: 2 }),
+    );
   });
 
   test('X and hybrid costs are not read', () => {

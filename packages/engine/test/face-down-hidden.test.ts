@@ -333,6 +333,7 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   castCostLife: 'public',
   additionalCosts: 'public',
   additionalCostChoice: 'public',
+  flashbackCost: 'public',
   face: 'masked',
   faces: 'masked',
   layout: 'masked',

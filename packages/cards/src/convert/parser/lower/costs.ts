@@ -37,6 +37,8 @@ export interface CostOptions {
   readonly discardX?: boolean;
   /** A spell's additional cost (CR 118.8), where Behold is paid; not a cost of an activated ability. */
   readonly additional?: boolean;
+  /** The cost of a Flashback keyword (CR 702.34a, 118.9): "Sacrifice three creatures" is paid as the spell is cast, by the engine's alternative cost; nowhere else but an activated ability. */
+  readonly flashback?: boolean;
 }
 
 /**
@@ -121,7 +123,7 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
       if (what.det !== 'a' || (what.count !== undefined && what.count.kind !== 'number')) {
         return failure(cost);
       }
-      if (many > 1 && options.ordinary !== true) return failure(cost);
+      if (many > 1 && options.ordinary !== true && options.flashback !== true) return failure(cost);
       const filter = lowerFilter(what);
       return filter.ok
         ? ok({ kind: 'sacrifice', what: filter.value, ...(many > 1 ? { count: many } : {}) })
