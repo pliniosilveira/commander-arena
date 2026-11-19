@@ -2809,6 +2809,19 @@ export type Effect =
       readonly otherwise?: Effect;
     }
   /**
+   * "Create a 1/1 black and green Insect creature token, then mill a card. If an Insect card was milled this way, put a loyalty counter on this planeswalker and repeat this
+   * process." (Death Toll deck, group C, Grist, the Hunger Tide; CR 608.2c): `effects` are done, then, when `condition` holds (read as a `conditional` reads it, after them: `moved` is
+   * what the last of them moved), `beforeAgain` is done and the whole is done again, as often as the condition holds. The last of `effects` is a `mill`, so each pass takes cards out of a
+   * library (the repeat ends when none of the cards milled matches, or the library is empty: nothing is milled and the condition is false). Not with targets or an X (the process
+   * would ask again). `beforeAgain` may be left out.
+   */
+  | {
+      readonly kind: 'repeatWhile';
+      readonly effects: readonly Effect[];
+      readonly condition: Condition;
+      readonly beforeAgain?: readonly Effect[];
+    }
+  /**
    * "You get {E}{E}" (CR 107.14, 122.1, D-209): each player the selector names gets `amount` energy counters (a player's own counters, kept for the rest of the
    * game), one `energyChanged` event. Nothing for an amount of 0 or less.
    */
@@ -3055,7 +3068,16 @@ export type Effect =
    * CR 114.3). The abilities work from the command zone (CR 114.4) for as long as the game lasts (CR 114.5: an emblem cannot be removed). "This emblem" in
    * the text is the emblem itself. `text` is the quoted text, as the emblem shows it.
    */
-  | { readonly kind: 'createEmblem'; readonly abilities: readonly Ability[]; readonly text: string }
+  | {
+      readonly kind: 'createEmblem';
+      readonly abilities: readonly Ability[];
+      readonly text: string;
+      /**
+       * "Target opponent gets an emblem with \"Whenever a player draws a card, you lose 2 life.\"" (Ob Nixilis Reignited; CR 114.1, 114.2): the player the selector names gets the emblem, owns and
+       * controls it, so "you" in its abilities is that player. Left out, the controller of the effect gets it. Each player the selector names gets one.
+       */
+      readonly player?: PlayerSelector;
+    }
   /**
    * "Empower Jace N" (CR 701.71a, D-201): "If you don't control a Jace planeswalker token, create a blue Jace planeswalker token with 0 loyalty,
    * '[-1]: Surveil 1,' and '[-3]: Draw a card.' Choose a Jace planeswalker token you control. Put N loyalty counters on it." The controller of the
@@ -3334,7 +3356,7 @@ export type Effect =
         readonly hidden?: true;
         /**
          * "Put all land cards from among them onto the battlefield tapped" (CR 701.20, 608.2c, Animist's Awakening): every card of the cards looked at that the filter matches is taken, with no
-         * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'`.
+         * question (`max` is 1 and unread). The cards taken are what `moved` names for the effects after it ("untap those lands"). Only with `revealAll` and `to: 'battlefield'` or `'hand'` ("Put all land cards revealed this way into your hand", Mulch).
          */
         readonly all?: true;
       };
@@ -5593,6 +5615,18 @@ export type StaticEffect =
    * graveyard, with no zone, controller, owner, stack kind or combat. A permanent that lost all its abilities gives nothing (CR 613.1f).
    */
   | { readonly kind: 'grantFlashbackToGraveyardCards'; readonly what: ObjectFilter }
+  /**
+   * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3, 613.1d, 613.4a):
+   * a characteristic-defining ability of the card it is printed on, working in every zone but the battlefield (a hand, a library, a graveyard, the stack, exile): the object is also a
+   * creature of the creature types `subtypes` (layer 4, applied first like Changeling) and its power and toughness are `power` and `toughness` (layer 7a). The ability is of the
+   * object itself, so its subject is the object; it does nothing on the battlefield, where the card is only what it prints. It cannot be granted.
+   */
+  | {
+      readonly kind: 'creatureOffBattlefield';
+      readonly power: number;
+      readonly toughness: number;
+      readonly subtypes: readonly Subtype[];
+    }
   | {
       /** CR 402.2: "You have no maximum hand size." */
       readonly kind: 'noMaximumHandSize';

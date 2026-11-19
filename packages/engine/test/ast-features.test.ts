@@ -221,6 +221,8 @@ describe('the dimensions', () => {
       'cantBeBlockedBy',
       'takeFromLinkedExile',
       'castAsThoughFlash',
+      // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
+      'creatureOffBattlefield',
       // D-145: "can't attack or block unless ...", "loses all abilities", "is a green ..." (colors).
       'restrictionUnless',
       'loseAllAbilities',

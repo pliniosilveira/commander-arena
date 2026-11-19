@@ -315,10 +315,20 @@ export function runInstruction(
       const offered = instruction.effect;
       const player = instruction.as ?? res.controller;
       if (
-        offered.kind === 'sacrifice' &&
-        offered.objects.kind === 'choose' &&
-        offered.player === undefined &&
-        sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0
+        (offered.kind === 'sacrifice' &&
+          offered.objects.kind === 'choose' &&
+          offered.player === undefined &&
+          sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0) ||
+        // CR 701.9 (Discard): a player with no card in hand cannot discard one, so they do not and the "if they don't" instruction is done for them (Professor Onyx's last
+        // loyalty ability rules: an opponent with an empty hand loses the life). Nobody is asked about a discard of nothing when "if they don't" follows; without it the question is
+        // asked as it always was (it is what the players who did the thing are counted from, Mog, Moogle Warrior).
+        (offered.kind === 'discard' &&
+          instruction.otherwise !== undefined &&
+          offered.player.kind === 'you' &&
+          offered.random !== true &&
+          offered.hand !== true &&
+          offered.anyNumber !== true &&
+          getSeat(state, player).hand.length === 0)
       ) {
         return instruction.otherwise === undefined
           ? done(state)
@@ -1524,9 +1534,19 @@ function runEffect(
     }
 
     case 'createEmblem': {
-      // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem.
-      const r = createEmblem(state, res.controller, effect.abilities, effect.text);
-      return done(r.state, r.events);
+      // CR 114.1, 114.2 (D-201): the controller of the effect gets the emblem, or each player the effect names ("Target opponent gets an emblem with ...": they own and control it).
+      let withEmblems = state;
+      const emblemEvents: GameEvent[] = [];
+      const getting =
+        effect.player === undefined
+          ? [res.controller]
+          : resolvePlayers(state, effect.player, ctx, targets);
+      for (const seat of getting) {
+        const r = createEmblem(withEmblems, seat, effect.abilities, effect.text);
+        withEmblems = r.state;
+        emblemEvents.push(...r.events);
+      }
+      return done(withEmblems, emblemEvents);
     }
 
     case 'empowerJace':
@@ -2252,6 +2272,21 @@ function runEffect(
       // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
       const rolled = rollDie(next, res.controller, effect.sides);
       return { ...done(rolled.state, rolled.events), dieResult: rolled.result };
+    }
+
+    case 'repeatWhile': {
+      // CR 608.2c (Grist, the Hunger Tide): the effects, then the test as an instruction of its own (read after them, so `moved` is what the last of them moved); when it holds
+      // `then` is done and this effect comes up again. The test is a `conditional`, so it ends the repeat when nothing was milled (the library ran out) or no card matches.
+      const again: Effect = {
+        kind: 'conditional',
+        condition: effect.condition,
+        effect: { kind: 'sequence', effects: [...(effect.beforeAgain ?? []), effect] },
+      };
+      return done(
+        state,
+        [],
+        [...effect.effects, again].map((e) => ({ kind: 'effect' as const, effect: e })),
+      );
     }
 
     case 'playersMay': {
