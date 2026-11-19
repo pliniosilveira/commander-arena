@@ -4450,6 +4450,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'grantPlayerManaAbility': {
+      // CR 118.3, 605.1a: a life cost of a whole number from 1, one mana of a color or {C}, until end of turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!Number.isInteger(e.life) || e.life < 1) {
+        issue(out, `${path}.life`, 'the life paid for the mana is a whole number from 1');
+      }
+      if (!['W', 'U', 'B', 'R', 'G', 'C'].includes(e.mana)) {
+        issue(out, `${path}.mana`, 'the mana is W, U, B, R, G or C');
+      }
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(out, `${path}.duration`, 'the mana ability of a player lasts until end of turn');
+      }
+      break;
+    }
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);

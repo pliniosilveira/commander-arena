@@ -232,6 +232,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'grantPlayerHexproof',
     // CR 601.3b (Alchemist's Refuge): "You may cast spells this turn as though they had flash."
     'grantCastAsThoughFlash',
+    // CR 605.1a, 118.3 (Channel): "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}."
+    'grantPlayerManaAbility',
     // D-639: "Goad target creature" (CR 701.15).
     'goad',
     'grantPlayerProtectionEverything',
@@ -2172,6 +2174,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   chooseObjects: true,
   grantPlayerHexproof: true,
   grantCastAsThoughFlash: true,
+  grantPlayerManaAbility: true,
   grantPlayerProtectionEverything: true,
   preventPlayerLifeTotalChange: true,
   mill: true,

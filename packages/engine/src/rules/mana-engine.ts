@@ -45,6 +45,13 @@ import {
   spentRiderOf,
 } from './mana-outcomes';
 import { additionalManaOptions } from './mana-triggers';
+import {
+  activatePlayerMana,
+  isPlayerManaAbility,
+  payGrantLife,
+  playerManaGrants,
+  usesOfPlanned,
+} from './player-mana';
 
 export {
   canTapForMana,
@@ -194,6 +201,8 @@ export function activateManaAbility(
   /** The colors of the additional mana of "adds an additional one mana of any color" (CR 605.1b, 106.1b, 605.3b): required when the land has such an ability on it. */
   extraColors: readonly ManaColor[] | null = null,
 ): ActivationResult {
+  // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player belongs to no permanent.
+  if (isPlayerManaAbility(abilityIndex)) return activatePlayerMana(state, seat, source);
   // A source that does not exist (a stale or invented id in a payManual action) is an illegal
   // action, which the caller answers with an error; it must not throw.
   const obj = state.objects[source];
@@ -329,6 +338,16 @@ export function applyPaymentPlan(
   const pool = getSeat(next, seat).manaPool.filter((_, i) => !spent.has(i));
   next = patchSeat(next, seat, { manaPool: addToPool(pool, plan.leftover) });
   for (const tap of plan.taps) {
+    if (isPlayerManaAbility(tap.abilityIndex)) {
+      // CR 605.1a, 118.3 (Channel): the life of the ability a player was given is paid; its mana was spent as it was made, or is left over below.
+      const grant = playerManaGrants(next, seat).find((g) => g.source === tap.object);
+      if (grant !== undefined) {
+        const paid = payGrantLife(next, seat, grant, usesOfPlanned(tap.abilityIndex));
+        next = paid.state;
+        events.push(...paid.events);
+      }
+      continue;
+    }
     const obj = next.objects[tap.object];
     const ability = obj
       ? manaAbilitiesOf(next, obj).find((m) => m.abilityIndex === tap.abilityIndex)?.ability

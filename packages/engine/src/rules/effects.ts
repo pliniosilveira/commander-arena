@@ -117,6 +117,7 @@ import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerLock } from './player-lock';
+import { runGrantPlayerManaAbility } from './player-mana';
 import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
@@ -2896,6 +2897,10 @@ function runEffect(
     case 'grantCastAsThoughFlash':
       // CR 601.3b (Alchemist's Refuge): the players may cast spells as though they had flash until end of turn (`rules/player-flash.ts`).
       return runGrantCastAsThoughFlash(state, effect, ctx, targets);
+
+    case 'grantPlayerManaAbility':
+      // CR 605.1a, 118.3 (Channel): the players have a mana ability of their own until end of turn (`rules/player-mana.ts`).
+      return runGrantPlayerManaAbility(state, effect, ctx, targets);
 
     case 'attackRandomOpponent':
       // CR 508.1d, 701.26a: an opponent at random that was not attacked in the last combat must be attacked this combat, or the creature is tapped (`rules/attack-random-opponent.ts`).
