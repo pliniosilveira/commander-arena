@@ -405,6 +405,16 @@ function lowerTypecycling(
 
 /** "Protection from black" (CR 702.16, stage P68, D-229): the colors it names; the engine reads damage, enchanting, blocking and targeting. */
 function lowerProtection(ability: IrKeyword): LowerResult<readonly Ability[]> {
+  if (ability.quality === 'multicolored' && ability.colors === undefined) {
+    // CR 702.16a, 105.2: protection from sources of two or more colors.
+    const blockedQuality = gate(ability, ['ability:keyword', 'keyword:protection']);
+    if (blockedQuality !== null) return blockedQuality;
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind: 'protection', from: 'multicolored' } }],
+      rule: 'keyword.line',
+    };
+  }
   const words = ability.colors ?? [];
   const colors = words.map((w) => colorLetter(w));
   if (colors.length === 0 || colors.some((c) => c === undefined) || ability.params.length > 0) {

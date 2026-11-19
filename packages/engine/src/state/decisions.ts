@@ -167,6 +167,8 @@ export interface TargetChoiceSpec {
    * of the targets, any player's, the controller of the spell included, so the slot is not "for each opponent". Absent otherwise.
    */
   readonly eachController?: true;
+  /** "Up to three target cards from their graveyard" (`TargetSpec.ownedByTarget`): every target of this slot is a card of the graveyard of the player chosen for the slot with this id (its `group`). */
+  readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
   /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes). */

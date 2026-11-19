@@ -569,6 +569,16 @@ export function legalTargets(
     ) {
       // D-149: a slot with one target for each opponent says whose each target is.
       // Hylda group 3: "with different controllers" says whose each target is as well.
+      // CR 115.1, 608.2b: cards "from their graveyard": the graveyard of the player an earlier slot names. Once the targets are chosen (as the spell or ability
+      // resolves, `stillLegalTargets`) only that player's cards stay legal; while they are being chosen the owner is the group `targetAnswerError` reads.
+      if (spec.ownedByTarget !== undefined) {
+        const named = (ctx.targets ?? []).find(
+          (t) => t.kind === 'player' && t.specId === spec.ownedByTarget,
+        );
+        if (named?.kind === 'player' && named.seat !== obj.owner) continue;
+        out.push({ kind: 'object', id, specId, group: obj.owner });
+        continue;
+      }
       out.push(
         spec.onePerOpponent === true || spec.differentControllers === true
           ? { kind: 'object', id, specId, group: controllerOf(state, obj) }

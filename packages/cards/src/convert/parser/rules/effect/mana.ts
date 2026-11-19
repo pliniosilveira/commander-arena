@@ -144,6 +144,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add {R} or {G} for each creature you control',
     // CR 605.3b, 700.5: the color of the sentence "Choose a color." before it; the lowering reads it only there.
     'add an amount of mana of that color equal to your devotion to that color',
+    // Kami of Whispered Hopes, Astral Cornucopia: a mana ability's count of mana of one chosen color.
+    'add x mana of any one color',
+    'add one mana of that color for each charge counter on ~',
   ],
   rejects: [
     'add two mana of the chosen color',
@@ -182,6 +185,10 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     'add an amount of mana of that color equal to your devotion to that colors',
     'add an amount of mana of any color equal to your devotion to that color',
     'add an amount of mana of that color equal to your devotion to that color for each creature you control',
+    'add one mana of that color',
+    'add x mana of any one color for each creature you control',
+    'add x mana of any color',
+    'add two mana of that color for each charge counter on ~',
   ],
   parse: single(
     'effect.add-mana',
@@ -225,6 +232,14 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
               ),
               () => ({ kind: 'devotionToChosenColor' as const }),
             ),
+            // Kami of Whispered Hopes (CR 106.1b, 107.3c): "X mana of any one color", X what the sentence's ", where X is ..." says; lowered only by a mana ability that has it.
+            map(pattern(/x mana of any one color(?![\p{L}\p{N}])/iu), () => ({
+              kind: 'anyOneColorX' as const,
+            })),
+            // Astral Cornucopia (CR 605.3b, 106.1b): after "Choose a color.", one mana of that color for each of a count; lowered only after that sentence.
+            map(pattern(/one mana of that color(?![\p{L}\p{N}])/iu), () => ({
+              kind: 'thatColor' as const,
+            })),
             // Stage P34 (D-152, CR 106.1b, 605.3b): "two mana in any combination of colors", each of a color chosen on its own.
             map(
               pattern(/(two|three) mana in any combination of colors(?![\p{L}\p{N}])/iu),
@@ -246,7 +261,9 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
       ),
       // Only fixed mana is added once for each: a choice of colors would be chosen once or for each, which the words do not say.
       ([, what, each]) =>
-        each === null || what.value.kind === 'symbols' || what.value.kind === 'oneOf',
+        what.value.kind === 'thatColor'
+          ? each !== null
+          : each === null || what.value.kind === 'symbols' || what.value.kind === 'oneOf',
     ),
     ([, what, each]) => ({
       verb: 'addMana',

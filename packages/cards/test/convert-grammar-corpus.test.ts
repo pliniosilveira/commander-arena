@@ -399,11 +399,11 @@ const P1_MANA_AND_LANDS: readonly Line[] = [
   },
   {
     kind: 'land',
-    text: '{T}: Add {G}. Activate only once each turn.',
-    expect: no('Activate only once each turn.', 'restriction.once-each-turn', {
+    text: '{T}: Add {G}. Activate only as a sorcery.',
+    expect: no('Activate only as a sorcery.', 'restriction.sorcery', {
       reason: 'notRunnable',
     }),
-    note: 'read and not run (stage P31): the engine limits the activations of an ordinary ability per turn, not of a mana ability',
+    note: 'read and not run (stage P31): a mana ability has no timing of its own (CR 605.3a), only "Activate only once each turn" (Quandrix Unlimited deck, group F) and a condition',
   },
   {
     kind: 'land',

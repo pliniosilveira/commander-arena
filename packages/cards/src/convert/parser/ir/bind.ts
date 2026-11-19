@@ -210,6 +210,18 @@ class Binder {
     this.antecedents.push({ noun: host, kind: 'object' });
   }
 
+  /**
+   * The permanent an intervening "if" of a triggered ability says things of by `~` ("if ~ has no charge counters on it, return it to its owner's hand", CR 603.4): the
+   * "it" of the body is that permanent, as for a cost that names `~`. Read only for a trigger that has no subject of its own ("at the beginning of your upkeep"), which
+   * leaves "it" nothing else to mean, and only where the condition counts the counters of `~`.
+   */
+  seedSelfCondition(trigger: IrTrigger, condition: IrCondition | undefined): void {
+    const test = condition?.test;
+    if (trigger.subject !== undefined || test?.kind !== 'amountIs') return;
+    if (test.amount.kind !== 'countersOn' || test.amount.of.det !== 'self') return;
+    this.seed(test.amount.of, 'triggerSubject', true);
+  }
+
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
   seedLine(noun: IrNoun): void {
     this.antecedents.push({ noun, kind: 'object', previousLine: true });
@@ -776,6 +788,7 @@ export function bind(ability: IrAbility, options: BindOptions = {}): BindResult 
     case 'triggered': {
       const trigger = seedTrigger(binder, ability.trigger);
       binder.seedHost(ability.interveningIf);
+      binder.seedSelfCondition(ability.trigger, ability.interveningIf);
       if (ability.modal !== undefined) {
         // Each mode starts from the antecedents a body would: the trigger's subject and actor.
         const modal = bindModes(ability.modal, scope, verbs, (b) =>

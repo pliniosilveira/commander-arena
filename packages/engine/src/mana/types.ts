@@ -37,6 +37,14 @@ export type ManaRestriction =
        * has at least one of the card types listed (when `types` is given) and at least one of the subtypes listed (when `subtypes` is given).
        */
       readonly alsoAbilities?: true;
+      /**
+       * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs" (CR 106.6, 202.3, 107.3): the spell has at least one of these
+       * qualities. Never with `alsoAbilities`: an ability has no mana value.
+       */
+      readonly qualities?: readonly (
+        | { readonly kind: 'manaValueAtLeast'; readonly value: number }
+        | { readonly kind: 'hasX' }
+      )[];
     };
 
 /**

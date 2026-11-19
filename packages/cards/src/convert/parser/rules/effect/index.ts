@@ -53,6 +53,7 @@ import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
+import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GALADRIEL_G1_EFFECT_RULES } from './galadriel-g1';
@@ -128,6 +129,7 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
+import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
@@ -139,6 +141,7 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { VOTE_EFFECT_RULES } from './vote';
@@ -1048,8 +1051,12 @@ export const EFFECT_RULES = [
   ...GOAD_EFFECT_RULES,
   // Issue 25 (the Niv-Mizzet deck): "shuffle ~ and your graveyard into their owner's library".
   ...NIV_EFFECT_RULES,
+  // Quandrix deck: "Target player shuffles up to three target cards from their graveyard into their library".
+  ...QUANDRIX_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
+  ...FLASH_PERMISSION_EFFECT_RULES,
+  ...SPEND_QUALITIES_EFFECT_RULES,
   ...NIV_GROUP_2B_B_EFFECT_RULES,
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,

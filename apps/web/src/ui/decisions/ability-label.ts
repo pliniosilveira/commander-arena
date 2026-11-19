@@ -1374,6 +1374,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
         : `Untap ${object(effect.objects)}`;
     case 'removeAllCounters':
       return `Remove all counters from ${object(effect.objects)}`;
+    case 'moveAllCounters':
+      // CR 122.1: "Move all counters from target nonland permanent you control onto another target nonland permanent you control".
+      return `Move all counters from ${object(effect.from)} onto ${object(effect.to)}`;
     case 'removeAllPlayerCounters':
       return `${playerVerb(effect.player, ability, 'lose')} all counters`;
     case 'createCopies': {

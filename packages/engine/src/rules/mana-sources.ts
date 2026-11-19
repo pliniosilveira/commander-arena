@@ -66,7 +66,7 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
       // The mana cost is the planner's business (one level, mana/payment.ts), so only the {T},
       // sacrifice and life costs and the restriction on activating decide whether the source is on
       // offer.
-      if (!canPayPhysicalCosts(state, obj, ability, seat)) continue;
+      if (!canPayPhysicalCosts(state, obj, ability, seat, abilityIndex)) continue;
       // CR 605.4, D-139: what a triggered mana ability adds ("add an additional {C}") is made with the mana, so the planner counts it.
       const produces = productionOutcomes(state, obj, ability)
         .filter((o) => o.length > 0)

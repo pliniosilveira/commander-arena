@@ -74,6 +74,7 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       }
       break;
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
+    case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
     case 'commanderIdentity':
       break;
     case 'chosenColor': // D-149: the face must ask for the color as the permanent enters (`validate-chosen.ts`)

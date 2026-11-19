@@ -193,6 +193,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tap',
     'untap',
     'removeAllCounters',
+    // Nexus Mentality: "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6).
+    'moveAllCounters',
     'removeAllPlayerCounters',
     // Galadriel group 3: "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1).
     'removeCounters',
@@ -222,6 +224,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'restrict',
     // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
     'grantPlayerHexproof',
+    // CR 601.3b (Alchemist's Refuge): "You may cast spells this turn as though they had flash."
+    'grantCastAsThoughFlash',
     // D-639: "Goad target creature" (CR 701.15).
     'goad',
     'grantPlayerProtectionEverything',
@@ -651,6 +655,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyCombination',
     // "Choose a color. Add an amount of mana of that color equal to your devotion to that color."
     'anyColorDevotion',
+    // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
+    'anyColorAmount',
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
@@ -868,6 +874,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'countX',
     // Hylda group 3 (CR 115.1, 601.2c): "any number of target tapped creatures with different controllers" (`TargetSpec.differentControllers`).
     'differentControllers',
+    // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
+    'ownedByTarget',
     'greatest',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
@@ -1590,6 +1598,8 @@ export const SELECTOR_KINDS = [
   'countX',
   /** "Any number of target tapped creatures with different controllers" (CR 115.1, 601.2c, Hylda group 3): the engine's `TargetSpec.differentControllers`. */
   'differentControllers',
+  /** "Target player shuffles up to three target cards from their graveyard into their library" (CR 115.1, 608.2b): the engine's `TargetSpec.ownedByTarget`. */
+  'ownedByTarget',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
@@ -2099,6 +2109,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   chooseObjects: true,
   grantPlayerHexproof: true,
+  grantCastAsThoughFlash: true,
   grantPlayerProtectionEverything: true,
   preventPlayerLifeTotalChange: true,
   mill: true,
@@ -2129,6 +2140,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   tap: true,
   untap: true,
   removeAllCounters: true,
+  moveAllCounters: true,
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
@@ -2416,6 +2428,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   combination: true,
   anyCombination: true,
   anyColorDevotion: true,
+  anyColorAmount: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,

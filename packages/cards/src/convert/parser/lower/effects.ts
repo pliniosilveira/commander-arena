@@ -60,6 +60,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
+import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
@@ -100,6 +101,7 @@ import { PREVENT_DAMAGE } from './prevent';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
+import { QUANDRIX_LOWERINGS } from './quandrix';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
@@ -855,8 +857,11 @@ const MAY_CAST_SPELLS: Lowering<IrClause, Effects> = {
   },
 };
 
-/** The mana a spec produces; a color choice is only possible while paying for a mana ability. */
-export function lowerMana(spec: IrManaSpec): ManaProduction {
+/**
+ * The mana a spec produces; a color choice is only possible while paying for a mana ability. Null for the specs whose count comes from elsewhere in the ability ("one mana of
+ * that color for each ...", "X mana of any one color, where X is ..."): `lowerManaAbility` builds those itself.
+ */
+export function lowerMana(spec: IrManaSpec): ManaProduction | null {
   switch (spec.what.kind) {
     case 'symbols':
       return { kind: 'fixed', mana: spec.what.symbols as ManaColor[] };
@@ -872,6 +877,9 @@ export function lowerMana(spec: IrManaSpec): ManaProduction {
       return spec.what.or === undefined
         ? { kind: 'chosenColor' }
         : { kind: 'chosenColor', or: spec.what.or };
+    case 'thatColor':
+    case 'anyOneColorX':
+      return null;
     case 'devotionToChosenColor':
       // CR 605.3b, 700.5: only after "Choose a color." in a mana ability (`lowerChosenColorDevotion`); the ordinary lowering of an instruction refuses it.
       return { kind: 'anyColorDevotion' };
@@ -1012,6 +1020,7 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
       return { ok: false, needs: ['selector:colorChoice'], at: spec.span, rule: spec.rule };
     }
     const produced = lowerMana(spec);
+    if (produced === null) return failure(clause);
     return {
       ok: true,
       value: [
@@ -2058,8 +2067,10 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
   ...NIV_LOWERINGS,
+  ...QUANDRIX_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
+  ...FLASH_PERMISSION_LOWERINGS,
   // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
   ...LOREHOLD_G1_LOWERINGS,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".

@@ -86,7 +86,7 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   for (const id of state.battlefield) {
     const obj = getObject(state, id);
     for (const { abilityIndex, ability } of manaAbilitiesOf(state, obj)) {
-      if (!canActivateManaAbility(state, obj, ability, seat)) continue;
+      if (!canActivateManaAbility(state, obj, ability, seat, abilityIndex)) continue;
       // CR 601.2b, 605.3b (D-222): a cost "Sacrifice a Spirit" is chosen by the player: one option for each permanent they may give up when there are several.
       const gives = manaSacrificeCandidates(state, seat, id, ability);
       // D-625: the same for a cost "Tap an untapped creature you control": one option for each permanent the player may tap when there are several.

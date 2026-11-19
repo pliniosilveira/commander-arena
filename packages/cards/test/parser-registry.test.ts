@@ -338,6 +338,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
+  'noun.all-tokens': spell((e) => `Destroy ${e}.`),
   'noun.each-permanent': spell((e) => `Destroy ${e}.`),
   'amount.number': spell((e) => `Draw ${e} cards.`),
   'amount.x': spell((e) => `Draw ${e} cards.`),
@@ -383,6 +384,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
   'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
+  // Quandrix Unlimited deck, group F (Mana Bloom): the counters of ~ all gone, in the intervening "if" of an upkeep trigger.
+  'condition.this-has-no-counters': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, return ~ to its owner's hand.`,
+  ),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,

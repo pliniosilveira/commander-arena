@@ -722,6 +722,7 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each permanent sacrificed this way',
     'for each card exiled this way',
     'for each card discarded this way',
+    'for each counter removed this way',
     'for each creature destroyed this way',
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
@@ -740,6 +741,8 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each creatures sacrificed this way',
     'for each card drawn this way',
     'for each card discarded',
+    'for each counter removed',
+    'for each counters removed this way',
     'for each cards discarded this way',
     'for each creature card discarded this way',
     'for each opponent who discarded a card this way',
@@ -765,6 +768,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: discarded.pos },
         },
         pos: discarded.pos,
+      };
+    }
+    // Nexus Mentality (CR 122.1, 608.2c): "for each counter removed this way": the counters the `remove all counters` before it took off.
+    const removed = pattern(/for each counter removed this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (removed.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'countersRemoved',
+          words: ['counter'],
+          span: { start: pos, end: removed.pos },
+        },
+        pos: removed.pos,
       };
     }
     // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards the mill before it put there.

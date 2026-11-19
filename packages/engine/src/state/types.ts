@@ -1878,6 +1878,8 @@ export interface ThisWayCounts {
   readonly discardedMost?: number;
   /** The damage dealt by `dealDamage` effects, after prevention, for "equal to the damage dealt this way" (issue 159). */
   readonly damageDealt?: number;
+  /** The counters of every kind that `removeAllCounters` effects took off, for "for each counter removed this way" (CR 122.1). */
+  readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
@@ -2005,6 +2007,8 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
+  /** "You may cast spells this turn as though they had flash" (`grantCastAsThoughFlash`, CR 601.3b): the effect's `players` may cast any spell at instant timing while it lasts. No layer: read in `castTiming`. */
+  | { readonly kind: 'playerCastAsThoughFlash' }
   /** Protection from everything granted to a player until their next turn (D-607). */
   | { readonly kind: 'playerProtectionEverything' }
   /** Prevents all increases and decreases to the player's life total (D-607). */
