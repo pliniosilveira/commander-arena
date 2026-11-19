@@ -2,6 +2,7 @@ import { choice, fail, map, type Parser, pattern, satisfy } from '../../combinat
 import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { defineRule, spanned } from '../registry';
+import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { COUNT_AMOUNT_RULES } from './count';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
@@ -12,7 +13,6 @@ import { HASHATON_G2_AMOUNT_RULES } from './hashaton-group-2';
 import { AMOUNT_FOR_EACH_DIED } from './history';
 import { HOFRI_AMOUNT_RULES } from './hofri';
 import { AMOUNT_TIMES_KICKED } from './kicked';
-import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { KORVOLD_AMOUNT_RULES } from './korvold';
 import { LOREHOLD_G2_AMOUNT_RULES } from './lorehold-g2';
 import { AMOUNT_FOR_EACH_MANA_SPENT } from './mana-spent';

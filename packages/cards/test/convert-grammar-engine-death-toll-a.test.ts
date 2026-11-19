@@ -68,7 +68,7 @@ describe('delirium statics: "as long as there are four or more card types among 
     '%s gets +2/+2 with four types, not with three (CR 205.2a)',
     (name) => {
       const def = real(name);
-      const [p = 0, t = 0] = statsOf(game(def, THREE), name);
+      const [p = 0, t = 0] = statsOf(game(def, THREE), name).map((n) => n ?? 0);
       expect(statsOf(game(def, FOUR), name)).toEqual([p + 2, t + 2]);
     },
   );
