@@ -389,7 +389,7 @@ export const EFFECT_REVEAL_UNTIL_MAY_PUT = defineRule<Clauses>({
 export const EFFECT_CAST_FREE = defineRule<Clauses>({
   id: 'effect.cast-free',
   family: 'effect',
-  leading: ['you'],
+  leading: ['you', 'cast'],
   cites: [
     'CR 608.2g (Resolving Spells and Abilities)',
     'CR 118.9 (Alternative Costs)',
@@ -401,6 +401,7 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast a creature spell from your hand without paying its mana cost',
     'you may cast a spell from your hand without paying its mana cost',
     'you may cast a spell with mana value X or less from your hand without paying its mana cost',
+    'you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost',
     'you may play the exiled card without paying its mana cost',
     'you may cast the exiled card without paying its mana cost',
   ],
@@ -408,6 +409,9 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
     'you may cast a spell with mana value 5 or less from your hand',
     'you may cast a spell with mana value X or less from your graveyard without paying its mana cost',
     'you may cast a spell with mana value X or less from your hand',
+    'you may cast a spell with lesser mana value from your hand without paying its mana cost',
+    'you may cast a spell that shares a card type with it from your hand without paying its mana cost',
+    'you may cast a spell with lesser mana value that shares a card type with it from your graveyard without paying its mana cost',
     'you may cast a spell with mana value 5 or less from your graveyard without paying its mana cost',
     'you may cast a spell with mana value 5 or less without paying its mana cost',
     'you may cast two spells from your hand without paying their mana costs',
@@ -421,9 +425,10 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
   ],
   parse: single(
     'effect.cast-free',
-    choice<{ objects: IrNoun; play: boolean }>(
+    choice<{ objects: IrNoun; play: boolean; written: boolean }>(
       (ctx, pos) => {
-        const head = pattern(/you may cast an? /iu)(ctx, pos);
+        // "you may cast ..."; inside a triggered ability the "you may" is the ability's (the clause is optional), so "cast ..." is read too, and the lowering asks for one of the two.
+        const head = pattern(/(you may )?cast an? /iu)(ctx, pos);
         if (!head.ok) return head;
         const phrase = spanned(spellPhrase(false))(ctx, head.pos);
         if (!phrase.ok) return phrase;
@@ -433,7 +438,15 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
           null,
         )(ctx, phrase.pos);
         if (!atMostX.ok) return atMostX;
-        const from = literal(' from your hand without paying its mana cost')(ctx, atMostX.pos);
+        // "a spell with lesser mana value that shares a card type with it" (issue 100, CR 202.3, 205.2a): relative to the spell a cast trigger is about.
+        const lesser = optional(
+          quiet(
+            pattern(/ with lesser mana value that shares a card type with it(?![\p{L}\p{N}])/u),
+          ),
+          null,
+        )(ctx, atMostX.pos);
+        if (!lesser.ok) return lesser;
+        const from = literal(' from your hand without paying its mana cost')(ctx, lesser.pos);
         if (!from.ok) return from;
         const { stackKind: _kind, zone: _zone, ...rest } = phrase.value.value;
         void _kind;
@@ -443,6 +456,7 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
           ...rest,
           zone: 'hand' as const,
           ...(atMostX.value === null ? {} : { manaValueAtMostX: true as const }),
+          ...(lesser.value === null ? {} : { lesserSharingTypeWithTriggerSpell: true as const }),
           // "a spell" is a card that is not a land: a land is played, never cast (CR 305.1, 601.1).
           ...(plainSpell ? { notTypes: ['land'] } : {}),
         };
@@ -456,7 +470,11 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
           span: phrase.value.span,
           rule: 'effect.cast-free',
         };
-        return { ok: true, value: { objects, play: false }, pos: from.pos };
+        return {
+          ok: true,
+          value: { objects, play: false, written: head.value[1] !== undefined },
+          pos: from.pos,
+        };
       },
       (ctx, pos) => {
         const r = spanned(
@@ -477,14 +495,23 @@ export const EFFECT_CAST_FREE = defineRule<Clauses>({
         };
         return {
           ok: true,
-          value: { objects, play: (r.value.value[1] ?? '').toLowerCase() === 'play' },
+          value: {
+            objects,
+            play: (r.value.value[1] ?? '').toLowerCase() === 'play',
+            written: true,
+          },
           pos: r.pos,
         };
       },
     ),
-    ({ objects, play }) => ({
+    ({ objects, play, written }) => ({
       verb: 'castFree',
-      args: { objects, play: flag('effect.cast-free', play, objects.span) },
+      args: {
+        objects,
+        play: flag('effect.cast-free', play, objects.span),
+        // Whether the sentence said "you may" itself (a triggered ability's own "you may" makes the clause optional instead).
+        mayWritten: flag('effect.cast-free', written, objects.span),
+      },
     }),
   ),
 });

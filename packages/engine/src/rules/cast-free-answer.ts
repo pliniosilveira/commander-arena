@@ -67,8 +67,16 @@ export function acceptCastFree(state: GameState, card: ObjectId): Result {
     a.head.remaining === undefined ? 0 : a.head.remaining === 'any' ? 'any' : a.head.remaining - 1;
   const again: readonly Instruction[] =
     left === 'any' || left > 0 ? [{ ...a.head, remaining: left, chosen: null }] : [];
-  return ok({ ...begun.state, resolution: { ...resolving, queue: [...again, ...a.rest] } }, [
-    accepted,
-    ...begun.events,
-  ]);
+  // CR 608.2c (issue 100): a spell was cast, which "if you do" reads (`performed`).
+  return ok(
+    {
+      ...begun.state,
+      resolution: {
+        ...resolving,
+        queue: [...again, ...a.rest],
+        performed: (resolving.performed ?? 0) + 1,
+      },
+    },
+    [accepted, ...begun.events],
+  );
 }

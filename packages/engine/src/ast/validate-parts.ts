@@ -365,8 +365,9 @@ export function checkFilter(
     );
   }
   // D-230: "mana value X or less, where X is ...": an amount that reads no target and no earlier instruction.
-  if (f.manaValueAtMost !== undefined) {
-    const a = f.manaValueAtMost as {
+  for (const limitKey of ['manaValueAtMost', 'manaValueBelow'] as const) {
+    if (f[limitKey] === undefined) continue;
+    const a = f[limitKey] as {
       kind?: string;
       of?: { kind?: string };
       filter?: ObjectFilter;
@@ -389,15 +390,15 @@ export function checkFilter(
     if (!ok) {
       issue(
         out,
-        `${path}.manaValueAtMost`,
+        `${path}.${limitKey}`,
         'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
       );
     }
     if (f.manaValue !== undefined) {
       issue(
         out,
-        `${path}.manaValueAtMost`,
-        'a filter has one mana value limit: manaValue or manaValueAtMost',
+        `${path}.${limitKey}`,
+        'a filter has one mana value limit: manaValue, manaValueAtMost or manaValueBelow',
       );
     }
   }
@@ -540,6 +541,13 @@ export function checkFilter(
         'sharesCreatureTypeWith is read in the filter of a revealUntil in the effect of a "dies" trigger, where the creature that died is what the trigger is about',
       );
     }
+  }
+  // CR 205.2a, 603.3d: "that shares a card type with it" names the spell a cast trigger is about.
+  if (f.sharesCardTypeWith !== undefined && f.sharesCardTypeWith !== 'triggerSubject') {
+    issue(out, `${path}.sharesCardTypeWith`, "sharesCardTypeWith is 'triggerSubject'");
+  }
+  if (f.manaValueAtMost !== undefined && f.manaValueBelow !== undefined) {
+    issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
   }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
   for (const key of ['chosenType', 'chosenColor', 'notChosenType'] as const) {
@@ -3994,6 +4002,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               child?.kind === 'exileOwnGraveyardCard' ||
               // Lorehold group 1: "you may exile one of them from your graveyard. If you do, ...".
               child?.kind === 'exileFromTriggerCards' ||
+              // Issue 100 (CR 608.2g): "you may cast a spell ... without paying its mana cost. If you don't, ...": whether a spell was cast is something done (`performed`).
+              (child?.kind === 'castFree' && child.max === undefined) ||
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
               child?.kind === 'createToken') &&
             after.mayAvailable !== true

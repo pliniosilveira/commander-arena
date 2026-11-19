@@ -190,6 +190,84 @@ export const SYNTHETIC_FREE_CAST_LIST: readonly CardDefinition[] = [
       },
     },
   }),
+  // CR 601.2i, 608.2g, 608.2c: "Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your
+  // hand without paying its mana cost. If you don't, create a 2/1 red Monkey Pirate creature token. It gains haste until end of turn."
+  singleFace({
+    name: 'SYNTHETIC Lesser Pair',
+    manaCost: ['1', 'U', 'R'],
+    types: ['creature'],
+    subtypes: ['Human'],
+    colors: ['U', 'R'],
+    colorIdentity: ['U', 'R'],
+    power: 2,
+    toughness: 4,
+    oracleText:
+      "Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create a 2/1 red Monkey Pirate creature token. It gains haste until end of turn.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'castSpell',
+          filter: { stackKind: 'spell', anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }] },
+          by: 'you',
+          firstOfKind: true,
+        },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'castFree',
+              objects: {
+                kind: 'choose',
+                filter: {
+                  zone: 'hand',
+                  notTypes: ['land'],
+                  manaValueBelow: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+                  sharesCardTypeWith: 'triggerSubject',
+                },
+              },
+            },
+            {
+              kind: 'conditional',
+              condition: { kind: 'not', term: { kind: 'didPrevious' } },
+              effect: {
+                kind: 'sequence',
+                effects: [
+                  {
+                    kind: 'createToken',
+                    token: {
+                      kind: 'custom',
+                      definition: {
+                        name: 'Monkey Pirate',
+                        manaCost: null,
+                        supertypes: [],
+                        types: ['creature'],
+                        subtypes: ['Monkey', 'Pirate'],
+                        colors: ['R'],
+                        power: 2,
+                        toughness: 1,
+                        loyalty: null,
+                        defense: null,
+                        oracleText: '',
+                        abilities: [],
+                      },
+                    },
+                    count: 1,
+                  },
+                  {
+                    kind: 'grantKeyword',
+                    objects: { kind: 'moved' },
+                    keyword: { kind: 'haste' },
+                    duration: 'untilEndOfTurn',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ],
+  }),
   // CR 107.3a, 202.3: "mana value X or less" is the X announced for this spell.
   singleFace({
     name: 'SYNTHETIC X Burn Free Rite',

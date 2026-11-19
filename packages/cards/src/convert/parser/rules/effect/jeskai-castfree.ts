@@ -5,7 +5,7 @@ import { choice, literal, map, pattern, quiet, sequence } from '../../combinator
 import type { IrAmount, IrFilter, IrNoun } from '../../ir/types';
 import { NOUN_ITS_CONTROLLER } from '../noun/controller';
 import { CARD_TYPES, typeChoice, typeWords } from '../noun/phrases';
-import { defineRule, family, spanned } from '../registry';
+import { defineRule, family, quietly, spanned } from '../registry';
 import { AT_LEAST_TWO } from './library';
 import { type Clauses, makeClause, single } from './operands';
 
@@ -208,8 +208,9 @@ export const EFFECT_DESTROYED_CONTROLLER_EXILE_CAST = defineRule<Clauses>({
     )(ctx, pos),
 });
 
+// Read quietly: these start like the plain look, counter and "if" rules, so they must not move the point where a line they do not read stops.
 export const JESKAI_CASTFREE_EFFECT_RULES = [
   EFFECT_LOOK_CAST_FREE,
   EFFECT_COUNTER_EXILE_CAST,
   EFFECT_DESTROYED_CONTROLLER_EXILE_CAST,
-];
+].map(quietly);

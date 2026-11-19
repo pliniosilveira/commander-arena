@@ -46,6 +46,8 @@ export function freeCandidates(
     // CR 107.3a: "mana value X or less" reads the X announced for the spell that is resolving.
     x: state.objects[res.object]?.stack?.x ?? 0,
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
+    // CR 603.3d: "with lesser mana value that shares a card type with it": the spell a cast trigger is about.
+    ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
   };
   const named: readonly ObjectId[] =
     // CR 608.2g: "from among them": the effect named the cards itself (those looked at), which are still where they were.
@@ -103,13 +105,15 @@ export function runCastFree(
     );
   }
   const legal = freeCandidates(state, res, ins);
-  if (legal.length === 0) return done(state);
+  // CR 608.2c (issue 100): "If you don't": nothing is done until a spell is cast, so what "if you do" reads starts again at 0 (`resetPerformed`).
+  if (legal.length === 0) return { ...done(state), resetPerformed: true };
   const first = state.objects[legal[0] as ObjectId]?.zone;
   const zone = first === 'exile' ? 'exile' : first === 'library' ? 'library' : 'hand';
   return {
     state,
     events: [],
     front: [],
+    resetPerformed: true,
     needs: {
       kind: 'chooseCards',
       seat: ins.seat ?? res.controller,

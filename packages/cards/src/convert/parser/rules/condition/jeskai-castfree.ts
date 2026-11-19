@@ -3,7 +3,7 @@
  */
 import { pattern } from '../../combinators';
 import type { IrCondition } from '../../ir/types';
-import { defineRule } from '../registry';
+import { defineRule, quietly } from '../registry';
 
 /**
  * `condition.was-cast`: "you cast it" (CR 601.2a, 603.4: the permanent came from a spell its controller cast, from any zone; "it" is the permanent the trigger is about, which
@@ -40,4 +40,4 @@ export const CONDITION_WAS_CAST = defineRule<IrCondition>({
   },
 });
 
-export const JESKAI_CASTFREE_CONDITION_RULES = [CONDITION_WAS_CAST];
+export const JESKAI_CASTFREE_CONDITION_RULES = [CONDITION_WAS_CAST].map(quietly);

@@ -652,6 +652,11 @@ export interface ObjectFilter {
    */
   readonly manaValueAtMost?: Amount;
   /**
+   * "a spell with lesser mana value" (CR 202.3, Baral and Kari Zev): as `manaValueAtMost` with the limit not included: the mana value of the object is less than the amount
+   * (the same amounts, `manaValueOf` of the `triggerSubject` of a `castSpell` trigger among them). A filter has one mana value limit.
+   */
+  readonly manaValueBelow?: Amount;
+  /**
    * Only objects whose power is less than the power of this ability's source (CR 702.134a, Mentor, D-120):
    * "target attacking creature with power less than this creature's power". The source's power is read as it
    * is now, or from last-known information if it has left the battlefield (CR 113.7a). Refused where
@@ -705,6 +710,11 @@ export interface ObjectFilter {
    * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
    */
   readonly sharesCreatureTypeWith?: 'triggerSubject';
+  /**
+   * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
+   * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
+   */
+  readonly sharesCardTypeWith?: 'triggerSubject';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
@@ -3622,6 +3632,11 @@ export type Trigger =
        * (a spell cast this turn counts, whoever it was cast by, whatever it is: the filter reads the spell that triggers, not the count). Not with `self`.
        */
       readonly nth?: number;
+      /**
+       * "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i, 603.2): only the first spell of the card types `filter` names (`types` or the `types` of its `anyOf`
+       * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type.
+       */
+      readonly firstOfKind?: true;
       /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
       readonly duringTurn?: 'opponent';
       /**

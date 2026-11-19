@@ -236,6 +236,9 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const play = arg(clause, 'play');
     if (objects?.kind !== 'noun' || play?.kind !== 'flag') return failure(clause);
+    // The cast is the controller's to decline: "you may cast ..." said by the sentence, or made optional by the "you may" of a triggered ability. "Cast a spell ..." alone is no offer.
+    const written = arg(clause, 'mayWritten');
+    if (written?.kind === 'flag' && !written.value && !clause.optional) return failure(clause);
     const playing = play.value ? { play: true as const } : {};
     if (objects.det === 'linkedExile') {
       // D-664 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
@@ -271,10 +274,32 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
       void _x;
       subject = { ...objects, filter: rest };
     }
+    // "... with lesser mana value that shares a card type with it": "it" is the spell of the cast trigger the effect belongs to (CR 603.3d).
+    let relative = false;
+    if (subject.filter.lesserSharingTypeWithTriggerSpell === true) {
+      if (!ctx.castTrigger) return failure(clause);
+      const missing = missingFeatures(['selector:manaValueBelow', 'selector:sharesCardTypeWith']);
+      if (missing.length > 0) return failure(clause, missing);
+      const { lesserSharingTypeWithTriggerSpell: _lesser, ...rest } = subject.filter;
+      void _lesser;
+      subject = { ...subject, filter: rest };
+      relative = true;
+    }
     const filter = lowerFilter(subject);
     if (!filter.ok) return filter;
-    const limited =
-      atMost === undefined ? filter.value : { ...filter.value, manaValueAtMost: atMost };
+    const limited = {
+      ...filter.value,
+      ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
+      ...(relative
+        ? {
+            manaValueBelow: {
+              kind: 'manaValueOf' as const,
+              of: { kind: 'triggerSubject' as const },
+            },
+            sharesCardTypeWith: 'triggerSubject' as const,
+          }
+        : {}),
+    };
     return {
       ok: true,
       value: [{ kind: 'castFree', objects: { kind: 'choose', filter: limited }, ...playing }],

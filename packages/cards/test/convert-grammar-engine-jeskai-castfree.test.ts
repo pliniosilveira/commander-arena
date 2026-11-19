@@ -108,6 +108,63 @@ describe('Velomachus Lorehold', () => {
   });
 });
 
+describe('Baral and Kari Zev', () => {
+  const CARD = real('Baral and Kari Zev');
+  const NAME = CARD.name;
+  const MURDER = 'Murder';
+  const game = (hand: readonly string[]) =>
+    scenario()
+      .define(CARD)
+      .seat(0)
+      .life(20)
+      .hand(...hand)
+      .battlefield(NAME, 'Swamp', 'Swamp', 'Swamp', 'Mountain')
+      .library('Island', 'Island')
+      .seat(1)
+      .life(20)
+      .battlefield('Typhoid Rats')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('it reads as supported and is valid', () => {
+    expect(validateCard(CARD)).toEqual([]);
+  });
+
+  test('the first instant of the turn, a Murder: the Bolt (lesser, an instant) is cast for free, and no token is created', () => {
+    const g = game([MURDER, BOLT]);
+    g.act(0).cast(MURDER, { targets: [{ name: 'Typhoid Rats' }], pay: true });
+    g.passAll();
+    g.act(0).chooseCards(BOLT);
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.expect.life(1, 17);
+    expect(g.find({ name: 'First Mate Ragavan', zone: 'battlefield' })).toHaveLength(0);
+  });
+
+  test('"If you don\'t": declining creates the legendary token, with haste until end of turn', () => {
+    const g = game([MURDER, BOLT]);
+    g.act(0).cast(MURDER, { targets: [{ name: 'Typhoid Rats' }], pay: true });
+    g.passAll();
+    g.act(0).chooseCards();
+    const token = g.view(0).battlefield.find((o) => o.name === 'First Mate Ragavan');
+    expect(token?.supertypes).toContain('legendary');
+    expect(token?.power).toBe(2);
+    expect(token?.toughness).toBe(1);
+    expect(token?.keywords).toContain('haste');
+  });
+
+  test('nothing lesser in hand: the token without a question; the second instant of the turn triggers nothing more', () => {
+    const g = game([BOLT, MURDER]);
+    g.act(0).cast(BOLT, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    expect(g.find({ name: 'First Mate Ragavan', zone: 'battlefield' })).toHaveLength(1);
+    g.act(0).cast(MURDER, { targets: [{ name: 'Typhoid Rats' }], pay: true });
+    g.passAll();
+    expect(g.find({ name: 'First Mate Ragavan', zone: 'battlefield' })).toHaveLength(1);
+    g.expect.pending('priority', 0);
+  });
+});
+
 describe('Transforming Flourish', () => {
   const CARD = real('Transforming Flourish');
   const NAME = CARD.name;

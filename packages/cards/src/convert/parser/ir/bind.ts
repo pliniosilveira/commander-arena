@@ -441,7 +441,17 @@ class Binder {
           this.antecedents.push({
             kind: 'object',
             token: true,
-            ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
+            // Issue 100 (Baral and Kari Zev): "Create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.": "it" of the
+            // sentence after the creation of a creature token with a power and toughness of its own is that token, as it is after a copy with exceptions.
+            ...(arg.copyExcept === undefined &&
+            !(
+              arg.copyOf === undefined &&
+              arg.predefined === undefined &&
+              arg.power !== undefined &&
+              arg.toughness !== undefined
+            )
+              ? {}
+              : { itToken: true as const }),
             noun: {
               kind: 'noun',
               det: 'a',

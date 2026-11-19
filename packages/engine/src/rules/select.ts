@@ -12,7 +12,7 @@ import type {
   PlayerSelector,
   TargetSpec,
 } from '../ast/types';
-import type { Subtype } from '../characteristics';
+import type { CardType, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat, objectsInZone, opponentsOf, seatsInOrder } from '../state/ops';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
@@ -238,6 +238,10 @@ export function matchesFilter(
     ...(filter.manaValueAtMost !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueAtMost, ctx) }
       : {}),
+    // CR 202.3: "with lesser mana value": at most one less than the amount.
+    ...(filter.manaValueBelow !== undefined
+      ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
+      : {}),
     attackersOfYou: attackersOfPlayer(state, ctx.controller),
     ...(filter.attackingYou === 'orPlaneswalkers' ||
     (filter.anyOf?.some((m) => m.attackingYou === 'orPlaneswalkers') ?? false)
@@ -290,6 +294,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.attackingOpponents !== undefined ||
     f.attackingOrBlocking === true ||
     f.manaValueAtMost !== undefined ||
+    f.manaValueBelow !== undefined ||
     f.powerLessThanSource === true ||
     f.manaValueX === true ||
     f.controllerDealtDamageBySource === true ||
@@ -297,6 +302,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.enteredThisTurn === true ||
     f.exiledWithSource === true ||
     f.sharesCreatureTypeWith !== undefined ||
+    f.sharesCardTypeWith !== undefined ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );
@@ -304,16 +310,22 @@ function readsGame(f: ObjectFilter): boolean {
 
 /** Whether the filter, or one of its `anyOf` members, asks for a creature type shared with the trigger's creature (D-261). */
 function readsSharedType(f: ObjectFilter): boolean {
-  return f.sharesCreatureTypeWith !== undefined || (f.anyOf?.some(readsSharedType) ?? false);
+  return (
+    f.sharesCreatureTypeWith !== undefined ||
+    f.sharesCardTypeWith !== undefined ||
+    (f.anyOf?.some(readsSharedType) ?? false)
+  );
 }
 
 /** The subtypes of the object a trigger is about, as it is or as it last was; none known when there is no such object. */
 function subjectSubtypesOf(
   state: GameState,
   subject: ObjectId | undefined,
-): { subjectSubtypes?: readonly Subtype[] } {
+): { subjectSubtypes?: readonly Subtype[]; subjectTypes?: readonly CardType[] } {
   const obj = subject === undefined ? null : objectOrLki(state, subject);
-  return obj === null ? {} : { subjectSubtypes: describeObject(state, obj).subtypes };
+  if (obj === null) return {};
+  const described = describeObject(state, obj);
+  return { subjectSubtypes: described.subtypes, subjectTypes: described.types };
 }
 
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */
@@ -550,7 +562,7 @@ export function legalTargets(
     // A spell or ability on the stack never targets itself while it is being put there.
     if (obj.zone === 'stack' && (id === ctx.source || id === ctx.stackObject)) continue;
     const matchingContext =
-      filter.manaValueAtMost === undefined
+      filter.manaValueAtMost === undefined && filter.manaValueBelow === undefined
         ? ctx
         : {
             ...ctx,

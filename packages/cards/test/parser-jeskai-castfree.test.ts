@@ -187,3 +187,97 @@ describe('Transcendent Dragon: "When ~ enters, if you cast it, counter target sp
     expect(dropped(text, 'creature').reason).toBeDefined();
   });
 });
+
+describe('Baral and Kari Zev: "Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don\'t, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn." (CR 601.2i, 202.3, 205.2a, 608.2g, 608.2c)', () => {
+  const REAL =
+    "Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.";
+  const TRIGGER = {
+    kind: 'castSpell',
+    filter: { stackKind: 'spell', anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }] },
+    by: 'you',
+    firstOfKind: true,
+  };
+  const CAST = {
+    kind: 'castFree',
+    objects: {
+      kind: 'choose',
+      filter: {
+        zone: 'hand',
+        notTypes: ['land'],
+        manaValueBelow: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+        sharesCardTypeWith: 'triggerSubject',
+      },
+    },
+  };
+
+  test('the real text: the first-of-kind cast trigger, the free cast, and the token that "if you don\'t" makes, with haste', () => {
+    const parsed = readAll(REAL, 'creature', ['Human']);
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: TRIGGER,
+        effect: {
+          kind: 'sequence',
+          effects: [
+            CAST,
+            {
+              kind: 'conditional',
+              condition: { kind: 'not', term: { kind: 'didPrevious' } },
+              effect: {
+                kind: 'sequence',
+                effects: [
+                  {
+                    kind: 'createToken',
+                    token: {
+                      kind: 'custom',
+                      definition: { name: 'First Mate Ragavan', supertypes: ['legendary'] },
+                    },
+                  },
+                  {
+                    kind: 'grantKeyword',
+                    objects: { kind: 'moved' },
+                    keyword: { kind: 'haste' },
+                    duration: 'untilEndOfTurn',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ]);
+  });
+
+  test('the free cast alone, of any cast trigger (SYNTHETIC)', () => {
+    const parsed = readAll(
+      'Whenever you cast an instant or sorcery spell, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost.',
+      'creature',
+    );
+    expect(parsed.abilities).toMatchObject([
+      { kind: 'triggered', trigger: { kind: 'castSpell', by: 'you' }, effect: CAST },
+    ]);
+  });
+
+  test('another kind of first spell (SYNTHETIC)', () => {
+    const parsed = readAll(
+      'Whenever you cast your first creature spell each turn, draw a card.',
+      'creature',
+    );
+    expect(parsed.abilities).toMatchObject([
+      {
+        kind: 'triggered',
+        trigger: { kind: 'castSpell', filter: { types: ['creature'] }, firstOfKind: true },
+      },
+    ]);
+  });
+
+  test.each([
+    // The spell "it" is the one of a cast trigger.
+    'When ~ enters, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost.',
+    // A forced cast is no offer.
+    "Whenever you cast your first instant or sorcery spell each turn, cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, draw a card.",
+    'Whenever you cast your first spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost.',
+  ])('not read: %s', (text) => {
+    expect(dropped(text, 'creature').reason).toBeDefined();
+  });
+});
