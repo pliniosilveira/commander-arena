@@ -25,7 +25,7 @@ const clickableTile = (page: Page, name: string) =>
 const logText = (page: Page) => page.getByRole('log');
 const creatureTiles = (page: Page) =>
   page.locator('.board-field[data-field-seat="0"] .board-row-creature .board-tile[data-object-id]');
-const chip = (page: Page, name: string) => page.locator('.board-flashback-chip', { hasText: name });
+const chip = (page: Page, name: string) => page.locator('.board-exile-play', { hasText: name });
 
 /** Plays on until `ready` holds; cards matching `keep` stay in the hand, kicker is declined. */
 async function playUntil(

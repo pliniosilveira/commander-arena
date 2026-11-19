@@ -203,6 +203,11 @@ export interface ObjectView {
    * 303.4b). The UI draws it on or under that permanent. Absent when it is attached to nothing.
    */
   readonly attachedTo?: ObjectId;
+  /**
+   * For a card in exile that Hideaway exiled face down and the viewer may look at (CR 702.75a, D-145): the permanent whose linked ability
+   * exiled it, which may let its controller play it. Absent otherwise (a viewer who may not look at it gets the placeholder).
+   */
+  readonly hideawaySource?: ObjectId;
   /** For an Aura that enchants a player (D-629): the player it is attached to. */
   readonly attachedToPlayer?: SeatId;
   /**
@@ -816,6 +821,8 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
       ? {}
       : { faceDown: true as const }),
     ...(obj.exiledFaceDown === true ? { exiledFaceDown: true as const } : {}),
+    // CR 702.75a: the viewer who may look at a Hideaway card knows which permanent exiled it (its linked ability may play it).
+    ...(obj.hideaway !== undefined && obj.zone === 'exile' ? { hideawaySource: obj.hideaway } : {}),
     ...specialActionFields(state, obj),
     ...(obj.stack?.x == null ? {} : { x: obj.stack.x }),
     ...(obj.stack == null || obj.stack.chosenModes.length === 0

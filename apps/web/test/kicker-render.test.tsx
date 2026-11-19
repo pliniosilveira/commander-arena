@@ -6,7 +6,7 @@ import type { GameView, ObjectView } from '@commander-arena/engine';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 import { CardFace } from '../src/ui/board/CardFace';
-import { OtherZonesStrip } from '../src/ui/board/OtherZonesStrip';
+import { ExilePlayStrip } from '../src/ui/board/ExilePlayStrip';
 import { ZoneViewer } from '../src/ui/board/ZoneViewer';
 import { DecisionLayer } from '../src/ui/decisions/DecisionLayer';
 import { StackPanel } from '../src/ui/panels/StackPanel';
@@ -119,7 +119,7 @@ test('the card face shows "kicked" and "flashback" only when the view says so', 
   expect(plain).not.toContain('flashback');
 });
 
-test('graveyard cards that can be cast with flashback are listed above the hand and badged in the list', async () => {
+test('graveyard cards that can be cast with flashback are listed in the strip at the right of the battlefield and badged in the list', async () => {
   const store = await must((view) => flashbackCards(view).length > 0);
   const view = store.getState().snapshot?.view;
   if (view === undefined) throw new Error('no view');
@@ -128,11 +128,11 @@ test('graveyard cards that can be cast with flashback are listed above the hand 
   const strip = renderToStaticMarkup(
     <StoreProvider store={live(store)}>
       <DecisionLayer>
-        <OtherZonesStrip view={view} />
+        <ExilePlayStrip view={view} />
       </DecisionLayer>
     </StoreProvider>,
   );
-  expect(strip).toContain('aria-label="Cast from your graveyard"');
+  expect(strip).toContain('aria-label="Playable from other zones"');
   expect(strip).toContain(card.name);
   expect(strip).toMatch(/Flashback (\{[^}]+\})+/);
 

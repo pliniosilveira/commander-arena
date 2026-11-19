@@ -238,7 +238,7 @@ test('A card cast from the graveyard: the ability opens a window, the chip says 
   await resolveStack(page);
 
   // The card can be cast from the graveyard this turn, and the chip says so.
-  const strip = page.getByRole('region', { name: 'Cast from your graveyard' });
+  const strip = page.getByRole('region', { name: 'Playable from other zones' });
   await expect(strip).toBeVisible();
   const chip = strip.getByRole('button', { name: `Cast from graveyard: ${zombie}` });
   await expect(chip).toContainText('Cast from graveyard');

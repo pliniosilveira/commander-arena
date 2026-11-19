@@ -1,45 +1,14 @@
 /**
- * The cards the player can cast right now from another zone, as rows of chips above the hand:
- * the graveyard cards with flashback (CR 702.34a, "Name Flashback {2}{B}"), escape (CR 702.138a,
- * "Name Escape {G}{G}, exile 5 other cards") or unearth (CR 702.84a, "Name Unearth {R}") and the cards in exile
- * (the cards playable from exile are shown at the left of the battlefield instead, `ExilePlayStrip`, issue 49) and the top card of the library under a permission to cast it from there
- * ("Name Cast from the top of your library"). A graveyard and the shared
- * exile are otherwise only a count that opens a list, and a castable card in one would be easy to
- * miss. A chip does what a click on the card does (the decision layer sends the cast with its
- * `alternative` or `face`).
+ * The cards in exile that are not playable now but have something to show, as a row of chips above the hand: a suspended card, the
+ * viewer's own foretold or Hideaway card, a card face down. The cards the viewer may cast or play from another zone (exile, graveyard,
+ * top of the library) are tiles at the right of the battlefield instead (`ExilePlayStrip`, issue 49).
  */
-import type { GameView, ObjectId, ObjectView } from '@commander-arena/engine';
+import type { GameView, ObjectView } from '@commander-arena/engine';
 import { exileMarks, FACE_DOWN_NAME, isHiddenFaceDown } from '../../game/later-text';
-import { graveyardLabels, graveyardPlayObjects } from '../decisions/flashback';
-import { libraryBadge } from '../decisions/layouts';
-import { objectIndex } from '../decisions/lookup';
-import { playableObjects } from '../decisions/priority';
-import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { type ExilePlayable, exilePlayable } from './exile-play';
 import { useHoverPreview } from './hover';
 import './later.css';
-
-function Chip({ object, label }: { object: ObjectView; label: string }) {
-  const hover = useHoverPreview(object.id);
-  const ix = useInteraction();
-  const drag = useDraggable(object.id, 'card', object.name);
-  return (
-    <button
-      type="button"
-      className={`board-flashback-chip${drag.dragging ? ' is-dragging' : ''}`}
-      draggable={drag.draggable}
-      onDragStart={drag.onDragStart}
-      onDragEnd={drag.onDragEnd}
-      data-object-id={object.id}
-      aria-label={`${label}: ${object.name}`}
-      onClick={() => ix.onObject(object.id)}
-      {...hover}
-    >
-      <b>{object.name}</b> <span>{label}</span>
-    </button>
-  );
-}
 
 /**
  * A card in exile that is not castable now but has something to show (D-128): a suspended card with its
@@ -71,51 +40,16 @@ function StatusChip({ object, mine }: { object: ObjectView; mine: boolean }) {
 
 export function OtherZonesStrip({ view, exile }: { view: GameView; exile?: ExilePlayable }) {
   const ix = useInteraction();
-  const pending = view.pending;
-  const priority = pending?.kind === 'priority' ? pending : null;
-  const index = objectIndex(view);
-  const graveyard = view.seats[view.viewer]?.graveyard ?? [];
-  const usable =
-    priority === null ? new Set<ObjectId>() : graveyardPlayObjects(priority, graveyard);
-  const fromGraveyard = graveyard.filter((o) => usable.has(o.id) && ix.clickable.has(o.id));
-  // The cards the viewer may cast or play from exile are shown by ExilePlayStrip, at the left of the battlefield (issue 49).
-  const { cards: fromExile } = exile ?? exilePlayable(view, ix.clickable);
-  // D-151 (CR 601.3): the top card of the viewer's own library, when a permanent lets them cast it from there.
-  const top = view.seats[view.viewer]?.libraryTop;
-  const playable = priority === null ? new Set<ObjectId>() : playableObjects(priority);
-  const fromLibrary =
-    top !== undefined && ix.clickable.has(top.id) && libraryBadge(playable, index, top.id) !== null
-      ? [top]
-      : [];
-  const shownCast = new Set(fromExile.map((o) => o.id));
+  // A card the strip at the right lists as playable is not listed a second time here.
+  const { cards: shown } = exile ?? exilePlayable(view, ix.clickable);
+  const shownCast = new Set(shown.map((o) => o.id));
   const status = view.exile.filter((o) => !shownCast.has(o.id) && exileMarks(o).length > 0);
+  if (status.length === 0) return null;
   return (
-    <>
-      {fromGraveyard.length > 0 && priority !== null && (
-        <section className="board-flashback" aria-label="Cast from your graveyard">
-          {fromGraveyard.map((o) => (
-            <Chip key={o.id} object={o} label={graveyardLabels(priority, o).join(' / ')} />
-          ))}
-        </section>
-      )}
-      {fromLibrary.length > 0 && (
-        <section className="board-flashback" aria-label="Cast from the top of your library">
-          {fromLibrary.map((o) => (
-            <Chip
-              key={o.id}
-              object={o}
-              label={libraryBadge(playable, index, o.id) ?? 'Cast from the top of your library'}
-            />
-          ))}
-        </section>
-      )}
-      {status.length > 0 && (
-        <ul className="board-exile-strip" aria-label="Suspended and foretold cards in exile">
-          {status.map((o) => (
-            <StatusChip key={o.id} object={o} mine={o.owner === view.viewer} />
-          ))}
-        </ul>
-      )}
-    </>
+    <ul className="board-exile-strip" aria-label="Suspended and foretold cards in exile">
+      {status.map((o) => (
+        <StatusChip key={o.id} object={o} mine={o.owner === view.viewer} />
+      ))}
+    </ul>
   );
 }

@@ -21,7 +21,7 @@ const stack = (page: Page) => page.getByRole('region', { name: 'Stack' });
 const discardDialog = (page: Page) => page.getByRole('dialog', { name: /^Discard/ });
 /** The chips above the hand for the cards of the graveyard that can be used now. */
 const chip = (page: Page, label: string | RegExp) =>
-  page.locator('.board-flashback-chip', { hasText: label });
+  page.locator('.board-exile-play', { hasText: label });
 const graveyardButton = (page: Page) =>
   page.getByRole('button', { name: /^Open You.* graveyard/i });
 
@@ -158,7 +158,10 @@ test('Escape: a button on the graveyard card, the exile question (Cancel takes t
   const before = await graveyardCount(page);
 
   await page.getByRole('button', { name: 'Full Control', exact: true }).click();
-  await expect(chip(page, 'Escape').first()).toHaveAttribute('aria-label', `${label}: ${name}`);
+  await expect(chip(page, 'Escape').first()).toHaveAttribute(
+    'aria-label',
+    `Graveyard: ${label}: ${name}`,
+  );
   await chip(page, 'Escape').first().click();
   // A single alternative is asked about, never cast by the click.
   await expect(chooser(page).getByRole('button', { name: label })).toBeVisible();
