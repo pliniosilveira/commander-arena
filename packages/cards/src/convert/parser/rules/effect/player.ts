@@ -97,43 +97,48 @@ const drawAction: Action = (subject, you, rule) =>
  * " unless you discard an artifact card" (stage P31, D-140, CR 701.9): the one card of a kind the player may discard instead of the
  * number the instruction names. The kind is card types (or a choice of them) and creature types, as a card in a hand is described.
  */
-const UNLESS_DISCARD: Parser<IrNoun> = map(
-  spanned(
-    sequence(
-      literal(' unless you discard '),
-      pattern(/an? /i),
-      many(
-        map(
-          sequence(
-            satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
-            literal(' '),
+const unlessDiscard = (who: 'you' | 'they'): Parser<IrNoun> =>
+  map(
+    spanned(
+      sequence(
+        literal(` unless ${who} discard `),
+        pattern(/an? /i),
+        many(
+          map(
+            sequence(
+              satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
+              literal(' '),
+            ),
+            ([w]) => w.subtype,
           ),
-          ([w]) => w.subtype,
         ),
+        optional(
+          map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
+          [] as string[],
+        ),
+        pattern(/card(?![\p{L}\p{N}])/iu),
       ),
-      optional(
-        map(sequence(typeWords(CARD_TYPES, false), literal(' ')), ([types]) => types),
-        [] as string[],
-      ),
-      pattern(/card(?![\p{L}\p{N}])/iu),
     ),
-  ),
-  ({ value: [, , subtypes, types], span }): IrNoun => ({
-    kind: 'noun',
-    det: 'a',
-    filter: {
-      ...(types.length > 0 ? { types } : {}),
-      ...(subtypes.length > 0 ? { subtypes } : {}),
-      card: true,
-      raw: [...subtypes, ...types, 'card'].join(' '),
-    },
-    upTo: false,
-    plural: false,
-    other: false,
-    span,
-    rule: 'effect.discard',
-  }),
-);
+    ({ value: [, , subtypes, types], span }): IrNoun => ({
+      kind: 'noun',
+      det: 'a',
+      filter: {
+        ...(types.length > 0 ? { types } : {}),
+        ...(subtypes.length > 0 ? { subtypes } : {}),
+        card: true,
+        raw: [...subtypes, ...types, 'card'].join(' '),
+      },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: 'effect.discard',
+    }),
+  );
+
+const UNLESS_DISCARD = unlessDiscard('you');
+/** " unless they discard a land card" (CR 701.9, Compulsive Research): said of a player other than the controller, who is the one who chooses what to discard. */
+const UNLESS_THEY_DISCARD = unlessDiscard('they');
 
 /**
  * "discards a card", "discard two cards" (CR 701.9: the player chooses, CR 701.9b); since stage P31 "discard two cards unless you
@@ -175,7 +180,9 @@ const discardAction: Action = (subject, you, rule) =>
           verbWord('discard', you),
           family<IrArg>('amount'),
           CARDS,
-          you ? optional(RANDOM_OR_UNLESS, null) : optional(AT_RANDOM, null),
+          you
+            ? optional(RANDOM_OR_UNLESS, null)
+            : optional(choice<string | IrNoun>(AT_RANDOM, UNLESS_THEY_DISCARD), null),
         ),
       ),
       ({ value, span }) => {
@@ -488,6 +495,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw two cards, then lose 2 life',
     'each player discards a card',
     'target player discards two cards',
+    // Compulsive Research (CR 701.9): the player who discards may discard one card of a kind instead.
+    'target player discards two cards unless they discard a land card',
     // Lorehold group 3 (CR 701.9a): the whole hand of each player the subject names.
     'each player discards their hand',
     'each player discards their hand, then draws seven cards',
@@ -627,6 +636,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its controller manifests the top card',
     'you and target opponent each manifest the top card of your library',
     'target player discards a card at random unless you discard an artifact card',
+    'target player discards two cards unless you discard a land card',
+    'you discard two cards unless they discard a land card',
     'each creature draws a card',
     'target player discards',
     'its controller',

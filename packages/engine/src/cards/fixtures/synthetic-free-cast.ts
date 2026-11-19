@@ -76,6 +76,244 @@ export const SYNTHETIC_FREE_CAST_LIST: readonly CardDefinition[] = [
     true,
     'You may play a card with mana value 5 or less from your hand without paying its mana cost.',
   ),
+  // CR 608.2g, 118.9: "Look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to this creature's
+  // power from among them without paying its mana cost. Put the rest on the bottom of your library in a random order."
+  singleFace({
+    name: 'SYNTHETIC Lorehold Scout',
+    manaCost: ['2', 'R'],
+    types: ['creature'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 3,
+    toughness: 3,
+    oracleText:
+      "{T}: Look at the top seven cards of your library. You may cast an instant or sorcery spell with mana value less than or equal to this creature's power from among them without paying its mana cost. Put the rest on the bottom of your library in a random order.",
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'lookAtTop',
+          count: 7,
+          take: {
+            filter: { anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }] },
+            max: 1,
+            to: 'castFree',
+            manaValueAtMost: { kind: 'powerOf', of: { kind: 'this' } },
+          },
+          rest: 'bottomRandom',
+        },
+      },
+    ],
+  }),
+  // CR 701.6a, 614.1a, 608.2g, 603.4: "Flash. When this creature enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of
+  // putting it into its owner's graveyard, then you may cast it without paying its mana cost."
+  singleFace({
+    name: 'SYNTHETIC Thief Dragon',
+    manaCost: ['2', 'U'],
+    types: ['creature'],
+    subtypes: ['Dragon'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    power: 2,
+    toughness: 2,
+    oracleText:
+      "Flash. When this creature enters, if you cast it, counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost.",
+    abilities: [
+      { kind: 'keyword', keyword: { kind: 'flash' } },
+      {
+        kind: 'triggered',
+        trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+        interveningIf: { kind: 'wasCast' },
+        targets: [
+          { id: 't1', what: { kind: 'object', filter: { zone: 'stack', stackKind: 'spell' } } },
+        ],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'counter', objects: { kind: 'target', id: 't1' }, exileInstead: true },
+            { kind: 'castFree', objects: { kind: 'moved' } },
+          ],
+        },
+      },
+    ],
+  }),
+  // CR 701.8, 701.13, 608.2g: "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their
+  // library until they exile a nonland card, then they may cast that card without paying its mana cost."
+  singleFace({
+    name: 'SYNTHETIC Flourish',
+    manaCost: ['2', 'R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      "Destroy target artifact or creature you don't control. If that permanent is destroyed this way, its controller exiles cards from the top of their library until they exile a nonland card, then they may cast that card without paying its mana cost.",
+    spell: {
+      targets: [
+        {
+          id: 't1',
+          what: {
+            kind: 'object',
+            filter: {
+              zone: 'battlefield',
+              controller: 'opponent',
+              anyOf: [{ types: ['artifact'] }, { types: ['creature'] }],
+            },
+          },
+        },
+      ],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'destroy', objects: { kind: 'target', id: 't1' } },
+          {
+            kind: 'conditional',
+            condition: { kind: 'thisWayAtLeast', what: 'destroyed', count: 1 },
+            effect: {
+              kind: 'sequence',
+              effects: [
+                {
+                  kind: 'exileUntilFound',
+                  players: { kind: 'controllerOf', of: { kind: 'target', id: 't1' } },
+                  filter: { notTypes: ['land'] },
+                },
+                {
+                  kind: 'castFree',
+                  objects: { kind: 'moved' },
+                  filter: { notTypes: ['land'] },
+                  player: { kind: 'controllerOf', of: { kind: 'target', id: 't1' } },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  }),
+  // CR 601.2i, 608.2g, 608.2c: "Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your
+  // hand without paying its mana cost. If you don't, create a 2/1 red Monkey Pirate creature token. It gains haste until end of turn."
+  singleFace({
+    name: 'SYNTHETIC Lesser Pair',
+    manaCost: ['1', 'U', 'R'],
+    types: ['creature'],
+    subtypes: ['Human'],
+    colors: ['U', 'R'],
+    colorIdentity: ['U', 'R'],
+    power: 2,
+    toughness: 4,
+    oracleText:
+      "Whenever you cast your first instant or sorcery spell each turn, you may cast a spell with lesser mana value that shares a card type with it from your hand without paying its mana cost. If you don't, create a 2/1 red Monkey Pirate creature token. It gains haste until end of turn.",
+    abilities: [
+      {
+        kind: 'triggered',
+        trigger: {
+          kind: 'castSpell',
+          filter: { stackKind: 'spell', anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }] },
+          by: 'you',
+          firstOfKind: true,
+        },
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'castFree',
+              objects: {
+                kind: 'choose',
+                filter: {
+                  zone: 'hand',
+                  notTypes: ['land'],
+                  manaValueBelow: { kind: 'manaValueOf', of: { kind: 'triggerSubject' } },
+                  sharesCardTypeWith: 'triggerSubject',
+                },
+              },
+            },
+            {
+              kind: 'conditional',
+              condition: { kind: 'not', term: { kind: 'didPrevious' } },
+              effect: {
+                kind: 'sequence',
+                effects: [
+                  {
+                    kind: 'createToken',
+                    token: {
+                      kind: 'custom',
+                      definition: {
+                        name: 'Monkey Pirate',
+                        manaCost: null,
+                        supertypes: [],
+                        types: ['creature'],
+                        subtypes: ['Monkey', 'Pirate'],
+                        colors: ['R'],
+                        power: 2,
+                        toughness: 1,
+                        loyalty: null,
+                        defense: null,
+                        oracleText: '',
+                        abilities: [],
+                      },
+                    },
+                    count: 1,
+                  },
+                  {
+                    kind: 'grantKeyword',
+                    objects: { kind: 'moved' },
+                    keyword: { kind: 'haste' },
+                    duration: 'untilEndOfTurn',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ],
+  }),
+  // "Put a creature card from your hand onto the battlefield." (a permanent that enters without being cast, CR 601.2a, 603.4)
+  singleFace({
+    name: 'SYNTHETIC Quick Drop',
+    manaCost: ['U'],
+    types: ['instant'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText: 'Put a creature card from your hand onto the battlefield.',
+    spell: {
+      effect: {
+        kind: 'moveToZone',
+        objects: {
+          kind: 'choose',
+          filter: { zone: 'hand', types: ['creature'], controller: 'you' },
+        },
+        to: 'battlefield',
+      },
+    },
+  }),
+  // CR 107.3a, 202.3: "mana value X or less" is the X announced for this spell.
+  singleFace({
+    name: 'SYNTHETIC X Burn Free Rite',
+    manaCost: ['X', 'R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'Deals X damage to any target. You may cast a spell with mana value X or less from your hand without paying its mana cost.',
+    spell: {
+      x: true,
+      targets: [{ id: 't1', what: { kind: 'anyTarget' } }],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'dealDamage', amount: { kind: 'x' }, to: { kind: 'target', id: 't1' } },
+          {
+            kind: 'castFree',
+            objects: {
+              kind: 'choose',
+              filter: { zone: 'hand', notTypes: ['land'], manaValueAtMost: { kind: 'x' } },
+            },
+          },
+        ],
+      },
+    },
+  }),
   // The filter does not say "not a land": a land card is still never cast (CR 305.1), so none is offered.
   rite(
     'SYNTHETIC Free Spell Rite',

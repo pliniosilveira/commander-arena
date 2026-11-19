@@ -76,6 +76,8 @@ import { HASHATON_GROUP_4_LOWERINGS } from './hashaton-group-4';
 import { HOFRI_LOWERINGS } from './hofri';
 import { HYLDA_G2_LOWERINGS } from './hylda-g2';
 import { HYLDA_G3_LOWERINGS } from './hylda-g3';
+import { JESKAI_CASTFREE_LOWERINGS } from './jeskai-castfree';
+import { JESKAI_FLASHBACK_LOWERINGS } from './jeskai-flashback';
 import { KORVOLD_LOWERINGS } from './korvold';
 import { LOREHOLD_G1_LOWERINGS } from './lorehold-g1';
 import { LOREHOLD_G2_LOWERINGS } from './lorehold-g2';
@@ -1343,6 +1345,14 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       atMost = lowered.value;
     }
+    // CR 608.2g (issue 100, "You may cast an instant or sorcery spell ... from among them without paying its mana cost"): the card taken is cast from the library.
+    const cast = arg(clause, 'castFree');
+    const castFree = cast?.kind === 'flag' && cast.value;
+    if (castFree) {
+      const blocked = missingFeatures(['effect:castFree']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
+    }
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
@@ -1350,6 +1360,7 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
         filter: filter.value,
         max: 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
+        ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
       },
       // "Look at the top card of your library. If it's a creature card of the chosen type, you may reveal it and put it into your hand."
@@ -2062,6 +2073,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
+  ...JESKAI_CASTFREE_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
@@ -2114,6 +2126,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HYLDA_G3_LOWERINGS,
   ...FLASH_PERMISSION_LOWERINGS,
   // Lorehold Spirit deck, group 1 (issue 86): "exile one of them from your graveyard", "shuffle any number of target cards from your graveyard into your library" and "each creature deals damage to itself".
+  ...JESKAI_FLASHBACK_LOWERINGS,
   ...LOREHOLD_G1_LOWERINGS,
   // Issue 279 (Rakdos Charm): "each creature deals 1 damage to its controller".
   ...CONTROLLER_DAMAGE_LOWERINGS,

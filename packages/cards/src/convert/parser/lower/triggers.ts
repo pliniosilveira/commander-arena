@@ -611,6 +611,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           ...(t.duringTurn === undefined ? {} : { duringTurn: t.duringTurn }),
         });
       }
+      // "Whenever you cast your first instant or sorcery spell each turn" (issue 100, CR 601.2i): the first spell of those card types the caster casts this turn.
+      if (t.firstOfKind === true) {
+        const missing = missingFeatures(['trigger:castFirstOfKind']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({ kind: 'castSpell', filter: filter.value, by, firstOfKind: true });
+      }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
     case 'leftGraveyard':
@@ -1357,6 +1363,8 @@ function lowerTriggeredAbility(
       c.verb === 'castMovedFree' ||
       // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
       c.verb === 'castFromAmong' ||
+      // Issue 100 (Baral and Kari Zev): "you may cast a spell ... from your hand without paying its mana cost. If you don't, ...": the engine's `castFree` asks (and may be declined).
+      c.verb === 'castFree' ||
       c.verb === 'putMovedOntoBattlefield' ||
       // Issue 103: "you may put a commander you own from the command zone onto the battlefield": the engine's choice of none or one card is the question.
       c.verb === 'putCommanderFromCommandZone' ||
@@ -1571,6 +1579,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:leftGraveyard',
   'trigger:exiledFromLibraryOrGraveyard',
   'trigger:castNth',
+  'trigger:castFirstOfKind',
   'trigger:crimeCommitted',
   'trigger:tokenCreated',
   'trigger:activatesAbility',

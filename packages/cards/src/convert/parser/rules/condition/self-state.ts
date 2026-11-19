@@ -341,6 +341,94 @@ export const CONDITION_THIS_HAS_COUNTER = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.this-counter-count`: "~ has fewer than three charge counters on it", "~ has three or more charge counters on it" (CR 122.1, 603.4: the number of counters of a
+ * kind on the permanent compared with a number, read as the ability triggers and as it resolves). The engine's `amountIs` of `countersOn` of the permanent itself;
+ * "fewer than N" is at most N - 1. Not read: another permanent's counters, "it", an unnamed kind of counter, "no counters", other comparisons.
+ */
+export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
+  id: 'condition.this-counter-count',
+  family: 'condition',
+  leading: ['~'],
+  cites: ['CR 122.1 (Counters)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    '~ has fewer than three charge counters on it',
+    '~ has fewer than 3 charge counters on it',
+    '~ has three or more charge counters on it',
+    '~ has fewer than two +1/+1 counters on it',
+  ],
+  rejects: [
+    '~ has fewer than three charge counters on it.',
+    '~ has fewer than three counters on it',
+    '~ has fewer than zero charge counters on it',
+    '~ has fewer than three charge counters',
+    '~ has fewer than three charge counters on it and',
+    'it has fewer than three charge counters on it',
+    'target artifact has fewer than three charge counters on it',
+    '~ has more than three charge counters on it',
+    '~ had fewer than three charge counters on it',
+    '~ has one or more charge counters on it',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      sequence(
+        literal('~ has '),
+        choice<{ cmp: 'atMost' | 'atLeast'; value: number }>(
+          map(
+            sequence(
+              literal('fewer than '),
+              satisfy(quantity, (n) => n >= 1),
+            ),
+            ([, n]) => ({
+              cmp: 'atMost' as const,
+              value: n - 1,
+            }),
+          ),
+          map(
+            sequence(
+              satisfy(quantity, (n) => n >= 2),
+              literal(' or more'),
+            ),
+            ([n]) => ({ cmp: 'atLeast' as const, value: n }),
+          ),
+        ),
+        literal(' '),
+        pattern(/[+-]\d+\/[+-]\d+|[a-z]+/i),
+        literal(' counters on it'),
+        pattern(/(?![\p{L}\p{N}])/u),
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, compare, , counter] = r.value.value;
+    const name = counter[0].toLowerCase();
+    if (name === 'no') return fail(ctx, pos);
+    const span = r.value.span;
+    return {
+      ok: true,
+      value: condition('condition.this-counter-count', pos, r.pos, {
+        kind: 'amountIs',
+        amount: {
+          kind: 'countersOn',
+          of: {
+            kind: 'noun',
+            det: 'self',
+            filter: { raw: '~' },
+            upTo: false,
+            plural: false,
+            other: false,
+            span,
+            rule: 'condition.this-counter-count',
+          },
+          counter: name,
+          span,
+        },
+        compare,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const SELF_STATE_CONDITION_RULES = [
   CONDITION_CONTROL_YOUR_COMMANDER,
   CONDITION_LIFE_TOTAL,
@@ -348,4 +436,5 @@ export const SELF_STATE_CONDITION_RULES = [
   CONDITION_ATTACHED_TO,
   CONDITION_PAIRED,
   CONDITION_THIS_HAS_COUNTER,
+  CONDITION_THIS_COUNTER_COUNT,
 ];

@@ -109,6 +109,17 @@ export function flashbackCostOf(face: CardFace | null): readonly Cost[] | null {
   return keywordCost(face, 'flashback');
 }
 
+/**
+ * The flashback cost a card is cast for when something gave it flashback with the cost equal to its mana cost (CR 702.34a, 118.9: `grantFlashbackToGraveyardCards`,
+ * `gainFlashbackFromManaCost`): its mana cost, as a mana cost; null when it has none (a cost equal to nothing cannot be paid, CR 202.1b).
+ */
+export function manaCostAsFlashbackCost(face: CardFace | null): readonly Cost[] | null {
+  const symbols = face?.manaCost;
+  return symbols === undefined || symbols === null || symbols.length === 0
+    ? null
+    : [{ kind: 'mana', symbols }];
+}
+
 /** The alternative cost of `kind` the face lists (`CardFace.alternativeCosts`, D-121), or null. */
 export function alternativeOf<K extends AlternativeCost['kind']>(
   face: CardFace | null,

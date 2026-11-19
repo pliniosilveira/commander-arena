@@ -39,6 +39,7 @@ import {
   flashbackCostOf,
   graveyardCostOf,
   kickerLikeCostOf,
+  manaCostAsFlashbackCost,
   manaSymbolsOf,
   modeCostsOf,
   namedAlternativeCostOf,
@@ -321,7 +322,9 @@ export function canPayRequest(
 export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const { seat, spell, zone, alternative } = request;
   const face = faceOfSpell(state, spell);
-  const flashback = alternative === 'flashback' ? flashbackCostOf(face) : null;
+  // CR 702.34a: the printed flashback cost, or (the card was given flashback with the cost equal to its mana cost) its mana cost.
+  const flashback =
+    alternative === 'flashback' ? (flashbackCostOf(face) ?? manaCostAsFlashbackCost(face)) : null;
   // D-121: a named alternative cost (overload, ...) is paid instead of the mana cost.
   const named = isNamedAlternative(alternative) ? namedAlternativeCostOf(face, alternative) : null;
   const perX = spellXCost(face, alternative);
@@ -333,7 +336,10 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     alternative === 'free'
       ? []
       : flashback !== null
-        ? manaSymbolsOf(flashback)
+        ? // CR 107.3a: a cost equal to the mana cost has the X of it; a printed flashback cost is paid as it is.
+          flashbackCostOf(face) === null
+          ? withX(manaSymbolsOf(flashback), x)
+          : manaSymbolsOf(flashback)
         : named !== null
           ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
             withX(manaSymbolsOf(named), x)

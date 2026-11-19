@@ -196,9 +196,11 @@ export function beginCast(
   const zone = resolving
     ? obj.zone === 'hand'
       ? 'hand'
-      : obj.zone === 'graveyard'
-        ? 'graveyard' // D-350: "cast target instant or sorcery card from a graveyard"
-        : 'exile'
+      : obj.zone === 'library'
+        ? 'library' // CR 608.2g: "look at the top seven cards ... you may cast a spell from among them"
+        : obj.zone === 'graveyard'
+          ? 'graveyard' // D-350: "cast target instant or sorcery card from a graveyard"
+          : 'exile'
     : castZone(state, seat, obj, alternative, face);
   if (zone === null) return fail('That card is not in a zone it can be cast from');
 

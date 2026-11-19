@@ -6,7 +6,7 @@
  * targets for the copy" is `newTargets: 'may'`, its absence `'no'`. Which spells can be copied from where is
  * `validateCard`'s refusal (a trigger that is not about a cast, a target slot the ability does not declare).
  */
-import type { Amount, ObjectFilter, ObjectRef } from '@commander-arena/engine';
+import type { Amount, Effect, ObjectFilter, ObjectRef } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
 import { missingFeatures } from './features';
@@ -16,7 +16,7 @@ import type { Lowering } from './types';
 export const COPY_SPELL: Lowering<IrClause, Effects> = {
   head: 'copySpell',
   id: 'lower.copySpell',
-  needs: ['effect:copySpell'],
+  needs: ['effect:copySpell', 'effect:moveToZone'],
   lower(clause, ctx) {
     const noun = arg(clause, 'spell');
     const flag = arg(clause, 'newTargets');
@@ -64,6 +64,53 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
       const by = arg(clause, 'copier');
       if (by?.kind === 'flag' && by.value) copier = 'triggerPlayer';
     }
+    // "..., then return it to its owner's hand" (Narset's Reversal, CR 400.3): after the copy the target spell leaves the stack for its owner's hand.
+    const returnIt = arg(clause, 'returnIt');
+    if (returnIt !== undefined && (spell.kind !== 'target' || count !== undefined)) {
+      return failure(clause);
+    }
+    // "... if it targets a permanent or player" and "If you don't copy a spell this way, draw a card" (Shiko and Narset, Unified, CR 115.1, 608.2c): the copy is made for a spell
+    // with a permanent or a player as a target; otherwise the controller draws. The copy is always made when the condition holds, so "if you don't copy" is "otherwise".
+    const ifTargets = arg(clause, 'ifTargets');
+    if (ifTargets !== undefined) {
+      if (spell.kind !== 'triggerSubject' || returnIt !== undefined || count !== undefined) {
+        return failure(clause);
+      }
+      if (forEach !== undefined) return failure(clause);
+      const missing = missingFeatures([
+        'effect:conditional',
+        'condition:objectMatches',
+        'selector:targetsObject',
+        'selector:targetsPlayer',
+        'effect:draw',
+      ]);
+      if (missing.length > 0) return failure(clause, missing);
+      const copy: Effect = {
+        kind: 'copySpell',
+        spell,
+        newTargets: flag.value ? 'may' : 'no',
+        ...(copier === undefined ? {} : { copier }),
+      };
+      const draws = arg(clause, 'elseDraw') !== undefined;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'conditional',
+            condition: {
+              kind: 'objectMatches',
+              of: spell,
+              filter: {
+                anyOf: [{ targetsObject: { zone: 'battlefield' } }, { targetsPlayer: true }],
+              },
+            },
+            effect: copy,
+            ...(draws ? { else: { kind: 'draw', player: { kind: 'you' }, count: 1 } } : {}),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
     return {
       ok: true,
       value: [
@@ -75,6 +122,9 @@ export const COPY_SPELL: Lowering<IrClause, Effects> = {
           ...(forEach === undefined ? {} : { forEach }),
           ...(copier === undefined ? {} : { copier }),
         },
+        ...(returnIt === undefined
+          ? []
+          : [{ kind: 'moveToZone' as const, objects: spell, to: 'hand' as const }]),
       ],
       rule: clause.rule,
     };

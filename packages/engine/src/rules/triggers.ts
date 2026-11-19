@@ -875,6 +875,17 @@ function matches(
       if (trigger.by === 'opponent' && occ.seat === candidate.controller) return false;
       // D-229: "their second spell each turn": the caster's nth spell of the turn.
       if (trigger.nth !== undefined && occ.nth !== trigger.nth) return false;
+      // CR 601.2i, 603.2: "your first instant or sorcery spell each turn": no other spell of those card types was cast by the caster before it this turn (this one is in the log).
+      if (trigger.firstOfKind === true) {
+        const wanted = [
+          ...(trigger.filter.types ?? []),
+          ...(trigger.filter.anyOf ?? []).flatMap((m) => m.types ?? []),
+        ];
+        const same = state.turnLog.castSpells.filter(
+          (s) => s.seat === occ.seat && s.types.some((t) => wanted.includes(t)),
+        );
+        if (same.length !== 1) return false;
+      }
       // D-565: "during each opponent's turn" is relative to the controller of this ability.
       if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
         return false;

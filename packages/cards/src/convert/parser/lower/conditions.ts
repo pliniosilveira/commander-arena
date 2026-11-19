@@ -466,6 +466,13 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:giftPromised']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'giftPromised' });
     }
+    case 'wasCast': {
+      // CR 601.2a, 603.4: "if you cast it" is read only as the intervening "if" of a trigger about the source itself, where "it" is the permanent the spell became.
+      const blocked = missingFeatures(['condition:wasCast']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (!itIsSelf || ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({ kind: 'wasCast' });
+    }
     case 'opponentControls': {
       // CR 109.4 (stage P30, D-135): some one opponent controls that many permanents that match.
       const blocked = missingFeatures(['condition:opponentControlsAtLeast']);
@@ -734,6 +741,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:playerHasDesignation',
   'condition:objectMatches',
   'condition:giftPromised',
+  'condition:wasCast',
   'condition:opponentControlsAtLeast',
   'condition:controlsGreatest',
   'condition:attackersAttackedYou',

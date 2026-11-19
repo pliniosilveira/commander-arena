@@ -194,6 +194,13 @@ interface HandGrantSource {
   readonly conditionKey?: string;
 }
 
+/** A static ability of a permanent that gives flashback to the cards of its controller's graveyard (`grantFlashbackToGraveyardCards`, CR 702.34a, 613.1f). */
+export interface FlashbackGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly condition?: Condition;
+}
+
 interface BoardIndex {
   readonly battlefield: readonly ObjectId[];
   readonly definitions: GameState['definitions'];
@@ -218,6 +225,8 @@ interface BoardIndex {
   readonly graveyardPlays: readonly GraveyardPlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
   readonly handGrants: readonly HandGrantSource[];
+  /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
+  readonly flashbackGrants: readonly FlashbackGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
   readonly attachments: ReadonlyMap<ObjectId, readonly ObjectId[]>;
 }
@@ -370,6 +379,28 @@ function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGr
   return out;
 }
 
+function flashbackGrantsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): FlashbackGrantSource[] {
+  const out: FlashbackGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantFlashbackToGraveyardCards' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        ...(a.condition === undefined ? {} : { condition: a.condition }),
+      });
+    }
+  }
+  return out;
+}
+
 function buildIndex(state: GameState): BoardIndex {
   const sources: ModifierSource[] = [];
   const reductions: CostReductionSource[] = [];
@@ -379,6 +410,7 @@ function buildIndex(state: GameState): BoardIndex {
   const libraryCasts: LibraryCastSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
+  const flashbackGrants: FlashbackGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
   for (const id of state.battlefield) {
     const object = state.objects[id];
@@ -395,6 +427,7 @@ function buildIndex(state: GameState): BoardIndex {
     libraryCasts.push(...libraryCastsOf(object, printed));
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
     handGrants.push(...handGrantsOf(object, printed));
+    flashbackGrants.push(...flashbackGrantsOf(object, printed));
     if (object.attachedTo !== null) {
       const list = attachments.get(object.attachedTo);
       if (list === undefined) attachments.set(object.attachedTo, [id]);
@@ -458,6 +491,7 @@ function buildIndex(state: GameState): BoardIndex {
     libraryCasts,
     graveyardPlays,
     handGrants,
+    flashbackGrants,
     attachments,
   };
 }
@@ -511,6 +545,11 @@ export function libraryCastSources(state: GameState): readonly LibraryCastSource
 /** The permission "Once during each of your turns, you may play a land or cast a spell from your graveyard" of the permanents on the battlefield (D-232). */
 export function graveyardPlaySources(state: GameState): readonly GraveyardPlaySource[] {
   return indexOf(state).graveyardPlays;
+}
+
+/** The static abilities of the permanents on the battlefield that give flashback to the cards of their controller's graveyard (CR 702.34a). */
+export function flashbackGrantSources(state: GameState): readonly FlashbackGrantSource[] {
+  return indexOf(state).flashbackGrants;
 }
 
 /** The permission "You may cast artifact spells as though they had flash" of the permanents on the battlefield (D-139). */

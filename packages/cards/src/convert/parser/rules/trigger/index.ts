@@ -45,6 +45,7 @@ import { HASHATON_G1_TRIGGER_RULES } from './hashaton';
 import { HASHATON_G9_TRIGGER_RULES } from './hashaton-g9';
 import { HOFRI_TRIGGER_RULES } from './hofri';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
+import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
@@ -1191,6 +1192,8 @@ export const TRIGGER_RULES = [
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value
   // entering together, "you create one or more creature tokens".
   ...HOFRI_TRIGGER_RULES,
+  // Jeskai free-cast cards (issue 100): "you cast your first instant or sorcery spell each turn".
+  ...JESKAI_CASTFREE_TRIGGER_RULES,
   // Stage P30 (D-135): "enters untapped" and "dies or is put into exile from the battlefield" read the words after the event
   // that `trigger.enters` and `trigger.dies` stop at, so they come before those.
   ...RECURSION_TRIGGER_RULES,

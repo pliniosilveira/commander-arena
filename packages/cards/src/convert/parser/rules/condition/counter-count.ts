@@ -1,6 +1,7 @@
 /**
- * Condition of the number of counters of one kind on the permanent itself (CR 122.1): "~ has ten or more +1/+1 counters on it". The engine's `amountIs` of the
- * `countersOn` this permanent has, compared with a whole number.
+ * Condition of the number of counters of one kind on the permanent itself (CR 122.1) after "as long as" of a static ability: "it has ten or more +1/+1 counters on
+ * it". The engine's `amountIs` of the `countersOn` this permanent has, compared with a whole number. The same count with the subject `~`, after the "if" of a
+ * trigger, is `condition.this-counter-count` (`self-state.ts`); the two do not read the same text.
  */
 import { map, type Parser, pattern, satisfy, sequence } from '../../combinators';
 import type { IrComparison, IrCondition, IrNoun } from '../../ir/types';
@@ -19,40 +20,40 @@ const COUNT_COMPARE: Parser<IrComparison> = map(
 );
 
 /**
- * `condition.this-has-counter-count`: "~ has ten or more +1/+1 counters on it", "~ has 2 or fewer charge counters on it" (CR 122.1: a permanent has as many counters of a
+ * `condition.this-has-counter-count`: "it has ten or more +1/+1 counters on it", "it has 2 or fewer charge counters on it" (CR 122.1: a permanent has as many counters of a
  * kind as are on it; CR 611.3a: read continuously after "as long as"; counters belong to no layer, CR 613.8). The counters are those of the one kind the words name on
  * the permanent the ability is on. Not read: a bare number ("has ten counters"), counters of no kind, another permanent's counters and a past tense.
  */
 export const CONDITION_THIS_HAS_COUNTER_COUNT = defineRule<IrCondition>({
   id: 'condition.this-has-counter-count',
   family: 'condition',
-  leading: ['~', 'it'],
+  leading: ['it'],
   cites: [
     'CR 122.1 (Counters)',
     'CR 611.3a (Continuous Effects)',
     'CR 613.8 (Interaction of Continuous Effects)',
   ],
   examples: [
-    '~ has ten or more +1/+1 counters on it',
     'it has ten or more +1/+1 counters on it',
-    '~ has 3 or more charge counters on it',
-    '~ has two or fewer charge counters on it',
+    'it has 3 or more charge counters on it',
+    'it has two or fewer charge counters on it',
   ],
   rejects: [
-    '~ has ten or more +1/+1 counters on it.',
-    '~ has ten +1/+1 counters on it',
-    '~ has ten or more counters on it',
-    '~ has ten or more +1/+1 counters',
-    '~ had ten or more +1/+1 counters on it',
-    '~ has one or more +1/+1 counters on it',
-    '~ has 0 or more +1/+1 counters on it',
+    '~ has ten or more +1/+1 counters on it',
+    'it has ten or more +1/+1 counters on it.',
+    'it has ten +1/+1 counters on it',
+    'it has ten or more counters on it',
+    'it has ten or more +1/+1 counters',
+    'it had ten or more +1/+1 counters on it',
+    'it has one or more +1/+1 counters on it',
+    'it has 0 or more +1/+1 counters on it',
     'target creature has ten or more +1/+1 counters on it',
-    '~ has ten or more +1/+1 counters on it and',
+    'it has ten or more +1/+1 counters on it and',
   ],
   parse: (ctx, pos) => {
     const r = spanned(
       sequence(
-        pattern(/(~|it) has /iu),
+        pattern(/it has /iu),
         COUNT_COMPARE,
         pattern(/ ([+-]\d+\/[+-]\d+|[a-z]+) counters on it(?![\p{L}\p{N}])/iu),
       ),

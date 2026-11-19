@@ -89,6 +89,28 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
     );
   });
   const to = ins.to ?? 'hand';
+  // CR 608.2g, 118.9 (Velomachus Lorehold shape): "You may cast an instant or sorcery spell ... from among them without paying its mana cost": the cards that match
+  // are offered, those that could be cast now, by a `castFree` of their own (the cast starts there and the resolution goes on), and the rest goes where `rest` says.
+  if (to === 'castFree') {
+    return done(
+      state,
+      [{ kind: 'topCardsLooked', seat, count: looked.length }],
+      [
+        ...(legal.length === 0
+          ? []
+          : [
+              {
+                kind: 'castFree' as const,
+                objects: { kind: 'choose' as const, filter: ins.filter },
+                play: false,
+                cards: legal,
+                chosen: null,
+              },
+            ]),
+        { ...ins, stage: 'rest' as const, chosen: [], left: looked },
+      ],
+    );
+  }
   // D-324: "Put two of them into your hand" with only two cards that can be taken: the whole answer is forced, so nobody is asked.
   const forced = ins.hidden === true && (ins.min ?? 0) >= legal.length && legal.length > 0;
   // `take.all`: "put all land cards from among them": every card that matches goes, with no question.

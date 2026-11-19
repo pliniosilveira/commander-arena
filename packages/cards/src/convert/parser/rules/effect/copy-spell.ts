@@ -7,11 +7,12 @@
  * `copySpell` with `newTargets: 'may'` or `'no'`.
  *
  * The sentence about the new targets is read with the clause (it is a second sentence in the text, but only
- * means something next to the copy). Not read: "Copy target instant or sorcery spell, then return it to its
- * owner's hand." (a second instruction that the engine has no way to run on the card that the copy came from),
- * "except" copies, copies of abilities and "for each" counts.
+ * means something next to the copy). ", then return it to its owner's hand" after a targeted spell (Narset's
+ * Reversal) is a second instruction on the same target: the copy is made first, and the original then leaves the stack for
+ * its owner's hand (CR 400.3, 608.2b). Not read: "except" copies, copies of abilities and "for each" counts. "it" is read
+ * as the spell of a cast trigger (Quandrix Unlimited group E); the lowering refuses it anywhere the binding pass did not make it that spell.
  */
-import { literal, map, optional, pattern, quiet, sequence } from '../../combinators';
+import { literal, map, optional, pattern, quiet, satisfy, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { BOUNDARY, spellPhrase } from '../noun/phrases';
 import { defineRule, node, spanned } from '../registry';
@@ -27,6 +28,9 @@ const YOU_CONTROL = pattern(new RegExp(` you control${BOUNDARY}`, 'iu'));
 const NEW_TARGETS = quiet(
   pattern(/\. you may choose new targets for the copy(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu),
 );
+
+/** ", then return it to its owner's hand": the original goes back to its owner's hand once copied. Only after a target. */
+const THEN_RETURN = quiet(pattern(/, then return it to its owner(?:'|’)s hand(?![\p{L}\p{N}])/iu));
 
 /** What may follow the copied spell on the same clause: a join says a second instruction, which is not read. */
 const CLAUSE_END = pattern(/(?=\.|$)/u);
@@ -62,6 +66,11 @@ const THAT_SPELL = node<RegExpExecArray, IrNoun>(
   }),
 );
 
+/** " and you may choose new targets for the copy": the same permission as the next sentence, joined to the clause (CR 707.10c). */
+const AND_NEW_TARGETS = quiet(
+  pattern(/,? and you may choose new targets for the copy(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu),
+);
+
 /** "it": the spell whose casting triggered the ability (Quandrix Unlimited group E); the lowering refuses it anywhere the binding pass did not make it that spell. */
 const IT_SPELL = node<RegExpExecArray, IrNoun>(
   'effect.copy-spell',
@@ -74,6 +83,14 @@ const IT_SPELL = node<RegExpExecArray, IrNoun>(
     plural: false,
     other: false,
   }),
+);
+
+/** " if it targets a permanent or player": the copy is made only for a spell with such a target (CR 115.1). Only after "that spell". */
+const IF_TARGETS = quiet(pattern(/ if it targets a permanent or player(?![\p{L}\p{N}])/iu));
+
+/** ". If you don't copy a spell this way, draw a card": what happens when the condition did not hold (Shiko and Narset, Unified). Only after the condition. */
+const ELSE_DRAW = quiet(
+  pattern(/\. if you don['’]t copy a spell this way, draw a card(?![\p{L}\p{N}])/iu),
 );
 
 /**
@@ -101,10 +118,18 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     // Quandrix Unlimited group E (Owlin Spiralmancer): "it" is the spell of the cast trigger.
     'copy it',
     'copy it. you may choose new targets for the copy',
+    'copy it and you may choose new targets for the copy',
+    'copy that spell if it targets a permanent or player, and you may choose new targets for the copy',
+    "copy that spell if it targets a permanent or player, and you may choose new targets for the copy. if you don't copy a spell this way, draw a card",
+    'copy that spell if it targets a permanent or player. if you don’t copy a spell this way, draw a card',
+    'copy that spell and you may choose new targets for the copy',
+    'copy target instant or sorcery spell and you may choose new targets for the copy',
+    "copy target instant or sorcery spell, then return it to its owner's hand. you may choose new targets for the copy",
+    'copy target instant or sorcery spell, then return it to its owner’s hand',
   ],
   rejects: [
-    'copy target instant or sorcery spell, then return it to its owner’s hand. you may choose new targets for the copy',
-    "copy target instant or sorcery spell, then return it to its owner's hand",
+    "copy that spell, then return it to its owner's hand",
+    'copy target instant or sorcery spell, then return it to your hand',
     'copy target instant or sorcery spell and draw a card',
     'copy target instant or sorcery spell. you may choose new targets for the copies',
     'copy target instant or sorcery spell. you may choose a new target for the copy',
@@ -118,26 +143,50 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy that creature',
     'copy that spell for each creature you control',
     'copy itself',
+    'copy it and you may choose new targets for the copy. you may choose new targets for the copy',
+    'copy it and you may choose new targets for the copies',
+    'copy it and you may choose new targets for the copy and draw a card',
     'copy this spell',
+    'copy that spell if it targets a creature',
+    'copy that spell if it targets a permanent or player and draw a card',
+    "copy that spell. if you don't copy a spell this way, draw a card",
+    "copy that spell if it targets a permanent or player. if you don't copy a spell this way, draw two cards",
+    'copy target instant or sorcery spell if it targets a permanent or player',
+    "copy that spell if it targets a permanent or player. if you don't copy a spell this way, draw a card and gain 1 life",
     'copy',
   ],
   parse: (ctx, pos) =>
     map(
-      spanned(
-        sequence(
-          literal('copy '),
-          (c, p) => {
-            const target = TARGET_SPELL(c, p);
-            if (target.ok) return target;
-            const that = THAT_SPELL(c, p);
-            return that.ok ? that : IT_SPELL(c, p);
-          },
-          CLAUSE_END,
-          optional(NEW_TARGETS, null),
+      satisfy(
+        spanned(
+          sequence(
+            literal('copy '),
+            (c, p) => {
+              const target = TARGET_SPELL(c, p);
+              if (target.ok) return target;
+              const that = THAT_SPELL(c, p);
+              return that.ok ? that : IT_SPELL(c, p);
+            },
+            optional(THEN_RETURN, null),
+            optional(IF_TARGETS, null),
+            optional(AND_NEW_TARGETS, null),
+            CLAUSE_END,
+            optional(NEW_TARGETS, null),
+            optional(ELSE_DRAW, null),
+          ),
         ),
+        ({ value }) => {
+          const [, spell, returnIt, ifTargets, andNew, , nextNew, elseDraw] = value;
+          // The condition is about the spell of the trigger, the "otherwise" sentence needs the condition, and the permission to choose new targets is given once.
+          if (ifTargets !== null && (spell.det !== 'anaphor' || returnIt !== null)) return false;
+          if (returnIt !== null && spell.det !== 'target') return false;
+          if (elseDraw !== null && ifTargets === null) return false;
+          return andNew === null || nextNew === null;
+        },
       ),
       ({ value, span }): Clauses => {
-        const [, spell, , newTargets] = value;
+        const [, spell, returnIt, ifTargets, andNew, , nextNew, elseDraw] = value;
+        const newTargets = andNew ?? nextNew;
         return [
           makeClause(
             'effect.copy-spell',
@@ -150,6 +199,15 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
                 span,
                 rule: 'effect.copy-spell',
               },
+              ...(returnIt === null
+                ? {}
+                : { returnIt: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),
+              ...(ifTargets === null
+                ? {}
+                : { ifTargets: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),
+              ...(elseDraw === null
+                ? {}
+                : { elseDraw: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),
             },
             span,
           ),

@@ -455,6 +455,11 @@ export function evaluateCondition(
       const spell = ctx.source === null ? null : objectOrLki(state, ctx.source);
       return spell?.stack?.castFrom === condition.zone;
     }
+    case 'wasCast': {
+      // CR 601.2a, 603.4: the permanent came from a spell that was cast (the spell remembers where from), read from last-known information once it has left.
+      const permanent = ctx.source === null ? null : objectOrLki(state, ctx.source);
+      return permanent?.castFrom !== undefined || permanent?.stack?.castFrom !== undefined;
+    }
     case 'yourTurn':
       // CR 611.3a, 613.8 (D-206): it is a turn of the controller.
       return state.turn.activeSeat === ctx.controller;

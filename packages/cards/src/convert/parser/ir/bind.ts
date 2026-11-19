@@ -91,6 +91,8 @@ interface Antecedent {
    * verb reads it so (the other pronouns after a token keep their meaning: "If that enchantment is an Aura, you may attach it to the token").
    */
   readonly plainToken?: true;
+  /** A creature token with a power and toughness of its own (issue 100): "it" that gains a keyword in the sentence after it is the token. */
+  readonly itTokenGains?: true;
 }
 
 const key = (span: Span) => `${span.start}:${span.end}`;
@@ -197,6 +199,14 @@ class Binder {
    */
   seedHost(condition: IrCondition | undefined): void {
     const test = condition?.test;
+    // "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, put a charge counter on it." (CR 603.4, 122.1): the permanent the intervening
+    // "if" counts counters on is what "it" of the body means, not the spell of the trigger.
+    if (test?.kind === 'amountIs' && test.amount.kind === 'countersOn') {
+      if (test.amount.of.det === 'self') {
+        this.antecedents.push({ noun: { ...test.amount.of, ref: 'self' }, kind: 'object' });
+      }
+      return;
+    }
     if (test?.kind !== 'attachedTo' || test.via === undefined) return;
     const host: IrNoun = {
       kind: 'noun',
@@ -293,8 +303,11 @@ class Binder {
               ? a.token === true
               : a.token !== true ||
                 (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim())) ||
-                (this.countersClause &&
+                (this.clauseVerb === 'addCounters' &&
                   a.plainToken === true &&
+                  /^it$/iu.test(noun.filter.raw.trim())) ||
+                (a.itTokenGains === true &&
+                  this.clauseVerb === 'grantKeyword' &&
                   /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
@@ -479,6 +492,15 @@ class Binder {
               ? {}
               : { itToken: true as const }),
             plainToken: true as const,
+            // Issue 100 (Baral and Kari Zev): "Create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.": the "it" that
+            // GAINS something (the subject of a keyword grant) after the creation of a creature token with a power and toughness of its own is that token. An "it" that is the object
+            // of another verb ("create a 2/2 token. If that enchantment is an Aura, you may attach it to the token") is still the permanent the text is about.
+            ...(arg.copyOf === undefined &&
+            arg.predefined === undefined &&
+            arg.power !== undefined &&
+            arg.toughness !== undefined
+              ? { itTokenGains: true as const }
+              : {}),
             noun: {
               kind: 'noun',
               det: 'a',
@@ -504,11 +526,11 @@ class Binder {
     }
   }
 
-  /** The clause being bound puts counters on something: its "it" may be a token an instruction before it made (`Antecedent.plainToken`). */
-  private countersClause = false;
+  /** The verb of the clause being bound: only the "it" of a keyword grant (issue 100) or of a counters clause (Quandrix Unlimited group E, `Antecedent.plainToken`) may mean the token a creature-token instruction made. */
+  private clauseVerb = '';
 
   clause(clause: IrClause): IrClause {
-    this.countersClause = clause.verb === 'addCounters';
+    this.clauseVerb = clause.verb;
     // Visit nouns in text order, whatever order the rule put its arguments in.
     const entries = Object.entries(clause.args).sort(([, a], [, b]) => spanStart(a) - spanStart(b));
     const args: Record<string, IrArg> = {};

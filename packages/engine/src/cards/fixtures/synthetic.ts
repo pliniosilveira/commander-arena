@@ -100,6 +100,7 @@ import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
 import { SYNTHETIC_HYLDA_G1_LIST } from './synthetic-hylda-g1';
 import { SYNTHETIC_HYLDA_G2_LIST } from './synthetic-hylda-g2';
 import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
+import { SYNTHETIC_JESKAI_FLASHBACK_LIST } from './synthetic-jeskai-flashback';
 import { SYNTHETIC_KEYWORD_LIST } from './synthetic-keywords';
 import { SYNTHETIC_KEYWORD2_LIST } from './synthetic-keywords-2';
 import { SYNTHETIC_KICKER_LIST } from './synthetic-kicker';
@@ -478,6 +479,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_DESTROY_PER_OPPONENT_LIST,
   ...SYNTHETIC_HOFRI_LIST,
   ...SYNTHETIC_ETERNAL_MIGHT_LIST,
+  ...SYNTHETIC_JESKAI_FLASHBACK_LIST,
   ...SYNTHETIC_TAP_ALT_LIST,
   ...SYNTHETIC_TAP_COST_LIST,
   ...SYNTHETIC_POPULATE_LIST,

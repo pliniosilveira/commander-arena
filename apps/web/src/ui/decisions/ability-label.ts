@@ -1291,6 +1291,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       // Issue 159 (CR 601.2, 611.2a): "You may cast Zombie spells from your graveyard this turn".
       // The one word of the filter: a creature type ("Zombie spells") or a card type ("creature spells").
       return `You may cast ${effect.spells.subtypes?.[0] ?? effect.spells.types?.[0] ?? ''} spells from your graveyard this turn`;
+    case 'gainFlashbackFromManaCost':
+      // CR 702.34a, 611.2a: "Each instant and sorcery card in your graveyard gains flashback until end of turn".
+      return 'Each instant and sorcery card in your graveyard gains flashback until end of turn';
     case 'gainActivatedAbilitiesOf':
       // Issue 159 (CR 613.1f): "This creature gains all activated abilities of that card until end of turn".
       return 'This creature gains all activated abilities of that card until end of turn';

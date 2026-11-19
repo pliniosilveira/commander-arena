@@ -8,6 +8,7 @@ import type { IrClause } from '../ir/types';
 import { withoutZone } from '../rules/noun/phrases';
 import { lowerAmount } from './amounts';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
+import { missingFeatures } from './features';
 import { declareDividedTarget, lowerFilter, objectRefOf, objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
@@ -235,6 +236,9 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const play = arg(clause, 'play');
     if (objects?.kind !== 'noun' || play?.kind !== 'flag') return failure(clause);
+    // The cast is the controller's to decline: "you may cast ..." said by the sentence, or made optional by the "you may" of a triggered ability. "Cast a spell ..." alone is no offer.
+    const written = arg(clause, 'mayWritten');
+    if (written?.kind === 'flag' && !written.value && !clause.optional) return failure(clause);
     const playing = play.value ? { play: true as const } : {};
     if (objects.det === 'linkedExile') {
       // D-664 (CR 701.20, 701.13, 608.2g): in the text of a spell "the exiled card" is the card the instruction before it exiled, there being no permanent for a linked
@@ -256,11 +260,49 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
       };
     }
     if (objects.det !== 'a' || objects.filter.zone !== 'hand') return failure(clause);
-    const filter = lowerFilter(objects);
+    // "a spell with mana value X or less from your hand" (CR 107.3a, 202.3): the X announced for this spell, so only the text of a spell reads it.
+    let subject = objects;
+    let atMost: Amount | undefined;
+    if (objects.filter.manaValueAtMostX === true) {
+      if (ctx.owner !== 'spell' || ctx.xIs !== null) return failure(clause);
+      const missing = missingFeatures(['selector:manaValueAtMost']);
+      if (missing.length > 0) return failure(clause, missing);
+      const amount = lowerAmount({ kind: 'x', span: objects.span }, ctx, clause.rule);
+      if (!amount.ok) return amount;
+      atMost = amount.value;
+      const { manaValueAtMostX: _x, ...rest } = objects.filter;
+      void _x;
+      subject = { ...objects, filter: rest };
+    }
+    // "... with lesser mana value that shares a card type with it": "it" is the spell of the cast trigger the effect belongs to (CR 603.3d).
+    let relative = false;
+    if (subject.filter.lesserSharingTypeWithTriggerSpell === true) {
+      if (!ctx.castTrigger) return failure(clause);
+      const missing = missingFeatures(['selector:manaValueBelow', 'selector:sharesCardTypeWith']);
+      if (missing.length > 0) return failure(clause, missing);
+      const { lesserSharingTypeWithTriggerSpell: _lesser, ...rest } = subject.filter;
+      void _lesser;
+      subject = { ...subject, filter: rest };
+      relative = true;
+    }
+    const filter = lowerFilter(subject);
     if (!filter.ok) return filter;
+    const limited = {
+      ...filter.value,
+      ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
+      ...(relative
+        ? {
+            manaValueBelow: {
+              kind: 'manaValueOf' as const,
+              of: { kind: 'triggerSubject' as const },
+            },
+            sharesCardTypeWith: 'triggerSubject' as const,
+          }
+        : {}),
+    };
     return {
       ok: true,
-      value: [{ kind: 'castFree', objects: { kind: 'choose', filter: filter.value }, ...playing }],
+      value: [{ kind: 'castFree', objects: { kind: 'choose', filter: limited }, ...playing }],
       rule: clause.rule,
     };
   },

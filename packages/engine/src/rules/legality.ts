@@ -9,7 +9,14 @@ import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject, getSeat, opponentsOf, printedCard, zoneList } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { alternativeOf, flashbackCostOf, hasAftermath, hasGift, hasModeCosts } from './alt-costs';
+import {
+  alternativeOf,
+  flashbackCostOf,
+  hasAftermath,
+  hasGift,
+  hasModeCosts,
+  manaCostAsFlashbackCost,
+} from './alt-costs';
 import { auraTargetSpec, BESTOW_TARGET_SPEC } from './attach';
 import {
   type CastAlternative,
@@ -28,6 +35,7 @@ import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { flashPermissionSources, libraryCastSources } from './derive-statics';
+import { hasGrantedFlashback } from './flashback-grant';
 import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
@@ -440,7 +448,12 @@ export function castZone(
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const face = faceOf(state, obj);
     const spell = face?.types.includes('instant') || face?.types.includes('sorcery');
-    return spell === true && flashbackCostOf(face) !== null ? 'graveyard' : null;
+    if (spell !== true) return null;
+    // CR 702.34a: printed flashback, or flashback with the cost equal to the mana cost that an effect or a permanent gave the card (rules/flashback-grant.ts).
+    if (flashbackCostOf(face) !== null) return 'graveyard';
+    return manaCostAsFlashbackCost(face) !== null && hasGrantedFlashback(state, seat, obj)
+      ? 'graveyard'
+      : null;
   }
   if (alternative === 'escape') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
@@ -776,14 +789,15 @@ export function canCastDuringResolution(
     // D-350 (CR 608.2g, 601.2): "you may cast target instant or sorcery card from a graveyard", paying its mana cost: the card is in a graveyard, whoever's it is (the
     // effect names it); the spell is cast from there and its owner stays the card's owner.
     if (obj.zone !== 'graveyard') return false;
-  } else if (obj.zone !== 'exile' && obj.zone !== 'hand') {
+  } else if (obj.zone !== 'exile' && obj.zone !== 'hand' && obj.zone !== 'library') {
     // D-145: a card in the hand is cast this way as well ("You may cast a spell with mana value 5 or less from your hand without paying
     // its mana cost"); Cascade, Suspend and Madness cast cards from exile.
     return false;
   }
   // D-149 (CR 702.75a, 608.2g): a card in exile is cast by the player the effect names, whoever owns it (see `canPlayLandByEffect`); a card in a
   // hand is the player's own.
-  if (obj.zone === 'hand' && obj.owner !== seat) return false;
+  // CR 608.2g: a card of a library is cast from among the cards its owner looked at ("look at the top seven cards ... you may cast a spell from among them").
+  if ((obj.zone === 'hand' || obj.zone === 'library') && obj.owner !== seat) return false;
   // CR 702.94a (D-274): a card is cast for its miracle cost from the hand it was revealed in.
   if (alternative === 'miracle' && obj.zone !== 'hand') return false;
   if (

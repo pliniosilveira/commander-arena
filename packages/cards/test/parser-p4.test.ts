@@ -568,7 +568,10 @@ describe('the intervening "if" of a triggered ability (CR 603.4)', () => {
         'creature',
       ),
     ).toMatchObject({ reason: 'unrecognised' });
-    expect(dropped('When ~ enters, if you cast it, you gain 1 life.', 'creature')).toMatchObject({
+    // "if you cast it" is read since issue 100 (`condition.was-cast`); where it was cast from is not.
+    expect(
+      dropped('When ~ enters, if you cast it from your hand, you gain 1 life.', 'creature'),
+    ).toMatchObject({
       reason: 'unrecognised',
     });
   });

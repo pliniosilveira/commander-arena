@@ -174,6 +174,9 @@ describe('"Creature spells you control can\'t be countered." and its siblings (C
       { notTypes: ['creature'], controller: 'you' },
     ],
     ["Dragon spells you control can't be countered.", { subtypes: ['Dragon'], controller: 'you' }],
+    // No "you control": every spell, whoever controls it (CR 101.2).
+    ["Spells can't be countered.", {}],
+    ["Creature spells can't be countered.", { types: ['creature'] }],
   ])('%s', (text, spells) => {
     expect(readAll(text, 'enchantment').abilities).toEqual([
       { kind: 'static', static: { kind: 'spellsCantBeCountered', spells } },
@@ -181,7 +184,6 @@ describe('"Creature spells you control can\'t be countered." and its siblings (C
   });
 
   test.each([
-    "Creature spells can't be countered.",
     "Creature spells your opponents control can't be countered.",
     "Creature spells you cast can't be countered.",
     "Creature spells you control can't be countered unless they target a player.",

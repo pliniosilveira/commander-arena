@@ -44,6 +44,7 @@ import { HYLDA_G1_CONDITION_RULES } from './hylda-g1';
 import { HYLDA_G2_CONDITION_RULES } from './hylda-g2';
 import { CONDITION_IF_YOU_DO } from './if-you-do';
 import { IT_ON_BATTLEFIELD_CONDITION_RULES } from './it-on-battlefield';
+import { JESKAI_CASTFREE_CONDITION_RULES } from './jeskai-castfree';
 import { CONDITION_KICKED } from './kicked';
 import { KORVOLD_CONDITION_RULES } from './korvold';
 import { LIBRARY_CONDITION_RULES } from './library';
@@ -559,6 +560,8 @@ export const CONDITION_RULES = [
   ...ARTIFACT_CONDITION_RULES,
   // Stage P32 (D-147): "you don't control another Dinosaur", "the creature you control has trample".
   ...DINOSAUR_CONDITION_RULES,
+  // Jeskai free-cast cards (issue 100): "you cast it".
+  ...JESKAI_CASTFREE_CONDITION_RULES,
   // Stage P34 (D-152): the most life, the total power of the attackers, the damage and the permanents of the turn.
   ...DRAGON_CONDITION_RULES,
   // Stage P37 (D-180): "you put a Cave onto the battlefield this way".
