@@ -581,6 +581,27 @@ export function legalTargets(
     }
     return out;
   }
+  if (spec.what.kind === 'objectOrSpell') {
+    // CR 115.1 (issue 81): "target spell or creature": the permanents the filter matches, then the spells on the stack the spell filter matches. A spell never targets itself
+    // while it is being put on the stack.
+    const { filter: permanents, spell: spells } = spec.what;
+    for (const [filter, zone] of [
+      [permanents, 'battlefield'],
+      [spells, 'stack'],
+    ] as const) {
+      for (const id of objectsInZone(state, zone)) {
+        const obj = getObject(state, id);
+        if (obj.zone === 'stack' && (id === ctx.source || id === ctx.stackObject)) continue;
+        if (
+          matchesFilter(state, obj, { ...filter, zone }, ctx) &&
+          canBeTargetedBy(state, obj, ctx.controller, ctx.source)
+        ) {
+          out.push({ kind: 'object', id, specId });
+        }
+      }
+    }
+    return out;
+  }
   if (spec.what.kind === 'anyTarget') {
     // CR 115.4: any target is a creature, player, planeswalker or battle.
     for (const id of state.battlefield) {

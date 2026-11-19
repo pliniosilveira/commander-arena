@@ -1080,6 +1080,15 @@ export interface TargetSpec {
         readonly kind: 'objectOrGraveyardCard';
         readonly filter: ObjectFilter;
         readonly card: ObjectFilter;
+      }
+    /**
+     * "Return target spell or creature to its owner's hand" (CR 115.1, 601.2c, 405.1, issue 81, Fatehold Charm): one slot whose target is a permanent on the battlefield that `filter`
+     * matches (no zone) or a spell on the stack that `spell` matches (`stackKind: 'spell'`, no zone). The slot is legal again as the ability resolves (CR 608.2b) where each now is.
+     */
+    | {
+        readonly kind: 'objectOrSpell';
+        readonly filter: ObjectFilter;
+        readonly spell: ObjectFilter;
       };
   readonly min?: number;
   readonly max?: number;

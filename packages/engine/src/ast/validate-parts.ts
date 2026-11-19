@@ -891,6 +891,49 @@ export function declareTargets(
         }
         break;
       }
+      case 'objectOrSpell':
+        // CR 115.1 (issue 81, Fatehold Charm): "target spell or creature": a permanent the filter matches or a spell the spell filter matches.
+        checkFilter(what.filter, `${p}.what.filter`, out);
+        checkFilter(what.spell, `${p}.what.spell`, out);
+        if (
+          filterSome(
+            what.filter,
+            (f) =>
+              (f.zone !== undefined && f.zone !== 'battlefield') ||
+              f.stackKind !== undefined ||
+              f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${p}.what.filter`,
+            'the permanent half is on the battlefield: no other zone, owner or stackKind',
+          );
+        }
+        if (
+          what.spell?.stackKind !== 'spell' ||
+          (what.spell.zone !== undefined && what.spell.zone !== 'stack') ||
+          what.spell.owner !== undefined
+        ) {
+          issue(
+            out,
+            `${p}.what.spell`,
+            'the spell half is a spell on the stack: stackKind "spell", no zone or owner',
+          );
+        }
+        if (
+          spec.onePerOpponent !== undefined ||
+          spec.divide !== undefined ||
+          spec.upToThatMany !== undefined ||
+          spec.anyNumber !== undefined
+        ) {
+          issue(
+            out,
+            p,
+            'a target of a permanent or a spell takes one target, not onePerOpponent, divide, upToThatMany or anyNumber',
+          );
+        }
+        break;
       default:
         issue(out, `${p}.what`, `unknown target kind ${kindOf(what)}`);
     }

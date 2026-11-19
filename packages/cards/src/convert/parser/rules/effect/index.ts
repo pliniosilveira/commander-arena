@@ -577,6 +577,19 @@ const RETURN_CHOSEN = map(
   }),
 );
 
+/** "return target spell or creature to its owner's hand" (issue 81, Fatehold Charm): the slot of a spell on the stack or a creature on the battlefield. */
+const RETURN_SPELL_OR_CREATURE_TO_HAND = map(
+  sequence(
+    literal('return '),
+    operands(['noun.target-spell-or-creature'], 'effect.return'),
+    spanned(OWNERS_HAND),
+  ),
+  ([, objects, to]): { objects: IrNoun | IrNounList; to: IrZoneSpec } => ({
+    objects,
+    to: zone('effect.return', to.span, 'hand', { whose: 'owner' }),
+  }),
+);
+
 const RETURN_TO_HAND = map(
   sequence(
     literal('return '),
@@ -840,6 +853,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'effect.return',
     choice<{ objects: IrNoun | IrNounList; to: IrZoneSpec; attachTo?: IrNoun }>(
       RETURN_TO_HAND,
+      RETURN_SPELL_OR_CREATURE_TO_HAND,
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,

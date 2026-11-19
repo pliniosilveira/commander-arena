@@ -1057,6 +1057,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever one or more creatures deal combat damage to you while you're the monarch, ${e}.`,
   ),
+  'noun.target-spell-or-creature': spell((e) => `Return ${e} to its owner's hand.`),
   'effect.return-to-battlefield-delayed': permanent((e) => `Whenever ~ dies, ${e}.`),
   // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
   'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),

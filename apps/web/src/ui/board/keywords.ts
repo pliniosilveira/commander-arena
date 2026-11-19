@@ -221,6 +221,8 @@ const RESTRICTIONS: Readonly<Record<Restriction, readonly [short: string, full: 
   cantAttack: ['NoAtk', "Can't attack"],
   cantBlock: ['NoBlk', "Can't block"],
   cantBeBlocked: ['Unbl', "Can't be blocked"],
+  // Issue 81 (CR 509.1b): the Gingerbrute token.
+  cantBeBlockedExceptByHaste: ['UnblH', "Can't be blocked except by creatures with haste"],
   cantBeBlockedByMoreThanOne: ['Blk≤1', "Can't be blocked by more than one creature"],
   attacksEachCombat: ['Atk!', 'Attacks each combat'],
   mustBeBlocked: ['Blk!', 'Must be blocked if able'],

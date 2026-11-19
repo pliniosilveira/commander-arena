@@ -73,6 +73,11 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
   cantAttack: { one: "can't attack", many: "can't attack" },
   cantBlock: { one: "can't block", many: "can't block" },
   cantBeBlocked: { one: "can't be blocked", many: "can't be blocked" },
+  // Issue 81 (CR 509.1b): the Gingerbrute token.
+  cantBeBlockedExceptByHaste: {
+    one: "can't be blocked except by creatures with haste",
+    many: "can't be blocked except by creatures with haste",
+  },
   cantBeBlockedByMoreThanOne: {
     one: "can't be blocked by more than one creature",
     many: "can't be blocked by more than one creature",

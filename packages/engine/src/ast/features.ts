@@ -779,6 +779,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playerOrObject',
     // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards" (`exile` only).
     'objectOrGraveyardCard',
+    // Issue 81 (Fatehold Charm): "target spell or creature".
+    'objectOrSpell',
     'each',
     'choose',
     'you',
@@ -1516,6 +1518,8 @@ export const SELECTOR_KINDS = [
   'playerOrObject',
   /** "Up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270): `TargetSpec.what` `objectOrGraveyardCard`. */
   'objectOrGraveyardCard',
+  /** "Target spell or creature" (CR 115.1, issue 81): `TargetSpec.what` `objectOrSpell`. */
+  'objectOrSpell',
   'each',
   'choose',
   'you',

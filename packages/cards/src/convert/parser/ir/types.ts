@@ -197,6 +197,11 @@ export interface IrNoun extends IrNode {
    * (permanents on the battlefield) or this filter (cards of any graveyard). The engine's slot of two zones (`objectOrGraveyardCard`); only `exile` takes it.
    */
   readonly orCard?: IrFilter;
+  /**
+   * "target spell or creature" (issue 81, Fatehold Charm, CR 115.1): a target noun whose targets are `filter` (permanents on the battlefield) or this filter (spells on the stack). The engine's
+   * slot of a permanent or a spell (`objectOrSpell`).
+   */
+  readonly orSpell?: IrFilter;
   /** `det` `players`: the player nouns that act together, in text order ("you", "target opponent"). */
   readonly members?: readonly IrNoun[];
   /**

@@ -83,6 +83,10 @@ function partOf(amount: PtAmount | StaticPtAmount, ctx: AmountContext = {}): Par
     // D-187 (CR 508.1): "+1/+0 for each time it has attacked this turn".
     return { sign: '+', mag: '1', each: 'for each time it has attacked this turn' };
   }
+  if (amount.kind === 'unspentMana') {
+    // Issue 81 (Omnath, CR 106.4): "+1/+1 for each unspent mana you have".
+    return { sign: '+', mag: '1', each: 'for each unspent mana you have' };
+  }
   if (amount.kind === 'colorsAmong') {
     // D-179: "+1/+1 for each color among permanents you control".
     const among = thingsPhrase(amount.filter, true);

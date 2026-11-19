@@ -66,6 +66,7 @@ import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
 import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
+import { SPELL_OR_CREATURE_NOUN_RULES } from './spell-or-creature';
 import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
@@ -779,6 +780,7 @@ export const NOUN_RULES = [
   ...PAIR_NOUN_RULES,
   NOUN_PLAYER,
   NOUN_TARGET_SPELL,
+  ...SPELL_OR_CREATURE_NOUN_RULES,
   // Galadriel deck, group 3 (issue 43): "up to one target spell".
   ...GALADRIEL_G3_NOUN_RULES,
   // Issue 100 (Sublime Epiphany): "target activated or triggered ability".

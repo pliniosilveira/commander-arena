@@ -685,6 +685,30 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
       spec = anyNumberTarget
         ? { id, what: { kind: 'player', filter: noun.filter.player }, anyNumber: true }
         : { id, what: { kind: 'player', filter: noun.filter.player }, ...boundsOf(noun) };
+    } else if (noun.orSpell !== undefined) {
+      // "target spell or creature" (issue 81, Fatehold Charm, CR 115.1): the engine's slot of a permanent or a spell; one target, nothing else about the noun.
+      if (
+        noun.upTo === true ||
+        noun.other ||
+        noun.otherTarget === true ||
+        anyNumberTarget ||
+        noun.perOpponent === true ||
+        noun.upToThatMany === true ||
+        noun.count !== undefined
+      ) {
+        return failure(noun, []);
+      }
+      const blocked = missingFeatures(['selector:objectOrSpell']);
+      if (blocked.length > 0) return failure(noun, blocked);
+      const permanents = lowerFilter(noun);
+      if (!permanents.ok) return permanents;
+      const spells = lowerFilterAt(noun.orSpell, { ...noun, other: false }, false);
+      if (!spells.ok) return spells;
+      spec = {
+        id,
+        what: { kind: 'objectOrSpell', filter: permanents.value, spell: spells.value },
+        ...boundsOf(noun),
+      };
     } else if (noun.orCard !== undefined) {
       // "up to three other target creatures from the battlefield and/or creature cards from graveyards" (D-270, CR 115.1): the engine's slot of two zones. The text of a
       // spell has no such slot (the engine reads it in a triggered ability only), and nothing else about the noun may be set that the slot does not say.

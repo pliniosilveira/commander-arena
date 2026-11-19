@@ -1046,3 +1046,47 @@ describe('Omnath: unspent mana grows it and is never lost, only made colorless',
     g.expect.pt(OMNATH.name, 4, 4);
   });
 });
+
+// ---- Fatehold Charm, mode two: "Return target spell or creature to its owner's hand." (CR 115.1, 608.2b, 400.3, 405.1: the target is a spell on the stack or a creature on the battlefield).
+
+const BOUNCE = parsed(
+  'SYNTHETIC Parsed Bounce',
+  'Instant',
+  "Return target spell or creature to its owner's hand.",
+  { manaCost: '{U}', colors: ['U'] },
+);
+
+describe('"Return target spell or creature to its owner\'s hand": a creature or a spell on the stack', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(BOUNCE)
+      .hand(BOUNCE.name, 'Unsummon')
+      .battlefield('Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+
+  test("a creature goes back to its owner's hand", () => {
+    const g = start();
+    g.act(0).cast(BOUNCE.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'hand', { seat: 1 });
+  });
+
+  test("a spell on the stack goes back to its owner's hand and does nothing", () => {
+    const g = start();
+    g.act(0).cast('Unsummon', { targets: ['Grizzly Bears'], pay: true });
+    g.act(0).cast(BOUNCE.name, { targets: [{ name: 'Unsummon', zone: 'stack' }], pay: true });
+    g.passAll();
+    g.expect.zone('Unsummon', 'hand', { seat: 0 });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 1 });
+    g.expect.invariants();
+  });
+});
