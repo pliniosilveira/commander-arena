@@ -858,6 +858,10 @@ export interface IrManaSpec extends IrNode {
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
     // "an amount of mana of that color equal to your devotion to that color" (CR 605.3b, 700.5): the color of the sentence "Choose a color." before it
     | { readonly kind: 'devotionToChosenColor' }
+    // "one mana of that color for each charge counter on ~" (CR 605.3b, 106.1b): after "Choose a color.", as many mana of it as the `times` amount of the clause
+    | { readonly kind: 'thatColor' }
+    // "X mana of any one color, where X is ~'s power" (CR 106.1b, 107.3c): `count` mana of one color chosen as the ability resolves, X what the sentence defines
+    | { readonly kind: 'anyOneColorX' }
     // "{R}{R}, {R}{W}, or {W}{W}" (stage P14): exactly one of the listed combinations, each a run of
     // symbols as written
     | { readonly kind: 'combination'; readonly options: readonly (readonly string[])[] }

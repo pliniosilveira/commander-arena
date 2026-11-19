@@ -20,7 +20,7 @@ import { COLORS } from '../characteristics';
 import type { ObjectId } from '../ids';
 import type { ManaColor, ManaRestriction, ManaRider } from '../mana/types';
 import type { GameObject, GameState } from '../state/types';
-import { devotionOf } from './amounts';
+import { amountOf, devotionOf } from './amounts';
 import { commanderIdentity } from './commander-identity';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -72,6 +72,7 @@ export function spendRestrictionOf(
     ...(only.types === undefined ? {} : { types: [...only.types] }),
     ...(subtypes === undefined ? {} : { subtypes }),
     ...(only.alsoAbilities === true ? { alsoAbilities: true as const } : {}),
+    ...(only.qualities === undefined ? {} : { qualities: only.qualities.map((q) => ({ ...q })) }),
   };
 }
 
@@ -173,6 +174,12 @@ function plainOutcomes(
       // CR 700.5, 605.3b: "Choose a color. Add an amount of mana of that color equal to your devotion to that color": one outcome per color, with as many
       // mana as the controller's devotion to it now (a color with none is an empty outcome: nothing to pick).
       return COLORS.map((c) => Array.from({ length: devotionOf(state, seat, [c]) }, () => c));
+    case 'anyColorAmount': {
+      // CR 106.1b, 605.3b: "Add X mana of any one color, where X is this creature's power": one outcome per color, with as many mana as the amount is now, read for the
+      // controller with the permanent as "this" (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
+      const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
+      return COLORS.map((c) => Array.from({ length: n }, () => c));
+    }
     case 'oneOf':
       return [...new Set(p.colors)].map((c) => [c]);
     case 'combination': {

@@ -4282,6 +4282,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     }
+    case 'grantCastAsThoughFlash': {
+      // CR 601.3b: players named by a selector, until end of turn.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (e.duration !== 'untilEndOfTurn') {
+        issue(
+          out,
+          `${path}.duration`,
+          'the permission to cast as though with flash lasts until end of turn',
+        );
+      }
+      break;
+    }
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -5604,6 +5616,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
+      if (e.mana?.kind === 'anyColorAmount') {
+        issue(
+          out,
+          `${path}.mana`,
+          'only a mana ability can ask for the color of an amount of mana',
+        );
+      }
       if (e.player !== undefined) {
         // D-229: the pool of one player a selector names; a fixed production only.
         checkPlayerSelector(e.player, `${path}.player`, scope, out);

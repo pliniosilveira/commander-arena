@@ -8,7 +8,7 @@ import type { ManaAbility } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
 import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
-import { checkCondition, checkCosts, checkEnumList } from './validate-parts';
+import { checkCondition, checkCosts, checkEnumList, checkStateAmount } from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   checkCosts(a.cost, `${path}.cost`, out);
@@ -70,6 +70,31 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       'the mana of a mana ability empties as steps and phases end',
     );
   }
+  // "Add X mana of any one color, where X is this creature's power": an amount the game says now, read for the permanent itself (CR 605.1a: no X, no target).
+  if (a.production?.kind === 'anyColorAmount') {
+    const amount = a.production.amount;
+    if (typeof amount === 'object' && amount !== null && amount.kind === 'powerOf') {
+      if (kindOf(amount.of) !== 'this') {
+        issue(
+          out,
+          `${path}.production.amount.of`,
+          'a mana ability reads the power of this permanent only',
+        );
+      }
+    } else {
+      checkStateAmount(amount, `${path}.production.amount`, out, 'the mana a mana ability makes');
+    }
+    if ((a.cost ?? []).some((c) => c?.kind === 'sacrifice' || c?.kind === 'removeCounters')) {
+      issue(
+        out,
+        `${path}.cost`,
+        'the amount is counted before the costs are paid: no cost that gives up a permanent or takes counters off',
+      );
+    }
+  }
+  if (a.oncePerTurn !== undefined && a.oncePerTurn !== true) {
+    issue(out, `${path}.oncePerTurn`, 'oncePerTurn must be true');
+  }
   if (a.production?.kind === 'couldProduce') {
     // The permanents whose mana is looked at are on the battlefield (CR 106.7).
     if (a.production.lands === undefined || a.production.lands === null) {
@@ -96,7 +121,41 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     if (only === null || typeof only !== 'object') {
       issue(out, `${path}.spendOnly`, 'spendOnly names the types and subtypes of the spells');
     } else {
-      if (only.types === undefined && only.subtypes === undefined && only.chosenType !== true) {
+      if (only.qualities !== undefined) {
+        if (!Array.isArray(only.qualities) || only.qualities.length === 0) {
+          issue(
+            out,
+            `${path}.spendOnly.qualities`,
+            'qualities must be a non-empty list when present',
+          );
+        } else {
+          if (only.chosenType === true) {
+            issue(
+              out,
+              `${path}.spendOnly`,
+              'spendOnly names qualities or the chosen type, not both',
+            );
+          }
+          only.qualities.forEach((q, i) => {
+            const ok =
+              q?.kind === 'hasX' ||
+              (q?.kind === 'manaValueAtLeast' && Number.isSafeInteger(q.value) && q.value >= 1);
+            if (!ok) {
+              issue(
+                out,
+                `${path}.spendOnly.qualities[${i}]`,
+                'a quality is hasX or manaValueAtLeast of a whole number from 1',
+              );
+            }
+          });
+        }
+      }
+      if (
+        only.types === undefined &&
+        only.subtypes === undefined &&
+        only.chosenType !== true &&
+        only.qualities === undefined
+      ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }
       // Issue 199: "of the chosen type" stands in for the subtypes.

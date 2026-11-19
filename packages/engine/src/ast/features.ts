@@ -221,6 +221,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'restrict',
     // Hylda group 3 (CR 702.11b): "You gain hexproof until end of turn", a player's hexproof for the turn.
     'grantPlayerHexproof',
+    // CR 601.3b (Alchemist's Refuge): "You may cast spells this turn as though they had flash."
+    'grantCastAsThoughFlash',
     // D-639: "Goad target creature" (CR 701.15).
     'goad',
     'grantPlayerProtectionEverything',
@@ -650,6 +652,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyCombination',
     // "Choose a color. Add an amount of mana of that color equal to your devotion to that color."
     'anyColorDevotion',
+    // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
+    'anyColorAmount',
   ],
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
@@ -2084,6 +2088,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   sequence: true,
   chooseObjects: true,
   grantPlayerHexproof: true,
+  grantCastAsThoughFlash: true,
   grantPlayerProtectionEverything: true,
   preventPlayerLifeTotalChange: true,
   mill: true,
@@ -2402,6 +2407,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   combination: true,
   anyCombination: true,
   anyColorDevotion: true,
+  anyColorAmount: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,

@@ -2007,6 +2007,8 @@ export type ContinuousChange =
    * player is targeted (`rules/player-protection.ts`).
    */
   | { readonly kind: 'playerHexproof' }
+  /** "You may cast spells this turn as though they had flash" (`grantCastAsThoughFlash`, CR 601.3b): the effect's `players` may cast any spell at instant timing while it lasts. No layer: read in `castTiming`. */
+  | { readonly kind: 'playerCastAsThoughFlash' }
   /** Protection from everything granted to a player until their next turn (D-607). */
   | { readonly kind: 'playerProtectionEverything' }
   /** Prevents all increases and decreases to the player's life total (D-607). */

@@ -113,6 +113,7 @@ import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
+import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerLock } from './player-lock';
 import { runPopulate } from './populate';
@@ -2779,6 +2780,10 @@ function runEffect(
     case 'grantPlayerHexproof':
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
+
+    case 'grantCastAsThoughFlash':
+      // CR 601.3b (Alchemist's Refuge): the players may cast spells as though they had flash until end of turn (`rules/player-flash.ts`).
+      return runGrantCastAsThoughFlash(state, effect, ctx, targets);
 
     case 'attackRandomOpponent':
       // CR 508.1d, 701.26a: an opponent at random that was not attacked in the last combat must be attacked this combat, or the creature is tapped (`rules/attack-random-opponent.ts`).

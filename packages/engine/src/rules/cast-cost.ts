@@ -61,6 +61,7 @@ import { payMechanismsOf, payOptionSources } from './pay-options';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
+import { spellSpendTarget } from './spend-target';
 import { hasX, largestPayableX, spellXCost, withX, type XCost } from './x-value';
 
 /** How a spell is cast instead of from the hand or the command zone: see `PriorityOption`. */
@@ -552,13 +553,8 @@ export function castManaPlan(
   anyType: boolean = spell.stack?.anyManaType === true,
   sacrificeCount = 1,
 ): PaymentPlan | null {
-  const derived = derive(state, spell);
-  // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes.
-  const target = {
-    types: derived.types,
-    subtypes: derived.subtypes,
-    ...(anyType ? { anyType: true as const } : {}),
-  };
+  // D-149: mana that may be spent only on a spell of a type and creature type ("only to cast an Angel spell") reads the subtypes; CR 106.6: or its mana value and {X}.
+  const target = spellSpendTarget(state, spell, anyType);
   const options = extraSources === undefined ? {} : { extraSources };
   const reserve = handReserve(state, seat, spell);
   const plan = planFor(state, seat, symbols, target, reserve, options);

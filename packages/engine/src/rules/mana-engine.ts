@@ -32,6 +32,7 @@ import {
   outcomeColor,
   payManaAbilityCosts,
   physicalRefusal,
+  recordManaActivation,
   sacrificeFilterOf,
   showCost,
   tapFilterOf,
@@ -86,8 +87,9 @@ export function canActivateManaAbility(
   obj: GameObject,
   ability: ManaAbility,
   seat: SeatId,
+  abilityIndex?: number,
 ): boolean {
-  if (!canPayPhysicalCosts(state, obj, ability, seat)) return false;
+  if (!canPayPhysicalCosts(state, obj, ability, seat, abilityIndex)) return false;
   const symbols = manaCostSymbols(ability);
   return symbols.length === 0 || poolPayment(state, seat, symbols) !== null;
 }
@@ -199,7 +201,7 @@ export function activateManaAbility(
   const found = manaAbilitiesOf(state, obj).find((m) => m.abilityIndex === abilityIndex);
   if (!found) return refuse('that permanent has no such mana ability');
   const name = derive(state, obj).name;
-  const stuck = physicalRefusal(state, obj, found.ability, seat);
+  const stuck = physicalRefusal(state, obj, found.ability, seat, abilityIndex);
   if (stuck !== null) return refuse(stuck);
   // CR 601.2b, 605.3b (D-222): the player chooses the permanent a cost "Sacrifice a Spirit" gives up. With one candidate there is no choice; with more the
   // activation must name one of them (the engine never picks for a player who is paying by hand).
@@ -269,19 +271,23 @@ export function activateManaAbility(
     extra = named;
   }
   const made = [...chosen, ...extra];
-  let next = patchSeat(paid.state, seat, {
-    manaPool: addToPool(
-      getSeat(paid.state, seat).manaPool,
-      toManaObjects(
-        source,
-        snow,
-        made,
-        spendRestrictionOf(found.ability, obj),
-        spentRiderOf(found.ability, source),
-        derive(state, obj).types,
+  let next = patchSeat(
+    recordManaActivation(paid.state, source, abilityIndex, found.ability),
+    seat,
+    {
+      manaPool: addToPool(
+        getSeat(paid.state, seat).manaPool,
+        toManaObjects(
+          source,
+          snow,
+          made,
+          spendRestrictionOf(found.ability, obj),
+          spentRiderOf(found.ability, source),
+          derive(state, obj).types,
+        ),
       ),
-    ),
-  });
+    },
+  );
   const events: GameEvent[] = [...paid.events];
   if (made.length > 0) events.push({ kind: 'manaAdded', seat, count: made.length });
   const also = found.ability.also ?? [];
@@ -338,7 +344,7 @@ export function applyPaymentPlan(
       undefined,
       new Set(plan.taps.map((t) => t.object)),
     );
-    next = paid.state;
+    next = recordManaActivation(paid.state, tap.object, tap.abilityIndex, ability);
     events.push(...paid.events);
     // D-151: mana of a source that was tapped for this payment and not left over was spent on it, with what it carries.
     const rider = spentRiderOf(ability, tap.object);
