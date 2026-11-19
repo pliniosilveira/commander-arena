@@ -344,6 +344,15 @@ const REVEAL_UNTIL =
   /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
 const PUT_THAT_CARD = /^put (?:that card|those [\p{L}]+ cards) [^.]*\.$/iu;
 /**
+ * "Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the
+ * battlefield, then shuffle the rest of the revealed cards into your library." (Mass Polymorph): two sentences that are one instruction, kept together for
+ * `effect.reveal-until-that-many`.
+ */
+const EXILE_THEN_REVEAL_THAT_MANY =
+  /^exile all [^.]*, then reveal cards from the top of your library until you reveal that many creature cards\.$/i;
+const PUT_ALL_REVEALED_SHUFFLE_REST =
+  /^put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library\.$/i;
+/**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
  * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.
  */
@@ -726,6 +735,14 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       said(a, REVEAL_UNTIL) &&
       said(b, PUT_THAT_CARD)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, EXILE_THEN_REVEAL_THAT_MANY) &&
+      said(b, PUT_ALL_REVEALED_SHUFFLE_REST)
     ) {
       out.push({ start: a.start, end: b.end });
       i += 1;

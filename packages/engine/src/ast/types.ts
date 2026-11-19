@@ -367,6 +367,8 @@ export type ThisWayKind =
   | 'destroyedOwnNontoken'
   // D-231: "When one or more nonland cards are exiled this way, put that many +1/+1 counters" (Augusta): the nonland cards `exileOwnGraveyardCard` exiled (CR 603.12).
   | 'exiledNonland'
+  // Mass Polymorph (CR 608.2c): "that many creature cards", the creatures an earlier `exile` effect of this resolution exiled from the battlefield, tokens included.
+  | 'exiledCreatures'
   | 'playersDrew'
   | 'tapped'
   | 'discarded'

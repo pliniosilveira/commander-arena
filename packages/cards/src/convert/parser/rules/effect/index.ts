@@ -144,6 +144,7 @@ import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
 import { RETURN_CONTROL_EFFECT_RULES } from './return-control';
 import { REVEAL_TAKE_EFFECT_RULES } from './reveal-take';
+import { REVEAL_THAT_MANY_EFFECT_RULES } from './reveal-that-many';
 import { REVEAL_TOP_DUEL_EFFECT_RULES } from './reveal-top-duel';
 import { REVEAL_X_CARDS_EFFECT_RULES } from './reveal-x-cards';
 import { RING_EFFECT_RULES } from './ring';
@@ -1059,6 +1060,7 @@ export const EFFECT_RULES = [
   ...DRAW_COMMANDER_CASTS_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "reveal the top X cards ... put all land cards from among them onto the battlefield tapped", "reveal cards until you reveal X land cards".
   ...REVEAL_X_CARDS_EFFECT_RULES,
+  ...REVEAL_THAT_MANY_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

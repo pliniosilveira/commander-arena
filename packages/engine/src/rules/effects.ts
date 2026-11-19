@@ -564,15 +564,22 @@ export function runInstruction(
       hidden.objects[result.newObject]?.zone === 'exile'
         ? instruction.exiledPower
         : undefined;
+    // CR 608.2c (Mass Polymorph: "that many creature cards"): every creature the `exile` effect really exiled counts, a token included (it is exiled, then ceases to exist, CR 111.7).
+    const exiledCreature =
+      instruction.exiledPower !== undefined &&
+      (result.newObject === null
+        ? movedObjects.length > 0
+        : hidden.objects[result.newObject]?.zone === 'exile');
     // D-135: an object that moved is something done, for "if you do".
     return {
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland || exiledPower !== undefined
+      ...(countedNonland || exiledPower !== undefined || exiledCreature
         ? {
             thisWay: {
               ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(exiledCreature ? { exiledCreatures: 1 } : {}),
               ...(exiledPower === undefined
                 ? {}
                 : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),

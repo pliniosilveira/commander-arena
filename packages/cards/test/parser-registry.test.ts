@@ -1045,6 +1045,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,
   ),
+  // Multiverse Reforged deck (issue 81): "that many" is the creatures the exile before it exiled.
+  'effect.reveal-until-that-many': spell((e) => `Exile all creatures you control, then ${e}.`),
 };
 
 function embedding(rule: PhraseRule<unknown>): Embed {

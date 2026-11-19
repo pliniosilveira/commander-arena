@@ -84,8 +84,41 @@ const UNTAP_MOVED: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the battlefield, then shuffle the rest of the
+ * revealed cards into your library." (Mass Polymorph, CR 701.20, 701.24, 608.2c): the engine's `revealUntil` with the creatures the exile before it exiled as its `count`, the rest left in
+ * the library (`rest: 'stay'`), then a `shuffle`. "That many" is the exile of the instruction before; after any other instruction the clause is refused.
+ */
+const REVEAL_UNTIL_THAT_MANY: Lowering<IrClause, Effects> = {
+  head: 'revealUntilThatMany',
+  id: 'lower.reveal-until-that-many',
+  needs: ['effect:revealUntil', 'ability:revealUntilCount', 'effect:shuffle'],
+  lower(clause, ctx) {
+    if (ctx.lastEffectKind !== 'exile') return failure(clause);
+    const card = arg(clause, 'card');
+    if (card?.kind !== 'noun') return failure(clause);
+    const filter = lowerFilter({ ...card, filter: withoutZone(card.filter) });
+    if (!filter.ok) return filter;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'revealUntil',
+          filter: filter.value,
+          count: { kind: 'thisWay', what: 'exiledCreatures' },
+          put: 'battlefield',
+          rest: 'stay',
+        },
+        { kind: 'shuffle', player: { kind: 'you' } },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const QUANDRIX_D2_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   REVEAL_UNTIL_X,
   REVEAL_TOP_PUT_ALL,
   UNTAP_MOVED,
+  REVEAL_UNTIL_THAT_MANY,
 ];

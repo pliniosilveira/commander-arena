@@ -258,6 +258,8 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 sacrificedOwn: (res.thisWay?.sacrificedOwn ?? 0) + (out.thisWay.sacrificedOwn ?? 0),
                 destroyed: (res.thisWay?.destroyed ?? 0) + (out.thisWay.destroyed ?? 0),
                 exiledNonland: (res.thisWay?.exiledNonland ?? 0) + (out.thisWay.exiledNonland ?? 0),
+                exiledCreatures:
+                  (res.thisWay?.exiledCreatures ?? 0) + (out.thisWay.exiledCreatures ?? 0),
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),

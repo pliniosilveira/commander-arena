@@ -1,0 +1,117 @@
+// The Multiverse Reforged - Reality Fracture deck (issue 81), run as written. Each group imports SYNTHETIC cards through the grammar (never through a fixture), defines them in an
+// engine scenario and plays them through applyAction. Every card name starts with "SYNTHETIC"; the wording of each text is that of the real card, taken from the card data the deck
+// support workflow fetched from Scryfall for the issue. No real card's text is claimed beyond that.
+import { scenario } from '@commander-arena/engine/testing';
+import { describe, test } from 'vitest';
+import { parsed } from './convert-grammar-helpers';
+
+// ---- Mass Polymorph: "Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed
+// this way onto the battlefield, then shuffle the rest of the revealed cards into your library." (CR 701.20 Reveal, 701.24 Shuffle, 608.2c: "that many" is read from the exile).
+
+const POLYMORPH = parsed(
+  'SYNTHETIC Parsed Polymorph',
+  'Sorcery',
+  'Exile all creatures you control, then reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library.',
+  { manaCost: '{X}{U}{U}' },
+);
+const BEAR = parsed('SYNTHETIC Parsed Bear', 'Creature — Bear', '', {
+  manaCost: '{1}{G}',
+  colors: ['G'],
+  power: '2',
+  toughness: '2',
+});
+const OGRE = parsed('SYNTHETIC Parsed Ogre', 'Creature — Ogre', '', {
+  manaCost: '{3}{R}',
+  colors: ['R'],
+  power: '4',
+  toughness: '4',
+});
+
+const TROLL = parsed('SYNTHETIC Parsed Troll', 'Creature — Troll', '', {
+  manaCost: '{3}{G}',
+  colors: ['G'],
+  power: '4',
+  toughness: '4',
+});
+const TROLL_TWO = parsed('SYNTHETIC Parsed Troll Two', 'Creature — Troll', '', {
+  manaCost: '{3}{G}',
+  colors: ['G'],
+  power: '4',
+  toughness: '4',
+});
+
+const MAKER = parsed(
+  'SYNTHETIC Parsed Maker',
+  'Creature — Human',
+  '{T}: Create a 1/1 white Soldier creature token.',
+  { manaCost: '{1}{W}', colors: ['W'], power: '1', toughness: '1' },
+);
+
+describe('Mass Polymorph: exile your creatures, then reveal that many creature cards', () => {
+  const start = (library: readonly string[]) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(POLYMORPH)
+      .define(BEAR)
+      .define(OGRE)
+      .define(TROLL)
+      .define(TROLL_TWO)
+      .hand(POLYMORPH.name)
+      .battlefield(BEAR.name, BEAR.name, 'Island', 'Island')
+      .library(...library)
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('two creatures are exiled and the first two creature cards revealed enter; the others are shuffled back', () => {
+    const g = start(['Plains', OGRE.name, 'Plains', TROLL.name, TROLL_TWO.name, 'Plains']);
+    g.act(0).cast(POLYMORPH.name, { pay: true });
+    g.passAll();
+    g.expect.zone(BEAR.name, 'exile', { seat: 0 });
+    g.expect.zone(OGRE.name, 'battlefield', { seat: 0 });
+    g.expect.zone(TROLL.name, 'battlefield', { seat: 0 });
+    g.expect.zone(TROLL_TWO.name, 'library', { seat: 0 });
+    // Two Plains were revealed with the Ogre and the Troll and shuffled back with the two cards that were not revealed: 4 cards in all.
+    g.expect.librarySize(0, 4);
+    g.expect.invariants();
+  });
+
+  test('a token exiled counts as a creature exiled (CR 111.7: it ceases to exist, but it was exiled)', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(POLYMORPH)
+      .define(MAKER)
+      .define(OGRE)
+      .define(TROLL)
+      .define(TROLL_TWO)
+      .hand(POLYMORPH.name)
+      .battlefield(MAKER.name, 'Island', 'Island')
+      .library('Plains', OGRE.name, TROLL.name, TROLL_TWO.name, 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(MAKER.name);
+    g.passAll();
+    g.act(0).cast(POLYMORPH.name, { pay: true });
+    g.passAll();
+    // The Maker and its Soldier token are two creatures exiled: two creature cards enter.
+    g.expect.zone(OGRE.name, 'battlefield', { seat: 0 });
+    g.expect.zone(TROLL.name, 'battlefield', { seat: 0 });
+    g.expect.zone(TROLL_TWO.name, 'library', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('with no creature in the library every card is revealed and the library is shuffled', () => {
+    const g = start(['Plains', 'Plains', 'Plains']);
+    g.act(0).cast(POLYMORPH.name, { pay: true });
+    g.passAll();
+    g.expect.librarySize(0, 3);
+    g.expect.invariants();
+  });
+});
