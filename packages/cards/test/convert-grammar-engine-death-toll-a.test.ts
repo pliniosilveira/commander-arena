@@ -88,3 +88,51 @@ describe('delirium statics: "as long as there are four or more card types among 
     four.expect.derived('it', { keywords: ['deathtouch'] });
   });
 });
+
+describe('Deluge of Doom (all creatures get -X/-X, X the card types among cards in your graveyard)', () => {
+  const DELUGE = real('Deluge of Doom');
+  const BIG = parsed('SYNTHETIC Big Beast', 'Creature — Beast', '', {
+    manaCost: '{1}',
+    power: '5',
+    toughness: '5',
+  });
+  const run = (yard: readonly string[]) => {
+    const g = scenario()
+      .define(DELUGE)
+      .define(BIG)
+      .define(SORC)
+      .define(INST)
+      .define(CRE)
+      .define(ART)
+      .seat(0)
+      .hand(DELUGE.name)
+      .battlefield('Swamp', { count: 3 })
+      .battlefield(BIG.name)
+      .graveyard(...yard)
+      .library(...FILLER)
+      .seat(1)
+      .battlefield(BIG.name)
+      .graveyard(ART.name)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(DELUGE.name, { pay: true });
+    g.passAll();
+    return g;
+  };
+  const power = (g: ReturnType<typeof run>, seat: 0 | 1) =>
+    getView(g.state, seat).battlefield.find((v) => v.name === BIG.name)?.power;
+
+  test('counts each type once, of the graveyard of the controller only, as it resolves (CR 205.2a)', () => {
+    // Two creature cards and a sorcery are two types; the artifact in the opponent's graveyard is not counted. The spell is a third type only once it is in the graveyard,
+    // and it leaves the stack after the effect has been worked out (CR 608.2k), so X is 2 and 3 would be a bug.
+    const g = run([CRE.name, CRE.name, SORC.name]);
+    expect(power(g, 0)).toBe(3);
+    expect(power(g, 1)).toBe(3);
+    g.expect.invariants();
+  });
+
+  test('an empty graveyard gives -0/-0', () => {
+    expect(power(run([]), 0)).toBe(5);
+  });
+});

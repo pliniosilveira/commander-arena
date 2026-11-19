@@ -78,4 +78,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-vote',
   // CR 700.4: the creatures that died this turn (history, read from the turn log).
   'amount.for-each-died',
+  // CR 205.2a: the card types among the cards of a graveyard.
+  'amount.for-each-card-type',
 ] as const;

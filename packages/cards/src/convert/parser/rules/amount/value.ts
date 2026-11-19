@@ -36,6 +36,7 @@ import type { IrAmount, IrNoun } from '../../ir/types';
 import { possessedNoun } from '../noun/controller';
 import { BOUNDARY } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
+import { CARD_TYPES_AMONG_VALUE } from './card-types';
 import { countAmount, counted } from './count';
 import { HISTORY_VALUE } from './history';
 import { DAMAGE_DEALT_AMOUNT } from './hofri';
@@ -288,6 +289,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     HISTORY_VALUE,
     // Stage P44 (D-195): "the number of profit votes" (the words "votes" end it, so no count of objects is mistaken for it).
     VOTES_AMOUNT,
+    // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
+    CARD_TYPES_AMONG_VALUE,
     NUMBER_OF_COUNTERS(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),
@@ -588,6 +591,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the greatest power among creatures you control as you cast ~',
     // Galadriel deck group 3 (CR 706.2): the die rolled before.
     'where X is the result',
+    // CR 205.2a: the card types of the cards of a graveyard.
+    'where X is the number of card types among cards in your graveyard',
   ],
   rejects: [
     'where X is the results',
