@@ -59,6 +59,9 @@ export const TRIGGER_CAST_X = defineRule<IrTrigger>({
   ],
   parse: (ctx, pos) => {
     const id = 'trigger.cast-x';
+    // Only a text that names an {X} before its first comma is this trigger; any other stops where `trigger.cast` and `trigger.cast-nth` always stopped.
+    const named = pattern(/(?=you cast [^,.]*\{X\})/u)(ctx, pos);
+    if (!named.ok) return named;
     const youCast = map(spanned(literal('you cast ')), ({ span }) =>
       makeNoun(id, { start: span.start, end: span.start + 3 }, 'you', { raw: 'you' }),
     );
