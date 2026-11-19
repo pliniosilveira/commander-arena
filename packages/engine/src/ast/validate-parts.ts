@@ -145,6 +145,8 @@ export interface Scope {
   readonly triggerPlayer?: boolean;
   /** True in the effect of a triggered ability whose trigger deals damage (`triggerDamage`, D-133). */
   readonly triggerDamage?: boolean;
+  /** True in the effect of a `cycled` trigger: `triggerCycleX` reads the X of the cycling cost (issue 81, Shark Typhoon). */
+  readonly triggerCycleX?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -735,6 +737,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerDamage',
   'triggerTargetCount',
   'triggerSpellX',
+  'triggerCycleX',
   'dieResult',
   'votesFor',
   'exiledStillThere',
@@ -2008,6 +2011,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // CR 107.3 (Quandrix Unlimited group E): the X of the spell a "whenever you cast" trigger is about.
       if (scope.triggerSubject !== 'stack') {
         issue(out, path, "'triggerSpellX' needs a trigger about a spell being cast");
+      }
+      break;
+    case 'triggerCycleX':
+      // CR 702.29a (issue 81, Shark Typhoon): the X of the cycling cost of the card that was cycled.
+      if (scope.triggerCycleX !== true) {
+        issue(
+          out,
+          path,
+          "'triggerCycleX' needs a triggered ability whose trigger is cycling this card",
+        );
       }
       break;
     case 'triggerTargetCount':

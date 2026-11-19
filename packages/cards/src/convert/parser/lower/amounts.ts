@@ -127,6 +127,11 @@ export function lowerAmount(
         const blockedCast = needs('triggerSpellX');
         return blockedCast ?? { ok: true, value: { kind: 'triggerSpellX' }, rule };
       }
+      // CR 702.29a, 107.3 (issue 81, Shark Typhoon): in "When you cycle this card", X is the X announced for the cycling cost.
+      if (ctx.cycleTriggerX) {
+        const blockedCycle = needs('triggerCycleX');
+        return blockedCycle ?? { ok: true, value: { kind: 'triggerCycleX' }, rule };
+      }
       const blocked = needs('x');
       if (blocked !== null) return blocked;
       ctx.usesX = true;

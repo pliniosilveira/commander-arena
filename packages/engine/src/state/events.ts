@@ -624,7 +624,13 @@ export type GameEvent =
    * is the card in the zone it wound up in (the graveyard, or exile for a card with madness); the `discarded` event before it has the id the card had in
    * the hand. "When you cycle this card" triggers from there.
    */
-  | { readonly kind: 'cycled'; readonly seat: SeatId; readonly object: ObjectId }
+  | {
+      readonly kind: 'cycled';
+      readonly seat: SeatId;
+      readonly object: ObjectId;
+      /** The X announced for the cycling cost (Shark Typhoon: "Cycling {X}{1}{U}", CR 702.29a, 107.3); left out when the cost has none. */
+      readonly x?: number;
+    }
   /**
    * A creature was exerted as it attacked (CR 701.43a, 701.43d, 508.1g): `seat`, its controller, chose to pay the optional cost of attacking its
    * "You may exert ~ as it attacks" ability. It does not untap during their next untap step; the abilities linked to the exert ability ("When you do", CR 607.2h)

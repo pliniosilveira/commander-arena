@@ -55,9 +55,11 @@ export function readsTriggerPlayer(ability: Ability): boolean {
 export function readsTriggerDamage(ability: Ability): boolean {
   return (
     ability.kind === 'triggered' &&
-    JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
+    (JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]).includes(
       '"triggerDamage"',
-    )
+    ) ||
+      // Issue 81 (Shark Typhoon): the X of the cycling cost travels with the trigger as the number of its event.
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerCycleX"'))
   );
 }
 

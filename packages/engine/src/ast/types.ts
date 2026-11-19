@@ -289,6 +289,11 @@ export type Amount =
    */
   | { readonly kind: 'triggerSpellX' }
   /**
+   * "When you cycle this card, create an X/X ... token" (Shark Typhoon, CR 702.29a, 702.29c, 107.3): the X announced for the cycling cost that made this trigger (0 when the cost has no X).
+   * Valid only in a `cycled` trigger.
+   */
+  | { readonly kind: 'triggerCycleX' }
+  /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */

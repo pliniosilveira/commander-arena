@@ -1549,6 +1549,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           ? { triggerCards: true }
           : {}),
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
+        ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),

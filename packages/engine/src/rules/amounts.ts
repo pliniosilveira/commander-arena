@@ -260,6 +260,8 @@ export function amountOf(
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
   if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
+  // CR 702.29a, 107.3 (Shark Typhoon): the X announced for the cycling cost that made this trigger ("When you cycle this card"), carried as the number of its event.
+  if (amount.kind === 'triggerCycleX') return ctx.triggerDamage ?? 0;
   // CR 107.3, 113.7a (Quandrix Unlimited group E): the X of the spell that caused a cast trigger, as it is on the stack or as it last was.
   if (amount.kind === 'triggerSpellX') {
     const spell = ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);

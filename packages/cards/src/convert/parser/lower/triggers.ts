@@ -1137,6 +1137,8 @@ function lowerTriggeredAbility(
   ctx.castTriggerX = triggers.every(
     (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
   );
+  // Issue 81 (Shark Typhoon): "When you cycle this card, create an X/X ... token": X is the X of the cycling cost.
+  ctx.cycleTriggerX = triggers.every((t) => t.kind === 'cycled');
   // CR 603.4: the intervening "if" is checked as the event happens and again on resolution, so
   // the ability does not trigger when it is false. It is not a conditional effect inside the
   // ability. "It" is the source only when every event is about the source itself.

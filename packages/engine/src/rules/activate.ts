@@ -270,7 +270,7 @@ export function payCosts(state: GameState, events: GameEvent[]): Result {
   if (!going) return fail('No activation is in progress');
   const { casting, activation, costs } = going;
   if (state.objects[activation.source] === undefined) return fail('The source is gone');
-  const paid = payImmediateCosts(state, casting.seat, activation.source, costs);
+  const paid = payImmediateCosts(state, casting.seat, activation.source, costs, activation.x);
   events.push(...paid.events);
   // D-625 (CR 601.2h): the permanents to tap are chosen first when there is mana to pay too, so the mana comes from the sources still untapped.
   if (costs.tapPermanents !== null && costs.mana.length > 0) {

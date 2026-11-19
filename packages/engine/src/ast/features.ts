@@ -1230,6 +1230,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerTargetCount',
     // Quandrix Unlimited group E: "put X counters" in a cast trigger: the X of the spell that was cast.
     'triggerSpellX',
+    // Issue 81 (Shark Typhoon): the X of the cycling cost, in a "when you cycle this card" trigger.
+    'triggerCycleX',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -2058,6 +2060,8 @@ export const AMOUNT_KINDS = [
   'triggerTargetCount',
   /** "X" in a cast trigger (CR 107.3, 113.7a): the engine's `triggerSpellX`. */
   'triggerSpellX',
+  /** "X" in a "when you cycle this card" trigger (CR 702.29a, 107.3, issue 81): the engine's `triggerCycleX`. */
+  'triggerCycleX',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */

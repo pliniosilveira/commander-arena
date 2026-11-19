@@ -318,13 +318,15 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
     'Cycling {2}',
     'Cycling {G}',
     'Cycling {1}{U}',
+    // Issue 81 (Shark Typhoon): the X of a cycling cost is announced as the ability is activated.
+    'Cycling {X}{1}{U}',
     'Cycling—Pay 2 life',
     'Cycling—Pay 2 life.',
     'cycling {3}',
   ],
   rejects: [
     'Cycling',
-    'Cycling {X}',
+    'Cycling {X/U}',
     'Cycling {W/U}',
     'Cycling {2}.',
     'Cycling—Discard a card',
@@ -340,7 +342,10 @@ export const KEYWORD_CYCLING = defineRule<readonly IrKeyword[]>({
       map(
         choice<IrCost>(
           map(
-            sequence(literal('cycling '), family<IrCost>('cost', { only: ['cost.mana'] })),
+            sequence(
+              literal('cycling '),
+              family<IrCost>('cost', { only: ['cost.mana', 'cost.mana-x'] }),
+            ),
             ([, cost]) => cost,
           ),
           // A cost that is an action ends like a sentence, as Kicker and Flashback do (the

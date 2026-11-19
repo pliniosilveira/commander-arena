@@ -269,7 +269,15 @@ function occurrences(
     case 'cycled':
       // CR 702.29c (D-179): the card that was cycled, where it wound up.
       return event.kind === 'cycled'
-        ? [{ subject: event.object, seat: event.seat, player: event.seat }]
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              player: event.seat,
+              // The X of the cycling cost, for `triggerCycleX` (Shark Typhoon).
+              ...(event.x === undefined ? {} : { damage: event.x }),
+            },
+          ]
         : [];
     case 'exerted':
       // CR 701.43d, 603.12: the creature that was exerted as it attacked, with the ability linked to its exert ability.

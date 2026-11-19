@@ -307,6 +307,7 @@ export function payImmediateCosts(
   seat: SeatId,
   source: ObjectId,
   costs: CostBreakdown,
+  x = 0,
 ): { state: GameState; events: GameEvent[] } {
   let state = input;
   const events: GameEvent[] = [];
@@ -366,7 +367,7 @@ export function payImmediateCosts(
       if (costs.cycling) {
         const landed = discarded.events.find((e) => e.kind === 'zoneChanged' && e.from === source);
         if (landed?.kind === 'zoneChanged')
-          events.push({ kind: 'cycled', seat, object: landed.to });
+          events.push({ kind: 'cycled', seat, object: landed.to, ...(x > 0 ? { x } : {}) });
       }
     }
   }

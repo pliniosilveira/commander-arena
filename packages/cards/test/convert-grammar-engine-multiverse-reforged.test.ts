@@ -783,3 +783,66 @@ describe('Windcrag Siege: Mardu doubles attack triggers, Jeskai makes a Goblin e
     g.expect.chosen(WINDCRAG.name, { option: 'Mardu' });
   });
 });
+
+// ---- Shark Typhoon: "Whenever you cast a noncreature spell, create an X/X blue Shark creature token with flying, where X is that spell's mana value. Cycling {X}{1}{U}. When you cycle this
+// card, create an X/X blue Shark creature token with flying." (CR 702.29a, 702.29c, 107.3, 202.3: the X of the cycling cost is the X of the trigger).
+
+const TYPHOON = parsed(
+  'SYNTHETIC Parsed Typhoon',
+  'Enchantment',
+  "Whenever you cast a noncreature spell, create an X/X blue Shark creature token with flying, where X is that spell's mana value.\nCycling {X}{1}{U}\nWhen you cycle this card, create an X/X blue Shark creature token with flying.",
+  { manaCost: '{5}{U}', colors: ['U'] },
+);
+
+describe('Shark Typhoon: a Shark for each noncreature spell, or when it is cycled', () => {
+  const sharks = (g: {
+    state: { battlefield: readonly number[] | readonly string[]; objects: any };
+  }) =>
+    (g.state.battlefield as readonly string[])
+      .map((id) => g.state.objects[id]?.token?.characteristics)
+      .filter((c) => c?.name === 'Shark');
+
+  test('a noncreature spell makes a Shark with its mana value', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(TYPHOON)
+      .battlefield(TYPHOON.name, 'Island', 'Swamp', 'Swamp', 'Swamp')
+      .hand('Murder')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast('Murder', { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.passAll();
+    const found = sharks(g);
+    expect(found).toHaveLength(1);
+    expect([found[0]?.power, found[0]?.toughness]).toEqual([3, 3]);
+  });
+
+  test('cycling for X makes a Shark of that size', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(TYPHOON)
+      .hand(TYPHOON.name)
+      .battlefield('Island', 'Island', 'Island', 'Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).activate(TYPHOON.name, { x: 3, pay: true });
+    g.passAll();
+    g.expect.zone(TYPHOON.name, 'graveyard', { seat: 0 });
+    const found = sharks(g);
+    expect(found).toHaveLength(1);
+    expect([found[0]?.power, found[0]?.toughness]).toEqual([3, 3]);
+    g.expect.handSize(0, 1);
+  });
+});
