@@ -263,8 +263,9 @@ const TRIGGERS: readonly Line[] = [
   },
   {
     kind: 'creature',
-    text: 'When ~ enters, if you cast it, you gain 1 life.',
-    expect: no('you cast it, you gain 1 life.', 'ability.triggered'),
+    // Issue 100: "if you cast it" is read now (`condition.was-cast`); where it was cast from is not.
+    text: 'When ~ enters, if you cast it from your hand, you gain 1 life.',
+    expect: no('from your hand, you gain 1 life.', 'condition.was-cast'),
     note: 'backlog: 1 card',
   },
 ];

@@ -251,6 +251,12 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/** "You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost." (Velomachus Lorehold, CR 608.2g): the middle sentence of the same instruction (`effect.look-cast-free`). */
+const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
+/** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
+const EXILE_COUNTERED_THEN_CAST =
+  /^if that spell is countered this way, exile it instead of putting it into its owner['’]s graveyard, then you may cast it without paying its mana cost\.$/i;
+const CAST_FROM_AMONG_FREE = /^you may cast [^.]* from among them without paying its mana cost\.$/i;
 /**
  * "Look at the top six cards of your library. You may put an Aura or Equipment card from among them onto the battlefield. If an Equipment is put onto the battlefield this way, you
  * may attach it to a creature you control. Put the rest of those cards on the bottom of your library in a random order." (D-658, Armored Skyhunter): four sentences that are one
@@ -660,6 +666,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
         (said(a, SHUFFLE_THEN_REVEAL_UNTIL) && said(b, EXILE_THAT_CARD_REST_BOTTOM)) ||
         (said(a, WHENEVER_COPY_EXILED_CARD) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, MAY_CAST_IN_A_GRAVEYARD) && said(b, WHEN_CAST_IT_GAINS_ABILITIES)) ||
@@ -671,7 +678,10 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       a !== undefined &&
       c !== undefined &&
       ((said(a, LOOK_AT_TOP) &&
-        (said(b, TAKE_FROM_AMONG) || said(b, PUT_ANY_TOTAL) || said(b, PUT_FROM_AMONG_ONTO))) ||
+        (said(b, TAKE_FROM_AMONG) ||
+          said(b, PUT_ANY_TOTAL) ||
+          said(b, PUT_FROM_AMONG_ONTO) ||
+          said(b, CAST_FROM_AMONG_FREE))) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_FROM_AMONG_REVEALED))) &&
       said(c, PUT_THE_REST)
     ) {

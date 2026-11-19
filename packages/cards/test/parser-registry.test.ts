@@ -398,6 +398,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Return target creature card from your graveyard to your hand. If ${e}, draw a card.`,
   ),
   'condition.gift-promised': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  // Issue 100 (Transcendent Dragon): the intervening "if" of an enters trigger of the permanent itself.
+  'condition.was-cast': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
   'condition.opponent-controls-at-least': permanent(
     (e) =>
       `{4}{B}{B}: Return this card from your graveyard to the battlefield. This ability costs {4} less to activate if ${e}.`,
@@ -861,6 +863,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cards-leave-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
+  // Issue 100 (Baral and Kari Zev): "you cast your first instant or sorcery spell each turn".
+  'trigger.cast-first-of-kind': whenever,
   'trigger.enters-one-or-more-creatures': whenever,
   'trigger.you-create-tokens': whenever,
   'condition.cards-in-graveyard': permanent((e) => `As long as ${e}, ~ has flying.`),

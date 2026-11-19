@@ -787,6 +787,17 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           issue(out, `${path}.nth`, 'nth must be a positive integer');
         if (t.self !== undefined) issue(out, `${path}.nth`, 'a self cast trigger has no count');
       }
+      // CR 601.2i: "your first instant or sorcery spell each turn": the first spell of the card types the filter names; not with `self` or `nth`.
+      if (t.firstOfKind !== undefined) {
+        const typed =
+          (t.filter?.types?.length ?? 0) > 0 ||
+          (t.filter?.anyOf?.some((m) => (m.types?.length ?? 0) > 0) ?? false);
+        if (t.firstOfKind !== true) issue(out, `${path}.firstOfKind`, 'firstOfKind must be true');
+        if (t.self !== undefined || t.nth !== undefined) {
+          issue(out, `${path}.firstOfKind`, 'firstOfKind is not for a self trigger or with nth');
+        }
+        if (!typed) issue(out, `${path}.filter`, 'firstOfKind names at least one card type');
+      }
       if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
         issue(out, `${path}.duringTurn`, 'unknown active player condition');
       }

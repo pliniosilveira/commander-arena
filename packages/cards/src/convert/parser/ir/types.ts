@@ -296,6 +296,11 @@ export interface IrFilter {
   readonly manaValueX?: true;
   /** "with mana value X or less" (stage P68, D-230, CR 202.3): at most the X the sentence defines ("..., where X is this creature's power"). Only a target reads it. */
   readonly manaValueAtMostX?: true;
+  /**
+   * "a spell with lesser mana value that shares a card type with it" (issue 100, Baral and Kari Zev, CR 202.3, 205.2a, 603.3d): the spell a cast trigger is about is "it": the card
+   * has a mana value less than its and a card type it has. Read in the filter of a `castFree` from the hand in the effect of such a trigger only.
+   */
+  readonly lesserSharingTypeWithTriggerSpell?: true;
   /** A target's mana value is at most an amount read as the spell resolves (Drown in the Loch, CR 202.3). */
   readonly manaValueAtMostAmount?: IrAmount;
   /** "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga. */
@@ -687,6 +692,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'youDont' }
     // "if the gift was promised" (CR 702.174k, stage P30)
     | { readonly kind: 'giftPromised' }
+    // "if you cast it" (CR 601.2a, 603.4): the permanent the trigger is about came from a spell that was cast
+    | { readonly kind: 'wasCast' }
     // "an opponent controls four or more nonbasic lands" (stage P30): some one opponent controls that many
     | { readonly kind: 'opponentControls'; readonly noun: IrNoun; readonly atLeast: IrAmount }
     // "it escaped" (CR 702.138b), stage P23: the permanent was cast with its escape cost; the rule that reads
@@ -1203,6 +1210,8 @@ export interface IrTrigger extends IrNode {
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
   /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
   readonly nth?: number;
+  /** 'cast': only the first spell of the kind the subject names that the actor casts each turn ("your first instant or sorcery spell each turn", CR 601.2i). */
+  readonly firstOfKind?: true;
   /** 'classLevel': the level a Class became (CR 716.2). */
   readonly level?: number;
   /** 'cast': only while the active player is an opponent of this ability's controller. */

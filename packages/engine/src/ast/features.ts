@@ -465,6 +465,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'becomesTargetSpell',
     // D-229: "casts their second spell each turn" (`castSpell` with `nth`).
     'castNth',
+    // Issue 100: "whenever you cast your first instant or sorcery spell each turn" (`castSpell` with `firstOfKind`).
+    'castFirstOfKind',
     // D-565: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
     'castDuringOpponentTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -805,6 +807,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-230: "return that card" of a dies trigger; "mana value X or less, where X is ...".
     'triggerCard',
     'manaValueAtMost',
+    // Issue 100: "a spell with lesser mana value that shares a card type with it" (`manaValueBelow`, `sharesCardTypeWith`).
+    'manaValueBelow',
+    'sharesCardTypeWith',
     // D-111: `ObjectFilter` comparisons with power, toughness and mana value, and the trigger subject
     // "equipped / enchanted creature" (`attached`).
     'power',
@@ -943,6 +948,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cardLeftYourGraveyard',
     'manaSpentAtLeast',
     'castFromZone',
+    // CR 603.4: "When this creature enters, if you cast it".
+    'wasCast',
     'spellTargets',
     // D-149: "if none of those creatures attacked you" (`not` of `attackersAttackedYou`), "during your first, second, or third turn",
     // "you control three or more lands with the same name".
@@ -1395,6 +1402,8 @@ export const TRIGGER_FEATURES = [
   'becomesTargetSpell',
   /** "Whenever an opponent casts their second spell each turn" (CR 601.2i, D-229): the engine's `castSpell` with `nth`. */
   'castNth',
+  /** "Whenever you cast your first instant or sorcery spell each turn" (CR 601.2i): the engine's `castSpell` with `firstOfKind`. */
+  'castFirstOfKind',
   /** "Whenever you cast your first spell during each opponent's turn" (D-565): `castSpell` with `duringTurn`. */
   'castDuringOpponentTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
@@ -1512,6 +1521,10 @@ export const SELECTOR_KINDS = [
   'triggerCard',
   /** "Mana value X or less, where X is this creature's power" (CR 202.3, D-230): the engine's `ObjectFilter.manaValueAtMost`. */
   'manaValueAtMost',
+  /** "A spell with lesser mana value" (CR 202.3, issue 100): the engine's `ObjectFilter.manaValueBelow`. */
+  'manaValueBelow',
+  /** "That shares a card type with it" (CR 205.2a, issue 100): the engine's `ObjectFilter.sharesCardTypeWith`. */
+  'sharesCardTypeWith',
   /** "Power 4 or greater", "toughness 2 or less", "mana value 3" (D-111): the engine's `ObjectFilter` `power`, `toughness`, `manaValue`. */
   'power',
   'toughness',
@@ -1663,6 +1676,8 @@ export const CONDITION_KINDS = [
   'manaSpentAtLeast',
   /** "If this spell was cast from a graveyard" (D-206): the engine's `castFromZone`. */
   'castFromZone',
+  /** "When this creature enters, if you cast it" (CR 603.4): the engine's `wasCast`. */
+  'wasCast',
   /** "If it targets a tapped creature" (CR 601.2f, D-207): the engine's `spellTargets`. */
   'spellTargets',
   /** "During the declare attackers step" (CR 506.1, D-139): the engine's `duringStep`. */
@@ -2275,6 +2290,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   triggerCondition: true,
   becomesTargetSpell: true,
   castNth: true,
+  castFirstOfKind: true,
   castDuringOpponentTurn: true,
   tappedBy: true,
   notAsAttacker: true,

@@ -296,6 +296,10 @@ export function checkInvariants(state: GameState): string[] {
     ) {
       problems.push(`${id} remembers the X ${obj.castX} of a spell it cannot have come from`);
     }
+    // CR 601.2a: the zone a permanent's spell was cast from is remembered by a permanent only.
+    if (obj.castFrom !== undefined && obj.zone !== 'battlefield') {
+      problems.push(`${id} remembers a cast but is not a permanent`);
+    }
     // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
     // treated as though it does not exist but stays as it was, with the face it had up).
     if (card === null ? obj.face !== 0 : obj.face < 0 || obj.face >= Math.max(1, faces.length)) {

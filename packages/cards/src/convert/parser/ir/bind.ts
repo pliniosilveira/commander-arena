@@ -86,6 +86,8 @@ interface Antecedent {
    * sentence after it is the token, as "that token" is (CR 707.9: the exceptions are said of "it", the copy).
    */
   readonly itToken?: true;
+  /** A creature token with a power and toughness of its own (issue 100): "it" that gains a keyword in the sentence after it is the token. */
+  readonly itTokenGains?: true;
 }
 
 const key = (span: Span) => `${span.start}:${span.end}`;
@@ -281,7 +283,10 @@ class Binder {
             (pronoun.type === 'token'
               ? a.token === true
               : a.token !== true ||
-                (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim()))) &&
+                (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim())) ||
+                (a.itTokenGains === true &&
+                  this.clauseVerb === 'grantKeyword' &&
+                  /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             !a.noun.plural &&
@@ -450,6 +455,15 @@ class Binder {
             kind: 'object',
             token: true,
             ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
+            // Issue 100 (Baral and Kari Zev): "Create First Mate Ragavan, a legendary 2/1 red Monkey Pirate creature token. It gains haste until end of turn.": the "it" that
+            // GAINS something (the subject of a keyword grant) after the creation of a creature token with a power and toughness of its own is that token. An "it" that is the object
+            // of another verb ("create a 2/2 token. If that enchantment is an Aura, you may attach it to the token") is still the permanent the text is about.
+            ...(arg.copyOf === undefined &&
+            arg.predefined === undefined &&
+            arg.power !== undefined &&
+            arg.toughness !== undefined
+              ? { itTokenGains: true as const }
+              : {}),
             noun: {
               kind: 'noun',
               det: 'a',
@@ -475,7 +489,11 @@ class Binder {
     }
   }
 
+  /** The verb of the clause being bound (issue 100: only the "it" of a keyword grant may mean the token a creature-token instruction made). */
+  private clauseVerb = '';
+
   clause(clause: IrClause): IrClause {
+    this.clauseVerb = clause.verb;
     // Visit nouns in text order, whatever order the rule put its arguments in.
     const entries = Object.entries(clause.args).sort(([, a], [, b]) => spanStart(a) - spanStart(b));
     const args: Record<string, IrArg> = {};

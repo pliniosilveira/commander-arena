@@ -1033,6 +1033,10 @@ function runEffect(
         canBeCountered(state, id),
       );
       for (const id of ids) events.push({ kind: 'countered', object: id });
+      // CR 701.6a, 614.1a: "exile it instead of putting it into its owner's graveyard": the card exiled is `moved` for the instructions after this one.
+      if (effect.exileInstead === true) {
+        return { ...done(state, events, moveInstructions(ids, 'exile')), lastMoved: [] };
+      }
       return done(state, events, moveInstructions(ids, 'graveyard'));
     }
 
@@ -2431,8 +2435,12 @@ function runEffect(
       );
     }
 
-    case 'castFree':
+    case 'castFree': {
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
+      // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
+      const [caster] =
+        effect.player === undefined ? [] : resolvePlayers(state, effect.player, ctx, targets);
+      if (effect.player !== undefined && caster === undefined) return done(state);
       return done(
         state,
         [],
@@ -2441,12 +2449,14 @@ function runEffect(
             kind: 'castFree',
             objects: effect.objects,
             play: effect.play === true,
+            ...(caster === undefined ? {} : { seat: caster }),
             ...(effect.filter === undefined ? {} : { filter: effect.filter }),
             ...(effect.max === undefined ? {} : { remaining: effect.max }),
             chosen: null,
           },
         ],
       );
+    }
 
     case 'fight': {
       // CR 701.14 (D-145): creatures fight. The creatures are read as the effect begins.

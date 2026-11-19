@@ -365,8 +365,9 @@ export function checkFilter(
     );
   }
   // D-230: "mana value X or less, where X is ...": an amount that reads no target and no earlier instruction.
-  if (f.manaValueAtMost !== undefined) {
-    const a = f.manaValueAtMost as {
+  for (const limitKey of ['manaValueAtMost', 'manaValueBelow'] as const) {
+    if (f[limitKey] === undefined) continue;
+    const a = f[limitKey] as {
       kind?: string;
       of?: { kind?: string };
       filter?: ObjectFilter;
@@ -380,6 +381,8 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      // CR 107.3a: "a spell with mana value X or less from your hand" (castFree), the X announced for the spell that is resolving.
+      a?.kind === 'x' ||
       // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
       (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
@@ -387,15 +390,15 @@ export function checkFilter(
     if (!ok) {
       issue(
         out,
-        `${path}.manaValueAtMost`,
-        'the limit is a number, the power of this, the damage that triggered the ability or the mana value of the spell that triggered it',
+        `${path}.${limitKey}`,
+        'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
       );
     }
     if (f.manaValue !== undefined) {
       issue(
         out,
-        `${path}.manaValueAtMost`,
-        'a filter has one mana value limit: manaValue or manaValueAtMost',
+        `${path}.${limitKey}`,
+        'a filter has one mana value limit: manaValue, manaValueAtMost or manaValueBelow',
       );
     }
   }
@@ -549,6 +552,13 @@ export function checkFilter(
         'sharesCreatureTypeWith is read in the filter of a revealUntil in the effect of a "dies" trigger, where the creature that died is what the trigger is about',
       );
     }
+  }
+  // CR 205.2a, 603.3d: "that shares a card type with it" names the spell a cast trigger is about.
+  if (f.sharesCardTypeWith !== undefined && f.sharesCardTypeWith !== 'triggerSubject') {
+    issue(out, `${path}.sharesCardTypeWith`, "sharesCardTypeWith is 'triggerSubject'");
+  }
+  if (f.manaValueAtMost !== undefined && f.manaValueBelow !== undefined) {
+    issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
   }
   // D-100: "of the chosen type" / "of the chosen color" are flags; the card must ask for the choice.
   for (const key of ['chosenType', 'chosenColor', 'notChosenType'] as const) {
@@ -2673,6 +2683,8 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.zone, ZONES))
         issue(out, `${path}.zone`, `unknown zone ${JSON.stringify(c.zone)}`);
       break;
+    case 'wasCast':
+      break;
     case 'sameNameAtLeast':
       // D-149: some name shared by `count` of the controller's permanents that match; whose they are is the condition's.
       checkFilter(c.filter, `${path}.filter`, out);
@@ -2936,6 +2948,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exile' ||
     e?.kind === 'destroy' ||
     e?.kind === 'moveToZone' ||
+    // CR 701.6a, 614.1a: the spell a `counter` with `exileInstead` exiled is "it" ("then you may cast it without paying its mana cost").
+    (e?.kind === 'counter' && e.exileInstead === true) ||
     e?.kind === 'createToken' ||
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
@@ -4001,6 +4015,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
               child?.kind === 'exileOwnGraveyardCard' ||
               // Lorehold group 1: "you may exile one of them from your graveyard. If you do, ...".
               child?.kind === 'exileFromTriggerCards' ||
+              // Issue 100 (CR 608.2g): "you may cast a spell ... without paying its mana cost. If you don't, ...": whether a spell was cast is something done (`performed`).
+              (child?.kind === 'castFree' && child.max === undefined) ||
               // Issue 89 (CR 603.12): "Create a 2/1 token. When you do, ...": the tokens made are something done (`performed`).
               child?.kind === 'createToken') &&
             after.mayAvailable !== true
@@ -5115,12 +5131,28 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // D-145: the cards taken go into the hand (default) or onto the battlefield, with an optional mana value limit.
       if (
         e.take?.to !== undefined &&
-        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown'])
+        !isOneOf(e.take.to, ['hand', 'battlefield', 'exileFaceDown', 'castFree'])
       ) {
         issue(
           out,
           `${path}.take.to`,
-          `the cards taken go to the hand, the battlefield or exile face down, not ${JSON.stringify(e.take.to)}`,
+          `the cards taken go to the hand, the battlefield or exile face down, or are cast, not ${JSON.stringify(e.take.to)}`,
+        );
+      }
+      // CR 608.2g: "You may cast ... from among them without paying its mana cost": one spell, chosen from those that match.
+      if (
+        e.take?.to === 'castFree' &&
+        (e.take.max !== 1 ||
+          e.take.min !== undefined ||
+          e.take.tapped !== undefined ||
+          e.take.totalManaValue !== undefined ||
+          e.take.hidden !== undefined ||
+          e.revealAll !== undefined)
+      ) {
+        issue(
+          out,
+          `${path}.take`,
+          'a spell cast from among the cards looked at is one card (max 1), with no min, tapped, totalManaValue or hidden, and nothing revealed',
         );
       }
       if (
@@ -5137,12 +5169,20 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       if (e.take?.manaValueAtMost !== undefined) {
-        checkStateAmount(
-          e.take.manaValueAtMost,
-          `${path}.take.manaValueAtMost`,
-          out,
-          'a mana value limit',
-        );
+        const limit = e.take.manaValueAtMost;
+        if (typeof limit === 'object' && limit?.kind === 'powerOf') {
+          // CR 202.3 (Velomachus Lorehold shape): "mana value less than or equal to this creature's power", read as the effect runs.
+          if (kindOf(limit.of) !== 'this') {
+            issue(
+              out,
+              `${path}.take.manaValueAtMost.of`,
+              'a mana value limit reads the power of this creature only',
+            );
+          }
+          checkAmount(limit, `${path}.take.manaValueAtMost`, NO_SCOPE, out);
+        } else {
+          checkStateAmount(limit, `${path}.take.manaValueAtMost`, out, 'a mana value limit');
+        }
       }
       if (e.take?.totalManaValue !== undefined) {
         // D-230: a whole number, with the cards put onto the battlefield.
@@ -5213,6 +5253,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
       }
       const objects = e.objects as ChooseSelector | ObjectRef;
+      // CR 608.2g: "then they may cast that card": another player casts the cards an earlier effect exiled.
+      if (e.player !== undefined) {
+        checkPlayerSelector(e.player, `${path}.player`, scope, out);
+        if (kindOf(objects) !== 'moved' || e.play === true) {
+          issue(
+            out,
+            `${path}.player`,
+            "another player casts the cards an effect before moved ('moved'), and does not play them",
+          );
+        }
+      }
       // D-655: "an Aura spell from among them": a filter for the cards a reference names; a choice from the hand has its own.
       if (e.filter !== undefined) {
         if (kindOf(objects) === 'choose') {

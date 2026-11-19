@@ -112,7 +112,9 @@ export function lookTakeDestination(
   decision: Pick<ChooseCardsDecision, 'source'>,
   index: Index,
 ): TakeTo {
-  return sourceEffect(decision, index, 'lookAtTop')?.take.to ?? 'hand';
+  const to = sourceEffect(decision, index, 'lookAtTop')?.take.to ?? 'hand';
+  // A card taken to be cast ("You may cast ... from among them") is chosen by the question of the cast (purpose 'cast'), never by this one.
+  return to === 'castFree' ? 'hand' : to;
 }
 
 /**

@@ -199,6 +199,11 @@ export interface GameObject {
    */
   readonly giftTo?: SeatId;
   /**
+   * The zone the spell this permanent came from was cast from (CR 601.2a, 603.4: "When this creature enters, if you cast it, ..."): remembered by the permanent the spell
+   * became. Absent for a permanent that was put onto the battlefield without being cast (and for one that came from a copy of a spell).
+   */
+  readonly castFrom?: Zone;
+  /**
    * The cards this permanent exiled with a linked ability (CR 607.2a, D-139: "Imprint", "exiled with this creature"), in the order they
    * were exiled; `exile.linked` records them and the static `takeFromLinkedExile` reads them. A card that has left exile is a new object
    * (CR 400.7) and no longer one of them: readers keep only those still in exile. It is this object's own: gone when the permanent
@@ -1301,7 +1306,7 @@ export type Instruction =
       readonly filter: ObjectFilter;
       readonly max: number;
       /** Where the cards taken go (`take.to`, D-145): the hand when left out. */
-      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown';
+      readonly to?: 'hand' | 'battlefield' | 'exileFaceDown' | 'castFree';
       /** The fewest cards that must be taken when some match (`take.min`, D-145: Hideaway exiles one of them). */
       readonly min?: number;
       readonly tapped?: true;
@@ -1739,6 +1744,10 @@ export type Instruction =
       readonly filter?: ObjectFilter;
       /** D-660: how many more spells may be cast ("up to two spells": 2, then 1 after one is cast; `'any'` stays); absent for one. */
       readonly remaining?: number | 'any';
+      /** The cards the question is about, when the effect names them itself: the cards of a library looked at ("cast a spell from among them"). Overrides `objects`. */
+      readonly cards?: readonly ObjectId[];
+      /** The player who may cast, when not the controller of the effect (`player`, "they may cast that card"): worked out as the effect began. */
+      readonly seat?: SeatId;
       readonly chosen: readonly ObjectId[] | null;
     };
 
