@@ -14,7 +14,7 @@ const card = (abilities: Ability[], types: ('planeswalker' | 'sorcery')[] = ['pl
     colors: [],
     colorIdentity: [],
     oracleText: '',
-    loyalty: types.includes('planeswalker') ? 3 : null,
+    ...(types.includes('planeswalker') ? { loyalty: 3 } : {}),
     abilities,
   });
 const plus = (effect: Effect): Ability => ({
