@@ -57,6 +57,19 @@ Second run: agent `casual`, 10 games per seat count, first seed 1, same limits.
 
 The same anomalies as in the first run appeared (permanents under a player who has lost: 1940 decisions with 3 seats, 5226 with 4; the active seat a player who has lost: 28 with 4 seats and none with 3; stack objects of a player who has lost: 10 with 4 seats). The casual agent eliminates players much earlier than the random one, and the crash is far more frequent: 6 of 20 games. It is not known yet whether the crash is specific to more than two seats; the same seeds were not played with two.
 
+Third run: agent `heuristic` (the strongest agent of `packages/ai`), 10 games per seat count, first seed 1, same limits.
+
+| | 3 seats | 4 seats |
+| --- | --- | --- |
+| Games ending with a winner | 8 of 10 | 9 of 10 |
+| Engine crash (`State-based actions and triggers did not settle`) | 2 (seeds 1, 7) | 1 (seed 7) |
+| Actions the engine rejected | 5 | 1 |
+| Fallbacks recorded by the agent | 2 | 3 |
+| Average final turn | 31 | 43 |
+| First loss seen at turn | 16 to 39 | 21 to 40 |
+
+The rejections the probe sampled (up to two per game) were `You cannot pay that cost` and, with 3 seats, a mana ability tried with a pool that lacked the {1} (Overflowing Basin). The same leaving-the-game anomaly appeared: permanents under a player who has lost in 1862 decisions with 3 seats and 6115 with 4; a seat that has lost was asked for a decision 3 and 6 times; the active seat a player who has lost twice with 4 seats. With a stronger agent the games end sooner and fewer crash (3 of 20), but a crash in every run, with every agent, means it is not specific to one agent. Whether it depends on the number of seats is not known: the same seed gives a different game with 3 and with 4 seats, and no game was played with two.
+
 ## Reading of the results
 
 - The engine plays games with more opponents to the end in most games: it is closer than the docs suggested. That does not prove the rules right.
@@ -65,7 +78,7 @@ The same anomalies as in the first run appeared (permanents under a player who h
 
 ## Limits of this probe
 
-- Only the random and casual agents were run. The heuristic agent may expose AI problems (target choice, hidden-hand samples, decision time).
+- All three agents were run at 10 games per seat count, which is a small sample: the crash rates (1 to 3 of 10) are not comparable between agents. Decision time was not measured.
 - The crash seeds are recorded above; none has been rebuilt with `replayGame` yet, and the three turn caps of the random run were not recorded.
 - The fallback count of the wrapper is fixed at construction and under-counts; it is zero for the random agent anyway.
 - Decision times were not measured. Runs of 10 games took on the order of minutes.
@@ -92,7 +105,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 ## Plan in phases
 
-0. Investigation (this note): done so far are the probe with the random and casual agents and the crash seeds. Open: reproducing the crash and the turn caps, the heuristic agent, an inventory of `'opponent'` and seat assumptions.
+0. Investigation (this note): done so far are the probe with the random, casual and heuristic agents and the crash seeds. Open: reproducing the crash and the turn caps, an inventory of `'opponent'` and seat assumptions.
 1. Engine: leaving the game (CR 800.4a), a player who loses during their own turn, several defenders, full APNAP, commander damage with several defenders. Tests first. An S-class gap needs a proposal on an issue and the human's approval (`AGENTS.md`, "Card support").
 2. Cards: re-test the supported cards that depend on the number of opponents with 3 and 4 seats and reclassify those that fail.
 3. AI: a target policy and several hidden-hand samples; `ai:arena` with 3 and 4 seats.
@@ -109,7 +122,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 - Reproduce the `did not settle` crash with `replayGame` (seeds above) and find what loops; play the same seeds with two seats to see whether it is specific to more than two seats.
 - Read how the 21-point commander loss is checked with several defenders (CR 903.10a; the CR text was not available in this session).
-- Look at the two `You cannot pay that cost` rejections of the casual agent with 3 seats.
+- Look at the rejections: `You cannot pay that cost` (casual with 3 seats, heuristic with both) and the mana ability of Overflowing Basin tried with an empty pool (heuristic with 3 seats). They may be agent bugs that exist with two seats too.
 - Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
 - Scenario DSL with 3 and 4 seats.
 - Choose 20 to 30 cards that depend on the number of opponents and write a scenario for each.
