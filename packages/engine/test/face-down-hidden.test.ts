@@ -308,6 +308,7 @@ const OBJECT_VIEW_FIELDS: Readonly<Record<keyof ObjectView, FieldClass>> = {
   activated: 'public',
   attachedTo: 'public',
   attachedToPlayer: 'public',
+  hideawaySource: 'controllerOnly',
   attachments: 'public',
   regenerationShields: 'public',
   kicked: 'public',

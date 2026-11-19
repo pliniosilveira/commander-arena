@@ -4,14 +4,22 @@
  * battlefield, where the emblem strip is (issue 49). A tile does what a click on the card does: the
  * decision layer sends the cast with its `alternative` or `face`.
  */
-import type { GameView, ObjectView } from '@commander-arena/engine';
+import type { GameView, ObjectId, ObjectView } from '@commander-arena/engine';
 import { exileBadge } from '../decisions/layouts';
 import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { type ExilePlayable, exilePlayable } from './exile-play';
 import { useHoverPreview } from './hover';
 
-function PlayTile({ object, label }: { object: ObjectView; label: string }) {
+function PlayTile({
+  object,
+  label,
+  via,
+}: {
+  object: ObjectView;
+  label: string;
+  via?: ObjectId | undefined;
+}) {
   const hover = useHoverPreview(object.id);
   const ix = useInteraction();
   const drag = useDraggable(object.id, 'card', object.name);
@@ -24,7 +32,8 @@ function PlayTile({ object, label }: { object: ObjectView; label: string }) {
       onDragEnd={drag.onDragEnd}
       data-object-id={object.id}
       aria-label={`${label}: ${object.name}`}
-      onClick={() => ix.onObject(object.id)}
+      // A Hideaway card is played by the ability of the permanent that exiled it: the click goes there.
+      onClick={() => ix.onObject(via ?? object.id)}
       {...hover}
     >
       <span className="board-exile-play-name">{object.name}</span>
@@ -40,7 +49,7 @@ function PlayTile({ object, label }: { object: ObjectView; label: string }) {
  */
 export function ExilePlayStrip({ view, playable }: { view: GameView; playable?: ExilePlayable }) {
   const ix = useInteraction();
-  const { cards, exile, priority, index } = playable ?? exilePlayable(view, ix.clickable);
+  const { cards, exile, via, priority, index } = playable ?? exilePlayable(view, ix.clickable);
   if (cards.length === 0) return null;
   return (
     <div className="board-exile-anchor">
@@ -51,7 +60,12 @@ export function ExilePlayStrip({ view, playable }: { view: GameView; playable?: 
             <li key={o.id}>
               <PlayTile
                 object={o}
-                label={exileBadge(exile, index, o.id, priority ?? undefined) ?? 'Cast from exile'}
+                via={via.get(o.id)}
+                label={
+                  via.has(o.id)
+                    ? 'Play from exile (Hideaway)'
+                    : (exileBadge(exile, index, o.id, priority ?? undefined) ?? 'Cast from exile')
+                }
               />
             </li>
           ))}
