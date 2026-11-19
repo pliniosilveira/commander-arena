@@ -197,6 +197,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   exiledFromLibraryOrGraveyard: { kind: 'exiledFromLibraryOrGraveyard', who: 'you' },
   putIntoGraveyard: { kind: 'putIntoGraveyard', who: 'you', from: 'anywhere' },
   ringTempted: { kind: 'ringTempted' },
+  doorUnlocked: { kind: 'doorUnlocked', who: 'you', door: 'this' },
   crimeCommitted: { kind: 'crimeCommitted', who: 'you' },
   tokenCreated: { kind: 'tokenCreated', who: 'you' },
   playsCard: { kind: 'playsCard', minCardTypes: 2 },

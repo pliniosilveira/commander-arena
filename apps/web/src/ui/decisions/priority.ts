@@ -23,7 +23,12 @@ export function playableObjects(decision: PriorityDecision): ReadonlySet<ObjectI
     if (o.kind === 'castSpell' || o.kind === 'playLand') ids.add(o.object);
     else if (o.kind === 'activateAbility') ids.add(o.source);
     else if (o.kind === 'activate') ids.add(o.object);
-    else if (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') {
+    else if (
+      o.kind === 'suspend' ||
+      o.kind === 'foretell' ||
+      o.kind === 'turnFaceUp' ||
+      o.kind === 'unlockDoor'
+    ) {
       ids.add(o.object);
     }
   }

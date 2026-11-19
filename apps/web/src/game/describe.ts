@@ -39,6 +39,7 @@ import { modeText, timesNote } from './mode-text';
 import { inherentNameOf } from './monarch-text';
 import type { LogLevel } from './protocol';
 import { giftedText } from './recursion-text';
+import { doorName, unlockedLine } from './room-text';
 import { chapterWord, loreCountIn, romanNumeral } from './saga';
 import { turnLabel } from './turn-label';
 
@@ -1593,6 +1594,22 @@ export function describeEvent(
         [event.permanent],
         'CR 701.42a',
       );
+    case 'doorUnlocked': {
+      // CR 709.5h (Room): a half was given its unlocked designation, entering the battlefield with the half that was cast included.
+      const room = after.objects[event.object];
+      const instance = room?.card == null ? undefined : after.cards[room.card];
+      const face =
+        instance === undefined
+          ? undefined
+          : after.definitions[instance.definition]?.faces[event.door];
+      return line(
+        'major',
+        unlockedLine(who(event.seat), face?.name ?? doorName(undefined, event.door)),
+        event.seat,
+        [event.object],
+        'CR 709.5h',
+      );
+    }
     case 'exerted':
       // CR 701.43a, 701.43d: the creature will not untap during its controller's next untap step; the "When you do" ability that follows says what it does.
       return line(
