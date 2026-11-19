@@ -60,7 +60,7 @@ const COUNT = choice(
   ),
 );
 
-const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Map', 'Blood'] as const;
+const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Blood'] as const;
 type Predefined = (typeof PREDEFINED)[number];
 
 /** "tapped " between the count and the token ("two tapped Treasure tokens", CR 110.5b: they enter tapped). */
@@ -105,13 +105,14 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'two Treasure tokens',
     'a Food token',
     'a Clue token',
+    'a Gold token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
     'two tapped Treasure tokens',
   ],
   rejects: [
-    'a Gold token',
+    'a Gold',
     'a Treasure',
     'a 1/1 white Soldier creature token',
     'a Treasure token tapped',
@@ -555,6 +556,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
     'a number of tapped Treasure tokens equal to its power',
     'a number of Treasure tokens equal to its power',
     'a number of Food tokens equal to that creature\u2019s power',
+    'a number of Gold tokens equal to its power',
     'a number of 1/1 white Soldier creature tokens equal to its power',
   ],
   rejects: [
@@ -562,7 +564,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
     'a number of Treasure tokens',
     'a number of Treasure tokens equal to',
     'a number of tokens equal to its power',
-    'a number of Gold tokens equal to its power',
+    'a number of Gold token equal to its power',
     'a number of tapped tapped Treasure tokens equal to its power',
     'a number of Treasure tokens equal to its power and draw a card',
   ],

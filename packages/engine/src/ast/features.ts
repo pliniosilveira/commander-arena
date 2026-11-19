@@ -649,7 +649,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue'],
+  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -1094,6 +1094,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Treasure',
     'Food',
     'Clue',
+    'Gold',
     'custom',
     'copyOf',
     'tapped',
@@ -1850,6 +1851,7 @@ export const TOKEN_KINDS = [
   'Treasure',
   'Food',
   'Clue',
+  'Gold',
   'Map',
   'Blood',
   'custom',
