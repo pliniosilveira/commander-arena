@@ -1398,6 +1398,7 @@
 .dec-versus-wrap {
   display: flex;
   justify-content: center;
+  width: 100%;
   margin-bottom: 12px;
 }
 /* In the top left corner of the dialog, over the empty space beside the cells. */
@@ -1425,7 +1426,7 @@
   width: 100%;
 }
 .dec-versus-side {
-  flex: 0 1 320px;
+  flex: 0 1 280px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1437,7 +1438,7 @@
 }
 .dec-versus-art {
   width: 100%;
-  aspect-ratio: 6 / 5;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--line);

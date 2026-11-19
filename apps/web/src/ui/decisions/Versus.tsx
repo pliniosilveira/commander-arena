@@ -21,7 +21,7 @@ function Side({
   return (
     <div className="dec-versus-side" data-versus-side={who}>
       {deck?.commanderImage !== undefined && (
-        <img className="dec-versus-art" src={deck.commanderImage} alt="" width={96} height={70} />
+        <img className="dec-versus-art" src={deck.commanderImage} alt="" />
       )}
       <span className="dec-versus-text">
         <span className="dec-versus-who">{who === 'you' ? 'You' : 'Opponent'}</span>
