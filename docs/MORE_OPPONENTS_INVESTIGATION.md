@@ -76,7 +76,7 @@ Reproduced with seed 7, 3 seats, agent `heuristic` (decks, in seat order: Grave 
 
 `putTriggersOnStack` (`rules/trigger-stack.ts`) walks `seatsInOrder`, which skips seats that have lost, so no seat ever puts that trigger on the stack and nothing removes it. `settle` then repeats a round that changes nothing until its guard of 10,000 rounds throws. The loop produced no events.
 
-So the crash comes from the same gap as the permanents that stay after their owner loses (CR 800.4a): the triggers, and the objects, of a player who left the game are not removed. It needs more than two seats by its mechanism: with two seats the game ends when a player loses, so no trigger of a player who has lost can be waiting. The same three decks with seats 0 and 1 only (a different game, since the shuffles differ) ended at turn 18 with a win and no crash. The other seven crash seeds of the casual and heuristic runs were played again with the same extended error, and all end the same way: at the crash every waiting trigger belongs to a seat that has lost.
+CR 800.4d says it outright: "If a triggered ability that would be controlled by a player who has left the game would be put onto the stack, it isn't put on the stack." The engine neither drops such a trigger nor lets it wait harmlessly. So the crash comes from the same gap as the permanents that stay after their owner loses (CR 800.4a): the triggers, and the objects, of a player who left the game are not removed. It needs more than two seats by its mechanism: with two seats the game ends when a player loses, so no trigger of a player who has lost can be waiting. The same three decks with seats 0 and 1 only (a different game, since the shuffles differ) ended at turn 18 with a win and no crash. The other seven crash seeds of the casual and heuristic runs were played again with the same extended error, and all end the same way: at the crash every waiting trigger belongs to a seat that has lost.
 
 | Run | Waiting triggers (kind) | Controller | Seats that have lost |
 | --- | --- | --- | --- |
@@ -93,7 +93,7 @@ The crash seeds of the random run were not examined. A game is reproduced from i
 ## Reading of the results
 
 - The engine plays games with more opponents to the end in most games: it is closer than the docs suggested. That does not prove the rules right.
-- A player who loses is not removed from the game: their permanents stay on the battlefield, and objects they control were seen on the stack. The next turn does skip a seat that has lost (`seatsInOrder`), so the lost seat seen as the active seat is probably a player who lost during their own turn; that is to be checked, not assumed. A lost seat that was asked for a decision is also unexplained. The crash is traced to the same gap (above). The turn caps of the random run are not explained.
+- A player who loses is not removed from the game: their permanents stay on the battlefield, and objects they control were seen on the stack. The next turn does skip a seat that has lost (`seatsInOrder`), so the lost seat seen as the active seat is a player who lost during their own turn. CR 800.4j says that turn goes on to its end without an active player and that the next player in turn order receives the priority the active player would have had; the engine keeps the seat as the active one, which is a difference to check, not yet a known defect. A lost seat that was asked for a decision is also unexplained. The crash is traced to the same gap (above). The turn caps of the random run are not explained.
 - With the random agent the first losses appeared late (turn 41 to 94), so it exercises the leaving-the-game paths little; the casual agent does it earlier (turn 19 to 56).
 
 ## Limits of this probe
@@ -141,7 +141,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 ## Open work from the probe
 
 - Check the crash of the random run (4 seats) and the three turn caps of that run.
-- Read how the 21-point commander loss is checked with several defenders (CR 903.10a; the CR text was not available in this session).
+- Read how the 21-point commander loss is checked with several defenders (CR 903.10a and 104.3j: 21 or more combat damage from the same commander; the key `"seat:card"` suggests it is per defender, but the check was not read).
 - Look at the rejections: `You cannot pay that cost` (casual with 3 seats, heuristic with both) and the mana ability of Overflowing Basin tried with an empty pool (heuristic with 3 seats). They may be agent bugs that exist with two seats too.
 - Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
 - Scenario DSL with 3 and 4 seats.
