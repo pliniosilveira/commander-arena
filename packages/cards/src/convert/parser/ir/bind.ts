@@ -447,7 +447,10 @@ class Binder {
           this.antecedents.push({
             kind: 'object',
             token: true,
-            ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
+            // "Create a 0/0 ... Fractal creature token. Put X +1/+1 counters on it." (Quandrix Unlimited deck, group G): a 0/0 token dies without counters, so "it" of the next sentence is it.
+            ...(arg.copyExcept === undefined && !(arg.power === 0 && arg.toughness === 0)
+              ? {}
+              : { itToken: true as const }),
             noun: {
               kind: 'noun',
               det: 'a',

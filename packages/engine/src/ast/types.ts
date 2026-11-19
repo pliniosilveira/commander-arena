@@ -692,6 +692,11 @@ export interface ObjectFilter {
    */
   readonly powerAboveBase?: true;
   /**
+   * "Creatures you control with base power 0" (CR 208.4b): the object's base power, the power layer 7b leaves before counters and "+N/+N" effects, is this whole number. An object with no power
+   * matches nothing. Read from the object as it is, or as it last was when it has left (CR 113.7a). Refused where `derive` matches filters, as `powerAboveBase` is.
+   */
+  readonly basePowerIs?: number;
+  /**
    * "Destroy all creatures with power greater than target creature's power" (CR 208.1, 608.2c): the object's power as it is now is more than the power of the object
    * this reference names, read as the effect resolves, with every effect and counter. Read only in the filter of an `each` selector of an effect, which knows the targets
    * (as `controlledBy` is). An object with no power, or a reference that names nothing, matches nothing.
@@ -5091,10 +5096,11 @@ export type Replacement =
       readonly counter: string;
       /**
        * `timesKicked` (D-254, CR 702.33c, 614.1c): "enters with a charge counter on it for each time it was kicked", the kicks of the spell the permanent came from.
+       * `x` with `times` (an integer of 2 or more): "enters with twice X +1/+1 counters on it" (CR 107.3m, 122.6), X multiplied by `times`.
        */
       readonly count:
         | number
-        | { readonly kind: 'x' }
+        | { readonly kind: 'x'; readonly times?: number }
         | { readonly kind: 'timesKicked' }
         | CountAmount
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */

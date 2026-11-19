@@ -24,6 +24,7 @@ import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER } from './controller';
+import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
@@ -812,6 +813,8 @@ export const NOUN_RULES = [
   ...HYLDA_G2_TARGET_NOUN_RULES,
   // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.
   ...ATTACKING_YOU_NOUN_RULES,
+  // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
+  ...QUANDRIX_G_TARGET_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -828,6 +831,8 @@ export const NOUN_RULES = [
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
   ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,
+  // Quandrix Unlimited deck, group G: "commanders you control".
+  ...QUANDRIX_G_NOUN_RULES,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.
   ...EDHREC_NOUN_RULES,

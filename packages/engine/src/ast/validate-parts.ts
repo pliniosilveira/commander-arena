@@ -324,6 +324,10 @@ export function checkFilter(
     if (f[key] !== undefined && f[key] !== true)
       issue(out, `${path}.${key}`, `${key} must be true`);
   }
+  // CR 208.4b: "with base power 0" is a whole number of power.
+  if (f.basePowerIs !== undefined && !Number.isInteger(f.basePowerIs)) {
+    issue(out, `${path}.basePowerIs`, 'basePowerIs must be a whole number');
+  }
   // D-131, CR 508.1b: "attacking you" is a flag; 'orPlaneswalkers' is "attacking you or a planeswalker you control".
   if (
     f.attackingYou !== undefined &&
@@ -655,6 +659,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.blocking !== undefined ||
   f.powerLessThanSource === true ||
   f.powerAboveBase === true ||
+  f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||

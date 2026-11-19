@@ -386,6 +386,11 @@ export function matchesFilterWith(
     }
     if (!(d.power > base)) return false;
   }
+  // CR 208.4b: "with base power 0": the base power the object has before counters and effects that only modify it.
+  if (filter.basePowerIs !== undefined) {
+    const base = d.basePower;
+    if (base === null || base === undefined || base !== filter.basePowerIs) return false;
+  }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
   if (filter.chosenType === true) {
     const type = ctx.sourceChosen?.creatureType;

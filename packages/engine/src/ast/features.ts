@@ -819,6 +819,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'powerLessThanSource',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
+    // "Creatures you control with base power 0" (`ObjectFilter.basePowerIs`).
+    'basePowerIs',
     // "Destroy all creatures with power greater than target creature's power" (`ObjectFilter.powerGreaterThan`).
     'powerGreaterThan',
     // D-131: `ObjectFilter.attackingYou` ("creatures attacking you"), several players at once ("you and target
@@ -1526,6 +1528,8 @@ export const SELECTOR_KINDS = [
   'powerLessThanSource',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
   'powerAboveBase',
+  /** "With base power 0" (CR 208.4b): the engine's `ObjectFilter.basePowerIs`. */
+  'basePowerIs',
   /** "With power greater than target creature's power" (CR 208.1, 608.2c): the engine's `ObjectFilter.powerGreaterThan`. */
   'powerGreaterThan',
   /** "Creatures attacking you" (CR 508.1b, D-131): the engine's `ObjectFilter.attackingYou`. */

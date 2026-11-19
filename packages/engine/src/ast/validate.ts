@@ -338,6 +338,11 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
             }
           });
         }
+      } else if (kindOf(r.count) === 'x') {
+        const times = (r.count as { times?: unknown }).times;
+        if (times !== undefined && (!isCount(times) || times < 2)) {
+          issue(out, `${path}.count.times`, 'the multiple of X is an integer of 2 or more');
+        }
       } else if (
         kindOf(r.count) !== 'x' &&
         kindOf(r.count) !== 'timesKicked' &&

@@ -126,6 +126,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:isSource',
   'selector:targetsOnly',
   'selector:powerAboveBase',
+  'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
@@ -314,6 +315,7 @@ function lowerFilterAt(
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
+  if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
   // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
   if (filter.named !== undefined) {
     if (inner) return bad([]);
@@ -479,6 +481,7 @@ function lowerFilterAt(
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
+    ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
     ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
