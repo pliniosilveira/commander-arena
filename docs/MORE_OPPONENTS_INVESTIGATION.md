@@ -68,18 +68,26 @@ Third run: agent `heuristic` (the strongest agent of `packages/ai`), 10 games pe
 | Average final turn | 31 | 43 |
 | First loss seen at turn | 16 to 39 | 21 to 40 |
 
-The rejections the probe sampled (up to two per game) were `You cannot pay that cost` and, with 3 seats, a mana ability tried with a pool that lacked the {1} (Overflowing Basin). The same leaving-the-game anomaly appeared: permanents under a player who has lost in 1862 decisions with 3 seats and 6115 with 4; a seat that has lost was asked for a decision 3 and 6 times; the active seat a player who has lost twice with 4 seats. With a stronger agent the games end sooner and fewer crash (3 of 20), but a crash in every run, with every agent, means it is not specific to one agent. Whether it depends on the number of seats is not known: the same seed gives a different game with 3 and with 4 seats, and no game was played with two.
+The rejections the probe sampled (up to two per game) were `You cannot pay that cost` and, with 3 seats, a mana ability tried with a pool that lacked the {1} (Overflowing Basin). The same leaving-the-game anomaly appeared: permanents under a player who has lost in 1862 decisions with 3 seats and 6115 with 4; a seat that has lost was asked for a decision 3 and 6 times; the active seat a player who has lost twice with 4 seats. With a stronger agent the games end sooner and fewer crash (3 of 20), but a crash in every run, with every agent, means it is not specific to one agent. The cause is below.
+
+## Cause of the `did not settle` crash
+
+Reproduced with seed 7, 3 seats, agent `heuristic` (decks, in seat order: Grave Danger, Prismari Artistry, Temur Roar), by adding to the error of `settle` (`rules/settle.ts`) the last events and the waiting triggers. At the crash seat 0 had lost (`hasLost`) and it was seat 2's declare attackers step. One triggered ability was waiting: the "attacks the enchanted player" trigger of a permanent controlled by seat 0 (`controller: 0`, an Aura of Grave Danger that enchants a player).
+
+`putTriggersOnStack` (`rules/trigger-stack.ts`) walks `seatsInOrder`, which skips seats that have lost, so no seat ever puts that trigger on the stack and nothing removes it. `settle` then repeats a round that changes nothing until its guard of 10,000 rounds throws. The loop produced no events.
+
+So the crash comes from the same gap as the permanents that stay after their owner loses (CR 800.4a): the triggers, and the objects, of a player who left the game are not removed. It needs more than two seats by its mechanism: with two seats the game ends when a player loses, so no trigger of a player who has lost can be waiting. The same three decks with seats 0 and 1 only (a different game, since the shuffles differ) ended at turn 18 with a win and no crash. This is one reproduced case; the other crash seeds were not examined and may have the same cause.
 
 ## Reading of the results
 
 - The engine plays games with more opponents to the end in most games: it is closer than the docs suggested. That does not prove the rules right.
-- A player who loses is not removed from the game: their permanents stay on the battlefield, and objects they control were seen on the stack. The next turn does skip a seat that has lost (`seatsInOrder`), so the lost seat seen as the active seat is probably a player who lost during their own turn; that is to be checked, not assumed. A lost seat that was asked for a decision is also unexplained. None of this is known to cause the 4-seat crash or the turn caps; only a reproduction would show it.
+- A player who loses is not removed from the game: their permanents stay on the battlefield, and objects they control were seen on the stack. The next turn does skip a seat that has lost (`seatsInOrder`), so the lost seat seen as the active seat is probably a player who lost during their own turn; that is to be checked, not assumed. A lost seat that was asked for a decision is also unexplained. The crash is traced to the same gap (above). The turn caps of the random run are not explained.
 - With the random agent the first losses appeared late (turn 41 to 94), so it exercises the leaving-the-game paths little; the casual agent does it earlier (turn 19 to 56).
 
 ## Limits of this probe
 
 - All three agents were run at 10 games per seat count, which is a small sample: the crash rates (1 to 3 of 10) are not comparable between agents. Decision time was not measured.
-- The crash seeds are recorded above; none has been rebuilt with `replayGame` yet, and the three turn caps of the random run were not recorded.
+- The crash seeds are recorded above; one was reproduced, not with `replayGame` but by running the same seed again with the error of `settle` extended (a scratch change, not kept). The three turn caps of the random run were not recorded.
 - The fallback count of the wrapper is fixed at construction and under-counts; it is zero for the random agent anyway.
 - Decision times were not measured. Runs of 10 games took on the order of minutes.
 - The probe's agents are wrapped, so a failing seed must be replayed without the wrapper to confirm it.
@@ -120,7 +128,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 ## Open work from the probe
 
-- Reproduce the `did not settle` crash with `replayGame` (seeds above) and find what loops; play the same seeds with two seats to see whether it is specific to more than two seats.
+- Check that the other crash seeds (casual: 2, 5, 9 with 3 seats and 4, 6, 9 with 4; heuristic: 1 with 3 seats) end the same way: a waiting trigger whose controller has lost.
 - Read how the 21-point commander loss is checked with several defenders (CR 903.10a; the CR text was not available in this session).
 - Look at the rejections: `You cannot pay that cost` (casual with 3 seats, heuristic with both) and the mana ability of Overflowing Basin tried with an empty pool (heuristic with 3 seats). They may be agent bugs that exist with two seats too.
 - Inventory of `'opponent'` in `ast/types.ts`, `rules/select.ts`, `filter-match.ts`, `triggers.ts`, `attack-bans.ts` and the parser.
