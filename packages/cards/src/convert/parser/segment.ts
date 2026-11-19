@@ -219,6 +219,14 @@ const RETURN_EXILED_SENTENCE =
 const EXILE_ON_RESOLVE =
   /(?:^|, )exile that card instead of putting it into your graveyard as it resolves\.$/i;
 
+/**
+ * "Copy that spell if it targets a permanent or player, and you may choose new targets for the copy. If you don't copy a spell this way, draw a card." (Shiko and Narset, Unified, CR 608.2c): the
+ * second sentence is the "otherwise" of the condition of the first, so the two are read as one (`effect.copy-spell`).
+ */
+const NOT_COPIED_SENTENCE = /^if you don['’]t copy a spell this way, draw a card\.$/i;
+const COPY_IF_TARGETS =
+  /(?:^|, )copy that spell if it targets a permanent or player(?:,? and you may choose new targets for the copy)?\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
@@ -226,6 +234,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   const beforeText = text.slice(before.start, before.end);
   if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
+  if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&

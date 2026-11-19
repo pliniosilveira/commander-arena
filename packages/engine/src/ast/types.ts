@@ -729,6 +729,11 @@ export interface ObjectFilter {
    */
   readonly targetsObject?: ObjectFilter;
   /**
+   * "A spell that targets a player" (CR 115.1, 601.2c, Shiko and Narset, Unified: "copy that spell if it targets a permanent or player", read as a disjunction of `targetsObject`
+   * of a permanent and this): a spell or ability on the stack with at least one chosen target that is a player. Read as `targetsObject` is, with the same limits.
+   */
+  readonly targetsPlayer?: true;
+  /**
    * "A spell that targets only this creature" (CR 115.9c, D-437): a spell or ability on the stack whose chosen targets are one object, whatever
    * the number of times it was chosen (an object chosen for two instances of the word "target" is still one), and that object is one this filter matches
    * (a player target is none, and a spell with a second different target does not match). Read where `targetsObject` is, with the same limits.

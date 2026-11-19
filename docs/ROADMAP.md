@@ -507,7 +507,6 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Unless [player] pays": a payer who chooses among costs ("pays {1} or discards a card") is not read.
 - Evoke: there is no "if it was evoked" condition, so a card that asks it stays unsupported.
 - Can't be countered: "can't be countered by [quality] spells" and abilities that can't be countered are not built.
-- Copy a spell: "Copy target instant or sorcery spell, then return it to its owner's hand" is not read.
 - Equip commander: a token that copies a commander cannot be the target; a granted list mixing a keyword and protection is not read.
 - AI, pay any amount: the agent always pays the most it can for a "pay any amount" question.
 - Look and take: a filtered take ("two creature cards from among them"), a number that is not fixed, X and another player's library are not read.
