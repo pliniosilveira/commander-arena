@@ -42,6 +42,8 @@ export function freeCandidates(
   const ctx: SelectContext = {
     controller: seat,
     source: res.source,
+    // CR 107.3a: "mana value X or less" reads the X announced for the spell that is resolving.
+    x: state.objects[res.object]?.stack?.x ?? 0,
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
   };
   const named: readonly ObjectId[] =

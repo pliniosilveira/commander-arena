@@ -8,6 +8,7 @@ import type { IrClause } from '../ir/types';
 import { withoutZone } from '../rules/noun/phrases';
 import { lowerAmount } from './amounts';
 import { amountArg, arg, type Effects, eachObject, failure, operand } from './clauses';
+import { missingFeatures } from './features';
 import { declareDividedTarget, lowerFilter, objectRefOf, objectSelectorOf } from './nouns';
 import type { Lowering } from './types';
 
@@ -256,11 +257,27 @@ export const CAST_FREE: Lowering<IrClause, Effects> = {
       };
     }
     if (objects.det !== 'a' || objects.filter.zone !== 'hand') return failure(clause);
-    const filter = lowerFilter(objects);
+    // "a spell with mana value X or less from your hand" (CR 107.3a, 202.3): the X announced for this spell, so only the text of a spell reads it.
+    let subject = objects;
+    let atMost: Amount | undefined;
+    if (objects.filter.manaValueAtMostX === true) {
+      if (ctx.owner !== 'spell' || ctx.xIs !== null) return failure(clause);
+      const missing = missingFeatures(['selector:manaValueAtMost']);
+      if (missing.length > 0) return failure(clause, missing);
+      const amount = lowerAmount({ kind: 'x', span: objects.span }, ctx, clause.rule);
+      if (!amount.ok) return amount;
+      atMost = amount.value;
+      const { manaValueAtMostX: _x, ...rest } = objects.filter;
+      void _x;
+      subject = { ...objects, filter: rest };
+    }
+    const filter = lowerFilter(subject);
     if (!filter.ok) return filter;
+    const limited =
+      atMost === undefined ? filter.value : { ...filter.value, manaValueAtMost: atMost };
     return {
       ok: true,
-      value: [{ kind: 'castFree', objects: { kind: 'choose', filter: filter.value }, ...playing }],
+      value: [{ kind: 'castFree', objects: { kind: 'choose', filter: limited }, ...playing }],
       rule: clause.rule,
     };
   },

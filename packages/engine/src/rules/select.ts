@@ -353,6 +353,8 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  // CR 107.3a, 202.3: "a spell with mana value X or less", the X announced for the spell that is resolving.
+  if (amount.kind === 'x') return ctx.x ?? 0;
   if (amount.kind === 'countOf') {
     const owner = amount.filter.owner;
     const countedContext =

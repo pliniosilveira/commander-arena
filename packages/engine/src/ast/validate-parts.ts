@@ -380,6 +380,8 @@ export function checkFilter(
       typeof a === 'number' ||
       (a?.kind === 'powerOf' && a.of?.kind === 'this') ||
       a?.kind === 'triggerDamage' ||
+      // CR 107.3a: "a spell with mana value X or less from your hand" (castFree), the X announced for the spell that is resolving.
+      a?.kind === 'x' ||
       // CR 603.3d: "with mana value less than or equal to that spell's mana value" (a cast trigger; `validateCard` checks the trigger).
       (a?.kind === 'manaValueOf' && a.of?.kind === 'triggerSubject') ||
       a?.kind === 'lifeGainedThisTurn' ||
@@ -388,7 +390,7 @@ export function checkFilter(
       issue(
         out,
         `${path}.manaValueAtMost`,
-        'the limit is a number, the power of this, the damage that triggered the ability or the mana value of the spell that triggered it',
+        'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
       );
     }
     if (f.manaValue !== undefined) {

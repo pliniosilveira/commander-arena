@@ -76,6 +76,33 @@ export const SYNTHETIC_FREE_CAST_LIST: readonly CardDefinition[] = [
     true,
     'You may play a card with mana value 5 or less from your hand without paying its mana cost.',
   ),
+  // CR 107.3a, 202.3: "mana value X or less" is the X announced for this spell.
+  singleFace({
+    name: 'SYNTHETIC X Burn Free Rite',
+    manaCost: ['X', 'R'],
+    types: ['instant'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    oracleText:
+      'Deals X damage to any target. You may cast a spell with mana value X or less from your hand without paying its mana cost.',
+    spell: {
+      x: true,
+      targets: [{ id: 't1', what: { kind: 'anyTarget' } }],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'dealDamage', amount: { kind: 'x' }, to: { kind: 'target', id: 't1' } },
+          {
+            kind: 'castFree',
+            objects: {
+              kind: 'choose',
+              filter: { zone: 'hand', notTypes: ['land'], manaValueAtMost: { kind: 'x' } },
+            },
+          },
+        ],
+      },
+    },
+  }),
   // The filter does not say "not a land": a land card is still never cast (CR 305.1), so none is offered.
   rite(
     'SYNTHETIC Free Spell Rite',
