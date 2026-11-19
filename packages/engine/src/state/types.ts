@@ -21,7 +21,7 @@ import type {
 import type { CardDefinition } from '../cards/definition';
 import type { CardType, Characteristics, Color, Subtype } from '../characteristics';
 import type { CardId, ObjectId, SeatId } from '../ids';
-import type { ManaObject } from '../mana/types';
+import type { ManaColor, ManaObject } from '../mana/types';
 import type { RngState } from '../rng/types';
 import type { ChosenTarget } from './chosen';
 import type { AttackTarget } from './combat-types';
@@ -2032,6 +2032,17 @@ export type ContinuousChange =
   | { readonly kind: 'playerHexproof' }
   /** "You may cast spells this turn as though they had flash" (`grantCastAsThoughFlash`, CR 601.3b): the effect's `players` may cast any spell at instant timing while it lasts. No layer: read in `castTiming`. */
   | { readonly kind: 'playerCastAsThoughFlash' }
+  /**
+   * "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}" (`grantPlayerManaAbility`, CR 605.1a, 118.3, 611.2): the effect's
+   * `players` have a mana ability that belongs to no permanent while it lasts. `source` is the spell that gave it (the mana it makes has it as its source), `life` the life
+   * it costs and `mana` what it makes. No layer: read by the payment planner and the legal actions (`rules/player-mana.ts`).
+   */
+  | {
+      readonly kind: 'playerPayLifeForMana';
+      readonly source: ObjectId;
+      readonly life: number;
+      readonly mana: ManaColor;
+    }
   /** Protection from everything granted to a player until their next turn (D-607). */
   | { readonly kind: 'playerProtectionEverything' }
   /** Prevents all increases and decreases to the player's life total (D-607). */

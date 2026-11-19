@@ -2998,6 +2998,18 @@ export type Effect =
       readonly player: PlayerSelector;
       readonly duration: 'untilEndOfTurn';
     }
+  /**
+   * "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (CR 605.1a, 605.3a, 118.3, 611.2, 514.2; Channel): each player the
+   * selector names has a mana ability that belongs to no permanent until end of turn: pay `life` life (a positive whole number, a cost, CR 118.3) to add one `mana`. It
+   * may be activated any number of times, whenever the player could activate a mana ability, and uses no stack. The spell that gives it is the source of the mana.
+   */
+  | {
+      readonly kind: 'grantPlayerManaAbility';
+      readonly player: PlayerSelector;
+      readonly life: number;
+      readonly mana: ManaColor;
+      readonly duration: 'untilEndOfTurn';
+    }
   /** "Target player gains protection from everything until their next turn" (D-607, CR 702.16). */
   | {
       readonly kind: 'grantPlayerProtectionEverything';

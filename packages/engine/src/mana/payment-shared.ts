@@ -52,6 +52,11 @@ export interface PaymentSource {
    */
   readonly lifeLoss?: number;
   /**
+   * The extra-effect preference of the planner counts the life this source costs, not just that it costs some: the several-uses sources of a mana ability a player was given
+   * (`rules/player-mana.ts`) must lose to a permanent that makes the same mana for less life. Absent for every source of a permanent.
+   */
+  readonly weighExtraByLife?: true;
+  /**
    * The mana this source makes can pay generic mana only, never a colored symbol or snow ("tap an untapped
    * artifact rather than pay that generic mana", Improvise, CR 702.126a; a colorless creature's convoke,
    * CR 702.51a; a card exiled for Delve, CR 702.66a; D-120). It also never pays the activation cost of a

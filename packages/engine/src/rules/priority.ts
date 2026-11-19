@@ -22,6 +22,7 @@ import {
 } from './legality';
 import { activationChoices, manaSacrificeCandidates, manaTapCandidates } from './mana-abilities';
 import { canActivateManaAbility, manaAbilitiesOf } from './mana-engine';
+import { activatablePlayerMana, PLAYER_MANA_ABILITY } from './player-mana';
 import { setPending } from './set-pending';
 import { settle } from './settle';
 import { foretellableObjects, suspendableObjects } from './special-legality';
@@ -111,6 +112,15 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
         }
       }
     }
+  }
+  // CR 605.1a, 605.3a (Channel): the mana ability an effect gave the player is on offer while they can pay its life.
+  for (const g of activatablePlayerMana(state, seat)) {
+    options.push({
+      kind: 'activateAbility',
+      source: g.source,
+      abilityIndex: PLAYER_MANA_ABILITY,
+      color: null,
+    });
   }
   options.push({ kind: 'concede' });
   return options;

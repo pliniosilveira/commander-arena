@@ -35,6 +35,7 @@ import {
 import { isCombinationProduction, productionOutcomes, spendRestrictionOf } from './mana-outcomes';
 import { additionalManaOptions } from './mana-triggers';
 import { lifeTotalIsLocked } from './player-lock';
+import { playerManaSources } from './player-mana';
 
 const sourcesBySeat = new WeakMap<GameState, Map<SeatId, readonly PaymentSource[]>>();
 
@@ -95,6 +96,8 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
       });
     }
   }
+  // CR 605.1a (Channel): the mana ability an effect gave the player, as many uses as their life allows.
+  out.push(...playerManaSources(state, seat));
   return out;
 }
 
@@ -126,6 +129,10 @@ export function planFor(
   const sources = [...paymentSources(state, seat), ...(options.extraSources ?? [])]
     .filter((s) => options.avoidSacrificing !== true || s.tier !== 'sacrifice')
     .filter((s) => options.avoidObjects === undefined || !options.avoidObjects.includes(s.object));
+  // CR 605.1a (Channel): the mana ability a player was given costs life, so it is planned only when the cost cannot be paid without it (never to save a reserved color).
+  const own = sources.filter((s) => s.weighExtraByLife !== true);
+  const plan = planWithout(state, seat, cost, spell, reserve, own, 0);
+  if (plan !== null || own.length === sources.length) return plan;
   return planWithout(state, seat, cost, spell, reserve, sources, 0);
 }
 

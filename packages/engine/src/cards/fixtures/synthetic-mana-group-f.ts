@@ -165,4 +165,61 @@ export const SYNTHETIC_MANA_GROUP_F_LIST: readonly CardDefinition[] = [
       effect: { kind: 'gainLife', player: { kind: 'you' }, amount: { kind: 'x' } },
     },
   }),
+  // "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (`grantPlayerManaAbility`)
+  singleFace({
+    name: 'SYNTHETIC Life Channel',
+    manaCost: ['G', 'G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText:
+      'Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}.',
+    spell: {
+      effect: {
+        kind: 'grantPlayerManaAbility',
+        player: { kind: 'you' },
+        life: 1,
+        mana: 'C',
+        duration: 'untilEndOfTurn',
+      },
+    },
+  }),
+  // The same for 2 life and {G}: the effect is general over the life paid and the mana made.
+  singleFace({
+    name: 'SYNTHETIC Dear Channel',
+    manaCost: ['G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText:
+      'Until end of turn, any time you could activate a mana ability, you may pay 2 life. If you do, add {G}.',
+    spell: {
+      effect: {
+        kind: 'grantPlayerManaAbility',
+        player: { kind: 'you' },
+        life: 2,
+        mana: 'G',
+        duration: 'untilEndOfTurn',
+      },
+    },
+  }),
+  // A spell that costs {3} and one that costs {G}, to be paid with the mana of the channel or not.
+  singleFace({
+    name: 'SYNTHETIC Three Sorcery',
+    manaCost: ['3'],
+    types: ['sorcery'],
+    colors: [],
+    colorIdentity: [],
+    oracleText: 'You gain 3 life.',
+    spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 3 } },
+  }),
+  singleFace({
+    name: 'SYNTHETIC Green Sorcery',
+    manaCost: ['G'],
+    types: ['sorcery'],
+    colors: ['G'],
+    colorIdentity: ['G'],
+    oracleText: 'You gain 1 life.',
+    spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 } },
+  }),
 ];
