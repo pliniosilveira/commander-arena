@@ -17,7 +17,7 @@ import {
   type SeatId,
 } from '@commander-arena/engine';
 import { type Agent, DEFAULT_BUDGET_MS, type DecideContext } from './agent';
-import { firstSafeAction } from './legal';
+import { firstAcceptedAction, firstSafeAction } from './legal';
 
 export interface LoggedAction {
   readonly seat: SeatId;
@@ -141,13 +141,20 @@ export async function runGame(
     let applied = applyAction(state, seat, action);
     if (!applied.ok) {
       rejected.push({ seat, action, atAction: log.length, error: applied.error });
-      action = firstSafeAction(decision);
-      applied = applyAction(state, seat, action);
-      if (!applied.ok) {
+      // Every legal action is tried until one is accepted (plays, then cancel, then concede).
+      let lastError = applied.error;
+      const fallback = firstAcceptedAction(decision, (a) => {
+        const tried = applyAction(state, seat, a);
+        if (!tried.ok) lastError = tried.error;
+        return tried.ok ? tried : null;
+      });
+      if (fallback === null) {
         reason = 'stuck';
-        agentErrors.push(`the fallback action was rejected too: ${applied.error}`);
+        agentErrors.push(`the fallback action was rejected too: ${lastError}`);
         break;
       }
+      action = fallback.action;
+      applied = fallback.value;
     }
     log.push({ seat, action });
     state = applied.state;
