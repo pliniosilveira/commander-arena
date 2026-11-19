@@ -649,7 +649,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // "Choose a color. Add an amount of mana of that color equal to your devotion to that color."
     'anyColorDevotion',
   ],
-  manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife'],
+  // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
+  manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
   // D-139: `each`, "each player sacrifices all permanents they control that ..." (every permanent by its own controller).
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
@@ -757,6 +758,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
     'castFromHand',
+    // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
+    'xInManaCost',
+    'firstXSpellThisTurn',
     // Group 4 of the Vraska deck: "target commander that entered this turn" (`ObjectFilter.enteredThisTurn`).
     'enteredThisTurn',
     // Lorehold group 2: "target card exiled with this creature" (`ObjectFilter.exiledWithSource`).
@@ -1160,6 +1164,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-133: "that much" for the damage that caused a trigger.
     'triggerDamage',
     'triggerTargetCount',
+    // Quandrix Unlimited group E: "put X counters" in a cast trigger: the X of the spell that was cast.
+    'triggerSpellX',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -1495,6 +1501,10 @@ export const SELECTOR_KINDS = [
   'notCastFromHand',
   /** "A spell you cast from your hand" (CR 601.2a, D-638): the engine's `ObjectFilter.castFromHand`. */
   'castFromHand',
+  /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
+  'xInManaCost',
+  /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
+  'firstXSpellThisTurn',
   'triggerSubject',
   'triggerActor',
   'bound',
@@ -1943,6 +1953,8 @@ export const AMOUNT_KINDS = [
   'triggerDamage',
   /** Number of targets chosen for a spell in a cast trigger (D-574). */
   'triggerTargetCount',
+  /** "X" in a cast trigger (CR 107.3, 113.7a): the engine's `triggerSpellX`. */
+  'triggerSpellX',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */

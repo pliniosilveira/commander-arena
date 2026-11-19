@@ -284,13 +284,25 @@ const NEXT_CAST_LEAD: Parser<NonNullable<IrSentence['delayed']>> = map(
       literal('when you next cast '),
       pattern(/an? /iu),
       map(spellPhrase(), withoutZone),
+      // Quandrix Unlimited group E (Brass Infiniscope, CR 107.3): "a spell with {X} in its mana cost".
+      optional(
+        pattern(
+          / with (?:\{X\} in its mana cost|a mana cost that contains \{X\})(?= this turn, )/iu,
+        ),
+        null,
+      ),
       literal(' this turn, '),
     ),
   ),
   ({ value, span }) => ({
     step: 'nextCast' as const,
     whose: 'you' as const,
-    spell: makeNoun('sentence.delayed-cast', span, 'a', value[2]),
+    spell: makeNoun(
+      'sentence.delayed-cast',
+      span,
+      'a',
+      value[3] === null ? value[2] : { ...value[2], xInManaCost: true },
+    ),
   }),
 );
 

@@ -127,6 +127,9 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
         get manaValue() {
           return manaValueOfCost(c.manaCost, lki.object);
         },
+        get manaCost() {
+          return c.manaCost;
+        },
       };
     }
   }
@@ -140,6 +143,10 @@ function describeObject(state: GameState, obj: GameObject): FilterSubject {
     power: d.power,
     toughness: d.toughness,
     basePower: d.basePower,
+    // Quandrix Unlimited group E: only a filter that says "with {X} in its mana cost" reads it.
+    get manaCost() {
+      return d.manaCost;
+    },
     get keywords() {
       return keywordKindsOf(d.abilities);
     },

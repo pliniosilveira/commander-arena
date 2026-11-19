@@ -275,6 +275,12 @@ export type Amount =
   /** Number of targets chosen for the spell that caused a cast trigger (D-574). */
   | { readonly kind: 'triggerTargetCount' }
   /**
+   * "Put X +1/+1 counters on this creature" in a "whenever you cast a spell with {X} in its mana cost" ability (Quandrix Unlimited deck, group E, CR 107.3, 601.2b, 113.7a): the X announced for
+   * the spell that caused the trigger (its `triggerSubject`), read as the spell is on the stack or as it last was; 0 for a spell that has no X. Valid only in a trigger about a spell
+   * being cast (`castSpell` without `self`).
+   */
+  | { readonly kind: 'triggerSpellX' }
+  /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */
@@ -511,6 +517,17 @@ export interface ObjectFilter {
    * caster's hand. Read from the spell itself as it is cast (the zone it came from), so only a spell is matched. Not with `notCastFromHand`.
    */
   readonly castFromHand?: true;
+  /**
+   * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
+   * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
+   */
+  readonly xInManaCost?: true;
+  /**
+   * "Your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck, group E, CR 601.2i, 603.2): no other spell with an {X} in its mana cost was cast this turn by the
+   * caster of this one, before it (`TurnLog.castSpells`; a copy is not cast, CR 707.10). Meant with `xInManaCost`. Read from the turn log, so it is read as the spell is cast (a cast
+   * trigger) or as its cost is determined (a cost reduction, where the spell is not yet logged); refused in a static ability that nothing refreshes (a layer effect).
+   */
+  readonly firstXSpellThisTurn?: true;
   /**
    * "That entered this turn" (group 4 of the Vraska deck, CR 400.7, 110.1): the permanent entered the battlefield during this turn and is still the same
    * object (one that left and came back is a new object). Read from the turn log where the filter is matched against the game (a target slot, an `each`

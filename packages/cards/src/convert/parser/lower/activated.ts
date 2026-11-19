@@ -30,7 +30,7 @@ import { lowerClause, lowerMana } from './effects';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { colorLetter } from './nouns';
-import { kindOfNoun, lowerSentences } from './sentences';
+import { kindOfNoun, lowerDelayedCast, lowerSentences } from './sentences';
 import { type LowerContext, type LowerFailure, type LowerResult, newContext } from './types';
 
 type Activated = Extract<IrAbility, { kind: 'activated' }>;
@@ -751,10 +751,48 @@ export function lowerActivated(
     if (chosen !== null) return chosen;
     const instead = lowerManaInstead(ability, ctx.faceTypes);
     if (instead !== null) return instead;
+    // "{T}: Add {C}{C}. When you next cast a spell with {X} in its mana cost this turn, you draw a card and gain half X life, rounded down." (Quandrix Unlimited group E, CR 603.7,
+    // 605.1a): the mana ability, and the delayed trigger it creates as its extra effect (`also`).
+    const delayed = lowerManaWithDelayedCast(ability, ctx);
+    if (delayed !== null) return delayed;
     const mana = lowerManaAbility(ability, clauses, ctx.faceTypes);
     if (mana !== null) return mana;
   }
   return lowerOrdinary(ability, ctx);
+}
+
+/**
+ * A mana ability whose last sentence is a "When you next cast ..." delayed trigger: the sentence is the `also` effect `delayedCast` (the engine runs it in the same activation, as
+ * the mana is added), the rest is read as any mana ability. Null when the ability has no such sentence.
+ */
+function lowerManaWithDelayedCast(
+  ability: Activated,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> | null {
+  const sentences = ability.body.sentences;
+  const at = sentences.findIndex((s) => s.delayed?.step === 'nextCast');
+  const sentence = sentences[at];
+  if (at < 1 || at !== sentences.length - 1 || sentence === undefined) return null;
+  const spell = sentence.delayed?.spell;
+  const without = { ...ability, body: { ...ability.body, sentences: sentences.slice(0, at) } };
+  const base = lowerManaAbility(
+    without,
+    without.body.sentences.flatMap((s) => s.clauses),
+    ctx.faceTypes,
+  );
+  if (base === null) return null;
+  if (!base.ok) return base;
+  const [mana] = base.value;
+  if (mana?.kind !== 'mana' || spell === undefined) return failure(ability);
+  const blocked = gate(ability, ['manaAlso:delayedCast', 'effect:delayedCast']);
+  if (blocked !== null) return blocked;
+  const lowered = lowerDelayedCast(sentence, spell, newContext('ability', ctx.faceTypes));
+  if (!lowered.ok) return lowered;
+  return {
+    ok: true,
+    value: [{ ...mana, also: [...(mana.also ?? []), lowered.value] }],
+    rule: base.rule,
+  };
 }
 
 /** Features the activated and mana ability lowerings can name, for the dimension test. */

@@ -178,6 +178,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
+  'static.first-x-spell-cost-reduction': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -858,6 +859,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cards-leave-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
+  'trigger.cast-x': whenever,
   'trigger.enters-one-or-more-creatures': whenever,
   'trigger.you-create-tokens': whenever,
   'condition.cards-in-graveyard': permanent((e) => `As long as ${e}, ~ has flying.`),

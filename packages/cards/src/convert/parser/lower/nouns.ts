@@ -287,6 +287,15 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castFromHand');
   }
+  // Quandrix Unlimited group E: "a spell with {X} in its mana cost" (CR 107.3), "your first such spell each turn" (CR 601.2i), a spell on the stack.
+  if (filter.xInManaCost === true) {
+    if (inner) return bad([]);
+    parts.push('selector:xInManaCost');
+  }
+  if (filter.firstXSpellThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstXSpellThisTurn');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
@@ -473,6 +482,8 @@ function lowerFilterAt(
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
+    ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
+    ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),

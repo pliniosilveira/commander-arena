@@ -8,7 +8,7 @@ import type { ManaAbility } from './types';
 import { checkBattlefieldFilter } from './validate-attach';
 import { issue, kindOf, type Out } from './validate-base';
 import { checkManaAbilityAlso, checkManaProduction } from './validate-mana';
-import { checkCondition, checkCosts, checkEnumList } from './validate-parts';
+import { checkCondition, checkCosts, checkDelayedCast, checkEnumList } from './validate-parts';
 
 export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
   checkCosts(a.cost, `${path}.cost`, out);
@@ -83,6 +83,23 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       issue(out, `${path}.also`, 'also must be a non-empty list when present');
     } else {
       a.also.forEach((e, i) => {
+        // CR 603.7, 605.1a (Brass Infiniscope): the delayed trigger a mana ability creates is checked as that of any effect.
+        if (e?.kind === 'delayedCast') {
+          checkDelayedCast(
+            e,
+            `${path}.also[${i}]`,
+            {
+              owner: 'ability',
+              targets: new Map(),
+              xAllowed: false,
+              checkAbility: () => undefined,
+              checkContinuous: () => undefined,
+              checkEffectExt: () => false,
+            },
+            out,
+          );
+          return;
+        }
         checkManaAbilityAlso(e, `${path}.also[${i}]`, out);
       });
     }

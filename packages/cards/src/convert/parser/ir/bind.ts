@@ -86,6 +86,11 @@ interface Antecedent {
    * sentence after it is the token, as "that token" is (CR 707.9: the exceptions are said of "it", the copy).
    */
   readonly itToken?: true;
+  /**
+   * A token an instruction made (Quandrix Unlimited group E, CR 111.2, 400.7j): "it" of "Put a number of +1/+1 counters on it" in the sentence after it is the token. Only that
+   * verb reads it so (the other pronouns after a token keep their meaning: "If that enchantment is an Aura, you may attach it to the token").
+   */
+  readonly plainToken?: true;
 }
 
 const key = (span: Span) => `${span.start}:${span.end}`;
@@ -273,7 +278,10 @@ class Binder {
             (pronoun.type === 'token'
               ? a.token === true
               : a.token !== true ||
-                (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim()))) &&
+                (a.itToken === true && /^it$/iu.test(noun.filter.raw.trim())) ||
+                (this.countersClause &&
+                  a.plainToken === true &&
+                  /^it$/iu.test(noun.filter.raw.trim()))) &&
             (a.selfIt !== true || /^its?$/iu.test(noun.filter.raw.trim())) &&
             (a.previousLine !== true || /^that /iu.test(noun.filter.raw)) &&
             !a.noun.plural &&
@@ -448,6 +456,7 @@ class Binder {
             kind: 'object',
             token: true,
             ...(arg.copyExcept === undefined ? {} : { itToken: true as const }),
+            plainToken: true as const,
             noun: {
               kind: 'noun',
               det: 'a',
@@ -473,7 +482,11 @@ class Binder {
     }
   }
 
+  /** The clause being bound puts counters on something: its "it" may be a token an instruction before it made (`Antecedent.plainToken`). */
+  private countersClause = false;
+
   clause(clause: IrClause): IrClause {
+    this.countersClause = clause.verb === 'addCounters';
     // Visit nouns in text order, whatever order the rule put its arguments in.
     const entries = Object.entries(clause.args).sort(([, a], [, b]) => spanStart(a) - spanStart(b));
     const args: Record<string, IrArg> = {};

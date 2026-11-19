@@ -132,7 +132,7 @@ import { striveTargetCap } from './strive';
 import { maxTargetCountX, targetAnswerError, targetChoiceSpecs } from './target-choice';
 import { payableSpellTargets } from './target-payable';
 import { collectTriggers } from './triggers';
-import { hasX, largestPayableX } from './x-value';
+import { hasX, largestPayableX, xSymbolCount } from './x-value';
 import { moveObject } from './zones';
 
 export function beginCast(
@@ -1560,6 +1560,11 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
               derive(next, getObject(next, casting.object)).manaCost,
               getObject(next, casting.object),
             ),
+            object: casting.object,
+            // Quandrix Unlimited group E: the spell has an {X} in its mana cost (CR 107.3).
+            ...(xSymbolCount(derive(next, getObject(next, casting.object)).manaCost ?? []) > 0
+              ? { hasX: true as const }
+              : {}),
             // Issue 159: "if you've cast a spell from a graveyard this turn".
             ...(obj.stack.castFrom === 'graveyard' ? { fromGraveyard: true as const } : {}),
           },

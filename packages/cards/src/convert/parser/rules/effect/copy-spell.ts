@@ -9,7 +9,7 @@
  * The sentence about the new targets is read with the clause (it is a second sentence in the text, but only
  * means something next to the copy). Not read: "Copy target instant or sorcery spell, then return it to its
  * owner's hand." (a second instruction that the engine has no way to run on the card that the copy came from),
- * "except" copies, "copy it", copies of abilities and "for each" counts.
+ * "except" copies, copies of abilities and "for each" counts.
  */
 import { literal, map, optional, pattern, quiet, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';
@@ -62,6 +62,20 @@ const THAT_SPELL = node<RegExpExecArray, IrNoun>(
   }),
 );
 
+/** "it": the spell whose casting triggered the ability (Quandrix Unlimited group E); the lowering refuses it anywhere the binding pass did not make it that spell. */
+const IT_SPELL = node<RegExpExecArray, IrNoun>(
+  'effect.copy-spell',
+  pattern(new RegExp(`it${BOUNDARY}`, 'iu')),
+  (m) => ({
+    kind: 'noun',
+    det: 'anaphor',
+    filter: { raw: m[0] },
+    upTo: false,
+    plural: false,
+    other: false,
+  }),
+);
+
 /**
  * `effect.copy-spell`: "copy target instant or sorcery spell", "copy target instant or sorcery spell you control"
  * and "copy that spell", each with or without the sentence "You may choose new targets for the copy." (CR 707.10,
@@ -84,6 +98,9 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy target spell. you may choose new targets for the copy',
     'copy target instant or sorcery spell',
     'copy that spell',
+    // Quandrix Unlimited group E (Owlin Spiralmancer): "it" is the spell of the cast trigger.
+    'copy it',
+    'copy it. you may choose new targets for the copy',
   ],
   rejects: [
     'copy target instant or sorcery spell, then return it to its owner’s hand. you may choose new targets for the copy',
@@ -100,7 +117,7 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy target spells',
     'copy that creature',
     'copy that spell for each creature you control',
-    'copy it',
+    'copy itself',
     'copy this spell',
     'copy',
   ],
@@ -111,7 +128,9 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
           literal('copy '),
           (c, p) => {
             const target = TARGET_SPELL(c, p);
-            return target.ok ? target : THAT_SPELL(c, p);
+            if (target.ok) return target;
+            const that = THAT_SPELL(c, p);
+            return that.ok ? that : IT_SPELL(c, p);
           },
           CLAUSE_END,
           optional(NEW_TARGETS, null),
