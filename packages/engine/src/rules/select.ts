@@ -401,6 +401,9 @@ function manaValueLimitOf(
 ): number {
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
+  // CR 119.3, 202.3: "mana value X or less, where X is the amount of life you gained this turn" (Moseo), read from the turn log of the ability's controller.
+  if (amount.kind === 'lifeGainedThisTurn')
+    return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
   // CR 107.3m: the X of the spell the permanent that has the ability came from, which the permanent remembers (`castX`), or its last-known information.
   if (amount.kind === 'enteredX') {
     const source =
