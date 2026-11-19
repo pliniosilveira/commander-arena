@@ -4733,6 +4733,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         scope.movedAvailable === true,
         scope.diesTrigger === true,
         scope.auraDiesTrigger === true,
+        scope.thisWay?.includes('exiledCreatures') === true,
       );
       break;
     case 'prepare':

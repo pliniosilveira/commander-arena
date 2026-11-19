@@ -23,6 +23,7 @@ export function checkDelayedTrigger(
   exiledAvailable = false,
   diesTrigger = false,
   auraDiesTrigger = false,
+  thisWayAvailable = false,
 ): void {
   if (!isOneOf(e.at?.step, [...TRIGGER_STEPS, 'nextMain'])) {
     issue(out, `${path}.at.step`, `unknown step ${JSON.stringify(e.at?.step)}`);
@@ -142,6 +143,34 @@ export function checkDelayedTrigger(
     }
     if (e.at?.step !== 'nextMain' && e.at?.whose !== 'you') {
       issue(out, `${path}.at`, "a delayed mana effect is added in the controller's own turn");
+    }
+    return;
+  }
+  // Issue 81 (Synthetic Destiny, CR 603.7c, 701.20, 701.24): "At the beginning of the next end step, reveal cards ... until you reveal that many creature cards, put all creature cards
+  // revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library": a reveal of that many, the rest left for the shuffle that follows.
+  if (kind === 'sequence') {
+    const parts = (inner as Extract<Effect, { kind: 'sequence' }>).effects ?? [];
+    const [reveal, shuffle, ...more] = parts;
+    const count = reveal?.kind === 'revealUntil' ? reveal.count : undefined;
+    const counted =
+      typeof count === 'object' &&
+      count !== null &&
+      count.kind === 'thisWay' &&
+      count.what === 'exiledCreatures';
+    if (
+      reveal?.kind !== 'revealUntil' ||
+      !counted ||
+      !thisWayAvailable ||
+      reveal.put !== 'battlefield' ||
+      reveal.rest !== 'stay' ||
+      shuffle?.kind !== 'shuffle' ||
+      more.length > 0
+    ) {
+      issue(
+        out,
+        `${path}.effect`,
+        'a delayed sequence reveals that many cards (the creatures an exile before it exiled), puts them onto the battlefield and shuffles the rest',
+      );
     }
     return;
   }

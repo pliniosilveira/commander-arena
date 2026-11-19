@@ -24,6 +24,7 @@ import type {
   GameState,
   Instruction,
   ResolutionContext,
+  ThisWayCounts,
   TriggeredAbility,
 } from '../state/types';
 import { runSplitExiled, startSplit } from './activation-exile';
@@ -1499,6 +1500,10 @@ function runEffect(
         player = resolvePlayers(state, inner.player, ctx, targets)[0];
         if (player === undefined) return done(state);
         baked = { ...inner, player: { kind: 'triggerPlayer' } };
+      } else if (inner.kind === 'sequence') {
+        // CR 603.7c (issue 81, Synthetic Destiny): "reveal cards ... until you reveal that many creature cards" at the next end step: how many is what the effect before it did as it
+        // resolved (`thisWay`), fixed now, when the delayed ability is created.
+        baked = bindThisWay(inner, ctx.thisWay);
       }
       const ability: TriggeredAbility = { kind: 'triggered', trigger, effect: baked };
       return done({
@@ -3045,4 +3050,17 @@ function putCountersOn(
     }),
     events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
   };
+}
+
+/** An effect with each `thisWay` amount in it replaced by the number the effects before it counted (CR 603.7c: a delayed ability is about what happened as it was created). */
+function bindThisWay<T>(value: T, counts: ThisWayCounts | undefined): T {
+  if (Array.isArray(value)) return value.map((item) => bindThisWay(item, counts)) as T;
+  if (typeof value !== 'object' || value === null) return value;
+  const record = value as Record<string, unknown>;
+  if (record.kind === 'thisWay' && typeof record.what === 'string') {
+    return (counts?.[record.what as keyof ThisWayCounts] ?? 0) as T;
+  }
+  return Object.fromEntries(
+    Object.entries(record).map(([key, item]) => [key, bindThisWay(item, counts)]),
+  ) as T;
 }

@@ -28,6 +28,8 @@ export const EFFECT_REVEAL_UNTIL_THAT_MANY = defineRule<Clauses>({
   ],
   examples: [
     'reveal cards from the top of your library until you reveal that many creature cards. Put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library',
+    // Issue 81 (Synthetic Destiny): one sentence, after "At the beginning of the next end step,".
+    'reveal cards from the top of your library until you reveal that many creature cards, put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library',
   ],
   rejects: [
     'reveal cards from the top of your library until you reveal that many creature cards',
@@ -45,7 +47,7 @@ export const EFFECT_REVEAL_UNTIL_THAT_MANY = defineRule<Clauses>({
       spanned(literal('creature')),
       literal(' '),
       pattern(
-        /cards\. put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library(?![\p{L}\p{N}])/iu,
+        /cards[.,] put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library(?![\p{L}\p{N}])/iu,
       ),
     ),
     ([, kind]) => ({

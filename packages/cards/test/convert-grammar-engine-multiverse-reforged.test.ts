@@ -844,3 +844,54 @@ describe('Shark Typhoon: a Shark for each noncreature spell, or when it is cycle
     g.expect.handSize(0, 1);
   });
 });
+
+// ---- Synthetic Destiny: "Exile all creatures you control. At the beginning of the next end step, reveal cards from the top of your library until you reveal that many creature cards, put all
+// creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library." (CR 603.7, 603.7c, 701.20, 701.24: how many is fixed when the
+// delayed ability is created, from what the exile exiled).
+
+const DESTINY = parsed(
+  'SYNTHETIC Parsed Destiny',
+  'Instant',
+  'Exile all creatures you control. At the beginning of the next end step, reveal cards from the top of your library until you reveal that many creature cards, put all creature cards revealed this way onto the battlefield, then shuffle the rest of the revealed cards into your library.',
+  { manaCost: '{3}{U}{U}', colors: ['U'] },
+);
+
+describe('Synthetic Destiny: the creatures come back, as many as were exiled, at the end step', () => {
+  test('two creatures exiled: two creature cards from the library at the next end step', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(DESTINY)
+      .define(OGRE)
+      .define(TROLL)
+      .define(TROLL_TWO)
+      .hand(DESTINY.name)
+      .battlefield(
+        'Grizzly Bears',
+        'Giant Spider',
+        'Island',
+        'Island',
+        'Island',
+        'Island',
+        'Island',
+      )
+      .library('Plains', OGRE.name, 'Plains', TROLL.name, TROLL_TWO.name, 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(DESTINY.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'exile', { seat: 0 });
+    g.expect.zone('Giant Spider', 'exile', { seat: 0 });
+    // Nothing comes back until the end step.
+    g.expect.zone(OGRE.name, 'library', { seat: 0 });
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.zone(OGRE.name, 'battlefield', { seat: 0 });
+    g.expect.zone(TROLL.name, 'battlefield', { seat: 0 });
+    g.expect.zone(TROLL_TWO.name, 'library', { seat: 0 });
+    g.expect.invariants();
+  });
+});
