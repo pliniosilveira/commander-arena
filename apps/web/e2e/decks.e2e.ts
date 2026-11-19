@@ -125,8 +125,9 @@ test.describe('precons on the decks page', () => {
     await page.getByRole('button', { name: 'Back to menu' }).click();
     // The edited precon is marked in both dialogs of the start-game flow.
     const mine = await openStartFlow(page);
+    await mine.getByRole('tab', { name: 'Precons' }).click();
     await expect(mine.locator('.scr-deck-tag')).toHaveCount(1);
-    // Selecting your deck opens the opponent's dialog, which marks it too.
+    // Choosing your deck opens the opponent's dialog, which marks it too.
     await select(mine);
     const theirs = page.getByRole('dialog', { name: OPPONENT_DIALOG });
     await expect(theirs.locator('.scr-deck-tag')).toHaveCount(1);

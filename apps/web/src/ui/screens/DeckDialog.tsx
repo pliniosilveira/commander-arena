@@ -2,8 +2,8 @@
  * A step of the start-game flow (issue 53): a dialog that asks for one deck, for you or for the
  * opponent. Two tabs split the choices, "My decks" (decks saved in this browser) and "Precons"
  * (the shipped precons, edited ones included, D-215); "My decks" opens first; the opponent step opens on "Precons". Decks are listed alphabetically.
- * A deck is marked by clicking it, or by one of the three Random buttons; the Select button under
- * the list confirms the step.
+ * Tapping a deck, or one of the three Random buttons, chooses it and moves to the next step at once;
+ * there is no separate Select button.
  */
 import { useEffect, useId, useRef, useState } from 'react';
 import type { DeckChoice } from '../../precons';
@@ -33,8 +33,6 @@ const RANDOMS: readonly { readonly scope: RandomScope; readonly label: string }[
 export function DeckDialog({
   title,
   prompt,
-  name,
-  value,
   decks,
   error,
   busy,
@@ -46,16 +44,12 @@ export function DeckDialog({
 }: {
   title: string;
   prompt: string;
-  /** The name of the radio group. */
-  name: string;
-  /** The deck marked when the dialog opens. */
-  value: string;
   decks: readonly DeckChoice[];
   /** Why the last choice was refused, if it was. */
   error: string | null;
   /** True while the game is being prepared: the buttons are disabled. */
   busy: boolean;
-  /** The Select button: confirms the marked deck. */
+  /** A tap on a deck or on a Random button: chooses that deck. */
   onChoose: (id: string) => void;
   /** Goes back one step; left out on the first step. */
   onBack?: () => void;
@@ -67,8 +61,6 @@ export function DeckDialog({
 }) {
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
-  // null until the player marks a deck: then the first deck of the tab is marked already.
-  const [picked, setPicked] = useState<string | null>(null);
   const [tab, setTab] = useState<DeckTab>(initialTab ?? 'saved');
   const [query, setQuery] = useState('');
   const [colorFilter, setColorFilter] = useState<readonly ColorFilter[]>([]);
@@ -84,15 +76,10 @@ export function DeckDialog({
         `${deck.name} ${deck.commander} ${deck.blurb}`.toLowerCase().includes(needle)),
   );
 
-  const marked = picked ?? (shown.some((d) => d.id === value) ? value : (shown[0]?.id ?? value));
-  const setMarked = setPicked;
-
-  // A random button marks a deck (and shows its tab); Select still confirms it.
-  const markRandom = (scope: RandomScope) => {
+  // A random button chooses a deck at once.
+  const chooseRandom = (scope: RandomScope) => {
     const deck = pickRandomDeck(decks, scope);
-    if (deck === null) return;
-    setMarked(deck.id);
-    setTab(deck.kind);
+    if (deck !== null) onChoose(deck.id);
   };
 
   // Focus moves into the dialog when it opens and back to the opener when it closes.
@@ -188,16 +175,14 @@ export function DeckDialog({
             </p>
           )}
           {shown.map((deck) => (
-            <label className="scr-deck" key={deck.id} data-selected={marked === deck.id}>
-              <input
-                className="scr-deck-radio"
-                type="radio"
-                name={name}
-                value={deck.id}
-                checked={marked === deck.id}
-                disabled={busy}
-                onChange={() => setMarked(deck.id)}
-              />
+            <button
+              type="button"
+              className="scr-deck"
+              key={deck.id}
+              data-deck-id={deck.id}
+              disabled={busy}
+              onClick={() => onChoose(deck.id)}
+            >
               {deck.commanderImage !== undefined && (
                 <img
                   className="scr-deck-art"
@@ -223,7 +208,7 @@ export function DeckDialog({
                   <ManaCost cost={deck.colors.length === 0 ? ['C'] : deck.colors} />
                 </span>
               )}
-            </label>
+            </button>
           ))}
         </div>
         {error !== null && (
@@ -233,14 +218,6 @@ export function DeckDialog({
         )}
         <div className="scr-modal-nav">
           <div className="scr-modal-group">
-            <button
-              type="button"
-              className="scr-btn scr-btn-primary"
-              disabled={busy || !decks.some((d) => d.id === marked)}
-              onClick={() => onChoose(marked)}
-            >
-              Select
-            </button>
             <button type="button" className="scr-btn" onClick={onCancel}>
               Cancel
             </button>
@@ -257,7 +234,7 @@ export function DeckDialog({
                 type="button"
                 className="scr-btn scr-btn-primary"
                 disabled={busy || pickRandomDeck(decks, r.scope, () => 0) === null}
-                onClick={() => markRandom(r.scope)}
+                onClick={() => chooseRandom(r.scope)}
               >
                 {r.label}
               </button>

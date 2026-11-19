@@ -1,5 +1,5 @@
 import { expect, type Page, test } from '@playwright/test';
-import { decksIn, OPPONENT_DIALOG, openStartFlow, select, startDefaultGame } from './harness/menu';
+import { decksIn, OPPONENT_DIALOG, openStartFlow, startDefaultGame } from './harness/menu';
 import { installedPrecons } from './harness/precons';
 import { untilHandPlayable } from './harness/resolve';
 
@@ -35,25 +35,15 @@ test('the menu starts the installed precon', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('the random buttons mark a deck and Select confirms it', async ({ page }) => {
+test('the random buttons choose a deck and move on, with no Select button', async ({ page }) => {
   await page.goto('/');
   const dialog = await openStartFlow(page);
-  // Select is first and Cancel to its right; the random buttons are on the other side.
   const buttons = await dialog.getByRole('button').allInnerTexts();
-  expect(buttons.slice(-5)).toEqual([
-    'Select',
-    'Cancel',
-    'Random all',
-    'Random precon',
-    'Random mine',
-  ]);
+  expect(buttons).not.toContain('Select');
+  expect(buttons.slice(-4)).toEqual(['Cancel', 'Random all', 'Random precon', 'Random mine']);
   // Nothing is saved in a fresh browser, so there is nothing to pick from.
   await expect(dialog.getByRole('button', { name: 'Random mine' })).toBeDisabled();
   await dialog.getByRole('button', { name: 'Random precon' }).click();
-  await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1);
-  await dialog.getByRole('button', { name: 'Random all' }).click();
-  await expect(dialog.getByRole('radio', { checked: true })).toHaveCount(1);
-  await select(dialog);
   await expect(page.getByRole('dialog', { name: OPPONENT_DIALOG })).toBeVisible();
 });
 
