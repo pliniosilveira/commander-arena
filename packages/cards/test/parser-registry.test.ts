@@ -390,6 +390,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-has-no-counters': permanent(
     (e) => `At the beginning of your upkeep, if ${e}, return ~ to its owner's hand.`,
   ),
+  // Primordial Hydra: the count of one kind of counter on ~, after "as long as".
+  'condition.this-has-counter-count': permanent((e) => `~ has trample as long as ${e}.`),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
