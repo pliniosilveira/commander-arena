@@ -27,6 +27,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   madness: 'Madness',
   miracle: 'Miracle',
   foretell: 'Foretell',
+  // CR 702.37c: cast face down as a 2/2 creature for {3}.
+  morph: 'Morph',
   // D-667 (CR 702.81a): cast from the graveyard by discarding a land card.
   retrace: 'Retrace',
   // D-149: "pay {W} and tap four untapped creatures ... rather than pay this spell's mana cost".
@@ -47,6 +49,8 @@ export function alternativeLogWords(kind: NamedAlternative): string {
   // D-149 (CR 118.9): the cost taps creatures; it has no keyword to name.
   if (kind === 'tapPermanents') return 'by tapping creatures';
   if (kind === 'sacrificeFromGraveyard') return 'from the graveyard by sacrificing creatures';
+  // CR 702.37c, 708.4: the card is the face-down spell; it pays {3}, not its morph cost (that turns it face up).
+  if (kind === 'morph') return 'face down';
   return `for its ${kind} cost`;
 }
 

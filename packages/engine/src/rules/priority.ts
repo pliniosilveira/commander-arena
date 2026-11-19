@@ -34,6 +34,7 @@ const ALTERNATIVES = [
   'dash',
   'bestow',
   'spectacle',
+  'morph',
   'tapPermanents',
 ] as const;
 

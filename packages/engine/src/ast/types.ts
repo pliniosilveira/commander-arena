@@ -1280,6 +1280,7 @@ export type NamedAlternativeKind =
   | 'madness'
   | 'miracle'
   | 'foretell'
+  | 'morph'
   | 'tapPermanents'
   | 'sacrificeFromGraveyard';
 
@@ -1341,6 +1342,10 @@ export type PermanentAlternativeKind =
  *   by the special action the engine derives from this entry: "any time you have priority during your turn, pay
  *   {2} and exile this card from your hand face down". It is never offered as a cast from a hand. On a card that
  *   is not a land.
+ * - `morph` (CR 702.37a, 702.37c, 708.4): the `cost` (mana only, no X) is the MORPH cost, paid to turn the permanent face up (CR 702.37e); the cast it allows is of the card as a 2/2
+ *   face-down creature spell with no name, text or mana cost, paying {3} rather than its mana cost, from any zone the card could be cast from. The engine adds the {3}, the
+ *   face-down status of the spell and of the permanent it becomes, and the special action; the card lists only the morph cost. On a creature card (CR 701.40b: a face-down
+ *   permanent is a creature).
  * - `tapPermanents` (D-149, CR 118.9): "You may pay {W} and tap four untapped creatures you control with flying rather than pay this
  *   spell's mana cost": the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also taps `count` untapped
  *   permanents they control that match `filter` as part of it (CR 118.3, 601.2h). A permanent that came under their control this

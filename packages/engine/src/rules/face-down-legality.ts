@@ -6,6 +6,7 @@
 import type { ObjectId, SeatId } from '../ids';
 import { definitionOf, getObject } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
+import { manaSymbolsOf, namedAlternativeCostOf } from './alt-costs';
 import { controllerOf } from './control';
 import { faceDownBy, faceDownPermanents } from './face-down';
 import { planFor } from './mana-engine';
@@ -15,10 +16,17 @@ import { planFor } from './mana-engine';
  * it is not a creature card, or the card has no mana cost. An {X} in the cost is 0 (CR 107.3: X is 0 for an object that is not a spell or on the stack), and a {0} is no mana.
  */
 export function turnUpSymbols(state: GameState, obj: GameObject): readonly string[] | null {
-  if (obj.zone !== 'battlefield' || obj.card === null || faceDownBy(obj) !== 'manifest') {
-    return null;
-  }
+  if (obj.zone !== 'battlefield' || obj.card === null) return null;
+  const by = faceDownBy(obj);
   const face = definitionOf(state, obj.card).faces[0];
+  // CR 702.37e: a face-down permanent cast with its morph ability is turned face up for the morph cost the card lists; an {X} in it is 0 here as well.
+  if (by === 'morph') {
+    const cost = namedAlternativeCostOf(face ?? null, 'morph');
+    return cost === null
+      ? null
+      : manaSymbolsOf(cost).filter((symbol) => symbol !== 'X' && symbol !== '0');
+  }
+  if (by !== 'manifest') return null;
   if (face === undefined || !face.types.includes('creature') || face.manaCost === null) {
     return null;
   }

@@ -54,6 +54,7 @@ import { expandKeywords } from './derive-keywords';
 import { costReductionSources } from './derive-statics';
 import { amountOf } from './effect-support';
 import { lifeOf } from './enters';
+import { faceDownSpellFields, isFaceDown } from './face-down';
 import { harmonizeReduction } from './harmonize';
 import { asFace } from './layouts';
 import { applyPaymentPlan, planFor } from './mana-engine';
@@ -126,6 +127,7 @@ export function isNamedAlternative(
     alternative === 'madness' ||
     alternative === 'miracle' ||
     alternative === 'foretell' ||
+    alternative === 'morph' ||
     alternative === 'tapPermanents' ||
     alternative === 'sacrificeFromGraveyard'
   );
@@ -152,8 +154,15 @@ function faceOfSpell(state: GameState, spell: GameObject): CardFace | null {
  * The card `obj` as `face` of it as the spell it would be on the stack, cast by `seat`: what the
  * cost code looks at before the card has moved (`canCast`); the real cast passes the stack object.
  */
-export function castAs(obj: GameObject, seat: SeatId, face: number): GameObject {
-  return { ...asFace(obj, face), controller: seat };
+export function castAs(
+  obj: GameObject,
+  seat: SeatId,
+  face: number,
+  alternative?: CastAlternative,
+): GameObject {
+  const spell = { ...asFace(obj, face), controller: seat };
+  // CR 702.37c, 708.4: a card cast with its morph ability is turned face down before it is cast: every effect and cost that reads the spell sees a 2/2 face-down creature.
+  return alternative === 'morph' ? { ...spell, ...faceDownSpellFields('morph', 1) } : spell;
 }
 
 const NUMERIC = /^[0-9]+$/;
@@ -319,7 +328,13 @@ export function canPayRequest(
 
 /** CR 601.2f: the total cost of the spell, from the state as it is now. */
 export function spellCost(state: GameState, request: CostRequest): SpellCost {
-  const { seat, spell, zone, alternative } = request;
+  const { seat, zone, alternative } = request;
+  // CR 702.37c, 708.4: a card cast face down is turned face down before it is cast, so every effect that reads the spell (a cost reduction, a restriction) sees the 2/2 creature
+  // with no mana cost it is; the card behind it still names the costs (`faceOfSpell` reads the card, not the characteristics).
+  const spell =
+    alternative === 'morph' && !isFaceDown(request.spell)
+      ? { ...request.spell, ...faceDownSpellFields('morph', 1) }
+      : request.spell;
   const face = faceOfSpell(state, spell);
   // CR 702.34a: the printed flashback cost, or (the card was given flashback with the cost equal to its mana cost) its mana cost.
   const flashback =
@@ -339,12 +354,15 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
           flashbackCostOf(face) === null
           ? withX(manaSymbolsOf(flashback), x)
           : manaSymbolsOf(flashback)
-        : named !== null
-          ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
-            withX(manaSymbolsOf(named), x)
-          : fromGraveyard !== null
-            ? manaSymbolsOf(fromGraveyard)
-            : withX(face?.manaCost ?? [], x);
+        : alternative === 'morph' && named !== null
+          ? // CR 702.37a, 702.37c: a card cast face down pays {3} rather than its mana cost; the morph cost on the card is what turns it face up.
+            ['3']
+          : named !== null
+            ? // D-274: the X of a miracle cost is the announced one (every other named alternative has none).
+              withX(manaSymbolsOf(named), x)
+            : fromGraveyard !== null
+              ? manaSymbolsOf(fromGraveyard)
+              : withX(face?.manaCost ?? [], x);
   let tax = 0;
   let taxLife = 0;
   if (zone === 'command' && spell.card !== null) {

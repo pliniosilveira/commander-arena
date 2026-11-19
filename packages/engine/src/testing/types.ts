@@ -115,7 +115,7 @@ export interface PermanentOptions extends PlaceOptions {
   readonly face?: number;
   readonly tapped?: boolean;
   /** The permanent is face down, manifested (CR 701.40a, 708.2a, D-308): a 2/2 creature with no name until it is turned face up. Labelled in the order placed. */
-  readonly faceDown?: true;
+  readonly faceDown?: true | 'morph';
   /** Damage marked on it (CR 120.3). */
   readonly damage?: number;
   /** Counters, for example { '+1/+1': 2 }. */

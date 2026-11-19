@@ -101,6 +101,8 @@ export function chooseNamedAlternative(
   // D-149: "pay {W} and tap four untapped creatures with flying": chosen when the ordinary cast cannot be paid; the creatures it
   // taps are chosen like any permanents tapped for a cost (`choosePermanentToTap`).
   if (offered.has('tapPermanents') && !ordinary) return 'tapPermanents';
+  // CR 702.37c (Morph): a face-down 2/2 for {3} when the ordinary cast cannot be paid; it is turned face up later for its morph cost (`casual-face-down.ts`).
+  if (offered.has('morph') && !ordinary) return 'morph';
   return undefined;
 }
 
