@@ -195,10 +195,9 @@ export const EFFECT_LEAVE_MADE_TOKENS = defineRule<Clauses>({
     if (!r.ok) return r;
     // Not "... at the beginning of the next end step": that is `effect.end-step-made-tokens`.
     if (/^ at the beginning/iu.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
-    const verb =
-      (r.value.value[1] ?? '').toLowerCase().startsWith('sacrifice')
-        ? 'sacrificeMadeTokens'
-        : 'exileMadeTokens';
+    const verb = (r.value.value[1] ?? '').toLowerCase().startsWith('sacrifice')
+      ? 'sacrificeMadeTokens'
+      : 'exileMadeTokens';
     return { ok: true, value: [makeClause(id, verb, {}, r.value.span)], pos: r.pos };
   },
 });
