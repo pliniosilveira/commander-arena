@@ -586,12 +586,49 @@ const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 const CREATE_AURA_TOKEN = /^create [^.]* Aura enchantment token [^.]*\.$/i;
 const TOKEN_HAS_ENCHANT = /^the token has enchant creature(?:\.| and ["“].*["”]\.?)$/i;
 
+const PLAYER_REVEALS_UNTIL =
+  /^target opponent reveals cards from the top of their library until they reveal [^.]*\.$/i;
+const YOU_PUT_AND_LOSE_LIFE =
+  /^you put that card onto the battlefield under your control and lose life equal to that permanent['’]s mana value\.$/i;
+const THAT_PLAYER_PUTS_REST_RANDOM =
+  /^that player puts the rest of the revealed cards on the bottom of their library in a random order\.$/i;
+const CONTROLLER_REVEALS_UNTIL =
+  /^that creature['’]s controller reveals cards from the top of their library until they reveal [^.]*\.$/i;
+const THE_PLAYER_PUTS_ANY_ORDER =
+  /^the player puts that card onto the battlefield and the rest on the bottom of their library in any order\.$/i;
+
 function joinLookAtTop(text: string, spans: Span[]): Span[] {
   const out: Span[] = [];
   for (let i = 0; i < spans.length; i++) {
     const [a, b, c, d] = [spans[i], spans[i + 1], spans[i + 2], spans[i + 3]];
     const said = (span: Span | undefined, re: RegExp) =>
       span !== undefined && re.test(text.slice(span.start, span.end));
+    // Issue 81 (Jhoira, Weatherlight Corsair): "Target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that card onto the battlefield
+    // under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a random order.": one
+    // instruction (`effect.player-reveals-until-you-put`).
+    if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, PLAYER_REVEALS_UNTIL) &&
+      said(b, YOU_PUT_AND_LOSE_LIFE) &&
+      said(c, THAT_PLAYER_PUTS_REST_RANDOM)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+      continue;
+    }
+    // Issue 81 (Proteus Staff): "That creature's controller reveals cards from the top of their library until they reveal a creature card. The player puts that card onto the battlefield and
+    // the rest on the bottom of their library in any order." (`effect.controller-reveals-until-puts`).
+    if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, CONTROLLER_REVEALS_UNTIL) &&
+      said(b, THE_PLAYER_PUTS_ANY_ORDER)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
+      continue;
+    }
     if (
       a !== undefined &&
       d !== undefined &&

@@ -437,7 +437,18 @@ function lowerFilterAt(
   // "historic" (stage P68, D-230, CR 700.6): an artifact, a legendary permanent or a Saga.
   let anyOfFinal = anyOf;
   if (filter.historic === true) {
-    if (anyOf !== undefined) return bad([]);
+    // Issue 81 (Jhoira, "a historic permanent card"): every historic object is a permanent already (an artifact, a legendary permanent, a Saga), so "permanent" adds nothing.
+    const onlyPermanentTypes =
+      anyOf !== undefined &&
+      anyOf.every(
+        (member) =>
+          Object.keys(member).length === 1 &&
+          member.types?.length === 1 &&
+          ['artifact', 'creature', 'enchantment', 'land', 'planeswalker', 'battle'].includes(
+            member.types[0] ?? '',
+          ),
+      );
+    if (anyOf !== undefined && !onlyPermanentTypes) return bad([]);
     anyOfFinal = [{ types: ['artifact'] }, { supertypes: ['legendary'] }, { subtypes: ['Saga'] }];
   }
   const value: ObjectFilter = {

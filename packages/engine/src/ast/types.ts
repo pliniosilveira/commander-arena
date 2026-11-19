@@ -3484,6 +3484,18 @@ export type Effect =
       readonly kind: 'revealUntil';
       readonly filter: ObjectFilter;
       /**
+       * "Target opponent reveals cards from the top of their library until they reveal a historic permanent card" (issue 81, Jhoira, Weatherlight Corsair; "That creature's controller reveals ...",
+       * Proteus Staff, CR 701.20): whose library is revealed, when it is not the controller's own. The player is the one `from` names (one player: the first it names), read as the effect
+       * resolves; a player with no library to reveal does nothing. The cards revealed are theirs: the rest go on the bottom of THEIR library (`rest`), and the card found enters under the control
+       * of the controller of the effect (`put: 'battlefield'`, "You put that card onto the battlefield under your control") unless `putUnder` says the player who revealed it.
+       */
+      readonly from?: PlayerSelector;
+      /**
+       * "The player puts that card onto the battlefield" (Proteus Staff, CR 110.2a): the card found enters under the control of the player whose library was revealed, not the controller of the
+       * effect. Only with `from` and `put: 'battlefield'`.
+       */
+      readonly putUnder?: 'revealer';
+      /**
        * `exile` (D-664, CR 701.13, 701.20a, 400.7, Creative Technique: "Exile that card and put the rest on the bottom of your library in a random order"): the card found is
        * exiled, face up, and is what `moved` names ("the exiled card": `castFree`); the rest of the cards revealed still go on the bottom of the library in a random order.
        *
@@ -3500,9 +3512,10 @@ export type Effect =
       readonly count?: Amount;
       /**
        * `stay` ("then shuffle the rest into your library", CR 701.24): the cards revealed that were not put anywhere are not moved by this effect; they stay in the library, for the
-       * `shuffle` effect after it to place. Without it they go to the bottom in a random order (CR 401.5).
+       * `shuffle` effect after it to place. `bottomChosen` (issue 81, Proteus Staff: "the rest on the bottom of their library in any order", CR 401.4): the player whose library it is chooses the order
+       * they go on the bottom in (`rules/arrange.ts`). Without it they go to the bottom in a random order (CR 401.5).
        */
-      readonly rest?: 'stay';
+      readonly rest?: 'stay' | 'bottomChosen';
     }
   /**
    * "Look at the top N cards of your library, then put them back in any order": the controller

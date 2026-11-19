@@ -1172,3 +1172,75 @@ describe("Venser: copy an opponent's permanent twice, with haste, until the end 
     g.expect.invariants();
   });
 });
+
+// ---- Jhoira, Weatherlight Corsair: "Whenever Jhoira enters or attacks, target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that
+// card onto the battlefield under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a
+// random order." (CR 701.20, 401.4, 110.2a, 119.3, 205.4g historic: artifacts, legendaries and Sagas).
+
+const JHOIRA = parsed(
+  'SYNTHETIC Parsed Jhoira',
+  'Legendary Creature — Human Pirate',
+  "Whenever ~ enters or attacks, target opponent reveals cards from the top of their library until they reveal a historic permanent card. You put that card onto the battlefield under your control and lose life equal to that permanent's mana value. That player puts the rest of the revealed cards on the bottom of their library in a random order.",
+  { manaCost: '{2}{U}', colors: ['U'], power: '2', toughness: '2' },
+);
+
+describe("Jhoira: take an opponent's first historic permanent card and pay its mana value in life", () => {
+  test('the card comes from their library, under your control, and you lose life equal to its mana value', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(JHOIRA)
+      .hand(JHOIRA.name)
+      .battlefield('Island', 'Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Grizzly Bears', 'Sol Ring', 'Giant Spider', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).cast(JHOIRA.name, { pay: true });
+    g.passAll();
+    // The only opponent is the target. The Bears are revealed first (not historic), then Sol Ring (an artifact): it enters under seat 0's control and its mana value, 1, is paid in life.
+    g.expect.zone('Sol Ring', 'battlefield', { seat: 0 });
+    g.expect.life(0, 19);
+    g.expect.zone('Grizzly Bears', 'library', { seat: 1 });
+    g.expect.invariants();
+  });
+});
+
+// ---- Proteus Staff: "{2}{U}, {T}: Put target creature on the bottom of its owner's library. That creature's controller reveals cards from the top of their library until they reveal a creature
+// card. The player puts that card onto the battlefield and the rest on the bottom of their library in any order. Activate only as a sorcery." (CR 701.20, 401.4, 603.7).
+
+const STAFF = parsed(
+  'SYNTHETIC Parsed Staff',
+  'Artifact',
+  "{2}{U}, {T}: Put target creature on the bottom of its owner's library. That creature's controller reveals cards from the top of their library until they reveal a creature card. The player puts that card onto the battlefield and the rest on the bottom of their library in any order. Activate only as a sorcery.",
+  { manaCost: '{3}' },
+);
+
+describe('Proteus Staff: the creature goes to the bottom and its controller gets the first creature of their library', () => {
+  test('the controller reveals until a creature, puts it onto the battlefield and chooses the order of the rest', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(STAFF)
+      .battlefield(STAFF.name, 'Island', 'Island', 'Island')
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .battlefield('Grizzly Bears')
+      .library('Plains', 'Island', 'Giant Spider', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.act(0).activate(STAFF.name, { targets: ['Grizzly Bears'], pay: true });
+    g.passAll();
+    g.expect.zone('Giant Spider', 'battlefield', { seat: 1 });
+    g.expect.zone('Grizzly Bears', 'library', { seat: 1 });
+    // The owner of the library orders the rest: the Island goes to the very bottom (the answer is the order they go in).
+    g.expect.pending('arrangeCards', 1);
+    g.act(1).arrange({ top: [], other: ['Plains[0]', 'Island'] });
+    const library = g.state.seats[1]?.library ?? [];
+    expect(library[library.length - 1] === g.id({ name: 'Island', zone: 'library' })).toBe(true);
+    g.expect.invariants();
+  });
+});

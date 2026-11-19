@@ -5674,8 +5674,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           checkAmount(e.count, `${path}.count`, scope, out);
         }
       }
-      if (e.rest !== undefined && e.rest !== 'stay') {
-        issue(out, `${path}.rest`, 'rest is stay when present');
+      if (e.rest !== undefined && e.rest !== 'stay' && e.rest !== 'bottomChosen') {
+        issue(out, `${path}.rest`, 'rest is stay or bottomChosen when present');
+      }
+      // Issue 81 (Jhoira, Proteus Staff): whose library is revealed, and who controls the card put onto the battlefield.
+      if (e.from !== undefined) {
+        checkPlayerSelector(e.from, `${path}.from`, scope, out);
+      }
+      if (
+        e.putUnder !== undefined &&
+        (e.putUnder !== 'revealer' || e.from === undefined || e.put !== 'battlefield')
+      ) {
+        issue(
+          out,
+          `${path}.putUnder`,
+          'putUnder is revealer, only with from and a card put onto the battlefield',
+        );
       }
       break;
     case 'gainLevel':

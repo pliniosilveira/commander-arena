@@ -2620,6 +2620,18 @@ function runEffect(
 
     case 'revealUntil':
       // CR 701.20, 401.4 (D-145): reveal until a card matches, put it somewhere, the rest on the bottom in a random order.
+      // Issue 81 (Jhoira, Proteus Staff): the library may be another player's (`from`); with none to name nothing is revealed.
+      if (effect.from !== undefined) {
+        const revealer = resolvePlayers(state, effect.from, ctx, targets)[0];
+        if (revealer === undefined) return done(state);
+        return runRevealUntil(
+          state,
+          res,
+          effect,
+          effect.count === undefined ? 1 : amountOf(state, effect.count, ctx, targets),
+          revealer,
+        );
+      }
       return runRevealUntil(
         state,
         res,
