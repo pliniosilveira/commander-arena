@@ -1004,6 +1004,52 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       // D-229: the cards of the controller's own graveyard (and library): `who` is "you".
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
       break;
+    case 'putIntoGraveyard':
+      // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
+      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (!isOneOf(t.from, ['anywhere', 'library'])) {
+        issue(out, `${path}.from`, `from must be "anywhere" or "library", not ${String(t.from)}`);
+      }
+      if (t.batch !== undefined && t.batch !== true) {
+        issue(out, `${path}.batch`, 'batch must be true when present');
+      }
+      if (t.firstTimeEachTurn !== undefined) {
+        if (t.firstTimeEachTurn !== true || t.batch !== true) {
+          issue(
+            out,
+            `${path}.firstTimeEachTurn`,
+            'firstTimeEachTurn must be true, and it goes with batch',
+          );
+        }
+        // Only the card types of an earlier card are kept for it (`TurnLog.graveyardEntries`).
+        if (
+          t.filter !== undefined &&
+          Object.keys(t.filter).some((k) => k !== 'types' && k !== 'notTypes')
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'firstTimeEachTurn reads card types only: the filter has types or notTypes',
+          );
+        }
+      }
+      // The card is read where it went (its owner's graveyard): no zone, controller or owner.
+      if (t.filter !== undefined) {
+        checkFilter(t.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            t.filter,
+            (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the card put into the graveyard is read there: the filter names no zone, controller or owner',
+          );
+        }
+      }
+      break;
     case 'diesBatch':
       // D-206: one or more permanents that `what` names die together: a filter of battlefield permanents, as they were.
       checkFilter(t.what, `${path}.what`, out);
@@ -1218,6 +1264,9 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
       return 'stack';
     case 'tokenCreated':
       return 'permanent';
+    case 'putIntoGraveyard':
+      // One card for each occurrence; a batch is about several cards and has no one subject.
+      return t.batch === true ? undefined : 'permanent';
     default:
       return undefined;
   }

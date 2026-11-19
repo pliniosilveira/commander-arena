@@ -347,7 +347,8 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
  */
 const REVEAL_UNTIL =
   /^(?:you may )?reveal cards from the top of your library until you reveal [^.]*\.$/i;
-const PUT_THAT_CARD = /^put (?:that card|those [\p{L}]+ cards) [^.]*\.$/iu;
+const PUT_THAT_CARD =
+  /^put (?:that card|those [\p{L}]+ cards|all [\p{L}]+ cards revealed this way) [^.]*\.$/iu;
 /**
  * "Reveal cards from the top of your library until you reveal an Aura card. You may put that card onto the battlefield. If you don't, put it into your hand. Put the rest on the
  * bottom of your library in a random order." (D-659, Songbirds' Blessing): four sentences that are one instruction, kept together for `effect.reveal-until-may-put`.

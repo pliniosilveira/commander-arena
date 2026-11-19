@@ -2094,6 +2094,17 @@ export type Effect =
    */
   | { readonly kind: 'exileRandomFromGraveyard' }
   /**
+   * "Choose a card at random in your graveyard", "return two creature cards at random from your graveyard to the battlefield" (CR 608.2c, 400.7; Death Toll deck group B): the
+   * controller's graveyard cards that `filter` names (a filter of cards with no zone, controller or owner; every card when left out), `count` of them (all there are when fewer),
+   * picked by the game's seeded generator: nobody chooses and nobody sees the order. Nothing moves: the cards chosen are what `moved` names for the instructions after it (a move
+   * of them, "If it's a creature card"). With no card to pick `moved` is empty and the instructions after it do nothing.
+   */
+  | {
+      readonly kind: 'chooseRandomFromGraveyard';
+      readonly count: number;
+      readonly filter?: ObjectFilter;
+    }
+  /**
    * "That source's controller exiles a card from their hand at random" (CR 701.13, 406.3, 400.7, D-393 provisional): the player `player` names exiles one card of their own hand chosen at
    * random by the game's generator (none when the hand is empty, and nobody is asked), face up and public: the card is named by the exile, and nothing is revealed before it. It is what
    * `moved` names afterwards ("If it's a land card, you may put it onto the battlefield under your control. Otherwise, you may cast it without paying its mana cost"). `moved` is empty
@@ -3453,10 +3464,12 @@ export type Effect =
        * `exile` (D-664, CR 701.13, 701.20a, 400.7, Creative Technique: "Exile that card and put the rest on the bottom of your library in a random order"): the card found is
        * exiled, face up, and is what `moved` names ("the exiled card": `castFree`); the rest of the cards revealed still go on the bottom of the library in a random order.
        *
+       * `graveyard` (Death Toll deck group B, CR 701.20, 401.4, Old Stickfingers: "Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order"): every card found goes into its owner's graveyard (it is put there, not milled); the rest still go on the bottom in a random order.
+       *
        * `none` (D-659, "You may put that card onto the battlefield. If you don't, put it into your hand."): the card found is not moved by this effect; it stays in the library
        * (revealed) and is what `moved` names for the effects after it, which put it somewhere or not; the rest go to the bottom as always.
        */
-      readonly put: 'battlefield' | 'hand' | 'exile' | 'none';
+      readonly put: 'battlefield' | 'hand' | 'exile' | 'graveyard' | 'none';
       readonly tapped?: true;
       /**
        * "Reveal cards from the top of your library until you reveal a creature card for each wild vote" (CR 701.20, 701.38b, issue 103, Selvala's Stampede): the cards are
@@ -4067,6 +4080,22 @@ export type Trigger =
    */
   | { readonly kind: 'leftGraveyard'; readonly who: 'you' }
   /**
+   * "Whenever a land card is put into your graveyard from anywhere" and "Whenever one or more land cards are put into your graveyard from anywhere for the first time each
+   * turn" (CR 603.2, 603.2c, 400.7, 404.1): a card put into the graveyard of the player `who` names (`you`: the controller of this ability, who owns the card, CR 404.1) from
+   * `from` (`anywhere`, or only the player's `library`: "from your library"). A token is not a card and never counts. The permanent with this ability must be on the battlefield
+   * as the card is put there (it does not look back in time). `filter` describes the card as it is in the graveyard (`types` or `notTypes` only, no zone, controller or
+   * owner). Without `batch` the ability triggers once for each card, and `triggerSubject` is that card; with `batch` the cards put into a graveyard in one run of events are one
+   * occurrence, however many. `firstTimeEachTurn` (batch only): only when no card the filter names was put into the player's graveyard earlier this turn.
+   */
+  | {
+      readonly kind: 'putIntoGraveyard';
+      readonly who: 'you';
+      readonly from: 'anywhere' | 'library';
+      readonly filter?: ObjectFilter;
+      readonly batch?: true;
+      readonly firstTimeEachTurn?: true;
+    }
+  /**
    * "Whenever one or more cards are put into exile from your library and/or your graveyard" (CR 603.2c, 400.7, D-229): a batch trigger on the cards of the
    * controller of this ability that are put into exile from their library or from their graveyard in one run of events. Once, however many. A card put
    * into exile from a hand, the battlefield, the stack or an opponent's zones is not counted.
@@ -4182,6 +4211,12 @@ export type Trigger =
        * it triggers once for the declaration, however many creatures attack. `triggerPlayer` is the attacking player.
        */
       readonly attackedEnchantedPlayer?: true;
+      /**
+       * "Whenever one or more Demons you control attack a player" (CR 508.1b, 508.6, 603.2c, Demonic Covenant): one occurrence for each player the declaration attacks (as a player: an
+       * attack on a planeswalker or a battle is not an attack on its controller or protector), counting only the creatures declared as attacking that player: the ability triggers once for
+       * each player attacked with `atLeast` or more creatures `what` names, whoever declares them. `triggerAttacked` is that player alone. Not with `attackedEnchantedPlayer`.
+       */
+      readonly eachAttackedPlayer?: true;
     }
   /**
    * "Whenever one or more creatures an opponent controls attack you and aren't blocked" (CR 509.1h, 603.2, 508.1b): once for each player `who` names (relative to the controller
@@ -5032,6 +5067,13 @@ export type Condition =
    * that is no longer there counts 0; with no card the total is 0. Only in a `conditional` effect that follows a moving effect in its sequence.
    */
   | { readonly kind: 'movedTotalManaValue'; readonly compare: NumberComparison }
+  /**
+   * "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c, Demonic Covenant): among the cards the earlier effects of this resolution moved (`moved`:
+   * the cards a `mill` put into a graveyard), at least two have the same card types, no more and no fewer (supertypes and subtypes are not card types: a creature and a legendary
+   * creature share all their card types; a land and an artifact land do not). A card of `moved` that is no longer there is read as it last was; with fewer than two cards the test is false.
+   * Only in a `conditional` effect that follows a moving effect in its sequence.
+   */
+  | { readonly kind: 'movedShareAllCardTypes' }
   /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).

@@ -52,6 +52,7 @@ import { lowerCost } from './costs';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
+import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
@@ -2101,6 +2102,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
   ...HASHATON_G9_LOWERINGS,
   ...DANITHA_G1B_LOWERINGS,
+  ...DEATH_TOLL_B_LOWERINGS,
   // D-411: "you may put a land card from among them into your hand" after a mill.
   ...DANITHA_G2_LOWERINGS,
   // Issue 104: "you may exile a creature card from your graveyard. If you do, create a token that's a copy of that card, ...".

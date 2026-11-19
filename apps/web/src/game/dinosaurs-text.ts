@@ -146,6 +146,11 @@ export function revealUntilText(effect: Extract<Effect, { kind: 'revealUntil' }>
   if (effect.put === 'exile') {
     return `Reveal cards from the top of your library until you reveal ${card}. Exile it and put the rest on the bottom of your library in a random order`;
   }
+  // Death Toll deck group B (CR 701.20, 401.4): "until you reveal X creature cards. Put all creature cards revealed this way into your graveyard".
+  if (effect.put === 'graveyard') {
+    const many = effect.count === undefined ? card : `X ${card.replace(/^an? /u, '')}s`;
+    return `Reveal cards from the top of your library until you reveal ${many}. Put all ${card.replace(/^an? /u, '')}s revealed this way into your graveyard, then put the rest on the bottom of your library in a random order`;
+  }
   const where =
     effect.put === 'hand'
       ? 'into your hand'

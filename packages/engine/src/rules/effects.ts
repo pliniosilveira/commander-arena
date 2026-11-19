@@ -2367,6 +2367,25 @@ function runEffect(
       return moving({ ...state, rng }, moveInstructions([picked], 'exile'));
     }
 
+    case 'chooseRandomFromGraveyard': {
+      // CR 608.2c, 400.7 (Death Toll deck group B): `count` cards of the controller's graveyard that match, picked by the game's random number generator; they are what `moved` names.
+      const candidates = getSeat(state, res.controller).graveyard.filter((id) => {
+        const card = state.objects[id];
+        return (
+          card !== undefined &&
+          (effect.filter === undefined ||
+            matchesFilter(
+              state,
+              card,
+              { ...effect.filter, zone: 'graveyard' },
+              { controller: res.controller, source: res.source },
+            ))
+        );
+      });
+      const [shuffled, rng] = shuffle(candidates, state.rng);
+      return { ...done({ ...state, rng }), lastMoved: shuffled.slice(0, effect.count) };
+    }
+
     case 'exileRandomFromHand':
       // CR 701.13 (D-393): one card of the hand of the player named, chosen by the game's random number generator (rules/exile-random-hand.ts).
       return runExileRandomFromHand(state, effect, ctx, targets);

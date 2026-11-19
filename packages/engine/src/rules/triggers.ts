@@ -431,6 +431,15 @@ function occurrences(
         event.card !== null
         ? [{ subject: null, seat: state.cards[event.card]?.owner ?? null }]
         : [];
+    case 'putIntoGraveyard':
+      // CR 603.2, 404.1: a card (never a token) put into a graveyard from another zone, by the player who owns it ("your graveyard"); `from` is the zone it came from.
+      return event.kind === 'zoneChanged' &&
+        event.toZone === 'graveyard' &&
+        event.fromZone !== 'graveyard' &&
+        (trigger.from === 'anywhere' || event.fromZone === 'library') &&
+        event.card !== null
+        ? [{ subject: event.to, seat: state.cards[event.card]?.owner ?? null }]
+        : [];
     case 'exiledFromLibraryOrGraveyard':
       // CR 400.7, 603.2c (D-229): a card put into exile from its owner's library or graveyard, by the player who owns it.
       return event.kind === 'zoneChanged' &&
@@ -550,6 +559,24 @@ function occurrences(
       }));
     }
     case 'attackBatch':
+      // CR 508.1b, 508.6, 603.2c (Demonic Covenant): "attack a player": one occurrence for each player attacked as a player, with the creatures that attack that player.
+      if (event.kind === 'attackersDeclared' && trigger.eachAttackedPlayer === true) {
+        const players = [
+          ...new Set(
+            event.attackers.flatMap((a) => (a.target.kind === 'player' ? [a.target.seat] : [])),
+          ),
+        ];
+        return players.map((player) => ({
+          subject: null,
+          seat: event.seat,
+          player: event.seat,
+          attackers: event.attackers
+            .filter((a) => a.target.kind === 'player' && a.target.seat === player)
+            .map((a) => a.object),
+          attacked: [player],
+          attackedAt: [player],
+        }));
+      }
       // CR 508.1, 603.2 (D-149): once for the whole declaration, whoever the creatures attack.
       return event.kind === 'attackersDeclared'
         ? [
@@ -747,6 +774,14 @@ function matches(
     case 'leftGraveyard':
     case 'exiledFromLibraryOrGraveyard':
       return occ.seat === candidate.controller;
+    case 'putIntoGraveyard':
+      // CR 603.2: the card as it is in the graveyard (or as it last was); the filter names card types only.
+      return (
+        occ.seat === candidate.controller &&
+        (trigger.filter === undefined ||
+          (subject !== null &&
+            matchesFilter(state, subject, { ...trigger.filter, zone: subject.zone }, ctx)))
+      );
     case 'discarded':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
@@ -981,7 +1016,9 @@ function isRelevant(event: GameEvent): boolean {
         event.toZone === 'battlefield' ||
         event.fromZone === 'battlefield' ||
         (event.fromZone === 'graveyard' && event.toZone !== 'graveyard') ||
-        (event.toZone === 'exile' && event.fromZone === 'library')
+        (event.toZone === 'exile' && event.fromZone === 'library') ||
+        // CR 603.2 (Skola Grovedancer): a card put into a graveyard from anywhere.
+        (event.toZone === 'graveyard' && event.fromZone !== 'graveyard')
       );
     case 'damageDealt':
       return true; // CR 510.2 (combat damage), 120.3 (D-133: "is dealt damage" reads any damage)
@@ -1063,6 +1100,37 @@ function leavesBattlefield(event: GameEvent): boolean {
     event.kind === 'died' ||
     event.kind === 'sacrificed'
   );
+}
+
+/**
+ * Whether no card the filter of `trigger` names was put into the graveyard of `seat` before these events this turn (CR 603.2: "for the first time each turn"). `state` already holds
+ * every entry of these events (`TurnLog.graveyardEntries`), so the ones before them are the log less the cards of these events that went into a graveyard. Only card types are
+ * kept for an earlier entry, which is all a filter of this trigger reads (`validateCard`).
+ */
+function firstGraveyardEntryOfTurn(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'putIntoGraveyard' }>,
+  events: readonly GameEvent[],
+  seat: SeatId,
+): boolean {
+  const inEvents = events.filter(
+    (e) =>
+      e.kind === 'zoneChanged' &&
+      e.toZone === 'graveyard' &&
+      e.fromZone !== 'graveyard' &&
+      e.card !== null,
+  ).length;
+  const log = state.turnLog.graveyardEntries;
+  const types = trigger.filter?.types;
+  const notTypes = trigger.filter?.notTypes;
+  return !log
+    .slice(0, Math.max(0, log.length - inEvents))
+    .some(
+      (entry) =>
+        entry.seat === seat &&
+        (types === undefined || types.every((t) => entry.types.includes(t))) &&
+        (notTypes === undefined || !notTypes.some((t) => entry.types.includes(t))),
+    );
 }
 
 /** The cards (as the objects they became) that left the graveyard of `seat` for another zone in these events (CR 400.7, 603.2c; D-232). */
@@ -1197,12 +1265,20 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
         })) {
           if (!matches(state, ability.trigger, occ, candidate)) continue;
           if (
+            ability.trigger.kind === 'putIntoGraveyard' &&
+            ability.trigger.firstTimeEachTurn === true &&
+            !firstGraveyardEntryOfTurn(state, ability.trigger, events, candidate.controller)
+          ) {
+            continue;
+          }
+          if (
             (ability.trigger.kind === 'discarded' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'diesBatch' ||
             ability.trigger.kind === 'entersBatch' ||
             (ability.trigger.kind === 'becomesTapped' && ability.trigger.batch === true) ||
             ability.trigger.kind === 'leftGraveyard' ||
-            ability.trigger.kind === 'exiledFromLibraryOrGraveyard'
+            ability.trigger.kind === 'exiledFromLibraryOrGraveyard' ||
+            (ability.trigger.kind === 'putIntoGraveyard' && ability.trigger.batch === true)
           ) {
             const key = `${id}:${index}`;
             if (batched.has(key)) continue;

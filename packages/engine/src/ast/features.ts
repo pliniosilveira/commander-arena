@@ -137,6 +137,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseFromCommandZone',
     // Issue 103: "Reveal cards from the top of your library until you reveal a creature card for each wild vote ... then shuffle the rest into your library" (`revealUntil` with `count` and `rest`).
     'revealUntilCount',
+    // "Reveal cards from the top of your library until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom" (`revealUntil` with `put: 'graveyard'`).
+    'revealUntilGraveyard',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
@@ -193,6 +195,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-445: "Monstrosity N" (CR 701.37).
     'monstrosity',
     'exileRandomFromGraveyard',
+    'chooseRandomFromGraveyard',
     // D-393 (provisional): "that source's controller exiles a card from their hand at random" (CR 701.13).
     'exileRandomFromHand',
     // D-232: Spirit of Resilience's "become a copy of an artifact or creature card from among those cards".
@@ -429,6 +432,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-229: "one or more cards leave your graveyard", "one or more cards are put into exile from your library and/or your graveyard".
     'leftGraveyard',
     'exiledFromLibraryOrGraveyard',
+    // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere" (once for each card, or a batch "for the first time each turn").
+    'putIntoGraveyard',
     'becomesTarget',
     'chapter',
     // D-111: steps and phases, draws, combat damage dealt, leaving the battlefield.
@@ -984,6 +989,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'didPrevious',
     // D-661: "if the total mana value of the cards exiled this way is 13 or less" (`movedTotalManaValue`).
     'movedTotalManaValue',
+    // CR 205.2a: "If two cards that share all their card types were milled this way" (`movedShareAllCardTypes`).
+    'movedShareAllCardTypes',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -1422,6 +1429,8 @@ export const ABILITY_FEATURES = [
   'chooseFromCommandZone',
   /** "Reveal cards until you reveal a creature card for each wild vote. Put those creature cards onto the battlefield, then shuffle the rest into your library" (issue 103, CR 701.20, 701.24): the engine's `revealUntil` with `count` and `rest`. */
   'revealUntilCount',
+  /** "Reveal cards until you reveal X creature cards. Put all creature cards revealed this way into your graveyard, then put the rest on the bottom of your library in a random order" (Death Toll deck group B, CR 701.20, 401.4): the engine's `revealUntil` with `put: 'graveyard'`. */
+  'revealUntilGraveyard',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
@@ -1746,6 +1755,8 @@ export const CONDITION_KINDS = [
   'didPrevious',
   /** "If the total mana value of the cards exiled this way is 13 or less" (CR 202.3, 608.2c, D-661): the engine's `movedTotalManaValue`. */
   'movedTotalManaValue',
+  /** "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c): the engine's `movedShareAllCardTypes`. */
+  'movedShareAllCardTypes',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -2161,6 +2172,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   chooseAlsoGraveyard: true,
   chooseFromCommandZone: true,
   revealUntilCount: true,
+  revealUntilGraveyard: true,
   spellXAtMost: true,
   copyEntersWithX: true,
   lookTakeAll: true,
@@ -2213,6 +2225,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   gainLevel: true,
   monstrosity: true,
   exileRandomFromGraveyard: true,
+  chooseRandomFromGraveyard: true,
   exileRandomFromHand: true,
   becomeCopyOfCard: true,
   gainLife: true,
@@ -2354,6 +2367,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   entersBatch: true,
   leftGraveyard: true,
   exiledFromLibraryOrGraveyard: true,
+  putIntoGraveyard: true,
   becomesTarget: true,
   chapter: true,
   step: true,

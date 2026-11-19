@@ -510,6 +510,20 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'exiledFromLibraryOrGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards are put into exile from your library and/or your graveyard';
+    case 'putIntoGraveyard': {
+      // CR 603.2, 603.2c: "Whenever a land card is put into your graveyard from anywhere", "one or more land cards ... for the first time each turn".
+      const base = discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      const cards =
+        trigger.batch === true
+          ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
+          : base;
+      const verb = trigger.batch === true ? 'are' : 'is';
+      const place = trigger.from === 'library' ? 'from your library' : 'from anywhere';
+      return `Whenever ${cards} ${verb} put into your graveyard ${place}${
+        trigger.firstTimeEachTurn === true ? ' for the first time each turn' : ''
+      }`;
+    }
     case 'entersBatch': {
       // D-218 (CR 603.2c): "Whenever one or more tokens you control enter".
       const core = nounCore(trigger.what, 'permanent');
@@ -650,6 +664,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         trigger.what === undefined
           ? 'creatures'
           : `${core.endsWith('s') ? core : `${core}s`}${withText(trigger.what)}`;
+      // Death Toll deck group B (CR 508.1b, 508.6): "Whenever one or more Demons you control attack a player", once for each player attacked.
+      if (trigger.eachAttackedPlayer === true) {
+        return trigger.who === 'you' && trigger.atLeast === 1
+          ? `Whenever one or more ${things}${trigger.what === undefined ? '' : ' you control'} attack a player`
+          : null;
+      }
       // D-187: "Whenever you attack" is one creature or more, said without the count.
       // D-218: "Whenever one or more creatures attack" (any player).
       if (trigger.who === 'any') return `Whenever one or more ${things} attack`;

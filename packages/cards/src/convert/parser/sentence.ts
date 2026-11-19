@@ -147,6 +147,8 @@ const LEAD_CONDITIONS = [
   'condition.discarded-spell-this-way',
   // Lorehold group 1: "If you search your library this way, shuffle." after a search.
   'condition.searched-this-way',
+  // Death Toll deck, group B: "If two cards that share all their card types were milled this way, sacrifice ~." after a mill.
+  'condition.two-milled-cards-share-all-types',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,

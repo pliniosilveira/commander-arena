@@ -763,6 +763,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `As many times as you choose, you may exile the top card of your library. If ${e}, you may cast any number of spells from among those cards without paying their mana costs.`,
   ),
+  // Death Toll deck, group B (CR 205.2a): the condition leads the sentence that follows a mill.
+  'condition.two-milled-cards-share-all-types': spell(
+    (e) => `Mill two cards. If ${e}, you gain 1 life.`,
+  ),
   // Prismari deck, group 3 (D-662): a delayed ability for the turn, after the exile of a card.
   'effect.delayed-combat-damage-copy-exiled': permanent(
     (e) => `Whenever you attack, target creature gains deathtouch until end of turn. ${cap(e)}.`,
@@ -885,6 +889,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P68 (D-229): the Hofri Ghostforge deck. The triggers follow "Whenever"; the conditions follow a trigger or "As long as"; the costs are costs of an
   // activated ability; the rider follows the "Add" sentence; the amount follows a pump; the static is a line of its own.
   'trigger.cards-leave-graveyard': whenever,
+  // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
+  'trigger.put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   'trigger.cast-x': whenever,

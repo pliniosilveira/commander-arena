@@ -2705,6 +2705,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'didPrevious':
     case 'thisWayAtLeast':
     case 'movedTotalManaValue':
+    case 'movedShareAllCardTypes':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -3051,6 +3052,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'exileTop' ||
     // D-235: the card `exileRandomFromGraveyard` exiled is "the exiled card".
     e?.kind === 'exileRandomFromGraveyard' ||
+    // Death Toll deck group B: the cards `chooseRandomFromGraveyard` picked are "it" ("If it's a creature card, put it onto the battlefield").
+    e?.kind === 'chooseRandomFromGraveyard' ||
     // D-393: the card `exileRandomFromHand` exiled is "it" ("If it's a land card, you may put it onto the battlefield").
     e?.kind === 'exileRandomFromHand' ||
     e?.kind === 'exileUntilCast' ||
@@ -3934,6 +3937,10 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       if (!isCount(c.compare?.value)) {
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
+      break;
+    case 'movedShareAllCardTypes':
+      // CR 205.2a (Demonic Covenant): the cards an earlier moving effect of the sequence moved, compared by their card types.
+      checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
       break;
     case 'ringBearerChosen':
       issue(
@@ -5563,11 +5570,11 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'the cards are in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
         );
       }
-      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'none'])) {
+      if (!isOneOf(e.put, ['battlefield', 'hand', 'exile', 'graveyard', 'none'])) {
         issue(
           out,
           `${path}.put`,
-          `a revealed card is put onto the battlefield, into the hand, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
+          `a revealed card is put onto the battlefield, into the hand, into the graveyard, into exile or (the card found stays, for the effects after it) nowhere, not ${JSON.stringify(e.put)}`,
         );
       }
       if (e.tapped !== undefined && (e.tapped !== true || e.put !== 'battlefield')) {
@@ -5613,6 +5620,32 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'exileRandomFromGraveyard':
       // CR 701.13 (D-235): no fields.
+      break;
+    case 'chooseRandomFromGraveyard':
+      // CR 608.2c (Death Toll deck group B): one or more cards of the controller's graveyard, described by a filter of cards.
+      if (!Number.isSafeInteger(e.count) || e.count < 1) {
+        issue(out, `${path}.count`, 'count is a whole number of one or more');
+      }
+      if (e.filter !== undefined) {
+        checkFilter(e.filter, `${path}.filter`, out);
+        if (
+          filterSome(
+            e.filter,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'the cards are in your graveyard: no zone, controller, owner, stackKind, or anything read from the game',
+          );
+        }
+      }
       break;
     case 'exileRandomFromHand':
       // CR 701.13 (D-393): one player exiles one card of their own hand at random, and `moved` names it, so the selector names one player.
