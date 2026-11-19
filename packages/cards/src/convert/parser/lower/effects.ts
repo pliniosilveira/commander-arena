@@ -1648,6 +1648,27 @@ const ADD_COUNTERS: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "Double the number of +1/+1 counters on target creature you control" (CR 701.10, 122.6): the engine's `doubleCounters`, one for each object
+ * of the operand; "it" may be the permanent whose event caused the trigger.
+ */
+const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
+  head: 'doubleCounters',
+  id: 'lower.double-counters',
+  needs: ['effect:doubleCounters'],
+  lower(clause, ctx) {
+    const counter = arg(clause, 'counter');
+    if (counter?.kind !== 'counterSpec') return failure(clause);
+    return eachObject(
+      clause,
+      ctx,
+      (objects) => ({ kind: 'doubleCounters', objects, counter: counter.name }),
+      'objects',
+      { triggerSubject: true },
+    );
+  },
+};
+
+/**
  * "Create a Treasure token", "create two 1/1 white Soldier creature tokens" (CR 111.2, 111.10).
  * A predefined token the engine cannot run (Food and Clue carry abilities it cannot activate yet,
  * Map and Blood are not in the AST) is reported with `token:<name>`.
@@ -1908,6 +1929,7 @@ const PLAYER_LOCK: Lowering<IrClause, Effects> = {
 export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SACRIFICE,
   ADD_COUNTERS,
+  DOUBLE_COUNTERS,
   CREATE_TOKEN,
   {
     head: 'createPerOpponent',

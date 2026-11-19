@@ -5959,7 +5959,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'proliferate':
-      // CR 701.34a (D-149): no parameters; the controller chooses what to give counters to as it resolves.
+      // CR 701.34a (D-149): the controller chooses what to give counters to as it resolves; `times` repeats it.
+      if (e.times !== undefined) checkAmount(e.times, `${path}.times`, scope, out);
+      break;
+    case 'doubleCounters':
+      checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
+      if (typeof e.counter !== 'string' || e.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
       break;
     case 'scry':
     case 'surveil':

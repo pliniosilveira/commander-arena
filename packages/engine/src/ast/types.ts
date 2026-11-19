@@ -2721,6 +2721,16 @@ export type Effect =
       readonly counter: string;
       readonly count: Amount;
     }
+  /**
+   * "Double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, CR 122.6): each object `objects` names that has
+   * `counter` counters, as the effect resolves, gets as many more of them as it has (each its own count). Counters it can't have (CR 122.6,
+   * 101.2) are not put; an object with none gets none.
+   */
+  | {
+      readonly kind: 'doubleCounters';
+      readonly objects: ObjectSelector;
+      readonly counter: string;
+    }
   | {
       readonly kind: 'modifyPt';
       readonly objects: ObjectSelector;
@@ -3193,9 +3203,10 @@ export type Effect =
    * engine keeps on players). The permanents are the battlefield's, whoever controls them; the counters are put by the controller of the
    * spell or ability (CR 122.6, so "whenever you put one or more +1/+1 counters" counts them). With nothing to choose from nothing
    * happens and nobody is asked; otherwise a `choosePermanent` decision of purpose `proliferate` asks (`legal`: the permanents with a
-   * counter, `players`: the players with poison counters), and the answer may be empty.
+   * counter, `players`: the players with poison counters), and the answer may be empty. `times` ("Proliferate X times", CR 701.34a): the
+   * whole action is done that many times in a row, each with its own choice; the amount is read once as the effect starts.
    */
-  | { readonly kind: 'proliferate' }
+  | { readonly kind: 'proliferate'; readonly times?: Amount }
   /**
    * "You may cast a spell with mana value 5 or less from your hand without paying its mana cost" and "You may play the exiled card without
    * paying its mana cost" (D-145, CR 608.2g, 118.9, 305.1): as this resolves the controller may choose one of the cards `objects` names that

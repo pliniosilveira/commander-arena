@@ -1937,25 +1937,25 @@ function runEffect(
     case 'addCounters': {
       const count = amountOf(state, effect.count, ctx, targets);
       if (count <= 0) return done(state);
-      // CR 122.6, 101.2 (D-380): a permanent that can't have counters of the kind gets none, and nothing happens to it.
       const blockers = counterBlockers(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
-        const obj = next.objects[id];
-        if (!obj) continue;
-        if (blocks(state, blockers, obj, effect.counter)) continue;
-        next = patchObject(next, id, {
-          counters: {
-            ...obj.counters,
-            [effect.counter]: (obj.counters[effect.counter] ?? 0) + count,
-          },
-        });
-        events.push({
-          kind: 'counterAdded',
-          object: id,
-          counter: effect.counter,
-          count,
-          by: ctx.controller,
-        });
+        const put = putCountersOn(state, next, id, effect.counter, count, ctx.controller, blockers);
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
+    case 'doubleCounters': {
+      // CR 701.10 (Double): "double the number of +1/+1 counters on it" puts that many more counters on each object, read as the effect
+      // resolves, each its own, through the same placement as `addCounters` (counters put by the controller, CR 122.6).
+      const blockers = counterBlockers(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        const count = next.objects[id]?.counters[effect.counter] ?? 0;
+        if (count <= 0) continue;
+        const put = putCountersOn(state, next, id, effect.counter, count, ctx.controller, blockers);
+        next = put.state;
+        events.push(...put.events);
       }
       return done(next, events);
     }
@@ -2580,7 +2580,15 @@ function runEffect(
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
-      return done(state, [], [{ kind: 'proliferate', chosen: null, players: [] }]);
+      // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      return done(
+        state,
+        [],
+        Array.from(
+          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
+        ),
+      );
 
     case 'conditional': {
       // CR 608.2c: the condition is read now, as this instruction comes up, after everything
@@ -2804,4 +2812,27 @@ function runEffect(
       return unreachable;
     }
   }
+}
+
+/**
+ * Puts `count` counters of a kind on one object as the effect of a spell or ability (CR 122.6, 101.2, D-380): nothing if the object is gone
+ * or can't have counters of the kind. `read` is the state the counter blockers were read from.
+ */
+function putCountersOn(
+  read: GameState,
+  state: GameState,
+  id: ObjectId,
+  counter: string,
+  count: number,
+  by: SeatId,
+  blockers: ReturnType<typeof counterBlockers>,
+): { readonly state: GameState; readonly events: readonly GameEvent[] } {
+  const obj = state.objects[id];
+  if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
+  return {
+    state: patchObject(state, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + count },
+    }),
+    events: [{ kind: 'counterAdded', object: id, counter, count, by }],
+  };
 }

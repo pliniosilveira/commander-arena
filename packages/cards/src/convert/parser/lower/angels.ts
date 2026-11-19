@@ -14,7 +14,7 @@ import type {
 import type { IrAbility, IrClause, IrStaticEffect } from '../ir/types';
 import { lowerAmount } from './amounts';
 import { withoutZone } from './attachments';
-import type { Effects } from './clauses';
+import { amountArg, arg, type Effects } from './clauses';
 import { type FeatureRef, missingFeatures } from './features';
 import { lowerFilter } from './nouns';
 import {
@@ -37,7 +37,19 @@ const PROLIFERATE: Lowering<IrClause, Effects> = {
   head: 'proliferate',
   id: 'lower.proliferate',
   needs: ['effect:proliferate'],
-  lower: (clause) => ({ ok: true, value: [{ kind: 'proliferate' }], rule: clause.rule }),
+  lower(clause, ctx) {
+    // "Proliferate X times" (CR 701.34a): the same action, done that many times in a row.
+    if (arg(clause, 'times') === undefined) {
+      return { ok: true, value: [{ kind: 'proliferate' }], rule: clause.rule };
+    }
+    const times = amountArg(clause, 'times', ctx);
+    if (!times.ok) return times;
+    return {
+      ok: true,
+      value: [{ kind: 'proliferate', times: times.value }],
+      rule: clause.rule,
+    };
+  },
 };
 
 export const ANGEL_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [PROLIFERATE];
