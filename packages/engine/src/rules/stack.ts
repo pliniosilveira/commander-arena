@@ -173,6 +173,9 @@ export function resolveTop(input: GameState): ResolveOutcome {
       ...(obj.stack?.sacrificedBefore === undefined
         ? {}
         : { sacrificed: obj.stack.sacrificedBefore }),
+      ...(obj.stack?.tappedPowerAsCost === undefined
+        ? {}
+        : { costTappedPower: obj.stack.tappedPowerAsCost }),
       ...(obj.stack?.exiledAsCost === undefined ? {} : { costExiled: obj.stack.exiledAsCost }),
       ...(obj.stack?.triggerCards === undefined ? {} : { triggerCards: obj.stack.triggerCards }),
       ...(obj.stack?.thisWayBefore === undefined ? {} : { thisWay: obj.stack.thisWayBefore }),
@@ -279,6 +282,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   out.thisWay.discardedMost ?? 0,
                 ),
                 damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
+                countersRemoved:
+                  (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
+                ...mergePowerBy(res.thisWay?.exiledPowerBy, out.thisWay.exiledPowerBy),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),
@@ -340,6 +346,19 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
 }
 
 /** The object or player an Aura spell targeted, as it was still legal when the spell resolved (CR 608.2b). */
+/** The totals of power by seat of two `thisWay` tallies, added (Oversimplify); nothing when neither has any. */
+function mergePowerBy(
+  a: Readonly<Record<number, number>> | undefined,
+  b: Readonly<Record<number, number>> | undefined,
+): { readonly exiledPowerBy?: Readonly<Record<number, number>> } {
+  if (a === undefined && b === undefined) return {};
+  const total: Record<number, number> = { ...a };
+  for (const [seat, power] of Object.entries(b ?? {})) {
+    total[Number(seat)] = (total[Number(seat)] ?? 0) + power;
+  }
+  return { exiledPowerBy: total };
+}
+
 function enchantedHost(
   res: ResolutionContext,
 ): { readonly object: ObjectId } | { readonly seat: SeatId } | null {

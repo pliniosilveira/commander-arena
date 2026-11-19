@@ -122,6 +122,11 @@ export function lowerAmount(
         const blockedEntered = needs('enteredX');
         return blockedEntered ?? { ok: true, value: { kind: 'enteredX' }, rule };
       }
+      // CR 107.3 (Quandrix Unlimited group E): in a cast trigger of a spell with {X} in its mana cost, X is the X of the spell that was cast.
+      if (ctx.castTriggerX) {
+        const blockedCast = needs('triggerSpellX');
+        return blockedCast ?? { ok: true, value: { kind: 'triggerSpellX' }, rule };
+      }
       const blocked = needs('x');
       if (blocked !== null) return blocked;
       ctx.usesX = true;
@@ -415,6 +420,12 @@ export function lowerAmount(
       // CR 903.8 (stage P68, D-229): the times the controller's commanders were cast from the command zone.
       const blocked = needs('commanderCasts');
       if (blocked !== null) return blocked;
+      if (amount.player !== undefined) {
+        // "... for each time they've cast a commander from the command zone this game": the player the effect names (a target), not the controller.
+        const player = playerSelectorOf(amount.player, ctx);
+        if (!player.ok) return player;
+        return { ok: true, value: { kind: 'commanderCasts', player: player.value }, rule };
+      }
       return { ok: true, value: { kind: 'commanderCasts' }, rule };
     }
     case 'lifeTotalOf': {
@@ -798,5 +809,6 @@ export const AMOUNT_NEEDS = [
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:triggerSpellX',
   'amount:votesFor',
 ] as const;

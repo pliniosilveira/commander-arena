@@ -20,7 +20,7 @@ import { COLORS } from '../characteristics';
 import type { ObjectId } from '../ids';
 import type { ManaColor, ManaRestriction, ManaRider } from '../mana/types';
 import type { GameObject, GameState } from '../state/types';
-import { devotionOf } from './amounts';
+import { amountOf, devotionOf } from './amounts';
 import { commanderIdentity } from './commander-identity';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
@@ -57,6 +57,8 @@ export function spendRestrictionOf(
 ): ManaRestriction | null {
   const only = ability.spendOnly;
   if (only === undefined) return null;
+  // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
+  if (only.xCost === true) return { kind: 'xCost' };
   // Issue 199 (CR 106.6, 607.2d): "of the chosen type" is the creature type the source chose as it entered; none chosen, an empty list (no spell matches it).
   const chosen = source?.chosen?.creatureType;
   const subtypes =
@@ -72,6 +74,7 @@ export function spendRestrictionOf(
     ...(only.types === undefined ? {} : { types: [...only.types] }),
     ...(subtypes === undefined ? {} : { subtypes }),
     ...(only.alsoAbilities === true ? { alsoAbilities: true as const } : {}),
+    ...(only.qualities === undefined ? {} : { qualities: only.qualities.map((q) => ({ ...q })) }),
   };
 }
 
@@ -161,8 +164,15 @@ function plainOutcomes(
       }
       return color === undefined ? [[]] : [[color]];
     }
-    case 'fixed':
+    case 'fixed': {
+      // CR 605.1a, 106.1 (Elementalist's Palette): "Add {C} for each charge counter on this artifact": the mana is added as many times as the amount says, read as the ability
+      // is activated (a mana ability resolves at once).
+      if (p.times !== undefined) {
+        const times = amountOf(state, p.times, { controller: seat, source: obj.id }, []);
+        return [Array.from({ length: Math.max(0, times) }, () => p.mana).flat()];
+      }
       return [[...p.mana]];
+    }
     case 'anyCombination':
       // D-151: "two mana in any combination of colors": every multiset of `count` of the five colors.
       return colorMultisets(p.count, p.distinct === true);
@@ -173,6 +183,12 @@ function plainOutcomes(
       // CR 700.5, 605.3b: "Choose a color. Add an amount of mana of that color equal to your devotion to that color": one outcome per color, with as many
       // mana as the controller's devotion to it now (a color with none is an empty outcome: nothing to pick).
       return COLORS.map((c) => Array.from({ length: devotionOf(state, seat, [c]) }, () => c));
+    case 'anyColorAmount': {
+      // CR 106.1b, 605.3b: "Add X mana of any one color, where X is this creature's power": one outcome per color, with as many mana as the amount is now, read for the
+      // controller with the permanent as "this" (a mana ability resolves at once). An amount of 0 or less is an empty outcome: nothing to pick.
+      const n = Math.max(0, amountOf(state, p.amount, { controller: seat, source: obj.id }, []));
+      return COLORS.map((c) => Array.from({ length: n }, () => c));
+    }
     case 'oneOf':
       return [...new Set(p.colors)].map((c) => [c]);
     case 'combination': {

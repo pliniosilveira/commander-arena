@@ -50,6 +50,7 @@ import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
+import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
 import {
   isPlainLandYouControl,
@@ -61,6 +62,7 @@ import {
   youNoun,
 } from './subjects';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
+import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
 import { VRASKA_TRIGGER_RULES } from './vraska';
 
 type EventName =
@@ -1117,6 +1119,7 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
       '~ enters and whenever you cast a spell with mana value 4 or greater',
       '~ enters and whenever you cast a creature spell',
       '~ enters and whenever you cast a noncreature spell',
+      '~ enters and whenever you cast your first spell with {X} in its mana cost each turn',
     ],
     rejects: [
       '~ enters and whenever you cast',
@@ -1137,7 +1140,7 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
           (t) => t.subject?.det === 'self',
         ),
         literal(' and whenever '),
-        family<IrTrigger>('trigger', { only: ['trigger.cast'] }),
+        family<IrTrigger>('trigger', { only: ['trigger.cast', 'trigger.cast-x'] }),
       )(ctx, pos);
       if (!r.ok) return r;
       const [enters, , cast] = r.value;
@@ -1161,6 +1164,10 @@ export const TRIGGER_RULES = [
   // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,
+  // Quandrix Unlimited deck, group E: "you cast a spell with {X} in its mana cost" and its first-each-turn form start like `trigger.cast`, which stops before the rest.
+  ...QUANDRIX_E_TRIGGER_RULES,
+  // Quandrix Unlimited deck, group I: "you cast an instant or sorcery spell or activate an ability, if ... contains {X}" starts like `trigger.cast`, which stops before the rest.
+  ...UNBOUND_I_TRIGGER_RULES,
   ...CLASS_TRIGGER_RULES,
   TRIGGER_OR,
   TRIGGER_OR_SUBJECTS,

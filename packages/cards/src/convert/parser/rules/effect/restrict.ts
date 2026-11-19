@@ -56,7 +56,7 @@ const TAIL_ALL = tail(true);
  * or two" (D-295, CR 601.2c). An exact count of two or more is not read, and neither is "up to that many" (a count a sacrifice before it made).
  */
 const targetCreatures = refuseAt(
-  family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+  family<IrNoun>('noun', { only: ['noun.target-permanent', 'noun.target-creature-token'] }),
   (n) =>
     (!n.plural || n.minTargets !== undefined || n.upTo) &&
     n.upToThatMany !== true &&
@@ -85,6 +85,8 @@ export const EFFECT_RESTRICT = defineRule<Clauses>({
     "target creature you don't control can't block this turn",
     'target creature attacks this turn if able',
     "target creature with power 3 or less can't be blocked this turn",
+    // Quandrix Unlimited deck, group G (Deekah): a creature token.
+    "target creature token can't be blocked this turn",
     // Stage P49 (D-206): "up to one target creature" (Key to the City).
     "up to one target creature can't be blocked this turn",
     // D-295 (CR 601.2c): the creatures of a slot of one to two, or of none to N.

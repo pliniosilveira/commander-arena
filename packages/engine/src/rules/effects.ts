@@ -51,6 +51,7 @@ import { runExchangeControl, runGainControl, runReturnControl } from './control-
 import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
+import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
   asking,
@@ -113,8 +114,10 @@ import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
+import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
 import { runPlayerLock } from './player-lock';
+import { runGrantPlayerManaAbility } from './player-mana';
 import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
 import { runPreventDamage } from './prevention';
@@ -554,12 +557,28 @@ export function runInstruction(
       result.newObject !== null &&
       hidden.objects[result.newObject]?.zone === 'exile' &&
       !derive(state, subject).types.includes('land');
+    // Oversimplify (CR 608.2h): a creature that really went to exile adds its power, as it was before any of them left, to what its controller lost "this way".
+    const exiledPower =
+      instruction.exiledPower !== undefined &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'exile'
+        ? instruction.exiledPower
+        : undefined;
     // D-135: an object that moved is something done, for "if you do".
     return {
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland ? { thisWay: { exiledNonland: 1 } } : {}),
+      ...(countedNonland || exiledPower !== undefined
+        ? {
+            thisWay: {
+              ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(exiledPower === undefined
+                ? {}
+                : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),
+            },
+          }
+        : {}),
     };
   }
   // D-210: an effect run "as" another player (the one a `playersMay` asked): that player is "you" in it, and what it queues next is run as them too.
@@ -630,6 +649,15 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
   return found.length > 0 ? found : [id];
 }
 
+/** The X a resolving spell or ability reads: its own, or, for a triggered ability with none, the X of the spell that is its source (`validateCard` allows that only for "When you cast this spell"). */
+function abilityXOf(state: GameState, res: ResolutionContext): number {
+  const own = state.objects[res.object]?.stack;
+  if (own?.x !== undefined && own.x !== null) return own.x;
+  if (own?.kind !== 'ability' || res.source === null) return 0;
+  const source = state.objects[res.source] ?? state.lki[res.source]?.object;
+  return source?.stack?.kind === 'spell' ? (source.stack.x ?? 0) : 0;
+}
+
 /** The context the selectors and amounts of a resolving spell or ability read: "this" is the spell, or for an ability the permanent it belongs to (which may be gone). */
 function contextOf(state: GameState, res: ResolutionContext): SelectContext {
   return {
@@ -640,10 +668,12 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
       : { sourceChosen: { creatureType: res.chosenCreatureType } }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
-    x: state.objects[res.object]?.stack?.x ?? 0,
+    // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
+    x: abilityXOf(state, res),
     ...(res.lastMoved === undefined ? {} : { moved: res.lastMoved }),
     ...(res.triggerSubject === undefined ? {} : { triggerSubject: res.triggerSubject }),
     ...(res.costSacrificed === undefined ? {} : { costSacrificed: res.costSacrificed }),
+    ...(res.costTappedPower === undefined ? {} : { costTappedPower: res.costTappedPower }),
     ...(res.sacrificed === undefined ? {} : { sacrificed: res.sacrificed }),
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
     ...(res.declinedPlayer === undefined ? {} : { declinedPlayer: res.declinedPlayer }),
@@ -898,7 +928,23 @@ function runEffect(
       // D-283 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
       const together = recordTogether(
         state,
-        moveInstructions(ids, 'exile').map((i) => (i.kind === 'move' ? { ...i, ...link } : i)),
+        moveInstructions(ids, 'exile').map((i) => {
+          if (i.kind !== 'move') return i;
+          // Oversimplify (CR 608.2h): the power and the controller of each creature as it is before any of them leaves, for "the total power of creatures they controlled that were exiled this way".
+          const obj = state.objects[i.object];
+          const lost =
+            obj !== undefined &&
+            obj.zone === 'battlefield' &&
+            derive(state, obj).types.includes('creature')
+              ? {
+                  exiledPower: {
+                    seat: controllerOf(state, obj),
+                    power: Math.max(0, derive(state, obj).power ?? 0),
+                  },
+                }
+              : {};
+          return { ...i, ...link, ...lost };
+        }),
       );
       return moving(together.state, together.instructions);
     }
@@ -1185,6 +1231,19 @@ function runEffect(
       // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
       const spells = resolveObjects(state, effect.spell, ctx, targets);
       return done(markExileOnResolve(state, spells, res.controller, res.source));
+    }
+
+    case 'doubleSpellX': {
+      // CR 107.3 (Unbound Flourishing): the X announced for each spell the effect names, still on the stack, becomes twice its value. A spell that left the stack, a copy
+      // of an ability and a spell with no X announced are not changed. The cost paid stays what it was (CR 601.2f).
+      let after = state;
+      for (const id of resolveObjects(state, effect.spell, ctx, targets)) {
+        const spell = after.objects[id];
+        const x = spell?.stack?.x ?? null;
+        if (spell?.zone !== 'stack' || spell.stack?.kind !== 'spell' || x === null) continue;
+        after = patchObject(after, id, { stack: { ...spell.stack, x: x * 2 } });
+      }
+      return done(after);
     }
 
     case 'exileSpellWithTimeCounters': {
@@ -1944,26 +2003,87 @@ function runEffect(
 
     case 'addCounters': {
       const count = amountOf(state, effect.count, ctx, targets);
-      if (count <= 0) return done(state);
-      // CR 122.6, 101.2 (D-380): a permanent that can't have counters of the kind gets none, and nothing happens to it.
+      if (count <= 0 && effect.perController !== true) return done(state);
       const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
-        const obj = next.objects[id];
-        if (!obj) continue;
-        if (blocks(state, blockers, obj, effect.counter)) continue;
-        next = patchObject(next, id, {
-          counters: {
-            ...obj.counters,
-            [effect.counter]: (obj.counters[effect.counter] ?? 0) + count,
-          },
-        });
-        events.push({
-          kind: 'counterAdded',
-          object: id,
-          counter: effect.counter,
+        // Oversimplify (CR 608.2c, 608.2h): the count is read for the player who controls each object, "the total power of creatures they controlled that were exiled this way".
+        const obj = state.objects[id];
+        const own =
+          effect.perController === true && obj !== undefined
+            ? amountOf(
+                state,
+                effect.count,
+                {
+                  ...ctx,
+                  thisWay: {
+                    ...ctx.thisWay,
+                    exiledPowerOwn: ctx.thisWay?.exiledPowerBy?.[controllerOf(state, obj)] ?? 0,
+                  },
+                },
+                targets,
+              )
+            : count;
+        if (own <= 0) continue;
+        const put = putCountersOn(
+          state,
+          next,
+          id,
+          effect.counter,
+          own,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
+    case 'distributeCounters': {
+      // CR 601.2d, 608.2b, 122.6: the counters a spell divided as it was cast go on each target of the slot that is still legal, in the share the caster gave it. Each share is
+      // its own placement, so a replacement of counters put on a permanent applies to each (CR 616.1).
+      const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
+      for (const t of targets) {
+        if (t.specId !== effect.to.id || t.share === undefined || t.kind !== 'object') continue;
+        const put = putCountersOn(
+          state,
+          next,
+          t.id,
+          effect.counter,
+          t.share,
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
+      }
+      return done(next, events);
+    }
+
+    case 'doubleCounters': {
+      // CR 701.10 (Double): "double the number of +1/+1 counters on it" puts that many more counters on each object, read as the effect
+      // resolves, each its own, through the same placement as `addCounters` (counters put by the controller, CR 122.6).
+      const blockers = counterBlockers(state);
+      const bonuses = counterBonuses(state);
+      for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        const count = next.objects[id]?.counters[effect.counter] ?? 0;
+        if (count <= 0) continue;
+        const put = putCountersOn(
+          state,
+          next,
+          id,
+          effect.counter,
           count,
-          by: ctx.controller,
-        });
+          ctx.controller,
+          blockers,
+          bonuses,
+        );
+        next = put.state;
+        events.push(...put.events);
       }
       return done(next, events);
     }
@@ -2218,14 +2338,15 @@ function runEffect(
       let afterCounters = state;
       const monstrousEvents: GameEvent[] = [];
       if (count > 0 && !blocks(state, counterBlockers(state), source, '+1/+1')) {
+        const put = counterCountOn(state, source, '+1/+1', count);
         afterCounters = patchObject(afterCounters, source.id, {
-          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + count },
+          counters: { ...source.counters, '+1/+1': (source.counters['+1/+1'] ?? 0) + put },
         });
         monstrousEvents.push({
           kind: 'counterAdded',
           object: source.id,
           counter: '+1/+1',
-          count,
+          count: put,
           by: ctx.controller,
         });
       }
@@ -2407,6 +2528,8 @@ function runEffect(
               : { totalManaValue: effect.take.totalManaValue }),
             // D-324 (CR 701.20a): "Put two of them into your hand" does not reveal them.
             ...(effect.take.hidden === true ? { hidden: true as const } : {}),
+            // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield tapped": no choice.
+            ...(effect.take.all === true ? { all: true as const } : {}),
             // CR 701.20a (D-396): "Reveal the top five cards of your library" shows every one of them.
             ...(effect.revealAll === true ? { revealAll: true as const } : {}),
             rest: effect.rest,
@@ -2561,6 +2684,34 @@ function runEffect(
       return { ...done(next, events), performed: attached };
     }
 
+    case 'moveAllCounters': {
+      // CR 122.1, 122.6: each counter comes off the first permanent and goes onto the second, except a kind the second can't have.
+      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
+      const toId = resolveObjects(state, effect.to, ctx, targets)[0];
+      const from = fromId === undefined ? undefined : next.objects[fromId];
+      const to = toId === undefined ? undefined : next.objects[toId];
+      if (from?.zone !== 'battlefield' || to?.zone !== 'battlefield' || from.id === to.id) {
+        return done(next);
+      }
+      let moved: GameState = next;
+      const events: GameEvent[] = [];
+      const fromCounters = { ...from.counters };
+      let toCounters = { ...to.counters };
+      for (const [counter, count] of Object.entries(from.counters)) {
+        if (count <= 0 || counterBlocked(state, to, counter)) continue;
+        delete fromCounters[counter];
+        toCounters = { ...toCounters, [counter]: (toCounters[counter] ?? 0) + count };
+        events.push(
+          { kind: 'counterRemoved', object: from.id, counter, count },
+          { kind: 'counterAdded', object: to.id, counter, count, by: res.controller },
+        );
+      }
+      if (events.length === 0) return done(next);
+      moved = patchObject(moved, from.id, { counters: fromCounters });
+      moved = patchObject(moved, to.id, { counters: toCounters });
+      return done(moved, events);
+    }
+
     case 'removeAllPlayerCounters': {
       const removed: GameEvent[] = [];
       for (const id of resolvePlayers(state, effect.player, ctx, targets)) {
@@ -2589,12 +2740,25 @@ function runEffect(
         if (Object.keys(obj.counters).length > 0)
           cleared = patchObject(cleared, id, { counters: {} });
       }
-      return done(cleared, removed);
+      // Nexus Mentality: "for each counter removed this way" counts every counter that came off.
+      const total = removed.reduce((n, e) => (e.kind === 'counterRemoved' ? n + e.count : n), 0);
+      return {
+        ...done(cleared, removed),
+        ...(total > 0 ? { thisWay: { countersRemoved: total } } : {}),
+      };
     }
 
     case 'proliferate':
       // CR 701.34a (D-149): the controller chooses the permanents and players to give counters to (rules/proliferate.ts).
-      return done(state, [], [{ kind: 'proliferate', chosen: null, players: [] }]);
+      // "Proliferate X times": each time is its own choice, read once as the effect starts.
+      return done(
+        state,
+        [],
+        Array.from(
+          { length: effect.times === undefined ? 1 : amountOf(state, effect.times, ctx, targets) },
+          () => ({ kind: 'proliferate' as const, chosen: null, players: [] }),
+        ),
+      );
 
     case 'conditional': {
       // CR 608.2c: the condition is read now, as this instruction comes up, after everything
@@ -2731,6 +2895,14 @@ function runEffect(
       // CR 702.11b, 611.2 (Hylda group 3): the players have hexproof until end of turn (`rules/player-hexproof.ts`).
       return runGrantPlayerHexproof(state, effect, ctx, targets);
 
+    case 'grantCastAsThoughFlash':
+      // CR 601.3b (Alchemist's Refuge): the players may cast spells as though they had flash until end of turn (`rules/player-flash.ts`).
+      return runGrantCastAsThoughFlash(state, effect, ctx, targets);
+
+    case 'grantPlayerManaAbility':
+      // CR 605.1a, 118.3 (Channel): the players have a mana ability of their own until end of turn (`rules/player-mana.ts`).
+      return runGrantPlayerManaAbility(state, effect, ctx, targets);
+
     case 'attackRandomOpponent':
       // CR 508.1d, 701.26a: an opponent at random that was not attacked in the last combat must be attacked this combat, or the creature is tapped (`rules/attack-random-opponent.ts`).
       return runAttackRandomOpponent(state, effect, ctx.source, res.controller);
@@ -2771,12 +2943,14 @@ function runEffect(
       // CR 122.1 (Galadriel group 3): the permanent loses up to that many counters of the kind; one event for the number that came off.
       const wanted = amountOf(state, effect.count, ctx, targets);
       if (wanted <= 0) return done(state);
+      let anyRemoved = false;
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
         const obj = next.objects[id];
         if (obj?.zone !== 'battlefield') continue;
         const had = obj.counters[effect.counter] ?? 0;
         const removed = Math.min(had, wanted);
         if (removed <= 0) continue;
+        anyRemoved = true;
         const left = had - removed;
         const { [effect.counter]: _gone, ...rest } = obj.counters;
         next = patchObject(next, id, {
@@ -2789,7 +2963,8 @@ function runEffect(
           count: removed,
         });
       }
-      return done(next, events);
+      // CR 608.2c: removing a counter is something done, which "if you do" reads.
+      return { ...done(next, events), performed: anyRemoved ? 1 : 0 };
     }
 
     case 'modifyPt':
@@ -2818,4 +2993,30 @@ function runEffect(
       return unreachable;
     }
   }
+}
+
+/**
+ * Puts `count` counters of a kind on one object as the effect of a spell or ability (CR 122.6, 101.2, D-380): nothing if the object is gone
+ * or can't have counters of the kind. `read` is the state the counter blockers were read from.
+ */
+function putCountersOn(
+  read: GameState,
+  state: GameState,
+  id: ObjectId,
+  counter: string,
+  count: number,
+  by: SeatId,
+  blockers: ReturnType<typeof counterBlockers>,
+  bonuses: ReturnType<typeof counterBonuses>,
+): { readonly state: GameState; readonly events: readonly GameEvent[] } {
+  const obj = state.objects[id];
+  if (!obj || blocks(read, blockers, obj, counter)) return { state, events: [] };
+  // CR 614.1a, 122.6: "that many plus one counters are put on it instead" (`countersPlus`).
+  const put = bonusCounters(read, bonuses, obj, counter, count);
+  return {
+    state: patchObject(state, id, {
+      counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) + put },
+    }),
+    events: [{ kind: 'counterAdded', object: id, counter, count: put, by }],
+  };
 }

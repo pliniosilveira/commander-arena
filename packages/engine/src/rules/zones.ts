@@ -53,7 +53,7 @@ import type {
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
-import { withoutBlockedCounters } from './counter-prevention';
+import { entryCounters } from './counter-bonus';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
 import { dieReplacementFor } from './die-replacement';
@@ -953,6 +953,19 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     next = became.state;
     events.push(...became.events);
     copyEvents.push(...became.counterEvents);
+    // CR 707.9b, 107.3m: "except it enters with X additional +1/+1 counters": the X of the spell it came from, 0 for a permanent that was not cast.
+    if (copyRule.withX !== undefined) {
+      const castX = old.zone === 'stack' && old.stack?.kind === 'spell' ? (old.stack.x ?? 0) : 0;
+      if (castX > 0) {
+        const kind = copyRule.withX.counter;
+        counters = { ...counters, [kind]: (counters[kind] ?? 0) + castX };
+        const copy = getObject(next, newId);
+        next = setObject(next, {
+          ...copy,
+          counters: { ...copy.counters, [kind]: (copy.counters[kind] ?? 0) + castX },
+        });
+      }
+    }
   }
   if (to === 'battlefield') {
     // CR 614.12, 122.6 (D-149): apply entry counters to the characteristics after an as-entry copy, without the entering group on the battlefield.
@@ -961,13 +974,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     const added = groupEntryCounters(beforeEntry, { ...entering, stack: old.stack });
     counters = addCounterMaps(counters, added);
     // D-380 (CR 122.6, 101.2): counter prohibitions apply to the permanent as it would enter too.
-    const finalCounters = withoutBlockedCounters(
+    const finalCounters = entryCounters(
       beforeEntry,
       { ...entering, counters: addCounterMaps(entering.counters, added) },
       addCounterMaps(entering.counters, added),
     );
     next = setObject(next, { ...entering, counters: finalCounters });
-    counters = withoutBlockedCounters(beforeEntry, entering, counters);
+    counters = entryCounters(beforeEntry, entering, counters);
   }
   // D-151 (CR 702.10): "If that mana is spent on a Dragon creature spell, it gains haste until end of turn": the permanent a spell with that mark becomes
   // has haste until the end of the turn.

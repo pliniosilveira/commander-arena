@@ -214,7 +214,13 @@ export function createRandomHandlers(draw: (n: number) => number): DecisionHandl
     // CR 614.12a: any creature type or color, from the options the engine lists.
     chooseOption: (d) => ({ kind: 'chooseOption', option: pick(d.options, draw) }),
     // CR 107.3a (D-103): any value from 0 to the most the engine says it could pay.
-    chooseX: (d) => ({ kind: 'chooseX', value: d.min + draw(d.max - d.min + 1) }),
+    chooseX: (d) => ({
+      kind: 'chooseX',
+      value:
+        d.values === undefined
+          ? d.min + draw(d.max - d.min + 1)
+          : (d.values[draw(d.values.length)] ?? d.min),
+    }),
     // CR 700.2 (D-114): any of the legal sets of modes the engine lists.
     chooseModes: (d) => ({ kind: 'chooseModes', modes: [...pick(d.sets, draw)] }),
     // CR 601.2f-h (D-120): any of the answers the engine lists, each of which leaves a cost it can pay.

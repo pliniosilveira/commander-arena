@@ -50,6 +50,7 @@ type StateAmount = Extract<
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
       | 'sacrificedAsCost'
+      | 'tappedAsCostPower'
       | 'exiledAsCost'
       | 'cardTypesAmong';
   }
@@ -93,6 +94,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'sacrificedAsCost' ||
+    amount.kind === 'tappedAsCostPower' ||
     amount.kind === 'exiledAsCost' ||
     amount.kind === 'cardTypesAmong'
   );
@@ -258,6 +260,11 @@ export function amountOf(
   // D-133: "that much" for the damage that caused the trigger (CR 120.3).
   if (amount.kind === 'triggerDamage') return ctx.triggerDamage ?? 0;
   if (amount.kind === 'triggerTargetCount') return ctx.triggerTargetCount ?? 0;
+  // CR 107.3, 113.7a (Quandrix Unlimited group E): the X of the spell that caused a cast trigger, as it is on the stack or as it last was.
+  if (amount.kind === 'triggerSpellX') {
+    const spell = ctx.triggerSubject === undefined ? null : objectOrLki(state, ctx.triggerSubject);
+    return spell?.stack?.x ?? 0;
+  }
   // D-110: "for each time it was kicked": the source's own count, or what its last-known information says.
   if (amount.kind === 'timesKicked') {
     return ctx.source === null ? 0 : timesKickedOf(objectOrLki(state, ctx.source));
@@ -367,6 +374,11 @@ export function stateAmountOf(
     case 'commanderManaValue':
       return commandersManaValue(state, ctx.controller);
     case 'commanderCasts': {
+      if (amount.player !== undefined) {
+        // CR 903.8: the player the selector names ("target player ... they've cast").
+        const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+        return seat === undefined ? 0 : commandersCastCount(state, seat);
+      }
       if (amount.of !== 'triggerSubject') return commandersCastCount(state, ctx.controller);
       // D-229: the commander the event is about: the times this card was cast from the command zone.
       const subject =
@@ -405,6 +417,9 @@ export function stateAmountOf(
       }
       return best;
     }
+    case 'tappedAsCostPower':
+      // CR 702.184a, 608.2h: the power the creatures had as they were tapped for the cost of the ability that is resolving.
+      return ctx.costTappedPower ?? 0;
     case 'sacrificedAsCost': {
       // CR 602.2b, 701.21a (D-584): "for each artifact sacrificed this way" in an activated ability whose cost sacrificed one or more permanents: the ability on the stack carries
       // them, and its resolution reads them (`ResolutionContext.costSacrificed`, which an ability without such a cost does not have).

@@ -164,6 +164,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.replicate': asIs,
   'keyword.ward': asIs,
   'keyword.crew': asIs,
+  'keyword.station': asIs,
   'token.copy': spell((e) => `Create ${e}.`),
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
@@ -180,6 +181,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P13: what a spell costs. The statements are lines of their own.
   'static.self-cost-reduction': asIs,
   'static.spells-cost-reduction': asIs,
+  'static.first-x-spell-cost-reduction': asIs,
   'static.spells-have-affinity': asIs,
   'noun.each-creature-enchanted-by-you': permanent(
     (e) => `${cap(e)} can't attack you or planeswalkers you control.`,
@@ -339,9 +341,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.target-creature-attacking-you': permanent((e) => `{W}, Sacrifice ~: Exile ${e}.`),
   'noun.target-permanent': spell((e) => `Destroy ${e}.`),
   'noun.all-permanents': spell((e) => `Destroy ${e}.`),
+  'noun.all-tokens': spell((e) => `Destroy ${e}.`),
   'noun.each-permanent': spell((e) => `Destroy ${e}.`),
   'amount.number': spell((e) => `Draw ${e} cards.`),
   'amount.x': spell((e) => `Draw ${e} cards.`),
+  // Quandrix Unlimited deck, group D2: the rounding of "half X" is written next to the X.
+  'amount.half-x': spell((e) => `You gain ${e} life.`),
   'amount.article': spell((e) => `Draw ${e} card.`),
   'amount.power-of': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.that-spells-mana-value': permanent(
@@ -384,6 +389,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   // CR 602.5b: "Activate only if ~ has a +1/+1 counter on it." is read after "if", like every condition.
   'condition.this-has-counter': permanent((e) => `{2}, {T}: Draw a card. Activate only if ${e}.`),
+  // Quandrix Unlimited deck, group F (Mana Bloom): the counters of ~ all gone, in the intervening "if" of an upkeep trigger.
+  'condition.this-has-no-counters': permanent(
+    (e) => `At the beginning of your upkeep, if ${e}, return ~ to its owner's hand.`,
+  ),
+  // Primordial Hydra: the count of one kind of counter on ~, after "as long as".
+  'condition.this-has-counter-count': permanent((e) => `~ has trample as long as ${e}.`),
   // CR 603.4: "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, ..." is read after "if", like every condition.
   'condition.this-counter-count': permanent(
     (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
@@ -460,6 +471,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.any-number-of-targets': spell((e) => `~ deals 4 damage divided as you choose among ${e}.`),
   // Stage P33 (D-149, D-150): the Angels slice. The statements and the replacement are lines of their own; the triggers follow "Whenever";
   // the conditions follow "if" (an intervening "if", a trailing "if" or the "Activate only if" of an ability); the nouns are operands.
+  'replacement.counters-plus': asIs,
   'replacement.life-gain-bonus': asIs,
   'static.player-hexproof': asIs,
   'static.cant-lose-win': asIs,
@@ -522,6 +534,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // conditions follow "if" (an intervening "if", the trailing "if" of an activated ability) or "As long as"; the nouns are operands of damage.
   'replacement.enters-as-copy': asIs,
   'replacement.enters-as-copy-embalmed': asIs,
+  'replacement.enters-as-copy-x-counters': asIs,
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.redirect-damage': asIs,
@@ -796,6 +809,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `When ~ enters, ${e} gets +1/+0 until end of turn.`,
   ),
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
+  // Quandrix Unlimited, group D1: "Auras, Equipment, and modified creatures you control gain hexproof until end of turn."
+  'noun.auras-equipment-modified': spell((e) => `${cap(e)} gain hexproof until end of turn.`),
   // Stage P64 (D-217): the nouns, effects and conditions of the Vraska EDHREC deck's second group.
   'noun.token-permanents': permanent((e) => `${cap(e)} have haste.`),
   // D-369: "Zombie tokens you control".
@@ -807,6 +822,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.cast-from-graveyard': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
+  ),
+  // Yavimaya Bloomsage.
+  'condition.that-object-power': spell(
+    (e) => `Put a +1/+1 counter on target creature you control. Then if ${e}, draw a card.`,
   ),
   // Issue 233 (Martial Coup).
   'condition.x-at-least': spell(
@@ -867,6 +886,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.cards-leave-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
+  'trigger.cast-x': whenever,
+  // Quandrix Unlimited deck, group I (Unbound Flourishing): one trigger for a spell cast and an ability activated, and the "if" on the cost that goes with it.
+  'trigger.cast-or-activate': whenever,
+  'condition.cost-contains-x': permanent(
+    (e) =>
+      `Whenever you cast an instant or sorcery spell or activate an ability, if ${e}, copy that spell or ability.`,
+  ),
   // Issue 100 (Baral and Kari Zev): "you cast your first instant or sorcery spell each turn".
   'trigger.cast-first-of-kind': whenever,
   'trigger.enters-one-or-more-creatures': whenever,
@@ -894,6 +920,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 241 (Opal Palace).
   'effect.mana-rider-counters-commander': permanent((e) => `{T}: Add {G}. ${cap(e)}.`),
+  'amount.damage-dealt-by-trigger': permanent(
+    (e) =>
+      `Whenever one or more creatures you control deal combat damage to a player, create a 0/0 green and blue Fractal creature token. Put a number of +1/+1 counters on it ${e}.`,
+  ),
   'amount.for-each-commander-cast': permanent((e) => `Creatures you control get +1/+1 ${e}.`),
   'static.untap-in-others-step': asIs,
   'trigger.class-level': permanent((e) => `When ${e}, draw a card.`),
@@ -1005,6 +1035,12 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
+  'condition.and': permanent((e) => `At the beginning of your end step, if ${e}, draw a card.`),
+  'condition.prime-number-of': permanent(
+    (e) => `At the beginning of your end step, if ${e}, draw a card.`,
+  ),
+  'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
+  'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Put two +1/+1 counters on ${e}.`,

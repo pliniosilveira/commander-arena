@@ -109,6 +109,8 @@ describe('amounts that read an object', () => {
       'triggerDamage',
       // D-574: the number of targets on a spell that caused a cast trigger.
       'triggerTargetCount',
+      // Quandrix Unlimited group E: the X of the spell that caused a cast trigger.
+      'triggerSpellX',
       // D-194: "the number of profit votes" (CR 701.38a).
       'votesFor',
       // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -120,6 +122,7 @@ describe('amounts that read an object', () => {
       'sacrificedAsCost',
       // D-575: the cards selected for a spell's optional hand-exile cost.
       'exiledAsCost',
+      'tappedAsCostPower',
       // Hylda group 3 (CR 107.3m): the X of the spell an enters trigger reads.
       'enteredX',
       // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a).

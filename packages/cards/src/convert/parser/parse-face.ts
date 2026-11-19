@@ -1,7 +1,15 @@
-import type { Ability, AlternativeCost, Cost, Effect, SpellText } from '@commander-arena/engine';
+import type {
+  Ability,
+  AlternativeCost,
+  Amount,
+  Cost,
+  Effect,
+  SpellText,
+} from '@commander-arena/engine';
 import type { UnparsedAbility } from '../../types';
 import { type CompileOptions, compileLine } from './compile';
 import { unparsedAbility } from './diagnostics';
+import { missingFeatures } from './lower/features';
 import { finishSpell, type SpellParts } from './lower/index';
 import {
   escapeRegExp,
@@ -94,9 +102,26 @@ export function parseFaceText(
   const alternativeCosts: AlternativeCost[] = [];
   let additionalCostChoice: readonly [readonly Cost[], readonly Cost[]] | null = null;
   let commanderTaxLife: number | null = null;
+  let xAtMost: Amount | null = null;
+  let xAtMostLine: { index: number; text: string } | null = null;
   // The line each ability came from, for a refusal that is found only once every line is read (a linked exile, stage P31).
   const lineOf: { index: number; text: string; ruleId: string }[] = [];
+  // CR 721.2, 721.3 (Station): once a station symbol ("12+ | ...") has been read, the lines after it that carry no symbol of their own may be in its striation, which the text does
+  // not say; they are refused, never read as abilities that work at every count.
+  let afterStationSymbol = false;
   for (const [index, text] of lines.entries()) {
+    const symbol = STATION_SYMBOL.exec(text);
+    if (symbol === null && afterStationSymbol) {
+      unparsed.push(
+        unparsedAbility(faceIndex, index, text, {
+          reason: 'notRunnable',
+          stoppedAt: text,
+          closestRule: 'none',
+          recognised: [],
+        }),
+      );
+      continue;
+    }
     if (
       /^Rather than pay \{2\} for each previous time you've cast ~ from the command zone this game, pay 2 life that many times\.$/u.test(
         text,
@@ -104,6 +129,13 @@ export function parseFaceText(
       commanderTaxLife === null
     ) {
       commanderTaxLife = 2;
+      continue;
+    }
+    // CR 107.3a, 601.2b (D-2 group, Open the Way): "X can't be greater than the number of players in the game." limits the X announced for the spell: the opponents
+    // still in the game and the player (`SpellText.xAtMost`). It is applied to the spell the other lines make, below.
+    if (face === 'spell' && X_AT_MOST_PLAYERS.test(text) && xAtMost === null) {
+      xAtMost = { kind: 'sum', of: [{ kind: 'opponentCount' }, 1] };
+      xAtMostLine = { index, text };
       continue;
     }
     const lineOptions: CompileOptions = {
@@ -116,16 +148,36 @@ export function parseFaceText(
       namedInQuotes,
       selfName,
     };
-    const asWritten = compileLine(text, lineOptions);
+    const threshold = symbol === null ? null : Number(symbol[1]);
+    const body = symbol === null ? text : (symbol[2] ?? '');
+    if (threshold !== null) afterStationSymbol = true;
+    const asWritten = compileLine(body, lineOptions);
     // CR 207.2d (D-204): a flavor word has no rules meaning, but no list names them, so the label is taken off only when the line did not
     // read as written, and the line is read again without it. A line that reads today never changes; a wrong strip can only turn an unread
     // line into a read one. If the line still does not read, the diagnostic is the one of the line without its label (it says what is
     // really unread), under the text as written.
     const bare =
-      asWritten.ok || asWritten.failure.reason !== 'unrecognised' ? text : stripFlavorWord(text);
-    const result = bare === text ? asWritten : compileLine(bare, lineOptions);
+      asWritten.ok || asWritten.failure.reason !== 'unrecognised' ? body : stripFlavorWord(body);
+    const result = bare === body ? asWritten : compileLine(bare, lineOptions);
     if (!result.ok) {
       unparsed.push(unparsedAbility(faceIndex, index, text, result.failure));
+    } else if (threshold !== null) {
+      // CR 721.2a (Station): "N+ | [abilities]" is "as long as this permanent has N or more charge counters on it, it has [abilities]". A symbol on a face that is not a station
+      // card, a threshold of 0, a line that is not an ability and one with a power and toughness box (CR 721.2b: not built) are refused as a whole.
+      const stationCard = faceSubtypes.includes('Spacecraft') || faceSubtypes.includes('Planet');
+      if (result.kind !== 'abilities' || threshold < 1 || !stationCard) {
+        unparsed.push(
+          unparsedAbility(faceIndex, index, text, {
+            reason: 'notRunnable',
+            stoppedAt: text,
+            closestRule: 'none',
+            recognised: [],
+          }),
+        );
+        continue;
+      }
+      abilities.push({ kind: 'stationLevel', threshold, abilities: [...result.abilities] });
+      lineOf.push({ index, text, ruleId: result.ruleId });
     } else if (result.kind === 'abilities') {
       abilities.push(...result.abilities);
       for (const _ of result.abilities) lineOf.push({ index, text, ruleId: result.ruleId });
@@ -172,7 +224,24 @@ export function parseFaceText(
     );
   }
   const kept = spellParts.filter((p) => !refused.includes(p)).map((p) => p.parts);
-  const spell = kept.length > 0 ? finishSpell(kept) : null;
+  const finished = kept.length > 0 ? finishSpell(kept) : null;
+  // The limit on X belongs to a spell that announces an X, and only when the engine runs it; otherwise the line is unread as a whole.
+  const limitOk =
+    xAtMost !== null &&
+    finished?.x === true &&
+    missingFeatures(['ability:spellXAtMost']).length === 0;
+  const spell =
+    limitOk && finished !== null && xAtMost !== null ? { ...finished, xAtMost } : finished;
+  if (xAtMost !== null && xAtMostLine !== null && !limitOk) {
+    unparsed.push(
+      unparsedAbility(faceIndex, xAtMostLine.index, xAtMostLine.text, {
+        reason: 'notRunnable',
+        stoppedAt: xAtMostLine.text,
+        closestRule: 'spell.x-at-most',
+        recognised: [],
+      }),
+    );
+  }
   const linked = groupLevels(linkExile(abilities));
   for (const at of linked.refused) {
     const line = lineOf[at];
@@ -198,12 +267,18 @@ export function parseFaceText(
   };
 }
 
+/** "12+ | {G}, {T}: Add {G}" (CR 721.2): the station symbol Scryfall writes as the number, a plus sign and a bar, before the ability it gates. */
+const STATION_SYMBOL = /^(\d+)\+ \| (.+)$/su;
+
 /**
  * A line of a spell that starts "If <test>, instead ..." or ends "... instead." (stage P36, D-178, CR 608.2c, 614.1a): "Threshold — If there are
  * seven or more cards in your graveyard, instead search your library for up to three basic land cards, ..." says what replaces the line before it,
  * as "..., instead" does at the end of a sentence in one line. The two lines are one text for the reading, which is what the replacement needs (it replaces one instruction of the
  * same spell); a pair that does not read as one is unread as a whole, as the instead line was alone.
  */
+/** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): a limit on the X of the spell, read as the line of its own it is. */
+const X_AT_MOST_PLAYERS = /^X can['’]t be greater than the number of players in the game\.$/u;
+
 const INSTEAD_LINE = /^If [^\n]+?(?:, instead (?!of\b)|[^\n]* instead\.$)/u;
 
 function joinInsteadLines(lines: readonly string[]): string[] {
@@ -226,7 +301,7 @@ function joinInsteadLines(lines: readonly string[]): string[] {
  * is unread as a whole, as the line was alone.
  */
 const REFERENCE_LINE =
-  /^(?:If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
+  /^(?:If [^\n]+?, untap those lands\.|If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
 
 function joinReferenceLines(lines: readonly string[]): string[] {
   const out: string[] = [];

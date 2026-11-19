@@ -34,7 +34,7 @@ import { isSummoningSick, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
-import { withX } from './x-value';
+import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
 
 /** An activation cost split by how it is paid. */
@@ -63,6 +63,8 @@ export interface CostBreakdown {
   readonly discardOf: Pick<Extract<Cost, { kind: 'discard' }>, 'filter' | 'named'> | null;
   /** The mana symbols of every `mana` cost, in order. */
   readonly mana: readonly string[];
+  /** The cost has an {X} (CR 107.3, 602.2b): `mana` has it paid already as generic mana. */
+  readonly hasX: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -227,6 +229,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   return {
     tap,
     life,
+    hasX: hasX(abilityXCost(costs)),
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -418,13 +421,15 @@ export function planActivationMana(
 ): PaymentPlan | null {
   const obj = state.objects[source];
   const d = obj === undefined ? null : derive(state, obj);
+  // CR 106.6, 107.3: "Spend this mana only on costs that contain {X}": the activation cost has an {X}.
+  const x = costs.hasX ? ({ hasX: true } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true }
-      : { ability: true, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x }
+      : { ability: true, ...x, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 

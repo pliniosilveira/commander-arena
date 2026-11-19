@@ -28,6 +28,7 @@ import { ATTACKING_OPPONENTS_CONDITION_RULES } from './attacking-opponents';
 import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
+import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
@@ -51,12 +52,16 @@ import { LOREHOLD_G1_CONDITION_RULES } from './lorehold-g1';
 import { LOREHOLD_G3_CONDITION_RULES } from './lorehold-g3';
 import { MELD_CONDITION_RULES } from './meld';
 import { NIV_CONDITION_RULES } from './niv';
+import { NO_COUNTERS_CONDITION_RULES } from './no-counters';
 import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
+import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { RECURSION_CONDITION_RULES } from './recursion';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
+import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
 import { THEY_ATTACKED_YOU_CONDITION_RULES } from './they-attacked-you';
+import { UNBOUND_I_CONDITION_RULES } from './unbound-i';
 import { CONDITION_UNLESS_PAYS } from './unless';
 import { VRASKA_CONDITION_RULES } from './vraska';
 import { CONDITION_X_AT_LEAST } from './x-at-least';
@@ -521,6 +526,8 @@ export const CONDITION_CONTROL_COMMANDER = defineRule<IrCondition>({
 });
 
 export const CONDITION_RULES = [
+  // Quandrix Unlimited deck, group G: two conditions joined by "and", and "you control a prime number of lands", before the single conditions they start with.
+  ...QUANDRIX_G_CONDITION_RULES,
   // Stage P33 (D-150): "you control three or more lands with the same name" before the plain count, whose phrase is a prefix of it.
   ...ANGEL_CONDITION_RULES,
   // Ever-Watching Threshold: "they attacked you and/or a planeswalker you control", the intervening "if" of "an opponent attacks".
@@ -546,6 +553,8 @@ export const CONDITION_RULES = [
   CONDITION_CONTROL_COMMANDER,
   ...GAME_STATE_CONDITION_RULES,
   ...SELF_STATE_CONDITION_RULES,
+  ...NO_COUNTERS_CONDITION_RULES,
+  ...COUNTER_COUNT_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
   // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value".
   ...ARTIFACT_CONDITION_RULES,
@@ -587,6 +596,8 @@ export const CONDITION_RULES = [
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".
   ...HYLDA_G1_CONDITION_RULES,
+  // Quandrix Unlimited deck, group I: "if that spell's mana cost or that ability's activation cost contains {X}".
+  ...UNBOUND_I_CONDITION_RULES,
   // D-518, D-520 (Hylda deck, group 2): "there are four or more card types among cards in your graveyard", "enchanted creature is untapped".
   ...HYLDA_G2_CONDITION_RULES,
   // Lorehold Spirit deck, group 1 (issue 86): "you search your library this way".
@@ -598,6 +609,7 @@ export const CONDITION_RULES = [
   CONDITION_KICKED,
   CONDITION_CAST_IN_OWN_MAIN_PHASE,
   CONDITION_X_AT_LEAST,
+  CONDITION_THAT_OBJECT_POWER,
   CONDITION_UNLESS_PAYS,
   CONDITION_UNLESS_ESCAPED,
   CONDITION_IF_YOU_DO,

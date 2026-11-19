@@ -55,6 +55,7 @@ import {
   manaValueOf,
   opposingCreatures,
   ownCreatureCount,
+  withoutReminder,
 } from './casual-view';
 import { multikickerHasRoom, needsPaidX, xSpellHasRoom } from './casual-x';
 
@@ -120,7 +121,7 @@ export function worthCasting(view: GameView, spell: ObjectView): boolean {
   }
   // D-129: a spell that copies a spell helps only when the spell on top is one of ours.
   if (copiesTargetSpell(spell.oracleText)) return copyWorthCasting(view);
-  if (TARGETS_SPELL.test(spell.oracleText)) {
+  if (TARGETS_SPELL.test(withoutReminder(spell.oracleText))) {
     const top = view.stack[view.stack.length - 1];
     return top !== undefined && top.controller !== view.viewer;
   }

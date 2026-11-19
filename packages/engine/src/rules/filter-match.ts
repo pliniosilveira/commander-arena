@@ -14,6 +14,7 @@ import type { ChosenValues, GameObject, GameState } from '../state/types';
 import { sameCreatureType } from './chosen';
 import { controllerOf } from './control';
 import { isCommanderObject } from './melded';
+import { xSymbolCount } from './x-value';
 
 /** The characteristics a filter looks at. `Derived` has all of them. */
 export interface FilterSubject {
@@ -32,6 +33,8 @@ export interface FilterSubject {
   /** The base power (CR 208.4b), read by `powerAboveBase` (D-431); left out where the caller does not know it, which fails that test closed. */
   readonly basePower?: number | null;
   readonly manaValue?: number;
+  /** The mana cost symbols, read by `xInManaCost`; left out where the caller does not know it, which fails that test closed. */
+  readonly manaCost?: readonly string[] | null;
   /**
    * The keywords without parameters the object has (`keywords`, `notKeywords`, D-133); left out where the caller does
    * not know them, which fails a `keywords` test closed and passes a `notKeywords` one (`validateCard` refuses both
@@ -119,6 +122,11 @@ export interface FilterContext {
   readonly powerLimit?: number | null;
   /** The X of the spell or ability being resolved (CR 107.3a), for `manaValueX` (D-139); absent fails the filter closed. */
   readonly x?: number;
+  /**
+   * The spell is looked at before its X is announced (CR 601.2b: X comes before the targets), so "with mana value X" may hold for any mana value: the question "can it be cast
+   * at all?" asks it, and the X offered is limited to those that leave a legal target (`rules/cast.ts`).
+   */
+  readonly xUnannounced?: true;
   /**
    * The players this ability's source dealt combat damage to this turn, for `controllerDealtDamageBySource` (D-139): read from the turn
    * log by the caller; without it the flag matches nothing.
@@ -320,6 +328,12 @@ export function matchesFilterWith(
   if (filter.notKeywords?.some((k) => d.keywords?.includes(k) === true)) return false;
   if (filter.colors && !filter.colors.every((c) => d.colors.includes(c))) return false;
   if (!compares(filter.power, d.power)) return false;
+  // "Each creature with power of the chosen quality" (Zimone's Hypothesis): the power now is odd or even; 0 is even and so is any multiple of 2, negative or not.
+  if (filter.powerParity !== undefined) {
+    if (d.power === null || d.power === undefined) return false;
+    const odd = Math.abs(d.power) % 2 === 1;
+    if (odd !== (filter.powerParity === 'odd')) return false;
+  }
   if (!compares(filter.toughness, d.toughness)) return false;
   if (!compares(filter.manaValue, d.manaValue)) return false;
   // CR 202.3 (D-230): "mana value X or less, where X is ...": the limit is worked out by the caller (`select.ts`); without it the filter fails closed.
@@ -330,7 +344,13 @@ export function matchesFilterWith(
     if (d.manaValue > ctx.manaValueLimit) return false;
   }
   // CR 107.3a, 202.3 (D-139): "with mana value X", the X of the ability that is resolving.
-  if (filter.manaValueX === true && (ctx.x === undefined || d.manaValue !== ctx.x)) return false;
+  if (filter.manaValueX === true) {
+    if (ctx.x !== undefined) {
+      if (d.manaValue !== ctx.x) return false;
+    } else if (ctx.xUnannounced !== true || d.manaValue === null || d.manaValue === undefined) {
+      return false;
+    }
+  }
   // CR 510.2 (D-139): "whose controller was dealt combat damage by this creature this turn".
   if (
     filter.controllerDealtDamageBySource === true &&
@@ -355,6 +375,21 @@ export function matchesFilterWith(
       ctx.castFrom ??
       (obj.zone === 'stack' && obj.stack?.kind === 'spell' ? obj.stack.castFrom : undefined);
     if (from !== 'hand') return false;
+  }
+  // CR 107.3, 202.1 (Quandrix Unlimited group E): "a spell with {X} in its mana cost".
+  if (
+    filter.xInManaCost === true &&
+    (d.manaCost === undefined || xSymbolCount(d.manaCost ?? []) === 0)
+  )
+    return false;
+  // CR 601.2i (Quandrix Unlimited group E): "your first spell with {X} in its mana cost each turn": no earlier one cast this turn by the caster.
+  if (
+    filter.firstXSpellThisTurn === true &&
+    state.turnLog.castSpells.some(
+      (e) => e.hasX === true && e.seat === controllerOf(state, obj) && e.object !== obj.id,
+    )
+  ) {
+    return false;
   }
   // CR 400.7: "that entered this turn" is the same object that entered the battlefield during this turn.
   if (filter.enteredThisTurn === true && !(ctx.entered ?? []).includes(obj.id)) return false;
@@ -387,6 +422,11 @@ export function matchesFilterWith(
       return false;
     }
     if (!(d.power > base)) return false;
+  }
+  // CR 208.4b: "with base power 0": the base power the object has before counters and effects that only modify it.
+  if (filter.basePowerIs !== undefined) {
+    const base = d.basePower;
+    if (base === null || base === undefined || base !== filter.basePowerIs) return false;
   }
   // D-100, CR 607.2d: "of the chosen type" / "of the chosen color" is what the source chose as it entered.
   if (filter.chosenType === true) {

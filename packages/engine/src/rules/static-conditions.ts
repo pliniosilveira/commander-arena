@@ -93,7 +93,18 @@ export function staticConditionHolds(
       return state.turnLog.entered.some((e) => e.object === source.id);
     case 'amountIs': {
       // D-423: "as long as another Aura is attached to enchanted creature": the count of a filter, read through layers 1, 4 and 5 (`validateCard` allows only `countOf` here).
-      if (typeof condition.amount === 'number' || condition.amount.kind !== 'countOf') return false;
+      if (typeof condition.amount === 'number') return false;
+      if (condition.amount.kind === 'countersOn') {
+        // CR 122.1, CR 613.8: the counters on the source itself, which no layer changes.
+        const have = source.counters[condition.amount.counter] ?? 0;
+        const c = condition.compare;
+        return c.cmp === 'atLeast'
+          ? have >= c.value
+          : c.cmp === 'atMost'
+            ? have <= c.value
+            : have === c.value;
+      }
+      if (condition.amount.kind !== 'countOf') return false;
       const n = countForSource(state, condition.amount.filter, source);
       const { cmp, value } = condition.compare;
       return cmp === 'atLeast' ? n >= value : cmp === 'atMost' ? n <= value : n === value;

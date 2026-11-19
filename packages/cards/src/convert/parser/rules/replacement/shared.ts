@@ -37,6 +37,15 @@ export function countersTail(
 ): Parser<{ count: IrAmount; counter: IrCounterSpec }> {
   const count: Parser<IrAmount> = (ctx, pos) => {
     if (allowX) {
+      // "twice X" (CR 107.3m, 122.6): X multiplied by two.
+      const twice = pattern(/twice X(?![\p{L}\p{N}])/u)(ctx, pos);
+      if (twice.ok) {
+        return {
+          ok: true,
+          value: { kind: 'x', times: 2, span: { start: pos, end: twice.pos } },
+          pos: twice.pos,
+        };
+      }
       const x = pattern(/X(?![\p{L}\p{N}])/u)(ctx, pos);
       if (x.ok)
         return { ok: true, value: { kind: 'x', span: { start: pos, end: x.pos } }, pos: x.pos };

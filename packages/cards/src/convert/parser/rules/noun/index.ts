@@ -63,6 +63,9 @@ import { PLAYER_NOUN_RULES } from './players';
 import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
+import { QUANDRIX_NOUN_RULES } from './quandrix';
+import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
+import { QUANDRIX_G_NOUN_RULES, QUANDRIX_G_TARGET_NOUN_RULES } from './quandrix-g';
 import { STACK_ABILITY_NOUN_RULES } from './stack-ability';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
@@ -179,7 +182,8 @@ function targetOf(
   // "each of up to two target creatures": the counters of a spell that puts one on each (the engine's
   // target slot already stands for every object chosen for it).
   const eachOf: Parser<Bare> = map(
-    sequence(literal('each of '), choice(upTo, counted)),
+    // "each of up to X target creatures you control" (Silkguard, CR 107.3a, 601.2c): the X of the spell is the number of targets.
+    sequence(literal('each of '), choice(...(allowX ? [xTargets] : []), upTo, counted)),
     ([, noun]) => noun,
   );
   return node<Bare, IrNoun>(
@@ -789,6 +793,8 @@ export const NOUN_RULES = [
   ...DRAGON_NOUN_RULES,
   // D-295: "each of one or two targets".
   ...ONE_OR_TWO_NOUN_RULES,
+  // Quandrix deck: "all creature tokens", before `noun.all-permanents`, whose phrase would stop at "creature".
+  ...QUANDRIX_NOUN_RULES,
   ...KORVOLD_NOUN_RULES,
   // D-270: "up to three other target creatures from the battlefield and/or creature cards from graveyards".
   ...CROSS_ZONE_NOUN_RULES,
@@ -815,6 +821,8 @@ export const NOUN_RULES = [
   ...HYLDA_G2_TARGET_NOUN_RULES,
   // Soul Snare: "target creature that's attacking you or a planeswalker you control", whose first words are those of `noun.target-permanent`.
   ...ATTACKING_YOU_NOUN_RULES,
+  // Quandrix Unlimited deck, group G: "target creature token", before `noun.target-permanent`.
+  ...QUANDRIX_G_TARGET_NOUN_RULES,
   NOUN_TARGET_PERMANENT,
   // D-426 (Danitha group 3): "all creatures that aren't enchanted", whose first words are those of `noun.all-permanents`.
   ...DANITHA_G3_NOUN_RULES,
@@ -823,6 +831,7 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
@@ -831,6 +840,8 @@ export const NOUN_RULES = [
   // D-650: "each other creature that's attacking one of your opponents", which `noun.each-permanent` would stop in the middle of.
   ...EDHREC_EARLY_NOUN_RULES,
   NOUN_EACH_PERMANENT,
+  // Quandrix Unlimited deck, group G: "commanders you control".
+  ...QUANDRIX_G_NOUN_RULES,
   // Stage P64 and P65 (D-217, D-218): "creature tokens you control" and "creatures attacking your opponents and/or planeswalkers they control", whose first words are
   // those of `noun.plain-permanents`.
   ...EDHREC_NOUN_RULES,

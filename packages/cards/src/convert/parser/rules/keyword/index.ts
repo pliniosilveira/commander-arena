@@ -16,6 +16,7 @@ import { numberedKeyword } from './numbered';
 import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
 import { protectionKeyword } from './protection';
 import { simpleKeyword } from './simple';
+import { STATION_KEYWORD_RULES } from './station';
 import { TYPECYCLING_RULES } from './typecycling';
 import { UPKEEP_KEYWORD_RULES } from './upkeep';
 import { plainWard, WARD_CREW_RULES } from './ward-crew';
@@ -178,10 +179,15 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Flying, protection from black',
     'Protection from white and from blue',
     'Flying, protection from red and from green, haste',
+    // CR 702.16a, 105.2: protection from multicolored sources.
+    'Protection from multicolored',
+    'Reach, trample, protection from multicolored',
   ],
   rejects: [
     'Ward {2}',
     'Protection from monocolored',
+    'Protection from multicolored and from red',
+    'Protection from multicoloredx',
     'Protection from artifacts',
     'Protection from everything',
     'Protection from red and blue',
@@ -373,6 +379,8 @@ export const KEYWORD_RULES = [
   ...COMMANDER_KEYWORD_RULES,
   ...ESCALATE_KEYWORD_RULES,
   ...WARD_CREW_RULES,
+  // CR 702.184a (Station).
+  ...STATION_KEYWORD_RULES,
   // Galadriel deck, group 3 (D-548): "Buyback {2}".
   ...GALADRIEL_G3_KEYWORD_RULES,
 ];

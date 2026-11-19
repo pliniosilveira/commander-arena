@@ -126,6 +126,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:isSource',
   'selector:targetsOnly',
   'selector:powerAboveBase',
+  'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
   'selector:eachOtherOpponent',
@@ -200,6 +201,7 @@ function lowerFilterAt(
         noun,
         true,
         filter.zone === 'stack' || filter.stackKind !== undefined,
+        noun.det === 'each' && !inner,
       );
       if (!lowered.ok) return lowered;
       anyOf.push(lowered.value);
@@ -265,7 +267,13 @@ function lowerFilterAt(
   // "With mana value X" and "whose controller was dealt combat damage by ~ this turn" read the ability that resolves (its X, its
   // source): the engine reads them in the `each` selector of an effect only, so a target or a member of a choice is not lowered.
   const resolving = filter.manaValueX === true || filter.controllerDamagedBySource === true;
-  if (resolving && (inner || noun.det !== 'each')) return bad([]);
+  // D2 group (CR 107.3a, 601.2b, 601.2c): "target creature with mana value X" reads the X announced before the targets are chosen; the engine reads it in the target
+  // slot of a spell's own text (`validateCard` refuses it anywhere else).
+  const aimedAtX =
+    filter.manaValueX === true &&
+    filter.controllerDamagedBySource !== true &&
+    noun.det === 'target';
+  if (resolving && (inner || (noun.det !== 'each' && !aimedAtX))) return bad([]);
   if (filter.manaValueX === true) parts.push('selector:manaValueX');
   if (filter.controllerDamagedBySource === true) parts.push('selector:controllerDamagedBySource');
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
@@ -287,6 +295,15 @@ function lowerFilterAt(
     if (inner) return bad([]);
     parts.push('selector:castFromHand');
   }
+  // Quandrix Unlimited group E: "a spell with {X} in its mana cost" (CR 107.3), "your first such spell each turn" (CR 601.2i), a spell on the stack.
+  if (filter.xInManaCost === true) {
+    if (inner) return bad([]);
+    parts.push('selector:xInManaCost');
+  }
+  if (filter.firstXSpellThisTurn === true) {
+    if (inner) return bad([]);
+    parts.push('selector:firstXSpellThisTurn');
+  }
   // Group 4 of the Vraska deck: "that entered this turn" (CR 400.7), read where the filter is matched against the game (a target slot, an `each` selector).
   if (filter.enteredThisTurn === true) {
     if (inner) return bad([]);
@@ -302,7 +319,8 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:putWithSource');
   }
-  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
+  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice,
+  // except of the choice of an `each` selector ("Auras, Equipment, and modified creatures you control"), whose members are matched against the same game.
   if (filter.modified === true) {
     if (inner && !aimed) return bad([]);
     parts.push('selector:modified');
@@ -314,6 +332,7 @@ function lowerFilterAt(
   }
   // D-431: "with power greater than its base power" (CR 208.4b), read from the object where the filter is matched against the game.
   if (filter.powerAboveBase === true) parts.push('selector:powerAboveBase');
+  if (filter.basePowerIs !== undefined) parts.push('selector:basePowerIs');
   // Issue 104 (CR 201.2): "a card named X" of a library search, read where the filter is matched against the game; never a member of a choice.
   if (filter.named !== undefined) {
     if (inner) return bad([]);
@@ -473,12 +492,15 @@ function lowerFilterAt(
       : {}),
     ...(filter.notCastFromHand === true ? { notCastFromHand: true as const } : {}),
     ...(filter.castFromHand === true ? { castFromHand: true as const } : {}),
+    ...(filter.xInManaCost === true ? { xInManaCost: true as const } : {}),
+    ...(filter.firstXSpellThisTurn === true ? { firstXSpellThisTurn: true as const } : {}),
     ...(filter.enteredThisTurn === true ? { enteredThisTurn: true as const } : {}),
     ...(filter.exiledWithSelf === true ? { exiledWithSource: true as const } : {}),
     ...(filter.putWithSelf === true ? { putWithSource: true as const } : {}),
     ...(filter.modified === true ? { modified: true as const } : {}),
     ...(filter.goaded === true ? { goaded: true as const } : {}),
     ...(filter.powerAboveBase === true ? { powerAboveBase: true as const } : {}),
+    ...(filter.basePowerIs === undefined ? {} : { basePowerIs: filter.basePowerIs }),
     ...(filter.named === undefined ? {} : { named: filter.named }),
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
@@ -722,7 +744,16 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         void _amount;
         subject = { ...noun, filter: rest };
       }
-      if (noun.filter.manaValueAtMostX === true) {
+      if (noun.filter.manaValueAtMostX === true && ctx.xIs === null && ctx.entersX) {
+        // CR 107.3m (D2 group, Kinetic Ooze): "destroy up to one target artifact or enchantment with mana value X or less" in the enters trigger of the permanent itself: the X of the
+        // spell it came from.
+        const missing = missingFeatures(['selector:manaValueAtMost', 'amount:enteredX']);
+        if (missing.length > 0) return failure(noun, missing);
+        atMost = { kind: 'enteredX' };
+        const { manaValueAtMostX: _x, ...rest } = noun.filter;
+        void _x;
+        subject = { ...noun, filter: rest };
+      } else if (noun.filter.manaValueAtMostX === true) {
         const defined = ctx.xIs;
         if (defined === null) return failure(noun, []);
         const missing = missingFeatures(['selector:manaValueAtMost']);
@@ -741,6 +772,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         atMost === undefined
           ? lowered
           : { ...lowered, value: { ...lowered.value, manaValueAtMost: atMost } };
+      // "target creature with mana value X" (CR 107.3a, 601.2b): the spell announces the X its target is read against (`SpellText.x`).
+      if (filter.value.manaValueX === true) ctx.usesX = true;
       // "for each opponent, exile up to one target ... that player controls" (stage P33, D-150, CR 115.1, 601.2c): one slot with at most one
       // target of each opponent, whose bounds are those of the slot ("up to one" for each).
       // "up to that many target creatures" (stage P41, D-188, CR 603.12): as many targets, at most, as the permanents the resolution that created

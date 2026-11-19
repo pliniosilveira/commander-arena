@@ -158,6 +158,9 @@ function nodesOfKind(
  * damage divided as the spell is cast or the ability is put on the stack (CR 602.2b, 603.3d), to the targets of that slot. A mode, a
  * static ability and a reflexive ability have no division.
  */
+const DIVIDING = ['dealDividedDamage', 'distributeCounters'] as const;
+const dividing = (node: unknown) => DIVIDING.flatMap((kind) => nodesOfKind(node, kind));
+
 function checkDividedDamage(face: CardFace, path: string, out: AstIssue[]): void {
   const spell = face.spell;
   const checkOne = (
@@ -166,17 +169,23 @@ function checkDividedDamage(face: CardFace, path: string, out: AstIssue[]): void
     at: string,
   ): void => {
     const divided = (targets ?? []).filter((t) => t?.divide !== undefined).map((t) => t.id);
-    const named = nodesOfKind(effect, 'dealDividedDamage').map(
-      (e) => (e.to as { id?: string } | undefined)?.id,
-    );
+    const named = dividing(effect).map((e) => (e.to as { id?: string } | undefined)?.id);
     for (const id of named) {
       if (typeof id === 'string' && !divided.includes(id)) {
-        issue(out, at, `dealDividedDamage names the target "${id}", whose slot has no divide`);
+        issue(
+          out,
+          at,
+          `dealDividedDamage or distributeCounters names the target "${id}", whose slot has no divide`,
+        );
       }
     }
     for (const id of divided) {
       if (!named.includes(id)) {
-        issue(out, at, `the slot "${id}" divides something but no dealDividedDamage deals it`);
+        issue(
+          out,
+          at,
+          `the slot "${id}" divides something but no dealDividedDamage deals it (or distributeCounters puts its counters)`,
+        );
       }
     }
   };
@@ -184,20 +193,20 @@ function checkDividedDamage(face: CardFace, path: string, out: AstIssue[]): void
   face.abilities.forEach((a, i) => {
     if (a?.kind === 'triggered' || a?.kind === 'activated') {
       checkOne(a.targets, a.effect ?? null, `${path}.abilities[${i}]`);
-    } else if (nodesOfKind(a, 'dealDividedDamage').length > 0) {
+    } else if (dividing(a).length > 0) {
       issue(
         out,
         `${path}.abilities[${i}]`,
-        'dealDividedDamage belongs to the effect of a spell or of an activated or triggered ability: the division is announced as it goes on the stack',
+        'dealDividedDamage and distributeCounters belong to the effect of a spell or of an activated or triggered ability: the division is announced as it goes on the stack',
       );
     }
   });
   const inModes =
-    nodesOfKind(spell?.modes ?? null, 'dealDividedDamage').length +
+    dividing(spell?.modes ?? null).length +
     face.abilities.reduce(
       (n, a) =>
         a?.kind === 'triggered' || a?.kind === 'activated'
-          ? n + nodesOfKind((a as { modes?: unknown }).modes ?? null, 'dealDividedDamage').length
+          ? n + dividing((a as { modes?: unknown }).modes ?? null).length
           : n,
       0,
     );

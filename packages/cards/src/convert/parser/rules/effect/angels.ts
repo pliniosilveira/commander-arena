@@ -14,7 +14,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
+import type { IrAmount, IrFilter, IrFlag, IrNoun, Span } from '../../ir/types';
 import {
   BOUNDARY,
   permanentPhrase,
@@ -22,8 +22,8 @@ import {
   spellTypesAndPhrase,
   withoutZone,
 } from '../noun/phrases';
-import { defineRule, quietly, spanned } from '../registry';
-import { type Clauses, makeClause } from './operands';
+import { defineRule, family, quietly, spanned } from '../registry';
+import { type Clauses, makeClause, single } from './operands';
 
 /** `effect.proliferate`: "proliferate" (CR 701.34a: choose any number of permanents and/or players, then give each another counter of each kind). */
 export const EFFECT_PROLIFERATE = defineRule<Clauses>({
@@ -34,6 +34,7 @@ export const EFFECT_PROLIFERATE = defineRule<Clauses>({
   examples: ['proliferate', 'Proliferate'],
   rejects: [
     'proliferate twice',
+    'proliferate X times',
     'proliferate target creature',
     'proliferates',
     'proliferate it',
@@ -42,7 +43,7 @@ export const EFFECT_PROLIFERATE = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const r = spanned(
-      pattern(new RegExp(`proliferate${BOUNDARY}(?! (?:twice|it|that|target))`, 'iu')),
+      pattern(new RegExp(`proliferate${BOUNDARY}(?! (?:twice|it|that|target|\\w+ times))`, 'iu')),
     )(ctx, pos);
     if (!r.ok) return r;
     // "Proliferate and draw a card" is two instructions, which the sentence's join reads (the clause itself is a whole instruction).
@@ -52,6 +53,34 @@ export const EFFECT_PROLIFERATE = defineRule<Clauses>({
       pos: r.pos,
     };
   },
+});
+
+/**
+ * `effect.proliferate-times`: "proliferate X times" (CR 701.34a: the action is done that many times in a row, each with its own choice).
+ * The count is a number or the X of the spell or ability.
+ */
+export const EFFECT_PROLIFERATE_TIMES = defineRule<Clauses>({
+  id: 'effect.proliferate-times',
+  family: 'effect',
+  leading: ['proliferate'],
+  cites: ['CR 701.34 (Proliferate)', 'CR 701.34a (Proliferate)', 'CR 107.3 (Variables)'],
+  examples: ['proliferate X times', 'Proliferate X times', 'proliferate three times'],
+  rejects: [
+    'proliferate X',
+    'proliferate times',
+    'proliferate X times and draw a card',
+    'proliferate X time',
+    'proliferate that many times',
+  ],
+  parse: single(
+    'effect.proliferate-times',
+    sequence(
+      literal('proliferate '),
+      family<IrAmount>('amount', { only: ['amount.number', 'amount.x'] }),
+      literal(' times'),
+    ),
+    ([, times]) => ({ verb: 'proliferate', args: { times } }),
+  ),
 });
 
 function flag(rule: string, span: Span): IrFlag {
@@ -407,6 +436,7 @@ export const EFFECT_SPEND_ONLY = defineRule<Clauses>({
 
 export const ANGEL_EFFECT_RULES = [
   EFFECT_PROLIFERATE,
+  EFFECT_PROLIFERATE_TIMES,
   EFFECT_EXILE_PER_OPPONENT,
   EFFECT_DESTROY_PER_OPPONENT,
   EFFECT_ONCE_EACH_TURN,

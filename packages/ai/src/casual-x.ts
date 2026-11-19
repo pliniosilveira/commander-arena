@@ -129,7 +129,21 @@ export function chooseXAnswer(view: GameView, d: ChooseXDecision): Action {
   }
   // A creature that X sizes is never announced at an X that kills it on arrival, when any larger X is on offer.
   const alive = source === undefined ? 0 : minXToSurvive(source);
-  return { kind: 'chooseX', value: Math.max(d.min, Math.min(d.max, Math.max(want, alive))) };
+  const value = Math.max(d.min, Math.min(d.max, Math.max(want, alive)));
+  return { kind: 'chooseX', value: onOffer(d, value) };
+}
+
+/**
+ * The value on offer nearest to `value` (CR 601.2b, 601.2c: a spell whose target is "with mana value X" is offered only the X that leave it a legal target,
+ * `ChooseXDecision.values`), the larger one when two are as near; `value` itself when every value is on offer.
+ */
+function onOffer(d: ChooseXDecision, value: number): number {
+  const values = d.values;
+  if (values === undefined || values.length === 0 || values.includes(value)) return value;
+  return values.reduce((best, v) => {
+    const closer = Math.abs(v - value) - Math.abs(best - value);
+    return closer < 0 || (closer === 0 && v > best) ? v : best;
+  });
 }
 
 /**
