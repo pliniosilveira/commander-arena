@@ -103,7 +103,13 @@ export function DeckDialog({
   }, []);
 
   return (
-    <div className="scr-backdrop">
+    // biome-ignore lint/a11y/noStaticElementInteractions: a click on the backdrop closes the dialog; Esc is the keyboard way.
+    <div
+      className="scr-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onCancel();
+      }}
+    >
       {/* The dialog takes focus itself; Esc closes it. */}
       <div
         ref={ref}
@@ -132,34 +138,36 @@ export function DeckDialog({
             </button>
           ))}
         </div>
-        <input
-          type="search"
-          className="scr-input scr-deck-search"
-          placeholder="Search decks by name or commander"
-          aria-label="Search decks"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        <fieldset className="scr-color-filter" aria-label="Filter by colors">
-          {COLOR_FILTERS.map((color) => (
-            <button
-              key={color}
-              type="button"
-              className="scr-color-btn"
-              aria-pressed={colorFilter.includes(color)}
-              aria-label={color === 'C' ? 'Colorless' : `${color} mana`}
-              title={color === 'C' ? 'Colorless' : undefined}
-              onClick={() => setColorFilter((prev) => toggleColorFilter(prev, color))}
-            >
-              <ManaCost cost={[color]} />
-            </button>
-          ))}
-          {colorFilter.length > 0 && (
-            <button type="button" className="scr-link" onClick={() => setColorFilter([])}>
-              Clear
-            </button>
-          )}
-        </fieldset>
+        <div className="scr-deck-filters">
+          <input
+            type="search"
+            className="scr-input scr-deck-search"
+            placeholder="Search decks by name or commander"
+            aria-label="Search decks"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <fieldset className="scr-color-filter" aria-label="Filter by colors">
+            {COLOR_FILTERS.map((color) => (
+              <button
+                key={color}
+                type="button"
+                className="scr-color-btn"
+                aria-pressed={colorFilter.includes(color)}
+                aria-label={color === 'C' ? 'Colorless' : `${color} mana`}
+                title={color === 'C' ? 'Colorless' : undefined}
+                onClick={() => setColorFilter((prev) => toggleColorFilter(prev, color))}
+              >
+                <ManaCost cost={[color]} />
+              </button>
+            ))}
+            {colorFilter.length > 0 && (
+              <button type="button" className="scr-link" onClick={() => setColorFilter([])}>
+                Clear
+              </button>
+            )}
+          </fieldset>
+        </div>
         <div role="tabpanel" className="scr-decks-list">
           {shown.length === 0 && inTab.length > 0 && (
             <p className="scr-note" role="note">
