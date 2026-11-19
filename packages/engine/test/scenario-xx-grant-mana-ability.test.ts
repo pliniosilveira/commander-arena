@@ -219,7 +219,7 @@ describe('validation and support', () => {
       validateAbility(grant(keyword))
         .map((i) => i.message)
         .join(),
-    ).toContain('a mana, an activated or a triggered ability');
+    ).toContain('a static ability can grant a mana, an activated, a triggered ability');
     const activated = {
       kind: 'activated',
       cost: [{ kind: 'tap' }],
