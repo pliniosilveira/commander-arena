@@ -1697,6 +1697,8 @@ export type Instruction =
       readonly alt?: 'unearth';
       /** A nonland card that goes to exile is counted as `thisWay` `exiledNonland` (D-231, `exileOwnGraveyardCard`). */
       readonly countsNonland?: true;
+      /** A creature that really goes to exile adds `power` to the total of `seat` in `thisWay` `exiledPowerBy` (Oversimplify; both read before the creatures left, CR 608.2h). */
+      readonly exiledPower?: { readonly seat: SeatId; readonly power: number };
       /** Creatures destroyed together replace each other's deaths (D-133, `MoveRequest.replacers`). */
       readonly replacers?: readonly ObjectId[];
       /** The last-known information of this permanent was recorded as the event of several leaving together began (D-283, `MoveRequest.lkiRecorded`). */
@@ -1884,6 +1886,10 @@ export interface ThisWayCounts {
   readonly discardedBy?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
   readonly searched?: number;
+  /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */
+  readonly exiledPowerBy?: Readonly<Record<number, number>>;
+  /** Not kept by a resolution: set for the one object an `addCounters` with `perController` reads, to the total of the player who controls it (`exiledPowerBy`). */
+  readonly exiledPowerOwn?: number;
 }
 
 /** An attacking creature (CR 508.1k). `blocked` stays true even if its blockers leave (CR 509.1h). */

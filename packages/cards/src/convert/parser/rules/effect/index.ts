@@ -130,6 +130,7 @@ import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
+import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
@@ -1098,6 +1099,7 @@ export const EFFECT_RULES = [
   // Stage P38 (D-182): changing the target of a spell or ability with a single target.
   EFFECT_CHANGE_TARGET,
   // Stage P33 (D-150): proliferate, an exile for each opponent, and the sentences about the ability before them.
+  ...QUANDRIX_D1_EFFECT_RULES,
   ...ANGEL_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,

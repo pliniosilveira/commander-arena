@@ -200,6 +200,7 @@ function lowerFilterAt(
         noun,
         true,
         filter.zone === 'stack' || filter.stackKind !== undefined,
+        noun.det === 'each' && !inner,
       );
       if (!lowered.ok) return lowered;
       anyOf.push(lowered.value);
@@ -302,7 +303,8 @@ function lowerFilterAt(
     if (inner || (filter.zone !== undefined && filter.zone !== 'battlefield')) return bad([]);
     parts.push('selector:putWithSource');
   }
-  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice.
+  // D-416 (CR 700.9): "modified", read where the filter is matched against the game (a target slot, an `each` selector, an enchant ability); never a member of a choice,
+  // except of the choice of an `each` selector ("Auras, Equipment, and modified creatures you control"), whose members are matched against the same game.
   if (filter.modified === true) {
     if (inner && !aimed) return bad([]);
     parts.push('selector:modified');

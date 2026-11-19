@@ -184,6 +184,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way".
       return 'the number of counters removed this way';
+    case 'exiledPowerOwn':
+      // Oversimplify: "the total power of creatures they controlled that were exiled this way".
+      return 'the total power of the creatures they controlled that were exiled this way';
   }
 }
 

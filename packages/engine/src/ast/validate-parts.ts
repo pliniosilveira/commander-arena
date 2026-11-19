@@ -1436,6 +1436,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   damageDealt: 'a dealDamage effect',
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
+  exiledPowerOwn: 'an exile effect',
 };
 
 /** Every `thisWay` count, one source of truth for the validator (the conditions and the amounts both read them from `ThisWayCounts`, D-131, D-210, D-358). */
@@ -1461,6 +1462,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt'];
   if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
+  // Oversimplify: the creatures an exile really exiled, by controller.
+  if (e?.kind === 'exile') return ['exiledPowerOwn'];
   // Lorehold group 1: "If you search your library this way, shuffle."
   if (e?.kind === 'search') return ['searched'];
   // D-210: what the players asked do is counted whether or not anyone accepts (the counts are 0 then).
@@ -5640,6 +5643,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       checkAmount(e.count, `${path}.count`, scope, out);
+      // Oversimplify: only an `addCounters` that reads its count for the controller of each object can read one player's total.
+      if (e.perController !== undefined && e.perController !== true) {
+        issue(out, `${path}.perController`, 'perController is true when present');
+      }
+      if (e.perController !== true && JSON.stringify(e.count).includes('exiledPowerOwn')) {
+        issue(
+          out,
+          `${path}.count`,
+          'exiledPowerOwn is read only by an addCounters with perController',
+        );
+      }
       break;
     case 'modifyPt':
     case 'setPt':

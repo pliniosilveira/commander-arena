@@ -102,6 +102,7 @@ import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
 import { QUANDRIX_LOWERINGS } from './quandrix';
+import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
@@ -2026,6 +2027,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ATTACH,
   ...DINOSAUR_LOWERINGS,
   ...ANGEL_LOWERINGS,
+  ...QUANDRIX_D1_LOWERINGS,
   ...ARDEN_LOWERINGS,
   // Issue 89 (Animate Dead): the Aura that returns the card it enchants.
   ...AURA_GRAVEYARD_LOWERINGS,

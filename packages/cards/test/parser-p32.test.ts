@@ -1265,7 +1265,7 @@ describe('fights (CR 701.14)', () => {
   test.each([
     'Target creature fights.',
     'Target creatures fight each other.',
-    'Target creature you control fights up to one target creature.',
+    'Target creature you control fights up to two target creatures.',
     'Target creature you control fights each creature.',
     'Each of those tokens fights one of those creatures.',
     'Each of those tokens fights a different one of them.',

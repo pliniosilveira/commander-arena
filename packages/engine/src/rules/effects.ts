@@ -555,12 +555,28 @@ export function runInstruction(
       result.newObject !== null &&
       hidden.objects[result.newObject]?.zone === 'exile' &&
       !derive(state, subject).types.includes('land');
+    // Oversimplify (CR 608.2h): a creature that really went to exile adds its power, as it was before any of them left, to what its controller lost "this way".
+    const exiledPower =
+      instruction.exiledPower !== undefined &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'exile'
+        ? instruction.exiledPower
+        : undefined;
     // D-135: an object that moved is something done, for "if you do".
     return {
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland ? { thisWay: { exiledNonland: 1 } } : {}),
+      ...(countedNonland || exiledPower !== undefined
+        ? {
+            thisWay: {
+              ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(exiledPower === undefined
+                ? {}
+                : { exiledPowerBy: { [exiledPower.seat]: exiledPower.power } }),
+            },
+          }
+        : {}),
     };
   }
   // D-210: an effect run "as" another player (the one a `playersMay` asked): that player is "you" in it, and what it queues next is run as them too.
@@ -899,7 +915,23 @@ function runEffect(
       // D-283 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
       const together = recordTogether(
         state,
-        moveInstructions(ids, 'exile').map((i) => (i.kind === 'move' ? { ...i, ...link } : i)),
+        moveInstructions(ids, 'exile').map((i) => {
+          if (i.kind !== 'move') return i;
+          // Oversimplify (CR 608.2h): the power and the controller of each creature as it is before any of them leaves, for "the total power of creatures they controlled that were exiled this way".
+          const obj = state.objects[i.object];
+          const lost =
+            obj !== undefined &&
+            obj.zone === 'battlefield' &&
+            derive(state, obj).types.includes('creature')
+              ? {
+                  exiledPower: {
+                    seat: controllerOf(state, obj),
+                    power: Math.max(0, derive(state, obj).power ?? 0),
+                  },
+                }
+              : {};
+          return { ...i, ...link, ...lost };
+        }),
       );
       return moving(together.state, together.instructions);
     }
@@ -1938,16 +1970,34 @@ function runEffect(
 
     case 'addCounters': {
       const count = amountOf(state, effect.count, ctx, targets);
-      if (count <= 0) return done(state);
+      if (count <= 0 && effect.perController !== true) return done(state);
       const blockers = counterBlockers(state);
       const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
+        // Oversimplify (CR 608.2c, 608.2h): the count is read for the player who controls each object, "the total power of creatures they controlled that were exiled this way".
+        const obj = state.objects[id];
+        const own =
+          effect.perController === true && obj !== undefined
+            ? amountOf(
+                state,
+                effect.count,
+                {
+                  ...ctx,
+                  thisWay: {
+                    ...ctx.thisWay,
+                    exiledPowerOwn: ctx.thisWay?.exiledPowerBy?.[controllerOf(state, obj)] ?? 0,
+                  },
+                },
+                targets,
+              )
+            : count;
+        if (own <= 0) continue;
         const put = putCountersOn(
           state,
           next,
           id,
           effect.counter,
-          count,
+          own,
           ctx.controller,
           blockers,
           bonuses,

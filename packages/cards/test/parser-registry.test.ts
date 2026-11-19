@@ -792,6 +792,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `When ~ enters, ${e} gets +1/+0 until end of turn.`,
   ),
   'noun.attacking-opponents': permanent((e) => `When ~ enters, ${e} get +1/+0 until end of turn.`),
+  // Quandrix Unlimited, group D1: "Auras, Equipment, and modified creatures you control gain hexproof until end of turn."
+  'noun.auras-equipment-modified': spell((e) => `${cap(e)} gain hexproof until end of turn.`),
   // Stage P64 (D-217): the nouns, effects and conditions of the Vraska EDHREC deck's second group.
   'noun.token-permanents': permanent((e) => `${cap(e)} have haste.`),
   // D-369: "Zombie tokens you control".

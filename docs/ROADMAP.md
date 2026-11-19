@@ -139,6 +139,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
 
+- "Total power of creatures they controlled that were exiled this way" (Oversimplify) counts only creatures an `exile` effect exiled, for each player's own tokens; other exiles (`exileTop`, until-leaves) and "you" or opponent phrasings are not read.
 - "Attached to that token" is read only after a token created in the same ability (Forum Filibuster). An Equipment put onto the battlefield attached to a non-creature enters unattached; that rule's text was not checked.
 - An Aura token an effect creates attached to a target is read only as one "white Aura enchantment token" with "enchant creature"; other enchant restrictions, several tokens and a replacement-made extra Aura (which still asks its host) are not.
 - An Aura attached to a card in a graveyard (Animate Dead, until its enters ability resolves) shows as unattached in the view and the web: the card is no permanent.

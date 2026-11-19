@@ -64,6 +64,7 @@ import { POWER_ABOVE_TARGET_NOUN_RULES } from './power-above-target';
 import { PRISMARI_G2_NOUN_RULES } from './prismari-g2';
 import { NOUN_EACH_OF_THEM, NOUN_IT, NOUN_THAT_TOKEN } from './pronoun';
 import { QUANDRIX_NOUN_RULES } from './quandrix';
+import { QUANDRIX_D1_NOUN_RULES } from './quandrix-d1';
 import { NOUN_SUBTYPE_UNION, SUBJECT_NOUN_RULES } from './subjects';
 import { VRASKA_EARLY_NOUN_RULES, VRASKA_NOUN_RULES } from './vraska';
 
@@ -179,7 +180,8 @@ function targetOf(
   // "each of up to two target creatures": the counters of a spell that puts one on each (the engine's
   // target slot already stands for every object chosen for it).
   const eachOf: Parser<Bare> = map(
-    sequence(literal('each of '), choice(upTo, counted)),
+    // "each of up to X target creatures you control" (Silkguard, CR 107.3a, 601.2c): the X of the spell is the number of targets.
+    sequence(literal('each of '), choice(...(allowX ? [xTargets] : []), upTo, counted)),
     ([, noun]) => noun,
   );
   return node<Bare, IrNoun>(
@@ -823,6 +825,7 @@ export const NOUN_RULES = [
   ...HYLDA_G2_EARLY_NOUN_RULES,
   // CR 208.1: "all creatures with power greater than target creature's power", whose first words are those of `noun.all-permanents`.
   ...POWER_ABOVE_TARGET_NOUN_RULES,
+  ...QUANDRIX_D1_NOUN_RULES,
   NOUN_ALL_PERMANENTS,
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle", which `noun.each-permanent` would stop at.
   ...HOFRI_NOUN_RULES,
