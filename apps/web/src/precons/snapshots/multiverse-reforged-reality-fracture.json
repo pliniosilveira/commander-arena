@@ -1,9 +1,11 @@
 {
   "id": "multiverse-reforged-reality-fracture",
-  "name": "Multiverse Reforged - Reality Fracture",
+  "name": "Multiverse Reforged",
   "blurb": "A Commander precon led by Jace, Multiverse Architect.",
   "source": "oracle_cards-2026-11-18T10-01-54-467-00-00.jsonl.gz",
   "decklist": "Commander\n1x Jace, Multiverse Architect\n\nMainboard\n1x Akroma, Angel of Fury\n1x Arcane Signet\n1x Archfiend of Despair\n1x Archon of Cruelty\n1x Avacyn, Angel of Horror\n1x Azorius Signet\n1x Battlefield Forge\n1x Brainstorm\n1x Brainsurge\n1x Caves of Koilos\n1x Chromatic Lantern\n1x Clifftop Retreat\n1x Command Tower\n1x Contaminated Landscape\n1x Currency Converter\n1x Cursed Mirror\n1x Dack Fayden, Helping Hand\n1x Darksteel Angel\n1x Despark\n1x Dimir Signet\n1x Dreadhorde Invasion\n1x Drowned Catacomb\n1x Elspeth, Sun's Champion\n1x Exotic Orchard\n1x Fabled Passage\n1x Fact or Fiction\n1x Fatehold Charm\n1x Fellwar Stone\n1x Fetid Heath\n1x Flawless Maneuver\n1x Ginger, Queen of Sweets\n1x Glacial Fortress\n1x Grand Crescendo\n1x Isolated Chapel\n1x Izzet Signet\n1x Jhoira, Weatherlight Corsair\n1x Kher Keep\n1x Lingering Souls\n1x Martial Coup\n1x Mass Polymorph\n1x Memnarch, the Warden\n1x Mystic Gate\n1x Nissa, Leyline Tamer\n1x Niv-Mizzet, Ghost Counsel\n1x Ob Nixilis, the Ascended\n1x Occult Epiphany\n1x Omnath, Locus of the Void\n1x Overlord of the Mistmoors\n1x Path of Ancestry\n1x Path to Exile\n1x Perilous Landscape\n1x Plan for All Outcomes\n1x Prairie Stream\n1x Proteus Staff\n1x Radiant Summit\n1x Rakdos Signet\n1x Reflecting Pool\n1x Restless Anchorage\n1x Restless Spire\n1x Secure the Wastes\n1x Serra's Emissary\n1x Shark Typhoon\n1x Shivan Reef\n1x Skrelv's Hive\n1x Sol Ring\n1x Staff of the Storyteller\n1x Stroke of Midnight\n1x Sulfur Falls\n1x Sulfurous Springs\n1x Sunfall\n1x Sunken Ruins\n1x Swords to Plowshares\n1x Synthetic Destiny\n1x Talisman of Creativity\n1x Talisman of Dominance\n1x Talisman of Indulgence\n1x Talisman of Progress\n1x Tamiyo, Upriser Crowned\n1x Teferi's Reproach\n1x The Ur-Sphinx\n1x Turbulent Crater\n1x Turbulent Shore\n1x Turbulent Wetlands\n1x Underground River\n1x Venser, Fervent Forger\n1x Whirlwind of Thought\n1x White Sun's Twilight\n1x Windcrag Siege\n2x Mountain\n2x Swamp\n3x Island\n4x Plains\n",
+  "set": "Reality Fracture Commander",
+  "year": 2026,
   "cards": [
     {
       "oracleId": "2b80faaf-92fd-4fa0-a3f6-8bb263e7ff1d",
