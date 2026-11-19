@@ -87,6 +87,8 @@ jobs:
         env:
           VITEST_RESULTS_DIR: .test-results
         run: |
+          # Without pipefail the step takes tee's exit code and a failing test never fails the job.
+          set -o pipefail
           mkdir -p "$VITEST_RESULTS_DIR"
           pnpm exec vitest run \
             --shard=${{ matrix.shard }}/4 \
