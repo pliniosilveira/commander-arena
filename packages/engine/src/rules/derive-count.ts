@@ -236,6 +236,18 @@ export function characteristicPtOf(
   let toughness: number | null = null;
   let found = false;
   for (const a of abilities) {
+    // CR 604.3, 613.4a (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...": the 1/1 of the ability, in every zone but the battlefield.
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'creatureOffBattlefield' &&
+      obj.zone !== 'battlefield'
+    ) {
+      if (!found && hasLostAbilities(state, obj.id)) return null;
+      found = true;
+      power = a.static.power;
+      toughness = a.static.toughness;
+      continue;
+    }
     if (a.kind !== 'static' || a.static.kind !== 'characteristicPt') continue;
     if (!found && hasLostAbilities(state, obj.id)) return null;
     found = true;

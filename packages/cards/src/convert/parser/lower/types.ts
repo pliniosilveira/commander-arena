@@ -98,6 +98,8 @@ export interface LowerContext {
    * it is): "that player" is then not lowered.
    */
   thatPlayer: { readonly selector: PlayerSelector; readonly needs: readonly FeatureRef[] } | null;
+  /** The sentence of "If they don't" after a "may" sentence the asked player does themselves is being lowered: "they" and "that player" are the player who declined (`declinedPlayer`). */
+  declinedPlayer: boolean;
   /** D-648: "that opponent" of a trigger about a player attacking one of your opponents (the player attacked), the engine's `triggerAttackedPlayer`; null for any other trigger. */
   attackedPlayer: {
     readonly selector: PlayerSelector;
@@ -323,6 +325,7 @@ export function newContext(
     lastToken: null,
     lowered: 0,
     thatPlayer: null,
+    declinedPlayer: false,
     attackedPlayer: null,
     enchantedPlayerTrigger: false,
     xIs: null,

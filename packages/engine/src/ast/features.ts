@@ -170,6 +170,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   ],
   effectKinds: [
     'sequence',
+    // Death Toll deck, group C: "... If an Insect card was milled this way, put a loyalty counter on ~ and repeat this process." (`repeatWhile`, CR 608.2c).
+    'repeatWhile',
     'chooseObjects',
     'chooseCreatureType',
     'dealDamage',
@@ -1122,6 +1124,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cantBeBlockedBy',
     'takeFromLinkedExile',
     'castAsThoughFlash',
+    // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (`creatureOffBattlefield`, CR 604.3).
+    'creatureOffBattlefield',
     // D-145: "can't attack or block unless you control another creature with power 4 or greater"; "Enchanted creature loses all
     // abilities and is a green Elk creature" (`loseAllAbilities`, `setColors`, `setTypes` without `additive`).
     'restrictionUnless',
@@ -1916,6 +1920,8 @@ export const STATIC_KINDS = [
   'takeFromLinkedExile',
   /** "You may cast artifact spells as though they had flash" (CR 601.3b, D-139): the engine's `castAsThoughFlash`. */
   'castAsThoughFlash',
+  /** "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types" (CR 604.3, 613.1d, 613.4a): the engine's `creatureOffBattlefield`. */
+  'creatureOffBattlefield',
   /** "Can't attack or block unless you control another creature with power 4 or greater" (CR 508.1a, D-145): the engine's `restrictionUnless`. */
   'restrictionUnless',
   /** "Enchanted creature loses all abilities" (CR 613.1f, D-145): the engine's static `loseAllAbilities`. */
@@ -2243,6 +2249,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   connive: true,
   createCopies: true,
   playersMay: true,
+  repeatWhile: true,
   addMana: true,
   addCounters: true,
   doubleCounters: true,

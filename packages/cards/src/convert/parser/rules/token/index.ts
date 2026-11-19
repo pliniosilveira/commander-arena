@@ -23,7 +23,11 @@ import { article, positiveCount, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS } from '../amount/scaled';
 import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
-import { namedTokenQuotedAbility, TOKEN_QUOTED_ABILITY_OR_CREW_BONUS } from '../static/quoted';
+import {
+  namedTokenQuotedAbility,
+  readQuotedAbility,
+  TOKEN_QUOTED_ABILITY_OR_CREW_BONUS,
+} from '../static/quoted';
 import { AURA_TOKEN_RULES } from './aura';
 import { TOKEN_COPY_EXCEPT, TOKEN_COPY_EXCEPT_ADDITIVE } from './copy-except';
 import { GALADRIEL_G3_TOKEN_RULES } from './galadriel-g3';
@@ -561,6 +565,73 @@ export const TOKEN_NAMED_LEGENDARY = defineRule<IrToken>({
   ),
 });
 
+/**
+ * A characteristic-defining ability of power and toughness in the quotes of a token with no numbers of its own: "This token's power and toughness are each equal to the number of lands
+ * you control." The one static ability of such a token (CR 208.2a, 604.3); another static ability is not read.
+ */
+const DEFINES_PT_QUOTED: Parser<IrQuotedAbility> = satisfy(
+  (ctx, pos) => readQuotedAbility(ctx, pos, { mana: false, statics: true }),
+  (quoted) =>
+    quoted.ability.kind === 'static' &&
+    quoted.ability.statement.effects.some((e) => e.kind === 'definesPt'),
+);
+
+/**
+ * `token.defined-pt`: "a green Treefolk creature token with reach and \"This token's power and toughness are each equal to the number of lands you control.\"" (Wrenn and Seven; Death Toll
+ * deck, group C; CR 111.4, 208.2a, 604.3): one token with no numbers of power and toughness, its own characteristic-defining ability in the quotes defines both (the same as `token.named-
+ * legendary` reads for a token with a name of its own); keywords of the token may come before the quote. One token ("a"), the colors and creature types written out. Not read: numbers of
+ * power and toughness with the ability, no quote, another static ability in the quote, a plural, an artifact creature.
+ */
+export const TOKEN_DEFINED_PT = defineRule<IrToken>({
+  id: 'token.defined-pt',
+  family: 'token',
+  leading: ['a'],
+  cites: [
+    'CR 111.4 (Tokens)',
+    'CR 208.2a (Power/Toughness)',
+    'CR 604.3 (Handling Static Abilities)',
+  ],
+  examples: [
+    'a green Treefolk creature token with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+    'a green Treefolk creature token with "~\'s power and toughness are each equal to the number of lands you control."',
+  ],
+  rejects: [
+    'a green Treefolk creature token',
+    'a green Treefolk creature token with reach',
+    'a 1/1 green Treefolk creature token with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+    'a green Treefolk creature token with reach and "~ gets +1/+1 for each land you control."',
+    'a green Treefolk creature token with reach and "Creatures you control get +1/+1."',
+    'a green Treefolk creature token with reach and "~\'s power and toughness are each equal to the number of lands you control"',
+    'two green Treefolk creature tokens with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+    'a green Treefolk artifact creature token with reach and "~\'s power and toughness are each equal to the number of lands you control."',
+  ],
+  parse: node<Bare, IrToken>(
+    'token.defined-pt',
+    map(
+      sequence(
+        spanned(literal('a ')),
+        COLORS,
+        literal(' '),
+        SUBTYPES,
+        literal(' creature'),
+        satisfy(TOKEN_WORD, (plural) => !plural),
+        literal(' with '),
+        satisfy(tokenWith(DEFINES_PT_QUOTED), (w) => w.abilities.length > 0),
+      ),
+      ([article, colors, , subtypes, , , , { keywords, abilities }]): Bare => ({
+        kind: 'token',
+        colors,
+        types: ['creature'],
+        subtypes,
+        count: { kind: 'number', value: 1, span: article.span },
+        ...(keywords.length > 0 ? { keywords } : {}),
+        abilities,
+      }),
+    ),
+    (b) => b,
+  ),
+});
+
 /** "a number of": a count that the sentence gives after the tokens, "equal to ..." (a placeholder of 1 until then). */
 const A_NUMBER_OF: Parser<IrAmount> = map(
   spanned(pattern(/a number of(?![\p{L}\p{N}])/iu)),
@@ -686,6 +757,8 @@ export const TOKEN_RULES = [
   TOKEN_PREDEFINED,
   TOKEN_CUSTOM,
   TOKEN_NAMED_LEGENDARY,
+  // Death Toll deck, group C: a token with no numbers whose own characteristic-defining ability defines them.
+  TOKEN_DEFINED_PT,
   TOKEN_NUMBER_OF,
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,

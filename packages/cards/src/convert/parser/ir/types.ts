@@ -1424,6 +1424,16 @@ export type IrStaticEffect =
   // D-647 (CR 508.1a): "Inklings can't attack you or planeswalkers you control": the creatures the subject names cannot be declared attacking the controller or their planeswalkers
   | { readonly kind: 'cantAttackYou' }
   | { readonly kind: 'noMaxHandSize' }
+  /**
+   * "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types." (Death Toll deck, group C, Grist, the Hunger Tide; CR 604.3): the engine's
+   * `creatureOffBattlefield` of the card itself. `subtypes` are the creature types as written (capitalised).
+   */
+  | {
+      readonly kind: 'creatureOffBattlefield';
+      readonly power: number;
+      readonly toughness: number;
+      readonly subtypes: readonly string[];
+    }
   /** "~ is the chosen type in addition to its other types." (stage P15, D-100, CR 205.1b, 613.1d). */
   | { readonly kind: 'chosenType' }
   /**

@@ -478,6 +478,15 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
         );
       }
       break;
+    case 'creatureOffBattlefield':
+      // CR 604.3: a characteristic-defining ability of the card itself: a power and toughness (whole numbers, not negative) and at least one creature type.
+      if (!isCount(s.power) || !isCount(s.toughness)) {
+        issue(out, path, 'the power and toughness are whole numbers, 0 or more');
+      }
+      if (!Array.isArray(s.subtypes) || s.subtypes.length === 0) {
+        issue(out, `${path}.subtypes`, 'name at least one creature type');
+      }
+      break;
     case 'noMaximumHandSize':
       break;
     case 'lookAtTopOfLibrary':

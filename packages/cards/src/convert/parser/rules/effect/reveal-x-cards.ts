@@ -8,10 +8,14 @@ import { NO_PARTS, toFilter } from '../noun/phrases';
 import { defineRule, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
-const KIND = '(land|creature|artifact|enchantment)';
+export const KIND = '(land|creature|artifact|enchantment)';
 
 /** The kind of card the instruction picks out, as the noun of a card in a library ("land cards": a plural noun, no article). */
-function kindOfCards(rule: string, type: string, span: { start: number; end: number }): IrNoun {
+export function kindOfCards(
+  rule: string,
+  type: string,
+  span: { start: number; end: number },
+): IrNoun {
   return {
     kind: 'noun',
     det: 'a',

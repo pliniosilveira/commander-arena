@@ -45,6 +45,7 @@ import { DANITHA_G2_EFFECT_RULES } from './danitha-g2';
 import { DANITHA_G4_EFFECT_RULES } from './danitha-g4';
 import { DAWNBREAK_EFFECT_RULES } from './dawnbreak';
 import { DEATH_TOLL_B_EFFECT_RULES } from './death-toll-b';
+import { DEATH_TOLL_C_EFFECT_RULES } from './death-toll-c';
 import { DELAYED_RULES } from './delayed';
 import { DINOSAUR_EFFECT_RULES } from './dinosaurs';
 import { DRAGON_EFFECT_RULES } from './dragons';
@@ -1060,6 +1061,8 @@ export const EFFECT_RULES = [
   ...DRAW_COMMANDER_CASTS_EFFECT_RULES,
   // Quandrix Unlimited deck, group D2: "reveal the top X cards ... put all land cards from among them onto the battlefield tapped", "reveal cards until you reveal X land cards".
   ...REVEAL_X_CARDS_EFFECT_RULES,
+  // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
+  ...DEATH_TOLL_C_EFFECT_RULES,
   EFFECT_DAMAGE,
   EFFECT_DAMAGE_COUNT,
   ...BITE_RULES,

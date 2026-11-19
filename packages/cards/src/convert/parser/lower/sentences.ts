@@ -19,7 +19,7 @@ import {
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { isCostSacrificeCount, lowerAmount } from './amounts';
 import { lowerChooseColorMana } from './chosen-color-mana';
-import { amountArg, type Effects } from './clauses';
+import { amountArg, arg, type Effects } from './clauses';
 import { lowerCondition } from './conditions';
 import { lowerCost } from './costs';
 import { lowerClause } from './effects';
@@ -866,8 +866,17 @@ function lowerRepeatProcess(
   const blocked = missingFeatures(['effect:conditional']);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
   const again = oneEffect(process.effects);
+  // "Repeat this process six more times." (Death Toll deck, group C, Professor Onyx): the process is done again that many more times, one after the other.
+  const times = arg(clause, 'times');
+  if (times !== undefined && (times.kind !== 'number' || sentence.condition !== undefined)) {
+    return refuse(sentence);
+  }
   if (sentence.condition === undefined) {
-    return { ok: true, value: [again], rule: clause.rule };
+    return {
+      ok: true,
+      value: Array.from({ length: times?.kind === 'number' ? times.value : 1 }, () => again),
+      rule: clause.rule,
+    };
   }
   const condition = lowerCondition(sentence.condition, false, ctx);
   if (!condition.ok) return condition;
@@ -876,6 +885,58 @@ function lowerRepeatProcess(
     value: [{ kind: 'conditional', condition: condition.value, effect: again }],
     rule: clause.rule,
   };
+}
+
+/**
+ * "Create a 1/1 black and green Insect creature token, then mill a card. If an Insect card was milled this way, put a loyalty counter on ~ and repeat this process." (Death Toll deck,
+ * group C, Grist, the Hunger Tide; CR 608.2c): the sentence before it is the process, the test of this sentence is when it is done again, after what is put before "repeat". The
+ * engine's `repeatWhile`. The process is the one sentence before it, ending in a mill of the controller's library (so that it ends), with no choice of targets; a sentence with no test, or
+ * one that repeats more than one sentence, is refused.
+ */
+function lowerRepeatWhile(
+  sentence: IrSentence,
+  steps: readonly Step[],
+  ctx: LowerContext,
+): LowerResult<Effects> {
+  const clauses = sentence.clauses;
+  const last = clauses[clauses.length - 1];
+  const [process] = steps;
+  if (
+    last === undefined ||
+    sentence.condition === undefined ||
+    sentence.where !== undefined ||
+    sentence.instead === true ||
+    sentence.otherwise === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined ||
+    clauses.some((c) => c.optional || c.condition !== undefined) ||
+    steps.length !== 1 ||
+    process === undefined ||
+    ctx.targets.length > 0 ||
+    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same).
+    process.effects[process.effects.length - 1]?.kind !== 'mill'
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(['effect:repeatWhile']);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  // The condition is read as the clause before it was lowered, which is the mill of the process (`ctx.milled`).
+  const condition = lowerCondition(sentence.condition, false, ctx);
+  if (!condition.ok) return condition;
+  const beforeClauses = clauses.slice(0, -1);
+  const before =
+    beforeClauses.length === 0
+      ? { ok: true as const, value: [], rule: last.rule }
+      : lowerClauses(beforeClauses, ctx);
+  if (!before.ok) return before;
+  const effect: Effect = {
+    kind: 'repeatWhile',
+    effects: process.effects,
+    condition: condition.value,
+    ...(before.value.length === 0 ? {} : { beforeAgain: before.value }),
+  };
+  return { ok: true, value: [effect], rule: last.rule };
 }
 
 /**
@@ -1797,6 +1858,16 @@ function lowerStep(
     steps.push({ effects: offeredSearch.value, replaceable: false });
     return { last: i };
   }
+  // "..., put a loyalty counter on ~ and repeat this process." (Death Toll deck, group C, Grist, the Hunger Tide).
+  if (sentence.clauses.some((c) => c.verb === 'repeatProcessAgain')) {
+    const last = sentence.clauses[sentence.clauses.length - 1];
+    if (last?.verb !== 'repeatProcessAgain') return stop(refuse(sentence));
+    const repeated = lowerRepeatWhile(sentence, steps, ctx);
+    if (!repeated.ok) return stop(repeated);
+    steps.pop();
+    steps.push({ effects: repeated.value, replaceable: false });
+    return { last: i };
+  }
   if (first.verb === 'repeatProcess') {
     const repeated = lowerRepeatProcess(sentence, steps, ctx);
     if (!repeated.ok) return stop(repeated);
@@ -2122,7 +2193,12 @@ function lowerPlayersMay(
     ) {
       return refused(refuse(next));
     }
+    // Death Toll deck, group C (Professor Onyx): "Each opponent may discard a card. If they don't, they lose 3 life.": "they" is the player who declined, not every player asked
+    // (the engine's `declinedPlayer`, D-576), which is who "they" and "that player" name while the sentence of "if they don't" is lowered.
+    const wasDeclined = ctx.declinedPlayer;
+    ctx.declinedPlayer = !by.haveYou;
     const other = lowerClauses(next.clauses, ctx);
+    ctx.declinedPlayer = wasDeclined;
     if (!other.ok) return refused(other);
     otherwise = oneEffect(other.value);
   }

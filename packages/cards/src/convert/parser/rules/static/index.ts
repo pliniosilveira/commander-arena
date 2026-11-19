@@ -18,6 +18,7 @@ import { BLOCK_POWER_STATIC_RULES } from './block-power';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
+import { DEATH_TOLL_C_STATIC_RULES } from './death-toll-c';
 import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
 import { EDHREC_STATIC_RULES } from './edhrec';
@@ -87,6 +88,8 @@ export const STATIC_NO_MAXIMUM_HAND_SIZE = defineRule<IrStatic>({
 
 export const STATIC_RULES = [
   STATIC_NO_MAXIMUM_HAND_SIZE,
+  // Death Toll deck, group C (Grist, the Hunger Tide): "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature ...", before the plain "as long as" statements.
+  ...DEATH_TOLL_C_STATIC_RULES,
   // Issue 104 (Eternal Might deck): "Creatures you control are every creature type. ...", whose first words are those of `static.permanents`.
   ...ETERNAL_MIGHT_STATIC_RULES,
   ...JESKAI_FLASHBACK_STATIC_RULES,

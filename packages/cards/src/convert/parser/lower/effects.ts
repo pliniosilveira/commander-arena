@@ -53,6 +53,7 @@ import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
 import { DANITHA_G2_LOWERINGS } from './danitha-g2';
 import { DAWNBREAK_LOWERINGS } from './dawnbreak';
 import { DEATH_TOLL_B_LOWERINGS } from './death-toll-b';
+import { DEATH_TOLL_C_LOWERINGS } from './death-toll-c';
 import { DESTINY_LOWERINGS } from './destiny';
 import { DINOSAUR_LOWERINGS } from './dinosaurs';
 import { DRAGON_LOWERINGS } from './dragons';
@@ -2138,6 +2139,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...QUANDRIX_LOWERINGS,
   // Quandrix Unlimited deck, group D2: reveal X cards or until X cards of a kind, the cards of the kind onto the battlefield tapped.
   ...QUANDRIX_D2_LOWERINGS,
+  ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_LOWERINGS,
   ...FLASH_PERMISSION_LOWERINGS,

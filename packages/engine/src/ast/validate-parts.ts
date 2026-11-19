@@ -4428,6 +4428,48 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkCosts(e.cost, `${path}.cost`, out);
       }
       break;
+    case 'repeatWhile': {
+      // CR 608.2c (Grist, the Hunger Tide): the effects, then `then` and the effects again while the test holds. The last effect is a mill, so each pass takes cards out of a
+      // library and the repeat ends; the test reads the cards that mill moved.
+      if (!Array.isArray(e.effects) || e.effects.length === 0) {
+        issue(out, `${path}.effects`, 'a repeated process needs at least one effect');
+        break;
+      }
+      if (e.effects[e.effects.length - 1]?.kind !== 'mill') {
+        issue(
+          out,
+          `${path}.effects`,
+          'the repeated process ends with a mill (each pass takes cards out of a library, so the repeat ends)',
+        );
+      }
+      checkEffect({ kind: 'sequence', effects: e.effects }, `${path}.effects`, scope, out);
+      const after = { ...scope, movedAvailable: true };
+      checkEffectCondition(e.condition, `${path}.condition`, after, out);
+      if (e.condition?.kind !== 'objectMatches' || kindOf(e.condition.of) !== 'moved') {
+        issue(
+          out,
+          `${path}.condition`,
+          'the test of a repeated process reads the cards the mill moved (objectMatches of moved)',
+        );
+      }
+      if (e.beforeAgain !== undefined) {
+        if (!Array.isArray(e.beforeAgain) || e.beforeAgain.length === 0) {
+          issue(
+            out,
+            `${path}.beforeAgain`,
+            'beforeAgain is a list of at least one effect when present',
+          );
+        } else {
+          checkEffect(
+            { kind: 'sequence', effects: e.beforeAgain },
+            `${path}.beforeAgain`,
+            after,
+            out,
+          );
+        }
+      }
+      break;
+    }
     case 'playersMay': {
       // D-210 (CR 608.2d): each player named is asked whether to do the effect; the effect and what is done otherwise are ordinary effects.
       checkPlayerSelector(e.players, `${path}.players`, scope, out);
@@ -4957,6 +4999,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           }
         });
       }
+      if (e.player !== undefined) checkPlayerSelector(e.player, `${path}.player`, scope, out);
       if (typeof e.text !== 'string') issue(out, `${path}.text`, 'the emblem needs its text');
       break;
     case 'empowerJace':
@@ -5390,19 +5433,19 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(e.rest, ['bottomRandom', 'graveyard', 'top', 'bottomChosen', 'topChosen'])) {
         issue(out, `${path}.rest`, `unknown place for the rest ${JSON.stringify(e.rest)}`);
       }
-      // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield": every matching card goes, in a reveal of the top, onto the battlefield.
+      // CR 701.20, 608.2c: "Put all land cards from among them onto the battlefield" and "Put all land cards revealed this way into your hand": every matching card goes, in a reveal of the top.
       if (
         e.take?.all !== undefined &&
         (e.take.all !== true ||
           e.revealAll !== true ||
-          e.take.to !== 'battlefield' ||
+          (e.take.to !== 'battlefield' && e.take.to !== 'hand') ||
           e.take.min !== undefined ||
           e.take.totalManaValue !== undefined)
       ) {
         issue(
           out,
           `${path}.take.all`,
-          'all is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield, with no min or total mana value',
+          'all is true, and only for a reveal of the top (revealAll) whose cards go onto the battlefield or into the hand, with no min or total mana value',
         );
       }
       break;
