@@ -365,7 +365,14 @@ describe('supported feature gate', () => {
       'moved',
       'putWithThis',
     ]);
-    expect(SUPPORTED_FEATURES.tokenPresets).toEqual(['Treasure', 'Food', 'Clue', 'Gold']);
+    expect(SUPPORTED_FEATURES.tokenPresets).toEqual([
+      'Treasure',
+      'Food',
+      'Clue',
+      'Gold',
+      'Map',
+      'Gingerbrute',
+    ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',
       'alone',

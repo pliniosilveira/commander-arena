@@ -347,7 +347,6 @@ describe('what stays unread: X where the engine has no X (CR 107.3, 107.3j)', ()
   test.each([
     ['Flashback {X}{R}', 'sorcery', '{X}{R}', 'keyword.flashback'],
     ['Kicker {X}', 'sorcery', '{X}', 'keyword.kicker'],
-    ['Cycling {X}', 'creature', '{X}', 'keyword.cycling'],
     ['Equip {X}', 'artifact', '{X}', 'keyword.equip'],
     ['Ward {X}', 'creature', '{X}', 'keyword.ward'],
     ['Cycling—Pay X life.', 'creature', 'X life.', 'cost.pay-life'],

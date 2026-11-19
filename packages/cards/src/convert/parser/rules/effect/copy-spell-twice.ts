@@ -4,7 +4,7 @@
 import { literal, pattern, quiet, sequence } from '../../combinators';
 import type { IrAmount, IrNoun } from '../../ir/types';
 import { BOUNDARY, spellPhrase } from '../noun/phrases';
-import { defineRule, spanned } from '../registry';
+import { defineRule, quietly, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
 
 const ID = 'effect.copy-spell-twice';
@@ -77,4 +77,5 @@ export const EFFECT_COPY_SPELL_TWICE = defineRule<Clauses>({
   },
 });
 
-export const COPY_SPELL_TWICE_EFFECT_RULES = [EFFECT_COPY_SPELL_TWICE];
+// Read quietly: a copy line this rule does not read keeps the diagnostic of `effect.copy-spell`.
+export const COPY_SPELL_TWICE_EFFECT_RULES = [EFFECT_COPY_SPELL_TWICE].map(quietly);
