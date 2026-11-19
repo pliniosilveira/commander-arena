@@ -234,6 +234,24 @@ class Binder {
     this.seed(test.amount.of, 'triggerSubject', true);
   }
 
+  /** The controller of the permanent a death trigger is about, as an antecedent of "that player" (CR 603.10a). */
+  seedControllerOfSubject(subject: IrNoun): void {
+    this.antecedents.push({
+      noun: {
+        kind: 'noun',
+        det: 'triggerActor',
+        filter: { raw: 'that player' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: subject.span,
+        rule: subject.rule,
+        ref: 'trigActor',
+      },
+      kind: 'player',
+    });
+  }
+
   /** The target of the spell line before this one, the antecedent of a "that creature" of this line and of no other pronoun (stage P35, D-176). */
   seedLine(noun: IrNoun): void {
     this.antecedents.push({ noun, kind: 'object', previousLine: true });
@@ -749,6 +767,17 @@ function seedTrigger(binder: Binder, source: IrTrigger): IrTrigger {
   const actor = binder.seed(source.actor, 'triggerActor');
   // The player a creature dealt combat damage to is the antecedent of "that player" (stage P18).
   const recipient = binder.seed(source.recipient, 'triggerActor');
+  // CR 603.10a, 400.7: "Whenever a creature an opponent controls dies, that player loses 2 life": the player of a death trigger is the controller of the
+  // permanent that died (last known information), so "that player" has an antecedent. A text that says no such pronoun is unchanged.
+  if (
+    (source.event === 'dies' || source.event === 'leavesBattlefield') &&
+    source.alternatives === undefined &&
+    subject !== undefined &&
+    subject.det !== 'self' &&
+    actor === undefined
+  ) {
+    binder.seedControllerOfSubject(subject);
+  }
   return {
     ...source,
     ...(subject === undefined ? {} : { subject }),

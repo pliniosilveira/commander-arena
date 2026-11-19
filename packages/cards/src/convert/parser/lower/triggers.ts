@@ -707,6 +707,18 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
   }
+  // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information.
+  if (
+    (only.event === 'dies' || only.event === 'leavesBattlefield') &&
+    only.subject !== undefined &&
+    only.subject.det !== 'self' &&
+    only.actor === undefined
+  ) {
+    return {
+      selector: { kind: 'controllerOf', of: { kind: 'triggerSubject' } },
+      needs: ['selector:controllerOf', 'selector:triggerSubject'],
+    };
+  }
   if (only.actor?.det === 'you') {
     return { selector: { kind: 'you' }, needs: ['selector:you'] };
   }
