@@ -1702,12 +1702,20 @@ describe('subjects of triggers and the player an event is about (CR 603.2, 508.1
   });
 
   test('the player of a death and of a combat damage that hit a creature is not an event player; the player of a step is the active player', () => {
-    for (const text of [
-      'Whenever a nontoken creature you control dies, that player loses 1 life.',
-      'Whenever ~ deals combat damage to a creature, that player discards a card.',
-    ]) {
-      expect(drop(text)).toMatchObject({ reason: 'unboundReference' });
-    }
+    // Combat damage to a creature has no event player. A death does: "that player" is the controller
+    // of the creature that died (CR 603.10a, last known information); see
+    // convert-grammar-engine-dies-that-player.test.ts for the full behaviour.
+    expect(
+      drop('Whenever ~ deals combat damage to a creature, that player discards a card.'),
+    ).toMatchObject({
+      reason: 'unboundReference',
+    });
+    expect(
+      abilities(
+        'Whenever a nontoken creature you control dies, that player loses 1 life.',
+        'enchantment',
+      ),
+    ).toMatchObject([{ kind: 'triggered', effect: { kind: 'loseLife', amount: 1 } }]);
     expect(
       abilities(
         "At the beginning of each opponent's upkeep, that player loses 1 life.",
