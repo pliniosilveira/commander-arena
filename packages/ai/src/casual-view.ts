@@ -10,6 +10,14 @@ export const hasKeyword = (o: ObjectView, keyword: string): boolean => o.keyword
 export const powerOf = (o: ObjectView): number => o.power ?? 0;
 export const toughnessOf = (o: ObjectView): number => o.toughness ?? 0;
 
+/**
+ * The rules text without its reminder text (CR 207.2a: text in parentheses explains a rule and has no
+ * effect of its own). A text filter must read this, not `oracleText`: the reminder of Hexproof says
+ * "can't be the target of spells" and the one of Indestructible says "destroy", which made a
+ * protection spell read as a counterspell and as a hostile one.
+ */
+export const withoutReminder = (text: string): string => text.replace(/\([^)]*\)/g, '');
+
 /** Mana value from the printed cost (CR 202.3). Commander tax is not included. */
 export const manaValueOf = (o: ObjectView): number =>
   o.manaCost === null ? 0 : manaValue(o.manaCost);

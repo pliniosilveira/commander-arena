@@ -44,12 +44,13 @@ import { isHelpfulSpell } from './casual-helpful';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey } from './casual-prevention';
 import { choosePriorityAction, type Play, spellPlays, spendOf, withFace } from './casual-priority';
-import { hasKeyword, manaValueOf } from './casual-view';
+import { hasKeyword, manaValueOf, withoutReminder } from './casual-view';
 import { creatureValue, evaluate } from './evaluate';
 import type { Think } from './heuristic-budget';
 import { type Answer, scoreCast, vetPlays } from './heuristic-delta';
 import { planLand } from './heuristic-lands';
 import { canPayAll, costSymbols, ownUnits } from './heuristic-mana';
+import { protectionPlay } from './heuristic-protect';
 import { bestRemovalTarget, isRemovalSpell } from './heuristic-targets';
 import type { Reason } from './reasons';
 
@@ -71,7 +72,8 @@ const TARGETS_SPELL = /target (activated or triggered ability|(\w+ )?spell)/i;
 
 const isInstantSpeed = (o: ObjectView): boolean =>
   o.types.includes('instant') || hasKeyword(o, 'flash');
-const isCounter = (o: ObjectView): boolean => isInstantSpeed(o) && TARGETS_SPELL.test(o.oracleText);
+const isCounter = (o: ObjectView): boolean =>
+  isInstantSpeed(o) && TARGETS_SPELL.test(withoutReminder(o.oracleText));
 
 const castAction = (p: Play): Action => ({
   kind: 'castSpell',
@@ -289,6 +291,9 @@ function windowPlay(
     const ward = plays.find((p) => isAura(p.obj) && flashesForCommander(p.obj));
     if (ward !== undefined) return { action: castAction(ward), reason: 'protect-commander' };
   }
+  // In response to an opponent's spell or ability that names a permanent of the agent's: a protection spell.
+  const shield = protectionPlay(view, plays, think, answer, castAction);
+  if (shield !== null) return { action: castAction(shield), reason: 'protect-threatened' };
   // In response to an opponent's spell: a counterspell for a spell worth it.
   if (top !== undefined && top.controller !== me && !top.abilitySource) {
     const counter = plays

@@ -37,6 +37,7 @@ import { NO_BUDGET, startBudget, type Think } from './heuristic-budget';
 import { choosePriorityHeuristic } from './heuristic-main';
 import { OpponentModel } from './heuristic-model';
 import { chooseHeuristicMulligan } from './heuristic-mulligan';
+import { isProtectionSpell, protectedTarget } from './heuristic-protect';
 import { chooseReplacementByOutcome } from './heuristic-replacement';
 import { chooseRemovalTargets, creatureToHelp } from './heuristic-targets';
 import { chooseVoteByOutcome } from './heuristic-vote';
@@ -140,7 +141,9 @@ export class HeuristicAgent implements ExplainingAgent {
             spec !== undefined &&
             spec.max === 1
           ) {
-            const target = creatureToHelp(view, spec.legal);
+            const target =
+              (isProtectionSpell(source) ? protectedTarget(view, spec.legal) : null) ??
+              creatureToHelp(view, spec.legal);
             if (target !== null) return { kind: 'chooseTargets', targets: [target] };
           }
         }
