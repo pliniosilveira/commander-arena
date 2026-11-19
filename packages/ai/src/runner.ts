@@ -79,7 +79,7 @@ function message(error: unknown): string {
 
 export async function runGame(
   config: GameConfig,
-  agents: readonly Agent[],
+  agents: readonly [Agent, Agent],
   options: RunOptions,
 ): Promise<GameRun> {
   let decisions = 0;

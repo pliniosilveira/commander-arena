@@ -15,8 +15,8 @@ Can the app run free-for-all Commander games with 3 and 4 seats, what would brea
 
 ## What blocks it today
 
-- `createGame` threw for anything but two seats (`rules/setup.ts`).
-- `runGame` typed its agents as a pair (`packages/ai/src/runner.ts`).
+- `createGame` throws for anything but two seats (`rules/setup.ts`).
+- `runGame` types its agents as a pair (`packages/ai/src/runner.ts`).
 - `Board.tsx` draws one opponent (`view.seats.find(s => s.id !== view.viewer)`), and the web host has one `HUMAN` and one `AI_SEAT` (`apps/web/src/game/host.ts`).
 - The scenario DSL assumes two seats (`testing/scenario.ts`, `testing/assemble.ts` has `(controller + 1) % 2`).
 - `docs/RULES_COVERAGE.md` marks CR 800.4a and 806 "Not implemented" and lists several seat-specific limits: one defending player (annihilator), `reselectAttack` (508.7d and 508.7e), APNAP for simultaneous choices (101.4), control changes when an owner leaves.
@@ -24,7 +24,7 @@ Can the app run free-for-all Commander games with 3 and 4 seats, what would brea
 
 ## Probe
 
-`node tools/ai/multiplayer-probe.ts --players 3|4 --games N --agent random|casual|greedy|heuristic [--seed S] [--verbose]` plays whole games of the real precons (`apps/web/src/precons/snapshots/`), one agent per seat, through `runGame`. It needs `createGame` to accept the seat count. Each agent is wrapped to record what its view shows about seats that have lost. Not part of any test run.
+The probe is not in the repository: it ran from a local patch that is not merged. It played whole games of the real precons (`apps/web/src/precons/snapshots/`), one agent per seat, through `runGame`, with three changes: `createGame` accepted two to four seats, `runGame` took any number of agents instead of a pair, and each agent was wrapped to record what its view shows about seats that have lost (`node tools/ai/multiplayer-probe.ts --players 3|4 --games N --agent random|casual|greedy|heuristic [--seed S] [--verbose]`).
 
 First run: agent `random`, 10 games per seat count, first seed 1, 100 turns and 8000 actions as limits.
 
@@ -91,7 +91,7 @@ The viewer stays below. Opponents sit in a row above: two for three seats, three
 
 - The range of influence (CR 801): off, so that everyone is in range?
 - Whether a game of 3 or 4 is offered as "commander damage per player" as in CR 903.10.
-- Whether `createGame` may accept more than two seats in `main` before phase 1 is finished.
+- Whether `createGame` may accept more than two seats in `main` before phase 1 is finished (it does not today).
 - Whether `docs/SPEC.md` section 1 changes (needs approval).
 
 ## Open work from the probe

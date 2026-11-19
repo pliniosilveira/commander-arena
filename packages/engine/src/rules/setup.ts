@@ -64,10 +64,10 @@ function emptySeat(id: SeatId): SeatState {
 
 /** Creates a game and stops at the first mulligan decision (CR 103.5). */
 export function createGame(config: GameConfig): Outcome {
-  if (config.decks.length < 2 || config.decks.length > 4) {
+  if (config.decks.length !== 2) {
     // v1 is one human against one AI. Every rule below is written for any number of seats; the
     // multiplayer pieces (800.4a leaving the game, APNAP around the table) arrive with multiplayer.
-    throw new Error('The engine supports two to four seats');
+    throw new Error('The engine supports exactly two seats');
   }
   const settings: GameSettings = { ...DEFAULT_SETTINGS, ...config.settings };
   const definitions: CardDefinition[] = [];
