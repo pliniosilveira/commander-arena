@@ -932,8 +932,14 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   const eventDamage = events.every(
     (e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt',
   );
-  if (!castTargetCount && !eventDamage) return ability;
-  const eventAmount = castTargetCount ? 'triggerTargetCount' : 'triggerDamage';
+  // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
+  const attackers = events.every((e) => e.event === 'attackBatch');
+  if (!castTargetCount && !eventDamage && !attackers) return ability;
+  const eventAmount = attackers
+    ? 'triggerAttackerCount'
+    : castTargetCount
+      ? 'triggerTargetCount'
+      : 'triggerDamage';
   let counted = false;
   const retarget = (amount: IrAmount): IrAmount => {
     switch (amount.kind) {

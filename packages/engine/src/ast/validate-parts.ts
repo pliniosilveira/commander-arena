@@ -147,6 +147,8 @@ export interface Scope {
   readonly triggerDamage?: boolean;
   /** True in the effect of a `cycled` trigger: `triggerCycleX` reads the X of the cycling cost (issue 81, Shark Typhoon). */
   readonly triggerCycleX?: boolean;
+  /** True in the effect of an `attackBatch` trigger: `triggerAttackerCount` reads the creatures of the declaration that matched (issue 81, The Ur-Sphinx). */
+  readonly triggerAttackerCount?: boolean;
   /** True in the effect of a cast trigger that requires targets (`triggerTargetCount`, D-574). */
   readonly triggerTargetCount?: boolean;
   /** True in the effect of a triggered ability whose trigger is a batch of attackers (`attackersAttackedYou`, D-149). */
@@ -738,6 +740,7 @@ const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'triggerTargetCount',
   'triggerSpellX',
   'triggerCycleX',
+  'triggerAttackerCount',
   'dieResult',
   'votesFor',
   'exiledStillThere',
@@ -2063,6 +2066,16 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           "'triggerCycleX' needs a triggered ability whose trigger is cycling this card",
+        );
+      }
+      break;
+    case 'triggerAttackerCount':
+      // CR 508.1 (issue 81): the creatures of the declaration the trigger counted.
+      if (scope.triggerAttackerCount !== true) {
+        issue(
+          out,
+          path,
+          "'triggerAttackerCount' needs a triggered ability whose trigger is a batch of attackers",
         );
       }
       break;
@@ -5516,6 +5529,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         }
         if (e.play === true) {
           issue(out, `${path}.max`, 'several cards are cast, not played (no play)');
+        }
+      }
+      // CR 608.2g, 101.4 (issue 81): one question for each owner of the cards an earlier effect moved: nothing else about who casts or how many.
+      if (e.perOwner !== undefined) {
+        if (
+          e.perOwner !== true ||
+          kindOf(e.objects) !== 'moved' ||
+          e.play !== undefined ||
+          e.max !== undefined ||
+          e.filter !== undefined ||
+          e.player !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.perOwner`,
+            "perOwner is true, on the cards an effect before moved ('moved'), with no play, max, filter or player",
+          );
         }
       }
       const objects = e.objects as ChooseSelector | ObjectRef;

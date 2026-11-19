@@ -676,6 +676,7 @@ function lowerCostReduction(
   ability: Static,
   amount: Extract<IrStaticEffect, { kind: 'costReduction' }>['amount'],
   ctx: LowerContext,
+  inCommandZone?: true,
 ): LowerResult<readonly Ability[]> {
   const { subject } = ability.statement;
   const missing = missingFeatures(['ability:static', 'static:costReduction']);
@@ -698,7 +699,18 @@ function lowerCostReduction(
   }
   return {
     ok: true,
-    value: [{ kind: 'static', static: { kind: 'costReduction', spells, amount: lowered.value } }],
+    value: [
+      {
+        kind: 'static',
+        static: {
+          kind: 'costReduction',
+          spells,
+          amount: lowered.value,
+          // Eminence (issue 81, CR 113.6): the reduction works in the command zone too.
+          ...(inCommandZone === true ? { inCommandZone: true as const } : {}),
+        },
+      },
+    ],
     rule: ability.rule,
   };
 }
@@ -1020,7 +1032,7 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isCostIncrease(first)) return more.length > 0 ? failure(ability) : lowerCostIncrease(ability);
   if (first.kind === 'costReduction') {
     if (more.length > 0) return failure(ability);
-    return lowerCostReduction(ability, first.amount, ctx);
+    return lowerCostReduction(ability, first.amount, ctx, first.inCommandZone);
   }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (Danitha group 3, D-428, CR 601.2f, 602.2b, 702.6a).
   if (first.kind === 'abilityCostReduction')

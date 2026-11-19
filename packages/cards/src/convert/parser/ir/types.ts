@@ -564,6 +564,8 @@ export type IrAmount =
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
+  // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
+  | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
   | { readonly kind: 'shortfall'; readonly limit: number; readonly span: Span }
   // Stage P39 (D-184, CR 601.2h): "the amount of mana spent to cast it", "for each mana from an artifact source spent to cast it"; `fromType` is the
@@ -1434,7 +1436,7 @@ export type IrStaticEffect =
    * {1} less to cast" (stage P13, CR 118.7, 601.2f): `amount` generic mana less. The statement's
    * subject is `~` (the spell itself) or the spells described (`det` `each`, `controller` you).
    */
-  | { readonly kind: 'costReduction'; readonly amount: IrAmount }
+  | { readonly kind: 'costReduction'; readonly amount: IrAmount; readonly inCommandZone?: true }
   /** D-149 (CR 601.2f): "Spells your opponents cast that target ~ cost {2} more to cast.": the engine's `costIncrease`, generic mana only. */
   | { readonly kind: 'costIncrease'; readonly amount: number }
   // "Equip abilities you activate that target enchanted creature cost {3} less to activate." (D-428, CR 601.2f, 602.2b, 702.6a): the generic mana taken off
@@ -1883,6 +1885,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'triggerDamage',
   'dieResult',
   'triggerTargetCount',
+  'triggerAttackerCount',
   'shortfall',
   'exiledStillThere',
   'aurasAttachedToIt',

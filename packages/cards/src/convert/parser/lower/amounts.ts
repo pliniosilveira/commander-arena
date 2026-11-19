@@ -201,6 +201,11 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'triggerAttackerCount': {
+      const blocked = needs('triggerAttackerCount');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'triggerAttackerCount' }, rule };
+    }
     case 'triggerTargetCount': {
       const blocked = needs('triggerTargetCount');
       if (blocked !== null) return blocked;
@@ -814,6 +819,7 @@ export const AMOUNT_NEEDS = [
   'amount:thisWay',
   'amount:triggerDamage',
   'amount:triggerTargetCount',
+  'amount:triggerAttackerCount',
   'amount:triggerSpellX',
   'amount:votesFor',
 ] as const;

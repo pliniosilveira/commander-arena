@@ -36,7 +36,7 @@ export function isLandCard(state: GameState, id: ObjectId): boolean {
 export function freeCandidates(
   state: GameState,
   res: ResolutionContext,
-  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards' | 'seat'>,
+  ins: Pick<CastFreeInstruction, 'objects' | 'play' | 'filter' | 'cards' | 'cardsZone' | 'seat'>,
 ): ObjectId[] {
   // "... then they may cast that card": the player the effect names casts it, not always its controller.
   const seat = ins.seat ?? res.controller;
@@ -52,7 +52,7 @@ export function freeCandidates(
   const named: readonly ObjectId[] =
     // CR 608.2g: "from among them": the effect named the cards itself (those looked at), which are still where they were.
     ins.cards !== undefined
-      ? ins.cards.filter((id) => state.objects[id]?.zone === 'library')
+      ? ins.cards.filter((id) => state.objects[id]?.zone === (ins.cardsZone ?? 'library'))
       : ins.objects.kind === 'choose'
         ? (state.seats[seat]?.hand.filter((id) => {
             const card = state.objects[id];
@@ -74,7 +74,13 @@ export function freeCandidates(
       return false;
     }
     if (isLandCard(state, id)) return ins.play === true && canPlayLandByEffect(state, seat, card);
-    return canCastDuringResolution(state, seat, card);
+    // CR 118.9: a card of a graveyard (`perOwner`) is cast from there, whoever's it is.
+    return canCastDuringResolution(
+      state,
+      seat,
+      card,
+      card.zone === 'graveyard' ? 'freeGraveyard' : 'free',
+    );
   });
 }
 
@@ -108,7 +114,14 @@ export function runCastFree(
   // CR 608.2c (issue 100): "If you don't": nothing is done until a spell is cast, so what "if you do" reads starts again at 0 (`resetPerformed`).
   if (legal.length === 0) return { ...done(state), resetPerformed: true };
   const first = state.objects[legal[0] as ObjectId]?.zone;
-  const zone = first === 'exile' ? 'exile' : first === 'library' ? 'library' : 'hand';
+  const zone =
+    first === 'exile'
+      ? 'exile'
+      : first === 'library'
+        ? 'library'
+        : first === 'graveyard'
+          ? 'graveyard'
+          : 'hand';
   return {
     state,
     events: [],
@@ -127,11 +140,13 @@ export function runCastFree(
       prompt:
         ins.remaining === undefined
           ? `You may ${ins.play ? 'play' : 'cast'} ${
-              ins.cards !== undefined
-                ? 'a card from among those you looked at'
-                : ins.objects.kind === 'choose'
-                  ? 'a card from your hand'
-                  : 'the exiled card'
+              ins.cardsZone === 'graveyard'
+                ? 'a card that player milled'
+                : ins.cards !== undefined
+                  ? 'a card from among those you looked at'
+                  : ins.objects.kind === 'choose'
+                    ? 'a card from your hand'
+                    : 'the exiled card'
             } without paying its mana cost`
           : // D-660: "up to two spells from among them", "any number of spells from among them": one at a time, until the player stops.
             `You may cast ${

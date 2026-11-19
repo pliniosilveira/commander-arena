@@ -843,15 +843,7 @@ function matches(
       ) {
         return false;
       }
-      const attackers = occ.attackers ?? [];
-      const counted =
-        trigger.what === undefined
-          ? attackers.length
-          : attackers.filter((id) => {
-              const creature = objectOrLki(state, id);
-              return creature !== null && matchesFilter(state, creature, trigger.what ?? {}, ctx);
-            }).length;
-      return counted >= trigger.atLeast;
+      return attackBatchCount(state, trigger, occ.attackers ?? [], ctx) >= trigger.atLeast;
     }
     case 'chapter':
       // CR 714.2b: "when lore counters are put onto this Saga": the Saga the ability sits on.
@@ -1033,6 +1025,21 @@ function isRelevant(event: GameEvent): boolean {
     default:
       return false;
   }
+}
+
+/** CR 603.2c: how many creatures of a declaration an `attackBatch` trigger counts (all of them when it names no filter). */
+function attackBatchCount(
+  state: GameState,
+  trigger: Extract<Trigger, { kind: 'attackBatch' }>,
+  attackers: readonly ObjectId[],
+  ctx: SelectContext,
+): number {
+  if (trigger.what === undefined) return attackers.length;
+  const filter = trigger.what;
+  return attackers.filter((id) => {
+    const creature = objectOrLki(state, id);
+    return creature !== null && matchesFilter(state, creature, filter, ctx);
+  }).length;
 }
 
 /** The battlefield as it was before the events happened, by undoing their zone changes. */
@@ -1271,6 +1278,15 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
             subject: occ.subject,
             ...eventPlayer(ability, occ),
             ...(occ.damage === undefined ? {} : { damage: occ.damage }),
+            // CR 508.1 (issue 81, The Ur-Sphinx): "that many" is the creatures of the declaration the batch trigger counted.
+            ...(ability.trigger.kind === 'attackBatch' && occ.attackers !== undefined
+              ? {
+                  damage: attackBatchCount(state, ability.trigger, occ.attackers, {
+                    controller: candidate.controller,
+                    source: id,
+                  }),
+                }
+              : {}),
             ...(occ.targetCount === undefined ? {} : { targetCount: occ.targetCount }),
             ...(occ.chapter === undefined ? {} : { chapter: occ.chapter }),
             ...(occ.attacked === undefined ? {} : { attacked: occ.attacked }),

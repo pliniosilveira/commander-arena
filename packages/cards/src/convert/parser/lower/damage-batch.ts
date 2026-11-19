@@ -114,8 +114,27 @@ const PAY_OR_CANT_ATTACK_PLANESWALKERS: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "For each player, you may cast a card that player milled this way without paying its mana cost." (issue 81, CR 701.17a, 608.2g): the engine's `castFree` of the cards the mill before it
+ * moved, one question for each owner (`perOwner`). Refused after any instruction but a mill: "that player milled this way" has nothing to read.
+ */
+const CAST_MILLED_EACH_PLAYER: Lowering<IrClause, Effects> = {
+  head: 'castMilledEachPlayer',
+  id: 'lower.cast-milled-each-player',
+  needs: ['effect:castFree', 'selector:moved'],
+  lower(clause, ctx) {
+    if (ctx.lastEffectKind !== 'mill') return failure(clause);
+    return {
+      ok: true,
+      value: [{ kind: 'castFree', objects: { kind: 'moved' }, perOwner: true }],
+      rule: clause.rule,
+    };
+  },
+};
+
 export const DAMAGE_BATCH_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   INCUBATE,
+  CAST_MILLED_EACH_PLAYER,
   PAY_OR_CANT_ATTACK_PLANESWALKERS,
   OWNER_PUTS_ON_LIBRARY,
   TAP_TRIGGER_SOURCES,

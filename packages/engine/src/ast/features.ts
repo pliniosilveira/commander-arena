@@ -1242,6 +1242,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'triggerSpellX',
     // Issue 81 (Shark Typhoon): the X of the cycling cost, in a "when you cycle this card" trigger.
     'triggerCycleX',
+    'triggerAttackerCount',
     // D-194: "the number of profit votes" (CR 701.38a).
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
@@ -2084,6 +2085,8 @@ export const AMOUNT_KINDS = [
   'triggerSpellX',
   /** "X" in a "when you cycle this card" trigger (CR 702.29a, 107.3, issue 81): the engine's `triggerCycleX`. */
   'triggerCycleX',
+  /** "that many" in a "whenever one or more Sphinxes attack" trigger (issue 81): the engine's `triggerAttackerCount`. */
+  'triggerAttackerCount',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */

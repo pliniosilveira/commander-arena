@@ -2469,27 +2469,10 @@
     "4a3fdb8e-4699-4bd9-84e6-3cc7fea0e1ef": {
       "name": "The Ur-Sphinx",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "As long as ~ is in the command zone or on the battlefield, other Sphinx spells you cast cost {1} less to cast.",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.conditional-prefix"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Whenever one or more Sphinxes you control attack, each player mills that many cards. For each player, you may cast a card that player milled this way without paying its mana cost.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.triggered"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1b2127a5"
+      "ast": "08f5a943"
     },
     "4a59d86e-405d-4c70-b2a5-c64f5cecfd9e": {
       "name": "Electrodominance",
@@ -8359,7 +8342,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 717,
+      "supported": 718,
       "total": 738
     }
   }

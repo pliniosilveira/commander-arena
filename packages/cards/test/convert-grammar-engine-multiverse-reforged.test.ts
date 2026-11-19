@@ -1398,3 +1398,66 @@ describe('Overlord of the Mistmoors: impending, then two Insects each time it en
     g.expect.invariants();
   });
 });
+
+// ---- The Ur-Sphinx: "Eminence — As long as ~ is in the command zone or on the battlefield, other Sphinx spells you cast cost {1} less to cast. ... Whenever one or more Sphinxes you control
+// attack, each player mills that many cards. For each player, you may cast a card that player milled this way without paying its mana cost." (CR 113.6, 601.2f, 701.17a, 608.2g).
+
+const UR_SPHINX = parsed(
+  'SYNTHETIC Parsed Ur-Sphinx',
+  'Legendary Creature — Sphinx Avatar',
+  'Eminence — As long as ~ is in the command zone or on the battlefield, other Sphinx spells you cast cost {1} less to cast.\nFlying\nWhenever one or more Sphinxes you control attack, each player mills that many cards. For each player, you may cast a card that player milled this way without paying its mana cost.',
+  { manaCost: '{3}{U}{U}', colors: ['U'], power: '4', toughness: '4' },
+);
+const SMALL_SPHINX = parsed('SYNTHETIC Parsed Small Sphinx', 'Creature — Sphinx', '', {
+  manaCost: '{2}{U}',
+  colors: ['U'],
+  power: '2',
+  toughness: '2',
+});
+
+describe('The Ur-Sphinx: eminence and the attack trigger', () => {
+  test('from the command zone it makes another Sphinx cost {1} less', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(UR_SPHINX)
+      .define(SMALL_SPHINX)
+      .commander(UR_SPHINX.name)
+      .hand(SMALL_SPHINX.name)
+      .battlefield('Island', { count: 2 })
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.expect.legal(0, { cast: SMALL_SPHINX.name });
+  });
+
+  test('attacking mills one card for each Sphinx that attacked, and each player may cast one milled', () => {
+    const g = scenario()
+      .seat(0)
+      .life(20)
+      .define(UR_SPHINX)
+      .battlefield(UR_SPHINX.name)
+      .library('Grizzly Bears', 'Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Giant Spider', 'Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 1 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: UR_SPHINX.name }]);
+    g.passAll();
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+    g.expect.zone('Giant Spider', 'graveyard', { seat: 1 });
+    // One Sphinx attacked: one card milled from each library.
+    expect(g.state.seats[0]?.library.length).toBe(2);
+    expect(g.state.seats[1]?.library.length).toBe(2);
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards('Grizzly Bears');
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards({ name: 'Giant Spider', zone: 'graveyard', seat: 1 });
+    g.expect.invariants();
+  });
+});

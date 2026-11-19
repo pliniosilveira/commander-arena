@@ -59,7 +59,8 @@ export function readsTriggerDamage(ability: Ability): boolean {
       '"triggerDamage"',
     ) ||
       // Issue 81 (Shark Typhoon): the X of the cycling cost travels with the trigger as the number of its event.
-      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerCycleX"'))
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerCycleX"') ||
+      JSON.stringify([ability.effect, ability.modes ?? []]).includes('"triggerAttackerCount"'))
   );
 }
 

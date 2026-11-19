@@ -1550,6 +1550,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           : {}),
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
+        ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),

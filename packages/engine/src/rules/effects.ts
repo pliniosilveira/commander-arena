@@ -5,7 +5,7 @@
  * It implements exactly the effect kinds in SUPPORTED_FEATURES. There is no "not implemented"
  * path: a card using any other kind is rejected by validateCard before it can be supported.
  */
-import type { Effect, ObjectFilter, ObjectSelector } from '../ast/types';
+import type { Effect, ObjectFilter, ObjectRef, ObjectSelector } from '../ast/types';
 import { CREATURE_TYPES } from '../data/creature-types';
 import type { ObjectId, SeatId } from '../ids';
 import { shuffle } from '../rng';
@@ -17,6 +17,7 @@ import {
   opponentsOf,
   patchObject,
   patchSeat,
+  seatsInOrder,
   setSeat,
 } from '../state/ops';
 import type {
@@ -2575,6 +2576,29 @@ function runEffect(
     }
 
     case 'castFree': {
+      // CR 608.2g, 101.4 (issue 81, The Ur-Sphinx): "For each player, you may cast a card that player milled this way": one question for each owner of the cards just
+      // moved, in turn order from the active player, over the cards that owner has among them (those in a graveyard now).
+      if (effect.perOwner === true) {
+        const moved = resolveObjects(state, effect.objects as ObjectRef, ctx, targets).filter(
+          (id) => state.objects[id]?.zone === 'graveyard',
+        );
+        const asks = seatsInOrder(state, state.turn.activeSeat).flatMap((owner) => {
+          const cards = moved.filter((id) => state.objects[id]?.owner === owner);
+          return cards.length === 0
+            ? []
+            : [
+                {
+                  kind: 'castFree' as const,
+                  objects: effect.objects,
+                  play: false,
+                  cards,
+                  cardsZone: 'graveyard' as const,
+                  chosen: null,
+                },
+              ];
+        });
+        return done(state, [], asks);
+      }
       // CR 608.2g (D-145): "You may cast a spell ... without paying its mana cost" (rules/cast-free.ts).
       // "... then they may cast that card": the player the effect names, one only (worked out now: the target they are the controller of may be gone by the time they are asked).
       const [caster] =

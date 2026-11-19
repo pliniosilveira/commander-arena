@@ -294,6 +294,11 @@ export type Amount =
    */
   | { readonly kind: 'triggerCycleX' }
   /**
+   * "Whenever one or more Sphinxes you control attack, each player mills that many cards" (issue 81, The Ur-Sphinx, CR 508.1, 603.2): the number of creatures of the declaration the
+   * `attackBatch` trigger's filter names, read as the attack is declared. Valid only in the effect of an `attackBatch` trigger.
+   */
+  | { readonly kind: 'triggerAttackerCount' }
+  /**
    * "For each opponent who has more life / cards in hand / creatures than you" (D-131): the number of opponents still
    * in the game whose `stat` is greater than the controller's, now.
    */
@@ -3436,6 +3441,12 @@ export type Effect =
         | ChooseSelector;
       readonly play?: true;
       /**
+       * "Each player mills three cards. For each player, you may cast a card that player milled this way without paying its mana cost" (issue 81, The Ur-Sphinx, CR 608.2g, 101.4):
+       * one question for each owner of the cards `moved` names (in a graveyard now), in turn order from the active player, each asking for one of that owner's cards, cast from the
+       * graveyard it is in. Only with `moved`, and with neither `play`, `max` nor `filter`.
+       */
+      readonly perOwner?: true;
+      /**
        * "You may cast an Aura spell from among them without paying its mana cost" (D-655, CR 608.2g): only the cards of `objects` this filter matches are offered, read for the
        * card as it is in exile (card types, subtypes, mana value, colors). With `objects` a `choose` selector the selector's own filter says it, so this is for `moved` and `linkedExile`.
        */
@@ -5915,6 +5926,11 @@ export type StaticEffect =
       readonly kind: 'costReduction';
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
       readonly amount: Amount;
+      /**
+       * Eminence (issue 81, The Ur-Sphinx; CR 113.6, 903.8): "As long as ~ is in the command zone or on the battlefield": the reduction also applies while the card with it is one
+       * of its owner's commanders in the command zone, with that player as "you". Only with a filter of spells, not `this`.
+       */
+      readonly inCommandZone?: true;
     }
   /**
    * "Spells your opponents cast that target this creature cost {2} more to cast." (CR 601.2f, 601.2c, 604.2, 113.6, D-149): a static ability of a permanent (its own, or one a

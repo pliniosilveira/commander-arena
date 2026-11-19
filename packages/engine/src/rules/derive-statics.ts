@@ -37,6 +37,7 @@ import type { StaticGrant } from './derive-layers';
 import { emblemsOf } from './emblem';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
+import { isCommanderCardId } from './melded';
 import { staticConditionHolds } from './static-conditions';
 import { subjectAffects, subjectContextOf } from './static-subject';
 
@@ -285,10 +286,13 @@ function staticModifiers(
 function costReductionsOf(
   object: GameObject,
   abilities: readonly Ability[],
+  /** Eminence (CR 113.6): only the reductions that also work in the command zone. */
+  commandZone = false,
 ): CostReductionSource[] {
   const out: CostReductionSource[] = [];
   for (const a of abilities) {
     if (a.kind !== 'static' || a.static.kind !== 'costReduction') continue;
+    if (commandZone && a.static.inCommandZone !== true) continue;
     // `this` is the spell's own ability, which works on the stack only (CR 113.6d).
     if ('kind' in a.static.spells) continue;
     out.push({ object, spells: a.static.spells, amount: a.static.amount });
@@ -445,6 +449,15 @@ function buildIndex(state: GameState): BoardIndex {
     }
     reductions.push(...costReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
+  }
+  // CR 113.6, 903.8 (issue 81, Eminence): a commander in the command zone has the cost reductions that say they work there.
+  for (const seat of state.seats) {
+    for (const id of seat.command) {
+      const object = state.objects[id];
+      if (object === undefined || object.emblem === true || object.zone !== 'command') continue;
+      if (!isCommanderCardId(state, object.card)) continue;
+      reductions.push(...costReductionsOf(object, printedAbilities(state, object), true));
+    }
   }
   // CR 113.6b, 604.2 (D-151): "As long as this card is in your graveyard ...": the abilities of the cards in the graveyards that work there.
   for (const seat of state.seats) {

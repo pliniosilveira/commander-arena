@@ -308,6 +308,10 @@ export function checkCostReduction(
   path: string,
   out: Out,
 ): void {
+  // CR 113.6 (issue 81, Eminence): "in the command zone" is for a reduction of other spells, not the spell's own `this` ability.
+  if (s.inCommandZone !== undefined && (s.inCommandZone !== true || kindOf(s.spells) === 'this')) {
+    issue(out, `${path}.inCommandZone`, 'inCommandZone is true, and only on a reduction by filter');
+  }
   if (kindOf(s.spells) !== 'this') {
     const filter = s.spells as ObjectFilter;
     // D-424 (CR 601.2c, 601.2f): "Aura spells you cast that target enchanted creature cost {3} less": the targets are chosen before the cost is determined, so the outer
