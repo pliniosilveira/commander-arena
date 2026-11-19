@@ -306,6 +306,14 @@ const MANA_STAYS_SENTENCE =
   /^until end of turn, you don['’]t lose this mana as steps and phases end\.$/i;
 
 /**
+ * "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel, CR 605.1a, 118.3): the second sentence is what the mana ability
+ * the first gives does, so the two are read as one instruction (`effect.player-mana-ability`).
+ */
+const PLAYER_MANA_ABILITY_SENTENCE =
+  /^until end of turn, any time you could activate a mana ability, you may pay [^.]*\.$/i;
+const IF_YOU_DO_ADD_SENTENCE = /^if you do, add [^.]*\.$/i;
+
+/**
  * "Then choose odd or even. Return each creature with power of the chosen quality to its owner's hand." (Zimone's Hypothesis, CR 608.2d): the choice and the instruction that reads it are one
  * instruction, kept together for `effect.choose-parity-return`.
  */
@@ -680,6 +688,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
+        (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||

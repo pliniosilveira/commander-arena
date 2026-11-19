@@ -55,6 +55,7 @@ import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
 import { FLASH_PERMISSION_EFFECT_RULES } from './flash-permission';
+import { PLAYER_MANA_ABILITY_EFFECT_RULES } from './player-mana-ability';
 import { FLICKER_RULES } from './flicker';
 import { GAIN_RULES } from './gain';
 import { GAIN_LIFE_AND_DRAW_EFFECT_RULES } from './gain-life-and-draw';
@@ -1084,6 +1085,8 @@ export const EFFECT_RULES = [
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
   ...FLASH_PERMISSION_EFFECT_RULES,
+  // Quandrix Unlimited deck: "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel).
+  ...PLAYER_MANA_ABILITY_EFFECT_RULES,
   ...SPEND_QUALITIES_EFFECT_RULES,
   ...NIV_GROUP_2B_B_EFFECT_RULES,
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
