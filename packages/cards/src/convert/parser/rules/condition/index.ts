@@ -39,6 +39,7 @@ import { DRAGON_CONDITION_RULES } from './dragons';
 import { EDHREC_CONDITION_RULES } from './edhrec';
 import { ENTERED_FROM_GRAVEYARD_CONDITION_RULES } from './entered-from-graveyard';
 import { CONDITION_UNLESS_ESCAPED } from './escaped';
+import { EXILED_WITH_CONDITION_RULES } from './exiled-with';
 import { EXPERIENCE_CONDITION_RULES } from './experience';
 import { GALADRIEL_G1_CONDITION_RULES } from './galadriel-g1';
 import { GAME_STATE_CONDITION_RULES } from './game-state';
@@ -543,6 +544,8 @@ export const CONDITION_RULES = [
   ...ARDEN_CONDITION_RULES,
   // Issue 89 (Animate Dead): "it's on the battlefield", the intervening "if" of an Aura's enters ability.
   ...IT_ON_BATTLEFIELD_CONDITION_RULES,
+  // Valakut Exploration: "there are cards exiled with ~", before the plain count whose phrase ("there are") is a prefix of it.
+  ...EXILED_WITH_CONDITION_RULES,
   // Issue 26 (the Danitha deck, D-412): "you control a Squirrel or returned a Squirrel card to your hand this way", before the plain count whose phrase is a prefix of it.
   ...DANITHA_G2_CONDITION_RULES,
   CONDITION_CONTROL_AT_LEAST,

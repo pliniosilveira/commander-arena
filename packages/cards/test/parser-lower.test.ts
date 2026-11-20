@@ -135,8 +135,8 @@ describe('recognised but not runnable', () => {
     expect(card.support.unparsed[0]).toMatchObject({ reason: 'unrecognised', slot: 'cost' });
   });
 
-  test('a color choice while a spell resolves is a missing selector, a mana ability is fine', () => {
-    const asSpell = parseOnly(spellCard('SYNTHETIC Wish', 'Add one mana of any color.'));
+  test('a color choice that a later instruction reads is a missing selector, a mana ability is fine', () => {
+    const asSpell = parseOnly(spellCard('SYNTHETIC Wish', 'Choose a color.'));
     expect(asSpell.support.unparsed[0]).toMatchObject({
       reason: 'notRunnable',
       needs: ['selector:colorChoice'],

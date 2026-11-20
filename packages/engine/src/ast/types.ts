@@ -326,6 +326,11 @@ export type Amount =
    */
   | { readonly kind: 'opponentCount' }
   /**
+   * "That much" after cards were put somewhere (Valakut Exploration, CR 608.2c): the number of objects `moved` names, the cards the instruction before it moved
+   * (`moveToZone`, `exile`, `exileTop`), counted as the amount is read. 0 when it moved nothing. Not for a static ability.
+   */
+  | { readonly kind: 'movedCount' }
+  /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
    * is a new object, CR 400.7, and is not counted). Valid only in the effect of a `delayedTrigger` that follows an effect that put cards in
@@ -2147,6 +2152,11 @@ export type Effect =
        * allows it (`mayPlay` with `lookAt`), and a card turns face up as it is cast or played. Also with `from` left out (the controller's own library).
        */
       readonly faceDown?: true;
+      /**
+       * "Exile the top card of your library. ... cards exiled with this enchantment" (Valakut Exploration, CR 607.2a): the cards exiled are remembered by the permanent the ability belongs
+       * to, as `exile.linked` does, for the `linkedExile` reference or the `exiledWithSource` filter of another ability of the same face. Only in an ability of a permanent, face up.
+       */
+      readonly linked?: true;
     }
   /**
    * "Each player exiles a card from their graveyard" (CR 701.13, 101.4, D-231): each player `players` names, in turn order starting with the active player, chooses a card
@@ -3352,7 +3362,7 @@ export type Effect =
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
    * `forever` (CR 701.15a, 611.2b): "The tokens are goaded for the rest of the game": the goad has no end, so the creatures stay goaded as long as they are in the game.
    */
-  | { readonly kind: 'goad'; readonly objects: ObjectRef; readonly forever?: true }
+  | { readonly kind: 'goad'; readonly objects: ObjectSelector; readonly forever?: true }
   /**
    * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (issue 81, Dack Fayden, CR 613.1b, 611.2a, 101.4):
    * for each permanent `objects` names (the ones an earlier effect moved), in order, the controller of the effect chooses an opponent not yet chosen for another one of them (a

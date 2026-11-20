@@ -59,6 +59,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
+import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -1119,6 +1120,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Valakut Exploration: "you may play that card for as long as it remains exiled", "put them into their owner's graveyard", "~ deals that much damage to each opponent".
+  ...EXILED_WITH_EFFECT_RULES,
   // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
   ...FINALE_EFFECT_RULES,
   ...GIDEON_EFFECT_RULES,

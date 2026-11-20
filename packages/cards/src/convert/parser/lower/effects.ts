@@ -66,6 +66,7 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
+import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
@@ -187,7 +188,7 @@ const ATTACK_RANDOM_OPPONENT_ANY: Lowering<IrClause, Effects> = {
   }),
 };
 
-/** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
+/** "Goad target creature", "goad it", "goad each creature target player controls" (CR 701.15a, D-639, D-651): the engine's `goad` on what the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
   id: 'lower.goad',
@@ -195,7 +196,7 @@ const GOAD: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const operandNoun = operand(clause, 'objects');
     if (operandNoun?.kind !== 'noun') return failure(clause);
-    const object = objectRefOf(operandNoun, ctx, { moved: true, token: true });
+    const object = objectSelectorOf(operandNoun, ctx, { moved: true, token: true });
     if (!object.ok) return object;
     // "The tokens are goaded for the rest of the game" (CR 701.15a, 611.2b): no end.
     const forever = arg(clause, 'forever');
@@ -1091,6 +1092,30 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
             options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
               label: `{${color}}`,
               effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
+            })),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    // "Whenever a land you control enters, add one mana of any color." (Lotus Cobra, CR 106.1b, 608.2d, 605.1b): an instruction of a spell or of an ability that is not a mana ability
+    // (a triggered ability whose event is not a mana ability uses the stack, CR 605.1b), so the color is chosen as it resolves: the engine's `chooseOne` of the five colors, each
+    // option adding the mana of that one color ("two mana of any one color" adds both of the same color).
+    if (spec.what.kind === 'anyColor' && !stays) {
+      const blocked = missingFeatures(['effect:chooseOne']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const count = spec.what.count ?? 1;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseOne',
+            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+              label: `{${color}}`,
+              effect: {
+                kind: 'addMana',
+                mana: { kind: 'fixed', mana: Array.from({ length: count }, () => color) },
+              } as Effect,
             })),
           },
         ],
@@ -2229,6 +2254,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
+  ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
@@ -2335,7 +2362,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notDeclaredAttacker' ||
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
-        kind === 'unlessReturn'
+        kind === 'unlessReturn' ||
+        kind === 'cardsExiledWithSelf'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );

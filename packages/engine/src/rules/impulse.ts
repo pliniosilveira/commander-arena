@@ -65,6 +65,14 @@ export function runExileTop(
   const top = owners.flatMap((owner) => getSeat(state, owner).library.slice(0, Math.max(0, n)));
   const moves = moveInstructions(top, 'exile');
   // CR 406.3 (D-187): "face down": no one may look at the cards.
+  // CR 607.2a: "exiled with this enchantment": the permanent the ability belongs to remembers the cards (face up: the link of a face-down card is Hideaway's, which is another one).
+  if (effect.linked === true && res.source !== null) {
+    const source = res.source;
+    return moving(
+      state,
+      moves.map((m) => (m.kind === 'move' ? { ...m, linkTo: source } : m)),
+    );
+  }
   return moving(
     state,
     effect.faceDown === true

@@ -50,6 +50,24 @@ export function checkDragonsEffect(
       if (e.faceDown !== undefined && e.faceDown !== true) {
         issue(out, `${path}.faceDown`, 'faceDown must be true when present');
       }
+      // CR 607.2a: the cards exiled with the permanent: its own, face up, from the controller's library, so an ability's.
+      if (e.linked !== undefined) {
+        if (e.linked !== true) issue(out, `${path}.linked`, 'linked must be true when present');
+        if (e.faceDown === true || e.from !== undefined) {
+          issue(
+            out,
+            `${path}.linked`,
+            'a linked exile of the top cards is face up and from the controller’s own library',
+          );
+        }
+        if (scope.owner === 'spell') {
+          issue(
+            out,
+            `${path}.linked`,
+            'the cards exiled with a permanent are exiled by an ability of it',
+          );
+        }
+      }
       return true;
     case 'mayPlay':
       // D-151: "you may play that card this turn": the cards an earlier effect of the sequence exiled.

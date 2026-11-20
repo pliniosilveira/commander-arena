@@ -91,7 +91,9 @@ function readsLinkedExile(e: unknown): boolean {
 /** Whether the effect is, or holds at any depth, an `exile` with `linked`. */
 function hasLinkedExile(e: unknown): boolean {
   return (
-    (JSON.stringify(e ?? null).includes('"kind":"exile"') &&
+    ((JSON.stringify(e ?? null).includes('"kind":"exile"') ||
+      // CR 607.2a: "exile the top card of your library" whose card another ability of the face reads as "exiled with this enchantment".
+      JSON.stringify(e ?? null).includes('"kind":"exileTop"')) &&
       JSON.stringify(e).includes('"linked":true')) ||
     // D-230: a token that copies a creature and remembers the cards the effect before it exiled holds the link itself.
     JSON.stringify(e ?? null).includes('"linkExiled":true')

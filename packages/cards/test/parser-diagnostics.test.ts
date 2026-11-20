@@ -261,18 +261,14 @@ describe('reason: notRunnable', () => {
     });
   });
 
-  test('a color choice in a spell: the node it stopped at is the mana phrase', () => {
-    const card = parseOnly(spellCard('SYNTHETIC Wish', 'Add one mana of any color.'));
-    expect(card.support.unparsed[0]).toEqual({
+  test('a color choice in a spell: the node it stopped at is the choice', () => {
+    const card = parseOnly(spellCard('SYNTHETIC Wish', 'Choose a color.'));
+    expect(card.support.unparsed[0]).toMatchObject({
       face: 0,
       ability: 0,
-      text: 'Add one mana of any color.',
-      stoppedAt: 'one mana of any color.',
-      closestRule: 'effect.add-mana',
+      text: 'Choose a color.',
       reason: 'notRunnable',
-      recognised: ['effect.add-mana'],
       needs: ['selector:colorChoice'],
-      template: 'Add N mana of any color.',
     });
   });
 

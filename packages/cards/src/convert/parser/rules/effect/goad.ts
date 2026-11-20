@@ -9,7 +9,7 @@ import { type Clauses, makeClause, operands, single } from './operands';
 
 /**
  * `effect.goad`: "goad target creature", "goad up to one target creature", "goad it" (CR 701.15a: the creature is goaded by the controller of the spell or ability until
- * their next turn; D-639, D-651). One creature: a target or the pronoun an earlier sentence of the text chose. Not read: "goad each creature", "goad all creatures",
+ * their next turn; D-639, D-651). One creature: a target or the pronoun an earlier sentence of the text chose; or "each creature target player controls" (Geode Rager). Not read: "goad each creature", "goad all creatures",
  * "goad them", "goad target player", a number of creatures, "goads", a duration.
  */
 export const EFFECT_GOAD = defineRule<Clauses>({
@@ -22,6 +22,8 @@ export const EFFECT_GOAD = defineRule<Clauses>({
     'goad up to one target creature',
     'goad it',
     'Goad target creature',
+    'goad each creature target player controls',
+    'goad each creature target opponent controls',
   ],
   rejects: [
     'goad each creature',
@@ -34,7 +36,13 @@ export const EFFECT_GOAD = defineRule<Clauses>({
   ],
   parse: single(
     'effect.goad',
-    sequence(literal('goad '), operands(['noun.target-permanent', 'noun.it'], 'effect.goad')),
+    sequence(
+      literal('goad '),
+      operands(
+        ['noun.target-permanent', 'noun.it', 'noun.each-permanent-of-target-player'],
+        'effect.goad',
+      ),
+    ),
     ([, objects]) => ({ verb: 'goad', args: { objects } }),
   ),
 });
