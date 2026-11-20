@@ -29,6 +29,14 @@ const NEW_TARGETS = quiet(
   pattern(/\. you may choose new targets for the copy(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu),
 );
 
+/**
+ * ". The copy targets that token": the next sentence, taken with the clause (Frontline Heroism, CR 707.10e): the copy has the token the instruction before made as the target of
+ * every instance of the word "target". Not followed by more of the same sentence.
+ */
+const COPY_TARGETS_TOKEN = quiet(
+  pattern(/\. the copy targets that token(?![\p{L}\p{N}])(?!,| and\b| then\b)/iu),
+);
+
 /** ", then return it to its owner's hand": the original goes back to its owner's hand once copied. Only after a target. */
 const THEN_RETURN = quiet(pattern(/, then return it to its owner(?:'|’)s hand(?![\p{L}\p{N}])/iu));
 
@@ -126,6 +134,9 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy target instant or sorcery spell and you may choose new targets for the copy',
     "copy target instant or sorcery spell, then return it to its owner's hand. you may choose new targets for the copy",
     'copy target instant or sorcery spell, then return it to its owner’s hand',
+    // Issue 144 (Frontline Heroism, CR 707.10e): the copy targets the token the instruction before made.
+    'copy that spell. the copy targets that token',
+    'copy it. the copy targets that token',
   ],
   rejects: [
     "copy that spell, then return it to its owner's hand",
@@ -156,6 +167,12 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
     'copy target instant or sorcery spell if it targets a permanent or player',
     "copy that spell if it targets a permanent or player. if you don't copy a spell this way, draw a card and gain 1 life",
     'copy',
+    'copy target instant or sorcery spell. the copy targets that token',
+    'copy that spell. the copy targets that token and you may choose new targets for the copy',
+    'copy that spell. you may choose new targets for the copy. the copy targets that token',
+    'copy that spell. the copy targets that creature',
+    'copy that spell. the copy targets that token. the copy targets that token',
+    'copy that spell and the copy targets that token',
   ],
   parse: (ctx, pos) =>
     map(
@@ -174,11 +191,24 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
             optional(AND_NEW_TARGETS, null),
             CLAUSE_END,
             optional(NEW_TARGETS, null),
+            optional(COPY_TARGETS_TOKEN, null),
             optional(ELSE_DRAW, null),
           ),
         ),
         ({ value }) => {
-          const [, spell, returnIt, ifTargets, andNew, , nextNew, elseDraw] = value;
+          const [, spell, returnIt, ifTargets, andNew, , nextNew, onToken, elseDraw] = value;
+          // "The copy targets that token" is said of the spell of the trigger, with nothing else asked of the copy.
+          if (
+            onToken !== null &&
+            (spell.det !== 'anaphor' ||
+              returnIt !== null ||
+              ifTargets !== null ||
+              andNew !== null ||
+              nextNew !== null ||
+              elseDraw !== null)
+          ) {
+            return false;
+          }
           // The condition is about the spell of the trigger, the "otherwise" sentence needs the condition, and the permission to choose new targets is given once.
           if (ifTargets !== null && (spell.det !== 'anaphor' || returnIt !== null)) return false;
           if (returnIt !== null && spell.det !== 'target') return false;
@@ -187,7 +217,7 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
         },
       ),
       ({ value, span }): Clauses => {
-        const [, spell, returnIt, ifTargets, andNew, , nextNew, elseDraw] = value;
+        const [, spell, returnIt, ifTargets, andNew, , nextNew, onToken, elseDraw] = value;
         const newTargets = andNew ?? nextNew;
         return [
           makeClause(
@@ -207,6 +237,9 @@ export const EFFECT_COPY_SPELL = defineRule<Clauses>({
               ...(ifTargets === null
                 ? {}
                 : { ifTargets: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),
+              ...(onToken === null
+                ? {}
+                : { newTarget: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),
               ...(elseDraw === null
                 ? {}
                 : { elseDraw: { kind: 'flag', value: true, span, rule: 'effect.copy-spell' } }),

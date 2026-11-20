@@ -894,6 +894,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'isSource',
     // D-438: "copy that spell for each other creature you control that the spell could target" (`copySpell.forEach`, `copier`).
     'copyForEach',
+    // Issue 144: "copy that spell. The copy targets that token" (`copySpell.newTarget`, CR 707.10e).
+    'copyNewTarget',
     // D-489, D-656: "creatures named ~" (`ObjectFilter.named`).
     'named',
     // D-652: "for each opponent, create two 3/3 tokens that attack that opponent this turn if able" (`createToken.forEachOpponent`).
@@ -1686,6 +1688,8 @@ export const SELECTOR_KINDS = [
   'isSource',
   /** "Copy that spell for each other creature you control that the spell could target", "that player copies" (CR 707.10, 707.10e, D-438): the engine's `copySpell.forEach` and `copier`. */
   'copyForEach',
+  /** "The copy targets that token" (CR 707.10e, Frontline Heroism): the engine's `copySpell.newTarget`. */
+  'copyNewTarget',
   /** "Creatures named Leitmotif Composer" (CR 201.2, D-489, D-656): the engine's `ObjectFilter.named`, the name of the objects as they are now. */
   'named',
   /** "For each opponent, create two 3/3 tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, D-652): the engine's `createToken.forEachOpponent`. */

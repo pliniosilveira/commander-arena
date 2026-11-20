@@ -248,6 +248,13 @@ const NOT_COPIED_SENTENCE = /^if you don['’]t copy a spell this way, draw a ca
 const COPY_IF_TARGETS =
   /(?:^|, )copy that spell if it targets a permanent or player(?:,? and you may choose new targets for the copy)?\.$/i;
 
+/**
+ * "..., create a 1/1 red Soldier creature token with haste, then copy that spell. The copy targets that token." (Frontline Heroism, issue 144, CR 707.10e): the second sentence only says what
+ * the copy of the first targets, so the two are read as one (`effect.copy-spell`). Joined only to a sentence that ends in the copy of the spell of the trigger.
+ */
+const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
+const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
@@ -256,6 +263,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
+  if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&

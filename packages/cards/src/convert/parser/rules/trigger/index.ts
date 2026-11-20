@@ -617,19 +617,22 @@ type Aimed =
       readonly what: string;
       readonly yours: boolean;
       readonly modified?: true;
+      /** Issue 144 (CR 115.9c): "that targets only a single creature you control", the spell's targets are one object of this kind. */
+      readonly only?: true;
     }
   | { readonly kind: 'self'; readonly only: boolean }
   | { readonly kind: 'any' };
 
 const AIMED: Parser<Aimed> = map(
   pattern(
-    /\s?that targets an? (modified )?(creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
+    /\s?that targets (an? |only a single )(modified )?(creature|artifact|enchantment|land|planeswalker|permanent)( you control)?(?![\p{L}\p{N}])/iu,
   ),
   (m): Aimed => ({
     kind: 'object',
-    what: (m[2] ?? '').toLowerCase(),
-    yours: m[3] !== undefined,
-    ...(m[1] === undefined ? {} : { modified: true as const }),
+    what: (m[3] ?? '').toLowerCase(),
+    yours: m[4] !== undefined,
+    ...(m[1]?.startsWith('only') === true ? { only: true as const } : {}),
+    ...(m[2] === undefined ? {} : { modified: true as const }),
   }),
 );
 
@@ -704,6 +707,9 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     // D-437 (Feather, group 3): the spell targets the source of the ability, or only it (CR 115.9c).
     'you cast a spell that targets ~',
     'you cast an instant or sorcery spell that targets only ~',
+    // Issue 144 (Frontline Heroism, CR 115.9c): the spell's targets are one creature you control.
+    'you cast a spell that targets only a single creature you control',
+    'you cast an instant or sorcery spell that targets only a single creature',
     'a player casts an instant or sorcery spell that targets only ~',
     // D-437: a second kind of spell joined with "or".
     'you cast an Equipment spell or a spell that targets a creature you control',
@@ -731,6 +737,9 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     'you cast a spell that targets a creature you controlled',
     'you cast a spell that targets ~ and a creature',
     'you cast a spell that targets only a creature',
+    'you cast a spell that targets only a single',
+    'you cast a spell that targets only a single creature you controlled',
+    'you cast a spell that targets only a single Dragon',
     'you cast a spell that targets only',
     'you cast a spell that targets it',
     'you cast an instant or sorcery spell or a spell that targets ~',
@@ -778,6 +787,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
     if (alternative !== null) {
       // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
       if (aimed !== null || base.anyOf !== undefined) return fail(ctx, pos);
+      // "only a single" is a filter of its own (`targetsOnly`), not one a member of the disjunction reads.
+      if (alternative[2].kind === 'object' && alternative[2].only === true) return fail(ctx, pos);
       const { stackKind: _kind, ...first } = base;
       filter = {
         stackKind: 'spell',
@@ -790,6 +801,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       filter = aimed.only ? { ...base, targetsOnlySelf: true } : { ...base, targetsSelf: true };
     } else if (aimed.kind === 'any') {
       filter = { ...base, targetCountAtLeast: 1 };
+    } else if (aimed.only === true) {
+      filter = { ...base, targetsOnly: aimedFilter(aimed) };
     } else {
       filter = { ...base, targets: aimedFilter(aimed) };
     }

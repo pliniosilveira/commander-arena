@@ -1587,6 +1587,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
+  excessDamageDealt: 'a dealDamage effect',
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
@@ -1616,7 +1617,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedTypeCount',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
-  if (e?.kind === 'dealDamage') return ['damageDealt'];
+  if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
   if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
@@ -5322,6 +5323,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.forEach`,
             'the objects a copy of a spell is aimed at are permanents on the battlefield',
+          );
+        }
+      }
+      // Issue 144 (CR 707.10e): "The copy targets that token.": one copy of the spell of the trigger, aimed at what the effect before it made.
+      if (e.newTarget !== undefined) {
+        if (kindOf(e.newTarget) !== 'moved') {
+          issue(
+            out,
+            `${path}.newTarget`,
+            "the object the copy targets is the 'moved' of an earlier effect",
+          );
+        } else {
+          checkRef(e.newTarget, 'object', `${path}.newTarget`, scope, out);
+        }
+        if (
+          e.newTargets !== 'no' ||
+          e.count !== undefined ||
+          e.forEach !== undefined ||
+          e.copier !== undefined ||
+          kindOf(e.spell) !== 'triggerSubject'
+        ) {
+          issue(
+            out,
+            `${path}.newTarget`,
+            'a copy that targets an object is one copy of the spell of the trigger (triggerSubject), newTargets "no", with no count, forEach or copier',
           );
         }
       }
