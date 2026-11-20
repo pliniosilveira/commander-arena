@@ -1017,6 +1017,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
     }
+    // "equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as it enters.
+    if (count?.kind === 'diedThisTurn') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:diedThisTurn',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'diedThisTurn') {
+        return failure(ability);
+      }
+      return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
     // "for each other Zombie you control and each Zombie card in your graveyard" (issue 159): each count as it enters, added.
     if (count?.kind === 'sum') {
       const blocked = gate(ability, [

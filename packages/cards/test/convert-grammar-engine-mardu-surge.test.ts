@@ -303,3 +303,42 @@ describe('Within Range: each opponent loses life for the creatures attacking the
     g.expect.life(1, 37);
   });
 });
+
+describe('Bone Devourer: counters for the creatures that died this turn (CR 614.12, 700.4)', () => {
+  const devourer = real('Bone Devourer');
+
+  test('the card is valid', () => {
+    expect(validateCard(devourer)).toEqual([]);
+  });
+
+  test('it enters with a +1/+1 counter for each creature that died this turn, any player’s included', () => {
+    const board = () =>
+      scenario()
+        .define(devourer)
+        .seat(0)
+        .library(...LIBRARY)
+        .hand(devourer.name, 'Lightning Bolt', 'Lightning Bolt')
+        .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Mountain', 'Mountain')
+        .battlefield(BEARS, { label: 'mine' })
+        .seat(1)
+        .library(...LIBRARY)
+        .battlefield(BEARS, { label: 'theirs' })
+        .at('precombatMain', { active: 0 })
+        .build();
+    const quiet = board();
+    quiet.act(0).cast(devourer.name, { pay: true });
+    quiet.passAll();
+    quiet.expect.zone(devourer.name, 'battlefield', { seat: 0 });
+    quiet.expect.counters(devourer.name, {});
+
+    const g = board();
+    g.act(0).cast('Lightning Bolt[0]', { targets: ['mine'], pay: true });
+    g.passAll();
+    g.act(0).cast('Lightning Bolt[0]', { targets: ['theirs'], pay: true });
+    g.passAll();
+    g.act(0).cast(devourer.name, { pay: true });
+    g.passAll();
+    g.expect.counters(devourer.name, { '+1/+1': 2 });
+    g.expect.invariants();
+  });
+});

@@ -50,6 +50,7 @@ import type {
   GameState,
   LastKnownInfo,
 } from '../state/types';
+import { historyCount } from './amounts';
 import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
@@ -742,7 +743,10 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       counters,
       castX,
       escaped,
-      (a) => countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
+      (a) =>
+        a.kind === 'diedThisTurn'
+          ? historyCount(nextBefore, a, enterController)
+          : countMatching(nextBefore, a.filter, { controller: enterController, source: newId }),
       kicks,
     );
     // CR 714.3a: a Saga enters with a lore counter.

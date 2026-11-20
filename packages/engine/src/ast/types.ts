@@ -5907,6 +5907,8 @@ export type Replacement =
         | { readonly kind: 'x'; readonly times?: number }
         | { readonly kind: 'timesKicked' }
         | CountAmount
+        /** "... equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as the permanent enters. */
+        | Extract<Amount, { readonly kind: 'diedThisTurn' }>
         /** "... for each other Zombie you control and each Zombie card in your graveyard" (issue 159): the counts, each counted as it enters, added. */
         | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
       /**

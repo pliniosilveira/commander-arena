@@ -324,6 +324,9 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       // D-131: a `countOf` is "a +1/+1 counter on it for each Zombie card in your graveyard".
       if (kindOf(r.count) === 'countOf') {
         checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
+      } else if (kindOf(r.count) === 'diedThisTurn') {
+        // Issue 101: the creatures that died this turn, read from the history as the permanent enters; no state of the game is read, so nothing more to check.
+        checkStateAmount(r.count as Amount, `${path}.count`, out, 'an enters-with count');
       } else if (kindOf(r.count) === 'sum') {
         // Issue 159: "for each A and each B": two or more counts, each read as the permanent enters.
         const parts = (r.count as { of?: unknown }).of;

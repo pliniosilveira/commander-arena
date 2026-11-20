@@ -58,6 +58,23 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: died.pos,
     };
   }
+  // CR 700.4 (issue 101, Bone Devourer): "the number of creatures that died this turn" counts the creatures that died under any player's control, tokens too.
+  const diedAny = pattern(/the number of creatures that died this turn(?![\p{L}\p{N}])/iu)(
+    ctx,
+    pos,
+  );
+  if (diedAny.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'diedThisTurn',
+        controller: 'any',
+        types: ['creature'],
+        span: { start: pos, end: diedAny.pos },
+      },
+      pos: diedAny.pos,
+    };
+  }
   const entries = pattern(
     /the number of (nontoken |token )?(creatures|permanents) you had enter the battlefield under your control this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);
