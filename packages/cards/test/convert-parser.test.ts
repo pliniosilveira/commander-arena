@@ -785,6 +785,7 @@ describe('unmatched abilities', () => {
       'effect.spend-only-x-cost',
       'effect.choose-graveyard-cards',
       'effect.copy-each-token',
+      'effect.copy-each-creature-token',
       'effect.remove-all-counters',
       'effect.gain-keyword-while-remains',
       'effect.gain-keyword-while-controlling',

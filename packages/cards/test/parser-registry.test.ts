@@ -1028,6 +1028,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
   'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
+  'effect.copy-each-creature-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),
