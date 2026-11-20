@@ -272,7 +272,7 @@ Rule numbers shift by one from 713 up after the October 19, 2026 bulletin (`docs
 | 704.5p | Other attached permanents | Implemented | A permanent that is neither an Aura nor an Equipment (or an Equipment that is a creature) becomes unattached. |
 | 704.5q | +1/+1 and -1/-1 counters annihilate | Implemented |
 | 704.5s | Saga with lore counters at its final chapter | Implemented | See 714.4 above: `rules/saga.ts` `sagaIsDone`, performed in `rules/sba.ts` as a sacrifice. |
-| 303.7, 704.5y | Roles | Implemented (rule text unverified) | Wicked Role only: `duplicateRoles` in `rules/sba.ts`. |
+| 303.7, 704.5y | Roles | Implemented (unverified) | Wicked Role (`rules/sba.ts`). |
 | 704.6c | 21 combat damage from one commander | Implemented |
 | 704.6d | Commander to the command zone | Implemented |
 
