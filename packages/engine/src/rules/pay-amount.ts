@@ -17,10 +17,20 @@ import { done, type StepOutcome } from './step-outcome';
 type PayAmount = Extract<Instruction, { kind: 'payAmount' }>;
 type PayAnyAmount = Extract<Effect, { kind: 'payAnyAmount' }>;
 
-/** The most times `seat` could pay one `symbol` right now (0 when not even once). */
-export function maxPayable(state: GameState, seat: SeatId, symbol: PayAnyAmount['symbol']): number {
+/** The mana symbols of one payment of the effect: the `cost` it names, or its one `symbol` (a generic {1} when it names neither). */
+function symbolsPerPayment(effect: PayAnyAmount): readonly string[] {
+  return effect.cost ?? [effect.symbol ?? '1'];
+}
+
+/** `symbols` paid `times` times over. */
+function repeated(symbols: readonly string[], times: number): string[] {
+  return Array.from({ length: times }, () => symbols).flat();
+}
+
+/** The most times `seat` could pay one payment of `symbols` right now (0 when not even once). */
+export function maxPayable(state: GameState, seat: SeatId, symbols: readonly string[]): number {
   let n = 0;
-  while (n < 40 && planFor(state, seat, Array(n + 1).fill(symbol), { ability: true }) !== null) {
+  while (n < 40 && planFor(state, seat, repeated(symbols, n + 1), { ability: true }) !== null) {
     n += 1;
   }
   return n;
@@ -32,7 +42,7 @@ export function runPayAmount(
   ins: PayAmount,
 ): StepOutcome {
   if (ins.amount === null) {
-    const payable = maxPayable(state, ins.seat, ins.effect.symbol);
+    const payable = maxPayable(state, ins.seat, symbolsPerPayment(ins.effect));
     // D-257: "where X is less than or equal to the amount of life you gained": a most the effect itself gives, read as it starts.
     const cap =
       ins.effect.atMost === undefined
@@ -68,7 +78,7 @@ export function runPayAmount(
         min: 0,
         max,
         perX: { mana: 0, life: 0 },
-        cost: [{ kind: 'mana', symbols: [ins.effect.symbol] }],
+        cost: [{ kind: 'mana', symbols: [...symbolsPerPayment(ins.effect)] }],
       },
     };
   }
@@ -81,7 +91,7 @@ export function runPayAmount(
       {
         kind: 'unlessPays',
         seat: ins.seat,
-        cost: [{ kind: 'mana', symbols: Array(ins.amount).fill(ins.effect.symbol) }],
+        cost: [{ kind: 'mana', symbols: repeated(symbolsPerPayment(ins.effect), ins.amount) }],
         stage: 'pay',
         effect: { ...ins.effect, paid: ins.amount },
         optional: false,

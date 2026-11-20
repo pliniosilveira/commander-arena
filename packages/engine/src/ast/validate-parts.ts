@@ -124,6 +124,8 @@ export interface Scope {
    * trigger, a spell, an activated ability).
    */
   readonly triggerSubject?: 'permanent' | 'stack';
+  /** True in the effect of a `tappedForMana` triggered ability, the only place `producedType` mana may stand (CR 605.1b). */
+  readonly triggeredMana?: boolean;
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
@@ -159,6 +161,8 @@ export interface Scope {
   readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
+  readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
   readonly mainPhaseTrigger?: boolean;
   /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
@@ -750,6 +754,7 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'x',
   'enteredX',
+  'lifePaidAsEntered',
   'powerOf',
   'manaValueOf',
   'toughnessOf',
@@ -1708,6 +1713,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'commanderManaValue':
     case 'commanderCasts':
     case 'cardTypesAmong':
+    case 'differentManaValuesAmong':
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
@@ -1811,6 +1817,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'lifePaidAsEntered':
+      // CR 119.4, 614.12: the face must pay life as it enters (`chosenIssues` checks it with the other entry-time choices).
+      break;
     case 'attackersGreatestPower':
       // CR 508.1: the creatures of the attack event of an `attackBatch` trigger (`scope.triggerAttacked` is set only there).
       if (scope.triggerAttacked !== true) {
@@ -1822,6 +1831,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'manaValueOf':
+    case 'colorsOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
     case 'shortfall':
@@ -1910,6 +1920,36 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         }
       }
       break;
+    case 'differentManaValuesAmong':
+      // Issue 121 (CR 202.3): the distinct mana values among the cards a filter matches in a zone outside the battlefield and the stack.
+      if (a.filter === undefined || a.filter === null) {
+        issue(out, `${path}.filter`, 'differentManaValuesAmong needs a filter');
+      } else {
+        checkFilter(a.filter, `${path}.filter`, out);
+        if (
+          a.filter.zone === undefined ||
+          filterSome(a.filter, (f) => f.zone === 'battlefield' || f.zone === 'stack')
+        ) {
+          issue(
+            out,
+            `${path}.filter.zone`,
+            'differentManaValuesAmong counts the mana values of cards in a zone (a graveyard, exile, the hand or the library)',
+          );
+        }
+        if (
+          filterSome(
+            a.filter,
+            (f) => readsCombatOrSource(f) || f.power !== undefined || f.toughness !== undefined,
+          )
+        ) {
+          issue(
+            out,
+            `${path}.filter`,
+            'differentManaValuesAmong cannot read the combat, the source power, power or toughness',
+          );
+        }
+      }
+      break;
     case 'devotion':
       // CR 700.5: devotion to one or more of the five colors (colorless mana symbols are not a color).
       checkEnumList(out, `${path}.colors`, a.colors, COLORS, 'color');
@@ -1940,11 +1980,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-646 (CR 202.3): and the greatest mana value among them, read the same way.
       checkEnumList(out, `${path}.ofTypes`, a.ofTypes, CARD_TYPES, 'card type');
       for (const key of Object.keys(a)) {
-        if (key !== 'kind' && key !== 'ofTypes') {
+        if (key !== 'kind' && key !== 'ofTypes' && key !== 'otherThanThis') {
           issue(
             out,
             `${path}.${key}`,
-            'spells cast this turn reads only the controller and the card types',
+            'spells cast this turn reads only the controller, the card types and whether to leave out this spell',
           );
         }
       }
@@ -2394,6 +2434,20 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'devotion is not supported as a plain static power/toughness modifier');
     return;
   }
+  // Issue 145 (Soul of Eternity, CR 604.3): "equal to your life total": a characteristic-defining ability only, of the controller.
+  if (amount?.kind === 'lifeTotalOf') {
+    const player = (a as { player?: { kind?: string } }).player;
+    if (plain) {
+      issue(
+        out,
+        path,
+        'a life total is the amount of a characteristic-defining ability, not a plain static power/toughness modifier',
+      );
+    } else if (player?.kind !== 'you') {
+      issue(out, `${path}.player`, 'a characteristic-defining ability reads the life total of you');
+    }
+    return;
+  }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
   // Issue 81 (Omnath, CR 106.4): "for each unspent mana you have": plain (+N/+N) only.
   if (amount?.kind === 'unspentMana') {
@@ -2515,6 +2569,38 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           out,
           `${path}.filter`,
           'a tap cost names permanents by type, subtype, color and the like: no stackKind or owner',
+        );
+      }
+      break;
+    case 'untapPermanents':
+      // CR 701.26b, 118.3: "Untap two tapped creatures you control": a count of 1 or more, permanents the player controls, on the battlefield, that are
+      // tapped (the engine adds that itself).
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (!isCount(cost.count) || cost.count < 1) {
+        issue(out, `${path}.count`, 'the number of permanents to untap must be a positive integer');
+      }
+      if (filterSome(cost.filter, (f) => f.controller === 'opponent')) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'only permanents you control can be untapped for a cost',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.tapped !== undefined)) {
+        issue(
+          out,
+          `${path}.filter.tapped`,
+          'the permanents untapped for a cost are tapped: the filter does not say so',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be untapped');
+      }
+      if (filterSome(cost.filter, (f) => f.stackKind !== undefined || f.owner !== undefined)) {
+        issue(
+          out,
+          `${path}.filter`,
+          'an untap cost names permanents by type, subtype, color and the like: no stackKind or owner',
         );
       }
       break;
@@ -3314,6 +3400,8 @@ function movesObjects(e: Effect): boolean {
     e?.kind === 'mill' ||
     // Lorehold group 1: the card `exileFromTriggerCards` exiled is "it" ("If you do, you may cast it this turn").
     e?.kind === 'exileFromTriggerCards' ||
+    // Issue 121 (Finale of Promise): the spells a `castCard` with `remember` cast are "those spells" ("If X is 10 or more, copy each of those spells twice").
+    (e?.kind === 'castCard' && e.remember === true) ||
     // Galadriel group 3: the card a `draw` with `reveal` drew is "that card" ("Draw a card and reveal it. ... that card's mana value").
     (e?.kind === 'draw' && e.reveal === true)
   );
@@ -3328,6 +3416,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Gingerbrute',
   'Incubator',
   'Lander',
+  'Junk',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
@@ -3981,6 +4070,17 @@ function checkSearch(
     issue(out, `${path}.filter`, 'a search needs a filter (use {} for "a card")');
   } else {
     checkFilter(filter, `${path}.filter`, out);
+    // CR 107.3a: "a creature card with mana value X or less" reads the X announced for the spell that is resolving.
+    if (
+      (filter.manaValueAtMost as { kind?: string } | undefined)?.kind === 'x' &&
+      !scope.xAllowed
+    ) {
+      issue(
+        out,
+        `${path}.filter.manaValueAtMost`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
+      );
+    }
     // The searched zone is the searcher's own library; naming another zone or controller is wrong.
     if (filterSome(filter, (f) => f.zone !== undefined)) {
       issue(out, `${path}.filter.zone`, "a search looks in the searcher's library: leave zone out");
@@ -5240,6 +5340,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         checkSubjectRef(e.spell, 'stack', `${path}.spell`, scope, out);
       } else if (kindOf(e.spell) === 'target') {
         checkRef(e.spell, 'object', `${path}.spell`, scope, out);
+      } else if (kindOf(e.spell) === 'moved') {
+        // Issue 121 (Finale of Promise): "copy each of those spells": the spells a `castCard` with `remember` cast.
+        checkRef(e.spell, 'object', `${path}.spell`, scope, out);
       } else if (kindOf(e.spell) === 'thisSpell') {
         // D-230: "you may copy this spell" (Sevinne's Reclamation): the spell that is resolving, so a spell's own text.
         if (scope.owner !== 'spell') {
@@ -5321,6 +5424,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.spell`,
           'exileOnResolve names the spell that was cast (triggerSubject)',
         );
+      }
+      // Issue 121: "exiled with this artifact": only an ability of a permanent remembers what it exiles.
+      if (e.linked !== undefined) {
+        if (e.linked !== true) issue(out, `${path}.linked`, 'linked must be true when present');
+        if (scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.linked`,
+            'only an ability of a permanent can link what it exiles to it',
+          );
+        }
       }
       break;
     case 'doubleSpellX':
@@ -5474,6 +5588,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.linked`,
             'only an ability of a permanent can link what it exiles to it',
+          );
+        }
+      }
+      // Issue 121: "at random": one card of an `each` selector.
+      if (e.atRandom !== undefined) {
+        if (e.atRandom !== true)
+          issue(out, `${path}.atRandom`, 'atRandom must be true when present');
+        if (kindOf(e.objects) !== 'each') {
+          issue(
+            out,
+            `${path}.objects`,
+            "an exile at random picks one of an 'each' selector's objects",
           );
         }
       }
@@ -5853,11 +5979,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'copyCardAndCast':
       // D-654 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
-      if (kindOf(e.objects) !== 'moved') {
+      // Issue 121 (Arcane Bombardment): or the cards the permanent exiled with its linked ability ("copy each card exiled with this enchantment").
+      if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
         issue(
           out,
           `${path}.objects`,
-          "copyCardAndCast copies the card an effect before it exiled (objects: 'moved')",
+          "copyCardAndCast copies the card an effect before it exiled (objects: 'moved') or the cards exiled with this permanent ('linkedExile')",
         );
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
@@ -5872,11 +5999,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (e.max !== 'any' && !(Number.isSafeInteger(e.max) && e.max >= 2)) {
           issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");
         }
-        if (kindOf(e.objects) !== 'moved') {
+        // Issue 121 (Forger's Foundry): or the cards the permanent exiled with its linked ability ("from among cards exiled with this artifact").
+        if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
           issue(
             out,
             `${path}.max`,
-            "several spells are cast from the cards an effect before moved ('moved')",
+            "several spells are cast from the cards an effect before moved ('moved') or the cards exiled with this permanent ('linkedExile')",
           );
         }
         if (e.play === true) {
@@ -5983,6 +6111,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           `${path}.free`,
           'a spell cast without paying its mana cost has no mana to spend',
         );
+      }
+      if (e.remember !== undefined && e.remember !== true) {
+        issue(out, `${path}.remember`, 'remember must be true when present');
       }
       break;
     case 'fight':
@@ -6331,6 +6462,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 104.3e (D-269): the players the selector names lose the game; no other operand.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
+    case 'winGame':
+      // CR 104.2b: one player wins the game; a selector that names several players has no meaning ("each opponent wins").
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (
+        e.player?.kind === 'eachPlayer' ||
+        e.player?.kind === 'eachOpponent' ||
+        e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'all'
+      ) {
+        issue(out, `${path}.player`, 'only one player wins the game: name a single player');
+      }
+      break;
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6338,6 +6481,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
+      // CR 106.12a, 605.1b: "add one mana of any type that land produced" reads the mana ability that triggered it: only a triggered mana ability has one.
+      if (e.mana?.kind === 'producedType' && scope.triggeredMana !== true) {
+        issue(
+          out,
+          `${path}.mana`,
+          'one mana of a type the tapped permanent produced is only the effect of a "tapped for mana" triggered mana ability',
+        );
+      }
       if (e.mana?.kind === 'anyColorAmount') {
         issue(
           out,

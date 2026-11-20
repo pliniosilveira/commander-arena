@@ -208,6 +208,18 @@ interface HandGrantSource {
   readonly conditionKey?: string;
 }
 
+/**
+ * A static ability of a permanent that gives a keyword to the spells its controller casts (`grantKeywordToSpells`, issue 145, CR 702.144a, 702.51a, 613.1f): read by `staticEffectsOn`
+ * for a spell on the stack. A permanent that lost all its abilities has none (CR 613.1f).
+ */
+interface SpellGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+  readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
+  readonly condition?: Condition;
+  readonly conditionKey?: string;
+}
+
 /** A static ability of a permanent that gives flashback to the cards of its controller's graveyard (`grantFlashbackToGraveyardCards`, CR 702.34a, 613.1f). */
 export interface FlashbackGrantSource {
   readonly object: GameObject;
@@ -241,6 +253,8 @@ interface BoardIndex {
   readonly graveyardPlays: readonly GraveyardPlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
   readonly handGrants: readonly HandGrantSource[];
+  /** Permanents with a `grantKeywordToSpells` static ability, in battlefield order (issue 145). */
+  readonly spellGrants: readonly SpellGrantSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
@@ -420,6 +434,28 @@ function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGr
   return out;
 }
 
+function spellGrantsOf(object: GameObject, abilities: readonly Ability[]): SpellGrantSource[] {
+  const out: SpellGrantSource[] = [];
+  for (const a of abilities) {
+    // A static ability of a permanent works on the battlefield, unless it says otherwise (CR 113.6b).
+    if (
+      a.kind === 'static' &&
+      a.static.kind === 'grantKeywordToSpells' &&
+      (a.functionsIn ?? 'battlefield') === 'battlefield'
+    ) {
+      out.push({
+        object,
+        what: a.static.what,
+        keyword: a.static.keyword,
+        ...(a.condition === undefined
+          ? {}
+          : { condition: a.condition, conditionKey: JSON.stringify(a.condition) }),
+      });
+    }
+  }
+  return out;
+}
+
 function flashbackGrantsOf(
   object: GameObject,
   abilities: readonly Ability[],
@@ -452,6 +488,7 @@ function buildIndex(state: GameState): BoardIndex {
   const hasteActivations: HasteActivationSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
+  const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
   for (const id of state.battlefield) {
@@ -474,6 +511,7 @@ function buildIndex(state: GameState): BoardIndex {
     }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
     handGrants.push(...handGrantsOf(object, printed));
+    spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
     if (object.attachedTo !== null) {
       const list = attachments.get(object.attachedTo);
@@ -548,6 +586,7 @@ function buildIndex(state: GameState): BoardIndex {
     hasteActivations,
     graveyardPlays,
     handGrants,
+    spellGrants,
     flashbackGrants,
     attachments,
   };
@@ -784,6 +823,41 @@ function handGrantsOn(state: GameState, target: GameObject, base: StaticBase): S
 }
 
 /**
+ * The keywords the static abilities of the permanents on the battlefield give to `target`, a spell on the stack (issue 145, `grantKeywordToSpells`, CR 702.144a, 702.51a, 613.1f):
+ * "Creature spells you cast have demonstrate." The spell is the one its controller cast, so `what` is read with the permanent's controller as "you" against the spell as it is after
+ * layers 4 and 5 (`base`). A copy of a spell is not cast (CR 707.10) and an ability on the stack is no spell: neither gets a keyword. The object may be the card as it is cast
+ * (`castAs`, no stack data yet), which is how the cost of a spell and the question whether it can be paid see a granted Convoke.
+ */
+function spellGrantsOn(state: GameState, target: GameObject, base: StaticBase): StaticGrant[] {
+  const sources = indexOf(state).spellGrants;
+  if (sources.length === 0) return [];
+  if (target.copyOf !== undefined || (target.stack !== null && target.stack.kind !== 'spell')) {
+    return [];
+  }
+  const grants: StaticGrant[] = [];
+  for (const source of sources) {
+    if (
+      source.condition !== undefined &&
+      !conditionHolds(state, source.condition, source.conditionKey ?? '', source.object)
+    ) {
+      continue;
+    }
+    const filter: ObjectFilter = { ...source.what, zone: 'stack' };
+    // "You" is the permanent's controller, read against the controller of the spell.
+    if (
+      !matchesFilterWith(state, target, () => base, filter, subjectContextOf(state, source.object))
+    ) {
+      continue;
+    }
+    grants.push({
+      ability: { kind: 'keyword', keyword: source.keyword },
+      timestamp: source.object.timestamp,
+    });
+  }
+  return grants;
+}
+
+/**
  * The static effects on `target`, whose characteristics after layers 4 and 5 are `base`. Only a permanent
  * on the battlefield is affected (CR 611.3b: a static ability of a permanent works there); for any
  * other object the result is empty, but for the keywords a permanent gives to the cards of its controller's hand
@@ -795,6 +869,7 @@ export function staticEffectsOn(
   base: StaticBase,
 ): StaticEffects {
   if (target.zone === 'hand') return otherZoneEffects(handGrantsOn(state, target, base));
+  if (target.zone === 'stack') return otherZoneEffects(spellGrantsOn(state, target, base));
   if (target.zone !== 'battlefield') return otherZoneEffects([]);
   const index = indexOf(state);
   const grants: StaticGrant[] = [];

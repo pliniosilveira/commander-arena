@@ -243,6 +243,19 @@ describe('a characteristic-defining ability and the "*" it needs (CR 208.2a, 604
     expect(issues(twice)).toEqual([]);
   });
 
+  test('a life total of you defines power and toughness (CR 119.1, 604.3); another player or a plain modifier is refused', () => {
+    const LIFE = { kind: 'lifeTotalOf', player: { kind: 'you' } };
+    const life = creature([defines(LIFE, LIFE)], star);
+    expect(issues(life)).toEqual([]);
+    expect(unsupportedFeatureIssues(life)).toEqual([]);
+    const theirs = { kind: 'lifeTotalOf', player: { kind: 'eachOpponent' } };
+    expectIssue(issues(creature([defines(theirs, theirs)], star)), 'life total of you');
+    expectIssue(
+      issues(creature([bonus(LIFE)], { power: 2, toughness: 2 })),
+      'not a plain static power/toughness modifier',
+    );
+  });
+
   test('a printed star with no ability that defines it is refused (and unsupported)', () => {
     const none = creature([], star);
     expectIssue(issues(none), "a printed '*' power needs a characteristic-defining ability");

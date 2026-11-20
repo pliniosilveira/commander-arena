@@ -429,6 +429,60 @@ export const CONDITION_THIS_COUNTER_COUNT = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.this-is-token`: "it isn't a token", "it's not a token", "it's a token", "~ is a token" (issue 145, Gruff Triplets; CR 111.1, 603.4: a token is a permanent that is not
+ * represented by a card). The engine's `thisMatches` with `token`, read as the ability triggers and as it resolves (the intervening "if" of an enters trigger of the permanent
+ * itself). The permanent is the one the ability is on: `~`, or "it" in an ability about itself. Not read: a kind of token ("a Treasure token"), another permanent, a past
+ * tense, "isn't not a token".
+ */
+export const CONDITION_THIS_IS_TOKEN = defineRule<IrCondition>({
+  id: 'condition.this-is-token',
+  family: 'condition',
+  leading: ['~', 'it', 'it’s', "it's"],
+  cites: ['CR 111.1 (Tokens)', 'CR 603.4 (Handling Triggered Abilities)'],
+  examples: [
+    "it isn't a token",
+    'it isn’t a token',
+    "it's not a token",
+    "it's a token",
+    '~ is a token',
+    "~ isn't a token",
+    'it is a token',
+  ],
+  rejects: [
+    "it isn't a token.",
+    "it isn't a Treasure token",
+    "it isn't not a token",
+    "it's not a tokens",
+    'it was a token',
+    'it wasn’t a token',
+    'target creature is a token',
+    "it isn't a token and",
+    "that isn't a token",
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(/(~|it)(?:['’]s(?: (not))?| is(?: (not))?| isn['’]t) an? token(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const match = r.value.value;
+    const text = match[0].toLowerCase();
+    const negative = /isn['’]t|\bnot\b/.test(text);
+    // "it's not a token" and "it isn't a token" are one denial; a second "not" is no wording.
+    if (/isn['’]t not|not not/.test(text)) return fail(ctx, pos);
+    const who = (match[1] ?? '').toLowerCase() === '~' ? 'self' : 'it';
+    return {
+      ok: true,
+      value: condition('condition.this-is-token', pos, r.pos, {
+        kind: 'thisMatches',
+        filter: { token: !negative, raw: match[0] },
+        who,
+      }),
+      pos: r.pos,
+    };
+  },
+});
+
 export const SELF_STATE_CONDITION_RULES = [
   CONDITION_CONTROL_YOUR_COMMANDER,
   CONDITION_LIFE_TOTAL,
@@ -437,4 +491,5 @@ export const SELF_STATE_CONDITION_RULES = [
   CONDITION_PAIRED,
   CONDITION_THIS_HAS_COUNTER,
   CONDITION_THIS_COUNTER_COUNT,
+  CONDITION_THIS_IS_TOKEN,
 ];

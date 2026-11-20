@@ -430,6 +430,16 @@ export function layoutSupportIssues(def: CardDefinition): AstIssue[] {
         message: `retrace on this face of layout ${def.layout} is not implemented by the engine yet`,
       });
     }
+    // CR 702.133a: jump-start is read from the front face of a card that is not split, like retrace.
+    const jumpStart = face.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'jumpStart',
+    );
+    if (jumpStart && (i > 0 || def.layout === 'split')) {
+      out.push({
+        path: `faces[${i}].abilities`,
+        message: `jump-start on this face of layout ${def.layout} is not implemented by the engine yet`,
+      });
+    }
   });
   return out;
 }

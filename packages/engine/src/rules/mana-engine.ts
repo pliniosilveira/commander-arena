@@ -275,7 +275,7 @@ export function activateManaAbility(
     const named = alternatives.find((a) => a.join('') === extraColors.join(''));
     if (named === undefined) {
       return refuse(
-        `${name} cannot add ${extraColors.join('')} as the additional mana: it is one mana of each of W, U, B, R or G (colorless is not a color)`,
+        `${name} cannot add ${extraColors.join('')} as the additional mana: choose one of ${alternatives.map((a) => a.join('')).join(', ')}`,
       );
     }
     extra = named;

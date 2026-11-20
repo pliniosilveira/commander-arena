@@ -25,6 +25,7 @@ export function optionText(
     | 'creatureType'
     | 'color'
     | 'cardType'
+    | 'lifePaid'
     | 'attackTarget'
     | 'assignOpponent'
     | 'option'
@@ -57,6 +58,7 @@ export function purposeNoun(
     | 'creatureType'
     | 'color'
     | 'cardType'
+    | 'lifePaid'
     | 'attackTarget'
     | 'assignOpponent'
     | 'option'
@@ -78,6 +80,7 @@ export function purposeNoun(
   if (purpose === 'assignOpponent') return 'opponent to gain control';
   if (purpose === 'option' || purpose === 'effect') return 'option';
   if (purpose === 'cardType') return 'card type';
+  if (purpose === 'lifePaid') return 'amount of life to pay';
   return purpose === 'color' ? 'color' : 'creature type';
 }
 
@@ -119,6 +122,14 @@ export function chosenLabel(object: Pick<ObjectView, 'chosen'>): ChosenLabel | n
       short: chosen.option,
       title: `Chosen option: ${chosen.option}`,
       heading: 'Chosen option',
+    };
+  }
+  // CR 119.4, 614.12: "pay any amount of life" as it entered (Phyrexian Processor), which its ability reads.
+  if (chosen.lifePaid !== undefined) {
+    return {
+      short: `${chosen.lifePaid} life`,
+      title: `Life paid as it entered: ${chosen.lifePaid}`,
+      heading: 'Life paid as it entered',
     };
   }
   return null;

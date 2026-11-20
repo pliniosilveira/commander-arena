@@ -228,6 +228,8 @@ export function staticAmountOf(
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'devotion')
     return devotionOf(state, controllerOf(state, source), amount.colors);
+  // CR 604.3, 119.1 (issue 145, Soul of Eternity): the life total of the controller, as the characteristics are worked out.
+  if (amount.kind === 'lifeTotalOf') return getSeat(state, controllerOf(state, source)).life;
   // CR 508.1 (D-187): the times the permanent was declared as an attacker this turn.
   if (amount.kind === 'timesAttacked') {
     return state.turnLog.attacked.filter((id) => id === recipient.id).length;

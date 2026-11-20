@@ -60,6 +60,7 @@ import { asFace } from './layouts';
 import { libraryCastSacrificeOf } from './library-cast-cost';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
+import { nextSpellReduction } from './next-spell';
 import { payMechanismsOf, payOptionSources } from './pay-options';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
@@ -142,6 +143,7 @@ export function alternativeOfStack(
 ): CastAlternative | undefined {
   if (stack?.flashback === true) return 'flashback';
   if (stack?.retrace === true) return 'retrace';
+  if (stack?.jumpStart === true) return 'jumpStart';
   if (stack?.free === true) return 'free';
   return stack?.alt;
 }
@@ -241,6 +243,8 @@ function reductionFor(
     if (!matchesFilter(state, spell, { ...source.spells, zone: 'stack' }, ctx)) continue;
     total += amountOf(state, source.amount, ctx, []);
   }
+  // Issue 121: "The next instant or sorcery spell you cast this turn costs {X} less to cast" (`nextSpellModifier`).
+  total += nextSpellReduction(state, seat, spell);
   return total;
 }
 
@@ -450,7 +454,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
   // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
-  if (alternative === 'retrace') discard += 1;
+  if (alternative === 'retrace' || alternative === 'jumpStart') discard += 1;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(
@@ -676,7 +680,7 @@ export function canPaySpellCost(
   const paid = cost.life > 0 ? patchSeat(state, seat, { life: life - cost.life }) : state;
   // D-120: Convoke, Improvise and Delve pay part of the total cost with creatures, artifacts and graveyard
   // cards, so they count as sources of the payment here (the caster chooses them as the cost is paid).
-  const mechanisms = payMechanismsOf(faceOfSpell(state, spell));
+  const mechanisms = payMechanismsOf(state, spell, faceOfSpell(state, spell));
   const extra = mechanisms.length === 0 ? undefined : payOptionSources(state, seat, mechanisms);
   return (
     castManaPlan(

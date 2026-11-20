@@ -195,6 +195,7 @@ export function runEnterToken(
         what,
         entersOptions(definition.abilities),
         entersColorExcept(definition.abilities),
+        lifeTotalIsLocked(state, seat) ? 0 : getSeat(state, seat).life,
       ),
       // Nothing exists yet: the question is about the token that the resolving spell or ability makes.
       source: res.object,
@@ -327,6 +328,13 @@ export function runEnterToken(
     const legal = devourCandidates(state, seat);
     if (legal.length > 0) return asked(devourDecision(seat, res.object, legal));
     devoured = [];
+  }
+  // CR 119.4, 614.12 (pay any amount of life): the life the token's controller chose to pay is lost as the token enters.
+  if (what === 'lifePaid' && (chosen?.lifePaid ?? 0) > 0) {
+    const had = getSeat(afterPay, seat).life;
+    const paid = chosen?.lifePaid ?? 0;
+    afterPay = loseLifeBy(afterPay, seat, paid);
+    payEvents.push({ kind: 'lifeChanged', seat, from: had, to: had - paid });
   }
   const sacrificed = sacrificeForDevour(afterPay, devoured ?? [], seat);
   const made = makeTokens(

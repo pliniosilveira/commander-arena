@@ -361,6 +361,37 @@ const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, crea
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
+/**
+ * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
+ * issue 121, CR 707.12): the second sentence is what is done with the copy of each card the first exiles, read as one instruction (`effect.exile-copy-cast`).
+ */
+/**
+ * "Then copy each card exiled with ~. You may cast any number of the copies without paying their mana costs." (Arcane Bombardment, issue 121, CR 707.12): the second sentence is what is
+ * done with the copies the first makes, read as one instruction (`effect.copy-linked-exiled-and-cast`).
+ */
+const COPY_EACH_EXILED_WITH = /^(?:then )?copy each card exiled with ~\.$/i;
+/**
+ * "When you pay this cost one or more times, put that many +1/+1 counters on this creature, then exile up to that many target instant and/or sorcery cards ... and copy them. You may cast any number
+ * of the copies without paying their mana costs." (Bloodthirsty Adversary, issue 121, CR 603.12, 707.12): the last sentence is what is done with the copies, part of the reflexive ability.
+ */
+const PAY_REFLEXIVE_AND_COPY_THEM =
+  /^when you pay this cost one or more times, [^.]* and copy them\.$/i;
+/**
+ * "You may cast up to one target instant card and/or up to one target sorcery card from your graveyard each with mana value X or less without paying their mana costs. If a spell cast this way would
+ * be put into your graveyard, exile it instead. If X is 10 or more, copy each of those spells twice. You may choose new targets for the copies." (Finale of Promise, issue 121): the four sentences
+ * of one instruction, kept together for `effect.cast-instant-and-sorcery-from-graveyard-x`.
+ */
+const FINALE_CAST =
+  /^you may cast up to one target instant card and\/or up to one target sorcery card from your graveyard each with mana value x or less without paying their mana costs\.$/i;
+const FINALE_EXILE_INSTEAD =
+  /^if a spell cast this way would be put into your graveyard, exile it instead\.$/i;
+const FINALE_COPY_TWICE = /^if x is 10 or more, copy each of those spells twice\.$/i;
+const FINALE_NEW_TARGETS = /^you may choose new targets for the copies\.$/i;
+const MAY_CAST_ANY_COPIES =
+  /^you may cast any number of the copies without paying their mana costs\.$/i;
+const EXILE_CARD_SENTENCE = /^exile [^.]* from your graveyard\.$/i;
+const FOR_EACH_EXILED_COPY_IT =
+  /^for each card exiled this way, copy it, and you may cast the copy without paying its mana cost\.$/i;
 
 /**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
@@ -651,6 +682,8 @@ const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [
 const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
 /** "It becomes an 8/8 Elemental creature with trample and haste until end of turn. It's still a land." (Silvanus's Invoker, issue 345): the land the sentence before named keeps its types. */
 const IT_BECOMES_LAND_CREATURE = /^it becomes an? \d+\/\d+ [^.]*\.$/i;
+/** "{2}{G}{W}: ~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land." (issue 145, Restless Prairie, CR 205.1b): the same, with the duration at the end. */
+const BECOMES_LAND_CREATURE_TRAILING = /(?:^|: )~ becomes a \d+\/\d+ [^.]* until end of turn\.$/i;
 /**
  * "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~." (Galadriel deck, group 3, CR 701.20a, 400.7j): the second sentence
  * reads the card the first one drew and revealed, so the two are read as one instruction (`effect.draw-reveal-remove`; the first may follow a loyalty cost).
@@ -658,6 +691,9 @@ const IT_BECOMES_LAND_CREATURE = /^it becomes an? \d+\/\d+ [^.]*\.$/i;
 const DRAW_AND_REVEAL = /(?:^[+\-−]?\d+: |^|, )draw a card and reveal it\.$/i;
 const REMOVE_COUNTERS_MANA_VALUE =
   /^remove a number of [^.]* counters equal to that card['’]s mana value from [^.]*\.$/i;
+/** "Count the number of cards in your library. Your life total becomes that number." (issue 145, Invincible Hymn, CR 119.5): the second sentence reads the count of the first. */
+const COUNT_LIBRARY = /^count the number of cards in your library\.$/i;
+const LIFE_TOTAL_BECOMES_THAT_NUMBER = /^your life total becomes that number\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 /**
@@ -717,7 +753,18 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       i += 1;
       continue;
     }
+    // Finale of Promise (issue 121): the four sentences of one instruction.
     if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, FINALE_CAST) &&
+      said(b, FINALE_EXILE_INSTEAD) &&
+      said(c, FINALE_COPY_TWICE) &&
+      said(d, FINALE_NEW_TARGETS)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
       a !== undefined &&
       d !== undefined &&
       said(a, LOOK_AT_TOP) &&
@@ -850,6 +897,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
         (said(a, IT_BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, BECOMES_LAND_CREATURE_TRAILING) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||
@@ -872,6 +921,9 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
+        (said(a, COPY_EACH_EXILED_WITH) && said(b, MAY_CAST_ANY_COPIES)) ||
+        (said(a, PAY_REFLEXIVE_AND_COPY_THEM) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||
@@ -1247,6 +1299,12 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
     const colon = costColon(text);
     if (colon > 0) return activatedSkeleton(text, colon, base);
     // A spell of the same two sentences: the rider belongs to the permission, not to a replacement effect of a permanent.
+    return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
+  }
+
+  // Finale of Promise (issue 121): "If a spell cast this way would be put into your graveyard, exile it instead." belongs to the permission the first sentence gives, not to a replacement
+  // effect of a permanent: the text is a spell of four sentences.
+  if (FINALE_CAST.test(text.split(/(?<=\.) /u)[0] ?? '')) {
     return { ...base, head: 'other', sentences: splitSentences(text, 0, text.length) };
   }
 

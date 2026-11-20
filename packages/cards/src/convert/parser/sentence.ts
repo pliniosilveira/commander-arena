@@ -463,7 +463,11 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
     let condition: IrCondition | undefined;
     let reflexive = false;
     if (options.reflexive === true) {
-      const lead = literal('when you do, ')(ctx, start);
+      // Issue 121 (Bloodthirsty Adversary): "When you pay this cost one or more times, ..." is the reflexive ability of a payment made any number of times.
+      const lead = choice(
+        literal('when you do, '),
+        literal('when you pay this cost one or more times, '),
+      )(ctx, start);
       if (lead.ok) {
         reflexive = true;
         at = lead.pos;

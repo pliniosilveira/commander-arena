@@ -60,6 +60,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
+  if (a.production?.kind === 'producedType') {
+    issue(
+      out,
+      `${path}.production`,
+      'one mana of a type a permanent produced is only the effect of a "tapped for mana" triggered mana ability (CR 605.1b), not what a mana ability makes',
+    );
+  }
   // CR 605.1a, 605.3b: "Add {C} for each charge counter on this artifact" (Elementalist's Palette), "Add {U} for each artifact you control" (Uthros, Titanic Godcore): the count is read as the
   // ability is activated and is what the game says then (a count, the counters on this permanent, ...): no target, no X and no earlier instruction to read. A cost that gives a permanent
   // up or takes counters off could change what it counts, so the two are not combined.
@@ -265,13 +272,15 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
             ('scryCommanderCasts' in scry && scry.scryCommanderCasts === true) ||
             ('countersCommanderCasts' in scry && scry.countersCommanderCasts === true) ||
             // D-328: "copy that spell" with or without "you may choose new targets for the copy".
-            ('copySpell' in scry && (scry.copySpell === 'may' || scry.copySpell === 'no')))
+            ('copySpell' in scry && (scry.copySpell === 'may' || scry.copySpell === 'no')) ||
+            // Issue 121 (Forger's Foundry): "you may exile that spell instead of putting it into its owner's graveyard as it resolves".
+            ('exileLinked' in scry && scry.exileLinked === true))
         )
       ) {
         issue(
           out,
           `${path}.spentRider.grants`,
-          'a rider is haste, a scry of one or more, a scry or counters of the times the commander was cast or a copy of the spell',
+          'a rider is haste, a scry of one or more, a scry or counters of the times the commander was cast, a copy of the spell or the exile of the spell',
         );
       }
       if (rider.spells === null || typeof rider.spells !== 'object') {
@@ -294,6 +303,17 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         }
         if (rider.spells.commander !== undefined && rider.spells.commander !== true) {
           issue(out, `${path}.spentRider.spells.commander`, 'only true is allowed');
+        }
+        // Issue 121: "with mana value 3 or less": a whole number of 0 or more.
+        if (
+          rider.spells.manaValueAtMost !== undefined &&
+          (!Number.isSafeInteger(rider.spells.manaValueAtMost) || rider.spells.manaValueAtMost < 0)
+        ) {
+          issue(
+            out,
+            `${path}.spentRider.spells.manaValueAtMost`,
+            'manaValueAtMost is a whole number of 0 or more',
+          );
         }
         checkEnumList(
           out,
@@ -330,6 +350,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     } else {
       checkCondition(a.instead.condition, `${path}.instead.condition`, out);
       checkManaProduction(a.instead.production, `${path}.instead.production`, out);
+      if (a.instead.production?.kind === 'producedType') {
+        issue(
+          out,
+          `${path}.instead.production`,
+          'producedType is only the effect of a triggered mana ability',
+        );
+      }
       if (a.instead.production?.kind === 'couldProduce') {
         issue(
           out,

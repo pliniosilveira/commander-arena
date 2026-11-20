@@ -82,6 +82,7 @@ const PREDEFINED = [
   'Map',
   'Gingerbrute',
   'Lander',
+  'Junk',
   'Blood',
 ] as const;
 type Predefined = (typeof PREDEFINED)[number];
@@ -89,6 +90,18 @@ type Predefined = (typeof PREDEFINED)[number];
 /** "tapped " between the count and the token ("two tapped Treasure tokens", CR 110.5b: they enter tapped). */
 const TAPPED = optional(
   map(literal('tapped '), () => true as const),
+  null,
+);
+
+/**
+ * "tapped and attacking " (CR 508.4, Ghalta and Mavren): a custom creature token created tapped that joins the combat; "attacking " alone is not read (the engine's
+ * `enterAttacking` has no untapped form to name). Before the plain "tapped ", of which it is the start.
+ */
+const TAPPED_AND_ATTACKING = optional(
+  choice(
+    map(literal('tapped and attacking '), (): true | 'attacking' => 'attacking'),
+    map(literal('tapped '), (): true | 'attacking' => true),
+  ),
   null,
 );
 
@@ -133,6 +146,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Gingerbrute token',
     // CR 111.10u (Horizon Explorer, Seedship Impact).
     'a Lander token',
+    // CR 111.10t (Break Down).
+    'a Junk token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
@@ -290,7 +305,7 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       sequence(
         count,
         literal(' '),
-        TAPPED,
+        TAPPED_AND_ATTACKING,
         pattern(/(\d+|X)\/(\d+|X) /),
         COLORS,
         literal(' '),
@@ -350,7 +365,8 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
     ]): Bare => ({
       kind: 'token',
       ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
-      ...(tapped === null ? {} : { tapped }),
+      ...(tapped === null ? {} : { tapped: true as const }),
+      ...(tapped === 'attacking' ? { attacking: true as const } : {}),
       ...(named === null ? {} : { named }),
       ...(pt[1] === 'X'
         ? { ptAmount: true as const }
@@ -830,6 +846,44 @@ export const TOKEN_COPY = defineRule<IrToken>({
   ),
 });
 
+/**
+ * `token.copy-that-creature`: "a token that's a copy of that creature" (issue 145, Bramble Sovereign; CR 707.2, 111.4): the copy of the permanent the event of the trigger is about,
+ * which the binding pass resolves as it does "it" (`token.copy`). One token, and nothing after the creature: "..., except it has haste" and the other exceptions belong to
+ * the rules that read them (`token.copy-except` and the effects of the cards that name the creature), which a copy of "that creature" must leave alone. Not read: several tokens,
+ * "that creature's controller", an exception, another permanent.
+ */
+export const TOKEN_COPY_THAT_CREATURE = defineRule<IrToken>({
+  id: 'token.copy-that-creature',
+  family: 'token',
+  leading: [],
+  cites: ['CR 707.2 (Copying Objects)', 'CR 111.4 (Tokens)'],
+  examples: ["a token that's a copy of that creature", 'a token that’s a copy of that creature'],
+  rejects: [
+    "a token that's a copy of that creature, except it has haste",
+    "a token that's a copy of that creature's controller",
+    'two tokens that are copies of that creature',
+    "a token that's a copy of that permanent",
+    "a token that's a copy of that creatures",
+    "one token that's a copy of that creature",
+    "a token that's a copy of that creature and",
+  ],
+  parse: node<Bare, IrToken>(
+    'token.copy-that-creature',
+    map(
+      sequence(
+        map(spanned(article), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
+        pattern(/ token that['’]s a copy of /i),
+        satisfy(family<IrNoun>('noun', { only: ['noun.that-object'] }), (noun) =>
+          /^that creature$/iu.test(noun.filter.raw.trim()),
+        ),
+        pattern(/(?!,? except)(?! and)/iu),
+      ),
+      ([count, , copyOf]): Bare => ({ kind: 'token', copyOf, count }),
+    ),
+    (b) => b,
+  ),
+});
+
 export const TOKEN_RULES = [
   TOKEN_PREDEFINED,
   TOKEN_CUSTOM,
@@ -848,4 +902,5 @@ export const TOKEN_RULES = [
   // Prismari deck, group 1 (D-638): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
   TOKEN_COPIES_X,
   TOKEN_COPY,
+  TOKEN_COPY_THAT_CREATURE,
 ];

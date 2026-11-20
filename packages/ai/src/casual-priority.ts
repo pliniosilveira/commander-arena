@@ -238,6 +238,7 @@ export function spellPlays(
       o.alternative === 'flashback' ||
       o.alternative === 'escape' ||
       o.alternative === 'retrace' ||
+      o.alternative === 'jumpStart' ||
       o.alternative === 'harmonize'
     )
       continue;

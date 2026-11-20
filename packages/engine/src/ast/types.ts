@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "Create an X/X token, where X is the life paid as this artifact entered" (CR 119.4, 614.12, 400.7): the life the permanent paid as it entered (`asEntersChoose` of
+   * `lifePaid` on the same face), which the permanent remembers (`GameObject.chosen.lifePaid`), read from last-known information once it has left (CR 113.7a). Needs
+   * that choice on the face; nothing was paid (0) for a permanent that made no choice.
+   */
+  | { readonly kind: 'lifePaidAsEntered' }
+  /**
    * "Draw a card for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-654): the Auras `controlledBy` ("you": the controller of the ability) controlled that
    * were attached to the permanent the trigger is about as it left the battlefield, from its last-known information. Valid only in a triggered ability whose trigger has a permanent
    * as its subject (`dies`, `leavesBattlefield`).
@@ -71,6 +77,11 @@ export type Amount =
    * last-known information of a spell that left the stack has lost its X (`docs/ROADMAP.md`).
    */
   | { readonly kind: 'manaValueOf'; readonly of: ObjectRef }
+  /**
+   * "For each of that spell's colors" (issue 145, Ancient Cornucopia; CR 105.2, 601.2i): how many of the five colors the object has (a color counts once, colorless is no color, CR 105.2c),
+   * read as it is now, or from last-known information once it has left (CR 608.2h). Valid where `manaValueOf` is: of a target or of the `triggerSubject` spell of a cast trigger.
+   */
+  | { readonly kind: 'colorsOf'; readonly of: ObjectRef }
   /**
    * "The difference" between a number and the mana value of a card (D-151, "If the discovered card's mana value is less than 10, create a number of tapped
    * Treasure tokens equal to the difference"): `limit` less the mana value of the object `of` names (read as `manaValueOf` is), and 0 when that is
@@ -204,6 +215,12 @@ export type Amount =
    * is read (an `amountIs` condition, so as an intervening "if" it is read when the event happens and again as the ability resolves).
    */
   | { readonly kind: 'cardTypesAmong'; readonly filter: ObjectFilter }
+  /**
+   * "The number of different mana values among instant and sorcery cards in your graveyard" (Eris, Roar of the Storm, issue 121, CR 202.3): how many distinct mana values the objects
+   * `filter` matches have between them, each counted once however many cards have it (a card with no mana cost has mana value 0, CR 202.1b). The filter names a zone other than the
+   * battlefield and the stack and reads no power, toughness, combat or source, as `cardTypesAmong`'s does; the values are those of the cards as they are there.
+   */
+  | { readonly kind: 'differentManaValuesAmong'; readonly filter: ObjectFilter }
   /**
    * "Your devotion to black", "your devotion to white and blue" (CR 700.5, D-131): the number of mana symbols that
    * are one of the `colors` (a hybrid symbol counts for each of its colors, once; a symbol that is generic or
@@ -364,7 +381,15 @@ export type Amount =
    * opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that have at least one of those card types, as they were cast; left out,
    * every spell counts. Not valid in a static ability: nothing refreshes a layer effect when a spell is cast.
    */
-  | { readonly kind: 'spellsCastThisTurn'; readonly ofTypes?: readonly CardType[] }
+  | {
+      readonly kind: 'spellsCastThisTurn';
+      readonly ofTypes?: readonly CardType[];
+      /**
+       * "For each other instant and sorcery spell you've cast this turn" (Lock and Load, issue 121): the spell that is resolving is not counted (it is the source of the instruction, and a
+       * copy of a spell, which is not cast, CR 707.10, has none to leave out). Only on an instant or sorcery spell's own text; the other spells are counted by their object.
+       */
+      readonly otherThanThis?: true;
+    }
   /**
    * "The greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck, group 2, D-646, CR 202.3, 202.3e, 601.2i, 707.10): the largest mana value
    * of the spells the controller of the spell or ability has cast this turn, each as it was cast (`TurnLog.castSpells`: an {X} counts as the number announced, as it does for a
@@ -517,6 +542,12 @@ export type StaticPtAmount =
 export type DefinedPtAmount =
   | CountAmount
   | Extract<Amount, { readonly kind: 'devotion' }>
+  /**
+   * "~'s power and toughness are each equal to your life total" (issue 145, CR 604.3, 119.1): the life total of the controller of the object (its owner outside the battlefield
+   * and the stack), read each time the characteristics are worked out. Only `you`; a life total below 0 is 0 (CR 208.1: a negative power or toughness is 0 for state-based
+   * actions, and a characteristic-defining ability sets the number as it is).
+   */
+  | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
 
@@ -1154,7 +1185,14 @@ export interface TargetSpec {
    * Only a slot of a spell's own text or of an activated or triggered ability (CR 601.2d, 602.2b, 603.3d: the division is announced as the ability is put on
    * the stack), not of a mode or a reflexive ability; a `dealDividedDamage` effect of the same spell or ability must name it.
    */
-  readonly divide?: { readonly total: Amount };
+  readonly divide?: {
+    readonly total: Amount;
+    /**
+     * "Distribute up to that many +1/+1 counters among any number of other target creatures" (CR 601.2d, 603.3d): the controller may divide fewer than `total` (each target
+     * still gets at least 1, and none may be chosen); the shares add up to at most `total`, not exactly it.
+     */
+    readonly upTo?: true;
+  };
   /**
    * "For each opponent, exile up to one target nonland permanent that player controls" (CR 115.1, 601.2c, 603.3d, D-149): the slot takes at most
    * one target for each opponent of the controller who is still in the game, each controlled by that opponent: `what` is an `object`
@@ -1289,6 +1327,16 @@ export type Cost =
    * or `tapCreatures`; it differs from `tapCreatures` (Crew), which counts total power.
    */
   | { readonly kind: 'tapPermanents'; readonly filter: ObjectFilter; readonly count: number }
+  /**
+   * "Untap two tapped creatures you control" (CR 701.26b, 118.3, 602.2b): the player untaps `count` tapped permanents they control that match `filter`, as part of the cost of an
+   * activated ability. Only a tapped permanent can be untapped, so a player with fewer than `count` of them cannot pay (CR 118.3). The costs are paid in the order the player likes
+   * (CR 601.2h): this one is paid after the mana, so a creature tapped for the mana of the cost may be one of them, and a creature that came under the player's control this turn
+   * may be untapped (CR 302.6: only its own {T} ability is held back). With more candidates than `count` a `choosePermanent` decision of purpose `untapCost` and `forCost` asks. A
+   * permanent that would not untap (a stun counter, CR 122.1d) is untapped as every effect untaps it. The filter's controller is the player (`you` or left out), its zone the
+   * battlefield, and it does not say `tapped`. Different from `untap` (the permanent the ability belongs to, {Q}); refused with another cost that taps permanents of a
+   * filter, a crew cost or a blight cost, and in a mana ability, a spell's additional cost or an alternative cost.
+   */
+  | { readonly kind: 'untapPermanents'; readonly filter: ObjectFilter; readonly count: number }
   /**
    * "Blight 1" (D-407, CR 701.68): the player puts `count` -1/-1 counters on a creature they control, as part of the cost of an activated ability. The
    * player chooses the creature with a `choosePermanent` decision of purpose `blight` and `forCost` (the engine chooses when only one creature can take the
@@ -1579,7 +1627,8 @@ export type TokenPreset =
   | 'Map'
   | 'Gingerbrute'
   | 'Incubator'
-  | 'Lander';
+  | 'Lander'
+  | 'Junk';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -1816,7 +1865,10 @@ export type Effect =
    */
   | {
       readonly kind: 'copyCardAndCast';
-      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' | 'boundObjects' }>;
+      readonly objects: Extract<
+        ObjectRef,
+        { readonly kind: 'moved' | 'boundObjects' | 'linkedExile' }
+      >;
     }
   | {
       readonly kind: 'delayedCombatDamage';
@@ -2319,7 +2371,12 @@ export type Effect =
    */
   | {
       readonly kind: 'payAnyAmount';
-      readonly symbol: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      readonly symbol?: 'W' | 'U' | 'B' | 'R' | 'G' | 'C' | '1';
+      /**
+       * "You may pay {2}{R} any number of times" (Bloodthirsty Adversary, issue 121, CR 118.1, 603.12): what one payment costs, in place of `symbol` (a card names one of them): the mana symbols of
+       * the cost (numbers and colors, no X or hybrid), paid as many times as the controller chooses, from none to as many times as they could pay now.
+       */
+      readonly cost?: readonly string[];
       readonly atMost?: Amount;
       readonly reflexive?: {
         readonly targets?: readonly TargetSpec[];
@@ -2455,6 +2512,19 @@ export type Effect =
       readonly lasts: PlayUntil;
     }
   /**
+   * "The next instant or sorcery spell you cast this turn costs {X} less to cast" and "the next instant or sorcery spell you cast this turn has storm" (Kaza, Roil Chaser, Crackling
+   * Spellslinger, Smoldering Stagecoach, issue 121, CR 601.2f, 118.7a, 702.40a, 702.85a, 611.2a): until end of turn, the first spell the controller of this effect casts that `spells`
+   * describes (a spell being cast, as `costReduction`'s filter does: no zone) is changed. `lessGeneric` is read as this resolves (Kaza: "the number of Wizards you control as this ability
+   * resolves") and takes that much off the generic part of the spell's cost (CR 601.2f, 118.7a: never below zero); `grants` gives the spell the keyword (only storm and cascade, which
+   * work as the spell is cast: CR 702.40a, 702.85a). The effect is used up by the cast that matches (a spell that does not match leaves it for a later one) and ends with the turn.
+   */
+  | {
+      readonly kind: 'nextSpellModifier';
+      readonly spells: ObjectFilter;
+      readonly lessGeneric?: Amount;
+      readonly grants?: 'storm' | 'cascade';
+    }
+  /**
    * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand"
    * (CR 701.20a Reveal, 608.2g, 118.9, 107.3b, 202.3e): the controller reveals the top card of their library (nothing happens with an empty library; the card stays on top
    * while the question is asked). When it is not a land card, its mana value (an {X} in a library counts as 0) is less than `manaValueBelow` and it could be cast now (a legal
@@ -2571,7 +2641,15 @@ export type Effect =
    * by another effect is not changed: the "if you do" is false for it) and its controller's delayed triggered ability returns the card to its owner's hand at the beginning of the next
    * end step (the one that is exiled; one that left exile since is a new object, CR 400.7). Does nothing when the spell has left the stack as this resolves.
    */
-  | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
+  | {
+      readonly kind: 'exileOnResolve';
+      readonly spell: ObjectRef;
+      /**
+       * "You may exile that spell instead of putting it into its owner's graveyard as it resolves" (Forger's Foundry, issue 121, CR 607.2a): the card is exiled as it resolves and the
+       * permanent the ability belongs to remembers it as exiled with it (`linkedExile`), and it is not returned to the hand. Only in an ability of a permanent.
+       */
+      readonly linked?: true;
+    }
   /**
    * "Double the value of X." (CR 107.3, 107.3a, Unbound Flourishing): the X announced for the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`)
    * becomes twice its value, as it is on the stack: every X in its text and in the permanent it becomes ("enters with X counters", CR 107.3m) reads the new value, and so does a copy
@@ -2708,6 +2786,11 @@ export type Effect =
       readonly kind: 'exile';
       readonly objects: ObjectSelector;
       readonly linked?: true;
+      /**
+       * "Exile an instant or sorcery card at random from your graveyard" (Arcane Bombardment, issue 121, CR 701.13): of the objects `objects` names, one is exiled, picked by the game's seeded
+       * generator (nobody chooses); with one or none there is nothing to pick. With `each` of a filter of cards in a zone outside the battlefield.
+       */
+      readonly atRandom?: true;
       /**
        * "Exile target nonland permanent ... until this enchantment leaves the battlefield" (CR 610.3, D-149): the cards are returned to the battlefield
        * under their owners' control (CR 610.3c) when the permanent the ability belongs to leaves the battlefield. If it has left already as the
@@ -2904,6 +2987,13 @@ export type Effect =
    * player" and "each player this creature attacked this turn" are all read (CR 104.3e: the effect names the player).
    */
   | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
+  /**
+   * "You win the game." (CR 104.2b: an effect may state that a player wins the game; CR 104.1: the game ends immediately when a player wins): the one player the selector names
+   * wins at once and the game ends, whoever else is in it (a player who "can't lose the game" does not stop it ending). When an opponent of the player has a permanent that says "your
+   * opponents can't win the game" (`opponentsCantWin`) the player does not win: the "can't" effect wins (CR 101.2). Nothing happens for a player who has left the game. The selector
+   * must name one player ("you", "that player", "target player").
+   */
+  | { readonly kind: 'winGame'; readonly player: PlayerSelector }
   /**
    * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-278), the ability of a meld card: it exiles the permanent it belongs to
    * and the creature named `partner` that its controller both owns and controls, then puts the two cards onto the battlefield as one melded permanent
@@ -3140,7 +3230,12 @@ export type Effect =
       readonly kind: 'grantAbility';
       readonly objects: ObjectSelector;
       readonly abilities: readonly Ability[];
-      readonly duration: 'untilEndOfTurn' | 'permanent';
+      /**
+       * `untilYourNextTurn` (issue 145, Song of Freyalise, CR 611.2a, 500.1): "Until your next turn, creatures you control gain \"{T}: Add one mana of any color.\"": the permanents
+       * `objects` names as the effect resolves (CR 611.2c) have the abilities until the next turn of the controller of the effect begins (the turn it resolves in not counted).
+       * Only an activated, triggered or mana ability, as for `untilEndOfTurn`.
+       */
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn' | 'permanent';
     }
   /**
    * "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. D-451 (CR 702.16): or a protection, from named colors
@@ -3669,6 +3764,11 @@ export type Effect =
       readonly anyManaType?: true;
       readonly exileInstead?: true;
       /**
+       * "If X is 10 or more, copy each of those spells twice" (Finale of Promise, issue 121, CR 608.2g, 707.10): the spells cast this way are what `moved` names afterwards, added to those
+       * an earlier `castCard` with `remember` in the same resolution cast.
+       */
+      readonly remember?: true;
+      /**
        * "You may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost" (CR 608.2g, 118.9): the spell is cast without paying its mana cost
        * (its additional costs, and the costs of the modes it must choose, are still paid, as for `castFree`). `object` may name a slot of several targets (one for each opponent,
        * `TargetSpec.onePerOpponent`): each card still a legal target is asked about, and cast, in the order the targets were chosen. Not with `anyManaType`.
@@ -3991,7 +4091,14 @@ export type ManaProduction =
    * of mana, chosen as the ability resolves (CR 605.3b), so the choice is part of the activation.
    * At least two combinations that differ as multisets; the order inside one does not matter.
    */
-  | { readonly kind: 'combination'; readonly options: readonly (readonly ManaColor[])[] };
+  | { readonly kind: 'combination'; readonly options: readonly (readonly ManaColor[])[] }
+  /**
+   * "Whenever you tap a land for mana, add one mana of any type that land produced." (Mirari's Wake, Vorinclex, Voice of Hunger; CR 106.12a, 605.1b, 605.4a): one mana
+   * of a type the mana ability that was tapped for mana produced (colorless is a type, CR 106.1b). With a single type produced there is nothing to choose; with several (a
+   * land that makes {W}{U}) the activation names the type, like `anyColor`. Only the effect of a `tappedForMana` trigger (`validateCard`): a mana ability or a spell has no
+   * mana ability that produced mana for it to read.
+   */
+  | { readonly kind: 'producedType' };
 
 // ---- Triggers (CR 603)
 
@@ -4095,8 +4202,11 @@ export type Trigger =
        * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
        */
       readonly firstOfKind?: true;
-      /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
-      readonly duringTurn?: 'opponent';
+      /**
+       * Whose turn the spell is cast in, relative to the controller of this ability (CR 603.2: the ability triggers only for an event that fits its words): `opponent` for "during
+       * each opponent's turn", only while the active player is an opponent; `you` for "an opponent casts a spell during your turn", only while the active player is the controller.
+       */
+      readonly duringTurn?: 'you' | 'opponent';
       /**
        * "When you cast this spell" (CR 702.85a Cascade, 603.2, D-120): the ability of a spell that works while
        * the spell is on the stack and triggers only for that very spell (so `by` is 'you' and the filter is
@@ -4518,6 +4628,11 @@ export type Trigger =
       readonly what: TriggerSubject;
       readonly counter?: string;
       readonly by: 'you' | 'any';
+      /**
+       * "When the twelfth hour counter is put on this artifact" (Midnight Clock, issue 121, CR 122.6, 603.2): only the instance of putting that makes the number of `counter` counters on
+       * the permanent reach this number or go past it (from fewer than `reaches` to `reaches` or more). Needs `counter`; a whole number of 2 or more.
+       */
+      readonly reaches?: number;
     }
   /**
    * "Whenever you attack" (`atLeast` 1, D-187), "Whenever you attack with two or more creatures", "whenever another player attacks with two or more creatures" (CR 508.1, 603.2, D-149):
@@ -4986,6 +5101,13 @@ export type Keyword =
    */
   | { readonly kind: 'retrace' }
   /**
+   * CR 702.133a (Jump-start): "You may cast this card from your graveyard by discarding a card in addition to paying its other costs. If you do, exile this card instead of putting it
+   * anywhere else any time it would leave the stack." A static ability that functions while the card is in its owner's graveyard: the card is cast from there, at the timing of its
+   * type, paying its mana cost and discarding a card from the hand as an additional cost (CR 601.2b, 601.2f-h). The engine offers it as its own way of casting (`castSpell` with
+   * `alternative` `jumpStart`: it is not an alternative cost, CR 118.9, but a permission used by naming it, like Retrace). An instant or a sorcery.
+   */
+  | { readonly kind: 'jumpStart' }
+  /**
    * CR 702.127a (Aftermath): "You may cast this half of this split card from your graveyard", "This half of this split card can't be cast from any zone other than a graveyard" and "If this
    * spell was cast from a graveyard, exile it instead of putting it anywhere else any time it would leave the stack." Three static abilities of one half of a split card (CR 709). It is not an
    * alternative cost: the half is cast paying its own mana cost, at the timing of its type, so the engine offers it as an ordinary `castSpell` with that `face` for a card in a graveyard
@@ -5082,6 +5204,13 @@ export type Keyword =
    * a positive whole number; `cost` is mana only, with no {X}. One suspend ability on a card that is not a land.
    */
   | { readonly kind: 'suspend'; readonly count: number; readonly cost: readonly Cost[] }
+  /**
+   * CR 702.170a (Plot): "Plot [cost]": a special action that works from the hand ("Any time you have priority during your main phase while the stack is empty, you may exile this
+   * card from your hand and pay [cost]. It becomes a plotted card", the action `plot`, CR 702.170b). A plotted card is exiled face up and its owner may cast it from exile
+   * without paying its mana cost during their main phase while the stack is empty, in any later turn (CR 702.170d); the engine reads that from `GameObject.plottedTurn`.
+   * `cost` is mana only, with no {X}. One plot ability on a card that is not a land.
+   */
+  | { readonly kind: 'plot'; readonly cost: readonly Cost[] }
   /**
    * "Gift a card" (CR 702.174, D-135): as an additional cost to cast the spell the caster may choose an opponent (the gift is
    * promised, CR 702.174k); asked after the kicker and replicate questions and before X and the targets (CR 601.2b). Of a
@@ -5715,8 +5844,12 @@ export type Replacement =
    */
   | {
       readonly kind: 'asEntersChoose';
-      /** `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`. */
-      readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
+      /**
+       * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
+       * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
+       * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
+       */
+      readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -5992,6 +6125,20 @@ export type StaticEffect =
       readonly kind: 'grantKeywordToHandCards';
       readonly what: ObjectFilter;
       readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
+    }
+  /**
+   * "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, 613.1f, 604.2, 611.3a): a static ability of a permanent on the battlefield that gives the keyword `keyword` to the
+   * spells its controller casts that `what` matches, in layer 6 with the permanent's timestamp, from the moment the spell is on the stack (CR 601.2a: it is cast from there), so that the
+   * keyword is there as the spell is cast (the triggered ability of Demonstrate, "When you cast this spell", is found once the spell is on the stack, CR 601.2i, 603.2) and when its total
+   * cost is determined (Convoke, CR 702.51b). Only Demonstrate and Convoke, the keywords the engine reads from a spell as it is cast. Each grant of Demonstrate is one more instance (each
+   * triggers on its own); Convoke instances are redundant (CR 702.51d). A copy of a spell is not cast (CR 707.10) and gets nothing, nor does an ability on the stack. `what` is a filter of
+   * the spell as it is on the stack (its types, colors, mana value and the like after layers 4 and 5) with `controller: 'you'` (the permanent's controller, "spells you cast"), and no zone,
+   * owner, stack kind, keyword, combat or source test. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantKeywordToSpells';
+      readonly what: ObjectFilter;
+      readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
     }
   /**
    * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 613.1f, 604.3, 611.3a): a static ability of a permanent
@@ -6852,6 +6999,8 @@ export interface ManaAbility {
        * spent (a spell with no color is none of them). With `types` it is "a red instant or sorcery spell": of a color and of a type.
        */
       readonly colors?: readonly Color[];
+      /** "... to cast an instant or sorcery spell with mana value 3 or less" (issue 121, CR 202.3e): the mana value of the spell as it is cast (the X announced counts) is no more than this. */
+      readonly manaValueAtMost?: number;
     };
     /**
      * `{ scryCommanderCasts: true }` (D-229): "scry X, where X is the number of times it's been cast from the command zone this game": X is the number of
@@ -6867,7 +7016,13 @@ export interface ManaAbility {
        * +1/+1 counters (this cast included), for each such mana spent on it. Read as the permanent enters.
        */
       | { readonly countersCommanderCasts: true }
-      | { readonly copySpell: 'may' | 'no' };
+      | { readonly copySpell: 'may' | 'no' }
+      /**
+       * `{ exileLinked: true }` (issue 121, Forger's Foundry, CR 106.6, 603.2, 607.2a): "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that
+       * spell instead of putting it into its owner's graveyard as it resolves": a triggered ability of the permanent that made the mana goes on the stack above the spell, and when its
+       * controller chooses to, the spell is exiled as it resolves and the permanent remembers it (`linkedExile`). Each mana spent is its own trigger.
+       */
+      | { readonly exileLinked: true };
   };
   /**
    * "{T}: Add one mana of any color. If you control a creature with power 4 or greater, add two mana of any one color instead." (D-145,

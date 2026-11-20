@@ -193,6 +193,18 @@ function spentRiderOf(clause: IrClause): ManaAbility['spentRider'] | null {
       grants: { copySpell: newTargets?.kind === 'flag' && newTargets.value ? 'may' : 'no' },
     };
   }
+  // "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead of putting it into its owner's graveyard as it resolves."
+  // (issue 121, Forger's Foundry, CR 607.2a): the spells are of a card type and have a mana value no more than the number, and the rider exiles the spell with the permanent.
+  const exile = clause.args.exileLinked;
+  if (exile?.kind === 'flag' && exile.value) {
+    const limit = clause.args.manaValueAtMost;
+    const shape = spellKindsOf(spells.filter);
+    if (shape === null || limit?.kind !== 'number') return null;
+    return {
+      spells: { ...shape, manaValueAtMost: limit.value },
+      grants: { exileLinked: true },
+    };
+  }
   const kinds = spellKindsOf(spells.filter);
   if (kinds === null) return null;
   // "When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1." (group 4 of the Vraska deck): the
@@ -371,6 +383,12 @@ function lowerManaAbility(
     typeof spentRider.grants === 'object' &&
     'countersCommanderCasts' in spentRider.grants
       ? (['ability:manaSpentRiderCounters'] as const)
+      : []),
+    ...(spentRider !== undefined &&
+    spentRider !== null &&
+    typeof spentRider.grants === 'object' &&
+    'exileLinked' in spentRider.grants
+      ? (['ability:manaSpentRiderExile'] as const)
       : []),
     ...(production.kind === 'anyCombination' && production.distinct === true
       ? (['ability:manaDistinctColors'] as const)
@@ -928,6 +946,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:manaDistinctColors',
   'ability:manaSpentRiderCopy',
   'ability:manaSpentRiderCounters',
+  'ability:manaSpentRiderExile',
   'manaProduction:anyCombination',
   'manaProduction:anyColorDevotion',
   'manaProduction:anyColorAmount',

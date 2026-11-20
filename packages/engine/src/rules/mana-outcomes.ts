@@ -94,6 +94,10 @@ export function spentRiderOf(ability: ManaAbility, source: ObjectId): ManaRider 
       ...riderSpells(rider.spells),
     };
   }
+  // Issue 121: "you may exile that spell instead of putting it into its owner's graveyard as it resolves": a triggered ability of the permanent that made the mana.
+  if (typeof grants === 'object' && 'exileLinked' in grants) {
+    return { kind: 'exileLinked', source, ...riderSpells(rider.spells) };
+  }
   // Issue 241: "it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone": no trigger, the spell carries it.
   if (typeof grants === 'object' && 'countersCommanderCasts' in grants) {
     return { kind: 'counters', countCommanderCasts: true, ...riderSpells(rider.spells) };
@@ -111,13 +115,17 @@ export function spentRiderOf(ability: ManaAbility, source: ObjectId): ManaRider 
 /** The spells a rider names, as the mana carries them (D-151, D-229, D-328). */
 function riderSpells(
   spells: NonNullable<ManaAbility['spentRider']>['spells'],
-): Pick<ManaRider, 'commander' | 'sharesTypeWithCommander' | 'types' | 'subtypes' | 'colors'> {
+): Pick<
+  ManaRider,
+  'commander' | 'sharesTypeWithCommander' | 'types' | 'subtypes' | 'colors' | 'manaValueAtMost'
+> {
   return {
     ...(spells.commander === true ? { commander: true as const } : {}),
     ...(spells.sharesTypeWithCommander === true ? { sharesTypeWithCommander: true as const } : {}),
     ...(spells.types === undefined ? {} : { types: [...spells.types] }),
     ...(spells.subtypes === undefined ? {} : { subtypes: [...spells.subtypes] }),
     ...(spells.colors === undefined ? {} : { colors: [...spells.colors] }),
+    ...(spells.manaValueAtMost === undefined ? {} : { manaValueAtMost: spells.manaValueAtMost }),
   };
 }
 
@@ -209,6 +217,9 @@ function plainOutcomes(
       const identity = commanderIdentity(state, seat);
       return identity.length === 0 ? [[]] : identity.map((c) => [c]);
     }
+    case 'producedType':
+      // CR 605.1b: only the effect of a triggered mana ability (`validateCard` refuses it as what a mana ability makes), read in `mana-triggers.ts`: no mana of its own.
+      return [[]];
     default: {
       const unreachable: never = p;
       return unreachable;

@@ -9,6 +9,7 @@
  * may be what the sentence defines X as: "put X +1/+1 counters on target creature, where X is that creature's power".
  */
 import {
+  choice,
   literal,
   map,
   optional,
@@ -17,7 +18,7 @@ import {
   separatedBy1,
   sequence,
 } from '../../combinators';
-import type { IrAmount, IrCounterSpec, IrNoun } from '../../ir/types';
+import type { IrAmount, IrCounterSpec, IrNoun, IrNounList } from '../../ir/types';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, LIST_SEPARATOR, makeClause, operands, single } from './operands';
@@ -41,6 +42,8 @@ const COUNTER_OPERANDS = [
   'noun.up-to-one-permanent',
   'noun.all-permanents',
   'noun.each-permanent',
+  // Issue 145 (Gruff Triplets): "each creature you control named ~".
+  'noun.each-creature-you-control-named-self',
   // Stage P68 (D-230): "each permanent you control that's a creature or Vehicle".
   'noun.each-permanent-that-is',
   // Stage P48 (D-205): "Tap up to two target creatures. Put a stun counter on each of them."
@@ -210,6 +213,9 @@ export const EFFECT_ADD_COUNTERS_NUMBER_OF = defineRule<Clauses>({
     'put a number of +1/+1 counters on ~ equal to the number of creatures you control',
     'put a number of charge counters on ~ equal to its power',
     'put a number of +1/+1 counters on target creature equal to twice the number of profit votes',
+    // Issue 145 (Gruff Triplets): the amount before the objects.
+    'put a number of +1/+1 counters equal to its power on each creature you control',
+    'put a number of +1/+1 counters equal to the number of creatures you control on ~',
   ],
   rejects: [
     'put a number of +1/+1 counters on each creature you control',
@@ -221,24 +227,56 @@ export const EFFECT_ADD_COUNTERS_NUMBER_OF = defineRule<Clauses>({
     'put the number of +1/+1 counters on each creature you control equal to the number of security votes',
     'put a number of +1/+1 counters on each creature you control equal to the number of security votes and draw a card',
     'put a number of +1/+1 counters on a creature you control equal to its power',
+    'put a number of +1/+1 counters equal to its power on a creature you control',
+    'put a number of +1/+1 counters equal to its power',
+    'put a number of +1/+1 counters equal to 3 on ~',
   ],
   parse: single(
     'effect.add-counters-number-of',
-    sequence(
-      literal('put a number of '),
-      map(
-        spanned(pattern(COUNTER_NAME)),
-        ({ value, span }): IrCounterSpec => ({
-          kind: 'counterSpec',
-          name: value[0].toLowerCase(),
-          span,
-          rule: 'effect.add-counters-number-of',
-        }),
+    choice(
+      sequence(
+        literal('put a number of '),
+        map(
+          spanned(pattern(COUNTER_NAME)),
+          ({ value, span }): IrCounterSpec => ({
+            kind: 'counterSpec',
+            name: value[0].toLowerCase(),
+            span,
+            rule: 'effect.add-counters-number-of',
+          }),
+        ),
+        pattern(/ counters on /i),
+        operands(COUNTER_OPERANDS, 'effect.add-counters-number-of'),
+        literal(' '),
+        family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
       ),
-      pattern(/ counters on /i),
-      operands(COUNTER_OPERANDS, 'effect.add-counters-number-of'),
-      literal(' '),
-      family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
+      // Issue 145 (Gruff Triplets): "put a number of +1/+1 counters equal to its power on each creature you control named ~": the amount before the objects.
+      map(
+        sequence(
+          literal('put a number of '),
+          map(
+            spanned(pattern(COUNTER_NAME)),
+            ({ value, span }): IrCounterSpec => ({
+              kind: 'counterSpec',
+              name: value[0].toLowerCase(),
+              span,
+              rule: 'effect.add-counters-number-of',
+            }),
+          ),
+          pattern(/ counters /i),
+          family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
+          literal(' on '),
+          operands(COUNTER_OPERANDS, 'effect.add-counters-number-of'),
+        ),
+        ([put, counter, counters, count, on, objects]): [
+          string,
+          IrCounterSpec,
+          RegExpExecArray,
+          IrNoun | IrNounList,
+          string,
+          IrAmount,
+        ] => [put, counter, counters, objects, on, count],
+      ),
     ),
     ([, counter, , objects, , count]) => ({
       verb: 'addCounters',

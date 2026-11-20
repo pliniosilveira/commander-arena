@@ -62,7 +62,7 @@ function checkGrantAbility(
   scope: Scope,
   out: AstIssue[],
 ): void {
-  if (e.duration === 'untilEndOfTurn') {
+  if (e.duration === 'untilEndOfTurn' || e.duration === 'untilYourNextTurn') {
     if (!Array.isArray(e.abilities) || e.abilities.length === 0) {
       issue(out, `${path}.abilities`, 'a grant gives at least one ability');
       return;
@@ -267,6 +267,8 @@ export function checkContinuousEffect(
         '"until the next untap step" is the duration of doesntUntap only',
       );
     }
+  } else if (e.kind === 'grantAbility' && e.duration === 'untilYourNextTurn') {
+    // Issue 145 (Song of Freyalise, CR 611.2a, 500.1): the duration of a temporary grant of an activated, triggered or mana ability (`checkGrantAbility` checks the abilities).
   } else if (!isOneOf(e.duration, DURATIONS)) {
     issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
   }

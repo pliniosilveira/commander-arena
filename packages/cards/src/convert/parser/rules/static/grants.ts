@@ -59,7 +59,7 @@ const KEYWORD_LIST: Parser<Effects> = map(
  * (costs and a body of one clause), which the lowering turns into the engine's mana ability, the only
  * kind a static ability can give. The same phrase rules as the ability's own text read each part.
  */
-const QUOTED_MANA: Parser<Effects> = (ctx, pos) => {
+export const QUOTED_MANA: Parser<Effects> = (ctx, pos) => {
   const r = sequence(
     pattern(/["“]/u),
     separatedBy1(family<IrCost>('cost'), literal(', ')),

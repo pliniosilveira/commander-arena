@@ -22,6 +22,7 @@ import {
 import type { IrArg, IrCost, IrNoun, IrNounList, IrZoneSpec, Span } from '../../ir/types';
 import { FOR_EACH_TAIL, scaled } from '../amount/scaled';
 import { defineRule, family, spanned } from '../registry';
+import { ADAPT_EFFECT_RULES } from './adapt';
 import { ADDITIONAL_LAND_EFFECT_RULES } from './additional-land';
 import { ANGEL_EFFECT_RULES, UNTIL_SOURCE_LEAVES } from './angels';
 import { ARDEN_EFFECT_RULES } from './arden';
@@ -110,6 +111,7 @@ import {
 } from './mana';
 import { MELD_EFFECT_RULES } from './meld';
 import { MOVE_COUNTERS_EFFECT_RULES } from './move-counters';
+import { NEXT_SPELL_EFFECT_RULES } from './next-spell';
 import { NILS_EFFECT_RULES } from './nils';
 import { NIV_EFFECT_RULES } from './niv';
 import { NIV_GROUP_2B_B_EFFECT_RULES } from './niv-group-2b-b';
@@ -149,12 +151,15 @@ import { PRIMORDIAL_EFFECT_RULES } from './primordial';
 import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
+import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
+import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
+import { QUICK_DRAW_EFFECT_RULES, QUICK_DRAW_FIRST_EFFECT_RULES } from './quick-draw';
 import { RAMP_LANDS_EFFECT_RULES } from './ramp-lands';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
@@ -169,13 +174,17 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
+import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
+import { WIN_GAME_EFFECT_RULES } from './win-game';
+import { YOU_MAY_HAVE_EFFECT_RULES } from './you-may-have';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
 const TAP_OPERANDS = [
@@ -1038,6 +1047,8 @@ export const EFFECT_TAP = tapRule('tap');
 export const EFFECT_UNTAP = tapRule('untap');
 
 export const EFFECT_RULES = [
+  // Finale of Promise (issue 121): the four sentences of its one instruction start like a plain "you may cast", and are tried first.
+  ...QUICK_DRAW_FIRST_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1096,6 +1107,14 @@ export const EFFECT_RULES = [
   ...REVEAL_THAT_MANY_EFFECT_RULES,
   ...COPY_SPELL_TWICE_EFFECT_RULES,
   ...DAMAGE_BATCH_EFFECT_RULES,
+  // CR 701.46a (Adapt): "Adapt 4".
+  ...ADAPT_EFFECT_RULES,
+  // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
+  ...NEXT_SPELL_EFFECT_RULES,
+  // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
+  ...PUT_MILLED_EFFECT_RULES,
+  // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
+  ...QUICK_DRAW_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,
@@ -1103,6 +1122,8 @@ export const EFFECT_RULES = [
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
+  ...YOU_MAY_HAVE_EFFECT_RULES,
+  ...SONG_FREYALISE_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
@@ -1116,6 +1137,8 @@ export const EFFECT_RULES = [
   ...TROYAN_G4_EFFECT_RULES,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_EFFECT_RULES,
+  // Lathiel: "distribute up to that many +1/+1 counters among any number of other target creatures" (a division of a triggered ability).
+  ...UP_TO_THAT_MANY_EFFECT_RULES,
   // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
   ...JESKAI_CASTFREE_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
@@ -1137,6 +1160,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
+  // Hatsune Miku deck (issue 145): "You win the game."
+  ...WIN_GAME_EFFECT_RULES,
   ...FLASH_PERMISSION_EFFECT_RULES,
   // Quandrix Unlimited deck: "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel).
   ...PLAYER_MANA_ABILITY_EFFECT_RULES,
@@ -1239,6 +1264,8 @@ export const EFFECT_RULES = [
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
+  // Mirari's Wake, Vorinclex: "add one mana of any type that land produced", before `effect.add-mana`.
+  ...PRODUCED_TYPE_MANA_EFFECT_RULES,
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,

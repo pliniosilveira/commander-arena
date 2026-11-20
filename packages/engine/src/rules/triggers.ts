@@ -104,6 +104,8 @@ interface Occurrence {
   readonly firstLoss?: boolean;
   /** For `countersAdded`: the kind of the counters put on (D-149). */
   readonly counter?: string;
+  /** For `countersAdded`: how many counters were put on in this instance of putting (issue 121: `reaches`). */
+  readonly countersPut?: number;
   /** For `becomesTapped`: the permanent was tapped as it was declared as an attacker (CR 508.1f, D-510). */
   readonly attacker?: true;
   /** For `doorUnlocked`: which half of the Room was unlocked, 0 the left half and 1 the right half (CR 709.5h). */
@@ -570,6 +572,7 @@ function occurrences(
               subject: event.object,
               seat: event.by ?? null,
               counter: event.counter,
+              countersPut: event.count,
             },
           ]
         : [];
@@ -911,6 +914,11 @@ function matches(
     case 'countersAdded':
       if (trigger.counter !== undefined && occ.counter !== trigger.counter) return false;
       if (trigger.by === 'you' && occ.seat !== candidate.controller) return false;
+      // CR 122.6 (Midnight Clock): "When the twelfth hour counter is put on this artifact": the putting that takes the number from below `reaches` to `reaches` or more.
+      if (trigger.reaches !== undefined) {
+        const now = subject?.counters[trigger.counter ?? ''] ?? 0;
+        if (now < trigger.reaches || now - (occ.countersPut ?? 0) >= trigger.reaches) return false;
+      }
       return matchesWhat(state, trigger.what, subject, candidate);
     case 'playerAttacksOpponent': {
       // "One of your opponents": a player other than the controller of the ability (D-648).
@@ -989,6 +997,9 @@ function matches(
       }
       // D-565: "during each opponent's turn" is relative to the controller of this ability.
       if (trigger.duringTurn === 'opponent' && state.turn.activeSeat === candidate.controller)
+        return false;
+      // CR 603.2: "during your turn": the active player is the controller of this ability.
+      if (trigger.duringTurn === 'you' && state.turn.activeSeat !== candidate.controller)
         return false;
       return matchesFilter(state, subject, trigger.filter, ctx);
     case 'step':

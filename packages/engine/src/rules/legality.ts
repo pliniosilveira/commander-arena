@@ -170,6 +170,19 @@ export function canPlayLandByEffect(state: GameState, seat: SeatId, obj: GameObj
 }
 
 /**
+ * CR 702.170d: whether `obj` is a plotted card its owner `seat` may cast from exile without paying its mana cost: it became plotted in an earlier turn. The timing (a main phase with an
+ * empty stack) is checked where the cast is decided (`canCast`).
+ */
+export function mayCastPlotted(state: GameState, seat: SeatId, obj: GameObject): boolean {
+  return (
+    obj.zone === 'exile' &&
+    obj.owner === seat &&
+    obj.plottedTurn !== undefined &&
+    state.turn.number > obj.plottedTurn
+  );
+}
+
+/**
  * CR 601.2, 305.1, 611.2a (D-151): whether an effect ("You may play that card this turn") lets `seat` cast or play the card `obj` in exile: a
  * `playPermission` of the seat that names this very object (a card that left exile is a new one, CR 400.7) and has not ended.
  */
@@ -451,6 +464,14 @@ export function castZone(
     );
     return retrace === true ? 'graveyard' : null;
   }
+  // CR 702.133a (Jump-start): a card with jump-start in its owner's graveyard is cast from there, paying its mana cost and discarding a card.
+  if (alternative === 'jumpStart') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    const jumpStart = faceOf(state, obj)?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'jumpStart',
+    );
+    return jumpStart === true ? 'graveyard' : null;
+  }
   if (alternative === 'flashback') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const face = faceOf(state, obj);
@@ -516,7 +537,9 @@ export function castZone(
     // CR 601.2, 118.9 (`mayCastEachType`): "you may cast a spell of that type from among the exiled cards without paying its mana cost", at the timing of its type.
     if (alternative === 'free') {
       return mayPlayFromExile(state, seat, obj, false, true) ||
-        freeCastSlots(state, seat, obj, faceIndex).length > 0
+        freeCastSlots(state, seat, obj, faceIndex).length > 0 ||
+        // CR 702.170d: a plotted card is cast from exile without paying its mana cost.
+        mayCastPlotted(state, seat, obj)
         ? 'exile'
         : null;
     }
@@ -650,6 +673,8 @@ export function alternativeCostAllowed(
   if (kind === 'free' && obj.zone === 'exile' && mayPlayFromExile(state, seat, obj, false, true)) {
     return true;
   }
+  // CR 702.170d: a plotted card in exile is cast without paying its mana cost, though its face lists no alternative cost.
+  if (kind === 'free' && mayCastPlotted(state, seat, obj)) return true;
   const alt = definitionOf(state, obj.card).faces[face]?.alternativeCosts?.find(
     (a) => a.kind === kind,
   );
@@ -703,7 +728,7 @@ export function canCast(
     obj.zone === 'exile' &&
     obj.onAdventure !== true &&
     obj.prepareOf === undefined &&
-    freeCastSlots(state, seat, obj, face).length > 0;
+    (freeCastSlots(state, seat, obj, face).length > 0 || mayCastPlotted(state, seat, obj));
   if (
     (alternative === 'free' || isNamedAlternative(alternative)) &&
     !byPermission &&
@@ -726,6 +751,17 @@ export function canCast(
   if (least === null) return false;
   const timing = castTiming(state, seat, spell);
   if (!timing.allowed) return false;
+  // CR 702.170d: a plotted card is cast during its owner's main phase while the stack is empty, whatever its types (flash does not change that), unless another permission lets it
+  // be cast now.
+  if (
+    alternative === 'free' &&
+    mayCastPlotted(state, seat, obj) &&
+    !mayPlayFromExile(state, seat, obj, false, true) &&
+    freeCastSlots(state, seat, obj, face).length === 0 &&
+    !hasSorceryTiming(state, seat)
+  ) {
+    return false;
+  }
   // CR 702.33g, 601.2c (D-181): a spell whose targets depend on the kicker can be cast either way; it is castable if one way has its targets and its cost.
   const kickedWays = hasKickedTargets(faceOf(state, spell)) ? [false, true] : [false];
   const payments = modePayments(state, seat, spell);
@@ -954,6 +990,15 @@ export function alternativeCastObjects(
     ...zoneList(state, 'command', seat),
     ...onAdventure,
     ...freeFromExile,
+    // CR 702.170d: the plotted cards of the seat in exile.
+    ...(kind === 'free'
+      ? state.exile.filter(
+          (id) =>
+            !onAdventure.includes(id) &&
+            !freeFromExile.includes(id) &&
+            mayCastPlotted(state, seat, getObject(state, id)),
+        )
+      : []),
     // `mayCastEachType`: the exiled cards a permission lets the seat cast without paying their mana costs.
     ...(kind === 'free'
       ? freeCastCards(state, seat).filter((id) => !freeFromExile.includes(id))
@@ -981,6 +1026,13 @@ export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
 export function retraceObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'retrace'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now with jump-start (CR 702.133a): the card is castable and a card can be discarded for it. */
+export function jumpStartObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'jumpStart'),
   );
 }
 

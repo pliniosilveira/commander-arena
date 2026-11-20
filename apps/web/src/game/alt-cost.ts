@@ -31,6 +31,8 @@ export const ALTERNATIVE_NAMES: Readonly<Record<NamedAlternative, string>> = {
   morph: 'Morph',
   // D-667 (CR 702.81a): cast from the graveyard by discarding a land card.
   retrace: 'Retrace',
+  // CR 702.133a: cast from the graveyard by discarding a card.
+  jumpStart: 'Jump-start',
   // D-149: "pay {W} and tap four untapped creatures ... rather than pay this spell's mana cost".
   tapPermanents: 'Tap creatures',
   // Issue 159: "cast this from your graveyard by paying {B}{B} and sacrificing two creatures".

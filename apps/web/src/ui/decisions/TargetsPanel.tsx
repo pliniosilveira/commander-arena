@@ -288,10 +288,10 @@ function DivisionSection({
     <fieldset
       className="dec-divide"
       data-divide={spec.specId}
-      aria-label={`Divide ${total} damage`}
+      aria-label={spec.divideUpTo === true ? `Divide up to ${total}` : `Divide ${total} damage`}
     >
       <legend title="Divide the damage among the targets: each gets at least 1">
-        Divide {total} damage
+        {spec.divideUpTo === true ? `Divide up to ${total}` : `Divide ${total} damage`}
       </legend>
       {mine.length === 0 ? (
         <p className="dec-sub dec-left">
@@ -343,11 +343,11 @@ function DivisionSection({
       )}
       <div className="dec-divide-foot">
         <p
-          className={`dec-sub dec-left${left === 0 ? '' : ' dec-warn'}`}
+          className={`dec-sub dec-left${left === 0 || spec.divideUpTo === true ? '' : ' dec-warn'}`}
           role="status"
           data-divide-left={left}
         >
-          {mine.length === 0 ? '' : divisionLine(total, left)}
+          {mine.length === 0 ? '' : divisionLine(total, left, spec.divideUpTo === true)}
         </p>
         {mine.length > 1 ? (
           <button

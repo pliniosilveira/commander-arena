@@ -32,6 +32,32 @@ export const SHUFFLE_GRAVEYARD_IN: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Shuffle your hand and graveyard into your library" (Midnight Clock, CR 701.24, 402.1, 404.1): every card of the hand and of the graveyard goes to its owner's library, then the library is
+ * shuffled. The engine's `moveToZone` of each card of the hand and of the graveyard, then `shuffle`.
+ */
+export const SHUFFLE_HAND_AND_GRAVEYARD_IN: Lowering<IrClause, Effects> = {
+  head: 'shuffleHandAndGraveyardIn',
+  id: 'lower.shuffle-hand-and-graveyard-in',
+  needs: ['effect:moveToZone', 'effect:shuffle', 'selector:each'],
+  lower(clause) {
+    const effects: Effect[] = [
+      {
+        kind: 'moveToZone',
+        objects: { kind: 'each', filter: { zone: 'hand', controller: 'you' } },
+        to: 'library',
+      },
+      {
+        kind: 'moveToZone',
+        objects: { kind: 'each', filter: { zone: 'graveyard', controller: 'you' } },
+        to: 'library',
+      },
+      { kind: 'shuffle', player: { kind: 'you' } },
+    ];
+    return { ok: true, value: effects, rule: clause.rule };
+  },
+};
+
 type Static = Extract<IrAbility, { kind: 'static' }>;
 type KorvoldStaticEffect = Extract<
   IrStaticEffect,
@@ -248,6 +274,7 @@ export const KORVOLD_NEEDS: readonly FeatureRef[] = [
 
 export const KORVOLD_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   SHUFFLE_GRAVEYARD_IN,
+  SHUFFLE_HAND_AND_GRAVEYARD_IN,
   REQUIRE_ATTACK,
   VOTE,
   RING_TEMPTS,

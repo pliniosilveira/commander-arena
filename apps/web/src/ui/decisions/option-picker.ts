@@ -5,6 +5,7 @@
  */
 import type { ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { purposeNoun } from '../../game/chosen';
+import { lifePaidPrompt } from './life-paid';
 import { namedOptionPrompt } from './option-names';
 
 /** "As SYNTHETIC Rally Banner enters, choose a creature type." */
@@ -45,6 +46,8 @@ export function optionPrompt(
       ...(d.seat === undefined ? {} : { seat: d.seat }),
     });
   }
+  // CR 119.4, 614.12: "As ~ enters, pay any amount of life."
+  if (d.purpose === 'lifePaid') return lifePaidPrompt(d);
   // D-303 (CR 700.3): the pile question has its own dialog and words (`piles-words.ts`); this is the plain fallback of a caller that reads the prompt anyway.
   if (d.purpose === 'pile') return `Pick a pile (${d.sourceName}).`;
   return `As ${d.sourceName} enters, choose a ${purposeNoun(d.purpose)}.`;
