@@ -124,7 +124,7 @@ function noteMoved(effects: readonly Effect[], ctx: LowerContext): void {
  * "create five of those tokens instead" makes more of.
  */
 function noteTokensMade(effects: readonly Effect[], ctx: LowerContext): void {
-  const MAKES = ['createToken', 'createCopies', 'populate'];
+  const MAKES = ['createToken', 'createCopies', 'populate', 'copyOneOfTriggerCards'];
   if (effects.some((e) => MAKES.includes(e.kind))) {
     ctx.tokensMade = true;
     const [only] = effects;

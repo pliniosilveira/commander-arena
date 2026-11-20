@@ -1204,6 +1204,8 @@ function lowerTriggeredAbility(
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.triggeredBody = true;
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
+  // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
+  ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
@@ -1243,6 +1245,14 @@ function lowerTriggeredAbility(
     const blocked = missingFeatures(['selector:xInManaCost', 'trigger:activatesAbilityX']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers.splice(0, triggers.length, ...folded);
+  } else if (ifWritten?.test.kind === 'enteredFromGraveyard') {
+    // "Whenever one or more other creatures you control enter, if they entered or were cast from a graveyard, ..." (Twilight Diviner, CR 603.4, 603.6a): the zone each permanent came from
+    // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'entersBatch') return failure(ifWritten, []);
+    const blocked = missingFeatures(['trigger:entersFromGraveyard']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers[0] = { ...only, fromGraveyard: true };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
@@ -1680,6 +1690,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:notAsAttacker',
+  'trigger:entersFromGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',

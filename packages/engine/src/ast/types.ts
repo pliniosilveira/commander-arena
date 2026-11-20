@@ -2147,6 +2147,12 @@ export type Effect =
    */
   | { readonly kind: 'exileFromTriggerCards' }
   /**
+   * "Create a token that's a copy of one of them." (CR 603.2c, 608.2d, 707.2, 111.4, Twilight Diviner): of the permanents that triggered this ability (`triggerCards`: the batch an
+   * `entersBatch` trigger saw enter) the ones still on the battlefield, the controller chooses one (nothing is asked with one; with none nothing is created) and creates a token with its
+   * copiable values, as `populate` makes one. The token made is what `moved` names afterwards. Only in a triggered ability whose trigger is an `entersBatch` (`validateCard`).
+   */
+  | { readonly kind: 'copyOneOfTriggerCards' }
+  /**
    * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player
    * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231): the controller of the effect chooses, for each player
    * (the active player first) and each type of `types` in order, one permanent of that type the player controls (none when there is none; the same permanent may be
@@ -4065,8 +4071,11 @@ export type Trigger =
    * "Whenever one or more [tokens you control] enter" (D-218, CR 603.2c, 603.6a): a batch trigger. Every permanent `what` names that enters in one batch of
    * events (a token effect makes them together, a spell that puts several onto the battlefield too) is one occurrence: the ability triggers once however
    * many entered. `what` is read as the permanent is as it enters (the controller of this ability is "you" in the filter). `triggerSubject` is the first of them.
+   * `fromGraveyard` ("..., if they entered or were cast from a graveyard", CR 603.4, 603.6a, 601.2a): only a permanent that entered from a graveyard, or that was a spell cast from a
+   * graveyard, is part of the batch (the zone each came from is read as the event happens, so the others do not count, and a batch with none of them does not trigger). The ability's
+   * `triggerCards` are the permanents of the batch that the trigger names, in the order they entered.
    */
-  | { readonly kind: 'entersBatch'; readonly what: ObjectFilter }
+  | { readonly kind: 'entersBatch'; readonly what: ObjectFilter; readonly fromGraveyard?: true }
   /**
    * "Whenever [a creature] blocks" (CR 509.1g, 702.45a, D-120): once for each creature declared as a blocker
    * in the declare blockers step, the blocker being the subject. A creature that blocks two attackers

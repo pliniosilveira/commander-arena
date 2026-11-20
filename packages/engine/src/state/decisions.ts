@@ -441,6 +441,7 @@ export interface ChoosePermanentDecision extends DecisionBase {
     | 'empowerJace'
     | 'amass'
     | 'populate'
+    | 'copyTrigger'
     | 'moveCounters'
     | 'untapChoice'
     | 'conniveOrder'
@@ -470,6 +471,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'populate'` (D-639, CR 701.36a: "choose a creature token you control and create a token that's a copy of that creature token"): `seat`, the player who populates, chooses
    * which creature token of `legal` (all they control, as `derive` types them now) is copied; exactly one (`min` = `max` = 1). Asked only with two or more. `source` is the
    * spell or ability.
+   * For `'copyTrigger'` (Twilight Diviner, CR 603.2c, 707.2: "create a token that's a copy of one of them"): `seat`, the controller of the ability, chooses which permanent of `legal` (the
+   * ones of the batch that triggered it that are still on the battlefield) is copied; exactly one. Asked only with two or more. `source` is the ability.
    * For `'ringBearer'` (D-196, CR 701.54a: "Each time the Ring tempts you, choose a creature you control"): `seat`, the player the Ring is tempting,
    * chooses which creature of `legal` (all the creatures they control, as `derive` types them now) becomes their Ring-bearer; exactly one
    * (`min` = `max` = 1), and only asked when there are two or more. `source` is the spell or ability that tempts.

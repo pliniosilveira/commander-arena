@@ -1608,6 +1608,22 @@ function runEffect(
         [{ kind: 'moveCounters', counter: effect.counter, to: effect.to, chosen: null }],
       );
 
+    case 'copyOneOfTriggerCards':
+      // CR 603.2c, 707.2 (Twilight Diviner): the permanents of the batch that are still on the battlefield, one of which the controller copies (rules/populate.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'populate',
+            among: (res.triggerCards ?? []).filter(
+              (id) => state.objects[id]?.zone === 'battlefield',
+            ),
+            chosen: null,
+          },
+        ],
+      );
+
     case 'populate':
       // CR 701.36 (D-627): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
       return done(state, [], [{ kind: 'populate', chosen: null }]);

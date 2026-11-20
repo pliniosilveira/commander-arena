@@ -402,6 +402,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
     'exileFromTriggerCards',
+    // Twilight Diviner: "create a token that's a copy of one of them" of the permanents a batch enters trigger saw (CR 603.2c, 707.2).
+    'copyOneOfTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
     // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
@@ -534,6 +536,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedBy',
     'notAsAttacker',
     'tapBatch',
+    // Twilight Diviner: "one or more other creatures you control enter, if they entered or were cast from a graveyard" (`entersBatch` with `fromGraveyard`).
+    'entersFromGraveyard',
     // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
     'activatesAbilityX',
   ],
@@ -1549,6 +1553,8 @@ export const TRIGGER_FEATURES = [
   'notAsAttacker',
   /** "Whenever you tap one or more untapped creatures" (CR 603.2c, D-510): the engine's `becomesTapped` with `batch`. */
   'tapBatch',
+  /** "Whenever one or more creatures enter, if they entered or were cast from a graveyard" (CR 603.4, 603.6a, 601.2a): the engine's `entersBatch` with `fromGraveyard`. */
+  'entersFromGraveyard',
   /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
   'activatesAbilityX',
 ] as const;
@@ -2418,6 +2424,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
+  copyOneOfTriggerCards: true,
   fight: true,
   castFree: true,
   castCard: true,
@@ -2514,6 +2521,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
+  entersFromGraveyard: true,
   activatesAbilityX: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {

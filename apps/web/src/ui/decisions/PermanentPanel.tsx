@@ -29,7 +29,7 @@ import { auraHostTitle, isAuraHost, isSpellTap, spellTapTitle } from './permanen
 import { BLIGHT_TITLE, isBlight } from './permanents-blight';
 import { entersCopyTitle, isEntersCopy } from './permanents-dragons';
 import { isMoveCounters, MOVE_COUNTERS_TITLE } from './permanents-move-counters';
-import { isPopulate, POPULATE_TITLE } from './permanents-populate';
+import { COPY_TRIGGER_TITLE, isPopulate, POPULATE_TITLE } from './permanents-populate';
 import { isRingBearer, RING_BEARER_TITLE } from './permanents-ring';
 import { isSoulbond, SOULBOND_TITLE } from './permanents-soulbond';
 import { isUntapChoice, UNTAP_CHOICE_TITLE } from './permanents-untap';
@@ -91,7 +91,9 @@ export function PermanentPanel({
     : amass
       ? AMASS_TITLE
       : populate
-        ? POPULATE_TITLE
+        ? decision.purpose === 'copyTrigger'
+          ? COPY_TRIGGER_TITLE
+          : POPULATE_TITLE
         : moveCounters
           ? MOVE_COUNTERS_TITLE
           : blight
@@ -135,7 +137,9 @@ export function PermanentPanel({
           : amass
             ? 'Armies to amass on'
             : populate
-              ? 'Creature tokens to copy'
+              ? decision.purpose === 'copyTrigger'
+                ? 'Creatures to copy'
+                : 'Creature tokens to copy'
               : moveCounters
                 ? 'Creatures to move a counter onto'
                 : blight
