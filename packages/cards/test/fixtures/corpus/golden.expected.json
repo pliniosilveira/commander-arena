@@ -1,5 +1,5 @@
 {
-  "parserVersion": 169,
+  "parserVersion": 170,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -4618,19 +4618,10 @@
     "7e8c2a18-e404-40ff-a9e0-ec3eeb6d576e": {
       "name": "Command Beacon",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}, Sacrifice ~: Put your commander into your hand from the command zone.",
-          "reason": "unrecognised",
-          "slot": "amount",
-          "closestRule": "effect.add-counters"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c0602cf8"
+      "ast": "7e7b07d2"
     },
     "7f268b15-ac92-4e98-821b-78d15d9285d9": {
       "name": "Loyal Apprentice",
@@ -5192,19 +5183,10 @@
     "8ea46945-d5ab-4209-b473-4769e7b8b962": {
       "name": "Shrine of the Forsaken Gods",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{T}: Add {C}{C}. Spend this mana only to cast colorless spells. Activate only if you control seven or more lands.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "56f03a54"
+      "ast": "35881dd6"
     },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
@@ -9049,7 +9031,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 798,
+      "supported": 800,
       "total": 823
     }
   }
