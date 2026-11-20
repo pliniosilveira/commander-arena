@@ -420,6 +420,8 @@ describe('supported feature gate', () => {
       'tapPermanents',
       // Issue 245 (PR #280): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).
       'removeCounters',
+      // Molten Slagheap: "{1}, Remove X storage counters from this land: Add X mana in any combination of {B} and/or {R}" (X is the number of mana chosen).
+      'removeCountersX',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
