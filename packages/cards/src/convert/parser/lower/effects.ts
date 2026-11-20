@@ -134,9 +134,9 @@ import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
+import { WIN_GAME_LOWERINGS } from './win-game';
 import { revealTopBranchesLowering, WITHERBLOOM_A_LOWERINGS } from './witherbloom-a';
 import { WITHERBLOOM_C_LOWERINGS } from './witherbloom-c';
-import { WIN_GAME_LOWERINGS } from './win-game';
 
 /**
  * "Untap ~", "exile ~", "return ~ to its owner's hand": the effect acts on the permanent the

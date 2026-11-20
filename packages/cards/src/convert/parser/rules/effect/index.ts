@@ -183,9 +183,9 @@ import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
+import { WIN_GAME_EFFECT_RULES } from './win-game';
 import { WITHERBLOOM_A_EFFECT_RULES } from './witherbloom-a';
 import { WITHERBLOOM_C_EARLY_EFFECT_RULES, WITHERBLOOM_C_EFFECT_RULES } from './witherbloom-c';
-import { WIN_GAME_EFFECT_RULES } from './win-game';
 import { YOU_MAY_HAVE_EFFECT_RULES } from './you-may-have';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
