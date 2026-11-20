@@ -78,6 +78,11 @@ const RESTRICTION_WORDS: Readonly<Record<Restriction, { one: string; many: strin
     one: "can't be blocked except by creatures with haste",
     many: "can't be blocked except by creatures with haste",
   },
+  // CR 508.1a, 508.6: Port Razer.
+  cantAttackPlayersAlreadyAttacked: {
+    one: "can't attack a player it has already attacked this turn",
+    many: "can't attack a player they have already attacked this turn",
+  },
   cantBeBlockedByMoreThanOne: {
     one: "can't be blocked by more than one creature",
     many: "can't be blocked by more than one creature",

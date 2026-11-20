@@ -16,7 +16,7 @@ import {
   satisfy,
   sequence,
 } from '../../combinators';
-import type { IrRestrictionKind, IrStaticEffect } from '../../ir/types';
+import type { IrFilter, IrRestrictionKind, IrStaticEffect } from '../../ir/types';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 
 /**
@@ -66,23 +66,39 @@ const BLOCKED_BY: Parser<IrStaticEffect> = map(
  * creatures that are not of that creature type (`notSubtypes`). Only a plural creature type, with no other quality and no controller: the complement of any other group (colors,
  * keywords, a controller) is not read.
  */
-const BLOCKED_EXCEPT_BY: Parser<IrStaticEffect> = map(
+/** The "Spirits" of "except by Spirits": a plural creature type, as the creatures that can't block (the complement of the kind, `notSubtypes`). */
+export const EXCEPT_BY_KIND: Parser<IrFilter> = map(
   quietly(
-    sequence(
-      pattern(/can['’]t be blocked except by /iu),
-      satisfy(map(permanentPhrase(true, 'all'), withoutZone), (filter) => {
-        const { raw: _raw, types, subtypes, ...rest } = filter;
-        return (
-          subtypes?.length === 1 &&
-          (types === undefined || (types.length === 1 && types[0] === 'creature')) &&
-          Object.values(rest).every((value) => value === undefined)
-        );
-      }),
-    ),
+    satisfy(map(permanentPhrase(true, 'all'), withoutZone), (filter) => {
+      const { raw: _raw, types, subtypes, ...rest } = filter;
+      return (
+        subtypes?.length === 1 &&
+        (types === undefined || (types.length === 1 && types[0] === 'creature')) &&
+        Object.values(rest).every((value) => value === undefined)
+      );
+    }),
   ),
-  ([, kind]): IrStaticEffect => ({
+  (kind): IrFilter => ({ notSubtypes: kind.subtypes ?? [], raw: kind.raw }),
+);
+
+const BLOCKED_EXCEPT_BY: Parser<IrStaticEffect> = map(
+  quietly(sequence(pattern(/can['’]t be blocked except by /iu), EXCEPT_BY_KIND)),
+  ([, blockers]): IrStaticEffect => ({ kind: 'cantBeBlockedBy', blockers }),
+);
+
+/**
+ * "can't be blocked by creatures the monarch controls" (Azure Fleet Admiral, CR 509.1b, 725.1): no creature the monarch controls (as it is when the blockers are declared) can block
+ * the subject, the engine's `cantBeBlockedBy` of the creatures with `controller: 'monarch'`. Only those words.
+ */
+const BLOCKED_BY_MONARCH: Parser<IrStaticEffect> = map(
+  pattern(new RegExp(`can['’]t be blocked by creatures the monarch controls${END}`, 'iu')),
+  (match): IrStaticEffect => ({
     kind: 'cantBeBlockedBy',
-    blockers: { notSubtypes: kind.subtypes ?? [], raw: kind.raw },
+    blockers: {
+      types: ['creature'],
+      controller: 'monarch',
+      raw: match[0].replace(/^can['’]t be blocked by /iu, ''),
+    },
   }),
 );
 
@@ -116,6 +132,7 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
     // Before the plain "can't be blocked", whose words are a prefix of these (stage P29, D-133, CR 509.1b).
     phrase("can['’]t be blocked by more than one creature", 'cantBeBlockedByMoreThanOne'),
     BLOCKED_EXCEPT_BY,
+    BLOCKED_BY_MONARCH,
     BLOCKED_BY,
     phrase("can['’]t block", 'cantBlock'),
     phrase("can['’]t be blocked", 'cantBeBlocked'),
@@ -129,6 +146,11 @@ export function restrictionPhrase(subject: RestrictionSubject): Parser<IrStaticE
       ...common,
       // D-648 (Prismari deck group 2, CR 509.1b): "~ can block only creatures with flying", said of `~` itself.
       phrase('can block only creatures with flying', 'canBlockOnlyFlying'),
+      // Ahoy Mateys deck, group 6 (Port Razer, CR 508.1a, 508.6): said of `~` itself.
+      phrase(
+        "can['’]t attack a player it has already attacked this turn",
+        'cantAttackPlayersAlreadyAttacked',
+      ),
       phrase("doesn['’]t untap during your untap step", 'doesntUntap'),
       phrase("can['’]t be countered", 'cantBeCountered'),
     );

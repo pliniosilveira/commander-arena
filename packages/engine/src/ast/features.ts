@@ -1009,6 +1009,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notAttacking',
     'blocking',
     'powerLessThanSource',
+    // CR 725.1 (monarch): `ObjectFilter.controller` 'monarch', "creatures the monarch controls"; and CR 509.1b: `restrict.blockers`, "can't be blocked this turn except by Spirits".
+    'monarchController',
+    'restrictBlockers',
     // D-431: "with power greater than its base power" (`ObjectFilter.powerAboveBase`).
     'powerAboveBase',
     // "Creatures you control with base power 0" (`ObjectFilter.basePowerIs`).
@@ -1578,6 +1581,8 @@ export const RESTRICTIONS: readonly Restriction[] = [
   'cantBlock',
   'cantAttack',
   'cantBeBlocked',
+  // CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn."
+  'cantAttackPlayersAlreadyAttacked',
   // D-648: "This creature can block only creatures with flying."
   'canBlockOnlyFlying',
   'cantBeBlockedByMoreThanOne',
@@ -1917,6 +1922,10 @@ export const SELECTOR_KINDS = [
   'blocking',
   /** "With power less than this creature's power" (CR 702.134a, D-120): the engine's `ObjectFilter.powerLessThanSource`. */
   'powerLessThanSource',
+  /** "Creatures the monarch controls" (CR 725.1): the engine's `ObjectFilter.controller` 'monarch'. */
+  'monarchController',
+  /** "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): the engine's `restrict.blockers`. */
+  'restrictBlockers',
   /** "With power greater than its base power" (CR 208.4b, D-431): the engine's `ObjectFilter.powerAboveBase`. */
   'powerAboveBase',
   /** "With base power 0" (CR 208.4b): the engine's `ObjectFilter.basePowerIs`. */

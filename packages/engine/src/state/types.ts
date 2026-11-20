@@ -2284,7 +2284,12 @@ export type ContinuousChange =
    * objects a restriction as the rules read it (CR 613.11) and is not an ability, so "loses all
    * abilities" leaves it. `derive` lists it in `restrictions`.
    */
-  | { readonly kind: 'restrict'; readonly restriction: Restriction }
+  | {
+      readonly kind: 'restrict';
+      readonly restriction: Restriction;
+      /** "Can't be blocked this turn except by Spirits": the creatures that can't block the object (a `cantBeBlocked` with them is a limit on blockers, not an unconditional restriction). */
+      readonly blockers?: ObjectFilter;
+    }
   /**
    * "You gain hexproof until end of turn" (`grantPlayerHexproof`, CR 702.11b, Hylda group 3): the effect's `players` have hexproof while it lasts. No layer: read where a
    * player is targeted (`rules/player-protection.ts`).

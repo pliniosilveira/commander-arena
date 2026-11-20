@@ -602,9 +602,16 @@ export type DefinedPtAmount =
  * Who controls a permanent: `you` (the controller of the ability), `opponent`, `any`, and (D-151) `triggerPlayer`: "that opponent", the player the
  * event that triggered the ability is about ("Destroy target artifact that opponent controls"); only in a triggered ability whose event is about a
  * player, as the selector `triggerPlayer` is. And (D-151) `defendingPlayer`: "target creature defending player controls" (CR 508.5): controlled by the player the
- * source of the ability, an attacking creature, is attacking; only in an ability of a creature that attacks.
+ * source of the ability, an attacking creature, is attacking; only in an ability of a creature that attacks. And `monarch` (CR 725.1, "creatures the monarch controls"): controlled by
+ * the player who is the monarch as the filter is read (nothing matches when there is none); only as the `blockers` of a `cantBeBlockedBy` or of a `restrict`, where it is read as blockers are declared.
  */
-export type ControllerFilter = 'you' | 'opponent' | 'any' | 'triggerPlayer' | 'defendingPlayer';
+export type ControllerFilter =
+  | 'you'
+  | 'opponent'
+  | 'any'
+  | 'triggerPlayer'
+  | 'defendingPlayer'
+  | 'monarch';
 
 /**
  * A comparison with a whole number (D-111): "power 4 or greater" is `{ cmp: 'atLeast', value: 4 }`,
@@ -3527,6 +3534,12 @@ export type Effect =
       readonly kind: 'restrict';
       readonly objects: ObjectSelector;
       readonly restriction: Restriction;
+      /**
+       * "Can't be blocked this turn except by Spirits" (CR 509.1b, 611.2a): only with `restriction: 'cantBeBlocked'`, the creatures that can't block each object the effect names
+       * (an attacker, as it is declared), the engine's `cantBeBlockedBy` of a static ability for the duration of the effect. Without it the objects can't be blocked at all.
+       * Not an ability: "loses all abilities" leaves it (CR 613.11).
+       */
+      readonly blockers?: ObjectFilter;
       readonly duration:
         | Duration
         | 'forAsLongAsYouControlThis'
@@ -5019,6 +5032,8 @@ export type Trigger =
  *   that does not fly is not one it can block);
  * - `cantBeBlockedExceptByHaste`: it can't be blocked except by creatures with haste (CR 509.1b, issue 81, Gingerbrute: "{1}: This token can't be blocked this turn except by creatures with
  *   haste"; the blocker's haste is read as the blockers are declared);
+ * - `cantAttackPlayersAlreadyAttacked`: it can't be declared attacking a player it has already attacked this turn (CR 508.1a, 508.6: "~ can't attack a player it has already attacked this turn",
+ *   read from `turnLog.attackedPlayers`; an attack on a planeswalker or a battle is not an attack on a player);
  * - `cantBeBlockedByMoreThanOne`: no more than one creature can block it (D-133, CR 509.1b: "can't be blocked by more than
  *   one creature"; with menace nothing can block it, CR 702.111b);
  * - `attacksEachCombat`: it attacks each combat if able (CR 508.1d, a requirement);
@@ -5036,6 +5051,7 @@ export type Restriction =
   | 'cantAttack'
   | 'cantBeBlocked'
   | 'cantBeBlockedExceptByHaste'
+  | 'cantAttackPlayersAlreadyAttacked'
   | 'canBlockOnlyFlying'
   | 'cantBeBlockedByMoreThanOne'
   | 'mustBeBlocked'

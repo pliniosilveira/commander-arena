@@ -258,6 +258,8 @@ export interface IrFilter {
     | 'triggerPlayer'
     // "defending player controls" (stage P34, D-152, CR 508.5): the player the source attacks
     | 'defendingPlayer'
+    // "creatures the monarch controls" (CR 725.1): only the blockers of "can't be blocked by creatures the monarch controls"
+    | 'monarch'
     // `orPlaneswalkerController`: "that player or that planeswalker's controller controls" (stage P47, D-200): the controller of the planeswalker the target is, too
     | { readonly noun: IrNoun; readonly orPlaneswalkerController?: true };
   readonly zone?: 'battlefield' | 'graveyard' | 'library' | 'hand' | 'exile' | 'stack';
@@ -1260,6 +1262,8 @@ export interface IrCostList extends IrNode {
 export interface IrRestrictionArg extends IrNode {
   readonly kind: 'restrictionKind';
   readonly restriction: IrRestrictionKind;
+  /** "can't be blocked this turn except by Spirits" (CR 509.1b): the creatures that can't block, only with `cantBeBlocked`. */
+  readonly blockers?: IrFilter;
 }
 
 /** What an "As ~ enters, choose ..." replacement asks (stage P15, D-100): a creature type or a color. */
@@ -1545,7 +1549,9 @@ export type IrRestrictionKind =
   // "Enchanted creature ... is goaded" (issue 201, CR 701.15): only of the permanent an Aura or Equipment is attached to.
   | 'goaded'
   // "~ can block only creatures with flying" (Prismari deck group 2, D-648, CR 509.1b): only of `~` itself.
-  | 'canBlockOnlyFlying';
+  | 'canBlockOnlyFlying'
+  // "~ can't attack a player it has already attacked this turn" (Ahoy Mateys deck, group 6, CR 508.1a, 508.6): only of `~` itself.
+  | 'cantAttackPlayersAlreadyAttacked';
 
 export type IrStaticEffect =
   | { readonly kind: 'pt'; readonly power: number; readonly toughness: number }
