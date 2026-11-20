@@ -4586,6 +4586,8 @@ const FIXTURES: readonly CardDefinition[] = [
   .filter((card) => !(CHOSEN_SPELL_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(X_SPELL_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(X_FIXTURE_ONLY_NAMES as readonly string[]).includes(card.name))
+  // A card with {X} in its mana cost asks `chooseX`, a kind that only the 'x' style plays (games-100). Read from the cost, so a later X creature is kept out too.
+  .filter((card) => !(card.faces[0]?.manaCost ?? []).includes('X'))
   .filter((card) => !(MODAL_CARD_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(PT_CARD_NAMES as readonly string[]).includes(card.name))
   .filter((card) => !(KEYWORD_BATCH_NAMES as readonly string[]).includes(card.name))
@@ -4652,6 +4654,18 @@ export const COVERAGE_CREATURES = FIXTURES.filter(
     (card.faces[0]?.abilities ?? []).some(
       (a) =>
         a.kind === 'keyword' && (COVERAGE_KEYWORDS as readonly string[]).includes(a.keyword.kind),
+    ),
+).map((card) => card.name);
+
+/**
+ * The non-legendary creatures of the generic pool that ask a question as they enter ("As this creature enters, choose a creature type"), which is a `chooseOption` decision.
+ * The 100 seeded games of games-100 draw one only by luck (the pool grows with every slice of creature fixtures), so the 'option' deck style plays them by construction.
+ */
+export const OPTION_CREATURES = FIXTURES.filter(
+  (card) =>
+    CREATURES.includes(card.name) &&
+    (card.faces[0]?.abilities ?? []).some(
+      (a) => a.kind === 'replacement' && a.replacement.kind === 'asEntersChoose',
     ),
 ).map((card) => card.name);
 
@@ -4774,7 +4788,8 @@ export type DeckStyle =
   | 'danithaG3'
   | 'repeatable'
   | 'manifest'
-  | 'combat';
+  | 'combat'
+  | 'option';
 
 /** The spell slots of a style. A style whose pool is empty falls back to the old spell mix. */
 export function spellSlots(style: DeckStyle): readonly string[] {
@@ -4822,6 +4837,8 @@ export function spellSlots(style: DeckStyle): readonly string[] {
   if (style === 'edhrec') return EDHREC_SPELLS;
   // Only the creatures with a coverage keyword, so every deck of the style draws them (see COVERAGE_KEYWORDS).
   if (style === 'combat' && COVERAGE_CREATURES.length > 0) return COVERAGE_CREATURES;
+  // Only the creatures that ask a question as they enter, so every deck of the style casts them (see OPTION_CREATURES).
+  if (style === 'option' && OPTION_CREATURES.length > 0) return OPTION_CREATURES;
   const pool =
     style === 'creatures'
       ? CREATURE_MIX_SPELLS
@@ -4941,6 +4958,7 @@ export function spellSlots(style: DeckStyle): readonly string[] {
 export function landSlots(style: DeckStyle): readonly string[] {
   // Basic lands of every color: the coverage creatures need green, black and others.
   if (style === 'combat' && BASIC_LANDS.length > 0) return BASIC_LANDS;
+  if (style === 'option' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'search' && BASIC_LANDS.length > 0) return BASIC_LANDS;
   if (style === 'activated' && ACTIVATED_LANDS.length > 0) return ACTIVATED_LANDS;
   if (style === 'attachments' && BASIC_LANDS.length > 0) return BASIC_LANDS;
