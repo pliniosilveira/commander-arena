@@ -4149,6 +4149,27 @@ function checkSearch(
       );
     }
   }
+  // CR 701.23: "any number of creature cards": no limit but the library; one 'rest' destination, nothing else that changes how many are found.
+  if (e.anyNumber !== undefined) {
+    if (e.anyNumber !== true) {
+      issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+    }
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.maxAmount !== undefined ||
+      e.totalManaValue !== undefined ||
+      e.zones !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        "a search for any number of cards has a max of 1 (unread), one destination of 'rest', and no shared land type, zones, maxAmount or totalManaValue",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {

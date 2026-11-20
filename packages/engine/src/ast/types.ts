@@ -3993,6 +3993,12 @@ export type Effect =
        * destinations are one `rest`, and no `sharedLandType`, `zones` or `maxAmount`.
        */
       readonly totalManaValue?: number;
+      /**
+       * "Search your library for any number of creature cards" (CR 701.23, 701.23b; Bilbo, Birthday Celebrant): any number of the cards of `filter` may be found, none included,
+       * with no limit but the library (the decision's `min` is 0 and its `max` is every card offered). `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`,
+       * `zones`, `maxAmount` or `totalManaValue`; the filter states a quality, as "any number of cards" finds one that is a card of a kind.
+       */
+      readonly anyNumber?: true;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;

@@ -338,6 +338,11 @@ export interface IrFilter {
    */
   readonly anyNumberTotalManaValue?: number;
   /**
+   * "any number of creature cards" (CR 701.23, 701.23b; Bilbo, Birthday Celebrant): any number of the cards of a library search, none included, with no limit but the library. Like
+   * `anyNumberTotalManaValue` it is about the cards found together; the search lowering takes it off (the engine's `search.anyNumber`), any other filter that has it is not lowered.
+   */
+  readonly anyNumber?: true;
+  /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
    */

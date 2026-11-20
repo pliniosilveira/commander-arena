@@ -345,6 +345,8 @@ function lowerFilterAt(
   if (filter.sharedLandType === true) return bad([]);
   // CR 202.3: "any number of ... with total mana value 6 or less" is also about the cards found together (the search lowering takes it off first).
   if (filter.anyNumberTotalManaValue !== undefined) return bad([]);
+  // CR 701.23: "any number of creature cards" is about the cards found together as well.
+  if (filter.anyNumber === true) return bad([]);
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');

@@ -902,6 +902,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'searchZones',
     // "Search your library for any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3; `search.totalManaValue`).
     'searchTotalManaValue',
+    // "Search your library for any number of creature cards" (CR 701.23; `search.anyNumber`).
+    'searchAnyNumber',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -1720,6 +1722,8 @@ export const SELECTOR_KINDS = [
   'searchZones',
   /** "Any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): the engine's `search.totalManaValue`. */
   'searchTotalManaValue',
+  /** "Any number of creature cards" (CR 701.23): the engine's `search.anyNumber`. */
+  'searchAnyNumber',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */

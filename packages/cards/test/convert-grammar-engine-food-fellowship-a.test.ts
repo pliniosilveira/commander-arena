@@ -274,6 +274,98 @@ describe('Crypt Incursion', () => {
   });
 });
 
+describe('Bilbo, Birthday Celebrant', () => {
+  const bilbo = real('Bilbo, Birthday Celebrant');
+  const start = (life: number) =>
+    scenario()
+      .define(bilbo)
+      .define(SIP)
+      .seat(0)
+      .life(life)
+      .battlefield(bilbo.name)
+      .battlefield('Plains', 'Swamp', 'Forest', 'Plains', 'Swamp')
+      .hand(SIP.name)
+      .library('Grizzly Bears', 'Plains', 'Grizzly Bears', 'Grizzly Bears', ...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(bilbo)).toEqual([]);
+  });
+
+  test('a life gain is one more (CR 614.1a): 3 becomes 4', () => {
+    const g = start(20);
+    g.act(0).cast(SIP.name).pay();
+    g.passAll();
+    g.expect.life(0, 24);
+  });
+
+  test('the search needs 111 life: refused at 110, offered at 111', () => {
+    const g = start(110);
+    g.expect.illegal(0, { activate: bilbo.name });
+    const rich = start(111);
+    rich.expect.legal(0, { activate: bilbo.name });
+  });
+
+  test('any number of creature cards go onto the battlefield, Bilbo is exiled, the library is shuffled', () => {
+    const g = start(111);
+    g.act(0).activate(bilbo.name).pay();
+    g.passAll();
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards(
+      { name: 'Grizzly Bears', zone: 'library', nth: 0 },
+      { name: 'Grizzly Bears', zone: 'library', nth: 1 },
+    );
+    g.expect.zone(bilbo.name, 'exile', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'battlefield', { seat: 0, count: 2 });
+    g.expect.zone('Grizzly Bears', 'library', { seat: 0, count: 1 });
+    g.expect.invariants();
+  });
+
+  test('finding none is allowed, and all of them too (CR 701.23b)', () => {
+    const none = start(111);
+    none.act(0).activate(bilbo.name).pay();
+    none.passAll();
+    none.act(0).chooseCards();
+    none.expect.zone('Grizzly Bears', 'battlefield', { count: 0 });
+    const all = start(111);
+    all.act(0).activate(bilbo.name).pay();
+    all.passAll();
+    all.act(0).chooseCards(
+      { name: 'Grizzly Bears', zone: 'library', nth: 0 },
+      { name: 'Grizzly Bears', zone: 'library', nth: 1 },
+      { name: 'Grizzly Bears', zone: 'library', nth: 2 },
+    );
+    all.expect.zone('Grizzly Bears', 'battlefield', { seat: 0, count: 3 });
+  });
+
+  test('a search for any number of cards is invalid with a max other than 1, or with a total mana value', () => {
+    const face = bilbo.faces[0];
+    const index = face?.abilities.findIndex((a) => a.kind === 'activated') ?? -1;
+    const ability = face?.abilities[index];
+    if (face === undefined || ability?.kind !== 'activated' || ability.effect.kind !== 'search') {
+      throw new Error('Bilbo reads as an activated search');
+    }
+    expect(ability.effect.anyNumber).toBe(true);
+    const mutate = (change: object): CardDefinition => ({
+      ...bilbo,
+      faces: [
+        {
+          ...face,
+          abilities: face.abilities.map((a, i) =>
+            i === index ? { ...ability, effect: { ...ability.effect, ...change } } : a,
+          ),
+        },
+      ],
+    });
+    expect(validateCard(mutate({ max: 2 })).length).toBeGreaterThan(0);
+    expect(validateCard(mutate({ totalManaValue: 6 })).length).toBeGreaterThan(0);
+    expect(validateCard(mutate({ destinations: [{ zone: 'hand', count: 1 }] })).length).toBeGreaterThan(0);
+  });
+});
+
 describe('what the new readings do not take', () => {
   const status = (text: string) => parseOnly(spellCard('Synthetic Probe', text)).support.status;
 
