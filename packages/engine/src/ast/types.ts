@@ -72,6 +72,11 @@ export type Amount =
    */
   | { readonly kind: 'manaValueOf'; readonly of: ObjectRef }
   /**
+   * "For each of that spell's colors" (issue 145, Ancient Cornucopia; CR 105.2, 601.2i): how many of the five colors the object has (a color counts once, colorless is no color, CR 105.2c),
+   * read as it is now, or from last-known information once it has left (CR 608.2h). Valid where `manaValueOf` is: of a target or of the `triggerSubject` spell of a cast trigger.
+   */
+  | { readonly kind: 'colorsOf'; readonly of: ObjectRef }
+  /**
    * "The difference" between a number and the mana value of a card (D-151, "If the discovered card's mana value is less than 10, create a number of tapped
    * Treasure tokens equal to the difference"): `limit` less the mana value of the object `of` names (read as `manaValueOf` is), and 0 when that is
    * not more than 0 or when `of` names nothing (no card was discovered).

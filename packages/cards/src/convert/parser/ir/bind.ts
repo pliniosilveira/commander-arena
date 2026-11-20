@@ -444,6 +444,7 @@ class Binder {
       case 'countOf':
       case 'powerOf':
       case 'manaValueOf':
+      case 'colorsOf':
       case 'toughnessOf':
       case 'countersOn':
       case 'aggregate':

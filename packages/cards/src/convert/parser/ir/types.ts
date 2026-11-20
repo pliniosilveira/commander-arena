@@ -438,6 +438,8 @@ export type IrAmount =
   | { readonly kind: 'powerOf'; readonly of: IrNoun; readonly span: Span }
   // "equal to that card's mana value" (CR 202.3), stage P11
   | { readonly kind: 'manaValueOf'; readonly of: IrNoun; readonly span: Span }
+  // "for each of that spell's colors" (issue 145, CR 105.2): how many colors the object has
+  | { readonly kind: 'colorsOf'; readonly of: IrNoun; readonly span: Span }
   // "for each color among permanents you control" (stage P37, D-180, CR 105.2): the colors the permanents have between them, each once
   | { readonly kind: 'colorsAmong'; readonly of: IrNoun; readonly span: Span }
   // "the number of card types among cards in your graveyard" (Hylda deck group 2, D-518, CR 205.2a): the card types the cards of the group have between them, each once
@@ -1947,6 +1949,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'countOf',
   'powerOf',
   'manaValueOf',
+  'colorsOf',
   'cardTypesAmong',
   'timesKicked',
   'lifeLostThisWay',

@@ -1074,6 +1074,7 @@ describe('unmatched abilities', () => {
       'amount.cards-in-hand-of-that-player',
       'amount.for-each-card-drawn',
       'amount.for-each-spell-cast',
+      'amount.for-each-spell-color',
       'amount.experience-counters',
       'amount.number',
       'amount.x',

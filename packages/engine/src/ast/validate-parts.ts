@@ -1821,6 +1821,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'manaValueOf':
+    case 'colorsOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
     case 'shortfall':

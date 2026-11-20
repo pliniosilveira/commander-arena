@@ -373,6 +373,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   'amount.for-each-spell-cast': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-spell-color': permanent(
+    (e) => `Whenever you cast a spell, you gain 1 life ${e}.`,
+  ),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),

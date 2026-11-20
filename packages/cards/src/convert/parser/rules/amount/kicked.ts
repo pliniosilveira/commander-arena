@@ -74,6 +74,7 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-card-drawn',
   // Issue 145 (Aetherflux Reservoir): the spells the controller has cast this turn.
   'amount.for-each-spell-cast',
+  'amount.for-each-spell-color',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.
   'amount.for-each-aura-attached',
   // Lorehold Spirit deck group 2 (issue 86): the votes for one option of the vote the text made.

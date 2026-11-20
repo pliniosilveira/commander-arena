@@ -1264,6 +1264,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'x',
     'powerOf',
     'manaValueOf',
+    // Issue 145 (Ancient Cornucopia): "for each of that spell's colors".
+    'colorsOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
     'shortfall',
     'countOf',
@@ -2132,6 +2134,8 @@ export const AMOUNT_KINDS = [
   'x',
   'powerOf',
   'manaValueOf',
+  /** "For each of that spell's colors" (CR 105.2, issue 145): the engine's `colorsOf`. */
+  'colorsOf',
   /** "The difference" between a number and a mana value (D-151): the engine's `shortfall`. */
   'shortfall',
   'countOf',

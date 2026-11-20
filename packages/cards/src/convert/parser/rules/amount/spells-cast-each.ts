@@ -4,6 +4,7 @@
  */
 import { pattern } from '../../combinators';
 import type { IrAmount } from '../../ir/types';
+import { possessedNoun } from '../noun/controller';
 import { defineRule } from '../registry';
 
 /**
@@ -47,4 +48,43 @@ export const AMOUNT_FOR_EACH_SPELL_CAST = defineRule<IrAmount>({
   },
 });
 
-export const SPELLS_CAST_EACH_AMOUNT_RULES = [AMOUNT_FOR_EACH_SPELL_CAST];
+/**
+ * `amount.for-each-spell-color`: "for each of that spell's colors" (issue 145, Ancient Cornucopia; CR 105.2: how many of the five colors the spell has, colorless is none;
+ * CR 601.2i). "That spell" is the spell whose cast caused the trigger, which the lowering reads as the engine's `triggerSubject`. Not read: another object ("that card's colors"),
+ * a missing apostrophe, "each color", the singular.
+ */
+export const AMOUNT_FOR_EACH_SPELL_COLOR = defineRule<IrAmount>({
+  id: 'amount.for-each-spell-color',
+  family: 'amount',
+  leading: ['for'],
+  cites: ['CR 105.2 (Colors)', 'CR 601.2i (Casting Spells)'],
+  examples: ["for each of that spell's colors", 'For each of that spell’s colors'],
+  rejects: [
+    "for each of that card's colors",
+    'for each of that spells colors',
+    "for each of that spell's color",
+    "for each of that spell's colors.",
+    'for each color',
+    'for each of its colors',
+    "each of that spell's colors",
+  ],
+  parse: (ctx, pos) => {
+    const m = pattern(/for each of (that spell['’]s) colors(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!m.ok) return m;
+    const of = possessedNoun(
+      'amount.for-each-spell-color',
+      m.value[1] ?? '',
+      pos + 'for each of '.length,
+    );
+    return {
+      ok: true,
+      value: { kind: 'colorsOf', of, span: { start: pos, end: m.pos } },
+      pos: m.pos,
+    };
+  },
+});
+
+export const SPELLS_CAST_EACH_AMOUNT_RULES = [
+  AMOUNT_FOR_EACH_SPELL_CAST,
+  AMOUNT_FOR_EACH_SPELL_COLOR,
+];

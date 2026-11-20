@@ -176,6 +176,17 @@ export function lowerAmount(
       }
       return { ok: true, value: { kind: 'manaValueOf', of: of.value }, rule };
     }
+    case 'colorsOf': {
+      // Issue 145 (Ancient Cornucopia, CR 105.2, 601.2i): the colors of the spell whose cast caused the trigger, or of a target.
+      const of = objectRefOf(amount.of, ctx, { triggerSubject: true });
+      if (!of.ok) return of;
+      const blocked = needs('colorsOf');
+      if (blocked !== null) return blocked;
+      if (of.value.kind !== 'target' && of.value.kind !== 'triggerSubject') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      return { ok: true, value: { kind: 'colorsOf', of: of.value }, rule };
+    }
     case 'dieResult': {
       // "Scry X, where X is the result" (Galadriel deck group 3, CR 706.2, 706.3b): the natural result of the die the text rolled before, read by the instructions after the roll in
       // the same sequence; a result with no roll before it in the text is refused, as `validateCard` does.
@@ -879,6 +890,7 @@ export const AMOUNT_NEEDS = [
   'amount:dieResult',
   'amount:powerOf',
   'amount:manaValueOf',
+  'amount:colorsOf',
   'amount:countOf',
   'amount:timesKicked',
   'amount:manaSpent',

@@ -353,6 +353,11 @@ export function amountOf(
     if (live) return derive(state, live).power ?? 0;
     return state.lki[id]?.power ?? 0;
   }
+  // CR 105.2 (issue 145): the colors the object has now, or last had.
+  if (amount.kind === 'colorsOf') {
+    if (live) return derive(state, live).colors.length;
+    return state.lki[id]?.characteristics.colors.length ?? 0;
+  }
   // manaValueOf: CR 202.3. An {X} counts as the number announced while the object is a spell on the
   // stack and as 0 anywhere else (CR 202.3e); a spell that left the stack counts it from its
   // last-known information (CR 608.2h), which keeps the object as it was on the stack.
