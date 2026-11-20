@@ -109,6 +109,11 @@ export interface LowerContext {
     readonly selector: PlayerSelector;
     readonly needs: readonly FeatureRef[];
   } | null;
+  /** "that's tapped and attacking" of a trigger about the creatures you control attacking (CR 508.4): the player the declaration attacked, the engine's `triggerAttackedPlayer`; null for any other trigger. */
+  attackBatchPlayer: {
+    readonly selector: PlayerSelector;
+    readonly needs: readonly FeatureRef[];
+  } | null;
   /** True in the body of "Whenever enchanted player is attacked" (issue 160, D-629): every event of the trigger is the Aura's player being attacked, so "each opponent attacking that player" is the attacking player. */
   enchantedPlayerTrigger: boolean;
   /**
@@ -189,6 +194,8 @@ export interface LowerContext {
   diesTrigger: boolean;
   /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
   damageBatchTrigger: boolean;
+  /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
+  selfAttackTrigger: boolean;
   /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
@@ -354,6 +361,7 @@ export function newContext(
     thatPlayer: null,
     declinedPlayer: false,
     attackedPlayer: null,
+    attackBatchPlayer: null,
     enchantedPlayerTrigger: false,
     xIs: null,
     xDefined: false,
@@ -400,6 +408,7 @@ export function newContext(
     itDied: false,
     diesTrigger: false,
     damageBatchTrigger: false,
+    selfAttackTrigger: false,
     cardName,
     selfName: '',
   };

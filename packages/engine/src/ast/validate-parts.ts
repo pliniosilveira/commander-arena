@@ -3,6 +3,7 @@
  * selectors, amounts, costs and effects. `validate.ts` composes these for abilities, spells and
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
+import { TOKEN_PRESETS } from '../cards/tokens';
 import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { FILTERABLE_KEYWORDS } from './features';
 import type {
@@ -165,6 +166,8 @@ export interface Scope {
   readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
   readonly mainPhaseTrigger?: boolean;
+  /** True in the effect of a `conditional` whose condition is `yourCombatPhase`: an `extraCombat` follows the combat phase that is going on (issue 144). */
+  readonly combatPhaseCondition?: boolean;
   /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
   readonly postcombatMainTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
@@ -1427,7 +1430,7 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(
           out,
           path,
-          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents",
+          "'triggerAttackedPlayer' is only valid in a triggered ability whose event is a player attacking one of your opponents or an attack batch",
         );
       }
       break;
@@ -1594,6 +1597,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedInstantOrSorcery: 'a discard effect',
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
+  excessDamageDealt: 'a dealDamage effect',
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
@@ -1623,7 +1627,7 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
       'discardedTypeCount',
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
-  if (e?.kind === 'dealDamage') return ['damageDealt'];
+  if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
   if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
@@ -2518,9 +2522,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
   switch (cost?.kind) {
     case 'mana':
       checkManaSymbols(cost.symbols, `${path}.symbols`, out);
+      if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
+        issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
+      }
       break;
     case 'tap':
     case 'untap':
+    case 'exert':
     case 'payXLife':
     case 'discardX':
       break;
@@ -2980,6 +2988,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'cardLeftYourGraveyard':
     case 'yourMainPhase':
+    case 'yourCombatPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
       break;
@@ -3275,6 +3284,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         'dieResult reads the die rolled earlier in the same resolution: it is only valid in a conditional effect after a rollDie of the same sequence',
       );
       break;
+    case 'thisAttackedThisTurn':
+      // CR 702.142a (Boast): no parameters; the permanent the ability belongs to.
+      break;
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
       break;
@@ -3321,6 +3333,10 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       // Zimone, All-Questioning: an amount that reads the game now, which is or is not a prime number.
       checkStateAmount(c.amount, `${path}.amount`, out, 'a condition');
       break;
+    case 'maxSpeed':
+      // CR 702.179e: whether one of the players the selector names has speed 4. A condition has no targets and reads no trigger subject.
+      checkConditionPlayers(c.player, `${path}.player`, out);
+      break;
     case 'playerHasDesignation':
       // D-131: whether the designation's holder is one of the players the selector names (so "an opponent is the
       // monarch" is `eachOpponent`). A condition has no targets and reads no trigger subject.
@@ -3361,6 +3377,10 @@ function movesObjects(e: Effect): boolean {
   if (e?.kind === 'sequence') return Array.isArray(e.effects) && e.effects.some(movesObjects);
   // Lorehold group 1: "you may exile that card from your graveyard. If you do, you may play that card this turn": the card a declined `may` did not exile is no card (`moved` is empty).
   if (e?.kind === 'may') return movesObjects(e.effect);
+  // CR 608.2c: "If you do, put a +1/+1 counter on this creature and exile the top card of your library. You may play that card this turn.": the cards the branch that ran moved are "that card"; when the condition fails nothing moved and `moved` is empty (`lastMoved` outlives the queued branch).
+  if (e?.kind === 'conditional') {
+    return movesObjects(e.effect) || (e.else !== undefined && movesObjects(e.else));
+  }
   // D-139: a `createToken` produces objects `moved` names too ("create a token, then attach this to it").
   return (
     e?.kind === 'exile' ||
@@ -3416,6 +3436,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Gingerbrute',
   'Incubator',
   'Lander',
+  'Wicked Role',
   'Junk',
 ];
 
@@ -3946,7 +3967,13 @@ function checkAuraTokenAttachment(
   scope: Scope,
   out: Out,
 ): void {
-  const definition = e.token?.kind === 'custom' ? e.token.definition : undefined;
+  // A predefined Role token (CR 111.10, 303.7) is an Aura token too: it is created attached to its host like a custom one.
+  const definition =
+    e.token?.kind === 'custom'
+      ? e.token.definition
+      : e.token?.kind === 'preset'
+        ? TOKEN_PRESETS[e.token.preset]
+        : undefined;
   const isAura = definition?.subtypes?.includes('Aura') === true;
   if (e.attachTo === undefined) {
     if (isAura) {
@@ -5288,6 +5315,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     }
+    case 'delayedCombatDamageToPlayer': {
+      // Issue 144 (CR 603.7c, 510.3a): the sources are creatures the controller controls; the player is a target of the spell or ability; what the ability does names no target and
+      // reads nothing of the spell (nothing of it is left when the ability triggers).
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          "the sources are creatures the controller controls (controller 'you'), as they are on the battlefield",
+        );
+      }
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
+    }
     case 'delayedCombatDamage':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
@@ -5392,6 +5434,31 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.forEach`,
             'the objects a copy of a spell is aimed at are permanents on the battlefield',
+          );
+        }
+      }
+      // Issue 144 (CR 707.10e): "The copy targets that token.": one copy of the spell of the trigger, aimed at what the effect before it made.
+      if (e.newTarget !== undefined) {
+        if (kindOf(e.newTarget) !== 'moved') {
+          issue(
+            out,
+            `${path}.newTarget`,
+            "the object the copy targets is the 'moved' of an earlier effect",
+          );
+        } else {
+          checkRef(e.newTarget, 'object', `${path}.newTarget`, scope, out);
+        }
+        if (
+          e.newTargets !== 'no' ||
+          e.count !== undefined ||
+          e.forEach !== undefined ||
+          e.copier !== undefined ||
+          kindOf(e.spell) !== 'triggerSubject'
+        ) {
+          issue(
+            out,
+            `${path}.newTarget`,
+            'a copy that targets an object is one copy of the spell of the trigger (triggerSubject), newTargets "no", with no count, forEach or copier',
           );
         }
       }
@@ -6435,6 +6502,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseLife':
     case 'gainEnergy':
     case 'gainExperience':
+    case 'increaseSpeed':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
       if (kindOf(e.amount) === 'lifeLostThisTurn') {
@@ -6615,7 +6683,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2c: "If [condition], [effect]. Otherwise, [else]." Both branches see the same
       // targets and X as the rest of the spell or ability.
       checkEffectCondition(e.condition, `${path}.condition`, scope, out);
-      checkEffect(e.effect, `${path}.effect`, scope, out);
+      checkEffect(
+        e.effect,
+        `${path}.effect`,
+        e.condition.kind === 'yourCombatPhase' ? { ...scope, combatPhaseCondition: true } : scope,
+        out,
+      );
       if (e.else !== undefined) checkEffect(e.else, `${path}.else`, scope, out);
       break;
     case 'may':

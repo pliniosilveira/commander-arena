@@ -15,6 +15,7 @@ import { evaluateCondition } from './conditions';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
 import { hasteActivationSources } from './derive-statics';
+import { exertPermanent } from './exert';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
 import { additionalManaOptions } from './mana-triggers';
@@ -78,7 +79,7 @@ export function canTapForMana(state: GameState, obj: GameObject, seat: SeatId): 
   return !isSummoningSickToActivate(state, obj);
 }
 
-export const hasCost = (ability: ManaAbility, kind: 'tap' | 'sacrifice'): boolean =>
+export const hasCost = (ability: ManaAbility, kind: 'tap' | 'sacrifice' | 'exert'): boolean =>
   ability.cost.some((c) => c.kind === kind);
 
 /**
@@ -402,6 +403,10 @@ export function payManaAbilityCosts(
       counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) - count },
     });
     events.push({ kind: 'counterRemoved', object: id, counter, count });
+  }
+  // CR 701.43a (issue 144): "Exert ~" as part of the cost: the permanent does not untap during its controller's next untap step.
+  if (hasCost(ability, 'exert') && next.objects[id]?.zone === 'battlefield') {
+    next = exertPermanent(next, id);
   }
   const life = lifeCostOf(ability);
   if (life > 0) {

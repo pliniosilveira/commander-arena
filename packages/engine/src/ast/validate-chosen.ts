@@ -28,6 +28,8 @@ function referencedChoices(value: unknown, found: Set<Choice>): void {
   if (o.chosenColor === true) found.add('color');
   // D-149: "Add one mana of the chosen color" reads the same choice.
   if (o.kind === 'chosenColor') found.add('color');
+  // Issue 144 (Throne of Eldraine): "monocolored spells of that color" and "Spend only mana of the chosen color" read the same choice.
+  if (o.monocoloredChosen === true || o.onlyChosenColor === true) found.add('color');
   // D-376: "protection from the chosen card type", on a keyword or a player's protection, reads the card type the permanent chose.
   if (o.from === 'chosenCardType') found.add('cardType');
   // D-652: "protection from the chosen color" reads the color the permanent chose.

@@ -123,11 +123,45 @@ const LANDER_TOKEN: TokenDefinition = artifactToken(
   ],
 );
 
+/**
+ * The Wicked Role token (CR 111.10, 303.7; rule letter and text not checked, the rules file was not available to this build): "a black Aura Role enchantment token named Wicked Role with
+ * enchant creature and 'Enchanted creature gets +1/+1' and 'When this token is put into a graveyard, each opponent loses 1 life.'" It is created attached to a creature, so it is only made
+ * by an effect that names the creature (`createToken.attachTo`).
+ */
+const WICKED_ROLE_TOKEN: TokenDefinition = {
+  name: 'Wicked Role',
+  manaCost: null,
+  supertypes: [],
+  types: ['enchantment'],
+  subtypes: ['Aura', 'Role'],
+  colors: ['B'],
+  power: null,
+  toughness: null,
+  loyalty: null,
+  defense: null,
+  oracleText:
+    'Enchant creature\nEnchanted creature gets +1/+1.\nWhen this token is put into a graveyard, each opponent loses 1 life.',
+  abilities: [
+    { kind: 'keyword', keyword: { kind: 'enchant', filter: { types: ['creature'] } } },
+    {
+      kind: 'static',
+      static: { kind: 'modifyPt', subject: { kind: 'attached' }, power: 1, toughness: 1 },
+    },
+    {
+      kind: 'triggered',
+      trigger: { kind: 'leavesBattlefield', what: { kind: 'this' }, to: 'graveyard' },
+      effect: { kind: 'loseLife', player: { kind: 'eachOpponent' }, amount: 1 },
+    },
+  ],
+};
+
 export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
   // Issue 81: the token of Ginger, Queen of Sweets and the cards like it.
   Gingerbrute: GINGERBRUTE_TOKEN,
   // CR 111.10i, 701.53b (issue 81): the token of Incubate.
   Incubator: INCUBATOR_TOKEN,
+  // CR 111.10, 303.7: the token of Witch's Mark and the cards like it.
+  'Wicked Role': WICKED_ROLE_TOKEN,
   // CR 111.10u (Edge of Eternities: Horizon Explorer, Seedship Impact, Larval Scoutlander).
   Lander: LANDER_TOKEN,
   // CR 111.10t (issue 145, Break Down): "{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery."

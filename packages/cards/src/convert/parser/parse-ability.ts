@@ -179,6 +179,9 @@ const MODE_COST_LEAD = /^\p{Lu}[\p{L}'’ -]* — ((?:\{[^{}]+\})+) — (?=\S)/u
  */
 const MODE_NAME_LEAD = /^\p{Lu}[\p{L}'’ -]* — (?=\S)/u;
 
+/** Spree (CR 702.172a): "{2}{R} — ", the cost of a mode with no name before it; group 1 is the cost, in braces. */
+const SPREE_COST_LEAD = /^((?:\{[^{}]+\})+) — (?=\S)/u;
+
 /** The symbols of "{3}{W}" as written, without braces; the lowering checks that the engine runs each in a mode cost. */
 function modeCostSymbols(braced: string): readonly string[] | null {
   const symbols = [...braced.matchAll(/\{([^{}]+)\}/gu)].map((m) => m[1] ?? '');
@@ -216,7 +219,9 @@ function readModes(
     // Tiered (D-433, CR 702.183a, 700.2h): "Cure — {0} — Target permanent ...": the name and the cost of the mode come off the bullet, the cost is kept.
     let from = mode.start;
     if (header.value.costed === true) {
-      const lead = MODE_COST_LEAD.exec(sk.text.slice(mode.start, mode.end));
+      const lead = (header.value.rule === 'modal.spree' ? SPREE_COST_LEAD : MODE_COST_LEAD).exec(
+        sk.text.slice(mode.start, mode.end),
+      );
       const symbols = lead === null ? null : modeCostSymbols(lead[1] ?? '');
       if (lead === null || symbols === null) {
         const failure = {
@@ -426,6 +431,7 @@ function readActivated(sk: AbilitySkeleton, rules: RuleLookup): ParseOutcome {
     body: body.value,
     ...(modal === undefined ? {} : { modal }),
     restrictions,
+    ...(sk.boast === true ? { boast: true as const } : {}),
     span: { start: first.start, end: body.value.span.end },
     rule: 'ability.activated',
   };

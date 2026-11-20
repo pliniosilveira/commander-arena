@@ -25,6 +25,7 @@ import { EACH_SPELL_COST_STATIC_RULES } from './each-spell-cost';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { EMINENCE_STATIC_RULES } from './eminence';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
+import { F144_STATIC_RULES } from './f144';
 import { GALADRIEL_G3_STATIC_RULES } from './galadriel-g3';
 import { GISA_G4_STATIC_RULES } from './gisa-g4';
 import { GRANT_STATIC_RULES } from './grants';
@@ -112,6 +113,8 @@ export const STATIC_RULES = [
   ...VRASKA_STATIC_RULES,
   // Stage P31 (D-140): flash for a kind of spell, what a linked exile gives, and "unless that player is the monarch".
   ...ARTIFACT_STATIC_RULES,
+  // Issue 144 (Conspicuous Snoop): "As long as the top card of your library is a Goblin card, ~ has all activated abilities of that card."
+  ...F144_STATIC_RULES,
   // Stage P32 (D-147): can't attack or block unless, an Aura that makes the creature something else, +X/+X for the commanders.
   ...DINOSAUR_STATIC_RULES,
   // Issue 160 (D-628): "Creatures with power less than ~'s power can't block creatures you control."

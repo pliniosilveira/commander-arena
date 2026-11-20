@@ -1453,6 +1453,13 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'delayedCombatDamageTurn':
       // CR 603.7, 510.3a (D-663): a delayed ability for the turn.
       return 'Whenever a creature you control deals combat damage to a player this turn, copy the exiled card. You may cast the copy without paying its mana cost';
+    case 'delayedCombatDamageToPlayer': {
+      // CR 603.7c (issue 144): a delayed ability for the turn, for damage to the player the spell targeted.
+      const inner = effectText(effect.effect, ability, self, defs);
+      return inner === ''
+        ? UNSAID
+        : `Whenever a creature you control deals combat damage to that player this turn, ${lower(inner)}`;
+    }
     case 'copyCardAndCast':
       // D-654 (CR 707.12, 608.2g): the card the instruction before exiled, copied, and the copy cast for free.
       return 'Copy the exiled card. You may cast the copy without paying its mana cost';

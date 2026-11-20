@@ -336,6 +336,7 @@ export function assemble(
       handSizeMax: s.handSizeMax,
       ...(s.ring === null || s.ring === 0 ? {} : { ring: { tempted: s.ring } }),
       ...(s.citysBlessing ? { citysBlessing: true as const } : {}),
+      ...(s.speed === null ? {} : { speed: s.speed }),
     };
   });
 

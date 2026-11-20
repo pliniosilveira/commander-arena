@@ -104,6 +104,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 245 (Vivid Grove).
   'replacement.enters-tapped-with-counters': asIs,
   'replacement.enters-tapped-unless': asIs,
+  // Issue 144 (Den of the Bugbear).
+  'replacement.enters-tapped-if': asIs,
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
   'replacement.enters-tapped-unless-reveals-or': asIs,
@@ -237,6 +239,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, return ${e} to the battlefield, where X is the number of opponents you have.`,
   ),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
+  // Issue 144 (Arena of Glory).
+  'cost.exert': permanent((e) => `{R}, ${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
@@ -336,6 +340,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.number-of': permanent((e) => `When ~ dies, create ${e}.`),
   'noun.self': spell((e) => `Put a +1/+1 counter on ${e}.`),
   'noun.a-permanent': spell((e) => `Sacrifice ${e}.`),
+  // Issue 144 (Fountainport).
+  'noun.a-token': permanent((e) => `Sacrifice ${e}: Draw a card.`),
   'noun.up-to-one-permanent': spell((e) => `Put two +1/+1 counters on ${e}.`),
   'noun.up-to-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'noun.any-target': spell((e) => `~ deals 1 damage to ${e}.`),
@@ -468,6 +474,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.living-weapon': asIs,
   // Stage P47: "~ can be your commander." is a line of its own.
   'keyword.can-be-commander': asIs,
+  // Issue 144 (CR 702.179a): "Start your engines!" is a line of its own.
+  'keyword.start-your-engines': asIs,
   'cost.loyalty': permanent((e) => `${e}: Draw a card.`),
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),
@@ -515,6 +523,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
+  // Issue 144 (Goblin Negotiation): the number of tokens follows "create a number of ... tokens".
+  'amount.excess-damage-dealt-this-way': spell(
+    (e) =>
+      `~ deals 3 damage to target creature. Create a number of 1/1 red Goblin creature tokens ${e}.`,
+  ),
   'amount.damage-dealt-this-way': spell(
     (e) => `~ deals 3 damage to target creature. You gain life ${e}.`,
   ),
@@ -679,6 +692,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.tiered': spell(
     (e) => `${e}\n• Cure — {0} — Draw a card.\n• Cura — {1} — You gain 1 life.`,
   ),
+  // Issue 144: Spree, whose bullets (plus signs in the Oracle text, bullets once normalized) are the cost of the mode and its effect.
+  'modal.spree': spell((e) => `${e}\n• {1} — Draw a card.\n• {2} — You gain 1 life.`),
+  // Issue 144: a test of the turn before an instruction, and the doubling of the other creatures of the chosen type.
+  'condition.your-combat-phase': spell((e) => `If ${e}, draw a card.`),
+  'static.triggers-additional-time-another': asIs,
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
@@ -1047,6 +1065,13 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 3-c (D-354): the cast of a card of a graveyard is read in the body of a trigger (a second rider sentence is joined to the first).
   'effect.cast-graveyard-card': permanent((e) => `When ~ enters, ${e}.`),
   'effect.cast-per-opponent-graveyard-free': permanent((e) => `When ~ enters, ${e}.`),
+  // Issue 144 (Goblin Dark-Dwellers, Glimpse the Impossible, Conspicuous Snoop).
+  'effect.cast-own-graveyard-card-free': permanent((e) => `When ~ enters, ${e}.`),
+  'amount.for-each-card-put-into-your-graveyard': spell(
+    (e) =>
+      `Exile the top three cards of your library. You may play those cards this turn. At the beginning of the next end step, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token ${e}.`,
+  ),
+  'static.top-card-abilities': asIs,
   // Group 7 (D-356): the additional beginning phase is said in the body of a trigger of the postcombat main phase.
   'effect.extra-beginning-phase': permanent(
     (e) => `At the beginning of each of your postcombat main phases, ${e}.`,

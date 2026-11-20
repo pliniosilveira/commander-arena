@@ -171,6 +171,9 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice another permanent',
     'Sacrifice an artifact',
     'Sacrifice a Treasure',
+    // Fountainport (issue 144): a token of any kind.
+    'Sacrifice a token',
+    'Sacrifice two tokens',
     'Sacrifice two other creatures',
     'Sacrifice X creatures',
     'Sacrifice one or more artifacts',
@@ -219,6 +222,7 @@ export const COST_SACRIFICE = defineRule<IrCost>({
             only: [
               'noun.self',
               'noun.a-permanent',
+              'noun.a-token',
               'noun.x-permanents',
               // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts", at least one of them.
               'noun.one-or-more-permanents',
@@ -453,6 +457,33 @@ export const COST_REMOVE_COUNTERS = defineRule<IrCost>({
         amount: value[1],
         span,
         rule: 'cost.remove-counters',
+      }),
+    )(ctx, pos),
+});
+
+/**
+ * `cost.exert`: "Exert ~" (issue 144, CR 701.43a): the permanent with the ability is exerted as the cost is paid, so it does not untap during its controller's next untap step. Only the
+ * permanent itself: another permanent is not exerted by a cost the engine reads.
+ */
+export const COST_EXERT = defineRule<IrCost>({
+  id: 'cost.exert',
+  family: 'cost',
+  leading: ['exert'],
+  cites: ['CR 701.43a (Exert)', 'CR 118.1 (Costs)'],
+  examples: ['Exert ~'],
+  rejects: [
+    'Exert',
+    'Exert target creature',
+    'Exert a creature you control',
+    'Exert ~ as it attacks',
+  ],
+  parse: (ctx, pos) =>
+    map(
+      spanned(pattern(/exert ~(?![\p{L}\p{N}~ ])/iu)),
+      ({ span }): IrCost => ({
+        kind: 'exert',
+        span,
+        rule: 'cost.exert',
       }),
     )(ctx, pos),
 });
@@ -916,6 +947,7 @@ export const COST_RULES = [
   ...DANITHA_G5_COST_RULES,
   COST_PAY_X_LIFE,
   COST_REMOVE_COUNTERS,
+  COST_EXERT,
   COST_PUT_COUNTERS,
   COST_RETURN_TO_HAND,
   COST_LOYALTY,

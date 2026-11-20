@@ -194,8 +194,9 @@ export const CONDITION_SPELLS_CAST_LAST_TURN = defineRule<IrCondition>({
 /**
  * `condition.attacked-with-creatures`: "you attacked with three or more creatures this turn" (CR 508.1: the player who declares the attackers attacks with them;
  * issue 279, Windbrisk Heights): the engine's `attackedWithCreaturesThisTurn`, the different creatures the controller declared as attackers in any combat of the turn.
- * Not read: "or fewer", "an opponent attacked", a kind of creature ("with three or more Dragons"), "this combat" (a test of one combat, which
- * `condition.attackers-total-power` reads for total power), zero, a variable count, "with a creature" with no count.
+ * "You attacked this turn" (Raid) and "you attacked with a creature this turn" are the same test with a count of one (CR 508.1: declaring one creature as an attacker is
+ * attacking). Not read: "or fewer", "an opponent attacked", a kind of creature ("with three or more Dragons"), "this combat" (a test of one combat, which
+ * `condition.attackers-total-power` reads for total power), zero, a variable count.
  */
 export const CONDITION_ATTACKED_WITH_CREATURES = defineRule<IrCondition>({
   id: 'condition.attacked-with-creatures',
@@ -207,6 +208,9 @@ export const CONDITION_ATTACKED_WITH_CREATURES = defineRule<IrCondition>({
     'you attacked with two or more creatures this turn',
     'you attacked with 3 or more creatures this turn',
     'you have attacked with three or more creatures this turn',
+    'you attacked this turn',
+    'you have attacked this turn',
+    'you attacked with a creature this turn',
   ],
   rejects: [
     'you attacked with three or more creatures',
@@ -218,9 +222,29 @@ export const CONDITION_ATTACKED_WITH_CREATURES = defineRule<IrCondition>({
     'you attacked with three or more Dragons this turn',
     'an opponent attacked with three or more creatures this turn',
     'you attacked with three or more creatures this turn and',
-    'you attacked with a creature this turn',
+    'you attacked',
+    'you attacked this turn and',
+    'you attacked this combat',
+    'you attacked with a creature',
+    'you attacked with a creature this combat',
+    'an opponent attacked this turn',
   ],
   parse: (ctx, pos) => {
+    const bare = pattern(
+      new RegExp(`you(?: have)? attacked(?: with a creature)? this turn${BOUNDARY}`, 'iu'),
+    )(ctx, pos);
+    if (bare.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'condition',
+          test: { kind: 'attackedWithCreaturesThisTurn', atLeast: 1 },
+          span: { start: pos, end: bare.pos },
+          rule: 'condition.attacked-with-creatures',
+        },
+        pos: bare.pos,
+      };
+    }
     const head = pattern(/you(?: have)? attacked with /iu)(ctx, pos);
     if (!head.ok) return head;
     const r = sequence(

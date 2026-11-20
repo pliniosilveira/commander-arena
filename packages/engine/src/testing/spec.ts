@@ -32,6 +32,8 @@ export interface SeatSpec {
   ring: number | null;
   /** The seat has the city's blessing at the start (CR 702.131c, D-264). */
   citysBlessing: boolean;
+  /** The seat's speed at the start (CR 702.179b); null: it has none. */
+  speed: number | null;
   /** Combat damage this seat has taken from a commander, by card name (CR 903.10a). */
   commanderDamage: { name: string; amount: number }[];
 }
@@ -56,6 +58,7 @@ export function emptySeatSpec(): SeatSpec {
     handSizeMax: null,
     ring: null,
     citysBlessing: false,
+    speed: null,
     commanderDamage: [],
   };
 }

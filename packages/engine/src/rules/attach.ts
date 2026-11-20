@@ -246,6 +246,26 @@ export function illegalAuras(state: GameState): GameObject[] {
 }
 
 /**
+ * CR 303.7 (Role), 704.5y: a permanent enchanted by two or more Role Auras controlled by the same player keeps the one with the latest timestamp; the others are put into their owners'
+ * graveyards (rule numbers from the audit row DEV-17 and the card rulings; the rule text was not available to this build, so this is unverified). Roles controlled by different players
+ * on the same permanent all stay.
+ */
+export function duplicateRoles(state: GameState): GameObject[] {
+  const newest = new Map<string, GameObject>();
+  const roles: { obj: GameObject; key: string }[] = [];
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || obj.attachedTo === null) continue;
+    if (!typeViewOf(state, obj).subtypes.includes('Role')) continue;
+    const key = `${obj.attachedTo}/${controllerOf(state, obj)}`;
+    roles.push({ obj, key });
+    const best = newest.get(key);
+    if (best === undefined || obj.timestamp > best.timestamp) newest.set(key, obj);
+  }
+  return roles.filter((r) => newest.get(r.key) !== r.obj).map((r) => r.obj);
+}
+
+/**
  * CR 704.5n, 704.5p: permanents that are attached to something they may not be. An Equipment
  * attached to a permanent that is not a creature or no longer on the battlefield; and a permanent
  * that is neither an Aura nor an Equipment (a creature, or an Equipment that lost its subtype)

@@ -53,10 +53,15 @@ export function sameCombination(a: readonly ManaColor[], b: readonly ManaColor[]
  */
 export function spendRestrictionOf(
   ability: ManaAbility,
-  source?: { readonly chosen?: { readonly creatureType?: string } },
+  source?: { readonly chosen?: { readonly creatureType?: string; readonly color?: string } },
 ): ManaRestriction | null {
   const only = ability.spendOnly;
   if (only === undefined) return null;
+  // Issue 144 (Throne of Eldraine, CR 105.2a, 106.6, 607.2d): "monocolored spells of that color" is the color the source chose as it entered; none chosen, an empty list (no spell matches it).
+  if (only.monocoloredChosen === true) {
+    const color = source?.chosen?.color;
+    return { kind: 'spellMatch', monocolored: color === undefined ? [] : [color] };
+  }
   // CR 106.6, 107.3 (Elementalist's Palette): "Spend this mana only on costs that contain {X}".
   if (only.xCost === true) return { kind: 'xCost' };
   // CR 106.6 (issue 345): "Spend this mana only to activate abilities".
@@ -172,7 +177,8 @@ function plainOutcomes(
       if (p.or !== undefined) {
         return color === undefined || color === p.or ? [[p.or]] : [[p.or], [color]];
       }
-      return color === undefined ? [[]] : [[color]];
+      // Issue 144: "Add four mana of the chosen color": `count` of them.
+      return color === undefined ? [[]] : [Array.from({ length: p.count ?? 1 }, () => color)];
     }
     case 'fixed': {
       // CR 605.1a, 106.1 (Elementalist's Palette): "Add {C} for each charge counter on this artifact": the mana is added as many times as the amount says, read as the ability

@@ -130,8 +130,22 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
     const whileControlling = scope === 'whileYouControlSelf';
     // "for as long as ~ remains on the battlefield" (issue 103, CR 611.2b): "it can't attack or block" with the duration of the effect that took the permanent.
     const whileRemains = scope === 'whileSelfRemains';
-    if (scope !== 'thisTurn' && scope !== 'untilEndOfTurn' && !whileControlling && !whileRemains) {
+    // "attacks this combat if able" (issue 144, CR 506.1, 508.1d): the requirement of one combat, the engine's `thisCombat`.
+    const thisCombat = scope === 'thisCombat';
+    if (
+      scope !== 'thisTurn' &&
+      scope !== 'untilEndOfTurn' &&
+      !whileControlling &&
+      !whileRemains &&
+      !thisCombat
+    ) {
       return failure(clause);
+    }
+    if (thisCombat) {
+      if (given.restriction !== 'attacksEachCombat') return failure(clause);
+      const blocked = missingFeatures(['duration:thisCombat']);
+      if (blocked.length > 0)
+        return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
     }
     if (whileControlling || whileRemains) {
       const blocked = missingFeatures([
@@ -173,10 +187,13 @@ export const RESTRICT: Lowering<IrClause, Effects> = {
           ? 'forAsLongAsYouControlThis'
           : whileRemains
             ? 'forAsLongAsThisRemains'
-            : END,
+            : thisCombat
+              ? 'thisCombat'
+              : END,
       }),
       'objects',
-      TRIGGER_SUBJECT,
+      // "That token attacks this combat if able": the token the sentence before made (the noun is bound by the earlier instruction).
+      thisCombat ? { ...TRIGGER_SUBJECT, token: true } : TRIGGER_SUBJECT,
     );
   },
 };

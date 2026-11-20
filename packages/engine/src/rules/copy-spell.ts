@@ -68,7 +68,9 @@ function expandEach(
   ins: CopySpellInstruction,
 ): StepOutcome {
   const original = copiedSpell(state, ins.spell);
-  if (original === null || ins.forEach === undefined) return done(state);
+  if (original === null || (ins.forEach === undefined && ins.among === undefined)) {
+    return done(state);
+  }
   const copier = ins.controller ?? res.controller;
   const chosen = original.stack?.chosenTargets ?? [];
   const used = new Set(chosen.map((t) => t.specId));
@@ -84,14 +86,23 @@ function expandEach(
     source: res.source,
     ...(res.triggerPlayer === undefined ? {} : { triggerPlayer: res.triggerPlayer }),
   };
-  const candidates = state.battlefield.filter((id) => {
-    const obj = state.objects[id];
-    return (
-      obj !== undefined &&
-      matchesFilter(state, obj, ins.forEach as ObjectFilter, finding) &&
-      legal.every((list) => list.some((t) => t.kind === 'object' && t.id === id))
-    );
-  });
+  const isLegalForEach = (id: ObjectId): boolean =>
+    legal.every((list) => list.some((t) => t.kind === 'object' && t.id === id));
+  const forEach = ins.forEach;
+  // CR 707.10e (Frontline Heroism): the copy targets the one object the effect names, the first that is a legal target for each instance of "target"; none, and no copy.
+  const candidates =
+    forEach === undefined
+      ? (ins.among ?? [])
+          .filter((id) => state.objects[id]?.zone === 'battlefield' && isLegalForEach(id))
+          .slice(0, 1)
+      : state.battlefield.filter((id) => {
+          const obj = state.objects[id];
+          return (
+            obj !== undefined &&
+            matchesFilter(state, obj, forEach as ObjectFilter, finding) &&
+            isLegalForEach(id)
+          );
+        });
   return done(
     state,
     [],

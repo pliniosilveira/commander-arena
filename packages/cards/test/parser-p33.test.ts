@@ -1227,6 +1227,16 @@ describe('mana spent only on some spells, and mana of the chosen color (CR 106.6
     ]);
   });
 
+  test('a count of mana of the chosen color (issue 144)', () => {
+    expect(abilities('{T}: Add four mana of the chosen color.', 'artifact')).toEqual([
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'chosenColor', count: 4 },
+      },
+    ]);
+  });
+
   test.each([
     '{T}: Add {G}. Spend this mana only to cast spells.',
     '{T}: Add {G}. Spend this mana only to cast a creature spell of the chosen type or an Angel spell.',
@@ -1234,7 +1244,8 @@ describe('mana spent only on some spells, and mana of the chosen color (CR 106.6
     '{T}: Add {G}. Spend this mana only to activate abilities of creatures.',
     '{T}: Add {G}. Spend this mana only to cast an Angel spell. Draw a card.',
     '{T}: Add one mana of the chosen type.',
-    '{T}: Add two mana of the chosen color.',
+    // Issue 144: "four mana of the chosen color" is read now (a count of two to four); five is not.
+    '{T}: Add five mana of the chosen color.',
     'Spend this mana only to cast an Angel spell.',
   ])('is not read: %s', (text) => {
     expect(drop(text, 'land')).toMatchObject({

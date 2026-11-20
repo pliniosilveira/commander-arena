@@ -335,6 +335,21 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     }
     case 'playerHasDesignation':
       return designationWords(condition.player, condition.designation, negate);
+    case 'maxSpeed': {
+      // CR 702.179e: "you have max speed", "an opponent has max speed".
+      if (condition.player.kind === 'all') return null;
+      const who =
+        condition.player.kind === 'you'
+          ? 'you'
+          : condition.player.kind === 'eachOpponent'
+            ? 'an opponent'
+            : condition.player.kind === 'eachPlayer'
+              ? 'a player'
+              : playerSubject(condition.player).text;
+      const has = condition.player.kind === 'you' ? 'have' : 'has';
+      const hasNot = condition.player.kind === 'you' ? "don't have" : "doesn't have";
+      return `${who} ${negate ? hasNot : has} max speed`;
+    }
     case 'controlsGreatest':
       return greatestWords(condition, negate);
     case 'ownTurnNumber':
@@ -361,6 +376,11 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
           : `you ${have} cast ${condition.atLeast} or more ${kinds} spells this turn`;
       }
       return `you ${negate ? "haven't" : 'have'} cast ${condition.atLeast} or more spells this turn`;
+    case 'thisAttackedThisTurn':
+      // CR 702.142a (Boast).
+      return negate
+        ? "this creature hasn't attacked this turn"
+        : 'this creature attacked this turn';
     case 'attackedWithCreaturesThisTurn':
       // Issue 279 (CR 508.1): "you attacked with three or more creatures this turn".
       return `you ${negate ? "haven't" : 'have'} attacked with ${condition.atLeast} or more creatures this turn`;
@@ -437,6 +457,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'yourTurn':
       // D-206 (CR 611.3a): "during your turn".
       return negate ? "it's not your turn" : "it's your turn";
+    case 'yourCombatPhase':
+      // Issue 144 (CR 506.1): "if it's your combat phase".
+      return `it's ${negate ? 'not ' : ''}your combat phase`;
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;

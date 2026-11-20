@@ -10,6 +10,7 @@
  * `effect.investigate` is the keyword action that makes a Clue (CR 701.16a), also "once for each ...".
  */
 import {
+  choice,
   fail,
   literal,
   map,
@@ -94,6 +95,19 @@ const AURA_TOKEN_TAIL: Parser<{
   };
 };
 
+/** " attached to up to one target creature you control" (CR 303.7): the one permanent, a target (an "up to one" one too), that a Role token is created attached to. */
+const ROLE_TOKEN_TAIL: Parser<IrNoun> = map(
+  sequence(
+    literal(' attached to '),
+    refuseAt(
+      family<IrNoun>('noun', { only: ['noun.target-permanent'] }),
+      (n) => !n.plural && n.anyNumber !== true,
+      (_n, _ctx, start) => start,
+    ),
+  ),
+  ([, noun]) => noun,
+);
+
 /** "create a Food token or a Treasure token": the first token must be one predefined token of one for the other to be offered with it. */
 const createdTokens: Parser<{
   token: IrToken;
@@ -122,7 +136,20 @@ const createdTokens: Parser<{
       pos: tail.pos,
     };
   }
-  const rider = sequence(literal('. They have '), TOKEN_QUOTED_ABILITY)(ctx, head.pos);
+  // CR 111.10, 303.7 (Witch's Mark): a Role token is an Aura token, created attached to the permanent the text names ("attached to up to one target creature you control").
+  if (token.predefined === 'Wicked Role') {
+    const host = ROLE_TOKEN_TAIL(ctx, head.pos);
+    if (!host.ok) return host;
+    return {
+      ok: true,
+      value: { token, alternative: null, attachTo: host.value },
+      pos: host.pos,
+    };
+  }
+  const rider = sequence(
+    choice(literal('. They have '), literal('. Those tokens have ')),
+    TOKEN_QUOTED_ABILITY,
+  )(ctx, head.pos);
   if (rider.ok) {
     return {
       ok: true,
@@ -170,10 +197,15 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     // Stage P35 (D-176, CR 608.2d): one of two predefined tokens, chosen as the instruction resolves.
     'create a Food token or a Treasure token',
     'create a Clue token or a Treasure token',
+    // CR 111.10, 303.7 (Witch's Mark): a Role token is created attached to a target.
+    'create a Wicked Role token attached to up to one target creature you control',
+    'create a Wicked Role token attached to target creature you control',
     // Issue 89 (CR 303.4f): an Aura token is created attached to a target.
     'create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and "Whenever enchanted creature attacks, you gain 1 life."',
     'create a white Aura enchantment token named Contract attached to target creature. The token has enchant creature',
     'create a number of 1/1 black and green Pest creature tokens equal to the number of +1/+1 counters on ~. They have "When ~ dies, you gain 1 life."',
+    // Issue 144 (Glimpse the Impossible): the same rider with "Those tokens".
+    'create a 0/1 colorless Eldrazi Spawn creature token for each card put into your graveyard this way. Those tokens have "Sacrifice ~: Add {C}."',
   ],
   rejects: [
     'create X Treasure tokens for each time it was kicked',
@@ -193,6 +225,8 @@ export const EFFECT_CREATE_TOKEN = defineRule<Clauses>({
     'create a Food token or a Treasure token or a Clue token',
     'create a Food token or Treasure token',
     'create a Food token for each land or a Treasure token',
+    'create a Wicked Role token',
+    'create a Wicked Role token attached to target creatures you control',
     'create a white Aura enchantment token named Contract',
     'create a white Aura enchantment token named Contract attached to target creature',
     'create a white Aura enchantment token named Contract attached to target creature. The token has enchant land',

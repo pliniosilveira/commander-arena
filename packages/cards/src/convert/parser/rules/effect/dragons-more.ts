@@ -334,6 +334,8 @@ export const EFFECT_MANA_RIDER = defineRule<Clauses>({
     'if that mana is spent on a Dragon creature spell, it gains haste until end of turn',
     'if that mana is spent on a creature spell, it gains haste until end of turn',
     'if that mana is spent on an Elf spell, it gains haste until end of turn',
+    // Arena of Glory (issue 144): "any of that mana", at least one of the mana made.
+    'if any of that mana is spent on a creature spell, it gains haste until end of turn',
   ],
   rejects: [
     'if that mana is spent on a Dragon creature spell, it gains haste',
@@ -343,12 +345,14 @@ export const EFFECT_MANA_RIDER = defineRule<Clauses>({
     'if that mana is spent on Dragon creature spells, it gains haste until end of turn',
     'if that mana is spent on a spell, it gains haste until end of turn',
     'if this mana is spent on a Dragon creature spell, it gains haste until end of turn',
+    'if any of this mana is spent on a creature spell, it gains haste until end of turn',
+    'if any of that mana is spent on a spell, it gains haste until end of turn',
     'if that mana is spent on an ability, it gains haste until end of turn',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.mana-rider';
     const r = sequence(
-      pattern(/if that mana is spent on an? /iu),
+      pattern(/if (?:any of )?that mana is spent on an? /iu),
       spanned(spellPhrase(false)),
       pattern(new RegExp(`, it gains haste until end of turn${BOUNDARY}`, 'iu')),
     )(ctx, pos);

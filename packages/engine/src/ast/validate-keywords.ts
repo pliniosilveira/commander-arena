@@ -26,6 +26,7 @@ const PLAIN: readonly Keyword['kind'][] = [
   'chooseBackground',
   'canBeCommander',
   'ascend',
+  'startYourEngines',
   'soulbond',
   'daybound',
   'nightbound',

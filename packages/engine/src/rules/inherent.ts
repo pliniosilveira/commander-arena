@@ -5,14 +5,17 @@
 import type { InherentAbility } from '../state/types';
 import { MONARCH_TEXT } from './monarch';
 import { RING_TEXT } from './ring';
+import { SPEED_TEXT } from './speed';
 
 /** The full text of an inherent ability, as the rule words it. */
 export const INHERENT_TEXT: Readonly<Record<InherentAbility, string>> = {
   ...MONARCH_TEXT,
   ...RING_TEXT,
+  ...SPEED_TEXT,
 };
 
-/** What an inherent ability is shown as: "The monarch" or "The Ring". */
+/** What an inherent ability is shown as: "The monarch", "The Ring" or "Speed". */
 export function inherentName(ability: InherentAbility): string {
+  if (ability === 'speedUp') return 'Speed';
   return ability === 'monarchDraw' || ability === 'monarchSteal' ? 'The monarch' : 'The Ring';
 }

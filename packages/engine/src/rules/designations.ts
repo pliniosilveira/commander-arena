@@ -18,3 +18,16 @@ export function designationHolders(state: GameState, designation: Designation): 
   if (designation === 'citysBlessing') return citysBlessingHolders(state);
   return state.monarch === null ? [] : [state.monarch];
 }
+
+/** CR 702.179e: a player has max speed if their speed is 4. Speed does not go past it (the repository's CR text states no cap, so this is unverified). */
+export const MAX_SPEED = 4;
+
+/** CR 702.179b, 702.179f: the speed of a player, 0 when they have none. Kept here with the other reads that `derive` makes (a condition of a static ability reads it). */
+export function speedOf(state: GameState, seat: SeatId): number {
+  return state.seats[seat]?.speed ?? 0;
+}
+
+/** CR 702.179e: whether the player has max speed. */
+export function hasMaxSpeed(state: GameState, seat: SeatId): boolean {
+  return speedOf(state, seat) >= MAX_SPEED;
+}

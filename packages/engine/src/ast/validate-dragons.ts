@@ -38,12 +38,13 @@ export function checkDragonsEffect(
       // D-187: "the top two cards of target opponent's library": one player, a target (CR 115.1).
       if (e.from !== undefined) {
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
-        // Issue 279: or "each player's library" (`eachPlayer`).
-        if (kindOf(e.from) !== 'target' && kindOf(e.from) !== 'eachPlayer') {
+        // Issue 279: or "each player's library" (`eachPlayer`). Issue 144: or "that player's library", the player of the event (`triggerPlayer`, valid where it is).
+        const owner = kindOf(e.from);
+        if (owner !== 'target' && owner !== 'eachPlayer' && owner !== 'triggerPlayer') {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target or each player's ('eachPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer') or the player of the event ('triggerPlayer')",
           );
         }
       }
@@ -85,6 +86,19 @@ export function checkDragonsEffect(
       // Lorehold group 1: "you may cast it this turn".
       if (e.castOnly !== undefined && e.castOnly !== true) {
         issue(out, `${path}.castOnly`, 'castOnly must be true when present');
+      }
+      // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" is about casting a spell.
+      if (e.anyManaColor !== undefined) {
+        if (e.anyManaColor !== true) {
+          issue(out, `${path}.anyManaColor`, 'anyManaColor must be true when present');
+        }
+        if (e.castOnly !== true) {
+          issue(
+            out,
+            `${path}.anyManaColor`,
+            'mana as though of any color is spent on a cast: needs castOnly',
+          );
+        }
       }
       return true;
     case 'mayCastEachType':
@@ -344,11 +358,15 @@ export function checkDragonsEffect(
       return true;
     case 'extraCombat':
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
-      if (scope.attackTrigger !== true && scope.mainPhaseTrigger !== true) {
+      if (
+        scope.attackTrigger !== true &&
+        scope.mainPhaseTrigger !== true &&
+        scope.combatPhaseCondition !== true
+      ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack or one that checks that it is your main phase',
+          'an additional combat phase is added by a triggered ability of an attack, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
         );
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the

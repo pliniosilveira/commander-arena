@@ -378,6 +378,15 @@ export function createExpectations(
         );
       }
     },
+    speed(seat, speed) {
+      const actual = getState().seats[seat]?.speed ?? null;
+      if (actual !== speed) {
+        fail(
+          `Expected seat ${seat} to have ${speed === null ? 'no speed' : `speed ${speed}`} but it has ${actual === null ? 'none' : actual}`,
+          getState(),
+        );
+      }
+    },
     ringLevel(seat, tempted) {
       const state = getState();
       const actual = state.seats[seat]?.ring?.tempted ?? 0;

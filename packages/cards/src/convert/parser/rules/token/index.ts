@@ -82,6 +82,7 @@ const PREDEFINED = [
   'Map',
   'Gingerbrute',
   'Lander',
+  'Wicked Role',
   'Junk',
   'Blood',
 ] as const;
@@ -146,6 +147,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Gingerbrute token',
     // CR 111.10u (Horizon Explorer, Seedship Impact).
     'a Lander token',
+    // CR 111.10, 303.7 (Witch's Mark): a Role token.
+    'a Wicked Role token',
     // CR 111.10t (Break Down).
     'a Junk token',
     'X Treasure tokens',
@@ -162,6 +165,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'Y Treasure tokens',
     'a tapped Treasure',
     'a tapped tapped Treasure token',
+    'a Wicked token',
+    'a Role token',
   ],
   parse: node<Bare, IrToken>('token.predefined', predefinedToken(COUNT), (b) => b),
 });
@@ -344,6 +349,13 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           ),
           null,
         ),
+        // CR 508.4, 110.5b: "that's tapped and attacking", said of one token.
+        optional(
+          quiet(
+            map(pattern(/ that['’]s tapped and attacking(?![\p{L}\p{N}])/iu), () => true as const),
+          ),
+          null,
+        ),
       ),
       ([amount, , , pt, , , , , plural]) =>
         ((amount.kind !== 'x' && amount.kind !== 'half' && !pluralOnly) || plural) &&
@@ -362,9 +374,11 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       named,
       { keywords, abilities },
       attackingThatOpponent,
+      tappedAndAttacking,
     ]): Bare => ({
       kind: 'token',
       ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
+      ...(tappedAndAttacking === null ? {} : { tappedAndAttacking }),
       ...(tapped === null ? {} : { tapped: true as const }),
       ...(tapped === 'attacking' ? { attacking: true as const } : {}),
       ...(named === null ? {} : { named }),
@@ -435,8 +449,19 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'a 2/2 blue Shapeshifter creature token with changeling',
     'a 1/1 white Soldier creature token with changeling and flying',
     'a 1/1 white Soldier creature token with flying, changeling, and "{T}: You gain 1 life."',
+    // CR 508.4, 110.5b: a token that enters tapped and attacking (after an attack batch trigger the lowering names the player).
+    "a 1/1 red Goblin creature token that's tapped and attacking",
+    'a 1/1 red Goblin creature token that’s tapped and attacking',
+    "a 1/1 white Soldier creature token with flying that's tapped and attacking",
   ],
   rejects: [
+    "a 1/1 red Goblin creature token that's tapped and attacking and",
+    "a 1/1 red Goblin creature token that's tapped",
+    "a 1/1 red Goblin creature token that's attacking",
+    "a 1/1 red Goblin creature token that's untapped and attacking",
+    "a 1/1 red Goblin creature token that's tapped and attacking a player",
+    "a tapped 1/1 red Goblin creature token that's tapped and attacking that opponent",
+    "a 1/1 red Goblin creature token that's attacking and tapped",
     'a 1/1 red and green Dragon creature token with devour',
     'a 1/1 red and green Dragon creature token with devour 0',
     'a 1/1 red and green Dragon creature token with devour X',
@@ -751,6 +776,7 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
     'a number of Food tokens equal to that creature\u2019s power',
     'a number of Gold tokens equal to its power',
     'a number of 1/1 white Soldier creature tokens equal to its power',
+    'a number of 1/1 red Goblin creature tokens equal to the amount of excess damage dealt to that creature this way',
   ],
   rejects: [
     'a number of Treasure token equal to its power',
@@ -770,7 +796,10 @@ export const TOKEN_NUMBER_OF = defineRule<IrToken>({
           (token) => token.abilities === undefined,
         ),
         literal(' '),
-        family<IrAmount>('amount', { only: EQUAL_AMOUNTS }),
+        // Issue 144 (Goblin Negotiation, CR 120.10): "a number of 1/1 red Goblin creature tokens equal to the amount of excess damage dealt to that creature this way".
+        family<IrAmount>('amount', {
+          only: [...EQUAL_AMOUNTS, 'amount.excess-damage-dealt-this-way'],
+        }),
       ),
       ([token, , count]): Bare => ({ ...token, count }),
     ),

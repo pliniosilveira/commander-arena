@@ -89,6 +89,7 @@ describe('the dimensions', () => {
       'forAsLongAsThisRemains',
       // D-517: "doesn't untap during its controller's next untap step".
       'untilNextUntapStep',
+      'thisCombat',
     ]);
     // Only what the interpreter runs: replacement and `conditional` conditions, and "was kicked".
     expect(SUPPORTED_FEATURES.conditionKinds).toEqual([
@@ -118,6 +119,7 @@ describe('the dimensions', () => {
       'amountIs',
       'amountIsPrime',
       'playerHasDesignation',
+      'maxSpeed',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',
       'lifeTotal',
@@ -136,6 +138,7 @@ describe('the dimensions', () => {
       'controlsGreatest',
       'duringStep',
       'yourMainPhase',
+      'yourCombatPhase',
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
       'cardLeftYourGraveyard',
@@ -173,6 +176,7 @@ describe('the dimensions', () => {
       'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
+      'thisAttackedThisTurn',
       'dieResult',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',
@@ -231,6 +235,8 @@ describe('the dimensions', () => {
       'setPt',
       'cantBeBlockedBy',
       'takeFromLinkedExile',
+      // Issue 144: "As long as the top card of your library is a Goblin card, this creature has all activated abilities of that card."
+      'grantActivatedAbilitiesOfTopCard',
       'castAsThoughFlash',
       // Death Toll deck, group C: "As long as ~ isn't on the battlefield, it's a 1/1 Insect creature in addition to its other types."
       'creatureOffBattlefield',
