@@ -1859,8 +1859,7 @@
 
 /* The same picture on a card in a hand, a zone viewer or a decision (CardFace.tsx, the hand
    variant). It lies over the drawn frame; the marks and the corner number stay on it, and the
-   cost stays where the printed one does not serve: changed by a tax or a reduction, and in the
-   fanned hand, where the next card lies over the printed cost. */
+   cost is drawn only when a tax or a reduction changed it, on the right under the printed one. */
 .board-card-hand {
   position: relative;
 }
@@ -1882,11 +1881,10 @@
   display: none;
 }
 
-.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head:has(.board-cost-now),
-.board-hand-card .board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head {
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head:has(.board-cost-now) {
   position: absolute;
   top: 17%;
-  left: 3px;
+  right: 3px;
   z-index: 4;
   display: flex;
   width: auto;

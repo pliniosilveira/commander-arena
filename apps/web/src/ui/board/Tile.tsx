@@ -146,6 +146,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
       className={classes}
       style={style}
       data-object-id={o.id}
+      data-count={count > 1 ? count : undefined}
       aria-label={ariaLabel(o, count, role)}
       aria-pressed={selected}
       tabIndex={clickable || onActivate !== undefined ? 0 : -1}
