@@ -1960,6 +1960,26 @@
   border-radius: 8px;
 }
 
+/* In the hand the card is whole: the picture fills the card with its printed border, the printed
+   power and toughness stand for the corner number, and nothing under the type line is covered. */
+.board-hand-card .board-card-image.board-card-top {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin-top: 0;
+}
+
+.board-hand-card .board-card-hand:has(> .board-card-top.is-loaded) .board-stat,
+.board-hand-card .board-card-hand:has(> .board-card-top.is-loaded) > .board-card-under {
+  display: none;
+}
+
+.board-hand-card
+  .board-card-hand:has(> .board-card-top.is-loaded)
+  > .board-card-head:has(.board-cost-now) {
+  top: 12%;
+}
+
 .board-card-under {
   position: absolute;
   right: 0;

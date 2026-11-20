@@ -5,15 +5,14 @@ import { useDraggable } from '../dnd/DragProvider';
 import { useInteraction } from '../interaction';
 import { useTextScale } from '../panels/text-size';
 import { CardFace } from './CardFace';
-import { cardTopHeight } from './card-top';
 import { useHoverPreview } from './hover';
 import { handScale, handStep } from './layout';
 import { useMeasure } from './measure';
 
-// D-240 (issue 137): a quarter wider than the 108 of before. A card in the hand is the top of the
-// printed card, as on the battlefield (`card-top.ts`); the preview panel shows the whole card.
+// D-240 (issue 137): a quarter bigger than the 108 by 150 of before. A card in the hand is the whole
+// printed card (488:680): it is big enough to read, so it is not cut to its top as a tile is.
 const BASE_W = 135;
-const BASE_H = cardTopHeight(BASE_W);
+const BASE_H = 188;
 /**
  * The height of the hand area when the window is short: what shows of a card at rest, the lower part
  * of a card sits below the board edge, as in a held hand; hover lifts it. The area is taller in a
