@@ -953,6 +953,7 @@ describe('unmatched abilities', () => {
       'token.aura',
       'token.copies-x',
       'token.copy',
+      'token.copy-that-creature',
       'noun.any-target',
       'noun.player-or-planeswalker',
       'noun.each-permanent-of-player',

@@ -777,6 +777,44 @@ export const TOKEN_COPY = defineRule<IrToken>({
   ),
 });
 
+/**
+ * `token.copy-that-creature`: "a token that's a copy of that creature" (issue 145, Bramble Sovereign; CR 707.2, 111.4): the copy of the permanent the event of the trigger is about,
+ * which the binding pass resolves as it does "it" (`token.copy`). One token, and nothing after the creature: "..., except it has haste" and the other exceptions belong to
+ * the rules that read them (`token.copy-except` and the effects of the cards that name the creature), which a copy of "that creature" must leave alone. Not read: several tokens,
+ * "that creature's controller", an exception, another permanent.
+ */
+export const TOKEN_COPY_THAT_CREATURE = defineRule<IrToken>({
+  id: 'token.copy-that-creature',
+  family: 'token',
+  leading: [],
+  cites: ['CR 707.2 (Copying Objects)', 'CR 111.4 (Tokens)'],
+  examples: ["a token that's a copy of that creature", 'a token that’s a copy of that creature'],
+  rejects: [
+    "a token that's a copy of that creature, except it has haste",
+    "a token that's a copy of that creature's controller",
+    'two tokens that are copies of that creature',
+    "a token that's a copy of that permanent",
+    "a token that's a copy of that creatures",
+    "one token that's a copy of that creature",
+    "a token that's a copy of that creature and",
+  ],
+  parse: node<Bare, IrToken>(
+    'token.copy-that-creature',
+    map(
+      sequence(
+        map(spanned(article), ({ value, span }): IrAmount => ({ kind: 'number', value, span })),
+        pattern(/ token that['’]s a copy of /i),
+        satisfy(family<IrNoun>('noun', { only: ['noun.that-object'] }), (noun) =>
+          /^that creature$/iu.test(noun.filter.raw.trim()),
+        ),
+        pattern(/(?!,? except)(?! and)/iu),
+      ),
+      ([count, , copyOf]): Bare => ({ kind: 'token', copyOf, count }),
+    ),
+    (b) => b,
+  ),
+});
+
 export const TOKEN_RULES = [
   TOKEN_PREDEFINED,
   TOKEN_CUSTOM,
@@ -793,4 +831,5 @@ export const TOKEN_RULES = [
   // Prismari deck, group 1 (D-638): "X tokens that are copies of ...", which `token.copy` does not read (a number of two or more).
   TOKEN_COPIES_X,
   TOKEN_COPY,
+  TOKEN_COPY_THAT_CREATURE,
 ];

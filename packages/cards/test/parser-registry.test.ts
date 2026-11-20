@@ -172,6 +172,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.crew': asIs,
   'keyword.station': asIs,
   'token.copy': spell((e) => `Create ${e}.`),
+  'token.copy-that-creature': permanent((e) => `Whenever another creature enters, create ${e}.`),
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.

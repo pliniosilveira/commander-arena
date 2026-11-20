@@ -1970,13 +1970,13 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   const who = arg(clause, 'player');
   let by: { controller?: PlayerSelector } = {};
   if (who !== undefined) {
-    if (who.kind !== 'noun' || token.copyOf !== undefined) return failure(clause);
+    if (who.kind !== 'noun') return failure(clause);
     const selector = playerSelectorOf(who, ctx);
     if (!selector.ok) return selector;
     // "You create ..." is the controller of the ability, which is who creates a token unless the node says otherwise.
     if (selector.value.kind !== 'you') by = { controller: selector.value };
   }
-  if (token.copyOf !== undefined) return lowerCopyToken(token, token.copyOf, clause, ctx);
+  if (token.copyOf !== undefined) return lowerCopyToken(token, token.copyOf, clause, ctx, by);
   if (token.predefined !== undefined) {
     const name = token.predefined;
     const blocked = missingFeatures([`token:${name}`]);
