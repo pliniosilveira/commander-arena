@@ -292,8 +292,15 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                   out.thisWay.discardedMost ?? 0,
                 ),
                 damageDealt: (res.thisWay?.damageDealt ?? 0) + (out.thisWay.damageDealt ?? 0),
-                excessDamageDealt:
-                  (res.thisWay?.excessDamageDealt ?? 0) + (out.thisWay.excessDamageDealt ?? 0),
+                // Left out until there is some, so the state of every game that never reads it is what it was.
+                ...(res.thisWay?.excessDamageDealt === undefined &&
+                out.thisWay.excessDamageDealt === undefined
+                  ? {}
+                  : {
+                      excessDamageDealt:
+                        (res.thisWay?.excessDamageDealt ?? 0) +
+                        (out.thisWay.excessDamageDealt ?? 0),
+                    }),
                 countersRemoved:
                   (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
                 ...mergePowerBy(res.thisWay?.exiledPowerBy, out.thisWay.exiledPowerBy),
