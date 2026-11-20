@@ -160,6 +160,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'optionalSacrifice',
     // D-583: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
     'sacrificeOneOrMore',
+    // "Sacrifice a Swamp and a Forest: ..." (`Cost` `sacrifice` with `alongside`, CR 701.21a, 118.3): a different permanent for each part.
+    'sacrificeEach',
     // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
     'reflexiveModal',
     'reflexivePaid',
@@ -1511,6 +1513,8 @@ export const ABILITY_FEATURES = [
   'optionalSacrifice',
   /** "{T}, Sacrifice one or more artifacts: ..." (D-583, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
   'sacrificeOneOrMore',
+  /** "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3, 602.2b): a `sacrifice` cost with `alongside` in an activated ability, one different permanent for each part, chosen as the cost is paid. */
+  'sacrificeEach',
   /** "When you do, choose one —" (CR 603.12, 700.2b, 603.3c, D-511): a `reflexive` effect with `modes` and `chooseModes`. */
   'reflexiveModal',
   /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-511): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
@@ -2275,6 +2279,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   sacrificeX: true,
   optionalSacrifice: true,
   sacrificeOneOrMore: true,
+  sacrificeEach: true,
   reflexiveModal: true,
   reflexivePaid: true,
   reflexiveMoved: true,

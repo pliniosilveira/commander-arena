@@ -117,6 +117,12 @@ export function sacrificeWhat(
   return /^[aeiou]/i.test(words) ? `an ${words}` : `a ${words}`;
 }
 
+/** "a Swamp and a Forest": the parts of a sacrifice of several different permanents (CR 701.21a), in the order of the text. */
+export function sacrificeParts(cost: Extract<Cost, { kind: 'sacrifice' }>): string {
+  const parts = [cost.what, ...(cost.alongside ?? [])];
+  return parts.map((part) => sacrificeWhat(part)).join(' and ');
+}
+
 const countText = (n: number, one: string, many: string): string =>
   n === 1 ? `a ${one}` : `${n} ${many}`;
 
@@ -154,6 +160,8 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       if (cost.anyNumber === true && !('kind' in cost.what)) {
         return `Sacrifice one or more ${plural(nounsOf(cost.what))} (optional)`;
       }
+      // CR 701.21a: "Sacrifice a Swamp and a Forest", a different permanent for each part.
+      if (cost.alongside !== undefined) return `Sacrifice ${sacrificeParts(cost)}`;
       return `Sacrifice ${sacrificeWhat(cost.what, cost.count, cost.countX === true)}`;
     case 'tapPermanents':
       // D-133: "Tap two untapped artifacts you control".

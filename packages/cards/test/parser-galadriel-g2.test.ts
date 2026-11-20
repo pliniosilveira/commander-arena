@@ -151,10 +151,10 @@ describe('"Return two lands you control to their owner\'s hand: Return this card
     ]);
   });
 
-  test('tapping or sacrificing in the cost, and returning the card itself, are not paid from a graveyard', () => {
+  test('tapping or sacrificing the card itself in the cost, and returning it, are not paid from a graveyard', () => {
     for (const line of [
       '{1}{G}, {T}: Return this card from your graveyard to your hand.',
-      '{1}{G}, Sacrifice a land: Return this card from your graveyard to your hand.',
+      '{1}{G}, Sacrifice ~: Return this card from your graveyard to your hand.',
       "{1}{G}, Return ~ to its owner's hand: Return this card from your graveyard to your hand.",
       '{1}{G}, Discard a card: Return this card from your graveyard to your hand.',
     ]) {

@@ -32,7 +32,13 @@ import { pushAbilityObject } from './ability-object';
 import { adjustedAbility, reducedForTargets } from './activate-adjust';
 import { answerBlightCost, payBlight } from './activate-blight';
 import { answerBounceCommander, answerBounceCost, payBounce } from './activate-bounce';
-import { breakDown, type CostBreakdown, costRefusal, payImmediateCosts } from './activate-costs';
+import {
+  breakDown,
+  type CostBreakdown,
+  costRefusal,
+  payImmediateCosts,
+  sacrificeGroups,
+} from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
@@ -47,6 +53,7 @@ import { legalModeSets, modalOfAbility, modesDecision, specModes } from './modes
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
+import { distinctAssignments } from './sacrifice-groups';
 import { setPending } from './set-pending';
 import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
@@ -430,6 +437,26 @@ function paySacrifice(state: GameState, events: GameEvent[]): Result {
       [...events, ...done.events],
       payDiscard,
     );
+  }
+  // CR 701.21a, 118.3: "Sacrifice a Swamp and a Forest": a different permanent for each part.
+  if (costs.sacrificeAlongside.length > 0) {
+    const groups = sacrificeGroups(state, seat, activation.source, costs);
+    const sets = distinctAssignments(groups);
+    const [only] = sets;
+    if (only === undefined)
+      return fail('You do not control permanents to sacrifice for every part');
+    if (sets.length === 1) return sacrificeChosen(state, events, only, true);
+    return pause({ ...state, casting: { ...casting, stage: 'sacrifice' } }, events, {
+      kind: 'choosePermanent',
+      seat,
+      source: casting.object,
+      purpose: 'sacrifice',
+      min: groups.length,
+      max: groups.length,
+      legal: [...new Set(groups.flat())],
+      forCost: true,
+      groups,
+    });
   }
   const legal = sacrificeCandidates(state, seat, activation.source, costs.sacrifice);
   if (legal.length < costs.sacrificeCount) {

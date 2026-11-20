@@ -1469,7 +1469,8 @@ function checkActivationCosts(
         typeof c.what === 'object' &&
         c.what !== null &&
         'kind' in c.what) ||
-      kind === 'sacrifice' ||
+      // CR 701.21a: sacrificing permanents you control (a filter) is paid wherever the ability works ("Sacrifice a Swamp and a Forest: Return this card from your graveyard to your hand"); sacrificing the source itself needs it on the battlefield.
+      (c?.kind === 'sacrifice' && 'kind' in c.what) ||
       kind === 'discard' ||
       kind === 'tapCreatures';
     // D-491: "you may sacrifice one or more creatures" is an additional cost of a spell, chosen as it is cast. D-583 (CR 602.2b): an activated ability may sacrifice "one or more"
