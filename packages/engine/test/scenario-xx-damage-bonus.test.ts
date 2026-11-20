@@ -11,7 +11,7 @@ import { scenario } from '../src/testing/index';
 const LORD = 'SYNTHETIC Red Sovereign'; // red creature: red sources +2
 const BANNER = 'SYNTHETIC Forge Banner'; // enchantment: red or artifact sources +1
 const RAIDER = 'SYNTHETIC Red Raider'; // red 2/2
-const GOLEM = 'SYNTHETIC Artifact Golem'; // colorless artifact creature 2/2
+const GOLEM = 'SYNTHETIC Bonus Artifact Golem'; // colorless artifact creature 2/2
 const ZAP = 'SYNTHETIC Green Zap'; // green instant, 2 damage to any target
 const BOLT = 'Lightning Bolt'; // red instant, 3 damage to any target
 const V55 = 'SYNTHETIC Vanilla 5/5';

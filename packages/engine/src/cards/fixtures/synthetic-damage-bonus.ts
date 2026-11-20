@@ -63,7 +63,7 @@ export const SYNTHETIC_DAMAGE_BONUS_LIST: readonly CardDefinition[] = [
     oracleText: '',
   }),
   singleFace({
-    name: 'SYNTHETIC Artifact Golem',
+    name: 'SYNTHETIC Bonus Artifact Golem',
     manaCost: ['3'],
     types: ['artifact', 'creature'],
     subtypes: ['Golem'],
