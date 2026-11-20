@@ -2,7 +2,7 @@
  * Effect rules of the Quick Draw deck (issue 121) for the cards that cast copies of cards they exiled: "Exile an instant or sorcery card at random from your graveyard." and "Then copy each
  * card exiled with ~. You may cast any number of the copies without paying their mana costs." (Arcane Bombardment, CR 701.13, 707.12, 608.2g, 118.9, 607.2a).
  */
-import { choice, literal, map, pattern, sequence } from '../../combinators';
+import { choice, fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrNoun, IrTypeList } from '../../ir/types';
 import { defineRule, spanned } from '../registry';
 import { flag, number } from './dragons';
@@ -43,6 +43,8 @@ export const EFFECT_EXILE_AT_RANDOM = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.exile-at-random';
+    if (!/^exile an? [a-z ]+ card at random /iu.test(ctx.text.slice(pos, pos + 60)))
+      return fail(ctx, pos);
     const r = spanned(
       sequence(
         literal('exile '),
@@ -210,6 +212,8 @@ export const EFFECT_PAY_ANY_NUMBER_OF_TIMES = defineRule<Clauses>({
   ],
   parse: (ctx, pos) => {
     const id = 'effect.pay-any-number-of-times';
+    if (!/^pay (?:\{[^}]+\})+ any number of times/iu.test(ctx.text.slice(pos, pos + 40)))
+      return fail(ctx, pos);
     const r = spanned(
       sequence(
         literal('pay '),

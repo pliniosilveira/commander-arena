@@ -1,4 +1,4 @@
-import { choice, literal, map, optional, pattern, sequence } from '../../combinators';
+import { choice, fail, literal, map, optional, pattern, sequence } from '../../combinators';
 import type { IrAmount, IrArg, IrKeywordArg, IrTypeList } from '../../ir/types';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
@@ -67,6 +67,9 @@ export const EFFECT_NEXT_SPELL_MODIFIER = defineRule<Clauses>({
     'the next instant spell and the next sorcery spell you cast this turn has cascade',
   ],
   parse: (ctx, pos) => {
+    // Nothing is read, and no position is reached, unless the words are those of this rule.
+    if (!/^the next (?:instant|sorcery)/iu.test(ctx.text.slice(pos, pos + 20)))
+      return fail(ctx, pos);
     const both = spanned(
       sequence(
         literal('the next instant spell and the next sorcery spell you cast this turn each have '),

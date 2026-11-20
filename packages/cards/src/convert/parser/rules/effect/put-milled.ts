@@ -1,4 +1,4 @@
-import { choice, literal, map, pattern, sequence } from '../../combinators';
+import { choice, fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrTypeList } from '../../ir/types';
 import { defineRule, spanned } from '../registry';
 import { type Clauses, makeClause } from './operands';
@@ -44,6 +44,8 @@ export const EFFECT_PUT_MILLED_INTO_HAND = defineRule<Clauses>({
     'you may put an instant or sorcery card milled this way onto the battlefield',
   ],
   parse: (ctx, pos) => {
+    if (!/^you may put an? [a-z ]+ card milled this way/iu.test(ctx.text.slice(pos, pos + 70)))
+      return fail(ctx, pos);
     const r = spanned(
       sequence(
         literal('you may put '),

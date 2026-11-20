@@ -78,6 +78,7 @@ export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
     name: 'SYNTHETIC Storm Granter',
     manaCost: ['R'],
     types: ['creature'],
+    supertypes: ['legendary'],
     subtypes: ['Human'],
     colors: ['R'],
     colorIdentity: ['R'],
@@ -101,6 +102,7 @@ export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
     name: 'SYNTHETIC Cascade Granter',
     manaCost: ['R'],
     types: ['creature'],
+    supertypes: ['legendary'],
     subtypes: ['Human'],
     colors: ['R'],
     colorIdentity: ['R'],
@@ -159,20 +161,20 @@ export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
     ],
   }),
   // "When this creature enters, you may pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters on this creature, then exile up to that
-  // many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. You may cast any number of the copies without paying their mana costs." (a 2/2 haste)
+  // many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. You may cast any number of the copies without paying their mana costs." (a 2/2)
   singleFace({
     name: 'SYNTHETIC Paying Adversary',
     manaCost: ['1', 'R'],
     types: ['creature'],
+    supertypes: ['legendary'],
     subtypes: ['Vampire'],
     colors: ['R'],
     colorIdentity: ['R'],
     power: 2,
     toughness: 2,
     oracleText:
-      'Haste. When this creature enters, you may pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters on this creature, then exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. You may cast any number of the copies without paying their mana costs.',
+      'When this creature enters, you may pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters on this creature, then exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. You may cast any number of the copies without paying their mana costs.',
     abilities: [
-      { kind: 'keyword', keyword: { kind: 'haste' } },
       {
         kind: 'triggered',
         trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
