@@ -347,6 +347,8 @@ export interface IrFilter {
    * `'yours'` is "your commander", a commander its owner designated and that owner is the player who controls the ability.
    */
   readonly commander?: true | 'yours';
+  /** "~" as one member of a disjunction (issue 101, "attack with ~ and/or your commander", CR 508.1): the object is the source of the ability itself. */
+  readonly isSelf?: true;
   /**
    * "whose controller was dealt combat damage by ~ this turn" (stage P31, CR 510.2): the object's controller was dealt combat damage
    * this turn by the source of the ability.

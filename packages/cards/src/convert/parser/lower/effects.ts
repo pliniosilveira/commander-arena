@@ -1978,6 +1978,34 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       rule: clause.rule,
     };
   }
+  // "For each opponent, create a 1/1 ... token that's tapped and attacking that player" (Mardu Surge deck, CR 508.4, 111.2): the same token, made tapped for each opponent and put in the
+  // combat attacking that opponent. A custom creature token only, with no controller of its own.
+  const perOpponentTapped = arg(clause, 'perOpponentTappedAttacking');
+  if (perOpponentTapped?.kind === 'flag' && perOpponentTapped.value) {
+    const blockedEach = missingFeatures(['selector:tokensPerOpponent', 'token:tapped']);
+    if (blockedEach.length > 0) return failure(clause, blockedEach);
+    const { perOpponentTappedAttacking: _flag, ...args } = clause.args;
+    const { tappedAndAttacking: _attacking, ...plain } = token;
+    const inner = lowerCreateToken(
+      { ...clause, args: { ...args, token: { ...plain, tapped: true } } },
+      ctx,
+    );
+    if (!inner.ok) return inner;
+    const [made, ...rest] = inner.value;
+    if (
+      made?.kind !== 'createToken' ||
+      rest.length > 0 ||
+      made.token.kind !== 'custom' ||
+      made.controller !== undefined
+    ) {
+      return failure(clause);
+    }
+    return {
+      ok: true,
+      value: [{ ...made, forEachOpponent: { attacking: true } }],
+      rule: clause.rule,
+    };
+  }
   // Issue 144 (CR 508.4, 110.5b): "create a 1/1 red Goblin creature token that's tapped and attacking": the token enters tapped, then the engine's `enterAttacking` puts it in the combat
   // against whom the source attacks, never declared as an attacker. Only where the source is the attacker ("Whenever this creature attacks"): anywhere else the controller chooses whom
   // it attacks (CR 508.4), which the engine does not ask.

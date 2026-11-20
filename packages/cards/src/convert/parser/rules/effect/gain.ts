@@ -240,7 +240,7 @@ export const EFFECT_GAIN_KEYWORD = defineRule<Clauses>({
 export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   id: 'effect.gain-keyword-all',
   family: 'effect',
-  leading: [...PLURAL_STARTS, 'all'],
+  leading: [...PLURAL_STARTS, 'all', 'tokens'],
   cites: [
     'CR 611.2a (Continuous Effects)',
     'CR 611.2c (Continuous Effects)',
@@ -249,6 +249,9 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   ],
   examples: [
     'All Zombies gain menace until end of turn',
+    // Issue 101 (Ainok Strike Leader): the tokens of the controller.
+    'creature tokens you control gain indestructible until end of turn',
+    'tokens you control gain haste until end of turn',
     'All creatures get +1/+1 and gain trample until end of turn',
     'All Time Lords gain flying until end of turn',
     'Dragons you control gain flying until end of turn',
@@ -274,7 +277,12 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   ],
   parse: gainParser(
     'effect.gain-keyword-all',
-    ['noun.plain-permanents', 'noun.all-permanents', 'noun.creature-land-pair'],
+    [
+      'noun.plain-permanents',
+      'noun.all-permanents',
+      'noun.creature-land-pair',
+      'noun.token-permanents',
+    ],
     true,
   ),
 });

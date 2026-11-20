@@ -4023,9 +4023,9 @@ export type Effect =
        * "For each opponent, create two 3/3 ... tokens that attack that opponent this turn if able" (CR 111.2, 508.1d, 101.4, D-652, Furygale Flocking): the controller of the effect creates
        * `count` tokens for each opponent still in the game (in turn order from the next player), and each token is required to attack the player it was made for this turn if able
        * (the requirement of `mustAttackPlayer`, as Encore's tokens have it; it does not give haste, and a token that cannot attack that player, or is not able to attack, is not
-       * required to). `moved` names all of the tokens afterwards. The token is a custom token whose abilities are keywords, so it asks nothing as it enters; no `controller`.
+       * required to). `{ attacking: true }` (issue 101, Adeline: "for each opponent, create a 1/1 token that's tapped and attacking that player", CR 508.4): the tokens made for each opponent enter the combat attacking that opponent instead (with `tapped`; nothing happens outside a combat); choosing a planeswalker of that player is not offered (`docs/ROADMAP.md`). `moved` names all of the tokens afterwards. The token is a custom token whose abilities are keywords, so it asks nothing as it enters; no `controller`.
        */
-      readonly forEachOpponent?: { readonly mustAttack: true };
+      readonly forEachOpponent?: { readonly mustAttack: true } | { readonly attacking: true };
       /**
        * "Create a white Aura enchantment token named Contract attached to target creature an opponent controls" (CR 303.4f, 303.4g, 111.2, 701.3; issue 89): the Aura token enters
        * attached to the object the effect names, which is not a choice of its controller. Only with a custom token that is an Aura (the subtype and an `enchant` ability that is

@@ -163,3 +163,89 @@ describe('Mobilize (CR 702.181a)', () => {
     g.expect.zone('Warrior', 'battlefield', { seat: 0, count: 2 });
   });
 });
+
+describe('For each opponent, a token tapped and attacking (CR 508.4, 101.4)', () => {
+  const adeline = real('Adeline, Resplendent Cathar');
+  const ainok = real('Ainok Strike Leader');
+
+  test.each([
+    ['Adeline, Resplendent Cathar', adeline],
+    ['Ainok Strike Leader', ainok],
+  ] as const)('%s is a valid card', (_name, card) => {
+    expect(validateCard(card)).toEqual([]);
+  });
+
+  test('Adeline: attacking makes a tapped and attacking 1/1 white Human for the opponent, and nothing triggers on it', () => {
+    const g = scenario()
+      .define(adeline)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(adeline.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: adeline.name }]);
+    g.passAll();
+    g.expect.zone('Human', 'battlefield', { seat: 0, count: 1 });
+    g.expect.tapped('Human');
+    g.expect.pt('Human', 1, 1);
+    g.expect.combat({
+      attackers: [adeline.name, 'Human'],
+      targets: [
+        { attacker: adeline.name, target: { player: 1 } },
+        { attacker: 'Human', target: { player: 1 } },
+      ],
+    });
+    g.expect.invariants();
+  });
+
+  test('Ainok: attacking with the commander makes a Goblin, attacking with another creature does not', () => {
+    const board = () =>
+      scenario()
+        .define(ainok)
+        .seat(0)
+        .library(...LIBRARY)
+        .battlefield(ainok.name, { label: 'ainok' })
+        .battlefield(BEARS, { label: 'cmdr', commander: true })
+        .battlefield(BEARS, { label: 'other' })
+        .seat(1)
+        .library(...LIBRARY)
+        .at('precombatMain', { active: 0 })
+        .build();
+    const attack = (who: string) => {
+      const g = board();
+      g.advanceTo('declareAttackers', { attack: false });
+      g.act(0).declareAttackers([{ attacker: who }]);
+      g.passAll();
+      return g;
+    };
+    attack('ainok').expect.zone('Goblin', 'battlefield', { seat: 0, count: 1 });
+    attack('cmdr').expect.zone('Goblin', 'battlefield', { seat: 0, count: 1 });
+    attack('other').expect.zone('Goblin', 'battlefield', { seat: 0, count: 0 });
+  });
+
+  test('Ainok: sacrificing it gives the creature tokens indestructible until end of turn, a nontoken creature does not get it', () => {
+    const g = scenario()
+      .define(ainok)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(ainok.name, { label: 'ainok' })
+      .battlefield(BEARS, { label: 'bears' })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    // A Goblin token from the attack trigger is the token; the nontoken Bears is not given anything.
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 'ainok' }]);
+    g.passAll();
+    g.expect.derived('Goblin', { keywords: [] });
+    g.act(0).activate('ainok');
+    g.passAll();
+    g.expect.zone(ainok.name, 'graveyard', { seat: 0 });
+    g.expect.derived('Goblin', { keywords: ['indestructible'] });
+    g.expect.derived('bears', { keywords: [] });
+  });
+});

@@ -673,6 +673,42 @@ export function runImmediateEffects(
  * CR 400.7 (D-230): the card an object that left became in a graveyard, if it is still there; the old id when it is not (nothing is exiled then). CR 712.21c
  * (D-277): a melded permanent that died became two cards, and an effect that finds the new object finds both.
  */
+/**
+ * CR 508.4 (D-648): the creature tokens `created` that are on the battlefield and not attacking yet start attacking `defender` while a combat is on; they were never declared as
+ * attackers, so nothing that triggers on an attack sees them and the turn log does not count them.
+ */
+function enterCombatAttacking(
+  state: GameState,
+  created: readonly ObjectId[],
+  defender: SeatId,
+): GameState {
+  const combat = state.combat;
+  if (combat === null) return state;
+  const entering = created.filter((id) => {
+    const obj = state.objects[id];
+    return (
+      obj !== undefined &&
+      obj.zone === 'battlefield' &&
+      derive(state, obj).types.includes('creature') &&
+      !combat.attackers.some((a) => a.object === id)
+    );
+  });
+  return {
+    ...state,
+    combat: {
+      ...combat,
+      attackers: [
+        ...combat.attackers,
+        ...entering.map((object) => ({
+          object,
+          target: { kind: 'player' as const, seat: defender },
+          blocked: false,
+        })),
+      ],
+    },
+  };
+}
+
 function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[] {
   const found = successorsOf(state, id, (o) => o.zone === 'graveyard');
   return found.length > 0 ? found : [id];
@@ -2344,7 +2380,11 @@ function runEffect(
             flow,
           );
           if (made.kind === 'asked') return asking(state, made);
-          next = requireAttackingPlayer(made.state, made.created, opponent);
+          // CR 508.4 (issue 101): "for each opponent, create a token that's tapped and attacking that player": the opponent's tokens join the combat attacking that opponent.
+          next =
+            'attacking' in effect.forEachOpponent
+              ? enterCombatAttacking(made.state, made.created, opponent)
+              : requireAttackingPlayer(made.state, made.created, opponent);
           events.push(...made.events);
           front.push(...made.front);
           created = [...created, ...made.created];
@@ -2397,32 +2437,7 @@ function runEffect(
       // never declared as attackers.
       if (effect.attacking !== undefined && next.combat !== null && created.length > 0) {
         const [defender] = resolvePlayers(next, effect.attacking.at, ctx, targets);
-        const combat = next.combat;
-        if (defender !== undefined) {
-          const entering = created.filter((id) => {
-            const obj = next.objects[id];
-            return (
-              obj !== undefined &&
-              obj.zone === 'battlefield' &&
-              derive(next, obj).types.includes('creature') &&
-              !combat.attackers.some((a) => a.object === id)
-            );
-          });
-          next = {
-            ...next,
-            combat: {
-              ...combat,
-              attackers: [
-                ...combat.attackers,
-                ...entering.map((object) => ({
-                  object,
-                  target: { kind: 'player' as const, seat: defender },
-                  blocked: false,
-                })),
-              ],
-            },
-          };
-        }
+        if (defender !== undefined) next = enterCombatAttacking(next, created, defender);
       }
       // D-139: "create a token, then attach this to it": the tokens just created are what `moved` ("it") names (CR 400.7j
       // reads it for a new object; here the object is new from the start).

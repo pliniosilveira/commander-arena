@@ -52,6 +52,7 @@ import { HOFRI_TRIGGER_RULES } from './hofri';
 import { HYLDA_G1_TRIGGER_RULES } from './hylda-g1';
 import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
+import { MARDU_SURGE_TRIGGER_RULES } from './mardu-surge';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
@@ -1215,6 +1216,7 @@ export const TRIGGER_RULES = [
   ...CONTROL_TRIGGER_RULES,
   // Stage P33 (D-150): gaining life, counters put on a permanent, attacking with several creatures.
   ...ANGEL_TRIGGER_RULES,
+  ...MARDU_SURGE_TRIGGER_RULES,
   ...UNBLOCKED_TRIGGER_RULES,
   ...ENCHANTED_MANA_TRIGGER_RULES,
   // Ever-Watching Threshold: "an opponent attacks" with no creatures named.
