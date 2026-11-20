@@ -128,6 +128,30 @@ export const NOUN_DEFENDING_PLAYER = defineRule<IrNoun>({
 });
 
 /**
+ * `noun.player-to-your-right`: "the player to your right" (Hithlain Rope): the player before you in turn order among the players still in the game, the
+ * opponent in a two-player game. The engine's `PlayerSelector` `playerToYourRight`. Not read: "the player to your left", "players to your right", a
+ * player "on your right".
+ */
+export const NOUN_PLAYER_TO_YOUR_RIGHT = defineRule<IrNoun>({
+  id: 'noun.player-to-your-right',
+  family: 'noun',
+  leading: ['the'],
+  cites: ['CR 102.1 (Players)', 'CR 101.4 (Handling Simultaneous Decisions)'],
+  examples: ['the player to your right', 'The player to your right'],
+  rejects: [
+    'the player to your left',
+    'players to your right',
+    'player to your right',
+    'the player to your right of',
+  ],
+  parse: phrase(
+    'noun.player-to-your-right',
+    new RegExp(`the player to your right${END}`, 'iu'),
+    (raw) => bare('playerToRight', raw),
+  ),
+});
+
+/**
  * `noun.that-player`: "that player" (stage P29, D-133): the player an earlier word of the text names or the event of the
  * trigger is about (the player who drew the card, who was dealt the damage, whose spell targeted). Like every pronoun it is left
  * to the binding pass, which makes it the last player the text names, and a text with none is an unbound reference; what
@@ -194,6 +218,7 @@ export const PLAYER_NOUN_RULES = [
   NOUN_YOU_AND_PLAYER,
   NOUN_EACH_OTHER_PLAYER,
   NOUN_DEFENDING_PLAYER,
+  NOUN_PLAYER_TO_YOUR_RIGHT,
   NOUN_THAT_PLAYER,
   NOUN_THAT_ATTACKING_PLAYER,
   NOUN_THEY,

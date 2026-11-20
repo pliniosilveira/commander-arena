@@ -13,6 +13,7 @@ import type { GameEvent } from '../state/events';
 import { objectsInZone } from '../state/ops';
 import type { GameState } from '../state/types';
 import { controllerOf } from './control';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { matchesFilter } from './select';
 import { moveObject } from './zones';
 
@@ -25,6 +26,8 @@ export function sacrificePermanent(
 ): { state: GameState; events: GameEvent[] } | null {
   const obj = state.objects[id];
   if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) return null;
+  // CR 701.21a, 101.2: a permanent that can't be sacrificed stays (Hithlain Rope).
+  if (cantBeSacrificed(state, id)) return null;
   // D-283 (CR 603.10a): permanents sacrificed together keep the last-known information recorded as the event began (`rules/simultaneous.ts`).
   const moved = moveObject(state, {
     object: id,
@@ -67,8 +70,21 @@ export function controlledCandidates(
   });
 }
 
-/** The permanents `seat` may choose to sacrifice (CR 701.21a): see `controlledCandidates`. */
-export const sacrificeCandidates = controlledCandidates;
+/**
+ * The permanents `seat` may choose to sacrifice (CR 701.21a): see `controlledCandidates`, without those that can't be sacrificed (CR 101.2: `cantBeSacrificed`),
+ * which are no choice for a cost or an effect.
+ */
+export function sacrificeCandidates(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId | null,
+  filter: ObjectFilter,
+  sacrificed?: readonly ObjectId[],
+): ObjectId[] {
+  return controlledCandidates(state, seat, source, filter, sacrificed).filter(
+    (id) => !cantBeSacrificed(state, id),
+  );
+}
 
 /**
  * The permanents `seat` may tap for "tap N untapped <filter> you control" (D-133, CR 118.3): the untapped ones it controls

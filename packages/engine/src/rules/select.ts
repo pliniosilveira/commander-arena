@@ -14,7 +14,14 @@ import type {
 } from '../ast/types';
 import type { CardType, Subtype } from '../characteristics';
 import type { ObjectId, SeatId } from '../ids';
-import { getObject, getSeat, objectsInZone, opponentsOf, seatsInOrder } from '../state/ops';
+import {
+  getObject,
+  getSeat,
+  objectsInZone,
+  opponentsOf,
+  playerToRightOf,
+  seatsInOrder,
+} from '../state/ops';
 import type { ChosenTarget, GameObject, GameState, ThisWayCounts } from '../state/types';
 import { chosenOf } from './chosen';
 import { controllerOf } from './control';
@@ -910,6 +917,10 @@ export function resolvePlayers(
       const seat = defendingPlayerOf(state, ctx.source);
       return seat === null ? [] : [seat];
     }
+    case 'playerToYourRight': {
+      const seat = playerToRightOf(state, ctx.controller);
+      return seat === null ? [] : [seat];
+    }
     case 'triggerPlayer':
       // D-133: "that player": the player the event that caused this trigger is about.
       return ctx.triggerPlayer === undefined || getSeat(state, ctx.triggerPlayer).hasLost
@@ -1001,6 +1012,7 @@ export function isPlayerSelector(sel: ObjectSelector | PlayerSelector): sel is P
     sel.kind === 'controllerOf' ||
     sel.kind === 'ownerOf' ||
     sel.kind === 'defendingPlayer' ||
+    sel.kind === 'playerToYourRight' ||
     sel.kind === 'triggerPlayer' ||
     sel.kind === 'discardedThisWay' ||
     sel.kind === 'couldntSacrificeThisWay' ||

@@ -254,6 +254,7 @@ describe('the dimensions', () => {
       'cantGainLife',
       'playerProtection',
       'cantHaveCounters',
+      'cantBeSacrificed',
       'doubleTriggers',
       'cantCastThis',
       'blockTax',

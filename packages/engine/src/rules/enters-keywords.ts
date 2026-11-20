@@ -18,6 +18,7 @@ import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
 import { mayHaveStatic } from './printed-statics';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { matchesFilter } from './select';
 import { staticConditionHolds } from './static-conditions';
 
@@ -94,6 +95,8 @@ export function devourCandidates(state: GameState, seat: SeatId, quality?: strin
   return state.battlefield.filter((id) => {
     const obj = state.objects[id];
     if (obj === undefined || controllerOf(state, obj) !== seat) return false;
+    // CR 701.21a, 101.2: a permanent that can't be sacrificed is no choice.
+    if (cantBeSacrificed(state, id)) return false;
     const derived = derive(state, obj);
     return quality === undefined
       ? derived.types.includes('creature')
