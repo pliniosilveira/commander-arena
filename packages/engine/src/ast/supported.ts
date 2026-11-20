@@ -527,6 +527,20 @@ function activationCostIssues(
         'more than one blight cost, or one with a creature-tapping cost, is not implemented by the engine yet',
     });
   }
+  if (
+    costs.filter((c) => c.kind === 'untapPermanents').length > 1 ||
+    (costs.some((c) => c.kind === 'untapPermanents') &&
+      costs.some(
+        (c) => c.kind === 'tapCreatures' || c.kind === 'tapPermanents' || c.kind === 'blight',
+      ))
+  ) {
+    // CR 701.26b: `breakDown` pays one untap cost, after the mana, and has no order for it next to a crew cost, a cost that taps permanents or a blight.
+    out.push({
+      path,
+      message:
+        'more than one untap cost, or one with a creature-tapping or blight cost, is not implemented by the engine yet',
+    });
+  }
   if (sacrifices > 1) {
     // `breakDown` (rules/activate-costs.ts) pays one sacrifice; an ability with two is never offered.
     out.push({
@@ -795,8 +809,8 @@ function walkAbility(
       if (
         a.trigger.kind === 'tappedForMana' &&
         a.effect.kind === 'addMana' &&
-        a.effect.mana.kind === 'anyColor' &&
-        (a.effect.mana.count ?? 1) === 1
+        ((a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
+          a.effect.mana.kind === 'producedType')
       ) {
         return;
       }

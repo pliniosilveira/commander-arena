@@ -166,6 +166,9 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (filter.controller !== undefined) return fail(ctx, end);
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
+    } else if (filter.attacking === true && other.value && filter.controller === undefined) {
+      // CR 508.1k (Ghalta and Mavren): "other attacking creatures" names the objects by what they do, whoever controls them, and needs no "on the battlefield".
+      // Only with "other": the creatures attacking besides the source.
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
       // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
@@ -258,7 +261,7 @@ function cards(plural: boolean): Parser<IrFilter> {
     return { ok: true, value: { zone: 'graveyard', controller: { noun: controller } }, pos: r.pos };
   };
   const where = choice<{
-    zone: 'hand' | 'graveyard';
+    zone: 'hand' | 'graveyard' | 'library';
     controller?:
       | 'you'
       | 'opponent'
@@ -267,6 +270,11 @@ function cards(plural: boolean): Parser<IrFilter> {
     map(literal(' in your hand'), () => ({ zone: 'hand' as const, controller: 'you' as const })),
     map(literal(' in your graveyard'), () => ({
       zone: 'graveyard' as const,
+      controller: 'you' as const,
+    })),
+    // Issue 145 (Invincible Hymn, CR 401.1): "the number of cards in your library".
+    map(literal(' in your library'), () => ({
+      zone: 'library' as const,
       controller: 'you' as const,
     })),
     map(literal(' in all graveyards'), () => ({ zone: 'graveyard' as const })),

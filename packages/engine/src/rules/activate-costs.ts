@@ -35,6 +35,7 @@ import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
+import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
 
@@ -84,6 +85,8 @@ export interface CostBreakdown {
   readonly exileCards: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The untapped permanents to tap (D-133, "Tap three untapped Zombies you control"), or null. */
   readonly tapPermanents: { readonly filter: ObjectFilter; readonly count: number } | null;
+  /** The tapped permanents to untap (CR 701.26b, "Untap two tapped creatures you control"), or null. */
+  readonly untapPermanents: { readonly filter: ObjectFilter; readonly count: number } | null;
   /** The total power of the untapped creatures to tap (CR 702.122a, Crew), or null. */
   readonly tapCreatures: number | null;
   /** "Blight 1" (D-407, CR 701.68): the -1/-1 counters put on a creature the player controls, none when 0. */
@@ -121,6 +124,8 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let exileCardsCosts = 0;
   let tapPermanents: CostBreakdown['tapPermanents'] = null;
   let tapPermanentsCosts = 0;
+  let untapPermanents: CostBreakdown['untapPermanents'] = null;
+  let untapPermanentsCosts = 0;
   let tapCreatures: number | null = null;
   let tapCreaturesCosts = 0;
   let blight = 0;
@@ -204,6 +209,10 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         tapPermanentsCosts += 1;
         tapPermanents = { filter: cost.filter, count: cost.count };
         break;
+      case 'untapPermanents':
+        untapPermanentsCosts += 1;
+        untapPermanents = { filter: cost.filter, count: cost.count };
+        break;
       case 'tapCreatures':
         tapCreaturesCosts += 1;
         tapCreatures = cost.totalPower;
@@ -221,6 +230,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     tapCreaturesCosts > 1 ||
     discards > 1 ||
     tapPermanentsCosts > 1 ||
+    untapPermanentsCosts > 1 ||
     bounces > 1 ||
     exileCardsCosts > 1 ||
     loyaltyCosts > 1 ||
@@ -235,6 +245,10 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   // D-625: next to a mana cost they are chosen before the mana is paid (CR 601.2h: the costs are paid in the order the player likes), so
   // the mana is paid from the sources that are still untapped.
   if (tapPermanents !== null && tapCreatures !== null) return null;
+  // CR 701.26b: the permanents to untap are chosen after the mana, and the engine has no order for them next to a crew cost, a cost that taps permanents or a blight.
+  if (untapPermanents !== null && (tapCreatures !== null || tapPermanents !== null || blight > 0)) {
+    return null;
+  }
   return {
     tap,
     life,
@@ -260,6 +274,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     bounceCount,
     exileCards,
     tapPermanents,
+    untapPermanents,
     tapCreatures,
     blight,
   };
@@ -529,6 +544,17 @@ export function costRefusal(
     const { filter, count } = parts.tapPermanents;
     if (tapCandidates(paid, seat, source.id, filter).length < count) {
       return `you control fewer than ${count} untapped permanents to tap`;
+    }
+  }
+  if (parts.untapPermanents !== null) {
+    // CR 701.26b, 118.3: enough tapped permanents once the mana is paid (CR 601.2h: the permanents tapped for it count).
+    const { filter, count } = parts.untapPermanents;
+    if (
+      untapCandidates(paid, seat, source.id, filter).length +
+        untappableByMana(paid, seat, source.id, filter, parts.mana.length) <
+      count
+    ) {
+      return `you control fewer than ${count} tapped permanents to untap`;
     }
   }
   if (

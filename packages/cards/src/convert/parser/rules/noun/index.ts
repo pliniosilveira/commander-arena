@@ -49,6 +49,7 @@ import {
 import { HYLDA_G3_NOUN_RULES } from './hylda-g3';
 import { KORVOLD_EARLY_NOUN_RULES, KORVOLD_NOUN_RULES } from './korvold';
 import { LIBRARY_NOUN_RULES } from './library';
+import { NOUN_LIBRARY_CARD_MANA_VALUE_X } from './library-mv-x';
 import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
@@ -881,6 +882,8 @@ export const NOUN_RULES = [
   ...SUBJECT_NOUN_RULES,
   ...CHOOSE_NOUN_RULES,
   ...LIBRARY_NOUN_RULES,
+  // Finale of Devastation: "a creature card with mana value X or less" in a search.
+  NOUN_LIBRARY_CARD_MANA_VALUE_X,
 ];
 
 export const NOUN_IDS = ID;

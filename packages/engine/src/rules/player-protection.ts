@@ -3,7 +3,7 @@
  * permanent that lost its abilities protects nobody; D-149):
  * - `playerHexproof` ("You have hexproof", CR 702.11b): opponents' spells and abilities can't target the player;
  * - `cantLoseGame` ("You can't lose the game", CR 104.3): the state-based actions that make a player lose do not (`rules/sba.ts`).
- * `opponentsCantWin` needs no read: no effect makes a player win but CR 104.2a, which overrides it.
+ * - `opponentsCantWin` ("Your opponents can't win the game", CR 104.2b): an effect that makes a player win does nothing (`cannotWinGame`); CR 104.2a, a player whose opponents have all left, overrides it.
  * - `playerProtection` ("You have protection from the chosen card type", CR 702.16, D-376): spells and abilities from a source of the type can't target
  *   the player (CR 702.16b) and damage from such a source to the player is prevented (CR 702.16e).
  * - `cantGainLife` ("Your opponents can't gain life", CR 119.7, D-363): the opponents of the controller gain no life (`rules/life-gain.ts`).
@@ -99,6 +99,26 @@ export function playerCanBeTargetedBy(
 /** CR 104.3: whether the state-based actions leave the player in the game whatever their life total and counters. */
 export function cannotLoseGame(state: GameState, seat: SeatId): boolean {
   return hasStaticOf(state, seat, 'cantLoseGame');
+}
+
+/**
+ * CR 104.2b, 101.2: whether an effect says the player `seat` can't win the game: a permanent an opponent of `seat` controls has `opponentsCantWin` ("Your opponents can't win the
+ * game"). `rules/win-game.ts` reads it, so an effect that says `seat` wins does nothing. The last player in the game still wins by CR 104.2a, which overrides it (`evaluateGameEnd`).
+ */
+export function cannotWinGame(state: GameState, seat: SeatId): boolean {
+  for (const id of state.battlefield) {
+    const obj = state.objects[id];
+    if (obj === undefined || controllerOf(state, obj) === seat) continue;
+    if (!mayHaveStatic(state, obj, 'opponentsCantWin')) continue;
+    if (
+      derive(state, obj).abilities.some(
+        (a) => a.kind === 'static' && a.static.kind === 'opponentsCantWin',
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

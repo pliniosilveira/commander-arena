@@ -207,6 +207,8 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     "~'s power and toughness are each equal to the number of Swamps you control.",
     "~'s power and toughness are each equal to the number of Zombies on the battlefield plus the number of Zombie cards in all graveyards.",
     "~'s power is equal to the number of creatures you control plus the number of lands you control.",
+    "~'s power and toughness are each equal to your life total.",
+    "~'s power is equal to your life total.",
   ],
   rejects: [
     "~'s power and toughness are each equal to the number of creatures you control plus half the number of lands you control.",
@@ -221,6 +223,9 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     "~'s power equals the number of lands you control.",
     "Enchanted creature's power is equal to the number of lands you control.",
     '~ has power equal to the number of lands you control.',
+    "~'s power and toughness are each equal to target player's life total.",
+    "~'s power and toughness are each equal to its life total.",
+    "~'s power and toughness are each equal to half your life total.",
   ],
   parse: (ctx, pos) => {
     const head = DEFINES(ctx, pos);
@@ -232,10 +237,13 @@ export const STATIC_DEFINES_PT = defineRule<IrStatic>({
     if (!count.ok) return count;
     // The engine reads a count, or the sum of counts (stage P28: "... plus the number of Zombie cards in all
     // graveyards"); "twice", "half", a greatest power and the rest are other statements.
+    // Issue 145 (Soul of Eternity, CR 119.1): "equal to your life total", the controller's.
+    const lifeTotal = count.value.kind === 'lifeTotalOf' && count.value.of.det === 'you';
     if (
       count.value.kind !== 'countOf' &&
       count.value.kind !== 'sum' &&
-      count.value.kind !== 'devotion'
+      count.value.kind !== 'devotion' &&
+      !lifeTotal
     )
       return fail(ctx, pos);
     const end = PERIOD(ctx, count.pos);

@@ -41,7 +41,9 @@ import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
+import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
+import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 
 /**
@@ -138,6 +140,7 @@ export const STATIC_RULES = [
   ...HASHATON_G2_STATIC_RULES,
   // Hashaton deck, group 6 (D-377): "You and creatures you control have protection from the chosen card type."
   ...HASHATON_G6_STATIC_RULES,
+  ...SHALAI_STATIC_RULES,
   // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
   ...HASHATON_G3_STATIC_RULES,
   // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
@@ -150,4 +153,6 @@ export const STATIC_RULES = [
   ...SKYBONDER_STATIC_RULES,
   // Galadriel deck, group 3 (issue 43): "~ saddles Mounts and crews Vehicles as though its power were 2 greater."
   ...GALADRIEL_G3_STATIC_RULES,
+  // Issue 145 (Hatsune Miku deck): "Creature spells you cast have demonstrate."
+  ...SPELL_KEYWORD_GRANT_STATIC_RULES,
 ];

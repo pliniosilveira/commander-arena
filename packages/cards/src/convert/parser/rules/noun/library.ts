@@ -106,7 +106,7 @@ const NAMED_SUFFIX =
   / named (\p{Lu}[\p{L}'’-]*(?:,? [\p{L}'’-]+)*?)(?= and put (?:it|that card) |, put |, reveal |$)/u;
 
 /** The filter of "<what> card(s)", with the library as its zone (CR 401.1) and no owner. */
-function libraryPhrase(plural: boolean): Parser<IrFilter> {
+export function libraryPhrase(plural: boolean): Parser<IrFilter> {
   const cardWord = CARD_WORD(plural);
   return (ctx, pos) => {
     // A choice first: it starts like a single type or subtype.

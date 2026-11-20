@@ -188,9 +188,7 @@ describe('"loses the game" (D-269, CR 104.3e)', () => {
 
   test('the near misses are not read (SYNTHETIC)', () => {
     for (const text of [
-      // winning is another thing: the engine ends a game only by losses and the last player left
-      'At the beginning of your end step, you win the game.',
-      'At the beginning of your end step, if you have at least 15 life more than your starting life total, you win the game.',
+      // winning another way: only "you win the game" is read (issue 145, Halo Fountain, the engine's `winGame`)
       'At the beginning of your end step, each opponent wins the game.',
       // a loss that waits, or is a "can't", is not an instant loss
       'At the beginning of your end step, each opponent loses the game at the beginning of the next turn.',

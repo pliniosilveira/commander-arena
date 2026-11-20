@@ -3,6 +3,7 @@ import type { Cost } from '@commander-arena/engine';
 import { amountPhrase } from './amount-text';
 import { NUMBER_WORDS, nounsOf, plural, tappedWhat } from './cost-words';
 import { beholdQuality } from './dragons-text';
+import { untapWhat } from './untap-cost-text';
 
 /**
  * One cost as it reads after "Pay": "2 life". Only paying life reaches the page today; any other
@@ -169,6 +170,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     case 'tapPermanents':
       // D-133: "Tap two untapped artifacts you control".
       return `Tap ${tappedWhat(cost.filter, cost.count)}`;
+    case 'untapPermanents':
+      // CR 701.26b: "Untap two tapped creatures you control".
+      return `Untap ${untapWhat(cost.filter, cost.count)}`;
     case 'blight':
       // D-407 (CR 701.68a): "Blight 1".
       return `Blight ${cost.count}`;

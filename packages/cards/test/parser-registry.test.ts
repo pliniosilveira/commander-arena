@@ -174,6 +174,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.crew': asIs,
   'keyword.station': asIs,
   'token.copy': spell((e) => `Create ${e}.`),
+  'token.copy-that-creature': permanent((e) => `Whenever another creature enters, create ${e}.`),
   // Hashaton deck group 5 (D-382): a copy with exceptions of characteristics.
   'token.copy-except': permanent((e) => `Whenever you discard a creature card, create ${e}.`),
   // Issue 103 (Will of the Temur): the same copy with exceptions that are in addition to what it copies.
@@ -182,6 +183,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'replacement.enters-with-counters-kicked': asIs,
   'replacement.as-enters-choose': asIs,
+  'replacement.as-enters-pay-life': asIs,
   'static.self-chosen-type': asIs,
   'static.attached': asIs,
   'static.permanents': asIs,
@@ -283,6 +285,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.library-cards-counted': spell(
     (e) => `Search your library for ${e}, put them into your hand, then shuffle.`,
   ),
+  'noun.library-card-mana-value-x': spell(
+    (e) => `Search your library for ${e} and put it onto the battlefield.`,
+  ),
   'trigger.enters': whenever,
   'trigger.dies': whenever,
   'trigger.attacks': whenever,
@@ -377,6 +382,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of your end step, choose target creature card in your graveyard. If that card's mana value is less than or equal to ${e}, return it to the battlefield.`,
   ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-spell-cast': spell((e) => `Draw a card ${e}.`),
+  'amount.for-each-spell-color': permanent(
+    (e) => `Whenever you cast a spell, you gain 1 life ${e}.`,
+  ),
   // Lock and Load (issue 121): the count of the other instants and sorceries cast this turn.
   'amount.for-each-other-spell-cast': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
@@ -406,6 +415,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.that-much': permanent((e) => `Whenever ~ is dealt damage, you gain ${e} life.`),
   'noun.subtype-union': permanent((e) => `${cap(e)} get +1/+1.`),
   'cost.tap-permanents': permanent((e) => `${e}: Draw a card.`),
+  'cost.untap-permanents': permanent((e) => `{T}, ${e}: Draw a card.`),
   'condition.control-your-commander': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.life-total': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
   'condition.this-tapped': permanent((e) => `As long as ${e}, ~ gets +1/+1.`),
@@ -421,6 +431,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-counter-count': permanent(
     (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
   ),
+  'condition.this-is-token': permanent((e) => `When ~ enters, if ${e}, draw a card.`),
   'static.each': asIs,
   'static.conditional-prefix': asIs,
   'static.conditional-suffix': asIs,
@@ -492,6 +503,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.any-number-targets': spell((e) => `~ deals X damage divided as you choose among ${e}.`),
   // Prismari deck, group 2 (D-656, D-657): "creatures named ~" is the group of a restriction, "any number of targets" the targets of a divided damage.
   'noun.creatures-named-self': permanent((e) => `{2}{U}: ${cap(e)} can't be blocked this turn.`),
+  // Issue 145 (Gruff Triplets): "each creature you control named ~" is the objects of a counters effect.
+  'noun.each-creature-you-control-named-self': permanent(
+    (e) => `When ~ dies, put a +1/+1 counter on ${e}.`,
+  ),
   'noun.any-number-of-targets': spell((e) => `~ deals 4 damage divided as you choose among ${e}.`),
   // Stage P33 (D-149, D-150): the Angels slice. The statements and the replacement are lines of their own; the triggers follow "Whenever";
   // the conditions follow "if" (an intervening "if", a trailing "if" or the "Activate only if" of an ability); the nouns are operands.
@@ -515,6 +530,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.opponents-cant-gain-life': asIs,
   // Hashaton deck, group 6 (D-377): the statement is a line of its own.
   'static.you-and-creatures-protection-chosen-type': asIs,
+  'static.you-planeswalkers-creatures-hexproof': asIs,
   'amount.life-lost-this-turn': permanent(
     (e) => `At the beginning of each end step, each opponent loses life ${e}.`,
   ),
@@ -777,6 +793,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `Counter ${e} unless its controller pays mana equal to the greatest power among creatures you control.`,
   ),
   'static.crew-saddle-bonus': asIs,
+  'static.spells-you-cast-have-keyword': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.graveyard-cards-have-flashback': asIs,
@@ -983,6 +1000,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
+  // CR 603.2: a spell cast in a named turn, and two events of one sentence.
+  'trigger.cast-during-your-turn': whenever,
+  'trigger.cast-turn-and-when': whenever,
   'trigger.cast-x': whenever,
   // Quandrix Unlimited deck, group I (Unbound Flourishing): one trigger for a spell cast and an ability activated, and the "if" on the cost that goes with it.
   'trigger.cast-or-activate': whenever,
@@ -1066,6 +1086,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Hashaton deck group 5 (D-385): copies of the tokens of the chosen type that entered this turn.
   'effect.copy-each-token': permanent((e) => `At the beginning of your end step, ${e}.`),
+  'effect.copy-each-creature-token': permanent((e) => `At the beginning of your end step, ${e}.`),
   'effect.create-copy-spirit': permanent(
     (e) => `Whenever another nontoken creature you control dies, exile it. If you do, ${e}`,
   ),

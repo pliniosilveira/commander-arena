@@ -73,6 +73,7 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
         issue(out, `${path}.distinct`, 'distinct is true or absent');
       }
       break;
+    case 'producedType': // read from the mana ability that was tapped for mana; only a `tappedForMana` effect (validate.ts, validate-parts.ts)
     case 'anyColorDevotion': // the color is chosen as the ability resolves: nothing to check
     case 'anyColorAmount': // the amount is checked with the mana ability (validate-mana-ability.ts)
     case 'commanderIdentity':

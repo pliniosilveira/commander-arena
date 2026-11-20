@@ -43,6 +43,35 @@ export const DISTRIBUTE_COUNTERS: Lowering<IrClause, Effects> = {
 };
 
 /**
+ * "..., if you gained life this turn, distribute up to that many +1/+1 counters among any number of other target creatures" (CR 601.2d, 603.3d, 603.4, 119.3): the slot with
+ * `divide` (the total is the life gained this turn, read as the ability is put on the stack, and the controller may give out less) and `distributeCounters` to it. "That many" is read
+ * only in a triggered ability whose intervening "if" is "if you gained life this turn" (`ctx.lifeGainedIf`).
+ */
+export const DISTRIBUTE_COUNTERS_UP_TO_THAT_MANY: Lowering<IrClause, Effects> = {
+  head: 'distributeCountersUpToThatMany',
+  id: 'lower.distribute-counters-up-to-that-many',
+  needs: ['effect:distributeCounters', 'selector:target', 'amount:lifeGainedThisTurn'],
+  lower(clause, ctx) {
+    const to = operand(clause, 'to');
+    const counter = arg(clause, 'counter');
+    if (to?.kind !== 'noun' || to.det !== 'target' || counter?.kind !== 'counterSpec') {
+      return failure(clause);
+    }
+    if (ctx.owner !== 'ability' || !ctx.lifeGainedIf) return failure(clause);
+    const total: Amount = { kind: 'lifeGainedThisTurn' };
+    const id = declareDividedTarget(to, ctx, total, true);
+    if (!id.ok) return id;
+    return {
+      ok: true,
+      value: [
+        { kind: 'distributeCounters', to: { kind: 'target', id: id.value }, counter: counter.name },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
  * "Remove a +1/+1 counter from ~" (CR 122.1, 122.2): the engine's `removeCounters` of the permanent with the ability (`~`, or "it" in an ability about itself); it does something
  * only when a counter of the kind was there, which "If you do" reads (CR 608.2c).
  */
@@ -105,6 +134,7 @@ export const CHOOSE_PARITY_RETURN: Lowering<IrClause, Effects> = {
 
 export const QUANDRIX_G_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DISTRIBUTE_COUNTERS,
+  DISTRIBUTE_COUNTERS_UP_TO_THAT_MANY,
   REMOVE_COUNTERS_SELF,
   CHOOSE_PARITY_RETURN,
 ];

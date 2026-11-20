@@ -693,6 +693,8 @@ const THEY_ARE_STILL = /^they['’]re still [^.]*\.$/i;
 /** "Until end of turn, ~ becomes a 2/3 white and blue Bird creature with flying. It's still a land." (issue 81, Restless Anchorage, CR 205.1b): the second sentence keeps the land type. */
 const BECOMES_LAND_CREATURE = /(?:^|: )until end of turn, ~ becomes a \d+\/\d+ [^.]*\.$/i;
 const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
+/** "{2}{G}{W}: ~ becomes a 3/3 green and white Llama creature until end of turn. It's still a land." (issue 145, Restless Prairie, CR 205.1b): the same, with the duration at the end. */
+const BECOMES_LAND_CREATURE_TRAILING = /(?:^|: )~ becomes a \d+\/\d+ [^.]* until end of turn\.$/i;
 /**
  * "Draw a card and reveal it. Remove a number of loyalty counters equal to that card's mana value from ~." (Galadriel deck, group 3, CR 701.20a, 400.7j): the second sentence
  * reads the card the first one drew and revealed, so the two are read as one instruction (`effect.draw-reveal-remove`; the first may follow a loyalty cost).
@@ -700,6 +702,9 @@ const ITS_STILL_A_LAND = /^it['’]s still a land\.$/i;
 const DRAW_AND_REVEAL = /(?:^[+\-−]?\d+: |^|, )draw a card and reveal it\.$/i;
 const REMOVE_COUNTERS_MANA_VALUE =
   /^remove a number of [^.]* counters equal to that card['’]s mana value from [^.]*\.$/i;
+/** "Count the number of cards in your library. Your life total becomes that number." (issue 145, Invincible Hymn, CR 119.5): the second sentence reads the count of the first. */
+const COUNT_LIBRARY = /^count the number of cards in your library\.$/i;
+const LIFE_TOTAL_BECOMES_THAT_NUMBER = /^your life total becomes that number\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
 /**
@@ -902,6 +907,8 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, REVEAL_TOP_CARD) && said(b, IF_REVEALED_CARD)) ||
         (said(a, THEY_BECOME) && said(b, THEY_ARE_STILL)) ||
         (said(a, BECOMES_LAND_CREATURE) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, BECOMES_LAND_CREATURE_TRAILING) && said(b, ITS_STILL_A_LAND)) ||
+        (said(a, COUNT_LIBRARY) && said(b, LIFE_TOTAL_BECOMES_THAT_NUMBER)) ||
         (said(a, DRAW_AND_REVEAL) && said(b, REMOVE_COUNTERS_MANA_VALUE)) ||
         (said(a, EACH_PLAYER_EXILES) && said(b, WHEN_NONLAND_EXILED)) ||
         (said(a, FOR_EACH_PLAYER_CHOOSE) && said(b, THEN_SACRIFICE_OTHERS)) ||

@@ -193,7 +193,7 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
     }
     if (o.chosen !== undefined) {
       const kind = entersChoice(face.abilities);
-      const { creatureType, color, option, cardType } = o.chosen;
+      const { creatureType, color, option, cardType, lifePaid } = o.chosen;
       if (kind === null) {
         throw new ScenarioError(`${where}: ${p.name} does not choose anything as it enters`);
       }
@@ -204,14 +204,22 @@ export function validatePlacement(p: Placement, def: CardDefinition): void {
             ? option
             : kind === 'cardType'
               ? cardType
-              : color;
-      const others = [creatureType, color, option, cardType].filter((x) => x !== undefined).length;
+              : kind === 'lifePaid'
+                ? lifePaid === undefined
+                  ? undefined
+                  : String(lifePaid)
+                : color;
+      const others = [creatureType, color, option, cardType, lifePaid].filter(
+        (x) => x !== undefined,
+      ).length;
       if (given === undefined || others !== 1) {
         throw new ScenarioError(
           `${where}: ${p.name} chooses a ${kind}, so chosen must give just that`,
         );
       }
-      if (chosenFromOption(kind, given, entersOptions(face.abilities)) === null) {
+      // A `lifePaid` answer is any whole number of life; the scenario places a permanent that already paid it.
+      const named = kind === 'lifePaid' ? [given] : entersOptions(face.abilities);
+      if (chosenFromOption(kind, given, named) === null) {
         throw new ScenarioError(`${where}: ${given} is not a ${kind}`);
       }
     }

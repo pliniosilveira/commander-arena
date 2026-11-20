@@ -125,6 +125,8 @@ export interface Scope {
    * trigger, a spell, an activated ability).
    */
   readonly triggerSubject?: 'permanent' | 'stack';
+  /** True in the effect of a `tappedForMana` triggered ability, the only place `producedType` mana may stand (CR 605.1b). */
+  readonly triggeredMana?: boolean;
   /** True in the effect of an activated ability whose cost sacrifices something (`sacrificedCost`, D-133). */
   readonly sacrificedCost?: boolean;
   /** True in the effect of an activated ability whose cost taps permanents (`tappedAsCostPower`, CR 702.184a). */
@@ -158,6 +160,8 @@ export interface Scope {
   readonly triggeredAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
+  /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
+  readonly attackBatchTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
   readonly mainPhaseTrigger?: boolean;
   /** True in the effect of a `conditional` whose condition is `yourCombatPhase`: an `extraCombat` follows the combat phase that is going on (issue 144). */
@@ -751,6 +755,7 @@ export function filterSome(f: ObjectFilter, test: (f: ObjectFilter) => boolean):
 const READS_NO_OBJECT: ReadonlySet<string> = new Set([
   'x',
   'enteredX',
+  'lifePaidAsEntered',
   'powerOf',
   'manaValueOf',
   'toughnessOf',
@@ -1813,6 +1818,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'lifePaidAsEntered':
+      // CR 119.4, 614.12: the face must pay life as it enters (`chosenIssues` checks it with the other entry-time choices).
+      break;
     case 'attackersGreatestPower':
       // CR 508.1: the creatures of the attack event of an `attackBatch` trigger (`scope.triggerAttacked` is set only there).
       if (scope.triggerAttacked !== true) {
@@ -1824,6 +1832,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'manaValueOf':
+    case 'colorsOf':
       checkAmountObject(a.of, `${path}.of`, scope, out, true);
       break;
     case 'shortfall':
@@ -2426,6 +2435,20 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
       issue(out, path, 'devotion is not supported as a plain static power/toughness modifier');
     return;
   }
+  // Issue 145 (Soul of Eternity, CR 604.3): "equal to your life total": a characteristic-defining ability only, of the controller.
+  if (amount?.kind === 'lifeTotalOf') {
+    const player = (a as { player?: { kind?: string } }).player;
+    if (plain) {
+      issue(
+        out,
+        path,
+        'a life total is the amount of a characteristic-defining ability, not a plain static power/toughness modifier',
+      );
+    } else if (player?.kind !== 'you') {
+      issue(out, `${path}.player`, 'a characteristic-defining ability reads the life total of you');
+    }
+    return;
+  }
   // D-145: "where X is the greatest mana value among your commanders": plain (+X/+X) only, a mana value is never negative.
   // Issue 81 (Omnath, CR 106.4): "for each unspent mana you have": plain (+N/+N) only.
   if (amount?.kind === 'unspentMana') {
@@ -2551,6 +2574,38 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           out,
           `${path}.filter`,
           'a tap cost names permanents by type, subtype, color and the like: no stackKind or owner',
+        );
+      }
+      break;
+    case 'untapPermanents':
+      // CR 701.26b, 118.3: "Untap two tapped creatures you control": a count of 1 or more, permanents the player controls, on the battlefield, that are
+      // tapped (the engine adds that itself).
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (!isCount(cost.count) || cost.count < 1) {
+        issue(out, `${path}.count`, 'the number of permanents to untap must be a positive integer');
+      }
+      if (filterSome(cost.filter, (f) => f.controller === 'opponent')) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'only permanents you control can be untapped for a cost',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.tapped !== undefined)) {
+        issue(
+          out,
+          `${path}.filter.tapped`,
+          'the permanents untapped for a cost are tapped: the filter does not say so',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be untapped');
+      }
+      if (filterSome(cost.filter, (f) => f.stackKind !== undefined || f.owner !== undefined)) {
+        issue(
+          out,
+          `${path}.filter`,
+          'an untap cost names permanents by type, subtype, color and the like: no stackKind or owner',
         );
       }
       break;
@@ -3369,6 +3424,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Incubator',
   'Lander',
   'Wicked Role',
+  'Junk',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
@@ -4028,6 +4084,17 @@ function checkSearch(
     issue(out, `${path}.filter`, 'a search needs a filter (use {} for "a card")');
   } else {
     checkFilter(filter, `${path}.filter`, out);
+    // CR 107.3a: "a creature card with mana value X or less" reads the X announced for the spell that is resolving.
+    if (
+      (filter.manaValueAtMost as { kind?: string } | undefined)?.kind === 'x' &&
+      !scope.xAllowed
+    ) {
+      issue(
+        out,
+        `${path}.filter.manaValueAtMost`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
+      );
+    }
     // The searched zone is the searcher's own library; naming another zone or controller is wrong.
     if (filterSome(filter, (f) => f.zone !== undefined)) {
       issue(out, `${path}.filter.zone`, "a search looks in the searcher's library: leave zone out");
@@ -6448,6 +6515,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 104.3e (D-269): the players the selector names lose the game; no other operand.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
+    case 'winGame':
+      // CR 104.2b: one player wins the game; a selector that names several players has no meaning ("each opponent wins").
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (
+        e.player?.kind === 'eachPlayer' ||
+        e.player?.kind === 'eachOpponent' ||
+        e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'all'
+      ) {
+        issue(out, `${path}.player`, 'only one player wins the game: name a single player');
+      }
+      break;
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6455,6 +6534,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'addMana':
       checkManaProduction(e.mana, `${path}.mana`, out);
+      // CR 106.12a, 605.1b: "add one mana of any type that land produced" reads the mana ability that triggered it: only a triggered mana ability has one.
+      if (e.mana?.kind === 'producedType' && scope.triggeredMana !== true) {
+        issue(
+          out,
+          `${path}.mana`,
+          'one mana of a type the tapped permanent produced is only the effect of a "tapped for mana" triggered mana ability',
+        );
+      }
       if (e.mana?.kind === 'anyColorAmount') {
         issue(
           out,

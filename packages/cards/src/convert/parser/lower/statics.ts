@@ -43,6 +43,7 @@ import { colorLetter, lowerFilter } from './nouns';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
+import { isSpellKeywordStatic, lowerSpellKeywordStatic } from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type At = { readonly span: { start: number; end: number }; readonly rule: string };
@@ -503,7 +504,10 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'ptCount':
       return ['static:modifyPt', 'amount:countOf'];
     case 'definesPt':
-      return ['static:characteristicPt', 'amount:countOf'];
+      return [
+        'static:characteristicPt',
+        effect.count.kind === 'lifeTotalOf' ? 'amount:lifeTotalOf' : 'amount:countOf',
+      ];
     case 'grantKeyword':
       // D-186: riot is read by the engine from the group's static ability as a permanent enters, and listed as a keyword of its own.
       if (effect.keyword === 'riot') return ['static:grantKeyword', 'keyword:riot'];
@@ -581,6 +585,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantKeywordToHandCards'];
     case 'graveyardFlashback':
       return ['static:grantFlashbackToGraveyardCards'];
+    case 'spellKeyword':
+      return ['static:grantKeywordToSpells'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
@@ -852,6 +858,34 @@ function lowerPlayerProtection(
 }
 
 /**
+ * "You, planeswalkers you control, and other creatures you control have hexproof." (issue 145, Shalai, CR 702.11b): the controller of the permanent has hexproof (the engine's
+ * `playerHexproof`) and each other subject of the statement (`also`) has the keyword. The controller is "you"; the statement has no condition and the effect is the player's
+ * alone, so a statement of another shape is not lowered.
+ */
+function lowerPlayerHexproofGroups(
+  ability: Static,
+  ctx: LowerContext,
+): LowerResult<readonly Ability[]> {
+  const { statement } = ability;
+  if (
+    statement.effects.length !== 1 ||
+    statement.subject.det !== 'you' ||
+    statement.condition !== undefined
+  ) {
+    return failure(ability);
+  }
+  const blocked = missingFeatures(['ability:static', 'static:playerHexproof']);
+  if (blocked.length > 0) return failure(ability, blocked);
+  const abilities: Ability[] = [{ kind: 'static', static: { kind: 'playerHexproof' } }];
+  for (const part of statement.also ?? []) {
+    const done = lowerPart(part, ability, undefined, ctx);
+    if (!done.ok) return done;
+    abilities.push(...done.value);
+  }
+  return { ok: true, value: abilities, rule: ability.rule };
+}
+
+/**
  * A static ability statement. It lowers only when the engine runs every effect and the subject:
  * the effects the grammar reads but the engine lacks (a granted ability in quotes) fail naming the
  * missing `static:` feature, and the statement is dropped whole. A statement that applies "as long as" a condition
@@ -887,6 +921,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isKeepsDamage(first)) return lowerKeepsDamage(ability);
   // Issue 104 (CR 702.29a, 613.1f): "Each creature card in your hand has cycling {1}{U}."
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
+  // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
+  if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
   const parts: IrStaticPart[] = [
@@ -965,6 +1001,10 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   }
   // Hashaton deck group 6 (D-377, CR 702.16): "You and creatures you control have protection from the chosen card type."
   if (first.kind === 'playerProtection') return lowerPlayerProtection(ability, ctx);
+  // Issue 145 (Shalai, Voice of Plenty, CR 702.11b): "You, planeswalkers you control, and other creatures you control have hexproof."
+  if (first.kind === 'playerHexproof' && statement.also !== undefined) {
+    return lowerPlayerHexproofGroups(ability, ctx);
+  }
   // Stage P33 (D-150): the protections of a player, damage prevented to ~, a card that can't be cast early, permanents that enter with counters.
   if (isAngelStatic(first)) return lowerAngelStatic(ability, ctx);
   // "~ costs {3} less to cast if you control a creature with power 4 or greater." (stage P38, D-182, CR 601.2f): the spell's own reduction, with

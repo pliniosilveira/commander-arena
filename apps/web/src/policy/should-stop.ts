@@ -114,6 +114,31 @@ function isSpell(object: ObjectView): boolean {
 }
 
 /**
+ * True when the viewer's own instant or sorcery is on top of the stack and they can activate an ability
+ * that targets a spell (Stella Lee, Wild Card: "{T}: Copy target instant or sorcery spell you control").
+ * Such an ability is only ever useful while the spell is on the stack, so passing through would resolve
+ * the spell before the player could answer it (CR 117.3c: a player who cast a spell receives priority).
+ * Any other own spell still resolves without a click (D-045). The options carry no targets, so the
+ * ability is recognized by its rules text: an activated line ("cost: effect") whose effect names a target spell.
+ */
+function answersOwnSpell(view: GameView, decision: PriorityDecision, top: ObjectView): boolean {
+  if (!isSpell(top) || !(top.types.includes('instant') || top.types.includes('sorcery'))) {
+    return false;
+  }
+  return decision.options.some((option) => {
+    if (option.kind !== 'activate') return false;
+    const source = view.battlefield.find((o) => o.id === option.object);
+    return source !== undefined && source.oracleText.split('\n').some(targetsSpellAbility);
+  });
+}
+
+const TARGETS_SPELL = /:[^.]*\btarget\b[^.]*\bspell\b/i;
+
+function targetsSpellAbility(line: string): boolean {
+  return TARGETS_SPELL.test(line);
+}
+
+/**
  * True when an object on the stack that someone else controls targets the viewer or a permanent
  * the viewer controls (CR 115.1: a spell or ability names its targets as it is put on the stack).
  */
@@ -154,7 +179,7 @@ export function shouldStop(view: GameView, settings: StopSettings): boolean {
   if (top !== undefined) {
     // Something is on the stack: stop to respond to someone else's object, or to look at their spell.
     // Resolving your own spell (and everything else) is passed through without a click.
-    if (top.controller === view.viewer) return false;
+    if (top.controller === view.viewer) return answersOwnSpell(view, decision, top);
     if (relevant) return true;
     // Issue 105: an opponent's spell is always shown to the player before it resolves. An ability
     // has `ability` or `abilitySource` in its view; a spell, a copy of one and a permanent spell do not.

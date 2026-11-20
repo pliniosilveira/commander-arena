@@ -261,7 +261,7 @@ function copyDecision(
     if (slot.divide === undefined) return { ...slot, min: kept, max: kept, legal };
     // CR 707.10, 115.7f (D-149): a copy of a spell that divides something keeps the division: the same number of targets, each
     // with the share it has, and no division to announce.
-    const { divide: _divide, ...rest } = slot;
+    const { divide: _divide, divideUpTo: _upTo, ...rest } = slot;
     return { ...rest, min: kept, max: kept, keepsDivision: true as const, legal };
   });
   return {

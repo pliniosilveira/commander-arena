@@ -591,6 +591,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           choice,
           entering === null ? [] : entersOptions(entering.abilities),
           entering === null ? undefined : entersColorExcept(entering.abilities),
+          // CR 119.4, 119.8: a player whose life total cannot change can pay only 0.
+          lifeTotalIsLocked(before, enterController) ? 0 : getSeat(before, enterController).life,
         ),
         source: old.id,
         sourceName: info?.name ?? '',
@@ -775,6 +777,18 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
       } else {
         tapped = true; // "If you don't, it enters tapped."
       }
+    }
+    // CR 119.4, 614.12 (pay any amount of life): the life the controller chose to pay is lost as the permanent enters, whatever else the replacement effects of entering do.
+    const lifePaid = request.entersChosen?.lifePaid ?? 0;
+    if (lifePaid > 0 && entersChoice(abilities) === 'lifePaid') {
+      const seat = getSeat(next, enterController);
+      next = loseLifeBy(next, enterController, lifePaid);
+      events.push({
+        kind: 'lifeChanged',
+        seat: enterController,
+        from: seat.life,
+        to: seat.life - lifePaid,
+      });
     }
     if (payment !== null && !tapped && !untappedByEffect) {
       if (mayPay && request.entersPaid === true) {

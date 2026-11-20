@@ -398,7 +398,7 @@ export function checkDragonsEffect(
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
-      if (scope.attackTrigger !== true) {
+      if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
       }
       return true;

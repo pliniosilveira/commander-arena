@@ -47,6 +47,7 @@ const STATIC_CONDITIONS = [
   // Primordial Hydra: "~ has ten or more +1/+1 counters on it".
   'condition.this-has-counter-count',
   // Quest for the Goblin Lord (CR 122.1, 611.3a): "~ has five or more quest counters on it".
+  // Issue 145 (Voice of the Blessed): "~ has four or more +1/+1 counters on it".
   'condition.this-counter-count',
 ] as const;
 
@@ -113,6 +114,28 @@ function hostPronounUnit(via: 'enchanted' | 'equipped'): Parser<StaticUnit> {
     return { ok: true, value: { noun, effects: r.value }, pos: r.pos };
   };
 }
+
+/**
+ * "it" after a condition about the counters on `~` ("As long as ~ has four or more +1/+1 counters on it, it has flying and vigilance."): the same permanent as the condition names
+ * (issue 145). A pronoun with no such condition before it is not read.
+ */
+const SELF_PRONOUN_UNIT: Parser<StaticUnit> = (ctx, pos) => {
+  const it = pattern(/it(?= )/iu)(ctx, pos);
+  if (!it.ok) return it;
+  const r = predicate('selfGrant')(ctx, it.pos);
+  if (!r.ok) return r;
+  const noun: IrNoun = {
+    kind: 'noun',
+    det: 'self',
+    filter: { raw: 'it' },
+    upTo: false,
+    plural: false,
+    other: false,
+    span: { start: pos, end: it.pos },
+    rule: 'static.conditional-prefix',
+  };
+  return { ok: true, value: { noun, effects: r.value }, pos: r.pos };
+};
 
 /** The word a condition about the permanent an attachment is on says ("enchanted", "equipped"), or undefined for any other condition. */
 function hostWordOf(condition: IrCondition | undefined): 'enchanted' | 'equipped' | undefined {
@@ -227,6 +250,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as another Aura is attached to enchanted creature, it has first strike and lifelink.',
     'As long as ~ entered this turn, enchanted creature has hexproof.',
     'As long as ~ has five or more quest counters on it, creatures you control get +2/+0.',
+    // Issue 145 (Voice of the Blessed): "it" is ~ after a condition about the counters on ~.
+    'As long as ~ has four or more +1/+1 counters on it, it has flying and vigilance.',
   ],
   rejects: [
     'As long as this card is in your graveyard and you control a Mountain, ~ gets +2/+2',
@@ -248,6 +273,8 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     'As long as enchanted creature is green, it gets +1/+1',
     'As long as enchanted creature is green or white, it gets +1/+1.',
     'As long as ~ entered this turn, it has hexproof.',
+    'As long as it has four or more +1/+1 counters on it, it has flying.',
+    'As long as ~ has four or more +1/+1 counters on it, you draw a card.',
   ],
   parse: (ctx, pos) => {
     const lead = literal('as long as ')(ctx, pos);
@@ -289,10 +316,16 @@ export const STATIC_CONDITIONAL_PREFIX = defineRule<IrStatic>({
     }
     // D-427: after a condition about the host of an attachment, "it" is that permanent.
     const via = hostWordOf(condition);
+    // Issue 145: after a condition about the counters on ~, "it" is ~.
+    const aboutSelfCounters = condition?.rule === 'condition.this-counter-count';
     const read = units(
       ctx,
       at,
-      via === undefined ? ANY_UNIT : choice(hostPronounUnit(via), ANY_UNIT),
+      via !== undefined
+        ? choice(hostPronounUnit(via), ANY_UNIT)
+        : aboutSelfCounters
+          ? choice(SELF_PRONOUN_UNIT, ANY_UNIT)
+          : ANY_UNIT,
     );
     if (!read.ok) return read;
     const last = read.value[read.value.length - 1];

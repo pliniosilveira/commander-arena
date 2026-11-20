@@ -99,6 +99,7 @@ import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
+import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
@@ -153,6 +154,7 @@ import { PRIMORDIAL_EFFECT_RULES } from './primordial';
 import { PRISMARI_G1_EFFECT_RULES } from './prismari-g1';
 import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
+import { PRODUCED_TYPE_MANA_EFFECT_RULES } from './produced-type-mana';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
@@ -175,14 +177,18 @@ import { RING_EFFECT_RULES } from './ring';
 import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
+import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
 import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
+import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
+import { WIN_GAME_EFFECT_RULES } from './win-game';
+import { YOU_MAY_HAVE_EFFECT_RULES } from './you-may-have';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
 const TAP_OPERANDS = [
@@ -1122,6 +1128,9 @@ export const EFFECT_RULES = [
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
+  ...LAND_CREATURE_ABILITY_EFFECT_RULES,
+  ...YOU_MAY_HAVE_EFFECT_RULES,
+  ...SONG_FREYALISE_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,
@@ -1135,6 +1144,8 @@ export const EFFECT_RULES = [
   ...TROYAN_G4_EFFECT_RULES,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_EFFECT_RULES,
+  // Lathiel: "distribute up to that many +1/+1 counters among any number of other target creatures" (a division of a triggered ability).
+  ...UP_TO_THAT_MANY_EFFECT_RULES,
   // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
   ...JESKAI_CASTFREE_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
@@ -1156,6 +1167,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
+  // Hatsune Miku deck (issue 145): "You win the game."
+  ...WIN_GAME_EFFECT_RULES,
   ...FLASH_PERMISSION_EFFECT_RULES,
   // Quandrix Unlimited deck: "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel).
   ...PLAYER_MANA_ABILITY_EFFECT_RULES,
@@ -1264,6 +1277,8 @@ export const EFFECT_RULES = [
   EFFECT_UNTAP,
   EFFECT_ADD_ADDITIONAL_MANA,
   EFFECT_CONTROLLER_ADDS_ADDITIONAL_MANA,
+  // Mirari's Wake, Vorinclex: "add one mana of any type that land produced", before `effect.add-mana`.
+  ...PRODUCED_TYPE_MANA_EFFECT_RULES,
   EFFECT_ADD_MANA,
   // The sentence before "Add an amount of mana of that color equal to your devotion to that color" (Nykthos, Shrine to Nyx).
   EFFECT_CHOOSE_COLOR,

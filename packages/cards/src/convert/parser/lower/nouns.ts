@@ -581,8 +581,11 @@ export function declareDividedTarget(
   noun: IrNoun,
   ctx: LowerContext,
   total: Amount,
+  /** "Distribute up to that many ...": the controller may give out fewer than the total (CR 601.2d). */
+  upTo = false,
 ): LowerResult<string> {
   const id = noun.ref;
+  const divide = { total, ...(upTo ? { upTo: true as const } : {}) };
   if (id === undefined || noun.det !== 'target' || noun.filter.player !== undefined) {
     return failure(noun, []);
   }
@@ -592,9 +595,9 @@ export function declareDividedTarget(
     const blockedAny = missingFeatures(['selector:anyTarget']);
     if (blockedAny.length > 0) return failure(noun, blockedAny);
     if (noun.anyNumber === true) {
-      ctx.targets.push({ id, what: { kind: 'anyTarget' }, divide: { total } });
+      ctx.targets.push({ id, what: { kind: 'anyTarget' }, divide });
     } else if (noun.minTargets !== undefined) {
-      ctx.targets.push({ id, what: { kind: 'anyTarget' }, ...boundsOf(noun), divide: { total } });
+      ctx.targets.push({ id, what: { kind: 'anyTarget' }, ...boundsOf(noun), divide });
     } else {
       return failure(noun, []);
     }
@@ -607,7 +610,7 @@ export function declareDividedTarget(
     id,
     what: { kind: 'object', filter: filter.value },
     ...bounds,
-    divide: { total },
+    divide,
   });
   return { ok: true, value: id, rule: noun.rule };
 }

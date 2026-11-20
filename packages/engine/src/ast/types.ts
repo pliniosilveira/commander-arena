@@ -46,6 +46,12 @@ export type Amount =
    */
   | { readonly kind: 'enteredX' }
   /**
+   * "Create an X/X token, where X is the life paid as this artifact entered" (CR 119.4, 614.12, 400.7): the life the permanent paid as it entered (`asEntersChoose` of
+   * `lifePaid` on the same face), which the permanent remembers (`GameObject.chosen.lifePaid`), read from last-known information once it has left (CR 113.7a). Needs
+   * that choice on the face; nothing was paid (0) for a permanent that made no choice.
+   */
+  | { readonly kind: 'lifePaidAsEntered' }
+  /**
    * "Draw a card for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a, 303.4e, D-654): the Auras `controlledBy` ("you": the controller of the ability) controlled that
    * were attached to the permanent the trigger is about as it left the battlefield, from its last-known information. Valid only in a triggered ability whose trigger has a permanent
    * as its subject (`dies`, `leavesBattlefield`).
@@ -71,6 +77,11 @@ export type Amount =
    * last-known information of a spell that left the stack has lost its X (`docs/ROADMAP.md`).
    */
   | { readonly kind: 'manaValueOf'; readonly of: ObjectRef }
+  /**
+   * "For each of that spell's colors" (issue 145, Ancient Cornucopia; CR 105.2, 601.2i): how many of the five colors the object has (a color counts once, colorless is no color, CR 105.2c),
+   * read as it is now, or from last-known information once it has left (CR 608.2h). Valid where `manaValueOf` is: of a target or of the `triggerSubject` spell of a cast trigger.
+   */
+  | { readonly kind: 'colorsOf'; readonly of: ObjectRef }
   /**
    * "The difference" between a number and the mana value of a card (D-151, "If the discovered card's mana value is less than 10, create a number of tapped
    * Treasure tokens equal to the difference"): `limit` less the mana value of the object `of` names (read as `manaValueOf` is), and 0 when that is
@@ -534,6 +545,12 @@ export type StaticPtAmount =
 export type DefinedPtAmount =
   | CountAmount
   | Extract<Amount, { readonly kind: 'devotion' }>
+  /**
+   * "~'s power and toughness are each equal to your life total" (issue 145, CR 604.3, 119.1): the life total of the controller of the object (its owner outside the battlefield
+   * and the stack), read each time the characteristics are worked out. Only `you`; a life total below 0 is 0 (CR 208.1: a negative power or toughness is 0 for state-based
+   * actions, and a characteristic-defining ability sets the number as it is).
+   */
+  | { readonly kind: 'lifeTotalOf'; readonly player: { readonly kind: 'you' } }
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
 
@@ -1172,7 +1189,14 @@ export interface TargetSpec {
    * Only a slot of a spell's own text or of an activated or triggered ability (CR 601.2d, 602.2b, 603.3d: the division is announced as the ability is put on
    * the stack), not of a mode or a reflexive ability; a `dealDividedDamage` effect of the same spell or ability must name it.
    */
-  readonly divide?: { readonly total: Amount };
+  readonly divide?: {
+    readonly total: Amount;
+    /**
+     * "Distribute up to that many +1/+1 counters among any number of other target creatures" (CR 601.2d, 603.3d): the controller may divide fewer than `total` (each target
+     * still gets at least 1, and none may be chosen); the shares add up to at most `total`, not exactly it.
+     */
+    readonly upTo?: true;
+  };
   /**
    * "For each opponent, exile up to one target nonland permanent that player controls" (CR 115.1, 601.2c, 603.3d, D-149): the slot takes at most
    * one target for each opponent of the controller who is still in the game, each controlled by that opponent: `what` is an `object`
@@ -1321,6 +1345,16 @@ export type Cost =
    * or `tapCreatures`; it differs from `tapCreatures` (Crew), which counts total power.
    */
   | { readonly kind: 'tapPermanents'; readonly filter: ObjectFilter; readonly count: number }
+  /**
+   * "Untap two tapped creatures you control" (CR 701.26b, 118.3, 602.2b): the player untaps `count` tapped permanents they control that match `filter`, as part of the cost of an
+   * activated ability. Only a tapped permanent can be untapped, so a player with fewer than `count` of them cannot pay (CR 118.3). The costs are paid in the order the player likes
+   * (CR 601.2h): this one is paid after the mana, so a creature tapped for the mana of the cost may be one of them, and a creature that came under the player's control this turn
+   * may be untapped (CR 302.6: only its own {T} ability is held back). With more candidates than `count` a `choosePermanent` decision of purpose `untapCost` and `forCost` asks. A
+   * permanent that would not untap (a stun counter, CR 122.1d) is untapped as every effect untaps it. The filter's controller is the player (`you` or left out), its zone the
+   * battlefield, and it does not say `tapped`. Different from `untap` (the permanent the ability belongs to, {Q}); refused with another cost that taps permanents of a
+   * filter, a crew cost or a blight cost, and in a mana ability, a spell's additional cost or an alternative cost.
+   */
+  | { readonly kind: 'untapPermanents'; readonly filter: ObjectFilter; readonly count: number }
   /**
    * "Blight 1" (D-407, CR 701.68): the player puts `count` -1/-1 counters on a creature they control, as part of the cost of an activated ability. The
    * player chooses the creature with a `choosePermanent` decision of purpose `blight` and `forCost` (the engine chooses when only one creature can take the
@@ -1612,7 +1646,8 @@ export type TokenPreset =
   | 'Gingerbrute'
   | 'Incubator'
   | 'Lander'
-  | 'Wicked Role';
+  | 'Wicked Role'
+  | 'Junk';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -2999,6 +3034,13 @@ export type Effect =
    */
   | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
   /**
+   * "You win the game." (CR 104.2b: an effect may state that a player wins the game; CR 104.1: the game ends immediately when a player wins): the one player the selector names
+   * wins at once and the game ends, whoever else is in it (a player who "can't lose the game" does not stop it ending). When an opponent of the player has a permanent that says "your
+   * opponents can't win the game" (`opponentsCantWin`) the player does not win: the "can't" effect wins (CR 101.2). Nothing happens for a player who has left the game. The selector
+   * must name one player ("you", "that player", "target player").
+   */
+  | { readonly kind: 'winGame'; readonly player: PlayerSelector }
+  /**
    * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-278), the ability of a meld card: it exiles the permanent it belongs to
    * and the creature named `partner` that its controller both owns and controls, then puts the two cards onto the battlefield as one melded permanent
    * (CR 712.14c), under the control of the controller of the ability. The cards can be melded only if they are the two cards of one meld pair, neither a token
@@ -3239,7 +3281,12 @@ export type Effect =
       readonly kind: 'grantAbility';
       readonly objects: ObjectSelector;
       readonly abilities: readonly Ability[];
-      readonly duration: 'untilEndOfTurn' | 'permanent';
+      /**
+       * `untilYourNextTurn` (issue 145, Song of Freyalise, CR 611.2a, 500.1): "Until your next turn, creatures you control gain \"{T}: Add one mana of any color.\"": the permanents
+       * `objects` names as the effect resolves (CR 611.2c) have the abilities until the next turn of the controller of the effect begins (the turn it resolves in not counted).
+       * Only an activated, triggered or mana ability, as for `untilEndOfTurn`.
+       */
+      readonly duration: 'untilEndOfTurn' | 'untilYourNextTurn' | 'permanent';
     }
   /**
    * "Target creature gains flying until end of turn": layer 6 (CR 613.1f), a keyword without parameters. D-451 (CR 702.16): or a protection, from named colors
@@ -4102,7 +4149,14 @@ export type ManaProduction =
    * of mana, chosen as the ability resolves (CR 605.3b), so the choice is part of the activation.
    * At least two combinations that differ as multisets; the order inside one does not matter.
    */
-  | { readonly kind: 'combination'; readonly options: readonly (readonly ManaColor[])[] };
+  | { readonly kind: 'combination'; readonly options: readonly (readonly ManaColor[])[] }
+  /**
+   * "Whenever you tap a land for mana, add one mana of any type that land produced." (Mirari's Wake, Vorinclex, Voice of Hunger; CR 106.12a, 605.1b, 605.4a): one mana
+   * of a type the mana ability that was tapped for mana produced (colorless is a type, CR 106.1b). With a single type produced there is nothing to choose; with several (a
+   * land that makes {W}{U}) the activation names the type, like `anyColor`. Only the effect of a `tappedForMana` trigger (`validateCard`): a mana ability or a spell has no
+   * mana ability that produced mana for it to read.
+   */
+  | { readonly kind: 'producedType' };
 
 // ---- Triggers (CR 603)
 
@@ -4206,8 +4260,11 @@ export type Trigger =
        * members) that the caster casts this turn, whatever other spells they cast before it. Not with `nth` or `self`; the filter names at least one card type, or (issue 81, "your first noncreature spell each turn") one it must not have (`notTypes`).
        */
       readonly firstOfKind?: true;
-      /** For "during each opponent's turn", only while the active player is an opponent of this ability's controller. */
-      readonly duringTurn?: 'opponent';
+      /**
+       * Whose turn the spell is cast in, relative to the controller of this ability (CR 603.2: the ability triggers only for an event that fits its words): `opponent` for "during
+       * each opponent's turn", only while the active player is an opponent; `you` for "an opponent casts a spell during your turn", only while the active player is the controller.
+       */
+      readonly duringTurn?: 'you' | 'opponent';
       /**
        * "When you cast this spell" (CR 702.85a Cascade, 603.2, D-120): the ability of a spell that works while
        * the spell is on the stack and triggers only for that very spell (so `by` is 'you' and the filter is
@@ -5855,8 +5912,12 @@ export type Replacement =
    */
   | {
       readonly kind: 'asEntersChoose';
-      /** `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`. */
-      readonly what: 'creatureType' | 'color' | 'option' | 'cardType';
+      /**
+       * `cardType` (D-376, CR 205.2a): "As this creature enters, choose a card type", one of the card types in `CARD_TYPES`; read by a `protection` from `chosenCardType`.
+       * `lifePaid` ("As this artifact enters, pay any amount of life", CR 119.4, 614.12): the controller chooses an amount from 0 to their life total (CR 119.4b: 0 can always be
+       * paid) and loses that much life as the permanent enters; the amount is kept on the permanent (`GameObject.chosen.lifePaid`) and read by the amount `lifePaidAsEntered`.
+       */
+      readonly what: 'creatureType' | 'color' | 'option' | 'cardType' | 'lifePaid';
       /**
        * For `what: 'option'` (D-151, "As this enchantment enters, choose Khans or Dragons"): the names the controller chooses among, at least two
        * different ones, as the card writes them. The answer is kept on the permanent (`GameObject.chosen.option`) and read by the condition
@@ -6132,6 +6193,20 @@ export type StaticEffect =
       readonly kind: 'grantKeywordToHandCards';
       readonly what: ObjectFilter;
       readonly keyword: Extract<Keyword, { readonly kind: 'cycling' }>;
+    }
+  /**
+   * "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, 613.1f, 604.2, 611.3a): a static ability of a permanent on the battlefield that gives the keyword `keyword` to the
+   * spells its controller casts that `what` matches, in layer 6 with the permanent's timestamp, from the moment the spell is on the stack (CR 601.2a: it is cast from there), so that the
+   * keyword is there as the spell is cast (the triggered ability of Demonstrate, "When you cast this spell", is found once the spell is on the stack, CR 601.2i, 603.2) and when its total
+   * cost is determined (Convoke, CR 702.51b). Only Demonstrate and Convoke, the keywords the engine reads from a spell as it is cast. Each grant of Demonstrate is one more instance (each
+   * triggers on its own); Convoke instances are redundant (CR 702.51d). A copy of a spell is not cast (CR 707.10) and gets nothing, nor does an ability on the stack. `what` is a filter of
+   * the spell as it is on the stack (its types, colors, mana value and the like after layers 4 and 5) with `controller: 'you'` (the permanent's controller, "spells you cast"), and no zone,
+   * owner, stack kind, keyword, combat or source test. A permanent that lost all its abilities gives nothing (CR 613.1f).
+   */
+  | {
+      readonly kind: 'grantKeywordToSpells';
+      readonly what: ObjectFilter;
+      readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
     }
   /**
    * "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a, 613.1f, 604.3, 611.3a): a static ability of a permanent

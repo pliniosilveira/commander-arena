@@ -20,7 +20,7 @@ export const DOESNT_UNTAP_NEXT: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const objects = arg(clause, 'objects');
     if (objects?.kind !== 'noun') return failure(clause);
-    const selector = objectSelectorOf(objects, ctx, { eachMention: true });
+    const selector = objectSelectorOf(objects, ctx, { eachMention: true, triggerSubject: true });
     if (!selector.ok) return selector;
     const effect: Effect = {
       kind: 'restrict',

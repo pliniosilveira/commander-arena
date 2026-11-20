@@ -67,6 +67,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     }
   });
   checkManaProduction(a.production, `${path}.production`, out);
+  if (a.production?.kind === 'producedType') {
+    issue(
+      out,
+      `${path}.production`,
+      'one mana of a type a permanent produced is only the effect of a "tapped for mana" triggered mana ability (CR 605.1b), not what a mana ability makes',
+    );
+  }
   // CR 605.1a, 605.3b: "Add {C} for each charge counter on this artifact" (Elementalist's Palette), "Add {U} for each artifact you control" (Uthros, Titanic Godcore): the count is read as the
   // ability is activated and is what the game says then (a count, the counters on this permanent, ...): no target, no X and no earlier instruction to read. A cost that gives a permanent
   // up or takes counters off could change what it counts, so the two are not combined.
@@ -355,6 +362,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
     } else {
       checkCondition(a.instead.condition, `${path}.instead.condition`, out);
       checkManaProduction(a.instead.production, `${path}.instead.production`, out);
+      if (a.instead.production?.kind === 'producedType') {
+        issue(
+          out,
+          `${path}.instead.production`,
+          'producedType is only the effect of a triggered mana ability',
+        );
+      }
       if (a.instead.production?.kind === 'couldProduce') {
         issue(
           out,

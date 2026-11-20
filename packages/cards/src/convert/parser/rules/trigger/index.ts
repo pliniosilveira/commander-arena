@@ -29,6 +29,7 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
+import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
 import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
@@ -774,6 +775,8 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
         ),
       ),
       spanned(sequence(pattern(/an? /i), map(spellPhrase(), withoutZone))),
+      // Issue 145 (Ancient Cornucopia, CR 105.2): "a spell that's one or more colors", a spell with at least one color.
+      optional(pattern(/ that['’]s one or more colors(?![\p{L}\p{N}])/iu), null),
       // Stage P49 (D-206, CR 115.1, 601.2c): "an instant or sorcery spell that targets a creature".
       // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~", the source of the ability.
       optional(choice(AIMED, AIMED_SELF, AIMED_ANY), null),
@@ -781,8 +784,14 @@ export const TRIGGER_CAST = defineRule<IrTrigger>({
       optional(sequence(literal(' or '), pattern(/a spell\s/iu), AIMED), null),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [actor, spell, aimed, alternative] = r.value;
-    const base: IrFilter = spell.value[1];
+    const [actor, spell, colored, aimed, alternative] = r.value;
+    if (colored !== null && (aimed !== null || alternative !== null)) return fail(ctx, pos);
+    const spellBase: IrFilter = spell.value[1];
+    if (colored !== null && (spellBase.colors !== undefined || spellBase.colorless === true)) {
+      return fail(ctx, pos);
+    }
+    const base: IrFilter =
+      colored === null ? spellBase : { ...spellBase, colorCount: { cmp: 'atLeast', value: 1 } };
     let filter: IrFilter;
     if (alternative !== null) {
       // The first kind of spell must be a plain description: no aim of its own, no choice of its own (the engine's disjunction is one level).
@@ -1184,6 +1193,8 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
  */
 export const TRIGGER_RULES = [
   TRIGGER_ENTERS_AND_CAST,
+  // "an opponent casts a spell during your turn [and when ~ dies]" starts like `trigger.cast`, which stops before the rest, so it comes before it.
+  ...CAST_DURING_TURN_TRIGGER_RULES,
   // Prismari deck, group 1 (D-638, D-644): "~ enters and whenever one or more creature tokens you control deal combat damage to a player" and "you cast ... from your hand" start like
   // `trigger.enters` and `trigger.cast`, which stop before the rest, so they come before them.
   ...PRISMARI_G1_TRIGGER_RULES,

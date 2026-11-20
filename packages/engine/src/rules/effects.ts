@@ -168,6 +168,7 @@ import type { TokenBatch } from './token-replacement';
 import { runTransform } from './transform';
 import { untapPermanent } from './untap';
 import { runVote } from './vote';
+import { winTheGame } from './win-game';
 import { moveObject } from './zones';
 
 /** The counter Cumulative upkeep puts on the permanent (CR 702.24a). */
@@ -2039,6 +2040,14 @@ function runEffect(
       // CR 104.3e (D-269): "each player this creature attacked this turn loses the game": the players the selector names lose it together.
       const lost = loseTheGame(next, resolvePlayers(state, effect.player, ctx, targets));
       return done(lost.state, [...events, ...lost.events]);
+    }
+
+    case 'winGame': {
+      // CR 104.2b: "You win the game": the player the selector names wins and the game ends (CR 104.1), unless an opponent's "your opponents can't win the game" stops it.
+      const [winner] = resolvePlayers(state, effect.player, ctx, targets);
+      if (winner === undefined) return done(next, events);
+      const won = winTheGame(next, winner);
+      return done(won.state, [...events, ...won.events]);
     }
 
     case 'setLifeTotal': {

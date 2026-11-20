@@ -217,6 +217,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
+    // "You win the game." (CR 104.2b).
+    'winGame',
     // D-278: "Exile them, then meld them into X." (CR 701.42a).
     'meld',
     'tap',
@@ -550,6 +552,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFirstOfKind',
     // D-565: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
     'castDuringOpponentTurn',
+    // CR 603.2: "an opponent casts a spell during your turn" (`castSpell` with `duringTurn: 'you'`).
+    'castDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -747,6 +751,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
+    'producedType',
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
@@ -764,6 +770,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Incubator',
     'Lander',
     'Wicked Role',
+    'Junk',
   ],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
@@ -819,6 +826,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // D-407 (CR 701.68): "Blight 1" as the cost of an activated ability.
     'blight',
+    // CR 701.26b: "Untap two tapped creatures you control" as the cost of an activated ability.
+    'untapPermanents',
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
@@ -1166,6 +1175,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'allCreatureTypes',
     // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
     'grantKeywordToHandCards',
+    // Issue 145: "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a).
+    'grantKeywordToSpells',
     // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
     'grantFlashbackToGraveyardCards',
     'noMaximumHandSize',
@@ -1271,6 +1282,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Incubator',
     'Lander',
     'Wicked Role',
+    'Junk',
     'custom',
     'copyOf',
     'tapped',
@@ -1284,6 +1296,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'x',
     'powerOf',
     'manaValueOf',
+    // Issue 145 (Ancient Cornucopia): "for each of that spell's colors".
+    'colorsOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
     'shortfall',
     'countOf',
@@ -1365,6 +1379,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedAsCostPower',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // CR 119.4, 614.12: "where X is the life paid as this artifact entered".
+    'lifePaidAsEntered',
     // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
     'aurasAttachedToTriggerSubject',
     // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
@@ -1620,6 +1636,8 @@ export const TRIGGER_FEATURES = [
   'castFirstOfKind',
   /** "Whenever you cast your first spell during each opponent's turn" (D-565): `castSpell` with `duringTurn`. */
   'castDuringOpponentTurn',
+  /** "Whenever an opponent casts a spell during your turn" (CR 603.2): `castSpell` with `duringTurn: 'you'`. */
+  'castDuringYourTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -2033,6 +2051,8 @@ export const STATIC_KINDS = [
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
   'grantKeywordToHandCards',
+  /** "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, issue 145). */
+  'grantKeywordToSpells',
   /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
   'grantFlashbackToGraveyardCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
@@ -2150,6 +2170,7 @@ export const TOKEN_KINDS = [
   'Incubator',
   'Lander',
   'Wicked Role',
+  'Junk',
   'Blood',
   'custom',
   /** "A token that's a copy of target creature" (CR 707.2): the engine's `copyOf`. */
@@ -2170,6 +2191,8 @@ export const AMOUNT_KINDS = [
   'x',
   'powerOf',
   'manaValueOf',
+  /** "For each of that spell's colors" (CR 105.2, issue 145): the engine's `colorsOf`. */
+  'colorsOf',
   /** "The difference" between a number and a mana value (D-151): the engine's `shortfall`. */
   'shortfall',
   'countOf',
@@ -2269,6 +2292,8 @@ export const AMOUNT_KINDS = [
   'tappedAsCostPower',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "Where X is the life paid as this artifact entered" (CR 119.4, 614.12): the engine's `lifePaidAsEntered`, the amount a permanent paid for "pay any amount of life". */
+  'lifePaidAsEntered',
   /** "For each Aura you controlled that was attached to it" (D-654, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
   'aurasAttachedToTriggerSubject',
   /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
@@ -2435,6 +2460,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   setLifeTotal: true,
   loseLife: true,
   loseGame: true,
+  winGame: true,
   meld: true,
   tap: true,
   untap: true,
@@ -2628,6 +2654,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castNth: true,
   castFirstOfKind: true,
   castDuringOpponentTurn: true,
+  castDuringYourTurn: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
@@ -2757,6 +2784,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  producedType: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,
@@ -2775,6 +2803,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,
   removeCounters: true,
