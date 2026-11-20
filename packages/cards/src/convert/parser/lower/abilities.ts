@@ -607,7 +607,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (event.condition === undefined) return built({ kind: 'entersTapped' });
     // The IR says "applies when X is false"; the engine's `unless` is X itself (CR 614.12).
     const { test } = event.condition;
-    if (test.kind !== 'not') return failure(ability);
+    if (test.kind !== 'not') {
+      // "If you control two or more other lands, ~ enters tapped." (CR 614.1c): it enters tapped when X holds, so it enters untapped (`unless`) when X does not.
+      const applies = lowerCondition(event.condition, true);
+      if (!applies.ok) return applies;
+      return built({ kind: 'entersTapped', unless: { kind: 'not', term: applies.value } });
+    }
     const unless = lowerCondition(test.term, true);
     if (!unless.ok) return unless;
     return built({ kind: 'entersTapped', unless: unless.value });

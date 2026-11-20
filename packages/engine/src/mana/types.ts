@@ -45,6 +45,11 @@ export type ManaRestriction =
         | { readonly kind: 'manaValueAtLeast'; readonly value: number }
         | { readonly kind: 'hasX' }
       )[];
+      /**
+       * "Spend this mana only to cast monocolored spells of that color" (issue 144, CR 106.6, 105.2a): the spell has exactly one color and it is one of these (`W`, `U`, `B`, `R`,
+       * `G`); an empty list matches no spell (no color was chosen). Never with `alsoAbilities`.
+       */
+      readonly monocolored?: readonly string[];
     };
 
 /**

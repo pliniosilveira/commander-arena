@@ -889,6 +889,8 @@ export type IrCost = IrNode &
     // "{E}{E}" (stage P51, D-209, CR 107.14): energy counters paid by the player that an "unless you pay" asks
     | { readonly kind: 'energy'; readonly count: number }
     | { readonly kind: 'removeCounters'; readonly counter: string; readonly amount: IrAmount }
+    // "Exert ~" (issue 144, CR 701.43a): the permanent itself, as a cost
+    | { readonly kind: 'exert' }
     // "Put a page counter on ~" (stage P31, CR 118.3, 122.1): counters put on the permanent itself as a cost
     | { readonly kind: 'putCounters'; readonly counter: string; readonly count: number }
     // "Return an artifact you control to its owner's hand", "Return ~ to its owner's hand" (stage P31, CR 118.3): `count` of them
@@ -921,7 +923,12 @@ export interface IrManaSpec extends IrNode {
     // one mana of any color in your commander's color identity (CR 903.4)
     | { readonly kind: 'commanderIdentity' }
     // "one mana of the chosen color" (stage P33, D-150, CR 106.1b, 607.2d): the color the permanent chose as it entered
-    | { readonly kind: 'chosenColor'; readonly or?: 'W' | 'U' | 'B' | 'R' | 'G' }
+    // issue 144 (Throne of Eldraine): "four mana of the chosen color" has `count` 4
+    | {
+        readonly kind: 'chosenColor';
+        readonly or?: 'W' | 'U' | 'B' | 'R' | 'G';
+        readonly count?: number;
+      }
     // "two mana in any combination of colors" (stage P34, D-152, CR 106.1b, 605.3b): `count` mana, each of a color chosen on its own
     // stage P34; issue 25 (D-319): "two mana of different colors" is `distinct` (no color twice)
     | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
@@ -1098,6 +1105,8 @@ export interface IrToken extends IrNode {
   readonly named?: string;
   /** "... token with flying that's attacking that opponent" (D-648, CR 508.4): the token is created attacking the player a trigger about a player attacking one of your opponents attacked. */
   readonly attackingThatOpponent?: true;
+  /** "... token that's tapped and attacking" (issue 144, CR 508.4, 110.5b): the token enters tapped and starts attacking whom the source attacks, never declared as an attacker. */
+  readonly tappedAndAttacking?: true;
   /** "Smaug, a legendary 6/6 red Dragon creature token" (stage P45, D-197, CR 205.4): the token has the supertype legendary. */
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */

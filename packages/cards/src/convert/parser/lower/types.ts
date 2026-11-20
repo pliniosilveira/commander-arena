@@ -187,6 +187,8 @@ export interface LowerContext {
   diesTrigger: boolean;
   /** True in the body of a trigger about a batch of combat damage (issue 81): "those creatures" are the creatures that dealt it (the engine's `triggerSources`). */
   damageBatchTrigger: boolean;
+  /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
+  selfAttackTrigger: boolean;
   /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
@@ -397,6 +399,7 @@ export function newContext(
     itDied: false,
     diesTrigger: false,
     damageBatchTrigger: false,
+    selfAttackTrigger: false,
     cardName,
     selfName: '',
   };

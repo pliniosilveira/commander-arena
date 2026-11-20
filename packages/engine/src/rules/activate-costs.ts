@@ -66,6 +66,8 @@ export interface CostBreakdown {
   readonly mana: readonly string[];
   /** The cost has an {X} (CR 107.3, 602.2b): `mana` has it paid already as generic mana. */
   readonly hasX: boolean;
+  /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the mana of the cost is of the color the source chose as it entered. */
+  readonly onlyChosenColor: boolean;
   /** The permanents to sacrifice: the source itself, or a choice among a filter's matches. */
   readonly sacrifice: 'this' | ObjectFilter | null;
   /** How many of them (D-133, "Sacrifice two artifacts"; D-488, "Sacrifice X creatures": the X announced, 0 for none); 1 for the source and for an ordinary cost. */
@@ -123,6 +125,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let tapCreaturesCosts = 0;
   let blight = 0;
   let blightCosts = 0;
+  let onlyChosenColor = false;
   let loyalty: number | null = null;
   let loyaltyCosts = 0;
   const mana: string[] = [];
@@ -182,6 +185,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         break;
       case 'mana':
         mana.push(...withX(cost.symbols, x));
+        if (cost.onlyChosenColor === true) onlyChosenColor = true;
         break;
       case 'sacrifice':
         sacrifices += 1;
@@ -235,6 +239,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     tap,
     life,
     hasX: hasX(abilityXCost(costs)),
+    onlyChosenColor,
     counters: [...counters].map(([counter, count]) => ({ counter, count })),
     putCounters: [...put].map(([counter, count]) => ({ counter, count })),
     loyalty,
@@ -443,13 +448,15 @@ export function planActivationMana(
   const d = obj === undefined ? null : derive(state, obj);
   // CR 106.6, 107.3: "Spend this mana only on costs that contain {X}": the activation cost has an {X}.
   const x = costs.hasX ? ({ hasX: true } as const) : {};
+  // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability": the color the source chose as it entered, or none.
+  const only = costs.onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
   return planFor(
     planningState(state, source, costs),
     seat,
     costs.mana,
     d === null
-      ? { ability: true, ...x }
-      : { ability: true, ...x, source: { types: d.types, subtypes: d.subtypes } },
+      ? { ability: true, ...x, ...only }
+      : { ability: true, ...x, ...only, source: { types: d.types, subtypes: d.subtypes } },
   );
 }
 

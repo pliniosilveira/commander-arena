@@ -114,6 +114,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpendOnlyChosenType',
     // Quandrix Unlimited group E: "Spend this mana only on costs that contain {X}." (`ManaAbility.spendOnly.xCost`) and "Add {C} for each charge counter on this artifact." (`times` of a fixed production).
     'manaSpendOnlyXCost',
+    // Issue 144 (Throne of Eldraine): "Spend this mana only to cast monocolored spells of that color." (`ManaAbility.spendOnly.monocoloredChosen`) and "Spend only mana of the chosen color to activate this ability." (`Cost` `mana` with `onlyChosenColor`).
+    'manaSpendOnlyMonocolored',
+    'spendOnlyChosenColor',
     'manaCountOwnCounters',
     // D-151: "As long as this card is in your graveyard ..." and "Whenever ..., return this card from your graveyard" (`functionsIn`).
     'functionsInGraveyard',
@@ -719,6 +722,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // Issue 245 (Vivid Grove): "{T}, Remove a charge counter from this land: Add one mana of any color." (CR 118.3, 122.1).
     'removeCounters',
+    // Issue 144 (Arena of Glory): "{R}, {T}, Exert this land: Add {R}{R}." (CR 701.43a).
+    'exert',
   ],
   // D-099: `couldProduce` (CR 106.7) and `combination` ("Add {R}{R}, {R}{W}, or {W}{W}").
   manaProductionKinds: [
@@ -1499,6 +1504,10 @@ export const ABILITY_FEATURES = [
   'manaSpendOnlyChosenType',
   /** "Spend this mana only on costs that contain {X}" (CR 106.6, 107.3): `ManaAbility.spendOnly.xCost`. */
   'manaSpendOnlyXCost',
+  /** "Spend this mana only to cast monocolored spells of that color" (issue 144, CR 106.6, 105.2a): `ManaAbility.spendOnly.monocoloredChosen`. */
+  'manaSpendOnlyMonocolored',
+  /** "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): the `onlyChosenColor` of the mana cost of an activated ability. */
+  'spendOnlyChosenColor',
   /** "Add {C} for each charge counter on this artifact" (CR 605.1a): a fixed production of a mana ability with `times` the counters on the permanent itself. */
   'manaCountOwnCounters',
   /** An ability that works while its card is in the graveyard (CR 113.6b, D-151): `functionsIn: 'graveyard'` on a static or triggered ability. */
@@ -2307,6 +2316,8 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
   manaSpendOnlyXCost: true,
+  manaSpendOnlyMonocolored: true,
+  spendOnlyChosenColor: true,
   manaCountOwnCounters: true,
   functionsInGraveyard: true,
   doOnlyOnceEachTurn: true,
@@ -2707,6 +2718,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,
   tap: true,
   untap: true,
+  exert: true,
   payLife: true,
   payXLife: true,
   discardX: true,

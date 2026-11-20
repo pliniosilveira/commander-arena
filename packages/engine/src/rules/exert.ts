@@ -45,16 +45,24 @@ export function applyExerts(
   const events: GameEvent[] = [];
   for (const a of attacks) {
     if (a.exert !== true || next.objects[a.attacker]?.zone !== 'battlefield') continue;
-    const [timestamp, stamped] = allocateTimestamp(next);
-    const effect: ContinuousEffect = {
-      id: `ce${timestamp}`,
-      timestamp,
-      objects: [getObject(stamped, a.attacker).id],
-      until: 'nextUntapStep',
-      change: { kind: 'restrict', restriction: 'doesntUntap' },
-    };
-    next = { ...stamped, continuousEffects: [...stamped.continuousEffects, effect] };
+    next = exertPermanent(next, a.attacker);
     events.push({ kind: 'exerted', seat, object: a.attacker });
   }
   return { state: next, events };
+}
+
+/**
+ * To exert a permanent (CR 701.43a): it does not untap during its controller's next untap step. The same effect whether the permanent is exerted as it attacks or as a cost
+ * ("Exert ~" in a mana ability, issue 144); exerting it twice before that step is the one effect twice (CR 701.43b).
+ */
+export function exertPermanent(state: GameState, id: ObjectId): GameState {
+  const [timestamp, stamped] = allocateTimestamp(state);
+  const effect: ContinuousEffect = {
+    id: `ce${timestamp}`,
+    timestamp,
+    objects: [getObject(stamped, id).id],
+    until: 'nextUntapStep',
+    change: { kind: 'restrict', restriction: 'doesntUntap' },
+  };
+  return { ...stamped, continuousEffects: [...stamped.continuousEffects, effect] };
 }

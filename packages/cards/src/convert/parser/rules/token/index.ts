@@ -319,12 +319,19 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
           keywords: [] as string[],
           abilities: [] as IrQuotedAbility[],
         }),
-        // D-648 (CR 508.4): "that's attacking that opponent", said of one token.
+        // D-648 (CR 508.4): "that's attacking that opponent", said of one token. Issue 144 (Den of the Bugbear): "that's tapped and attacking", which
+        // the controller of the token sends at whom the source attacks.
         optional(
           quiet(
-            map(
-              pattern(/ that['’]s attacking that opponent(?![\p{L}\p{N}])/iu),
-              () => true as const,
+            choice(
+              map(
+                pattern(/ that['’]s attacking that opponent(?![\p{L}\p{N}])/iu),
+                () => 'opponent' as const,
+              ),
+              map(
+                pattern(/ that['’]s tapped and attacking(?![\p{L}\p{N}])/iu),
+                () => 'tapped' as const,
+              ),
             ),
           ),
           null,
@@ -349,7 +356,8 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
       attackingThatOpponent,
     ]): Bare => ({
       kind: 'token',
-      ...(attackingThatOpponent === null ? {} : { attackingThatOpponent }),
+      ...(attackingThatOpponent === 'opponent' ? { attackingThatOpponent: true as const } : {}),
+      ...(attackingThatOpponent === 'tapped' ? { tappedAndAttacking: true as const } : {}),
       ...(tapped === null ? {} : { tapped }),
       ...(named === null ? {} : { named }),
       ...(pt[1] === 'X'

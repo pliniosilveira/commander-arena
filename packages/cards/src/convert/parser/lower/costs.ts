@@ -94,6 +94,9 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
     case 'blight':
       // CR 701.68a (D-407): Blight 1 is paid as the cost of an ordinary activated ability: the player chooses the creature as it is activated.
       return options.ordinary === true ? ok({ kind: 'blight', count: cost.count }) : failure(cost);
+    case 'exert':
+      // CR 701.43a (issue 144): the cost of a mana ability only; an ordinary activated ability's `costKinds` does not list it, so that reading is refused with its feature.
+      return ok({ kind: 'exert' });
     case 'removeCounters':
       return cost.amount.kind === 'number' && cost.amount.value >= 1
         ? ok({ kind: 'removeCounters', counter: cost.counter, count: cost.amount.value })
