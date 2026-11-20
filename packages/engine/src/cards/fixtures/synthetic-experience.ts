@@ -66,9 +66,9 @@ export const SYNTHETIC_EXPERIENCE_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
-  creature('SYNTHETIC Free Beast', null, 1),
-  creature('SYNTHETIC Two Beast', ['2'], 2),
+  creature('SYNTHETIC Experience Free Beast', null, 1),
+  creature('SYNTHETIC Experience Two Beast', ['2'], 2),
   creature('SYNTHETIC Three Beast', ['3'], 3),
   // {X}{1}: a mana value of 1 in a graveyard (CR 202.3e).
-  creature('SYNTHETIC X Beast', ['X', '1'], 1),
+  creature('SYNTHETIC Experience X Beast', ['X', '1'], 1),
 ];

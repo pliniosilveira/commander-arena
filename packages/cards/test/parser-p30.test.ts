@@ -1144,8 +1144,8 @@ describe('an ability of the card that works from the graveyard (CR 113.6b)', () 
       'it taps: nothing of the battlefield is paid from there',
     ],
     [
-      '{2}, Sacrifice a creature: Return this card from your graveyard to the battlefield.',
-      'it sacrifices',
+      '{2}, Sacrifice ~: Return this card from your graveyard to the battlefield.',
+      'it sacrifices itself, which is not in the graveyard',
     ],
     [
       '{2}: Return this card from your graveyard to the battlefield. Draw a card.',

@@ -122,8 +122,8 @@ describe('the engine runs what the lowering produced', () => {
       .seat(0)
       .define(lowered())
       .battlefield('SYNTHETIC Lowered Shaman', 'Mountain', 'Mountain', 'Mountain')
-      .battlefield('SYNTHETIC Free Beast', { label: 'dying' })
-      .graveyard('SYNTHETIC Two Beast', { label: 'two' })
+      .battlefield('SYNTHETIC Experience Free Beast', { label: 'dying' })
+      .graveyard('SYNTHETIC Experience Two Beast', { label: 'two' })
       .hand('Lightning Bolt')
       .seat(1)
       .library('Island', { count: 4 })
@@ -136,7 +136,7 @@ describe('the engine runs what the lowering produced', () => {
     g.advanceTo('end');
     g.act(0).chooseTargets('two');
     g.passAll();
-    g.expect.zone('SYNTHETIC Two Beast', 'hand', { seat: 0 });
+    g.expect.zone('SYNTHETIC Experience Two Beast', 'hand', { seat: 0 });
     expect(applyAction(g.state, 0, { kind: 'pass' }).ok).toBe(true);
   });
 
@@ -145,13 +145,13 @@ describe('the engine runs what the lowering produced', () => {
       .seat(0)
       .define(lowered())
       .battlefield('SYNTHETIC Lowered Shaman', 'Mountain')
-      .graveyard('SYNTHETIC Free Beast', { label: 'free' })
+      .graveyard('SYNTHETIC Experience Free Beast', { label: 'free' })
       .seat(1)
       .library('Island', { count: 4 })
       .at('postcombatMain', { active: 0, turn: 3 })
       .build();
     g.advanceTo('end');
     g.passAll();
-    g.expect.zone('SYNTHETIC Free Beast', 'battlefield', { seat: 0 });
+    g.expect.zone('SYNTHETIC Experience Free Beast', 'battlefield', { seat: 0 });
   });
 });

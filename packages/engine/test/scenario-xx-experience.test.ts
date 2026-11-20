@@ -8,10 +8,10 @@ import { getView, syntheticCard, validateCard } from '../src/index';
 import { type ScenarioGame, scenario } from '../src/testing/index';
 
 const SHAMAN = 'SYNTHETIC Experienced Shaman';
-const FREE = 'SYNTHETIC Free Beast'; // mana value 0
-const TWO = 'SYNTHETIC Two Beast';
+const FREE = 'SYNTHETIC Experience Free Beast'; // mana value 0
+const TWO = 'SYNTHETIC Experience Two Beast';
 const THREE = 'SYNTHETIC Three Beast';
-const X1 = 'SYNTHETIC X Beast'; // {X}{1}
+const X1 = 'SYNTHETIC Experience X Beast'; // {X}{1}
 const SWEEP = 'SYNTHETIC Grim Sweep'; // destroy all creatures
 
 const experience = (g: ScenarioGame, seat: 0 | 1): number | undefined =>
