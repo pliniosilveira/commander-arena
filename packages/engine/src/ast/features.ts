@@ -164,6 +164,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'optionalSacrifice',
     // D-583: "{T}, Sacrifice one or more artifacts: ..." (`Cost` `sacrifice` with `anyNumber` and `atLeastOne` in an activated ability, CR 602.2b, 701.21a).
     'sacrificeOneOrMore',
+    // "Sacrifice a Swamp and a Forest: ..." (`Cost` `sacrifice` with `alongside`, CR 701.21a, 118.3): a different permanent for each part.
+    'sacrificeEach',
     // D-511: "You may pay {1}. When you do, choose one —" (a `reflexive` effect with `modes`, and with `afterPayment` inside a `mayPay`, CR 603.12, 700.2b).
     'reflexiveModal',
     'reflexivePaid',
@@ -226,6 +228,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeCounters',
     // D-209: "You get {E}{E}" (`gainEnergy`) and "connives" (`connive`).
     'gainEnergy',
+    // CR 122.1: "You get an experience counter" (`gainExperience`).
+    'gainExperience',
     // "You have no maximum hand size for the rest of the game" (CR 402.2).
     'noMaxHandSizeForGame',
     'connive',
@@ -406,6 +410,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
     'exileFromTriggerCards',
+    // Twilight Diviner: "create a token that's a copy of one of them" of the permanents a batch enters trigger saw (CR 603.2c, 707.2).
+    'copyOneOfTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
     'castFree',
     // D-350: "you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead" (CR 608.2g, 609.4b).
@@ -538,6 +544,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedBy',
     'notAsAttacker',
     'tapBatch',
+    // Twilight Diviner: "one or more other creatures you control enter, if they entered or were cast from a graveyard" (`entersBatch` with `fromGraveyard`).
+    'entersFromGraveyard',
     // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
     'activatesAbilityX',
   ],
@@ -852,6 +860,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
     'searchZones',
+    // "Search your library for any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3; `search.totalManaValue`).
+    'searchTotalManaValue',
     // D-181: "target spell or ability with a single target" (`ObjectFilter.singleTarget`).
     'singleTarget',
     'targetCountAtLeast',
@@ -952,6 +962,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
     'discardedThisWay',
+    // CR 701.21a (Plaguecrafter): "each player who can't" (`PlayerSelector` `couldntSacrificeThisWay`) and `discard.together`.
+    'couldntSacrificeThisWay',
+    'discardTogether',
     // D-139: "two or more colors" (`ObjectFilter.colorCount`).
     'colorCount',
     // Zimone's Hypothesis: "power of the chosen quality" (`ObjectFilter.powerParity`).
@@ -1023,6 +1036,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'movedTotalManaValue',
     // CR 205.2a: "If two cards that share all their card types were milled this way" (`movedShareAllCardTypes`).
     'movedShareAllCardTypes',
+    // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have" (`manaValueAtMostAmount`).
+    'manaValueAtMostAmount',
     // D-210: "if a creature card was discarded this way" (`thisWayAtLeast`).
     'thisWayAtLeast',
     'objectMatches',
@@ -1291,6 +1306,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'votesFor',
     // D-450: "for each card you've drawn this turn" (CR 121.1).
     'cardsDrawnThisTurn',
+    // CR 122.1: "the number of experience counters you have".
+    'experienceCounters',
     // D-638: "the number of instant and sorcery spells you've cast this turn" (CR 601.2i).
     'spellsCastThisTurn',
     // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
@@ -1520,6 +1537,8 @@ export const ABILITY_FEATURES = [
   'optionalSacrifice',
   /** "{T}, Sacrifice one or more artifacts: ..." (D-583, CR 602.2b, 701.21a, 118.3): a `sacrifice` cost with `anyNumber` and `atLeastOne` in an activated ability, chosen as the cost is paid; `sacrificedAsCost` counts what was sacrificed. */
   'sacrificeOneOrMore',
+  /** "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3, 602.2b): a `sacrifice` cost with `alongside` in an activated ability, one different permanent for each part, chosen as the cost is paid. */
+  'sacrificeEach',
   /** "When you do, choose one —" (CR 603.12, 700.2b, 603.3c, D-511): a `reflexive` effect with `modes` and `chooseModes`. */
   'reflexiveModal',
   /** "You may pay {1}. When you do, ..." (CR 603.12, 118.1, D-511): a `reflexive` effect with `afterPayment`, the `effect` of a `mayPay`. */
@@ -1558,6 +1577,8 @@ export const TRIGGER_FEATURES = [
   'notAsAttacker',
   /** "Whenever you tap one or more untapped creatures" (CR 603.2c, D-510): the engine's `becomesTapped` with `batch`. */
   'tapBatch',
+  /** "Whenever one or more creatures enter, if they entered or were cast from a graveyard" (CR 603.4, 603.6a, 601.2a): the engine's `entersBatch` with `fromGraveyard`. */
+  'entersFromGraveyard',
   /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
   'activatesAbilityX',
 ] as const;
@@ -1630,6 +1651,8 @@ export const SELECTOR_KINDS = [
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
   'searchZones',
+  /** "Any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): the engine's `search.totalManaValue`. */
+  'searchTotalManaValue',
   /** "That targets a creature" (CR 115.1, 601.2c, D-206): the engine's `ObjectFilter.targetsObject`. */
   'targetsObject',
   /** "That targets a player" (CR 115.1, 601.2c): the engine's `ObjectFilter.targetsPlayer`. */
@@ -1754,6 +1777,10 @@ export const SELECTOR_KINDS = [
   'giftRecipient',
   /** "Each player who discarded a card this way" (CR 701.9, D-210): the engine's `PlayerSelector` `discardedThisWay`. */
   'discardedThisWay',
+  /** "Each player who can't" after a sacrifice (CR 701.21a, Plaguecrafter): the engine's `PlayerSelector` `couldntSacrificeThisWay`. */
+  'couldntSacrificeThisWay',
+  /** "Each player who can't discards a card" (CR 701.9, 101.4): all the cards chosen are discarded at once, the engine's `discard.together`. */
+  'discardTogether',
   /** "Permanents that are two or more colors", "monocolored" (CR 105.2, D-139): the engine's `ObjectFilter.colorCount`. */
   'colorCount',
   /** "Each creature with an odd power" (Zimone's Hypothesis): the engine's `ObjectFilter.powerParity`. */
@@ -1830,6 +1857,8 @@ export const CONDITION_KINDS = [
   'movedTotalManaValue',
   /** "If two cards that share all their card types were milled this way" (CR 205.2a, 608.2c): the engine's `movedShareAllCardTypes`. */
   'movedShareAllCardTypes',
+  /** "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c): the engine's `manaValueAtMostAmount`. */
+  'manaValueAtMostAmount',
   /** "If a creature card was discarded this way" (CR 608.2c, D-210): the engine's `thisWayAtLeast`. */
   'thisWayAtLeast',
   /** "If you control the artifact with the greatest mana value or tied for the greatest" (D-139): the engine's `controlsGreatest`. */
@@ -2161,6 +2190,8 @@ export const AMOUNT_KINDS = [
   'votesFor',
   /** "For each card you've drawn this turn" (CR 121.1, D-450): the engine's `cardsDrawnThisTurn`. */
   'cardsDrawnThisTurn',
+  /** "The number of experience counters you have" (CR 122.1): the engine's `experienceCounters`. */
+  'experienceCounters',
   /** "The number of instant and sorcery spells you've cast this turn" (CR 601.2i, D-638): the engine's `spellsCastThisTurn`. */
   'spellsCastThisTurn',
   /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */
@@ -2286,6 +2317,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   sacrificeX: true,
   optionalSacrifice: true,
   sacrificeOneOrMore: true,
+  sacrificeEach: true,
   reflexiveModal: true,
   reflexivePaid: true,
   reflexiveMoved: true,
@@ -2343,6 +2375,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,
+  gainExperience: true,
   noMaxHandSizeForGame: true,
   connive: true,
   createCopies: true,
@@ -2429,6 +2462,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
+  copyOneOfTriggerCards: true,
   fight: true,
   castFree: true,
   castCard: true,
@@ -2525,6 +2559,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
+  entersFromGraveyard: true,
   activatesAbilityX: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {

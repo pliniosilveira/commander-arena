@@ -259,6 +259,27 @@ export function evaluateCondition(
       if (condition.compare.cmp === 'atMost') return total <= condition.compare.value;
       return total === condition.compare.value;
     }
+    case 'manaValueAtMostAmount': {
+      // CR 202.3, 608.2c, 608.2h (Meren of Clan Nel Toth): the mana value of the object the reference names (an {X} is 0 off the stack, CR 202.3e) against a state amount read now.
+      const [id] = resolveObjects(
+        state,
+        condition.of,
+        {
+          controller: ctx.controller,
+          source: ctx.source,
+          ...(ctx.moved === undefined ? {} : { moved: ctx.moved }),
+          ...(ctx.triggerSubject === undefined ? {} : { triggerSubject: ctx.triggerSubject }),
+        },
+        ctx.targets ?? [],
+      );
+      if (id === undefined) return false;
+      const value = statOf(state, id, 'manaValue');
+      if (value === null || value === undefined) return false;
+      return (
+        value <=
+        amountOf(state, condition.amount, { controller: ctx.controller, source: ctx.source }, [])
+      );
+    }
     case 'movedShareAllCardTypes': {
       // CR 205.2a, 608.2c (Demonic Covenant): two of the cards an earlier instruction moved have exactly the same card types, as they are (or last were).
       const seen = new Set<string>();

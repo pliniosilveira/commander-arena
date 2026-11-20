@@ -1028,6 +1028,8 @@ interface CardWords {
   readonly types: readonly string[];
   readonly anyOf: readonly string[];
   readonly subtypes: readonly string[];
+  /** "non-Dragon creature card" (CR 205.3d): creature types the card does not have. */
+  readonly notSubtypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1043,30 +1045,46 @@ interface CardWords {
 export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
-  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' = 'from',
+  preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' | 'fromTheirs' = 'from',
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
-    preposition === 'fromThatPlayer'
-      ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
-        map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
-      : preposition === 'inAny'
-        ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
-          map(literal(' in a graveyard'), () => undefined)
-        : preposition === 'in'
-          ? map(literal(' in your graveyard'), () => 'you' as const)
-          : choice(
-              map(literal(' from your graveyard'), () => 'you' as const),
-              map(literal(' from a graveyard'), () => undefined),
-              map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
-              // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
-              ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
-            );
+    preposition === 'fromTheirs'
+      ? // "each player exiles all creature cards from their graveyard" (CR 404.1, 101.4): the graveyard of each player the subject names; with every player named that is every
+        // graveyard, so no owner. The caller reads it only after "each player".
+        map(literal(' from their graveyard'), () => undefined)
+      : preposition === 'fromThatPlayer'
+        ? // "for each opponent, ... target instant or sorcery card from that player's graveyard" (the Diluvian Primordial group): the graveyard of the opponent the slot is for.
+          map(pattern(/ from that player['’]s graveyard/i), () => 'opponent' as const)
+        : preposition === 'inAny'
+          ? // Issue 159 (Havengul Lich): "target creature card in a graveyard": any player's graveyard, so no owner.
+            map(literal(' in a graveyard'), () => undefined)
+          : preposition === 'in'
+            ? map(literal(' in your graveyard'), () => 'you' as const)
+            : choice(
+                map(literal(' from your graveyard'), () => 'you' as const),
+                map(literal(' from a graveyard'), () => undefined),
+                map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
+                // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
+                ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+              );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
     ([words]): CardWords => ({ types: [], anyOf: words, subtypes: [] }),
   );
+  // "non-Dragon creature card" (CR 205.3d): the card has none of these creature types.
+  const nonSubtypes: Parser<string[]> = many(
+    map(
+      sequence(
+        literal('non-'),
+        satisfy(SUBTYPE_WORD_NUMBERED, (w) => w.plural !== true),
+        literal(' '),
+      ),
+      ([, w]) => w.subtype,
+    ),
+  );
   const typed: Parser<CardWords> = map(
     sequence(
+      nonSubtypes,
       many(
         map(
           sequence(
@@ -1081,7 +1099,12 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([subtypes, types]): CardWords => ({ types, anyOf: [], subtypes }),
+    ([notSubtypes, subtypes, types]): CardWords => ({
+      types,
+      anyOf: [],
+      subtypes,
+      ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
+    }),
   );
   // "nonland permanent card" (stage P33, D-150, CR 110.1, 205.2a): a card that is a permanent card is of one of the permanent types, so the
   // words say a choice of them, less the types the modifiers leave out ("nonland": not a land card). An instant or a sorcery is no
@@ -1180,8 +1203,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes }] = r.value;
+    const [{ types, subtypes, notSubtypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
+    // A negated creature type inside a union is another reading, not built here.
+    if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
       ok: true,
       value: {
@@ -1241,7 +1266,7 @@ export function graveyardPhrase(
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, extra, subtypeAnyOf },
       ,
       compared,
       atMostX,
@@ -1259,6 +1284,7 @@ export function graveyardPhrase(
         {
           ...filter,
           ...(subtypes.length > 0 ? { subtypes } : {}),
+          ...(notSubtypes !== undefined ? { notSubtypes } : {}),
           ...(anyOf.length > 0
             ? {
                 anyOf: [...anyOf.map((t): IrFilter => ({ types: [t], raw: t })), ...(extra ?? [])],

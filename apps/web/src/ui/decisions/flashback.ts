@@ -41,10 +41,18 @@ export function flashbackCost(card: ObjectView | undefined): string | null {
   return found?.[1] ?? null;
 }
 
-/** "Flashback {2}{B}", or "Flashback" when the cost cannot be read. */
+/** "Sacrifice three creatures" from the card's "Flashback—Sacrifice three creatures." line (a cost that is no mana symbols), or null. */
+export function flashbackDashCost(card: ObjectView | undefined): string | null {
+  const found = card?.oracleText.match(/\bFlashback—([^.(\n]+)/i);
+  return found?.[1]?.trim() ?? null;
+}
+
+/** "Flashback {2}{B}" or "Flashback—Sacrifice three creatures", or "Flashback" when the cost cannot be read. */
 export function flashbackLabel(card: ObjectView | undefined): string {
   const cost = flashbackCost(card);
-  return cost === null ? 'Flashback' : `Flashback ${cost}`;
+  if (cost !== null) return `Flashback ${cost}`;
+  const dashed = flashbackDashCost(card);
+  return dashed === null ? 'Flashback' : `Flashback—${dashed}`;
 }
 
 /**

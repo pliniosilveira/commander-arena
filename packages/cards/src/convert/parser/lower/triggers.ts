@@ -642,12 +642,29 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
-    case 'leftGraveyard':
-    case 'exiledFromLibraryOrGraveyard': {
-      // "one or more cards leave your graveyard" (stage P68, D-229, CR 400.7, 603.2c): the cards of the controller's own zones.
+    case 'leftGraveyard': {
+      // "one or more cards leave your graveyard" (stage P68, D-229, CR 400.7, 603.2c): the cards of the controller's own zones; "one or more creature cards", "a creature
+      // card leaves your graveyard" (CR 603.2): a kind of card is a filter on the card as it was in the graveyard.
       const missing = missingFeatures([`trigger:${t.event}`]);
       if (missing.length > 0) return failure(t, missing);
-      return ok({ kind: t.event, who: 'you' });
+      const kind = t.subject?.filter;
+      const filter =
+        t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
+          ? null
+          : lowerFilter(t.subject);
+      if (filter !== null && !filter.ok) return filter;
+      return ok({
+        kind: 'leftGraveyard',
+        who: 'you',
+        ...(filter === null ? {} : { filter: filter.value }),
+        ...(t.each === true ? { each: true as const } : {}),
+      });
+    }
+    case 'exiledFromLibraryOrGraveyard': {
+      // "one or more cards are put into exile from your library and/or your graveyard" (stage P68, D-229, CR 400.7, 603.2c): the cards of the controller's own zones.
+      const missing = missingFeatures([`trigger:${t.event}`]);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'exiledFromLibraryOrGraveyard', who: 'you' });
     }
     case 'putIntoGraveyard': {
       // "Whenever a land card is put into your graveyard from anywhere" (Death Toll deck, group B, CR 603.2, 603.2c): the kind of card is a filter on the card in the graveyard.
@@ -661,8 +678,14 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (filter !== null && !filter.ok) return filter;
       return ok({
         kind: 'putIntoGraveyard',
-        who: 'you',
-        from: t.fromLibrary === true ? 'library' : 'anywhere',
+        // "from anywhere other than the battlefield" is the card of any player's graveyard (CR 603.2, 404.1, 700.4).
+        who: t.fromNotBattlefield === true ? 'any' : 'you',
+        from:
+          t.fromNotBattlefield === true
+            ? 'notBattlefield'
+            : t.fromLibrary === true
+              ? 'library'
+              : 'anywhere',
         ...(filter === null ? {} : { filter: filter.value }),
         ...(t.batch === true ? { batch: true as const } : {}),
         ...(t.firstEachTurn === true ? { firstTimeEachTurn: true as const } : {}),
@@ -702,6 +725,18 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
   const [only, ...more] = events;
   if (only === undefined || more.length > 0) return null;
   if (only.event === 'cast' || only.event === 'castOrCopy') {
+    return {
+      selector: { kind: 'controllerOf', of: { kind: 'triggerSubject' } },
+      needs: ['selector:controllerOf', 'selector:triggerSubject'],
+    };
+  }
+  // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information.
+  if (
+    (only.event === 'dies' || only.event === 'leavesBattlefield') &&
+    only.subject !== undefined &&
+    only.subject.det !== 'self' &&
+    only.actor === undefined
+  ) {
     return {
       selector: { kind: 'controllerOf', of: { kind: 'triggerSubject' } },
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
@@ -1169,6 +1204,8 @@ function lowerTriggeredAbility(
   ctx.scryTrigger = triggers.every((t) => t.kind === 'scries');
   ctx.triggeredBody = true;
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
+  // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
+  ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.
   ctx.selfCast = triggers.every((t) => t.kind === 'castSpell' && t.self === true);
   // Issue 25: "that spell" of "if five or more mana was spent to cast that spell" is the spell of a cast trigger (`castSpell` of another spell).
@@ -1208,6 +1245,14 @@ function lowerTriggeredAbility(
     const blocked = missingFeatures(['selector:xInManaCost', 'trigger:activatesAbilityX']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers.splice(0, triggers.length, ...folded);
+  } else if (ifWritten?.test.kind === 'enteredFromGraveyard') {
+    // "Whenever one or more other creatures you control enter, if they entered or were cast from a graveyard, ..." (Twilight Diviner, CR 603.4, 603.6a): the zone each permanent came from
+    // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'entersBatch') return failure(ifWritten, []);
+    const blocked = missingFeatures(['trigger:entersFromGraveyard']);
+    if (blocked.length > 0) return failure(ifWritten, blocked);
+    triggers[0] = { ...only, fromGraveyard: true };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.
@@ -1659,6 +1704,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:notAsAttacker',
+  'trigger:entersFromGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',

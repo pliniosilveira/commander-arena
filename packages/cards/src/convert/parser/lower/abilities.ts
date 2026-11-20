@@ -132,6 +132,37 @@ function lowerEquipCosts(
   };
 }
 
+/** The flashback cost that sacrifices permanents: each of mana, life and one sacrifice at most once, as the engine's `checkFlashbackCost` takes them. */
+function lowerFlashbackSacrifice(
+  ability: IrKeyword,
+  written: readonly IrCost[],
+): LowerResult<readonly Ability[]> {
+  const kinds = written.map((c) => c.kind);
+  if (
+    kinds.some((k) => k !== 'mana' && k !== 'payLife' && k !== 'sacrifice') ||
+    new Set(kinds).size !== kinds.length
+  ) {
+    return failure(ability);
+  }
+  const costs: Cost[] = [];
+  for (const item of written) {
+    const lowered = lowerCost(item, { flashback: true });
+    if (!lowered.ok) return lowered;
+    costs.push(lowered.value);
+  }
+  const blocked = gate(ability, [
+    'ability:keyword',
+    'keyword:flashback',
+    ...costs.map((c) => `cost:${c.kind}` as FeatureRef),
+  ]);
+  if (blocked !== null) return blocked;
+  return {
+    ok: true,
+    value: [{ kind: 'keyword', keyword: { kind: 'flashback', cost: costs } }],
+    rule: KEYWORD_RULE.flashback,
+  };
+}
+
 function lowerCostedKeyword(
   ability: IrKeyword,
   name: CostedKeyword,
@@ -144,6 +175,14 @@ function lowerCostedKeyword(
   // "Ward—{2}, Pay 2 life." (Gisa deck, D-467, CR 702.21a): a mana cost and a payment of life, each once.
   if (name === 'ward' && only !== undefined && more.length === 1 && ability.params.length === 0) {
     return lowerEquipCosts(ability, [only, ...more], 'ward');
+  }
+  // "Flashback—Sacrifice three creatures." (Dread Return, CR 702.34a, 118.9, 701.21a): one sacrifice of the caster's permanents, alone or with a mana cost or a payment of life.
+  if (
+    name === 'flashback' &&
+    (ability.cost ?? []).some((c) => c.kind === 'sacrifice') &&
+    ability.params.length === 0
+  ) {
+    return lowerFlashbackSacrifice(ability, ability.cost ?? []);
   }
   // "Flashback—{1}{U}, Pay 3 life." (Grave Danger, issue 159, CR 702.34a): a mana cost and a payment of life, each once.
   if (

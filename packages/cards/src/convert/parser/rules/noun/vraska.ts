@@ -1,7 +1,7 @@
 /**
  * Noun rules of the Vraska deck (stage P50, D-207): "target triggered ability or colorless spell" (CR 113.3c, 603.1, 115.1).
  */
-import { literal, map, sequence } from '../../combinators';
+import { literal, map, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrNoun } from '../../ir/types';
 import { defineRule, node } from '../registry';
 import { spellPhrase } from './phrases';
@@ -99,7 +99,44 @@ export const NOUN_EACH_PLAYER_DISCARDED = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.each-player-cant-sacrifice`: "each player who can't" (CR 701.21a, 101.4, Plaguecrafter: "each player sacrifices a creature or planeswalker of their choice. Each
+ * player who can't discards a card"): the players for whom the sacrifice before it found nothing to sacrifice, in turn order. The engine's `PlayerSelector`
+ * `couldntSacrificeThisWay`; only after a sacrifice of the same text (the lowering checks it). Not read: "each opponent who can't", "each player who can", another verb
+ * than "can't" or a single player.
+ */
+export const NOUN_EACH_PLAYER_CANT_SACRIFICE = defineRule<IrNoun>({
+  id: 'noun.each-player-cant-sacrifice',
+  family: 'noun',
+  leading: ['each'],
+  cites: ['CR 701.21 (Sacrifice)', 'CR 101.4 (Handling Simultaneous Decisions)'],
+  examples: ["each player who can't", 'Each player who can’t'],
+  rejects: [
+    "each opponent who can't",
+    'each player who can',
+    'each player who cant',
+    "each player that can't",
+    "a player who can't",
+    "each players who can't",
+  ],
+  parse: node<string, IrNoun>(
+    'noun.each-player-cant-sacrifice',
+    map(pattern(/each player who can(?:'|’)t(?![\p{L}\p{N}])/iu), (m) => m[0]),
+    (raw) => ({
+      kind: 'noun',
+      det: 'couldntSacrificeThisWay',
+      filter: { raw },
+      upTo: false,
+      plural: true,
+      other: false,
+    }),
+  ),
+});
+
 export const VRASKA_NOUN_RULES = [NOUN_TARGET_TRIGGERED_ABILITY_OR_SPELL];
 
 /** Before `noun.player`, which would read "each player" and stop there. */
-export const VRASKA_EARLY_NOUN_RULES = [NOUN_EACH_PLAYER_DISCARDED];
+export const VRASKA_EARLY_NOUN_RULES = [
+  NOUN_EACH_PLAYER_DISCARDED,
+  NOUN_EACH_PLAYER_CANT_SACRIFICE,
+];

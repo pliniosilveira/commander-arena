@@ -527,6 +527,8 @@ function recipientText(
       return 'the chosen player';
     case 'discardedThisWay':
       return 'each player who discarded a card this way';
+    case 'couldntSacrificeThisWay':
+      return "each player who can't";
     case 'attackedPlayers':
       // D-269 (CR 508.6).
       return 'each player this creature attacked this turn';
@@ -698,6 +700,7 @@ function payerWords(player: PlayerSelector): { readonly who: string; readonly th
     case 'giftRecipient':
       return { who: 'the chosen player', third: true };
     case 'discardedThisWay':
+    case 'couldntSacrificeThisWay':
     case 'attackedPlayers':
       return { who: 'they', third: false };
     case 'all':
@@ -1697,6 +1700,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'dealDamageToController':
       // CR 120.3 (issue 279): "Each creature deals 1 damage to its controller".
       return `${capital(object(effect.objects))} deals ${defs.say(effect.amount, { self })} damage to its controller`;
+    case 'copyOneOfTriggerCards':
+      // Twilight Diviner (CR 603.2c, 707.2): of the permanents a batch enters trigger saw.
+      return "Create a token that's a copy of one of them";
     case 'exileFromTriggerCards':
       // CR 603.2c (Lorehold group 1): of the cards a batch trigger is about.
       return 'You may exile one of them from your graveyard';

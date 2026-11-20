@@ -7,6 +7,7 @@ import {
   type ChoosePermanentDecision,
   type ConfirmOptionalDecision,
   type Cost,
+  distinctAssignments,
   type GameView,
   manaValue,
   type ObjectId,
@@ -54,6 +55,19 @@ export function permanentValue(view: GameView, o: ObjectView): number {
 }
 
 export function choosePermanentToSacrifice(view: GameView, d: ChoosePermanentDecision): Action {
+  // CR 701.21a: "Sacrifice a Swamp and a Forest": a different permanent for each part; of the ways to pay it the one that gives up the least.
+  if (d.groups !== undefined) {
+    const cost = (ids: readonly ObjectId[]): number =>
+      ids.reduce((sum, id) => {
+        const o = findObject(view, id);
+        return sum + (o === undefined ? Number.POSITIVE_INFINITY : permanentValue(view, o));
+      }, 0);
+    let best: readonly ObjectId[] | undefined;
+    for (const ids of distinctAssignments(d.groups)) {
+      if (best === undefined || cost(ids) < cost(best)) best = ids;
+    }
+    return { kind: 'choosePermanents', objects: d.legal.filter((id) => best?.includes(id)) };
+  }
   const ranked = d.legal
     .map((id, index) => {
       const o = findObject(view, id);

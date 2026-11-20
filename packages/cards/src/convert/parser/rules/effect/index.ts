@@ -36,6 +36,7 @@ import { EFFECT_CHANGE_TARGET } from './change-target';
 import { CHOSEN_COLOR_MANA_EFFECT_RULES } from './chosen-color-mana';
 import { CONTROL_EFFECT_RULES } from './control';
 import { CONTROLLER_DAMAGE_EFFECT_RULES } from './controller-damage';
+import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
@@ -1146,6 +1147,8 @@ export const EFFECT_RULES = [
   ...HASHATON_GROUP_4_EFFECT_RULES,
   // Issue 160 (D-627): "Populate".
   ...POPULATE_EFFECT_RULES,
+  // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
+  ...COPY_ONE_OF_THEM_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,
   ...SEARCH_PAIR_RULES,

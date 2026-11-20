@@ -177,14 +177,14 @@ const FLASHBACK: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Draw a card.\nFlashback—Sacrifice three creatures.',
-    expect: no('Flashback—Sacrifice three creatures.', 'keyword.flashback', NOT_RUNNABLE),
-    note: 'backlog: Flashback—Sacrifice N creatures. 1 card (the dash form ends with a period)',
+    expect: OK,
+    note: 'backlog: Flashback—Sacrifice N creatures. 1 card (the dash form ends with a period); run since Dread Return (a sacrifice in the flashback cost, CR 118.9)',
   },
   {
     kind: 'sorcery',
     text: 'Draw a card.\nFlashback—Sacrifice a creature',
-    expect: no('Flashback—Sacrifice a creature', 'keyword.flashback', NOT_RUNNABLE),
-    note: 'SYNTHETIC; the period is optional',
+    expect: OK,
+    note: 'SYNTHETIC; the period is optional, one creature is a sacrifice with no count',
   },
   {
     kind: 'sorcery',

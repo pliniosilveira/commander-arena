@@ -417,6 +417,23 @@ export function lowerCondition(
         at.movedOnto === id ? ({ kind: 'moved' } as const) : ({ kind: 'target', id } as const);
       return ok({ kind: 'objectMatches', of, filter: filter.value });
     }
+    case 'manaValueAtMostAmount': {
+      // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of the target an earlier instruction of the text named (or the object it moved), against an amount read as the instruction runs.
+      const blocked = missingFeatures(['condition:manaValueAtMostAmount']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const at = ctx ?? newContext('ability', []);
+      const id = test.who.ref ?? '';
+      if (id !== 'moved' && (!/^t\d+$/.test(id) || !at.targets.some((t) => t.id === id))) {
+        return failure(c, []);
+      }
+      const amount = lowerAmount(test.amount, at, c.rule);
+      if (!amount.ok) return amount;
+      const of =
+        id === 'moved' || at.movedOnto === id
+          ? ({ kind: 'moved' } as const)
+          : ({ kind: 'target', id } as const);
+      return ok({ kind: 'manaValueAtMostAmount', of, amount: amount.value });
+    }
     case 'milledThisWay': {
       // Issue 159 (CR 608.2c, 701.17a): the cards the mill before it put into the graveyard, any of them: the clause before must be a mill of your own library (`ctx.milled`).
       const blocked = missingFeatures(['condition:objectMatches']);
@@ -648,6 +665,7 @@ export function lowerCondition(
     }
     case 'costContainsX':
     case 'notDeclaredAttacker':
+    case 'enteredFromGraveyard':
       // D-510 (CR 508.1f): "if it isn't being declared as an attacker" is part of the event of a "becomes tapped" trigger, which the lowering of the trigger reads (`lowerTriggered`);
       // as a condition of anything else there is nothing to read it from.
       return failure(c, []);
@@ -765,6 +783,7 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:amountIsPrime',
   'condition:playerHasDesignation',
   'condition:objectMatches',
+  'condition:manaValueAtMostAmount',
   'condition:giftPromised',
   'condition:wasCast',
   'condition:opponentControlsAtLeast',

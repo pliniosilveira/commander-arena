@@ -110,6 +110,12 @@ export function describeSearch(search: SearchEffect): string {
   const what = describeFilter(search.filter);
   const sharing = search.sharedLandType === true ? ' that share a land type' : '';
   const named = search.filter.named === undefined ? '' : ` named ${search.filter.named}`;
+  if (search.totalManaValue !== undefined) {
+    const place = search.destinations[0];
+    const where = place === undefined ? '' : `; they go ${whereWords(place)}`;
+    const shuffle = search.shuffle ? ' Then your library is shuffled.' : '';
+    return `Choose any number of ${what === '' ? '' : `${what} `}cards with total mana value ${search.totalManaValue} or less${where}.${shuffle}`;
+  }
   const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}${named}${sharing}`;
   const clauses: string[] = [];
   let start = 0;

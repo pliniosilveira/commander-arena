@@ -184,8 +184,8 @@ const DAMAGE: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Whenever a creature an opponent controls dies, that player loses 2 life.',
-    expect: no('that player loses 2 life.', 'noun.that-player', { reason: 'unboundReference' }),
-    note: 'replay: 1 card; "that player" is the controller of the creature, which no antecedent of the text names',
+    expect: OK,
+    note: 'replay: 1 card; "that player" is the controller of the creature that died (CR 603.10a, last known information)',
   },
   {
     kind: 'creature',

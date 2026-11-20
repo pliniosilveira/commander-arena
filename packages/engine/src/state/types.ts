@@ -643,6 +643,11 @@ export interface SeatState {
    */
   readonly energy?: number;
   /**
+   * The experience counters the player has (CR 122.1, Meren of Clan Nel Toth), kept for the rest of the game (the second kind of counter a player can have, beside poison);
+   * gained with "you get an experience counter" and read as "the number of experience counters you have". Absent until the first time (a player has none). Public.
+   */
+  readonly experience?: number;
+  /**
    * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): set by the `noMaxHandSizeForGame` effect; the player discards nothing in a cleanup step
    * from then on, as with a permanent that says it (`hasNoMaximumHandSize`). Absent until the first time. Public.
    */
@@ -1064,7 +1069,12 @@ export type Instruction =
        */
       readonly together?: {
         readonly later: readonly SeatId[];
-        readonly held: readonly { readonly seat: SeatId; readonly objects: readonly ObjectId[] }[];
+        readonly held: readonly {
+          readonly seat: SeatId;
+          readonly objects: readonly ObjectId[];
+          /** No permanent the player controls matched, so they could not sacrifice (`ThisWayCounts.couldntSacrifice`). */
+          readonly couldnt?: true;
+        }[];
       };
     }
   /**
@@ -1149,6 +1159,11 @@ export type Instruction =
    */
   | {
       readonly kind: 'populate';
+      /**
+       * Twilight Diviner (`copyOneOfTriggerCards`, CR 603.2c, 707.2): the creature is chosen among these permanents (the batch that triggered the ability, the ones still on the
+       * battlefield) instead of among the creature tokens the controller controls, and the decision's purpose is 'copyTrigger'.
+       */
+      readonly among?: readonly ObjectId[];
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -1478,6 +1493,14 @@ export type Instruction =
       /** The creature that connives (CR 701.50a, D-209): a nonland card discarded puts a +1/+1 counter on it, if it is still on the battlefield. */
       readonly conniver?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
+      /**
+       * `discard.together` (CR 701.9, 101.4): the players who choose after `seat`, in order, and the cards the earlier ones chose; nothing is discarded until the last has chosen,
+       * then every chosen card is discarded at once.
+       */
+      readonly together?: {
+        readonly later: readonly SeatId[];
+        readonly held: readonly { readonly seat: SeatId; readonly cards: readonly ObjectId[] }[];
+      };
     }
   /**
    * CR 701.22 (Scry), 701.25 (Surveil), or "look at the top N cards and put them back in any order":
@@ -1973,6 +1996,8 @@ export interface ThisWayCounts {
   readonly countersRemoved?: number;
   /** The players who discarded a card to a `discard` effect (D-210: "each player who discarded a card this way"), in the order they did. */
   readonly discardedBy?: readonly SeatId[];
+  /** The players who had nothing to sacrifice to a `sacrifice` effect that names a choice (Plaguecrafter: "each player who can't"), in the order they were asked. */
+  readonly couldntSacrifice?: readonly SeatId[];
   /** The `search` instructions the player went through with (Lorehold group 1: "If you search your library this way, shuffle"). */
   readonly searched?: number;
   /** The total power of the creatures each player controlled that `exile` effects exiled, by seat (Oversimplify: "the total power of creatures they controlled that were exiled this way"). */

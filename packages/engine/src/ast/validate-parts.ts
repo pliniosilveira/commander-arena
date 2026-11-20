@@ -589,8 +589,22 @@ export function checkFilter(
     }
   }
   // CR 205.2a, 603.3d: "that shares a card type with it" names the spell a cast trigger is about.
-  if (f.sharesCardTypeWith !== undefined && f.sharesCardTypeWith !== 'triggerSubject') {
-    issue(out, `${path}.sharesCardTypeWith`, "sharesCardTypeWith is 'triggerSubject'");
+  if (
+    f.sharesCardTypeWith !== undefined &&
+    f.sharesCardTypeWith !== 'triggerSubject' &&
+    f.sharesCardTypeWith !== 'sacrificed'
+  ) {
+    issue(
+      out,
+      `${path}.sharesCardTypeWith`,
+      "sharesCardTypeWith is 'triggerSubject' or 'sacrificed'",
+    );
+  } else if (f.sharesCardTypeWith === 'sacrificed' && where.afterSacrifice !== true) {
+    issue(
+      out,
+      `${path}.sharesCardTypeWith`,
+      "sharesCardTypeWith 'sacrificed' is read in the filter of a sacrifice that follows another sacrifice (or the offer of one) in the same sequence",
+    );
   }
   if (f.manaValueAtMost !== undefined && f.manaValueBelow !== undefined) {
     issue(out, `${path}.manaValueBelow`, 'a filter has one mana value limit');
@@ -611,6 +625,7 @@ export function checkFilter(
       checkFilter(member, p, out, undefined, sharesWith, {
         onStack: f.zone === 'stack' || f.stackKind !== undefined || where.onStack === true,
         ...(where.inTargets === true ? { inTargets: true } : {}),
+        ...(where.afterSacrifice === true ? { afterSacrifice: true } : {}),
       });
       // Where to look (CR 115.1, 601.2c) is the outer filter's business.
       // D-207: a member may say what kind of stack object it is when the outer filter, on the stack, does not ("triggered ability or colorless spell").
@@ -634,6 +649,8 @@ interface FilterWhere {
   readonly inTargets?: boolean;
   /** CR 107.3a, 202.3: the filter of a target slot of a spell with an {X} in its text: "target creature with mana value X" reads the X announced (D2 group). */
   readonly xTarget?: boolean;
+  /** CR 701.21a (Braids): the filter of a `sacrifice` choice that follows a sacrifice of the same resolution, so `sharesCardTypeWith: 'sacrificed'` has a permanent to read. */
+  readonly afterSacrifice?: boolean;
 }
 
 /** The parts of a filter a host named by `attachedTo` may have (D-422): what layers 1, 4 and 5 give it, and its controller; nothing of layers 6 and 7, nothing of the game. */
@@ -1443,6 +1460,16 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'couldntSacrificeThisWay':
+      // CR 701.21a (Plaguecrafter): "each player who can't": a sacrifice before it in the same sequence.
+      if (!(scope.thisWay ?? []).includes('sacrificed')) {
+        issue(
+          out,
+          path,
+          "'couldntSacrificeThisWay' needs a sacrifice effect before it in the same sequence",
+        );
+      }
+      break;
     case 'all':
       // D-131: "you and target opponent": two or more selectors, each a selector of its own (not another `all`).
       if (!Array.isArray(sel.of) || sel.of.length < 2) {
@@ -1898,6 +1925,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'lifeTotalOf':
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
+    case 'experienceCounters':
+      // CR 122.1 (Meren of Clan Nel Toth): the controller's own experience counters now; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
@@ -2520,6 +2550,42 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           issue(out, `${path}.atLeastOne`, 'atLeastOne is true and goes with anyNumber');
         }
       }
+      if (cost.alongside !== undefined) {
+        // CR 701.21a, 118.3: "Sacrifice a Swamp and a Forest": one different permanent for `what` and for each filter of `alongside`; an ability's cost only (checked where it stands).
+        if (!Array.isArray(cost.alongside) || cost.alongside.length < 1) {
+          issue(out, `${path}.alongside`, 'alongside lists at least one more filter');
+        } else {
+          if (
+            kindOf(cost.what) === 'this' ||
+            cost.count !== undefined ||
+            cost.countX !== undefined ||
+            cost.anyNumber !== undefined
+          ) {
+            issue(
+              out,
+              `${path}.alongside`,
+              'a sacrifice of several different permanents names each by a filter: no this, count, X or any number',
+            );
+          }
+          cost.alongside.forEach((filter, j) => {
+            checkFilter(filter, `${path}.alongside[${j}]`, out);
+            if (filterSome(filter, (f) => f.controller === 'opponent')) {
+              issue(
+                out,
+                `${path}.alongside[${j}].controller`,
+                'a player can only sacrifice permanents they control',
+              );
+            }
+            if (filter.zone !== undefined && filter.zone !== 'battlefield') {
+              issue(
+                out,
+                `${path}.alongside[${j}].zone`,
+                'only permanents on the battlefield can be sacrificed',
+              );
+            }
+          });
+        }
+      }
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
         if (!isCount(cost.count) || cost.count < 2) {
@@ -2864,6 +2930,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'thisWayAtLeast':
     case 'movedTotalManaValue':
     case 'movedShareAllCardTypes':
+    case 'manaValueAtMostAmount':
     case 'objectMatches':
       // D-135: these read what a resolving effect knows (what it did, the object it names), so only a `conditional` effect has them.
       issue(out, path, `${c.kind} is only valid in a conditional effect (D-135)`);
@@ -3214,6 +3281,8 @@ function movesObjects(e: Effect): boolean {
     // D-639: the tokens `createCopies` and `populate` made are "they" / "it" / "those tokens" ("Exile those tokens at the beginning of the next end step").
     e?.kind === 'createCopies' ||
     e?.kind === 'populate' ||
+    // Twilight Diviner: the token `copyOneOfTriggerCards` made is "it".
+    e?.kind === 'copyOneOfTriggerCards' ||
     // D-145: the card found by a `revealUntil` is "it".
     e?.kind === 'revealUntil' ||
     // D-151: the cards `exileTop` exiled are "those cards", and the card Discover found is "the discovered card".
@@ -3276,7 +3345,9 @@ function checkSacrificeSelector(
     return;
   }
   const choose = sel as ChooseSelector;
-  checkFilter(choose.filter, `${path}.filter`, out);
+  checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
+    ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
+  });
   // CR 701.21a: a player can only sacrifice their own permanents, so the filter may not name others.
   if (filterSome(choose.filter, (f) => f.controller === 'opponent')) {
     issue(out, `${path}.filter.controller`, 'a player can only sacrifice permanents they control');
@@ -3938,6 +4009,26 @@ function checkSearch(
       );
     }
   }
+  // CR 202.3: "any number of ... cards with total mana value N or less": a positive limit; one 'rest' destination, nothing else that changes how many are found.
+  if (e.totalManaValue !== undefined) {
+    if (!isCount(e.totalManaValue) || e.totalManaValue < 1) {
+      issue(out, `${path}.totalManaValue`, 'totalManaValue is a positive integer');
+    }
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.maxAmount !== undefined ||
+      e.zones !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.totalManaValue`,
+        "a search with a total mana value has a max of 1 (unread), one destination of 'rest', and no shared land type, zones or maxAmount",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {
@@ -4159,6 +4250,29 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.compare.value`, 'a total mana value is compared with a whole number');
       }
       break;
+    case 'manaValueAtMostAmount': {
+      // CR 202.3, 608.2c (Meren of Clan Nel Toth): the mana value of a target, the object that was moved or the one that caused the trigger, against an amount read now.
+      const ofKind = kindOf(c.of);
+      if (ofKind !== 'target' && ofKind !== 'moved' && ofKind !== 'triggerSubject') {
+        issue(
+          out,
+          `${path}.of`,
+          'manaValueAtMostAmount reads a target, the object that was moved or the object that caused the trigger',
+        );
+      } else if (ofKind === 'triggerSubject') {
+        if (scope.triggerSubject !== 'permanent' && scope.triggerSubject !== 'stack') {
+          issue(
+            out,
+            `${path}.of`,
+            'triggerSubject is only read where the trigger names a permanent or a spell that was cast',
+          );
+        }
+      } else {
+        checkRef(c.of, 'object', `${path}.of`, scope, out);
+      }
+      checkAmount(c.amount, `${path}.amount`, scope, out);
+      break;
+    }
     case 'movedShareAllCardTypes':
       // CR 205.2a (Demonic Covenant): the cards an earlier moving effect of the sequence moved, compared by their card types.
       checkRef({ kind: 'moved' }, 'object', `${path}`, scope, out);
@@ -4502,6 +4616,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           out,
           path,
           'exileFromTriggerCards needs a trigger about a batch of cards (a batch discarded trigger)',
+        );
+      }
+      break;
+    case 'copyOneOfTriggerCards':
+      // CR 603.2c, 707.2 (Twilight Diviner): the permanents a batch `entersBatch` trigger saw enter, one of which is copied.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          'copyOneOfTriggerCards needs a trigger about a batch of permanents (an entersBatch trigger)',
         );
       }
       break;
@@ -6148,6 +6272,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 701.9, 101.4 (Plaguecrafter): the players choose in turn and all the chosen cards go together; nobody chooses a random or a whole-hand discard.
+      if (e.kind === 'discard' && e.together !== undefined) {
+        if (e.together !== true || e.random !== undefined || e.hand !== undefined) {
+          issue(out, `${path}.together`, 'together is true, and goes with neither random nor hand');
+        }
+      }
       if (e.kind === 'draw' && (e as { unless?: unknown }).unless !== undefined) {
         issue(out, `${path}.unless`, 'only a discard has an "unless you discard" alternative');
       }
@@ -6155,6 +6285,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'gainLife':
     case 'loseLife':
     case 'gainEnergy':
+    case 'gainExperience':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
       if (kindOf(e.amount) === 'lifeLostThisTurn') {

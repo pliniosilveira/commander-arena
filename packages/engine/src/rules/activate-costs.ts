@@ -34,6 +34,7 @@ import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
+import { canAssignDistinct } from './sacrifice-groups';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
 
@@ -71,6 +72,8 @@ export interface CostBreakdown {
   readonly sacrificeCount: number;
   /** D-583, "Sacrifice one or more artifacts": the player sacrifices one to all of the permanents that match (`sacrificeCount` is the least, 1). */
   readonly sacrificeAny: boolean;
+  /** "Sacrifice a Swamp and a Forest" (CR 701.21a): the filters of the other parts of the sacrifice, each paid by a different permanent from `sacrifice` and from each other; empty for one part. */
+  readonly sacrificeAlongside: readonly ObjectFilter[];
   /** The permanents to return to their owners' hands (D-139): the source itself, or a choice among a filter's matches; null for none. */
   readonly bounce: 'this' | ObjectFilter | null;
   /** How many of them; 1 for the source and for an ordinary cost. */
@@ -107,6 +110,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
   let sacrifice: CostBreakdown['sacrifice'] = null;
   let sacrificeCount = 1;
   let sacrificeAny = false;
+  let sacrificeAlongside: readonly ObjectFilter[] = [];
   let sacrifices = 0;
   let bounce: CostBreakdown['bounce'] = null;
   let bounceCount = 1;
@@ -186,6 +190,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
         sacrificeCount = cost.countX === true ? x : (cost.count ?? 1);
         // D-583 (CR 602.2b, 701.21a): "Sacrifice one or more artifacts": at least one, chosen as the cost is paid.
         sacrificeAny = cost.anyNumber === true && cost.atLeastOne === true;
+        sacrificeAlongside = cost.alongside ?? [];
         break;
       case 'exileFromGraveyard':
         exileCardsCosts += 1;
@@ -245,6 +250,7 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     sacrifice,
     sacrificeCount,
     sacrificeAny,
+    sacrificeAlongside,
     bounce,
     bounceCount,
     exileCards,
@@ -252,6 +258,19 @@ export function breakDown(costs: readonly Cost[], x = 0): CostBreakdown | null {
     tapCreatures,
     blight,
   };
+}
+
+/** The permanents that can pay each part of a sacrifice cost of several parts, the first part first. */
+export function sacrificeGroups(
+  state: GameState,
+  seat: SeatId,
+  source: ObjectId,
+  costs: Pick<CostBreakdown, 'sacrifice' | 'sacrificeAlongside'>,
+): ObjectId[][] {
+  if (costs.sacrifice === null || costs.sacrifice === 'this') return [];
+  return [costs.sacrifice, ...costs.sacrificeAlongside].map((filter) =>
+    sacrificeCandidates(state, seat, source, filter),
+  );
 }
 
 /** Why the costs that need no mana and no choice cannot be paid from `source`, or null (CR 118.3). */
@@ -467,6 +486,11 @@ export function costRefusal(
   if (parts.sacrifice === 'this') {
     if (source.zone !== 'battlefield' || controllerOf(state, source) !== seat) {
       return 'you do not control it, so you cannot sacrifice it';
+    }
+  } else if (parts.sacrifice !== null && parts.sacrificeAlongside.length > 0) {
+    // CR 701.21a, 118.3: each part of "Sacrifice a Swamp and a Forest" needs a permanent of its own.
+    if (!canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))) {
+      return 'you do not control permanents to sacrifice for every part of the cost';
     }
   } else if (parts.sacrifice !== null && parts.sacrificeCount > 0) {
     // CR 701.21a: permanents you control that match. `other` leaves the source out. (X = 0 of "Sacrifice X creatures" asks for none, D-488.)

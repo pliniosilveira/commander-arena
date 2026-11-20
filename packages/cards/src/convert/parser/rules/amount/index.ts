@@ -6,6 +6,7 @@ import { CARD_TYPES_AMOUNT_RULES } from './card-types';
 import { COUNT_AMOUNT_RULES } from './count';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
+import { EXPERIENCE_AMOUNT_RULES } from './experience';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
@@ -466,6 +467,8 @@ export const AMOUNT_RULES = [
   ...HAND_OF_THAT_PLAYER_AMOUNT_RULES,
   // Feather deck, group 1 (D-450): "for each card you've drawn this turn".
   ...FEATHER_G1_AMOUNT_RULES,
+  // Meren of Clan Nel Toth: "the number of experience counters you have".
+  ...EXPERIENCE_AMOUNT_RULES,
   AMOUNT_NUMBER,
   AMOUNT_X,
   AMOUNT_ARTICLE,

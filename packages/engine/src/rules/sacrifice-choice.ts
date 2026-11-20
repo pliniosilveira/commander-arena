@@ -62,21 +62,36 @@ export function runChooseSacrifice(
     automatic,
   });
   // CR 101.4: the choice of one of several players who sacrifice together is held until the last has chosen; then all are sacrificed at once.
-  const proceed = (chosen: readonly ObjectId[], events: readonly GameEvent[]): StepOutcome => {
+  // `couldnt` (Plaguecrafter, "each player who can't"): no permanent the player controls matched, so they had nothing to sacrifice; it is recorded in `thisWay`.
+  const proceed = (
+    chosen: readonly ObjectId[],
+    events: readonly GameEvent[],
+    couldnt = false,
+  ): StepOutcome => {
     const group = instruction.together;
     // D-283 (CR 603.10a): what is sacrificed together is recorded before the first moves.
     if (group === undefined) {
       const together = recordTogether(state, sacrificeInstructions(chosen, instruction.seat));
-      return done(together.state, events, together.instructions);
+      return {
+        ...done(together.state, events, together.instructions),
+        ...(couldnt ? { thisWay: { couldntSacrifice: [seat] } } : {}),
+      };
     }
-    const held = [...group.held, { seat, objects: chosen }];
+    const held = [
+      ...group.held,
+      { seat, objects: chosen, ...(couldnt ? { couldnt: true as const } : {}) },
+    ];
     const next = group.later[0];
     if (next === undefined) {
       const together = recordTogether(
         state,
         held.flatMap((h) => sacrificeInstructions(h.objects, h.seat)),
       );
-      return done(together.state, events, together.instructions);
+      const couldntSeats = held.flatMap((h) => (h.couldnt === true ? [h.seat] : []));
+      return {
+        ...done(together.state, events, together.instructions),
+        ...(couldntSeats.length > 0 ? { thisWay: { couldntSacrifice: couldntSeats } } : {}),
+      };
     }
     return done(state, events, [
       {
@@ -90,12 +105,18 @@ export function runChooseSacrifice(
   if (instruction.chosen !== null) {
     return proceed(instruction.chosen, [chosenEvent(instruction.chosen, false)]);
   }
-  const candidates = sacrificeCandidates(state, seat, res.source, instruction.filter);
+  const candidates = sacrificeCandidates(
+    state,
+    seat,
+    res.source,
+    instruction.filter,
+    res.sacrificed,
+  );
   const legal =
     instruction.greatest === undefined
       ? candidates
       : greatestAmong(state, candidates, instruction.greatest);
-  if (legal.length === 0) return proceed([], []);
+  if (legal.length === 0) return proceed([], [], true);
   // D-135: "any number": the player chooses none, some or all of the candidates, even when there is only one.
   // D-187: "one or more": at least one of them.
   if (instruction.anyNumber === true) {

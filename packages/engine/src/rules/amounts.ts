@@ -48,6 +48,7 @@ type StateAmount = Extract<
       | 'opponentCount'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
+      | 'experienceCounters'
       | 'spellsCastThisTurn'
       | 'greatestManaValueCast'
       | 'sacrificedAsCost'
@@ -93,6 +94,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'opponentCount' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
+    amount.kind === 'experienceCounters' ||
     amount.kind === 'spellsCastThisTurn' ||
     amount.kind === 'greatestManaValueCast' ||
     amount.kind === 'sacrificedAsCost' ||
@@ -431,6 +433,9 @@ export function stateAmountOf(
     case 'cardsDrawnThisTurn':
       // CR 121.1 (D-450): "for each card you've drawn this turn": the cards the controller of the effect has drawn so far this turn (`SeatState.cardsDrawnThisTurn`).
       return getSeat(state, ctx.controller).cardsDrawnThisTurn;
+    case 'experienceCounters':
+      // CR 122.1 (Meren of Clan Nel Toth): the experience counters the controller of the effect has now (`SeatState.experience`).
+      return getSeat(state, ctx.controller).experience ?? 0;
     case 'spellsCastThisTurn': {
       // CR 601.2i (D-638): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
       const types = amount.ofTypes;

@@ -366,6 +366,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'amount.mana-value-of': spell((e) => `Exile target creature. You lose life ${e}.`),
   'amount.times-kicked': spell((e) => `Draw a card ${e}.`),
   // Feather deck group 1 (D-450): the count of a pump, or of a draw, after "for each".
+  // Meren of Clan Nel Toth: experience counters.
+  'amount.experience-counters': permanent(
+    (e) =>
+      `At the beginning of your end step, choose target creature card in your graveyard. If that card's mana value is less than or equal to ${e}, return it to the battlefield.`,
+  ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
@@ -756,6 +761,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
+  // Twilight Diviner: the intervening "if" of a trigger about one or more creatures entering.
+  'condition.entered-from-graveyard': permanent(
+    (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
+  ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
@@ -862,6 +871,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Create a 3/3 blue Robot Warrior artifact creature token. Then if ${e}, put two +1/+1 counters on that token.`,
   ),
+  // Meren of Clan Nel Toth: the condition leads the sentence that returns the card chosen before it.
+  'condition.that-mana-value-at-most': permanent(
+    (e) =>
+      `At the beginning of your end step, choose target creature card in your graveyard. If ${e}, return it to the battlefield.`,
+  ),
   // Yavimaya Bloomsage.
   'condition.that-object-power': spell(
     (e) => `Put a +1/+1 counter on target creature you control. Then if ${e}, draw a card.`,
@@ -905,6 +919,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.player-declines': permanent(
     (e) => `When ~ enters, target opponent may have you draw a card. If ${e}, you gain 1 life.`,
   ),
+  // Meren deck, Braids: the sentence for the opponents who declined starts with the words instead of an "if".
+  'condition.each-opponent-declines': permanent(
+    (e) =>
+      `At the beginning of your end step, each opponent may discard a card. ${cap(e)}, that player loses 1 life.`,
+  ),
+  // Meren deck, Braids: the permanent an opponent may sacrifice after the sacrifice of the sentence before it.
+  'noun.a-permanent-sharing-type': permanent(
+    (e) =>
+      `At the beginning of your end step, you may sacrifice a creature. If you do, each opponent may sacrifice ${e}.`,
+  ),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,
@@ -912,6 +936,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-player-discarded': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. ${cap(e)} draws a card.`,
+  ),
+  // CR 701.21a: the players a sacrifice found nothing to sacrifice for, as the subject of the next sentence.
+  'noun.each-player-cant-sacrifice': permanent(
+    (e) =>
+      `When ~ enters, each player sacrifices a creature of their choice. ${cap(e)} discards a card.`,
   ),
   // D-269: the players a permanent attacked this turn, as the subject of "loses the game".
   'noun.each-player-attacked': permanent(
@@ -923,6 +952,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P68 (D-229): the Hofri Ghostforge deck. The triggers follow "Whenever"; the conditions follow a trigger or "As long as"; the costs are costs of an
   // activated ability; the rider follows the "Add" sentence; the amount follows a pump; the static is a line of its own.
   'trigger.cards-leave-graveyard': whenever,
+  'trigger.graveyard-events': whenever,
   // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
   'trigger.put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,

@@ -77,6 +77,13 @@ export function checkAdditionalCosts(costs: readonly Cost[], path: string, out: 
         if (cost.countX === true && cost.anyNumber === true) {
           issue(out, `${p}.countX`, 'a sacrifice cost cannot be both X and any number');
         }
+        if (cost.alongside !== undefined) {
+          issue(
+            out,
+            `${p}.alongside`,
+            'a sacrifice of several different permanents is the cost of an activated ability',
+          );
+        }
         // D-491: "you may sacrifice one or more creatures" is the one sacrifice of the spell, chosen as the cost is paid (the engine's `sacrificeAny`).
         if (cost.anyNumber === true && costs.some((c, j) => j !== i && c?.kind === 'sacrifice')) {
           issue(

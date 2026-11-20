@@ -4,10 +4,11 @@
  * you control with mana value 3 or less enter" (CR 603.2c, 603.6a) and "you create one or more creature tokens" (CR 111.1, 701.7a: a token is created as it
  * enters the battlefield).
  */
-import { choice, fail, literal, map, pattern, sequence } from '../../combinators';
+import { choice, fail, literal, map, optional, pattern, sequence } from '../../combinators';
 import type { IrFilter, IrNoun, IrTrigger } from '../../ir/types';
 import { permanentPhrase, spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, quietly, spanned } from '../registry';
+import { CARD_KINDS, cardFilter } from './death-toll-b';
 import { makeNoun } from './subjects';
 
 /** A trigger of one event with no subject, from `pos` to `end`. */
@@ -23,20 +24,26 @@ function plain(id: string, event: string, pos: number, end: number): IrTrigger {
 
 /**
  * `trigger.cards-leave-graveyard`: "one or more cards leave your graveyard" (CR 400.7: a card that changes zones becomes a new object; a card that leaves a
- * graveyard for any other zone leaves it; CR 603.2c: the ability triggers once however many cards left together). The engine's `leftGraveyard`. Not read: a
- * number, the graveyard of another player, "a card leaves", the cards that go to a zone.
+ * graveyard for any other zone leaves it; CR 603.2c: the ability triggers once however many cards left together). The engine's `leftGraveyard`; a kind of card
+ * ("one or more creature cards") is a filter on the card as it was in the graveyard. Not read: a number, the graveyard of another player, "a card leaves", the cards that go
+ * to a zone, a card of two kinds.
  */
 export const TRIGGER_CARDS_LEAVE_GRAVEYARD = defineRule<IrTrigger>({
   id: 'trigger.cards-leave-graveyard',
   family: 'trigger',
   leading: ['one'],
   cites: ['CR 400.7 (Zones)', 'CR 603.2c (Handling Triggered Abilities)', 'CR 404.1 (Graveyard)'],
-  examples: ['one or more cards leave your graveyard'],
+  examples: [
+    'one or more cards leave your graveyard',
+    'one or more creature cards leave your graveyard',
+    'one or more nonland cards leave your graveyard',
+  ],
   rejects: [
     'one or more cards leave a graveyard',
     "one or more cards leave an opponent's graveyard",
     'one or more cards leaves your graveyard',
-    'one or more creature cards leave your graveyard',
+    'one or more land or creature cards leave your graveyard',
+    'one or more creature cards leaves your graveyard',
     'two or more cards leave your graveyard',
     'one card leaves your graveyard',
     'one or more cards leave your graveyard and',
@@ -44,14 +51,30 @@ export const TRIGGER_CARDS_LEAVE_GRAVEYARD = defineRule<IrTrigger>({
     'one or more cards are put into your graveyard',
   ],
   parse: (ctx, pos) => {
-    const r = pattern(/one or more cards leave your graveyard(?![\p{L}\p{N}])(?!\s+and)/iu)(
-      ctx,
-      pos,
-    );
+    const r = pattern(
+      new RegExp(
+        `one or more (?:(non)?(${CARD_KINDS}) )?cards leave your graveyard(?![\\p{L}\\p{N}])(?!\\s+and)`,
+        'iu',
+      ),
+    )(ctx, pos);
     if (!r.ok) return r;
+    const [, non, kind] = r.value;
+    const filter = cardFilter(undefined, non, kind);
+    if (filter === null) return fail(ctx, pos);
+    const span = { start: pos, end: r.pos };
+    const value = plain('trigger.cards-leave-graveyard', 'leftGraveyard', pos, r.pos);
     return {
       ok: true,
-      value: plain('trigger.cards-leave-graveyard', 'leftGraveyard', pos, r.pos),
+      value:
+        kind === undefined
+          ? value
+          : {
+              ...value,
+              subject: {
+                ...makeNoun('trigger.cards-leave-graveyard', span, 'a', filter),
+                plural: true,
+              },
+            },
       pos: r.pos,
     };
   },
@@ -197,7 +220,7 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
 
 /**
  * `trigger.enters-one-or-more-creatures`: "one or more creatures you control with mana value 3 or less enter" (CR 603.2c, 603.6a: creatures that enter together are
- * one event for the ability). The engine's `entersBatch`, as `trigger.enters-one-or-more` has it for tokens. Not read: a number, "enters", a controller other than
+ * one event for the ability; "other" leaves out the permanent with the ability, Twilight Diviner). The engine's `entersBatch`, as `trigger.enters-one-or-more` has it for tokens. Not read: a number, "enters", a controller other than
  * "you", more than one group of types, a group that is not creatures.
  */
 export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
@@ -213,8 +236,11 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     'one or more creatures you control with mana value 3 or less enter',
     'one or more creatures you control enter',
     'one or more nontoken creatures you control enter',
+    'one or more other creatures you control enter',
   ],
   rejects: [
+    'one or more other creatures you control enters',
+    'one or more other creatures enter',
     'one or more creatures you control with mana value 3 or less enters',
     'one or more creatures with mana value 3 or less enter',
     'one or more creatures your opponents control enter',
@@ -228,16 +254,21 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     const id = 'trigger.enters-one-or-more-creatures';
     const r = sequence(
       literal('one or more '),
+      optional(literal('other '), null),
       spanned(map(permanentPhrase(true, 'all'), withoutZone)),
       pattern(/ enter(?![\p{L}\p{N}])(?!\s+(?:tapped|untapped|or|and)(?![\p{L}\p{N}]))/iu),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, phrase] = r.value;
+    const [, other, phrase] = r.value;
     const filter: IrFilter = phrase.value;
     const creatures =
       filter.anyOf === undefined && filter.types?.length === 1 && filter.types[0] === 'creature';
     if (!creatures || filter.controller !== 'you') return fail(ctx, pos);
-    const subject: IrNoun = { ...makeNoun(id, phrase.span, 'a', filter), plural: true };
+    const subject: IrNoun = {
+      ...makeNoun(id, phrase.span, 'a', filter),
+      plural: true,
+      ...(other === null ? {} : { other: true }),
+    };
     return {
       ok: true,
       value: {

@@ -674,6 +674,20 @@ export function describeEvent(
         'CR 107.14',
       );
     }
+    case 'experienceChanged': {
+      // CR 122.1: "You get an experience counter (2 in all)."; removing them all reads as the new total.
+      const change = event.to - event.from;
+      const counters = `${Math.abs(change)} experience counter${Math.abs(change) === 1 ? '' : 's'}`;
+      return line(
+        'major',
+        change > 0
+          ? `${who(event.seat)} ${verb(event.seat, 'get', 'gets')} ${counters} (${event.to} in all).`
+          : `${possessive(event.seat, viewer)} experience counters: ${event.from} to ${event.to}.`,
+        event.seat,
+        [],
+        'CR 122.1',
+      );
+    }
     case 'poisonChanged': {
       // CR 120.3b (infect), 120.3g (toxic), 122.1: "You get 2 poison counters (3 of 10)." Ten or
       // more loses the game at the next state-based action check (CR 704.5c), which has its own line.

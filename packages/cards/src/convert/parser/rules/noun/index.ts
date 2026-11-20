@@ -347,10 +347,14 @@ export const NOUN_TARGET_GRAVEYARD_CARD = defineRule<IrNoun>({
     // Issue 89 (Forum Filibuster): one card that is an Aura or an Equipment.
     'up to one target Aura or Equipment card from your graveyard',
     'target Aura or Equipment card from your graveyard',
+    // Junji, the Midnight Sky (CR 205.3d): a creature card that has no Dragon type.
+    'target non-Dragon creature card from a graveyard',
+    "target non-Zombie creature card from an opponent's graveyard",
   ],
   rejects: [
     'target creature',
     'target card',
+    'target non-Dragon creature card or Ugin planeswalker card from your graveyard',
     'all creature cards from your graveyard',
     'up to two target land card from your graveyard',
     'one or two target creature and planeswalker cards from your graveyard',

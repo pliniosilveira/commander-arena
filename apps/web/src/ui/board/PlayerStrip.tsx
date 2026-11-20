@@ -20,6 +20,10 @@ export type ZoneRef =
 export const POISON_TITLE =
   'Poison counters. A player with ten or more poison counters loses the game (CR 704.5c).';
 
+/** Experience counters (CR 122.1): a player keeps them for the rest of the game; cards read how many there are. */
+export const EXPERIENCE_TITLE =
+  'Experience counters. A player keeps them for the rest of the game, and some cards count them (CR 122.1).';
+
 /** Energy counters (CR 107.14, 122.1): paid as {E}; a player keeps them for the rest of the game. */
 export const ENERGY_TITLE =
   'Energy counters. {E} is paid by removing one energy counter from yourself; you keep them for the rest of the game (CR 107.14).';
@@ -273,7 +277,7 @@ export function PlayerStrip({
           dimmed ? ' is-dimmed' : ''
         }`}
         data-seat={seat.id}
-        aria-label={`${who}, ${seat.life} life${seat.poison > 0 ? `, ${seat.poison} poison` : ''}${seat.energy !== undefined && seat.energy > 0 ? `, ${seat.energy} energy` : ''}${
+        aria-label={`${who}, ${seat.life} life${seat.poison > 0 ? `, ${seat.poison} poison` : ''}${seat.energy !== undefined && seat.energy > 0 ? `, ${seat.energy} energy` : ''}${seat.experience !== undefined && seat.experience > 0 ? `, ${seat.experience} experience` : ''}${
           view.monarch === seat.id ? ', the monarch' : ''
         }${seat.citysBlessing === true ? ', has the city’s blessing' : ''}${seat.ringTempted === undefined ? '' : `, the Ring has tempted ${seat.ringTempted === 1 ? 'once' : `${seat.ringTempted} times`}`}${clickable ? ', can be chosen' : ''}`}
         aria-pressed={selected}
@@ -301,6 +305,15 @@ export function PlayerStrip({
               data-energy={seat.energy}
             >
               {seat.energy} energy
+            </span>
+          )}
+          {seat.experience !== undefined && seat.experience > 0 && (
+            <span
+              className="board-flag board-flag-experience"
+              title={EXPERIENCE_TITLE}
+              data-experience={seat.experience}
+            >
+              {seat.experience} experience
             </span>
           )}
           {view.monarch === seat.id && (

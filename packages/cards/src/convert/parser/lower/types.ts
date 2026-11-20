@@ -229,6 +229,8 @@ export interface LowerContext {
   didSearch: boolean;
   /** True in the body of a triggered ability whose every event is a batch of cards discarded (Lorehold group 1, CR 603.2c): "one of them" names the cards that triggered it. */
   discardBatchTrigger: boolean;
+  /** True in the body of a triggered ability whose every event is a batch of permanents entering (Twilight Diviner, CR 603.2c): "one of them" names the permanents that triggered it. */
+  entersBatchTrigger: boolean;
   /**
    * What "it" and "that land" mean after a search (stage P36, D-178, CR 400.7j, 701.23): the reference of the noun the last search looked for, which
    * the engine's `moved` names (the cards that search put somewhere). Null before a search and after any other move, destroy or exile.
@@ -269,6 +271,11 @@ export interface LowerContext {
    * CR 608.2c): "them" of "put a permanent card from among them onto the battlefield" are the cards that exile moved. Any other clause lowered after it makes it false again.
    */
   exiledAnyCardTypes: boolean;
+  /**
+   * True after "each player exiles all creature cards from their graveyard" (Living Death, CR 608.2c): the cards that exile moved are what "all cards they exiled this way" names, kept
+   * through a sacrifice and false after any other instruction that moves, destroys or exiles.
+   */
+  exiledOwnGraveyards: boolean;
   /**
    * What "it" means in "If you do, return it to the battlefield ... at the beginning of the next end step" (stage P48, D-205, CR 603.7c, 400.7j): the reference of the
    * target the last instruction exiled, which the engine's `moved` names. Null before an exile of a target and after any other move, destroy or sacrifice.
@@ -347,6 +354,7 @@ export function newContext(
     scryTrigger: false,
     triggeredBody: false,
     discardBatchTrigger: false,
+    entersBatchTrigger: false,
     didSearch: false,
     searched: null,
     sacrificedRef: null,
@@ -357,6 +365,7 @@ export function newContext(
     createdToken: null,
     movedToHand: false,
     exiledAnyCardTypes: false,
+    exiledOwnGraveyards: false,
     exiledRef: null,
     lastEffectKind: null,
     randomYardCard: false,

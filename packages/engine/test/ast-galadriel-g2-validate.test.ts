@@ -118,11 +118,8 @@ describe('a cost that returns other permanents, in an ability that works from th
     has(found, 'cannot cost returnToHand');
   });
 
-  test('tapping and sacrificing are still not paid from the graveyard', () => {
-    for (const cost of [
-      { kind: 'tap' },
-      { kind: 'sacrifice', what: { types: ['land'], controller: 'you' } },
-    ] as const) {
+  test('tapping is still not paid from the graveyard, and neither is sacrificing the card itself', () => {
+    for (const cost of [{ kind: 'tap' }, { kind: 'sacrifice', what: { kind: 'this' } }] as const) {
       const found = full(
         creature([
           {
@@ -135,6 +132,21 @@ describe('a cost that returns other permanents, in an ability that works from th
       );
       has(found, 'cannot cost');
     }
+  });
+
+  test('sacrificing other permanents of a filter is paid from the battlefield (CR 701.21a)', () => {
+    expect(
+      full(
+        creature([
+          {
+            kind: 'activated',
+            cost: [{ kind: 'sacrifice', what: { types: ['land'], controller: 'you' } }],
+            effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+            functionsIn: 'graveyard',
+          },
+        ]),
+      ),
+    ).toEqual([]);
   });
 });
 

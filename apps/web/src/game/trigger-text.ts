@@ -507,9 +507,14 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
     case 'doorUnlocked':
       // CR 709.5h (Room): the half whose text has the ability.
       return 'When you unlock this door';
-    case 'leftGraveyard':
-      // D-229 (CR 400.7, 603.2c).
-      return 'Whenever one or more cards leave your graveyard';
+    case 'leftGraveyard': {
+      // D-229 (CR 400.7, 603.2c): "one or more cards leave your graveyard", "a creature card leaves your graveyard".
+      const base = trigger.filter === undefined ? 'a card' : discardedCardWords(trigger.filter);
+      if (base === null) return null;
+      return trigger.each === true
+        ? `Whenever ${base} leaves your graveyard`
+        : `Whenever ${base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')} leave your graveyard`;
+    }
     case 'exiledFromLibraryOrGraveyard':
       // D-229 (CR 400.7, 603.2c).
       return 'Whenever one or more cards are put into exile from your library and/or your graveyard';
@@ -522,8 +527,14 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
           ? base.replace(/^an? /u, 'one or more ').replace(/ card$/u, ' cards')
           : base;
       const verb = trigger.batch === true ? 'are' : 'is';
-      const place = trigger.from === 'library' ? 'from your library' : 'from anywhere';
-      return `Whenever ${cards} ${verb} put into your graveyard ${place}${
+      const place =
+        trigger.from === 'library'
+          ? 'from your library'
+          : trigger.from === 'notBattlefield'
+            ? 'from anywhere other than the battlefield'
+            : 'from anywhere';
+      const graveyard = trigger.who === 'any' ? 'a graveyard' : 'your graveyard';
+      return `Whenever ${cards} ${verb} put into ${graveyard} ${place}${
         trigger.firstTimeEachTurn === true ? ' for the first time each turn' : ''
       }`;
     }
@@ -536,7 +547,10 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const base = tokens ? `${kind === null ? '' : `${kind} `}tokens` : core;
       if (base === null) return null;
       const things = `${base.endsWith('s') ? base : `${base}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
-      return `Whenever one or more ${things} enter`;
+      // Twilight Diviner (CR 603.4): "..., if they entered or were cast from a graveyard".
+      return `Whenever one or more ${trigger.what.other === true ? 'other ' : ''}${things} enter${
+        trigger.fromGraveyard === true ? ', if they entered or were cast from a graveyard' : ''
+      }`;
     }
     case 'becomesTarget': {
       const what = subjectPhrase(trigger.what, ctx);
