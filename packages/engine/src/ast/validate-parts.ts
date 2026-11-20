@@ -314,6 +314,9 @@ export function checkFilter(
   ) {
     issue(out, `${path}.hasCounter`, 'hasCounter must be true or the name of a counter');
   }
+  if (f.notTriggerCard !== undefined && f.notTriggerCard !== true) {
+    issue(out, `${path}.notTriggerCard`, 'notTriggerCard must be true when present');
+  }
   if (f.commander !== undefined && f.commander !== true && f.commander !== 'yours') {
     issue(out, `${path}.commander`, "commander must be true or 'yours'");
   }
@@ -423,12 +426,14 @@ export function checkFilter(
       a?.kind === 'lifeGainedThisTurn' ||
       // CR 107.3m: "with mana value X or less" in the enters trigger of the permanent itself: the X of the spell it came from (`validateCard` checks the trigger and the cost).
       a?.kind === 'enteredX' ||
+      // CR 122.1, 603.10a (Puca's Covenant): "with mana value less than or equal to the number of counters on that creature": the permanent the trigger is about, as it last was.
+      (a?.kind === 'countersOn' && a.of?.kind === 'triggerSubject') ||
       countOfTargetControllerGraveyard;
     if (!ok) {
       issue(
         out,
         `${path}.${limitKey}`,
-        'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
+        'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell, the mana value of the spell that triggered it or the counters on the permanent that triggered it',
       );
     }
     // CR 107.3a: "each nonland permanent with mana value X or less" reads the X announced for the spell or ability that has the selector.
@@ -1422,6 +1427,10 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         );
       }
       break;
+    case 'eachPlayerExcept':
+      // CR 102.1 (Oft-Nabbed Goat): "each other player": the players the `except` selector does not name.
+      checkPlayerSelector(sel.except, `${path}.except`, scope, out);
+      break;
     case 'triggerPlayer':
       // D-133: "that player": only a trigger whose event is about a player has one.
       if (scope.triggerPlayer !== true) {
@@ -1541,6 +1550,7 @@ export const PLAYER_ONLY = [
   'eachPlayer',
   'eachOpponent',
   'eachOtherOpponent',
+  'eachPlayerExcept',
   'all',
   'controllerOf',
   'ownerOf',
@@ -1876,7 +1886,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'toughnessOf':
     case 'countersOn':
       checkAmountObject(a.of, `${path}.of`, scope, out);
-      if (a.kind === 'countersOn' && (typeof a.counter !== 'string' || a.counter === '')) {
+      if (
+        a.kind === 'countersOn' &&
+        a.counter !== undefined &&
+        (typeof a.counter !== 'string' || a.counter === '')
+      ) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;
@@ -3223,6 +3237,29 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       if (!isOneOf(c.stat, PLAYER_STATS))
         issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}`);
       break;
+    case 'subjectControlledByYou':
+      // Where it may stand (the intervening "if" of a trigger about a permanent, or a conditional effect of one) is checked with the trigger (validate.ts, `checkEffectCondition`).
+      break;
+    case 'subjectStat':
+      if (!isOneOf(c.stat, ['power', 'toughness'])) {
+        issue(out, `${path}.stat`, `unknown stat ${String(c.stat)}: power or toughness`);
+      }
+      if (!isOneOf(c.compare?.cmp, ['atLeast', 'atMost', 'equal'])) {
+        issue(out, `${path}.compare.cmp`, `unknown comparison ${JSON.stringify(c.compare?.cmp)}`);
+      }
+      if (!Number.isSafeInteger(c.compare?.value)) {
+        issue(out, `${path}.compare.value`, 'a power or toughness is compared with a whole number');
+      }
+      break;
+    case 'putCountersThisTurn':
+      // CR 122.6 (Lasting Tarfire): the turn log of the controller of the ability; no parameter is needed.
+      if (c.counter !== undefined && (typeof c.counter !== 'string' || c.counter === '')) {
+        issue(out, `${path}.counter`, 'counter name must be non-empty when present');
+      }
+      if (c.onType !== undefined && !(CARD_TYPES as readonly string[]).includes(c.onType)) {
+        issue(out, `${path}.onType`, `unknown card type ${String(c.onType)}`);
+      }
+      break;
     case 'triggerPlayerHasMore':
       // Where it may stand (an intervening "if" of a trigger whose event is about a player) is checked with the trigger (validate.ts).
       if (!isOneOf(c.stat, PLAYER_STATS))
@@ -4522,6 +4559,18 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         'ringBearerChosen is the intervening "if" of a ringTempted trigger, read as it triggers and again as it resolves',
       );
       break;
+    case 'subjectControlledByYou':
+    case 'subjectStat':
+      // CR 603.10a: "if you control that creature": the permanent whose event caused the trigger.
+      if (scope.triggerSubject !== 'permanent') {
+        issue(
+          out,
+          path,
+          `${c.kind} reads the permanent the trigger is about: it is only valid in the effect of a trigger about a permanent`,
+        );
+      }
+      checkCondition(c, path, out);
+      break;
     case 'abilityResolvedTimes':
       // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
       if (scope.triggeredAbility !== true && scope.activatedAbility !== true) {
@@ -5449,6 +5498,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachPlayer' ||
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'attackedPlayers' ||
         e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
@@ -6688,6 +6738,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachPlayer' ||
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'eachPlayerExcept' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player wins the game: name a single player');

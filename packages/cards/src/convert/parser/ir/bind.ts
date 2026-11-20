@@ -371,8 +371,12 @@ class Binder {
   noun(noun: IrNoun): IrNoun {
     const seen = this.byKey.get(key(noun.span));
     if (seen !== undefined) return seen;
+    // "with mana value less than or equal to the number of counters on that creature" (Puca's Covenant): "that creature" is the permanent the trigger is about, not this target card, so
+    // the target is numbered with the others, after the amount is bound.
     const ownTargetRef =
-      noun.det === 'target' && noun.filter.manaValueAtMostAmount !== undefined
+      noun.det === 'target' &&
+      noun.filter.manaValueAtMostAmount !== undefined &&
+      noun.filter.manaValueAtMostAmount.kind !== 'countersOn'
         ? `t${++this.scope.targetCount}`
         : undefined;
     if (ownTargetRef !== undefined) {
@@ -648,6 +652,7 @@ class Binder {
       clause.condition !== undefined &&
       (test?.kind === 'unlessPays' ||
         test?.kind === 'objectMatches' ||
+        test?.kind === 'controlsThat' ||
         test?.kind === 'manaValueAtMostAmount')
         ? { ...clause.condition, test: { ...test, who: this.noun(test.who) } }
         : clause.condition;
@@ -720,7 +725,9 @@ class Binder {
         const test = s.condition?.test;
         const condition =
           s.condition !== undefined &&
-          (test?.kind === 'objectMatches' || test?.kind === 'manaValueAtMostAmount')
+          (test?.kind === 'objectMatches' ||
+            test?.kind === 'controlsThat' ||
+            test?.kind === 'manaValueAtMostAmount')
             ? { ...s.condition, test: { ...test, who: this.noun(test.who) } }
             : s.condition;
         // "Target opponent may have you draw three cards" (stage P52, D-210): the player asked is named before the clauses, and later sentences may say "that player".
@@ -758,7 +765,7 @@ function withThoseCounters(clause: IrClause, condition: IrCondition | undefined)
   const test = condition?.test;
   if (clause.verb !== 'removeThoseCounters') return clause;
   if (test?.kind !== 'amountIs' || test.amount.kind !== 'countersOn') return clause;
-  if (test.amount.of.det !== 'self') return clause;
+  if (test.amount.of.det !== 'self' || test.amount.counter === undefined) return clause;
   const counter: IrArg = {
     kind: 'counterSpec',
     name: test.amount.counter,

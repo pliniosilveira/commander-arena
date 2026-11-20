@@ -8,7 +8,7 @@
  * must be everything it said.
  */
 
-import type { Condition, Cost, Effect } from '@commander-arena/engine';
+import type { Condition, Cost, Effect, PlayerSelector } from '@commander-arena/engine';
 import {
   type IrAmount,
   type IrArg,
@@ -209,6 +209,12 @@ function lowerClauses(clauses: readonly IrClause[], ctx: LowerContext): LowerRes
     effects.push(...lowered.value);
     ctx.lowered += 1;
     ctx.lastEffectKind = lowered.value[lowered.value.length - 1]?.kind ?? ctx.lastEffectKind;
+    // "its owner draws that many cards and each other player loses that much life": "other" is besides the player the instruction before it was said of.
+    const lastEffect = lowered.value[lowered.value.length - 1];
+    ctx.lastPlayer =
+      lastEffect !== undefined && 'player' in lastEffect && typeof lastEffect.player === 'object'
+        ? (lastEffect.player as PlayerSelector)
+        : null;
     if (lowered.value.some((e) => e.kind === 'chooseRandomFromGraveyard'))
       ctx.randomYardCard = true;
     noteRemoved(lowered.value, ctx);

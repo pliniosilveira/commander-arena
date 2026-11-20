@@ -40,6 +40,8 @@ export const CONDITION_HAD_COUNTERS = defineRule<IrCondition>({
     'it had a page counter on it',
     'it had +1/+1 counters on it',
     'it had an oil counter on it',
+    'it had one or more -1/-1 counters on it',
+    'it had one or more counters on it',
   ],
   rejects: [
     'it had counters',
@@ -51,27 +53,30 @@ export const CONDITION_HAD_COUNTERS = defineRule<IrCondition>({
     'it had counters on them',
     'they had counters on them',
     'it had counters on it and',
+    'it had one or more -1/-1 counter on it',
+    'it had one or more a +1/+1 counters on it',
+    'it had one or more',
   ],
   parse: (ctx, pos) => {
     const kind = '([+-]\\d+\\/[+-]\\d+|[a-z]+)';
     const r = pattern(
       new RegExp(
-        `it had (?:an? (?:${kind} )?counter|(?:${kind} )?counters) on it${BOUNDARY}`,
+        `it had (?:an? (?:${kind} )?counter|(one or more )?(?:${kind} )?counters) on it${BOUNDARY}`,
         'iu',
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const counter = (r.value[1] ?? r.value[2])?.toLowerCase();
+    const counter = (r.value[1] ?? r.value[3])?.toLowerCase();
     // "it had no counters on it" says the opposite.
     if (counter === 'no') return fail(ctx, pos);
+    const oneOrMore = r.value[2] !== undefined;
     return {
       ok: true,
-      value: conditionOf(
-        'condition.had-counters',
-        pos,
-        r.pos,
-        counter === undefined ? { kind: 'hadCounters' } : { kind: 'hadCounters', counter },
-      ),
+      value: conditionOf('condition.had-counters', pos, r.pos, {
+        kind: 'hadCounters',
+        ...(counter === undefined ? {} : { counter }),
+        ...(oneOrMore ? { oneOrMore: true as const } : {}),
+      }),
       pos: r.pos,
     };
   },

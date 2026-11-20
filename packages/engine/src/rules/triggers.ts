@@ -580,15 +580,14 @@ function occurrences(
         : [];
     case 'countersAdded':
       // CR 122.6, 122.6a (D-149): counters put on a permanent, by the player who put them.
+      // CR 603.2: the singular wording ("whenever a -1/-1 counter is put on") triggers once for each counter put on.
       return event.kind === 'counterAdded'
-        ? [
-            {
-              subject: event.object,
-              seat: event.by ?? null,
-              counter: event.counter,
-              countersPut: event.count,
-            },
-          ]
+        ? Array.from({ length: trigger.each === true ? Math.max(event.count, 1) : 1 }, () => ({
+            subject: event.object,
+            seat: event.by ?? null,
+            counter: event.counter,
+            countersPut: event.count,
+          }))
         : [];
     case 'playerAttacksOpponent': {
       // CR 508.1, 508.6, 603.2c (D-648): once for each player the declaration attacks (a planeswalker or a battle attacked is no player), however many creatures attack them.
@@ -1725,8 +1724,27 @@ function limitOncePerTurn(
   return { found: kept, state: { ...state, turnLog: { ...state.turnLog, triggered: seen } } };
 }
 
+/**
+ * CR 122.6 (Lasting Tarfire: "if you put a counter on a creature this turn"): records, in the turn log, every counter a player put on a permanent in these events, with the card
+ * types the permanent has as it got them. A counter no player put (`counterAdded` with no `by`) and a permanent that is gone are not recorded.
+ */
+function recordCountersPut(state: GameState, events: readonly GameEvent[]): GameState {
+  const put = events.flatMap((e) => {
+    if (e.kind !== 'counterAdded' || e.by === undefined || e.count < 1) return [];
+    const obj = state.objects[e.object];
+    if (obj === undefined || obj.zone !== 'battlefield') return [];
+    return [{ seat: e.by, counter: e.counter, types: [...derive(state, obj).types] }];
+  });
+  if (put.length === 0) return state;
+  return {
+    ...state,
+    turnLog: { ...state.turnLog, countersPut: [...(state.turnLog.countersPut ?? []), ...put] },
+  };
+}
+
 /** Adds the triggers the events cause to the pending list (CR 603.2, 603.3). */
-export function collectTriggers(input: GameState, events: readonly GameEvent[]): GameState {
+export function collectTriggers(recorded: GameState, events: readonly GameEvent[]): GameState {
+  const input = recordCountersPut(recorded, events);
   const limited = limitOncePerTurn(input, findTriggers(input, events));
   // CR 702.179d: the inherent speed ability, which belongs to no object; its once-each-turn count is in the turn log.
   const speeding = findSpeedTriggers(limited.state, events);

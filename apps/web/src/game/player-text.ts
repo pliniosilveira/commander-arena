@@ -29,6 +29,9 @@ export function playerSubject(
     case 'eachOtherOpponent':
       // D-151: the opponents besides the player of the event.
       return { text: 'each other opponent', base: false };
+    case 'eachPlayerExcept':
+      // CR 102.1: every player but the ones `except` names ("its owner draws ... and each other player loses ...").
+      return { text: 'each other player', base: false };
     case 'controllerOf':
       return { text: 'its controller', base: false };
     case 'ownerOf':

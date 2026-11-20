@@ -481,6 +481,8 @@ export const PLAYER_SUBJECTS = [
   'noun.defending-player',
   'noun.player',
   'noun.its-controller',
+  // Oft-Nabbed Goat: "its owner draws that many cards".
+  'noun.its-owner',
   'noun.each-exiled-controller',
   'noun.that-player',
   // D-648: "that attacking player draws a card" (the player of a trigger about a player attacking one of your opponents).
@@ -542,6 +544,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you draw a card, then discard a card',
     'target opponent discards a card',
     'its controller gains 4 life',
+    // Oft-Nabbed Goat: the owner of the object an earlier part of the text named.
+    'its owner draws a card',
     "that creature's controller loses 2 life",
     'that player loses 2 life',
     'that player discards a card',
@@ -701,7 +705,8 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'each creature draws a card',
     'target player discards',
     'its controller',
-    'its owner gains 4 life',
+    'its owners gain 4 life',
+    'its owner',
     'you become the monarch and',
     'you becomes the monarch',
     'you become monarch',

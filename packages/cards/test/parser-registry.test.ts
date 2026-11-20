@@ -566,6 +566,17 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.player-attacks-opponent': whenever,
   'trigger.unblocked-opponent-attackers': whenever,
   'trigger.enchanted-tapped-for-mana': whenever,
+  // Lorwyn Eclipsed (Blight Curse deck): the conditions and the noun of the counter group.
+  'condition.control-that-creature': permanent(
+    (e) => `Whenever one or more -1/-1 counters are put on a creature, draw a card if ${e}.`,
+  ),
+  'condition.its-stat-was': permanent(
+    (e) => `Whenever a creature an opponent controls dies, if ${e}, draw a card.`,
+  ),
+  'condition.you-put-counter-this-turn': permanent(
+    (e) => `At the beginning of each end step, if ${e}, ~ deals 2 damage to each opponent.`,
+  ),
+  'noun.its-owner': permanent((e) => `When ~ dies, ${e} draws a card.`),
   'condition.had-counters': permanent(
     (e) =>
       `Whenever another permanent you control leaves the battlefield, if ${e}, you gain 1 life.`,

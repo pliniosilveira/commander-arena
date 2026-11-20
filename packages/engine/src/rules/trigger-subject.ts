@@ -14,6 +14,11 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // CR 603.3d: so does a target filter that reads the triggering object ("with mana value less than or equal to that spell's mana value").
   const effects = JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
+  // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card" leaves out the card the permanent that died became, read as the targets are chosen and checked again.
+  if (effects.includes('"notTriggerCard"')) return true;
+  // CR 603.10a, 608.2h (Auntie Ool): "draw a card if you control that creature" reads the permanent the trigger is about, as the ability resolves.
+  if (effects.includes('"subjectControlledByYou"') || effects.includes('"subjectStat"'))
+    return true;
   // D-654 (CR 603.10a): "for each Aura you controlled that was attached to it" reads the Auras of the creature the trigger is about, from its last-known information.
   if (effects.includes('"aurasAttachedToTriggerSubject"')) return true;
   // CR 107.3, 113.7a (Quandrix Unlimited group E): "put X +1/+1 counters" of a cast trigger reads the X of the spell that was cast, as the ability resolves.
@@ -30,6 +35,9 @@ export function readsTriggerSubject(ability: Ability): boolean {
   // D-229: the intervening "if" of Archaeomancer's Map reads the controller of the land that entered, again as the ability resolves.
   return (
     condition.includes('"subjectGreaterPt"') ||
+    // Massacre Girl: the toughness the creature that died had, read again as the ability resolves.
+    condition.includes('"subjectStat"') ||
+    condition.includes('"subjectControlledByYou"') ||
     // Galadriel group 1: the creature the Ring tempted its controller to choose, read again as the ability resolves.
     condition.includes('"ringBearerChosen"') ||
     condition.includes('"manaSpentAtLeast"') ||

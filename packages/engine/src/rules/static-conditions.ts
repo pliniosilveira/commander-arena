@@ -96,7 +96,10 @@ export function staticConditionHolds(
       if (typeof condition.amount === 'number') return false;
       if (condition.amount.kind === 'countersOn') {
         // CR 122.1, CR 613.8: the counters on the source itself, which no layer changes.
-        const have = source.counters[condition.amount.counter] ?? 0;
+        const have =
+          condition.amount.counter === undefined
+            ? 0
+            : (source.counters[condition.amount.counter] ?? 0);
         const c = condition.compare;
         return c.cmp === 'atLeast'
           ? have >= c.value

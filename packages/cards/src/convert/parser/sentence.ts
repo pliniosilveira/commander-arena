@@ -93,6 +93,8 @@ const CONTROL_CONDITIONS = [
   'condition.control-none',
   'condition.control-commander',
   'condition.control-your-commander',
+  // Auntie Ool, Cursewretch: "draw a card if you control that creature. If you don't control it, ...".
+  'condition.control-that-creature',
 ] as const;
 
 /** "If the creature you control has trample, excess damage is dealt to that creature's controller instead." (stage P32). */

@@ -99,6 +99,8 @@ export interface FilterContext {
   readonly attackersOfYouOrPlaneswalkers?: readonly ObjectId[];
   /** The number `manaValueAtMost` stands for (D-230), worked out by the caller that has the state. */
   readonly manaValueLimit?: number;
+  /** The cards `notTriggerCard` leaves out (CR 400.7, 603.10a): the card the permanent the trigger is about became, read by the caller; absent leaves nothing out. */
+  readonly excludedCards?: readonly ObjectId[];
   /** The creatures declared as blockers that are still in combat, for `blocking` (CR 509.1g): read from the combat in progress by the caller. */
   readonly blockers?: readonly ObjectId[];
   /** The creatures that are attacking or blocking, for `attackingOrBlocking` (D-229): read from the combat in progress by the caller. */
@@ -214,6 +216,8 @@ export function matchesFilterWith(
   const zone = filter.zone ?? (filter.stackKind ? 'stack' : 'battlefield');
   if (obj.zone !== zone) return false;
   if (filter.other && ctx.source !== null && obj.id === ctx.source) return false;
+  // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card": not the card the permanent the trigger is about became.
+  if (filter.notTriggerCard === true && (ctx.excludedCards ?? []).includes(obj.id)) return false;
   // D-437: "a spell that targets this creature": the object is the permanent that has the ability.
   if (filter.isSource === true && (ctx.source === null || obj.id !== ctx.source)) return false;
   if (filter.controller === 'you' && controllerOf(state, obj) !== ctx.controller) return false;

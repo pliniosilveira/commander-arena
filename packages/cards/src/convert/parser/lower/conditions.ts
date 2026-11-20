@@ -252,6 +252,42 @@ export function lowerCondition(
       if (blocked.length > 0) return failure(c, blocked);
       return ok({ kind, stat: test.stat });
     }
+    case 'controlsThat': {
+      // CR 603.10a, 608.2h (Auntie Ool, Cursewretch): "draw a card if you control that creature": the permanent the trigger is about, under the control it has or had as it left. "It" of
+      // a trigger about the source is the source, which is the subject of its event too.
+      const blocked = missingFeatures(['condition:subjectControlledByYou']);
+      if (blocked.length > 0) return failure(c, blocked);
+      const aboutTrigger =
+        test.who.det === 'triggerSubject' || (test.who.ref === 'self' && itIsSelf);
+      if (!aboutTrigger) return failure(c, []);
+      const held: Condition = { kind: 'subjectControlledByYou' };
+      return ok(test.negated === true ? { kind: 'not', term: held } : held);
+    }
+    case 'subjectStat': {
+      // CR 603.10a, 113.7a, 208.1 (Massacre Girl, Known Killer): "if its toughness was less than 1" is the intervening "if" of a trigger about a permanent, read from the permanent as it
+      // last was.
+      const blocked = missingFeatures(['condition:subjectStat']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      return ok({
+        kind: 'subjectStat',
+        stat: test.stat,
+        compare: { cmp: test.compare.cmp, value: test.compare.value },
+      });
+    }
+    case 'putCountersThisTurn': {
+      // CR 122.6, 603.4 (Lasting Tarfire): read from the turn log, for the controller of the ability.
+      const blocked = missingFeatures(['condition:putCountersThisTurn']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (test.onType !== undefined && !(CARD_TYPES as readonly string[]).includes(test.onType)) {
+        return failure(c, []);
+      }
+      return ok({
+        kind: 'putCountersThisTurn',
+        ...(test.counter === undefined ? {} : { counter: test.counter }),
+        ...(test.onType === undefined ? {} : { onType: test.onType as CardType }),
+      });
+    }
     case 'cardsInGraveyard': {
       // CR 404.1 (stage P68, D-229): the number of cards in the graveyard of the controller.
       const blocked = missingFeatures(['condition:cardsInGraveyard']);
@@ -813,6 +849,9 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:cardsInLibrary',
   'condition:aPlayerCardsInHand',
   'condition:subjectControllerHasMore',
+  'condition:subjectControlledByYou',
+  'condition:subjectStat',
+  'condition:putCountersThisTurn',
   'condition:triggerPlayerHasMore',
   'condition:thisMatches',
   'condition:escaped',

@@ -30,6 +30,7 @@ import { BRUNA_CONDITION_RULES } from './bruna';
 import { CONDITION_CAST_IN_OWN_MAIN_PHASE } from './cast-phase';
 import { CHOOSER_CONDITION_RULES } from './choosers';
 import { COUNTER_COUNT_CONDITION_RULES } from './counter-count';
+import { COUNTER_TRIGGER_CONDITION_RULES } from './counter-triggers';
 import { DANITHA_G1B_CONDITION_RULES } from './danitha-g1b';
 import { DANITHA_G2_CONDITION_RULES, DANITHA_G2_LATE_CONDITION_RULES } from './danitha-g2';
 import { DANITHA_G3_CONDITION_RULES } from './danitha-g3';
@@ -610,6 +611,8 @@ export const CONDITION_RULES = [
   ...DANITHA_G3_CONDITION_RULES,
   // Issue 89: "it's attacking one of your opponents".
   ...ATTACKING_OPPONENTS_CONDITION_RULES,
+  // Lorwyn Eclipsed (Blight Curse deck): "you control that creature", "its toughness was less than 1", "you put a counter on a creature this turn".
+  ...COUNTER_TRIGGER_CONDITION_RULES,
   // Issue 41 (the Gisa deck, D-475): "a player was dealt combat damage by a Zombie this turn".
   ...GISA_G1_CONDITION_RULES,
   // Issue 42 (the Hylda deck, D-510): "it isn't being declared as an attacker".

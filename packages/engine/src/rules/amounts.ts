@@ -14,6 +14,7 @@ import { getSeat, objectsInZone, opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState } from '../state/types';
 import { commanderIdentity } from './commander-identity';
 import { controllerOf } from './control';
+import { countersOfKind } from './counters-of-kind';
 import { derive } from './derive';
 import { commandersCastCount, commandersManaValue } from './derive-count';
 import { devotionOf } from './devotion';
@@ -422,7 +423,7 @@ export function stateAmountOf(
       if (id === undefined) return 0;
       // CR 113.7a: an object that left the battlefield is read as it last existed.
       const obj = state.objects[id] ?? state.lki[id]?.object;
-      return obj?.counters[amount.counter] ?? 0;
+      return countersOfKind(obj?.counters, amount.counter);
     }
     case 'aggregate': {
       // CR 109.4, 608.2c: "the greatest power among creatures they control", the player a target of the spell or ability: read now, with the targets.

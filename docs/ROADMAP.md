@@ -334,7 +334,8 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - A search of another player's library is not read.
 - Blight: CR 701.68c and 701.68d (the "blighted creature" and "whenever a player blights" triggers) are not implemented.
 - "Blight N" is read as an instruction, an activated ability's cost, a spell's optional additional cost and Ward's only cost; not as a mandatory additional cost or another keyword's.
-- "Enchanted creature can't attack" and "can't attack or block" are read for the attached permanent only: "~ can't attack", "creatures you control can't attack", "can't attack or block alone" and "can't attack you" with a tax are not.
+- "Can't attack" and "can't attack or block" are read for an attached permanent and for a group; "~ can't attack", "can't attack or block alone" and "can't attack you" with a tax are not.
+- "If you put a counter on a creature this turn" ignores counters no player put (wither damage). Puca's "another target ... card" means besides the creature that died: both unverified against rulings.
 - A spell's own conditional flash: with several mandatory target slots only the first is restricted, so a legal cast whose second slot meets "it targets a commander" is not offered; a modal spell's modes are not restricted.
 - A spell's own conditional flash: the grammar reads only "it targets <a kind of permanent or a commander>"; "if you control a Dragon" and the like run in the engine but are not read.
 - The attach to "that creature" needs a trigger that names a creature; "it" is the token of the same sentence only.

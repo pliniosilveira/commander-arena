@@ -19,7 +19,7 @@ import {
   separatedBy1,
   sequence,
 } from '../../combinators';
-import type { IrComparison, IrFilter } from '../../ir/types';
+import type { IrAmount, IrComparison, IrFilter } from '../../ir/types';
 import { GRANTABLE_KEYWORDS } from '../keyword/vocabulary';
 import { readCreatureType } from './creature-types';
 import { PLANESWALKER_TYPES, SUBTYPE_WORD_NUMBERED, type SubtypeWord, subtypeOf } from './subtypes';
@@ -1046,6 +1046,9 @@ export function graveyardPhrase(
   plural: boolean,
   // D-362: "target creature cards in your graveyard" (Victimize, "Choose two target creature cards in your graveyard"): the same cards, said with "in".
   preposition: 'from' | 'in' | 'inAny' | 'fromThatPlayer' | 'fromTheirs' | 'fromPlayers' = 'from',
+  // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
+  // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
+  amountLimit?: Parser<IrAmount>,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
     preposition === 'fromTheirs'
@@ -1268,6 +1271,17 @@ export function graveyardPhrase(
       optional(quiet(MANA_VALUE_X_OR_LESS), false),
       // "Saga card with mana value X from your graveyard" (CR 107.3a, 202.3): the mana value is the X announced for the ability.
       optional(quiet(MANA_VALUE_X), false),
+      optional(
+        quiet(
+          amountLimit === undefined
+            ? fail
+            : map(
+                sequence(literal(' with mana value less than or equal to '), amountLimit),
+                ([, amount]) => amount,
+              ),
+        ),
+        undefined,
+      ),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), false),
@@ -1279,6 +1293,7 @@ export function graveyardPhrase(
       compared,
       atMostX,
       equalsX,
+      limitAmount,
       controller,
       putThere,
     ] = r.value;
@@ -1304,6 +1319,7 @@ export function graveyardPhrase(
           ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
+          ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),
           card: true,
         },
         compared,

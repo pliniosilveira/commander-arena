@@ -511,7 +511,8 @@ export type IrAmount =
   | {
       readonly kind: 'countersOn';
       readonly of: IrNoun;
-      readonly counter: string;
+      /** The kind of counter; left out for "the number of counters on that creature" (every kind added together). */
+      readonly counter?: string;
       readonly span: Span;
     }
   // "the greatest power among creatures you control", "the total power of creatures you control"
@@ -813,7 +814,22 @@ export interface IrCondition extends IrNode {
       }
     // Stage P33 (D-150): "if it had counters on it" (CR 603.10a): the permanent that left the battlefield had a counter (of the kind named,
     // when the text names one), as it last was; the lowering folds it into the filter of the trigger about the permanent
-    | { readonly kind: 'hadCounters'; readonly counter?: string }
+    // `oneOrMore` (Oft-Nabbed Goat): "it had one or more -1/-1 counters on it", whose number "that many" and "that much" of the body then name
+    | { readonly kind: 'hadCounters'; readonly counter?: string; readonly oneOrMore?: true }
+    // Auntie Ool, Cursewretch (CR 603.10a, 608.2h): "you control that creature", "you don't control it" (`not` of this): the permanent the text means by `who`, which the binding pass names
+    | { readonly kind: 'controlsThat'; readonly who: IrNoun; readonly negated?: true }
+    // Massacre Girl, Known Killer (CR 603.10a, 113.7a, 208.1): "its toughness was less than 1": the power or toughness of the permanent the trigger is about, as it is or as it last was
+    | {
+        readonly kind: 'subjectStat';
+        readonly stat: 'power' | 'toughness';
+        readonly compare: IrComparison;
+      }
+    // Lasting Tarfire (CR 122.6, 603.4): "you put a counter on a creature this turn": a counter the controller put on a permanent (of the card type, when named) this turn
+    | {
+        readonly kind: 'putCountersThisTurn';
+        readonly counter?: string;
+        readonly onType?: string;
+      }
     // Stage P33 (D-150): "none of those creatures attacked you" is `not` of this (CR 508.1b): at least one creature of the attackers that
     // triggered the ability was declared as attacking its controller as a player
     | { readonly kind: 'attackersAttackedYou' }
@@ -1440,6 +1456,8 @@ export interface IrTrigger extends IrNode {
   readonly by?: 'you' | 'any';
   /** 'countersAdded' "the twelfth hour counter is put on ~" (Midnight Clock, issue 121): the number of counters of the kind the putting reaches. */
   readonly reaches?: number;
+  /** 'countersAdded' "a -1/-1 counter is put on a creature" (Flourishing Defenses, CR 122.6): the singular wording, once for each counter put on. */
+  readonly perCounter?: true;
   /**
    * 'attacks' "while you don't control another Dinosaur" (stage P32, D-147, CR 603.2): a condition that is part of the event itself,
    * read once as it happens (not an intervening "if", CR 603.4, which is read again as the ability resolves).
