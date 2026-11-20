@@ -848,8 +848,12 @@ export interface ObjectFilter {
    * "that shares a creature type with it" (D-261, CR 205.3m, 603.10a, 113.7a): the object has at least one creature type that the creature the trigger is
    * about has (`triggerSubject`: the one that died), as that creature last was on the battlefield; a changeling has every creature type (CR 702.73a).
    * Only in the filter of a `revealUntil` in the effect of a "dies" trigger.
+   * `source` (Titan of Littjara: "each other creature you control that shares a creature type with it", CR 205.3m, 702.73a): the creature types of the source of the ability, as it is or as it
+   * last was (CR 113.7a); read anywhere a filter is matched against the game. `sacrificed` (Descendants' Fury: "a creature card that shares a creature type with the sacrificed creature",
+   * CR 701.21a, 113.7a): the creature types the first permanent an earlier `sacrifice` of this resolution sacrificed last had on the battlefield, in the filter of a `revealUntil` that
+   * follows that sacrifice (or the `may` of one) in the same sequence.
    */
-  readonly sharesCreatureTypeWith?: 'triggerSubject';
+  readonly sharesCreatureTypeWith?: 'triggerSubject' | 'source' | 'sacrificed';
   /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.

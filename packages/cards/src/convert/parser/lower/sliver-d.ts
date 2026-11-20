@@ -20,3 +20,15 @@ const EACH_PLAYER_CHOOSES_CREATURE_TYPE: Lowering<IrClause, Effects> = {
 export const SLIVER_D_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EACH_PLAYER_CHOOSES_CREATURE_TYPE,
 ];
+
+/**
+ * Whether the written ability (IR) has a count of "creatures that share a creature type with it" (Titan of Littjara, CR 205.3m): "it" is the source of the ability only in a triggered
+ * ability about the card itself, so any other ability is refused.
+ */
+export function usesSharesWithSource(written: unknown): boolean {
+  if (written === null || typeof written !== 'object') return false;
+  if (Array.isArray(written)) return written.some(usesSharesWithSource);
+  const record = written as Record<string, unknown>;
+  if (record.sharesCreatureTypeWithSource === true) return true;
+  return Object.values(record).some(usesSharesWithSource);
+}

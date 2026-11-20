@@ -323,6 +323,11 @@ export interface IrFilter {
    */
   readonly sharesCreatureTypeWithIt?: true;
   /**
+   * "each other creature you control that shares a creature type with it" (Titan of Littjara, CR 205.3m, 702.73a): the permanent has a creature type the source of the ability has. "It" is the
+   * source only in a trigger about the card itself entering or attacking, which the lowering of the ability checks (`usesSharesWithSource`); the engine's `sharesCreatureTypeWith: 'source'`.
+   */
+  readonly sharesCreatureTypeWithSource?: true;
+  /**
    * "a permanent of their choice that shares a card type with it" (Braids, CR 205.2a, 701.21a, 113.7a): the permanent has a card type the permanent an earlier sacrifice of the same
    * text sacrificed had, as it last was. Read in the filter of a sacrifice only; the engine's `sharesCardTypeWith: 'sacrificed'`.
    */

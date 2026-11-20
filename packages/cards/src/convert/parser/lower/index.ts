@@ -37,6 +37,7 @@ import { NOUN_EXTRA_NEEDS, SELECTOR_NEEDS } from './nouns';
 import { PLANESWALKER_NEEDS } from './planeswalker';
 import { REVEAL_TOP_DUEL_NEEDS } from './reveal-top-duel';
 import { COMBAT_DAMAGE_TO_PLAYER_NEEDS, NEXT_CAST_NEEDS, SENTENCE_NEEDS } from './sentences';
+import { usesSharesWithSource } from './sliver-d';
 import { ALTERNATIVE_COST_NEEDS, lowerAlternativeKeyword, lowerSpellCosts } from './spell-costs';
 import { lowerStatic, STATIC_NEEDS } from './statics';
 import { lowerTriggered, TRIGGER_NEEDS } from './triggers';
@@ -77,6 +78,10 @@ export function lower(ability: IrAbility, ctx: LowerContext): LowerResult<Lowere
     r.ok && ctx.usesX && !ctx.selfCast
       ? { ok: false, needs: [], at: ability.span, rule: ability.rule }
       : r;
+  // Titan of Littjara (CR 205.3m): "shares a creature type with it" is read only in a triggered ability about the card itself (checked there).
+  if (ability.kind !== 'triggered' && usesSharesWithSource(ability)) {
+    return { ok: false, needs: [], at: ability.span, rule: ability.rule };
+  }
   switch (ability.kind) {
     case 'keyword': {
       // Overload, Evoke, Dash and the other named alternatives (Madness and Foretell: stage P26) are

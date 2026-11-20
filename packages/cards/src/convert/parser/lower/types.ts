@@ -197,6 +197,11 @@ export interface LowerContext {
   /** True in the body of "Whenever this creature attacks" (issue 144, CR 508.4): the source is the attacker, so a token "tapped and attacking" attacks whom it attacks (`enterAttacking`). */
   selfAttackTrigger: boolean;
   /**
+   * True in the body of a triggered ability whose every event is the card itself entering the battlefield or attacking (Titan of Littjara): "it" in "shares a creature type with it" is
+   * the source of the ability, the one case the engine's `sharesCreatureTypeWith: 'source'` is read from the words.
+   */
+  selfEntersOrAttacksTrigger: boolean;
+  /**
    * True when the source of the triggered ability is an Aura whose own trigger is "when enchanted creature dies" (D-657, CR 603.10a, 303.4f): every event is `dies` of the attached
    * permanent, so the Aura has gone to the graveyard with the creature by the time the effect runs, and "this card" is that card (the engine's `thisCard`).
    */
@@ -409,6 +414,7 @@ export function newContext(
     diesTrigger: false,
     damageBatchTrigger: false,
     selfAttackTrigger: false,
+    selfEntersOrAttacksTrigger: false,
     cardName,
     selfName: '',
   };
