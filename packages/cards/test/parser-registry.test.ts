@@ -550,6 +550,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
   'trigger.attack-with-self-or-commander': whenever,
+  'trigger.opponents-dealt-combat-damage': whenever,
+  'condition.damage-dealt-by-type': permanent(
+    (e) => `Whenever your opponents are dealt combat damage, if ${e}, you gain 1 life.`,
+  ),
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,
   'trigger.unblocked-opponent-attackers': whenever,

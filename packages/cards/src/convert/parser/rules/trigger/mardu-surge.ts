@@ -4,7 +4,7 @@
  * - `trigger.attack-with-self-or-commander`: "you attack with ~ and/or your commander" (CR 508.1, 603.2c, 903.3): once for the declaration, when at least one of the creatures declared is
  *   this creature or a commander its controller owns. The engine's `attackBatch` with a filter of two members.
  */
-import { literal } from '../../combinators';
+import { literal, pattern } from '../../combinators';
 import type { IrTrigger } from '../../ir/types';
 import { defineRule, quietly } from '../registry';
 import { makeNoun, youNoun } from './subjects';
@@ -59,4 +59,51 @@ export const TRIGGER_ATTACK_WITH_SELF_OR_COMMANDER = defineRule<IrTrigger>({
   },
 });
 
-export const MARDU_SURGE_TRIGGER_RULES = [TRIGGER_ATTACK_WITH_SELF_OR_COMMANDER].map(quietly);
+/**
+ * `trigger.opponents-dealt-combat-damage`: "your opponents are dealt combat damage" (CR 510.2, 603.2c; Mindblade Render): one occurrence for each opponent dealt combat damage in one
+ * damage event, whatever dealt it. The engine's `combatDamageBatch` with `to: 'opponent'`; "if any of that damage was dealt by a Warrior" is the type in the filter of the sources
+ * (`condition.damage-dealt-by-type`, folded by the lowering of the trigger).
+ */
+export const TRIGGER_OPPONENTS_DEALT_COMBAT_DAMAGE = defineRule<IrTrigger>({
+  id: 'trigger.opponents-dealt-combat-damage',
+  family: 'trigger',
+  leading: ['your'],
+  cites: ['CR 510.2 (Combat Damage Step)', 'CR 603.2c (Handling Triggered Abilities)'],
+  examples: ['your opponents are dealt combat damage'],
+  rejects: [
+    'your opponents are dealt damage',
+    'your opponent is dealt combat damage',
+    'your opponents are dealt combat damage by a Warrior',
+    'you are dealt combat damage',
+    'an opponent is dealt combat damage',
+    'your opponents are dealt combat damage and',
+    'your opponents are dealt noncombat damage',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/your opponents are dealt combat damage(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    const subject = makeNoun('trigger.opponents-dealt-combat-damage', span, 'a', {
+      types: ['creature'],
+      raw: 'creatures',
+    });
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'combatDamageBatch',
+        subject: { ...subject, plural: true },
+        damaged: 'opponent',
+        args: {},
+        span,
+        rule: 'trigger.opponents-dealt-combat-damage',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const MARDU_SURGE_TRIGGER_RULES = [
+  TRIGGER_ATTACK_WITH_SELF_OR_COMMANDER,
+  TRIGGER_OPPONENTS_DEALT_COMBAT_DAMAGE,
+].map(quietly);

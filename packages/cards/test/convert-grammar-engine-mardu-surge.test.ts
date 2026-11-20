@@ -409,3 +409,47 @@ describe('Thalisse, Reverent Medium: X tokens for the tokens created this turn (
     g.expect.derived('Spirit', { keywords: ['flying'] });
   });
 });
+
+describe('Mindblade Render: combat damage dealt by a Warrior (CR 510.2, 603.4)', () => {
+  const render = real('Mindblade Render');
+  const zurgo = real('Zurgo Stormrender');
+
+  test('the card is valid', () => {
+    expect(validateCard(render)).toEqual([]);
+  });
+
+  test('Warriors dealing combat damage draw one card and cost 1 life, once for the whole damage event', () => {
+    const g = scenario()
+      .define(render)
+      .define(zurgo)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(render.name)
+      .battlefield(zurgo.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.playCombat({ attack: [zurgo.name], until: 'combatDamage' });
+    g.passAll();
+    g.expect.handSize(0, 1);
+    g.expect.life(0, 39);
+  });
+
+  test('a creature that is not a Warrior does not trigger it', () => {
+    const g = scenario()
+      .define(render)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(render.name)
+      .battlefield(BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.playCombat({ attack: [BEARS], until: 'combatDamage' });
+    g.passAll();
+    g.expect.handSize(0, 0);
+    g.expect.life(0, 40);
+  });
+});

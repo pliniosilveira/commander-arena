@@ -680,6 +680,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'ringBearerChosen' }
     // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
     | { readonly kind: 'notDeclaredAttacker' }
+    // "if any of that damage was dealt by a Warrior" (issue 101, Mindblade Render, CR 510.2, 603.4): a part of the filter of the sources of a combat damage batch trigger
+    | { readonly kind: 'damageDealtByType'; readonly subtype: string }
     // "they entered or were cast from a graveyard" (Twilight Diviner, CR 603.4, 603.6a): part of the event of "one or more creatures enter", read by the trigger's lowering
     | { readonly kind: 'enteredFromGraveyard' }
     // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
