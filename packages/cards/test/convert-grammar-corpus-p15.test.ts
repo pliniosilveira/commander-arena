@@ -251,11 +251,8 @@ const TRIGGERS: readonly Line[] = [
   {
     kind: 'creature',
     text: "When ~ is put into a graveyard from anywhere, return it to its owner's hand.",
-    expect: no(
-      "is put into a graveyard from anywhere, return it to its owner's hand.",
-      'trigger.or',
-    ),
-    note: 'replay: 20 cards; "from anywhere" is not "dies" (CR 700.4)',
+    expect: no("it to its owner's hand.", 'noun.it', { reason: 'notRunnable' }),
+    note: 'replay: 20 cards; the trigger is read (Troyan 2 deck), the return of "it" is not',
   },
   {
     kind: 'creature',
