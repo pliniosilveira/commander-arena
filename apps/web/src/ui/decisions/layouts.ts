@@ -125,14 +125,20 @@ export function exileBadge(
 /** What the top card of the library says when it may be cast from there (D-151, CR 601.3). */
 export const CAST_FROM_LIBRARY = 'Cast from the top of your library';
 
-/** The badge of the top card of the library when the decision offers to cast it; null for anything else. */
+/** What the top card of the library says when it is a land that may be played from there (issue 345, CR 305.1, 401.5). */
+export const PLAY_FROM_LIBRARY = 'Play from the top of your library';
+
+/** The badge of the top card of the library when the decision offers to cast or play it; null for anything else. */
 export function libraryBadge(
   playable: ReadonlySet<ObjectId>,
   index: Index,
   id: ObjectId,
+  decision?: PriorityDecision,
 ): string | null {
   const card = index.get(id);
-  return card?.zone === 'library' && playable.has(id) ? CAST_FROM_LIBRARY : null;
+  if (card?.zone !== 'library' || !playable.has(id)) return null;
+  const land = decision?.options.some((o) => o.kind === 'playLand' && o.object === id) === true;
+  return land ? PLAY_FROM_LIBRARY : CAST_FROM_LIBRARY;
 }
 
 /** True for a transformed (or back-face-up) double-faced permanent or spell. */

@@ -582,6 +582,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'playLandsFromGraveyard':
+    case 'playLandsFromTopOfLibrary':
     case 'attackTax':
     case 'optionalUntap':
     case 'crewSaddleBonus':

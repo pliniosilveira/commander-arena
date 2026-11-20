@@ -566,10 +566,94 @@ export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.play-lands-from-top`: "You may play lands from the top of your library." (CR 305.1, 401.5, 604.1: the permission only says where the land card may come from; the
+ * land plays of the turn are the ones the turn has, and the card on top is not looked at: that is `static.look-at-top`). Not read: another card kind, another zone, "from the
+ * top of target player's library", a count, "Once each turn" and a line with more text.
+ */
+export const STATIC_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
+  id: 'static.play-lands-from-top',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 305.1 (Lands)', 'CR 401.5 (Library)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: ['You may play lands from the top of your library.'],
+  rejects: [
+    'You may play lands from the top of your library',
+    'You may play a land from the top of your library.',
+    'You may play lands from the top of your graveyard.',
+    "You may play lands from the top of target player's library.",
+    "You may play lands from the top of an opponent's library.",
+    'You may play lands from your library.',
+    'You may play lands from the top of your library this turn.',
+    'You may cast spells from the top of your library.',
+    'You may play lands from the top of your library. You may look at the top card of your library any time.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/you may play lands from the top of your library\./i)(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject('you', 'you', { start: pos, end: pos + 3 }, 'static.play-lands-from-top');
+    return {
+      ok: true,
+      value: statement(
+        'static.play-lands-from-top',
+        who,
+        { kind: 'playLandsFromTopOfLibrary' },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.look-and-play-lands-from-top`: "You may look at the top card of your library any time, and you may play lands from the top of your library." (CR 401.5, 305.1,
+ * 604.1): the two abilities of `static.look-at-top` and `static.play-lands-from-top` in one sentence. Not read: the order reversed, another zone or card kind, a line with more text.
+ */
+export const STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
+  id: 'static.look-and-play-lands-from-top',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 401.5 (Library)', 'CR 305.1 (Lands)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    'You may look at the top card of your library any time, and you may play lands from the top of your library.',
+  ],
+  rejects: [
+    'You may look at the top card of your library any time, and you may play lands from the top of your library',
+    'You may play lands from the top of your library, and you may look at the top card of your library any time.',
+    'You may look at the top card of your library any time, and you may cast spells from the top of your library.',
+    'You may look at the top card of your library any time, and you may play lands from your graveyard.',
+    'You may look at the top card of your library any time and you may play lands from the top of your library.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may look at the top card of your library any time, and you may play lands from the top of your library\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.look-and-play-lands-from-top',
+    );
+    return {
+      ok: true,
+      value: statement(
+        'static.look-and-play-lands-from-top',
+        who,
+        { kind: 'playLandsFromTopOfLibrary', alsoLook: true },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
+  STATIC_PLAY_LANDS_FROM_TOP,
+  STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,

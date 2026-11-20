@@ -1,7 +1,7 @@
 // Agatha deck (issue 345), group 1: Hero's Blade, "Whenever a legendary creature you control enters, you may attach ~ to it."
 // Pins: CR 701.3 (attach), CR 603.2 (the trigger), CR 205.4 (legendary supertype), CR 603.5 (the "may" is asked as the ability resolves).
 import { scenario } from '@commander-arena/engine/testing';
-import { describe, expect, test } from 'vitest';
+import { describe, test } from 'vitest';
 import { real } from './agatha-helpers';
 import { parsed } from './convert-grammar-helpers';
 

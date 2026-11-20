@@ -23,6 +23,7 @@ export type PlayRuleEffect = Extract<
       | 'additionalLandDrops'
       | 'lookAtTopOfLibrary'
       | 'playLandsFromGraveyard'
+      | 'playLandsFromTopOfLibrary'
       | 'attackTax'
       | 'optionalUntap'
       | 'crewSaddleBonus'
@@ -36,6 +37,7 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
     effect.kind === 'additionalLandDrops' ||
     effect.kind === 'lookAtTopOfLibrary' ||
     effect.kind === 'playLandsFromGraveyard' ||
+    effect.kind === 'playLandsFromTopOfLibrary' ||
     effect.kind === 'attackTax' ||
     effect.kind === 'blockTax' ||
     effect.kind === 'optionalUntap' ||
@@ -53,6 +55,10 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
       return ['static:lookAtTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
+    case 'playLandsFromTopOfLibrary':
+      return effect.alsoLook === true
+        ? ['static:lookAtTopOfLibrary', 'static:playLandsFromTopOfLibrary']
+        : ['static:playLandsFromTopOfLibrary'];
     case 'attackTax':
       return ['static:attackTax', 'cost:mana'];
     // Stage P33 (D-150): "Creatures can't block unless their controller pays {1} for each of those creatures."
@@ -101,6 +107,18 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
               : { types: ['land'], subtypes: [effect.landType] },
         },
       });
+    // "You may play lands from the top of your library." (issue 345, CR 305.1, 401.5), with "You may look at the top card of your library any time" in the same sentence.
+    case 'playLandsFromTopOfLibrary': {
+      const play: Ability = { kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' } };
+      return {
+        ok: true,
+        value:
+          effect.alsoLook === true
+            ? [{ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } }, play]
+            : [play],
+        rule: at.rule,
+      };
+    }
     case 'optionalUntap':
       return ok({ kind: 'static', static: { kind: 'optionalUntap' } });
     // "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a): the creature itself, a bonus to the power it counts for the cost.
@@ -152,6 +170,7 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:additionalLandDrops',
   'static:lookAtTopOfLibrary',
   'static:playLandsFromGraveyard',
+  'static:playLandsFromTopOfLibrary',
   'static:attackTax',
   'static:blockTax',
   'static:optionalUntap',

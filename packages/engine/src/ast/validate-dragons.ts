@@ -446,6 +446,8 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
         }
       }
       return true;
+    case 'playLandsFromTopOfLibrary':
+      return true;
     case 'playLandsFromGraveyard':
       // CR 305.1: the land cards that may be played from the graveyard, as the card in the graveyard is.
       if (s.lands !== undefined) {

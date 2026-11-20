@@ -6420,6 +6420,12 @@ export type StaticEffect =
    */
   | { readonly kind: 'playLandsFromGraveyard'; readonly lands?: ObjectFilter }
   /**
+   * "You may play lands from the top of your library." (CR 305.1, 401.5, 604.1, issue 345): while the permanent has the ability, its controller may play the land card on top of their
+   * own library as a land play. When a land may be played, and how many, are those of the turn (CR 305.2, 505.6b); the permission only adds where the land may come from. It does not let
+   * the player look at the card, which is `lookAtTopOfLibrary`.
+   */
+  | { readonly kind: 'playLandsFromTopOfLibrary' }
+  /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative
    * to the controller of the permanent: "you" is usual, and a spell of another player never gets it, as the permission is the

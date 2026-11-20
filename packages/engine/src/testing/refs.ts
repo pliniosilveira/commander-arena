@@ -367,7 +367,7 @@ function faceField(
   return face !== 0 || multi ? { face } : {};
 }
 
-/** The `playLand` action for a card in `seat`'s hand, or in exile when an effect lets it be played (D-151), or in their graveyard (D-232); `face` picks a modal double-faced card's face. */
+/** The `playLand` action for a card in `seat`'s hand, or in exile when an effect lets it be played (D-151), or in their graveyard (D-232), or on top of their library (issue 345); `face` picks a modal double-faced card's face. */
 export function playLandAction(
   ctx: RefContext,
   seat: SeatId,
@@ -387,7 +387,12 @@ export function playLandAction(
       try {
         obj = resolveObject(ctx, card, { zones: ['graveyard'], seat });
       } catch {
-        throw error;
+        // Issue 345 (CR 305.1, 401.5): the land on top of the library, when a permanent lets its controller play lands from there.
+        try {
+          obj = resolveObject(ctx, card, { zones: ['library'], seat });
+        } catch {
+          throw error;
+        }
       }
     }
   }
