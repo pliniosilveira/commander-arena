@@ -283,6 +283,9 @@ const LOOK_AT_TOP = /^look at the top [^.]* cards of your library\.$/i;
 const TAKE_FROM_AMONG =
   /^you may reveal [^.]* from among them and put (?:it|that card|them) (?:into your hand|onto the battlefield(?: tapped)?)\.$/i;
 const PUT_THE_REST = /^put the rest [^.]*\.$/i;
+/** "You may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand." (For the Ancestors): the middle sentence of the same instruction. */
+const TAKE_ANY_OF_CHOSEN_TYPE =
+  /^you may reveal any number of cards of the chosen type from among them and put the revealed cards into your hand\.$/i;
 /** "You may cast an instant or sorcery spell with mana value less than or equal to ~'s power from among them without paying its mana cost." (Velomachus Lorehold, CR 608.2g): the middle sentence of the same instruction (`effect.look-cast-free`). */
 const COUNTER_TARGET_SPELL = /^counter target [^.]*\.$/i;
 /** "If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without paying its mana cost." (Transcendent Dragon, CR 701.6a, 614.1a, 608.2g): what the counter before it does to the spell (`effect.counter-exile-cast`). */
@@ -950,6 +953,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       c !== undefined &&
       ((said(a, LOOK_AT_TOP) &&
         (said(b, TAKE_FROM_AMONG) ||
+          said(b, TAKE_ANY_OF_CHOSEN_TYPE) ||
           said(b, PUT_ANY_TOTAL) ||
           said(b, PUT_FROM_AMONG_ONTO) ||
           said(b, CAST_FROM_AMONG_FREE))) ||

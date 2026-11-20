@@ -1497,12 +1497,18 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (blocked.length > 0) return failure(clause, blocked);
       if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
     }
+    // "You may reveal any number of cards of the chosen type from among them": every card looked at may be taken, so `max` is the number looked at (a number, not an amount read later).
+    const any = arg(clause, 'anyNumber');
+    const anyNumber = any?.kind === 'flag' && any.value;
+    if (anyNumber && (typeof count.value !== 'number' || toBattlefield || castFree)) {
+      return failure(clause);
+    }
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
       take: {
         filter: filter.value,
-        max: 1,
+        max: anyNumber && typeof count.value === 'number' ? count.value : 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
         ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
