@@ -502,6 +502,9 @@ export function evaluateCondition(
         state.turn.activeSeat === ctx.controller &&
         (state.turn.phase === 'precombatMain' || state.turn.phase === 'postcombatMain')
       );
+    case 'yourCombatPhase':
+      // CR 506.1 (issue 144): the combat phase, of a turn of the controller (the beginning of combat, declare attackers, ... end of combat steps are all part of it).
+      return state.turn.activeSeat === ctx.controller && state.turn.phase === 'combat';
     case 'chosenOption':
       // CR 607.2d, 614.12a (D-151): the option the source chose as it entered; read from last-known information once it has left (CR 113.7a).
       return chosenOf(state, ctx.source)?.option === condition.option;
@@ -559,6 +562,9 @@ export function evaluateCondition(
           state.turnLog.attackedWith.filter((a) => a.seat === ctx.controller).map((a) => a.object),
         ).size >= condition.atLeast
       );
+    case 'thisAttackedThisTurn':
+      // CR 702.142a (Boast): the source itself was declared as an attacker this turn (any combat phase).
+      return ctx.source !== null && state.turnLog.attacked.includes(ctx.source);
     case 'castFromGraveyardThisTurn':
       // Issue 159 (CR 601.2a, 602.2): a spell the controller cast from a graveyard this turn, or an ability of a card in a graveyard they activated this turn.
       return (

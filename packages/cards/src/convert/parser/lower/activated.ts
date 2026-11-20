@@ -599,6 +599,18 @@ function restrictionsOf(
   let costReducedIf: Restrictions['costReducedIf'];
   let costReducedBy: Restrictions['costReducedBy'];
   let oncePerTurn = false;
+  // CR 702.142a (Boast): "Boast — [Cost]: [Effect]" means "[Cost]: [Effect]. Activate only if this creature attacked this turn and only once each turn."
+  if (ability.boast === true) {
+    if (!allowOnce) return failure(ability);
+    const blocked = gate(ability, [
+      'ability:oncePerTurn',
+      'ability:activateOnlyIf',
+      'condition:thisAttackedThisTurn',
+    ]);
+    if (blocked !== null) return blocked;
+    activateOnlyIf = { kind: 'thisAttackedThisTurn' };
+    oncePerTurn = true;
+  }
   for (const restriction of ability.restrictions) {
     // "This ability costs {1} less to activate for each other artifact you control." (stage P31, D-140, CR 601.2f): an amount read as
     // the ability is activated, for its controller, off the generic part of an ordinary activation's mana cost.

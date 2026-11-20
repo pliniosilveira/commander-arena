@@ -352,6 +352,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'exileTopAnyNumber',
     // D-662: "whenever a creature you control deals combat damage to a player this turn, ..." (CR 603.7).
     'delayedCombatDamageTurn',
+    // Issue 144: "whenever a creature you control deals combat damage to that player this turn, ..." (CR 603.7c).
+    'delayedCombatDamageToPlayer',
     'delayedCombatDamage',
     'forEachPlayer',
     // D-336: "when you next cast an instant or sorcery spell this turn, copy that spell" (CR 603.7).
@@ -1076,6 +1078,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'duringStep',
     // D-187: "if it's your main phase" (`yourMainPhase`).
     'yourMainPhase',
+    // Issue 144: "If it's your combat phase" (`yourCombatPhase`).
+    'yourCombatPhase',
     // D-206: "during your turn" (`yourTurn`), "if a card left your graveyard this turn", "if at least four mana was spent to cast it", "if this spell was cast from a graveyard".
     'yourTurn',
     'cardLeftYourGraveyard',
@@ -1112,6 +1116,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastThisTurn',
     // Issue 279: "if you attacked with three or more creatures this turn".
     'attackedWithCreaturesThisTurn',
+    // CR 702.142a: "Boast" ("Activate only if this creature attacked this turn").
+    'thisAttackedThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
     // "If X is 10 or more" (CR 107.3, 608.2c).
@@ -1901,6 +1907,8 @@ export const CONDITION_KINDS = [
   'controlsGreatest',
   /** "If it's your main phase" (CR 505.1, D-187): the engine's `yourMainPhase`. */
   'yourMainPhase',
+  /** "If it's your combat phase" (CR 506.1, issue 144): the engine's `yourCombatPhase`. */
+  'yourCombatPhase',
   /** "During your turn" (CR 611.3a, D-206): the engine's `yourTurn`. */
   'yourTurn',
   /** "If a card left your graveyard this turn" (D-206): the engine's `cardLeftYourGraveyard`. */
@@ -1947,6 +1955,8 @@ export const CONDITION_KINDS = [
   'spellsCastThisTurn',
   /** "If you attacked with three or more creatures this turn" (CR 508.1, issue 279): the engine's `attackedWithCreaturesThisTurn`. */
   'attackedWithCreaturesThisTurn',
+  /** "Boast —" (CR 702.142a): "Activate only if this creature attacked this turn", the engine's `thisAttackedThisTurn`. */
+  'thisAttackedThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
@@ -2487,6 +2497,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exilePiles: true,
   exileTopAnyNumber: true,
   delayedCombatDamageTurn: true,
+  delayedCombatDamageToPlayer: true,
   delayedCombatDamage: true,
   forEachPlayer: true,
   delayedCast: true,

@@ -135,6 +135,7 @@ describe('the dimensions', () => {
       'controlsGreatest',
       'duringStep',
       'yourMainPhase',
+      'yourCombatPhase',
       // D-206: during your turn, a card left your graveyard this turn, mana spent, cast from a zone.
       'yourTurn',
       'cardLeftYourGraveyard',
@@ -170,6 +171,7 @@ describe('the dimensions', () => {
       'spellsCastThisTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
+      'thisAttackedThisTurn',
       'dieResult',
       // CR 107.3: "If X is 10 or more".
       'thisInYourGraveyard',

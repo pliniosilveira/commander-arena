@@ -262,7 +262,7 @@ const STAT_OF =
   };
 
 const MANA_VALUE_OF_HEAD =
-  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s) mana value(?![\p{L}\p{N}])/iu;
+  /(its|that (?:creature|permanent|card|spell|enchantment|artifact|land|planeswalker)['’]s|the sacrificed (?:creature|permanent|artifact)['’]s) mana value(?![\p{L}\p{N}])/iu;
 
 /** "its mana value", "that card's mana value" (CR 202.3). */
 const MANA_VALUE_OF =
@@ -270,7 +270,20 @@ const MANA_VALUE_OF =
   (ctx, pos) => {
     const m = pattern(MANA_VALUE_OF_HEAD)(ctx, pos);
     if (!m.ok) return m;
-    const of = possessedNoun(rule, m.value[1] ?? '', pos);
+    const head = m.value[1] ?? '';
+    // "The sacrificed permanent's mana value" (Boast, CR 202.3, 602.2c, 113.7a): what the cost of the ability sacrificed, as it last was.
+    const of: IrNoun = head.toLowerCase().startsWith('the sacrificed')
+      ? {
+          kind: 'noun',
+          det: 'sacrificed',
+          filter: { raw: head.slice(0, head.length - 2) },
+          upTo: false,
+          plural: false,
+          other: false,
+          span: { start: pos, end: pos + head.length - 2 },
+          rule,
+        }
+      : possessedNoun(rule, head, pos);
     return {
       ok: true,
       value: { kind: 'manaValueOf', of, span: { start: pos, end: m.pos } },
@@ -377,11 +390,19 @@ const SUM_OR_ATOM = (rule: string): Parser<IrAmount> => {
   return (ctx, pos) => {
     // D-638 (Prismari deck group 1): "one plus the number of instant and sorcery spells you've cast this turn": a plain 1 more than the amount that follows.
     const one = literal('one plus ')(ctx, pos);
-    const first = atom(ctx, one.ok ? one.pos : pos);
+    // Issue 144 (Broadside Bombardiers): "2 plus the sacrificed permanent's mana value": a plain whole number of digits more than the amount that follows.
+    const digits = pattern(/([1-9][0-9]*) plus /u)(ctx, pos);
+    const lead = one.ok
+      ? { pos: one.pos, value: 1 }
+      : digits.ok
+        ? { pos: digits.pos, value: Number(digits.value[1]) }
+        : null;
+    const first = atom(ctx, lead === null ? pos : lead.pos);
     if (!first.ok) return first;
-    const parts: IrAmount[] = one.ok
-      ? [{ kind: 'number', value: 1, span: { start: pos, end: one.pos } }, first.value]
-      : [first.value];
+    const parts: IrAmount[] =
+      lead === null
+        ? [first.value]
+        : [{ kind: 'number', value: lead.value, span: { start: pos, end: lead.pos } }, first.value];
     let at = first.pos;
     for (;;) {
       const plus = literal(' plus ')(ctx, at);
@@ -553,7 +574,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     const value = VALUE('amount.equal-to')(ctx, head.pos);
     if (!value.ok) return value;
     // "equal to the sacrificed creature's power" (CR 602.2c, 113.7a): the older rules read only "its" and "that creature's", so this one reads the sacrificed object.
-    const sacrificedStat = value.value.kind === 'powerOf' && value.value.of.det === 'sacrificed';
+    const sacrificedStat =
+      (value.value.kind === 'powerOf' || value.value.kind === 'manaValueOf') &&
+      value.value.of.det === 'sacrificed';
     if (OLDER_EQUAL_KINDS.has(value.value.kind) && !sacrificedStat) return fail(ctx, pos);
     return value;
   }),

@@ -1634,6 +1634,9 @@ function findDelayedTriggers(
       .filter(
         (occ) =>
           (delayed.watched === undefined || occ.subject === delayed.watched) &&
+          // Issue 144: "deals combat damage to that player this turn": only damage dealt to the player the ability was made for.
+          (delayed.damagedPlayer === undefined ||
+            (occ.damaged?.kind === 'player' && occ.damaged.seat === delayed.damagedPlayer)) &&
           // Issue 159: "When you cast it this turn": only a spell cast from that card.
           (delayed.watchedCard === undefined ||
             (occ.subject !== null && state.objects[occ.subject]?.card === delayed.watchedCard)) &&

@@ -800,6 +800,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'attackersTotalPower'; readonly atLeast: number }
     // Stage P41 (D-188): "it's your main phase" (CR 505.1): the precombat or the postcombat main phase of a turn of the controller
     | { readonly kind: 'yourMainPhase' }
+    // Issue 144 (CR 506.1): "it's your combat phase"
+    | { readonly kind: 'yourCombatPhase' }
     // Stage P49 (D-206): "during your turn" (CR 611.3a)
     | { readonly kind: 'yourTurn' }
     // Stage P49 (D-206): "at least four mana was spent to cast it" (CR 601.2h), "a card left your graveyard this turn" (CR 400.7), "~ was cast from a graveyard" (CR 601.2a)
@@ -1263,7 +1265,11 @@ export interface IrSentence extends IrNode {
      * `thatCombat` (stage P41, D-188, CR 603.7, 500.8): "At the beginning of that combat, untap all creatures you control": the combat phase the
      * sentence before it added, which the lowering folds into the engine's `extraCombat` as what happens at its beginning.
      */
-    readonly step: 'endStep' | 'thatCombat' | 'nextCast';
+    readonly step: 'endStep' | 'thatCombat' | 'nextCast' | 'combatDamageToThatPlayer';
+    /**
+     * `combatDamageToThatPlayer` (issue 144, CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, create a tapped
+     * Treasure token": a delayed ability for the turn, about the one player the spell's target named before it (the lowering finds that target).
+     */
     readonly whose: 'you' | 'each';
     /**
      * `nextCast` (D-336, CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, copy that spell": the spell the delayed trigger waits for,
@@ -1934,6 +1940,8 @@ export type IrAbility =
       /** Empty (no sentences) when the ability is modal: its effects are in `modal`. */
       readonly body: IrBody;
       readonly restrictions: readonly IrRestriction[];
+      /** "Boast — {cost}: ..." (CR 702.142a): activate only if this creature attacked this turn, and only once each turn. */
+      readonly boast?: true;
       /** "{2}, {T}: Choose one —" and its bullets (stage P19, CR 700.2a). */
       readonly modal?: IrModes;
     })

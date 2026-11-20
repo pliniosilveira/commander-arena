@@ -668,6 +668,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'modal.tiered': spell(
     (e) => `${e}\n• Cure — {0} — Draw a card.\n• Cura — {1} — You gain 1 life.`,
   ),
+  // Issue 144: Spree, whose bullets (plus signs in the Oracle text, bullets once normalized) are the cost of the mode and its effect.
+  'modal.spree': spell((e) => `${e}\n• {1} — Draw a card.\n• {2} — You gain 1 life.`),
+  // Issue 144: a test of the turn before an instruction, and the doubling of the other creatures of the chosen type.
+  'condition.your-combat-phase': spell((e) => `If ${e}, draw a card.`),
+  'static.triggers-additional-time-another': asIs,
   // Stage P37 (D-180): the Korvold deck's triggers and small statics. The statics are lines of their own; the trigger follows "When"; the
   // conditions follow "As long as" or "If"; the nouns are operands of damage; the amount follows "gets +1/+1".
   'trigger.cycled': permanent((e) => `When ${e}, you gain 1 life.`),
