@@ -63,6 +63,8 @@ export type AngelStaticEffect = Extract<
       | 'cantLoseGame'
       | 'opponentsCantWin'
       | 'cantGainLife'
+      | 'damageCantBePrevented'
+      | 'damageAsThoughWither'
       | 'preventDamageToThis'
       | 'cantCastThis'
       | 'othersEnterWithCounters';
@@ -75,6 +77,8 @@ export function isAngelStatic(effect: IrStaticEffect): effect is AngelStaticEffe
     effect.kind === 'cantLoseGame' ||
     effect.kind === 'opponentsCantWin' ||
     effect.kind === 'cantGainLife' ||
+    effect.kind === 'damageCantBePrevented' ||
+    effect.kind === 'damageAsThoughWither' ||
     effect.kind === 'preventDamageToThis' ||
     effect.kind === 'cantCastThis' ||
     effect.kind === 'othersEnterWithCounters'
@@ -172,10 +176,21 @@ export function lowerAngelStatic(
       }
       case 'cantGainLife': {
         // CR 119.7 (D-363): "Your opponents can't gain life": the controller of the permanent is "you", and the opponents are said of them.
-        if (subject.det !== 'you') return failure(ability);
+        // "Players can't gain life": every player, said of no one in particular.
+        const players = effect.who === 'players';
+        if (subject.det !== (players ? 'eachPlayer' : 'you')) return failure(ability);
         const blocked = missingFeatures(['ability:static', 'static:cantGainLife']);
         if (blocked.length > 0) return failure(ability, blocked);
-        abilities.push({ kind: 'static', static: { kind: 'cantGainLife', who: 'opponents' } });
+        abilities.push({ kind: 'static', static: { kind: 'cantGainLife', who: effect.who } });
+        break;
+      }
+      case 'damageCantBePrevented':
+      case 'damageAsThoughWither': {
+        // CR 615.12, 702.80a: a rule of the game, whoever controls the permanent; the line is its own statement.
+        if (effects.length !== 1) return failure(ability);
+        const blocked = missingFeatures(['ability:static', `static:${effect.kind}`]);
+        if (blocked.length > 0) return failure(ability, blocked);
+        abilities.push({ kind: 'static', static: { kind: effect.kind } });
         break;
       }
       case 'preventDamageToThis': {
@@ -224,6 +239,8 @@ export const ANGEL_NEEDS: readonly FeatureRef[] = [
   'static:cantLoseGame',
   'static:opponentsCantWin',
   'static:cantGainLife',
+  'static:damageCantBePrevented',
+  'static:damageAsThoughWither',
   'static:preventDamageToThis',
   'static:cantCastThis',
   'condition:ownTurnNumber',

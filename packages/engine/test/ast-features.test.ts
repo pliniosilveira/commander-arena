@@ -252,6 +252,8 @@ describe('the dimensions', () => {
       'cantLoseGame',
       'opponentsCantWin',
       'cantGainLife',
+      'damageCantBePrevented',
+      'damageAsThoughWither',
       'playerProtection',
       'cantHaveCounters',
       'doubleTriggers',

@@ -1265,6 +1265,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'opponentsCantWin',
     // D-363 (CR 119.7): "Your opponents can't gain life."
     'cantGainLife',
+    // CR 615.12, 702.80a, 120.3d: "Damage can't be prevented.", "All damage is dealt as though its source had wither."
+    'damageCantBePrevented',
+    'damageAsThoughWither',
     // D-377 (CR 702.16): "You have protection from the chosen card type."
     'playerProtection',
     // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them."
@@ -2165,6 +2168,9 @@ export const STATIC_KINDS = [
   'opponentsCantWin',
   /** "Your opponents can't gain life" (CR 119.7, D-363): the engine's `cantGainLife`. */
   'cantGainLife',
+  /** "Damage can't be prevented" (CR 615.12) and "All damage is dealt as though its source had wither" (CR 702.80a): `damageCantBePrevented` and `damageAsThoughWither`. */
+  'damageCantBePrevented',
+  'damageAsThoughWither',
   /** "You have protection from the chosen card type" (CR 702.16, D-377): the engine's `playerProtection`. */
   'playerProtection',
   /** "Creatures you control can't have -1/-1 counters put on them" (CR 122.6, 101.2, D-380): the engine's `cantHaveCounters`. */

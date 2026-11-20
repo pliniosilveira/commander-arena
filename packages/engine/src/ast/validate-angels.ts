@@ -280,10 +280,17 @@ export function checkAngelsStatic(s: StaticEffect, path: string, out: AstIssue[]
       }
       return true;
     case 'cantGainLife':
-      // CR 119.7 (D-363): the opponents of the controller are the only group the engine reads.
-      if (s.who !== 'opponents') {
-        issue(out, `${path}.who`, 'cantGainLife is said of the opponents of the controller');
+      // CR 119.7 (D-363): the opponents of the controller, or every player.
+      if (s.who !== 'opponents' && s.who !== 'players') {
+        issue(
+          out,
+          `${path}.who`,
+          'cantGainLife is said of the opponents of the controller or of the players',
+        );
       }
+      return true;
+    case 'damageCantBePrevented':
+    case 'damageAsThoughWither':
       return true;
     case 'cantHaveCounters':
       // D-380 (CR 122.6): the permanents that can't have the counter: this one, the one this is attached to, or a group on the battlefield.

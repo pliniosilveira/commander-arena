@@ -1774,8 +1774,12 @@ export type IrStaticEffect =
    * protection from the card type it chose as it entered. The subject is `you`; the statement's `also` gives the same to "creatures you control".
    */
   | { readonly kind: 'playerProtection'; readonly quality: 'chosenCardType' }
-  /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent. */
-  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
+  /** "Your opponents can't gain life." (Hashaton deck group 2, D-363, CR 119.7). The subject is `you`, the controller of the permanent; "Players can't gain life." is said of `players`. */
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' | 'players' }
+  /** "Damage can't be prevented." (CR 615.12): the permanent changes a rule of the game. */
+  | { readonly kind: 'damageCantBePrevented' }
+  /** "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d): the permanent changes a rule of the game. */
+  | { readonly kind: 'damageAsThoughWither' }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (Hashaton deck group 3, D-380, CR 122.6, 101.2): no counter of the kind named (a power and
    * toughness counter, "+1/+1" or "-1/-1") is put on the permanents the subject names. The subject is a group, `~` or the attached permanent.

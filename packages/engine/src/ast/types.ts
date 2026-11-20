@@ -6812,7 +6812,20 @@ export type StaticEffect =
    * effect that sets a life total does not raise one (`setLifeTotal`). `who` is `opponents`, the only group the engine reads. Read from the abilities of the
    * permanents on the battlefield after the layers (`rules/player-protection.ts`); a permanent that lost its abilities protects nobody. No condition.
    */
-  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' }
+  | { readonly kind: 'cantGainLife'; readonly who: 'opponents' | 'players' }
+  /**
+   * "Damage can't be prevented." (CR 615.12, 101.2, 604.1; Everlasting Torment): while the permanent has the ability, no damage is prevented, whoever deals it and
+   * whoever or whatever it is dealt to. The prevention effects still apply to the damage event, once each (CR 615.12a), and prevent nothing, but their additional
+   * effects take place (a counter a static prevention removes); a shield is not reduced and none is reported as `damagePrevented`. Read from the abilities of the
+   * permanents on the battlefield after the layers (`rules/global-statics.ts`); a permanent that lost its abilities does nothing. No condition.
+   */
+  | { readonly kind: 'damageCantBePrevented' }
+  /**
+   * "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d, 604.1; Everlasting Torment): while the permanent has the ability, all damage dealt to
+   * a creature is -1/-1 counters its source's controller puts on it, not marked damage, as if each source had wither. Damage to a player, planeswalker or battle
+   * is as usual. Read from the abilities of the permanents on the battlefield after the layers. A source that already has wither or infect changes nothing. No condition.
+   */
+  | { readonly kind: 'damageAsThoughWither' }
   /**
    * "Creatures you control can't have -1/-1 counters put on them." (D-380, CR 122.6, 101.2, 604.1; the Hashaton deck, Darksteel Angel): while the permanent has the
    * ability, no counter of the kind `counter` is put on a permanent `subject` names (a group, `this`, or `attached`), by any means: an effect that puts counters

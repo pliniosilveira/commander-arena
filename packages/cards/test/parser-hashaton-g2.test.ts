@@ -34,7 +34,6 @@ describe('"Your opponents can\'t gain life." (CR 119.7)', () => {
   test.each([
     "Your opponents can't gain life",
     "Each opponent can't gain life.",
-    "Players can't gain life.",
     "You can't gain life.",
     "Your opponents can't gain life until end of turn.",
     "Your opponents can't gain life as long as you control a Dragon.",
