@@ -282,7 +282,7 @@ export function checkInvariants(state: GameState): string[] {
       ) === true;
     if (
       obj.kicked === true &&
-      (obj.zone !== 'battlefield' ||
+      ((obj.zone !== 'battlefield' && obj.zone !== 'phased') ||
         !(faces.some((f) => kickerLikeCostOf(f) !== null) || tokenKicker))
     ) {
       problems.push(`${id} remembers being kicked but is not a permanent with kicker`);
@@ -291,15 +291,17 @@ export function checkInvariants(state: GameState): string[] {
     if (obj.kicks !== undefined && (obj.kicked !== true || !(obj.kicks >= 1))) {
       problems.push(`${id} remembers ${obj.kicks} kicks without having been kicked`);
     }
-    // CR 107.3m (Hylda group 3): the X of the spell a permanent came from is remembered by a permanent only, and only when it was at least 1.
+    // CR 107.3m (Hylda group 3): the X of the spell a permanent came from is remembered by a permanent only (on the battlefield or phased out, CR 702.26b), and only when it was at least 1.
     if (
       obj.castX !== undefined &&
-      (obj.zone !== 'battlefield' || !Number.isSafeInteger(obj.castX) || obj.castX < 1)
+      ((obj.zone !== 'battlefield' && obj.zone !== 'phased') ||
+        !Number.isSafeInteger(obj.castX) ||
+        obj.castX < 1)
     ) {
       problems.push(`${id} remembers the X ${obj.castX} of a spell it cannot have come from`);
     }
-    // CR 601.2a: the zone a permanent's spell was cast from is remembered by a permanent only.
-    if (obj.castFrom !== undefined && obj.zone !== 'battlefield') {
+    // CR 601.2a: the zone a permanent's spell was cast from is remembered by a permanent only (on the battlefield or phased out, CR 702.26b: it stays as it was).
+    if (obj.castFrom !== undefined && obj.zone !== 'battlefield' && obj.zone !== 'phased') {
       problems.push(`${id} remembers a cast but is not a permanent`);
     }
     // CR 712.8a, 715.4: a face other than the front one is up only on the stack and the battlefield (or phased out, CR 702.26b: a phased-out permanent is
