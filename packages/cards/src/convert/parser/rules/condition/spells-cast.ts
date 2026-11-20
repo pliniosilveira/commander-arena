@@ -242,8 +242,65 @@ export const CONDITION_ATTACKED_WITH_CREATURES = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.no-spell-cast-this-turn`: "you haven't cast a spell this turn" (Conduit of Worlds; CR 601.2i: a spell is cast once it is on the stack with its costs paid;
+ * CR 707.10: a copy is not cast). The engine's `spellsCastThisTurn` of one or more, negated: the controller has cast no spell this turn, from any zone, as the effect
+ * resolves. Not read: "you have not cast", a kind of spell ("an instant"), a number, "an opponent hasn't cast", "this game", "since", a trailing word.
+ */
+export const CONDITION_NO_SPELL_CAST_THIS_TURN = defineRule<IrCondition>({
+  id: 'condition.no-spell-cast-this-turn',
+  family: 'condition',
+  leading: ["you haven't", 'you haven’t', 'you'],
+  cites: [
+    'CR 601.2i (Casting Spells)',
+    'CR 707.10 (Copying Objects)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ["you haven't cast a spell this turn", 'you haven’t cast a spell this turn'],
+  rejects: [
+    "you haven't cast a spell",
+    "you haven't cast a spell this turn.",
+    "you haven't cast a spell this game",
+    "you haven't cast two spells this turn",
+    "you haven't cast an instant spell this turn",
+    "you haven't cast spells this turn",
+    "an opponent hasn't cast a spell this turn",
+    "you haven't cast a spell this turn and",
+    "you haven't cast a spell this turn or",
+    'you have cast a spell this turn',
+    "you've cast a spell this turn",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(new RegExp(`you haven['’]t cast a spell this turn${BOUNDARY}`, 'iu'))(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: {
+          kind: 'not',
+          term: {
+            kind: 'condition',
+            test: { kind: 'spellsCastThisTurn', atLeast: 1 },
+            span,
+            rule: 'condition.no-spell-cast-this-turn',
+          },
+        },
+        span,
+        rule: 'condition.no-spell-cast-this-turn',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 export const SPELLS_CAST_CONDITION_RULES = [
   CONDITION_SPELLS_CAST_THIS_TURN,
   CONDITION_SPELLS_CAST_LAST_TURN,
+  CONDITION_NO_SPELL_CAST_THIS_TURN,
   CONDITION_ATTACKED_WITH_CREATURES,
 ];

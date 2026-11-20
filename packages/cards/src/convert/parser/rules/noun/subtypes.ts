@@ -26,6 +26,7 @@ export const OTHER_SUBTYPES: ReadonlySet<string> = new Set([
   'Food',
   'Fortification',
   'Gold',
+  'Lander',
   'Map',
   'Powerstone',
   'Treasure',

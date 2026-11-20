@@ -166,8 +166,8 @@ const DAMAGE: readonly Line[] = [
   {
     kind: 'aura',
     text: 'Enchant creature\nWhenever enchanted creature deals damage to an opponent, you may draw a card.',
-    expect: no('deals damage to an opponent, you may draw a card.', 'trigger.becomes-target'),
-    note: 'replay: 3 cards; damage that is not combat damage is not an event the engine reads',
+    expect: OK,
+    note: 'replay: 3 cards; read since the deals-damage trigger (damage to an opponent, any kind)',
   },
   {
     kind: 'equipment',

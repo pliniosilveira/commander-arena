@@ -4,6 +4,7 @@
  * cleanup steps." (CR 514.2, D-192), read for one permanent. The ones
  * that change characteristics ("+N/+N", granted keywords) are applied by `rules/derive-statics.ts`.
  */
+import type { StaticEffect } from '../ast/types';
 import type { ObjectId, SeatId } from '../ids';
 import { getObject, getSeat } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
@@ -64,22 +65,29 @@ export function landPlaysAllowed(state: GameState, seat: SeatId): number {
 }
 
 /**
- * CR 401.5 (Library), D-125: whether `seat` may look at the top card of their own library now: they control a
- * battlefield permanent that says "You may look at the top card of your library any time". Several do the same
- * as one. Read from the derived abilities, so a permanent that lost its abilities gives nothing. While a spell
- * is being cast or an ability activated, a top card that changed since the transaction began stays hidden
- * until it is done (CR 401.5): the top card is shown only when it is the one that was on top at the start.
+ * CR 401.5 (Library), D-125: the top card of the library of `seat` that `viewer` (the player themselves when left out) may see now. The player may look at it
+ * when they control a battlefield permanent that says "You may look at the top card of your library any time", and every player may see it while a permanent
+ * their owner controls says "Play with the top card of your library revealed" (`revealTopOfLibrary`). Several do the same as one. Read from the derived
+ * abilities, so a permanent that lost its abilities gives nothing. While a spell is being cast or an ability activated, a top card that changed since the
+ * transaction began stays hidden until it is done (CR 401.5): the top card is shown only when it is the one that was on top at the start.
  */
-export function topCardVisibleTo(state: GameState, seat: SeatId): ObjectId | null {
+export function topCardVisibleTo(
+  state: GameState,
+  seat: SeatId,
+  viewer: SeatId = seat,
+): ObjectId | null {
   const top = getSeat(state, seat).library[0];
   if (top === undefined) return null;
+  const kinds: readonly StaticEffect['kind'][] =
+    viewer === seat ? ['lookAtTopOfLibrary', 'revealTopOfLibrary'] : ['revealTopOfLibrary'];
   const allowed = state.battlefield.some((id) => {
     const obj = getObject(state, id);
     return (
       controllerOf(state, obj) === seat &&
-      mayHaveStatic(state, obj, 'lookAtTopOfLibrary') &&
-      derive(state, obj).abilities.some(
-        (a) => a.kind === 'static' && a.static.kind === 'lookAtTopOfLibrary',
+      kinds.some(
+        (kind) =>
+          mayHaveStatic(state, obj, kind) &&
+          derive(state, obj).abilities.some((a) => a.kind === 'static' && a.static.kind === kind),
       )
     );
   });

@@ -66,7 +66,7 @@ export function exilePlayable(view: GameView, clickable: ReadonlySet<ObjectId>):
     priority !== null &&
     top !== undefined &&
     clickable.has(top.id) &&
-    libraryBadge(playableObjects(priority), index, top.id, priority) !== null
+    libraryBadge(playableObjects(priority), index, top.id) !== null
       ? [top]
       : [];
   return { cards, graveyard, library, exile, via, priority, index };

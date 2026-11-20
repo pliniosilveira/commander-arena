@@ -112,6 +112,8 @@ export function resolveTop(input: GameState): ResolveOutcome {
     ...(obj.stack?.triggerSubject === undefined
       ? {}
       : { triggerSubject: obj.stack.triggerSubject }),
+    // CR 107.3a, 608.2b: "target Saga card with mana value X" is read again as the ability resolves, with the X announced for it.
+    ...(obj.stack?.x === undefined || obj.stack.x === null ? {} : { x: obj.stack.x }),
   };
   const legal = stillLegalTargets(input, specs, chosen, ctx);
 

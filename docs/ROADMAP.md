@@ -141,14 +141,15 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read for most cards built in a cloud session: behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
+- A land on top of the library (`playLandsFromTopOfLibrary`) is playable unseen, but the web shows no top card then and the agents never play it.
 - "Target spell or creature" is plain text in the web.
 - "If this spell was kicked, choose any number instead" is read as all modes: choosing none is not offered.
 - The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
 - `putIntoGraveyard` reads your own graveyard only; Hedge Shredder ("put them onto the battlefield tapped") stays unsupported. Effects that unlock or lock a Room half, and "fully unlocks" (CR 709.5f, 709.5g, 709.5i), are not built.
 - `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; three or more players are untested (the scenario DSL has two seats).
-- The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the payment by hand that holds mana open skips such sources and leaves them to `payAuto`.
-- A spell with a target tax (Skybonder) is offered by `canCast` when the cheapest cost is payable, though no target leaves it payable; the targets decision then lists none. The agents cancel it (CR 601.2c, 601.2f).
-- An Aftermath half that targets "target card from a graveyard" is offered when its own card is the only one there: it is still in the graveyard when the targets are read (CR 601.2a). The agents cancel it.
+- The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the hand payment that holds mana open skips such sources.
+- A spell with a target tax (Skybonder) is offered when the cheapest cost is payable, though no target leaves it payable; the agents cancel it (CR 601.2c, 601.2f).
+- An Aftermath half that targets "target card from a graveyard" is offered when its own card is the only one there (CR 601.2a); the agents cancel it.
 - A prepared copy of a spell (CR 722.3c) was offered, then the engine refused `payAuto` ("You cannot pay that cost"); cause not traced. The agents cancel it and do not cast it again that turn.
 - The CasualAgent sometimes casts a spell with "creature with mana value X" that the engine refuses ("No creature has a mana value that X could be"); one refused answer, then the fallback.
 - The agents never activate Station: a human charges a station permanent; the agent still taps it for the mana of its symbol abilities once it has the counters.

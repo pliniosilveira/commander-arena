@@ -116,9 +116,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P24: the play rules are lines of their own.
   'static.additional-land': asIs,
   'static.look-at-top': asIs,
+  'static.reveal-top': asIs,
+  'static.play-lands-from-top': asIs,
   'static.play-lands-from-graveyard': asIs,
   // Issue 345: the play-from-the-top lines are lines of their own.
-  'static.play-lands-from-top': asIs,
   'static.look-and-play-lands-from-top': asIs,
   'static.activate-as-though-haste': asIs,
   'static.attack-tax': asIs,
@@ -148,6 +149,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.escape': asIs,
   'keyword.impending': asIs,
   'static.eminence-cost-reduction': asIs,
+  'static.each-spell-cost-reduction': asIs,
   // Stage P25: Echo and Cumulative upkeep are lines of their own.
   'keyword.echo': asIs,
   'keyword.cumulative-upkeep': asIs,
@@ -279,6 +281,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.library-card': spell(
     (e) =>
       `Search your library for ${e}, put ${e.startsWith('up to') ? 'them' : 'it'} into your hand, then shuffle.`,
+  ),
+  'noun.library-cards-counted': spell(
+    (e) => `Search your library for ${e}, put them into your hand, then shuffle.`,
   ),
   'trigger.enters': whenever,
   'trigger.dies': whenever,
@@ -554,6 +559,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 103 (Deceptive Frostkite).
   'replacement.enters-as-copy-except': asIs,
   'replacement.redirect-damage': asIs,
+  'replacement.damage-bonus': asIs,
   'static.unspent-mana': asIs,
   'static.cast-from-top': asIs,
   'trigger.attacks-first-time': whenever,
@@ -779,6 +785,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.spells-cast-last-turn': permanent(
     (e) => `At the beginning of each upkeep, if ${e}, you gain 1 life.`,
   ),
+  // Conduit of Worlds: the condition leads the sentence that offers to cast the card.
+  'condition.no-spell-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
   // Issue 279 (Windfall).
   'amount.discarded-most-this-way': spell(
     (e) => `Each player discards their hand, then draws cards ${e}.`,
@@ -843,6 +851,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Group 9 of the Hashaton deck (D-390 to D-395): the Phyrexian cost of an ordinary activation, the trigger about a source, its controller and the exile of a random card.
   'cost.mana-phyrexian': permanent((e) => `${e}: Draw a card.`),
   'trigger.source-deals-damage': whenever,
+  // Issue 347: "enchanted creature deals damage to an opponent" and "Treefolk and Forests you control".
+  'trigger.deals-damage': whenever,
+  'noun.creature-land-pair': spell((e) => `${cap(e)} gain indestructible until end of turn.`),
   'noun.that-sources-controller': permanent(
     (e) => `Whenever a source deals damage to ~, ${e} exiles a card from their hand at random.`,
   ),
@@ -1040,6 +1051,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
   'noun.all-with-power-above-target': spell((e) => `Destroy ${e}.`),
+  'noun.each-permanent-of-target-player': spell((e) => `Goad ${e}.`),
   'noun.group-of-target-player': spell((e) => `${cap(e)} get +1/+1 until end of turn.`),
   'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
   'noun.those-creatures': spell(
@@ -1103,6 +1115,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
   ),
   'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.cards-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),

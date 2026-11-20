@@ -83,9 +83,7 @@ export function ExilePlayStrip({ view, playable }: { view: GameView; playable?: 
             <li key={o.id}>
               <PlayTile
                 object={o}
-                label={
-                  libraryBadge(playableIds, index, o.id, priority ?? undefined) ?? CAST_FROM_LIBRARY
-                }
+                label={libraryBadge(playableIds, index, o.id) ?? CAST_FROM_LIBRARY}
               />
             </li>
           ))}

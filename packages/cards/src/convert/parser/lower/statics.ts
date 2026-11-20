@@ -582,8 +582,9 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantFlashbackToGraveyardCards'];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
-    case 'playLandsFromGraveyard':
+    case 'revealTopOfLibrary':
     case 'playLandsFromTopOfLibrary':
+    case 'playLandsFromGraveyard':
     case 'activateAsThoughHaste':
     case 'attackTax':
     case 'optionalUntap':

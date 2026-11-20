@@ -426,4 +426,96 @@ export const EFFECT_PUT_FROM_HAND = defineRule<Clauses>({
   ),
 });
 
-export const PUT_RULES = [EFFECT_PUT_LIBRARY, EFFECT_PUT_BATTLEFIELD, EFFECT_PUT_FROM_HAND];
+const UP_TO_X_RULE = 'effect.put-up-to-x-from-hand-graveyard';
+
+/**
+ * `effect.put-up-to-x-from-hand-graveyard`: "put up to X land cards from your hand and/or graveyard onto the battlefield tapped" (Worldsoul's Rage; CR 608.2d, 110.2a, 107.3a: the X
+ * of the spell; the player chooses up to that many cards of the kind among the cards of their hand and of their graveyard together, "and/or" letting them take from either or both).
+ * The same engine choice as `effect.put-from-hand` with both places (`alsoGraveyard`), for up to X cards. Not read: a number instead of X (another amount), "or" (that is one card),
+ * another place, the library, "you may" (the words already say "up to"), an instant or a sorcery.
+ */
+export const EFFECT_PUT_UP_TO_X_FROM_HAND_GRAVEYARD = defineRule<Clauses>({
+  id: UP_TO_X_RULE,
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 110.2a (Permanents)',
+    'CR 107.3a (Numbers and Symbols)',
+  ],
+  examples: [
+    'put up to X land cards from your hand and/or graveyard onto the battlefield tapped',
+    'put up to X creature cards from your hand and/or graveyard onto the battlefield',
+  ],
+  rejects: [
+    'put up to two land cards from your hand and/or graveyard onto the battlefield tapped',
+    'put up to X land cards from your hand or graveyard onto the battlefield tapped',
+    'put up to X land cards from your hand onto the battlefield tapped',
+    'put up to X land cards from your graveyard and/or library onto the battlefield tapped',
+    'put up to X instant cards from your hand and/or graveyard onto the battlefield',
+    'put up to X land cards from your hand and/or graveyard onto the battlefield under your control',
+    'you may put up to X land cards from your hand and/or graveyard onto the battlefield tapped',
+    'put up to X lands from your hand and/or graveyard onto the battlefield tapped',
+  ],
+  parse: single(
+    UP_TO_X_RULE,
+    (ctx, pos) => {
+      const r = sequence(
+        literal('put up to '),
+        family<IrAmount>('amount', { only: ['amount.x'] }),
+        literal(' '),
+        spanned(typeWords(PERMANENT_TYPES, false)),
+        literal(' cards from your hand and/or graveyard '),
+        spanned(sequence(literal('onto the battlefield'), optional(literal(' tapped'), null))),
+      )(ctx, pos);
+      if (!r.ok) return r;
+      const [, count, , kind, , onto] = r.value;
+      const noun: IrNoun = {
+        kind: 'noun',
+        det: 'a',
+        filter: {
+          zone: 'hand',
+          types: kind.value,
+          controller: 'you',
+          card: true,
+          raw: ctx.text.slice(kind.span.start, kind.span.end),
+        },
+        upTo: true,
+        plural: true,
+        other: false,
+        count,
+        span: kind.span,
+        rule: UP_TO_X_RULE,
+      };
+      const to: IrZoneSpec = {
+        kind: 'zoneSpec',
+        zone: 'battlefield',
+        ...(onto.value[1] === null ? {} : { tapped: true }),
+        span: onto.span,
+        rule: UP_TO_X_RULE,
+      };
+      const flag = (value: boolean): IrFlag => ({
+        kind: 'flag',
+        value,
+        span: { start: pos, end: pos },
+        rule: UP_TO_X_RULE,
+      });
+      return {
+        ok: true,
+        value: { noun, to, may: flag(true), both: flag(true), count },
+        pos: r.pos,
+      };
+    },
+    ({ noun, to, may, both, count }) => ({
+      verb: 'putFromZone',
+      args: { objects: noun, to, may, alsoGraveyard: both, count },
+    }),
+  ),
+});
+
+export const PUT_RULES = [
+  EFFECT_PUT_LIBRARY,
+  EFFECT_PUT_BATTLEFIELD,
+  EFFECT_PUT_FROM_HAND,
+  EFFECT_PUT_UP_TO_X_FROM_HAND_GRAVEYARD,
+];

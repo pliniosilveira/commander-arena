@@ -2,7 +2,7 @@
  * Trigger rules of stage P37 (D-180): the Korvold deck's slice of triggers and small statics. "When you cycle this card" (CR 702.29c), the
  * ability of a card that was discarded to pay a cycling cost, which triggers from the zone the card winds up in.
  */
-import { choice, literal, map, pattern, sequence } from '../../combinators';
+import { choice, fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrTrigger } from '../../ir/types';
 import { defineRule, spanned } from '../registry';
 import { makeNoun, youNoun } from './subjects';
@@ -136,8 +136,11 @@ export const TRIGGER_YOU_ATTACK = defineRule<IrTrigger>({
     'CR 603.2 (Handling Triggered Abilities)',
     'CR 603.2c (Handling Triggered Abilities)',
   ],
-  examples: ['you attack'],
+  // CR 508.1b, 508.6 (Horizon Explorer): "you attack a player" triggers once for each player attacked as a player ("trigger once for each player you attack").
+  examples: ['you attack', 'you attack a player'],
   rejects: [
+    'you attack a players',
+    'you attack a player or',
     'you attack with two or more creatures',
     'you attack with a creature',
     'you attack alone',
@@ -156,6 +159,13 @@ export const TRIGGER_YOU_ATTACK = defineRule<IrTrigger>({
     )(ctx, pos);
     if (!r.ok) return r;
     const [actor] = r.value;
+    // CR 508.1b, 508.6: " a player" is once for each player attacked as a player; more words after it (" a players", " a player or") are not read.
+    const player = pattern(/ a player(?![\p{L}\p{N}])(?!\s+(?:with|and|or)(?![\p{L}\p{N}]))/iu)(
+      ctx,
+      r.pos,
+    );
+    if (!player.ok && /^ a player/iu.test(ctx.text.slice(r.pos))) return fail(ctx, pos);
+    const end = player.ok ? player.pos : r.pos;
     return {
       ok: true,
       value: {
@@ -163,11 +173,12 @@ export const TRIGGER_YOU_ATTACK = defineRule<IrTrigger>({
         event: 'attackBatch',
         actor,
         atLeast: 1,
+        ...(player.ok ? { eachAttackedPlayer: true as const } : {}),
         args: {},
-        span: { start: pos, end: r.pos },
+        span: { start: pos, end },
         rule: 'trigger.you-attack',
       },
-      pos: r.pos,
+      pos: end,
     };
   },
 });

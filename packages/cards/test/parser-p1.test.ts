@@ -428,10 +428,7 @@ describe('triggers (CR 603)', () => {
     for (const [text, stoppedAt] of [
       ['When ~ enters, you may draw a card. Amass 1.', 'Amass 1.'],
       ['When ~ enters, amass 1.', 'amass 1.'],
-      [
-        'Whenever ~ deals damage to a player, draw a card.',
-        'deals damage to a player, draw a card.',
-      ],
+      ['Whenever ~ deals damage to a creature, draw a card.', 'a creature, draw a card.'],
       [
         'Whenever your opponents cast a spell, draw a card.',
         'Whenever your opponents cast a spell, draw a card.',

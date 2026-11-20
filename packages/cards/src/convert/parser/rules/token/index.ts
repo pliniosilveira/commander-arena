@@ -74,7 +74,16 @@ const COUNT = choice(
   ),
 );
 
-const PREDEFINED = ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute', 'Blood'] as const;
+const PREDEFINED = [
+  'Treasure',
+  'Food',
+  'Clue',
+  'Gold',
+  'Map',
+  'Gingerbrute',
+  'Lander',
+  'Blood',
+] as const;
 type Predefined = (typeof PREDEFINED)[number];
 
 /** "tapped " between the count and the token ("two tapped Treasure tokens", CR 110.5b: they enter tapped). */
@@ -122,6 +131,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Clue token',
     'a Gold token',
     'a Gingerbrute token',
+    // CR 111.10u (Horizon Explorer, Seedship Impact).
+    'a Lander token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
@@ -292,6 +303,8 @@ export function customToken(count: Parser<IrAmount>, pluralOnly = false): Parser
             'creature',
           ]),
           map(literal(' artifact creature'), () => ['artifact', 'creature']),
+          // CR 205.3i, 305.6 (Verdant Kraken): "a 3/3 green Forest Tentacle land creature token".
+          map(literal(' land creature'), () => ['land', 'creature']),
           map(literal(' creature'), () => ['creature']),
         ),
         TOKEN_WORD,
@@ -371,6 +384,8 @@ export const TOKEN_CUSTOM = defineRule<IrToken>({
     'two 2/2 black Zombie creature tokens',
     'a 1/1 colorless Servo artifact creature token',
     'a 3/3 colorless Golem enchantment artifact creature token',
+    // CR 205.3i, 305.6 (Verdant Kraken): a land creature token whose subtypes include a basic land type.
+    'a 3/3 green Forest Tentacle land creature token',
     'three 1/1 white and blue Spirit creature tokens',
     'a 3/3 green Beast creature token',
     'a 1/1 white Spirit creature token with flying',

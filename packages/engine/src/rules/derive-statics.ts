@@ -235,8 +235,6 @@ interface BoardIndex {
   readonly flashes: readonly FlashPermissionSource[];
   /** Permanents with a `castFromTopOfLibrary` static ability, in battlefield order (D-151). */
   readonly libraryCasts: readonly LibraryCastSource[];
-  /** Permanents with a `playLandsFromTopOfLibrary` static ability, in battlefield order (issue 345). */
-  readonly libraryLandPlays: readonly GameObject[];
   /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
   readonly hasteActivations: readonly HasteActivationSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
@@ -451,7 +449,6 @@ function buildIndex(state: GameState): BoardIndex {
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
-  const libraryLandPlays: GameObject[] = [];
   const hasteActivations: HasteActivationSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
@@ -470,9 +467,6 @@ function buildIndex(state: GameState): BoardIndex {
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
     libraryCasts.push(...libraryCastsOf(object, printed));
-    if (printed.some((a) => a.kind === 'static' && a.static.kind === 'playLandsFromTopOfLibrary')) {
-      libraryLandPlays.push(object);
-    }
     for (const a of printed) {
       if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
         hasteActivations.push({ object, creatures: a.static.creatures });
@@ -551,7 +545,6 @@ function buildIndex(state: GameState): BoardIndex {
     abilityReductions,
     flashes,
     libraryCasts,
-    libraryLandPlays,
     hasteActivations,
     graveyardPlays,
     handGrants,
@@ -602,11 +595,6 @@ export function abilityReductionSources(state: GameState): readonly AbilityReduc
 }
 
 /** The permission "You may cast creature spells ... from the top of your library" of the permanents on the battlefield (D-151). */
-/** The permanents whose static ability lets their controller play lands from the top of their library (`playLandsFromTopOfLibrary`, issue 345). */
-export function libraryLandPlaySources(state: GameState): readonly GameObject[] {
-  return indexOf(state).libraryLandPlays;
-}
-
 /** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
 export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
   return indexOf(state).hasteActivations;

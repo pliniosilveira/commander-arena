@@ -910,8 +910,8 @@ function combatView(state: GameState): CombatView | null {
 
 export function getView(state: GameState, viewer: SeatId): GameView {
   const seats: SeatView[] = state.seats.map((s) => {
-    // CR 401.5: only the player who may look sees it.
-    const top = s.id === viewer ? topCardVisibleTo(state, s.id) : null;
+    // CR 401.5: only the player who may look sees it, or everyone while it is revealed.
+    const top = topCardVisibleTo(state, s.id, viewer);
     return {
       id: s.id,
       life: s.life,

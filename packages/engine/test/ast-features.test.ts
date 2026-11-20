@@ -201,6 +201,8 @@ describe('the dimensions', () => {
       'goaded',
       'additionalLandDrops',
       'lookAtTopOfLibrary',
+      'revealTopOfLibrary',
+      'playLandsFromTopOfLibrary',
       'attackTax',
       // D-647: "Inklings can't attack you or planeswalkers you control."
       'cantAttackYou',
@@ -252,8 +254,6 @@ describe('the dimensions', () => {
       'playFromGraveyardOnceEachTurn',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
-      // Issue 345 (CR 305.1, 401.5): "You may play lands from the top of your library."
-      'playLandsFromTopOfLibrary',
       // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
       'activateAsThoughHaste',
       // D-179: "Your opponents can't cast spells during your turn."

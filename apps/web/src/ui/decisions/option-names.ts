@@ -188,7 +188,7 @@ export function replacementThen(amount: number, to?: string): string {
 
 type Outcome = Extract<
   NonNullable<ChooseOptionDecision['replacement']>['choices'][number],
-  { kind: 'prevent' | 'redirect' }
+  { kind: 'prevent' | 'redirect' | 'increase' }
 >['outcome'];
 type DamageEvent = NonNullable<
   Extract<NonNullable<ChooseOptionDecision['replacement']>, { event: object }>['event']

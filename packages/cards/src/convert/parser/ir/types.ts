@@ -707,6 +707,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'thisInYourGraveyard' }
     // Issue 89 (CR 603.4, Animate Dead): "it's on the battlefield": the permanent the trigger is about, which is the source, is still on the battlefield
     | { readonly kind: 'thisOnBattlefield' }
+    // Valakut Exploration (CR 603.4, 607.2a): "there are cards exiled with ~": at least one card the permanent exiled with its linked ability is still in exile
+    | { readonly kind: 'cardsExiledWithSelf' }
     // D-278 (CR 701.42a, 712.4a): "you both own and control ~ and a creature named Bruna, the Fading Light": the card itself and a permanent of the type with that name
     | { readonly kind: 'ownsAndControlsNamed'; readonly name: string; readonly type: string }
     // "there are fewer than eight cards in your graveyard" (stage P68, D-229, CR 404.1): the cards in the graveyard of the controller
@@ -1079,7 +1081,15 @@ export interface IrQuotedAbility extends IrNode {
 export interface IrToken extends IrNode {
   readonly kind: 'token';
   // CR 111.10
-  readonly predefined?: 'Treasure' | 'Food' | 'Clue' | 'Gold' | 'Map' | 'Gingerbrute' | 'Blood';
+  readonly predefined?:
+    | 'Treasure'
+    | 'Food'
+    | 'Clue'
+    | 'Gold'
+    | 'Map'
+    | 'Gingerbrute'
+    | 'Lander'
+    | 'Blood';
   readonly power?: number;
   readonly toughness?: number;
   /** "X/X creature token": use the X value bound by the enclosing ability's where-X clause. */
@@ -1557,13 +1567,15 @@ export type IrStaticEffect =
     }
   /** "You may look at the top card of your library any time." (stage P24, D-125, CR 401.5). The subject is `you`. */
   | { readonly kind: 'lookAtTopOfLibrary' }
-  /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
-  | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
+  /** "Play with the top card of your library revealed." (CR 401.5, Oracle of Mul Daya). The subject is `you`. */
+  | { readonly kind: 'revealTopOfLibrary' }
   /**
-   * "You may play lands from the top of your library." (issue 345, CR 305.1, 401.5): the subject is `you`. `alsoLook` is the sentence "You may look at the top card of your library any
-   * time, and you may play lands from the top of your library.", which is both abilities.
+   * "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. `alsoLook` is the sentence "You may look at the top card of
+   * your library any time, and you may play lands from the top of your library.", which is both abilities (issue 345).
    */
   | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
+  /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
+  | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
   | { readonly kind: 'activateAsThoughHaste' }
   /**

@@ -391,6 +391,9 @@ function exilesIn(effect: Effect): number {
   switch (effect.kind) {
     case 'exile':
       return 1;
+    // CR 607.2a (Valakut Exploration): "exile the top card of your library" whose card another ability reads as "exiled with ~" (one card, a face-up exile of the controller's own library).
+    case 'exileTop':
+      return effect.count === 1 && effect.faceDown !== true && effect.from === undefined ? 1 : 0;
     // "you may exile that card from your graveyard" (stage P50, D-207).
     case 'may':
       return exilesIn(effect.effect);
@@ -495,6 +498,8 @@ function choosesFromExile(node: unknown): boolean {
 function linkedEffect(effect: Effect): Effect {
   switch (effect.kind) {
     case 'exile':
+      return { ...effect, linked: true };
+    case 'exileTop':
       return { ...effect, linked: true };
     case 'may':
       return { ...effect, effect: linkedEffect(effect.effect) };

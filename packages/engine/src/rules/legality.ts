@@ -34,17 +34,14 @@ import {
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
-import {
-  flashPermissionSources,
-  libraryCastSources,
-  libraryLandPlaySources,
-} from './derive-statics';
+import { flashPermissionSources, libraryCastSources } from './derive-statics';
 import { hasGrantedFlashback } from './flashback-grant';
 import { freeCastCards, freeCastSlots } from './free-cast';
 import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
+import { libraryLandPermission } from './library-play';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { hasGrantedFlashCasting } from './player-flash';
@@ -259,8 +256,8 @@ export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, fac
     obj.zone === 'graveyard' &&
     (mayPlayFromGraveyard(state, seat, obj, true) ||
       graveyardPlayPermission(state, seat, obj, true) !== null);
-  // CR 305.1, 401.5 (issue 345): the land on top of the library a permanent lets its controller play.
-  const fromLibrary = mayPlayLandFromTop(state, seat, obj);
+  // CR 305.1, 401.5: the top card of the library, when a permanent lets its controller play lands from there ("You may play lands from the top of your library").
+  const fromLibrary = libraryLandPermission(state, seat, obj);
   if (!fromExile && !fromGraveyard && !fromLibrary && (obj.zone !== 'hand' || obj.owner !== seat)) {
     return false;
   }
@@ -394,16 +391,6 @@ export function libraryCastPermission(
     if (source.gainsHaste) gainsHaste = true;
   }
   return allowed ? { gainsHaste } : null;
-}
-
-/**
- * CR 305.1, 401.5 (issue 345): whether a permanent `seat` controls lets it play `obj` from the top of its library as a land: `obj` is the top card of the seat's own
- * library and a permanent with "You may play lands from the top of your library" is under their control. Whether it is a land is read by `canPlayLand`.
- */
-export function mayPlayLandFromTop(state: GameState, seat: SeatId, obj: GameObject): boolean {
-  if (obj.zone !== 'library' || obj.owner !== seat || obj.card === null) return false;
-  if (getSeat(state, seat).library[0] !== obj.id) return false;
-  return libraryLandPlaySources(state).some((source) => controllerOf(state, source) === seat);
 }
 
 /**
@@ -1026,15 +1013,13 @@ export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
       mayPlayFromGraveyard(state, seat, getObject(state, id)) ||
       graveyardPlayPermission(state, seat, getObject(state, id), true) !== null,
   );
+  // CR 305.1, 401.5: the top card of the library (`playLandsFromTopOfLibrary`).
   const top = getSeat(state, seat).library[0];
+  const fromLibrary =
+    top !== undefined && libraryLandPermission(state, seat, getObject(state, top)) ? [top] : [];
   return faceOptions(
     state,
-    [
-      ...zoneList(state, 'hand', seat),
-      ...fromExile,
-      ...fromGraveyard,
-      ...(top === undefined ? [] : [top]),
-    ],
+    [...zoneList(state, 'hand', seat), ...fromExile, ...fromGraveyard, ...fromLibrary],
     (obj, face) => canPlayLand(state, seat, obj, face),
   );
 }

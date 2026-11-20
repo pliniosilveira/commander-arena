@@ -334,7 +334,6 @@ describe('static.spells-cost-reduction: "Artifact spells you cast cost {1} less 
   test.each([
     ['Creature spells you cast of the chosen player cost {1} less to cast.', 'none'],
     ['Creature spells you cast with flying cost {2} less to cast.', 'none'],
-    ['Each spell you cast that’s red or green costs {1} less to cast.', 'none'],
     ['Artifact spells your opponents cast cost {1} more to cast.', 'none'],
     ['Legendary spells you cast cost {1} less to cast.', 'none'],
     ['Historic spells you cast cost {1} less to cast.', 'none'],

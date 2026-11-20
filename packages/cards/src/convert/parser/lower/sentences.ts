@@ -1519,6 +1519,67 @@ function lowerIfDone(
 }
 
 /**
+ * "If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn." (Conduit of Worlds, CR 608.2c, 608.2g, 101.2): the offer
+ * of the engine's `castCard` under the test of the first sentence, and the instruction of the second, which runs only when the card was cast (`didPrevious`, which the
+ * accepted cast sets). Null when the sentence is not an offer to cast "that card" under a condition, followed by "If you do"; any other shape of either sentence is refused.
+ */
+function lowerCastThenIfDo(
+  sentence: IrSentence,
+  sentences: readonly IrSentence[],
+  i: number,
+  ctx: LowerContext,
+): LowerResult<Effects> | null {
+  const [cast, ...more] = sentence.clauses;
+  if (cast?.verb !== 'castThatCard' || sentence.condition === undefined) return null;
+  const next = sentences[i + 1];
+  if (next?.condition?.test.kind !== 'didPrevious' || next.reflexive === true) return null;
+  if (
+    more.length > 0 ||
+    sentence.instead === true ||
+    sentence.where !== undefined ||
+    sentence.delayed !== undefined ||
+    sentence.reflexive === true ||
+    sentence.otherwise === true ||
+    next.instead === true ||
+    next.where !== undefined ||
+    next.delayed !== undefined ||
+    next.otherwise === true ||
+    next.clauses.some((c) => c.optional || c.condition !== undefined)
+  ) {
+    return refuse(sentence);
+  }
+  const blocked = missingFeatures(SENTENCE_NEEDS);
+  if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+  const condition = lowerCondition(sentence.condition, false, ctx);
+  if (!condition.ok) return condition;
+  const offered = lowerClauses([cast], ctx);
+  if (!offered.ok) return offered;
+  const after = lowerClauses(next.clauses, ctx);
+  if (!after.ok) return after;
+  return {
+    ok: true,
+    value: [
+      {
+        kind: 'conditional',
+        condition: condition.value,
+        effect: {
+          kind: 'sequence',
+          effects: [
+            ...offered.value,
+            {
+              kind: 'conditional',
+              condition: { kind: 'didPrevious' },
+              effect: oneEffect(after.value),
+            },
+          ],
+        },
+      },
+    ],
+    rule: cast.rule,
+  };
+}
+
+/**
  * The sentence "If ~ was kicked, it deals 4 damage instead.": the earlier damage with a new
  * amount, for the same recipients. Only after one sentence that is one damage effect, so that
  * what "it deals" refers to is one thing.
@@ -1599,9 +1660,14 @@ function countsWhatHappened(
   switch (amount.what) {
     case 'sacrificed': {
       // "Each other player sacrifices a creature of their choice. ... for each creature sacrificed this way."
+      // CR 701.21a (Nahiri's Lithoforming): or the controller's own "Sacrifice X lands. For each land sacrificed this way, ...": a choice of permanents (`a`), not "sacrifice ~".
+      const chosenByController =
+        earlier.args.player === undefined &&
+        earlier.args.objects?.kind === 'noun' &&
+        earlier.args.objects.det === 'a';
       return (
         earlier.verb === 'sacrifice' &&
-        earlier.args.player !== undefined &&
+        (earlier.args.player !== undefined || chosenByController) &&
         (word === 'permanent' || names(earlier.args.objects).every((n) => n === word))
       );
     }
@@ -2008,6 +2074,13 @@ function lowerStep(
   if (putOrElse !== null) {
     if (!putOrElse.ok) return stop(putOrElse);
     steps.push({ effects: putOrElse.value, replaceable: false });
+    return { last: i + 1 };
+  }
+  // "If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn." (Conduit of Worlds, CR 608.2c, 608.2g).
+  const castThen = lowerCastThenIfDo(sentence, sentences, i, ctx);
+  if (castThen !== null) {
+    if (!castThen.ok) return stop(castThen);
+    steps.push({ effects: castThen.value, replaceable: false });
     return { last: i + 1 };
   }
   // Issue 100: "... If you don't, create a token. It gains haste until end of turn.": the rider is about the token, which is made only when the player did not, so it joins that instruction.

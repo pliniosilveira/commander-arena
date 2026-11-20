@@ -20,10 +20,10 @@ import {
 
 // Read only with an Equipment face (CR 301.5a), so it also proves that the faces are tried.
 const READ_LINE = 'Equipped creature has deathtouch and lifelink.';
-// Read by the grammar; the engine's `addMana` effect has no choice of color while a triggered ability
-// resolves (`selector:colorChoice`; a mana ability chooses while paying instead). This line used to
-// be a granted ability in quotes (`static:grantAbility`) until the engine ran it (D-099).
-const NOT_RUNNABLE_LINE = 'Whenever a land you control enters, add one mana of any color.';
+// Read by the grammar; the engine has no choice of color outside a mana ability's payment
+// (`selector:colorChoice`). "Add one mana of any color" used to be the example until the engine ran
+// it (a granted ability in quotes was one before that, D-099).
+const NOT_RUNNABLE_LINE = 'Choose a color.';
 // Invented words: no rule reads them, however far the grammar grows.
 const UNREAD_LINE = '~ glorp the frobnicate of each gizmo.';
 

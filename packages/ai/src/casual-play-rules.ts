@@ -29,8 +29,8 @@ export function grantsLandDrops(view: GameView, spell: ObjectView): boolean {
 }
 
 /**
- * The top card of the agent's own library, when a permanent lets it look (CR 401.5, D-125): `null` when it may
- * not look. The view carries it only for the viewer's own seat, so this never reads another player's library.
+ * The top card of the agent's own library, when a permanent lets it look or reveals it (CR 401.5, D-125): `null` when it may
+ * not look. Only the viewer's own seat is read here, never another player's library.
  */
 export function knownTopCard(view: GameView): ObjectView | null {
   return view.seats.find((s) => s.id === view.viewer)?.libraryTop ?? null;

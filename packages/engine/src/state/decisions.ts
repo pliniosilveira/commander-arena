@@ -956,8 +956,11 @@ interface ReplacementChoiceBase {
 
 /** One effect the affected player may choose to apply first to a damage event (CR 616.1, D-191). */
 export interface DamageReplacementChoice extends ReplacementChoiceBase {
-  /** `prevent`: a shield or a static prevention; `redirect` (D-192, CR 614.9): the damage would be dealt to the permanent `object` instead. */
-  readonly kind: 'prevent' | 'redirect';
+  /**
+   * `prevent`: a shield or a static prevention; `redirect` (D-192, CR 614.9): the damage would be dealt to the permanent `object` instead; `increase`
+   * (CR 614.1a): the source deals more damage because of the permanent `object`.
+   */
+  readonly kind: 'prevent' | 'redirect' | 'increase';
   /** What happens to the damage if this effect is applied first and the rest follow the default order. */
   readonly outcome: {
     readonly to: DamageRecipient;

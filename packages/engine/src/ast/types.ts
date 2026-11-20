@@ -326,6 +326,11 @@ export type Amount =
    */
   | { readonly kind: 'opponentCount' }
   /**
+   * "That much" after cards were put somewhere (Valakut Exploration, CR 608.2c): the number of objects `moved` names, the cards the instruction before it moved
+   * (`moveToZone`, `exile`, `exileTop`), counted as the amount is read. 0 when it moved nothing. Not for a static ability.
+   */
+  | { readonly kind: 'movedCount' }
+  /**
    * "For each of those cards that are still exiled" (D-151): the cards the effect before this one in the sequence that created the delayed trigger
    * exiled (`moved`), counted when the delayed trigger resolves: those that are still in exile, as the same objects (a card that left exile
    * is a new object, CR 400.7, and is not counted). Valid only in the effect of a `delayedTrigger` that follows an effect that put cards in
@@ -1573,7 +1578,8 @@ export type TokenPreset =
   | 'Gold'
   | 'Map'
   | 'Gingerbrute'
-  | 'Incubator';
+  | 'Incubator'
+  | 'Lander';
 
 export type TokenSpec =
   | { readonly kind: 'preset'; readonly preset: TokenPreset }
@@ -2147,6 +2153,11 @@ export type Effect =
        * allows it (`mayPlay` with `lookAt`), and a card turns face up as it is cast or played. Also with `from` left out (the controller's own library).
        */
       readonly faceDown?: true;
+      /**
+       * "Exile the top card of your library. ... cards exiled with this enchantment" (Valakut Exploration, CR 607.2a): the cards exiled are remembered by the permanent the ability belongs
+       * to, as `exile.linked` does, for the `linkedExile` reference or the `exiledWithSource` filter of another ability of the same face. Only in an ability of a permanent, face up.
+       */
+      readonly linked?: true;
     }
   /**
    * "Each player exiles a card from their graveyard" (CR 701.13, 101.4, D-231): each player `players` names, in turn order starting with the active player, chooses a card
@@ -3214,6 +3225,16 @@ export type Effect =
       readonly player: PlayerSelector;
       readonly duration: 'untilNextTurn';
     }
+  /**
+   * "You can't cast additional spells this turn" and "Target player can't cast spells this turn" (CR 101.2, 601.2, 611.2a): until end of turn the players `player` names (as the effect
+   * resolves) can't cast spells: a spell they cast earlier this turn is not affected, and no way of casting asks (a cast from a hand, a graveyard, with an alternative cost, for free
+   * as an effect resolves): "can't" beats "can" (CR 101.2). Playing a land and activating abilities are not casting a spell. `duration` is `untilEndOfTurn`.
+   */
+  | {
+      readonly kind: 'playerCantCastSpells';
+      readonly player: PlayerSelector;
+      readonly duration: 'untilEndOfTurn';
+    }
   /** "Target player's life total can't change until their next turn" (D-607): blocks every life-total increase and decrease. */
   | {
       readonly kind: 'preventPlayerLifeTotalChange';
@@ -3283,8 +3304,9 @@ export type Effect =
   /**
    * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
    * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
+   * "You may play X additional lands this turn." (Nahiri's Lithoforming, CR 107.3a, 305.2): `count` may be an amount, read as the effect runs; with 0 or less nothing is added.
    */
-  | { readonly kind: 'additionalLandDropThisTurn'; readonly count: number }
+  | { readonly kind: 'additionalLandDropThisTurn'; readonly count: Amount }
   /**
    * The engine's own effect of the Ring's third ability (CR 701.54c, D-196: "Whenever your Ring-bearer becomes blocked by a creature, the blocking
    * creature's controller sacrifices it at end of combat"): creates a delayed triggered ability (CR 603.7) about the creature whose event
@@ -3352,7 +3374,7 @@ export type Effect =
    * when the effect resolves (CR 611.2c); a creature already goaded by the same player is not goaded again and the first goad keeps its end (CR 701.15d).
    * `forever` (CR 701.15a, 611.2b): "The tokens are goaded for the rest of the game": the goad has no end, so the creatures stay goaded as long as they are in the game.
    */
-  | { readonly kind: 'goad'; readonly objects: ObjectRef; readonly forever?: true }
+  | { readonly kind: 'goad'; readonly objects: ObjectSelector; readonly forever?: true }
   /**
    * "For each of those permanents, choose a different opponent. Each opponent gains control of the permanent for which they were chosen." (issue 81, Dack Fayden, CR 613.1b, 611.2a, 101.4):
    * for each permanent `objects` names (the ones an earlier effect moved), in order, the controller of the effect chooses an opponent not yet chosen for another one of them (a
@@ -4212,6 +4234,17 @@ export type Trigger =
       readonly what: TriggerSubject;
       readonly to: 'player' | 'opponent' | 'creature' | 'any' | 'playerOrPlaneswalker';
       readonly filter?: ObjectFilter;
+    }
+  /**
+   * "Whenever [enchanted creature | this creature] deals damage to an opponent" (CR 120.2, 603.2, 603.2c, 603.2g): damage of any kind (combat or not,
+   * CR 120.2a, 120.2b) that the permanent `what` names deals to a player, once for each player it damages in one damage event. `to` is `opponent` (a
+   * player the controller of this ability does not control: for an ability an Aura grants, its host's controller, CR 113.7a) or `player`. Damage that is
+   * prevented entirely, or is 0, is not dealt and triggers nothing (CR 120.8, 603.2g). `triggerDamage` is the amount and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'dealsDamage';
+      readonly what: TriggerSubject;
+      readonly to: 'opponent' | 'player';
     }
   /**
    * "Whenever a source you control deals noncombat damage to an opponent" (CR 120.2b, 603.2, 603.2c, D-333): once for each source and each player it
@@ -5858,6 +5891,19 @@ export type Replacement =
       readonly permanents?: ObjectFilter;
     }
   /**
+   * "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+   * (CR 614.1a, 614.5, 616.1, 120.3; Torbran, Thane of Red Fell, Mechanized Warfare): a replacement effect of a permanent on the battlefield for
+   * every damage event, combat or not, whose source `sources` matches and whose recipient is an opponent of the controller of the permanent with the
+   * ability or a permanent such an opponent controls. The same source deals `amount` more damage than it would have (the source is the original
+   * source, not the permanent with the ability, CR 120.3); an event of 0 damage is no event and is not replaced. `sources` is read for the source as it is,
+   * or as it last was when it has left the battlefield (CR 113.7a), in the zone it is in (a spell on the stack is a source, CR 609.7), with
+   * `controller: 'you'` required: the source is controlled by the controller of the permanent with the ability. Each such effect applies once to an event
+   * (CR 614.5), so two of them add up, and the player dealt the damage orders them with the effects that prevent or redirect it (CR 616.1,
+   * `rules/damage-order.ts`): damage that is all prevented is no longer replaced. Damage a spell divides or a creature assigns is divided before this applies
+   * (CR 120.3: each amount is its own event). It is the ability of the permanent (lost with "loses all abilities").
+   */
+  | { readonly kind: 'damageBonus'; readonly sources: ObjectFilter; readonly amount: number }
+  /**
    * "If you would draw a card, skip that draw instead." (D-332, CR 614.1a, 614.11, 121.6): a replacement effect of a permanent on the battlefield
    * for every card its controller would draw, by an effect or by the draw step. The draw simply does not happen: no card moves, nothing was
    * drawn (no "whenever you draw" ability triggers, CR 121.1) and, as the draw was not attempted, the player does not lose for an empty library
@@ -6006,6 +6052,19 @@ export type StaticEffect =
    * is a different ability and is not this one.
    */
   | { readonly kind: 'lookAtTopOfLibrary' }
+  /**
+   * "Play with the top card of your library revealed." (CR 401.5, 701.20, Oracle of Mul Daya): while the permanent is on the battlefield with the ability, the top card of its
+   * controller's library is revealed: every player sees it (`SeatView.libraryTop` in each view), not only the controller. A new top card that appears while a spell is being
+   * cast or an ability activated stays hidden until that is done (CR 401.5). It says nothing about what may be played from there (`playLandsFromTopOfLibrary`).
+   */
+  | { readonly kind: 'revealTopOfLibrary' }
+  /**
+   * "You may play lands from the top of your library." (CR 305.1, 401.5, 604.1, Oracle of Mul Daya): while the permanent has the ability, its controller may play the top card of their
+   * library as a land play if it is a land card `lands` matches (any land when absent; as the card it is: its types and subtypes, `zone`, `owner` and `controller` are not read). When
+   * a land may be played, and how many, are those of the turn (CR 305.2, 505.6b): the permission only adds where the land may come from, and it is not used up. The player sees the
+   * card only through another ability (`lookAtTopOfLibrary`, `revealTopOfLibrary`), as with `castFromTopOfLibrary`.
+   */
+  | { readonly kind: 'playLandsFromTopOfLibrary'; readonly lands?: ObjectFilter }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's
    * attacking you." (CR 508.1d, 508.1h, D-125): while the permanent is on the battlefield, each creature
@@ -6507,12 +6566,6 @@ export type StaticEffect =
    * (unlike `playFromGraveyardOnceEachTurn`, which it may stand beside).
    */
   | { readonly kind: 'playLandsFromGraveyard'; readonly lands?: ObjectFilter }
-  /**
-   * "You may play lands from the top of your library." (CR 305.1, 401.5, 604.1, issue 345): while the permanent has the ability, its controller may play the land card on top of their
-   * own library as a land play. When a land may be played, and how many, are those of the turn (CR 305.2, 505.6b); the permission only adds where the land may come from. It does not let
-   * the player look at the card, which is `lookAtTopOfLibrary`.
-   */
-  | { readonly kind: 'playLandsFromTopOfLibrary' }
   /**
    * "You may activate abilities of creatures you control as though those creatures had haste." (CR 702.10b, 302.6, issue 345): while the permanent has the ability, a creature `creatures`
    * describes (read for the controller of the permanent: "you" is usual, the source is the permanent) is not held back by summoning sickness from an ability with {T} or {Q} in its

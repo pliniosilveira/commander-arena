@@ -42,6 +42,7 @@ import { SYNTHETIC_COUNTER_DOUBLING_LIST } from './synthetic-counter-doubling';
 import { SYNTHETIC_COUNTERS_PLUS_LIST } from './synthetic-counters-plus';
 import { SYNTHETIC_CROSS_ZONE_LIST } from './synthetic-cross-zone';
 import { SYNTHETIC_CURSE_LIST } from './synthetic-curse';
+import { SYNTHETIC_DAMAGE_BONUS_LIST } from './synthetic-damage-bonus';
 import { SYNTHETIC_DAMAGE_ORDER_LIST } from './synthetic-damage-order';
 import { SYNTHETIC_DANITHA_G1A_LIST } from './synthetic-danitha-g1a';
 import { SYNTHETIC_DANITHA_G1B_LIST } from './synthetic-danitha-g1b';
@@ -401,6 +402,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_VEHICLE_LIST,
   ...SYNTHETIC_PREVENTION_LIST,
   ...SYNTHETIC_DAMAGE_ORDER_LIST,
+  ...SYNTHETIC_DAMAGE_BONUS_LIST,
   ...SYNTHETIC_LAYOUT_LIST,
   ...SYNTHETIC_ROOM_LIST,
   ...SYNTHETIC_MANIFEST_LIST,

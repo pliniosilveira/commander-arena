@@ -123,7 +123,7 @@ import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
 import { runGrantCastAsThoughFlash } from './player-flash';
 import { runGrantPlayerHexproof } from './player-hexproof';
-import { runPlayerLock } from './player-lock';
+import { runPlayerCantCast, runPlayerLock } from './player-lock';
 import { runGrantPlayerManaAbility } from './player-mana';
 import { runPopulate } from './populate';
 import { becomePrepared, prepareCardOf } from './prepare';
@@ -1596,7 +1596,13 @@ function runEffect(
         res.controller === state.turn.activeSeat
           ? {
               ...state,
-              turn: { ...state.turn, extraLandDrops: state.turn.extraLandDrops + effect.count },
+              turn: {
+                ...state.turn,
+                // CR 107.3a: "play X additional lands": the X of the spell, read as the effect runs; none for 0 or less.
+                extraLandDrops:
+                  state.turn.extraLandDrops +
+                  Math.max(0, amountOf(state, effect.count, ctx, targets)),
+              },
             }
           : state,
       );
@@ -3138,6 +3144,10 @@ function runEffect(
     case 'grantPlayerProtectionEverything':
     case 'preventPlayerLifeTotalChange':
       return runPlayerLock(state, effect, ctx, targets);
+
+    case 'playerCantCastSpells':
+      // CR 101.2, 611.2a: the players can't cast spells until end of turn (`rules/player-lock.ts`).
+      return runPlayerCantCast(state, effect, ctx, targets);
 
     case 'requireAttack':
       // CR 508.1d, 611.2c (D-179): a requirement on a group of creatures, read when attackers are declared.

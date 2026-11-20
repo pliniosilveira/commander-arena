@@ -442,7 +442,7 @@ const CAST_HEAD: Parser<{
  * A count after the cost ("... cost {1} less to cast for each ...") is read as for `~`. "Of the chosen
  * type" and "of the chosen color" (a choice made as the permanent enters, D-100) are read, before or
  * after "you cast". Not read: "with power 4 or greater" and other
- * qualities of the spell, "that's red or green", "spells your opponents cast", colored reductions
+ * qualities of the spell, "spells your opponents cast", colored reductions
  * ("cost {W} less"), "more" (an increase) and "cost {X} less".
  */
 export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
@@ -509,7 +509,6 @@ export const STATIC_SPELLS_COST_REDUCTION = defineRule<IrStatic>({
     'Creature spells you cast with flying cost {2} less to cast.',
     'Creature spells with flying or reach you cast cost {1} less to cast.',
     'Creature spells with flying cost {1} less to cast.',
-    'Each spell you cast that’s red or green costs {1} less to cast.',
     'Instant or sorcery spells you cast cost {1} less to cast.',
     'Instant and sorcery spells you cast cost {2} less to cast for each creature you control.',
     'Legendary spells you cast cost {1} less to cast.',

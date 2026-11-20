@@ -598,6 +598,7 @@ function triggerSubjectFilter(t: Trigger): ObjectFilter | null {
     case 'blocks':
     case 'becomesBlocked':
     case 'dealsCombatDamage':
+    case 'dealsDamage':
     case 'leavesBattlefield':
       return 'kind' in t.what ? null : t.what;
     case 'landfall':

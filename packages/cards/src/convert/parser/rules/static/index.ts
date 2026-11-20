@@ -21,6 +21,7 @@ import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
 import { DEATH_TOLL_C_STATIC_RULES } from './death-toll-c';
 import { DINOSAUR_STATIC_RULES } from './dinosaurs';
 import { DRAGON_STATIC_RULES } from './dragons';
+import { EACH_SPELL_COST_STATIC_RULES } from './each-spell-cost';
 import { EDHREC_STATIC_RULES } from './edhrec';
 import { EMINENCE_STATIC_RULES } from './eminence';
 import { ETERNAL_MIGHT_STATIC_RULES } from './eternal-might';
@@ -103,6 +104,7 @@ export const STATIC_RULES = [
   ...PLAY_RULE_STATIC_RULES,
   ...COST_STATIC_RULES,
   ...EMINENCE_STATIC_RULES,
+  ...EACH_SPELL_COST_STATIC_RULES,
   ...CONDITIONAL_STATIC_RULES,
   // Stage P49 (D-206): "During your turn, equipped creature has flying."
   ...VRASKA_STATIC_RULES,
