@@ -1857,9 +1857,12 @@
   object-fit: fill;
 }
 
-/* The printed frame carries the card's colours, so the tile's own frame thins to a line. */
-.board-tile.has-frame .board-tile-inner:has(> .board-tile-top.is-loaded) {
-  border-width: 1px;
+/* The printed frame carries the card's colours, so the tile has no border of its own unless the
+   border says something: it can be clicked, it is selected, it attacks or blocks, or the engine does
+   not support it. */
+.board-tile:not(.is-clickable, .is-selected, .is-attacking, .is-blocking, .is-unsupported)
+.board-tile-inner:has(> .board-tile-top.is-loaded) {
+  border-width: 0;
 }
 
 .board-tile-inner:has(> .board-tile-top.is-loaded)
@@ -1923,8 +1926,13 @@
   position: relative;
 }
 
-.board-card-hand.has-frame:has(> .board-card-top.is-loaded) {
-  border-width: 1px;
+.board-card-hand:has(> .board-card-top.is-loaded) {
+  border-width: 0;
+}
+
+.board-hand-card:is(.is-clickable, .is-selected) .board-card-hand:has(> .board-card-top.is-loaded),
+.board-zone-card:is(.is-clickable, .is-selected) .board-card-hand:has(> .board-card-top.is-loaded) {
+  border-width: 2px;
 }
 
 .board-card-hand:has(> .board-card-top.is-loaded) > .board-card-foot {
