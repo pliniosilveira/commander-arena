@@ -85,10 +85,15 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     }
     // The IR says where the cards are (the library); the engine's filter must not (CR 401.1). "That share a land type" (D-262, CR 205.3i) is about the cards found
     // together, so it is an option of the search and not of the filter: the engine's `search.sharedLandType`.
-    const { sharedLandType, ...single } = cards.filter;
+    const { sharedLandType, anyNumberTotalManaValue: totalMV, ...single } = cards.filter;
     const shared = sharedLandType === true;
     const sharing = shared ? missingFeatures(['selector:sharedLandType']) : [];
     if (sharing.length > 0) return { ok: false, needs: sharing, at: cards.span, rule: cards.rule };
+    // CR 701.23, 202.3: "any number of ... cards with total mana value N or less": every card found goes to the one place, as for "up to X".
+    const totaling =
+      totalMV === undefined ? [] : missingFeatures(['selector:searchTotalManaValue']);
+    if (totaling.length > 0)
+      return { ok: false, needs: totaling, at: cards.span, rule: cards.rule };
     const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
     // D-626: "up to X ..., where X is ...": the amount is the most that may be found, read as the search begins; the cards all go to one place.
@@ -102,7 +107,11 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       amountValue = lowered.value;
     }
-    const max = xCount ? 1 : cards.count?.kind === 'number' ? cards.count.value : 1;
+    const rest = xCount || totalMV !== undefined;
+    if (totalMV !== undefined && (shared || xCount || cards.count !== undefined)) {
+      return failure(clause);
+    }
+    const max = rest ? 1 : cards.count?.kind === 'number' ? cards.count.value : 1;
     // Issue 104 (CR 701.23a): "search your graveyard, hand, and/or library": the zones of the searcher, with nothing revealed and no shuffle in the sentence.
     const zonesArg = arg(clause, 'zones');
     let zones: readonly ('graveyard' | 'hand' | 'library')[] | undefined;
@@ -136,15 +145,15 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       destinations.push({
         zone: place.zone,
         ...(place.tapped === true ? { tapped: true } : {}),
-        count: xCount ? 'rest' : (place.count ?? max),
+        count: rest ? 'rest' : (place.count ?? max),
       });
     }
-    if (xCount && destinations.length !== 1) return failure(clause);
+    if (rest && destinations.length !== 1) return failure(clause);
     // D-178: the cards that were found are "it" and "that land" for what follows (the engine's `moved`).
     ctx.searched = cards.ref ?? null;
     ctx.didSearch = true;
     const total = destinations.reduce((sum, d) => sum + (d.count === 'rest' ? 0 : d.count), 0);
-    if (!xCount && total !== max) return failure(clause);
+    if (!rest && total !== max) return failure(clause);
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).
     const who = arg(clause, 'player');
     const may = arg(clause, 'may');
@@ -166,6 +175,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
           filter: filter.value,
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),
+          ...(totalMV === undefined ? {} : { totalManaValue: totalMV }),
           ...(shared ? { sharedLandType: true as const } : {}),
           ...(zones === undefined ? {} : { zones }),
           destinations,

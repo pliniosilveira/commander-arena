@@ -348,6 +348,12 @@ export type Amount =
    */
   | { readonly kind: 'cardsDrawnThisTurn' }
   /**
+   * "The number of experience counters you have" (CR 122.1, Meren of Clan Nel Toth): the experience counters the controller of the spell or ability has now
+   * (`SeatState.experience`, 0 when they have none), read as the instruction runs. A state amount, so valid wherever an amount is; a static ability is not refreshed when
+   * the number changes (`validateCard` refuses it there).
+   */
+  | { readonly kind: 'experienceCounters' }
+  /**
    * "One plus the number of instant and sorcery spells you've cast this turn" (Prismari deck, group 1, CR 601.2i, 707.10): how many spells the controller of the spell or ability
    * has cast this turn (`TurnLog.castSpells`: a spell counts once it is on the stack with its costs paid, whether or not it resolved or was countered; a copy is not cast, and an
    * opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that have at least one of those card types, as they were cast; left out,
@@ -808,8 +814,11 @@ export interface ObjectFilter {
   /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
+   * `sacrificed` (CR 205.2a, 701.21a, 113.7a; Braids, Arisen Nightmare): the permanent an earlier `sacrifice` of this resolution sacrificed (the first one), with the card types it
+   * last had on the battlefield: "each opponent may sacrifice a permanent that shares a card type with it" matches a permanent with ANY of them. Read in the filter of a `choose` of
+   * a `sacrifice` that comes after that sacrifice (or the `may` of one) in the same sequence.
    */
-  readonly sharesCardTypeWith?: 'triggerSubject';
+  readonly sharesCardTypeWith?: 'triggerSubject' | 'sacrificed';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
@@ -1046,6 +1055,12 @@ export type PlayerSelector =
    */
   | { readonly kind: 'discardedThisWay' }
   /**
+   * "Each player who can't" after "each player sacrifices a creature or planeswalker of their choice" (CR 701.21a, 101.4, Plaguecrafter): the players for whom a `sacrifice` effect of
+   * this same resolution had nothing to sacrifice (no permanent they control matched, so they sacrificed nothing), in the order CR 101.4 gives. A player who chose to sacrifice nothing
+   * ("any number") is not one of them. Valid after a `sacrifice` effect in the same sequence.
+   */
+  | { readonly kind: 'couldntSacrificeThisWay' }
+  /**
    * "Each player this creature attacked this turn" (D-269, CR 508.6): the players the creature the ability belongs to was declared as an attacker
    * attacking this turn, in any combat phase, each once, in the order CR 101.4 gives; the players who have left the game are not named. An
    * attack on a planeswalker or a battle is not an attack on its controller or protector. Read from the turn log under the id the ability's source
@@ -1249,6 +1264,13 @@ export type Cost =
       readonly anyNumber?: true;
       /** D-583: with `anyNumber`, at least one permanent: "Sacrifice one or more artifacts" as the cost of an activated ability. Not for an additional cost of a spell. */
       readonly atLeastOne?: true;
+      /**
+       * "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3, 602.2b): one more permanent for each filter, each a different permanent from the others and from the one `what` names,
+       * so `what` and `alongside` are the parts of one cost. A permanent that matches several parts pays only one of them (a land that is both a Swamp and a Forest is one land):
+       * the cost can be paid when each part can be given its own permanent, and the answer must be such an assignment. Only the cost of an activated ability, with a filter in `what`
+       * and no `count`, `countX` or `anyNumber`.
+       */
+      readonly alongside?: readonly ObjectFilter[];
     }
   /**
    * "Tap two untapped artifacts you control", "Tap three untapped Zombies you control" (D-133, CR 118.3): the player taps
@@ -2141,6 +2163,12 @@ export type Effect =
    */
   | { readonly kind: 'exileFromTriggerCards' }
   /**
+   * "Create a token that's a copy of one of them." (CR 603.2c, 608.2d, 707.2, 111.4, Twilight Diviner): of the permanents that triggered this ability (`triggerCards`: the batch an
+   * `entersBatch` trigger saw enter) the ones still on the battlefield, the controller chooses one (nothing is asked with one; with none nothing is created) and creates a token with its
+   * copiable values, as `populate` makes one. The token made is what `moved` names afterwards. Only in a triggered ability whose trigger is an `entersBatch` (`validateCard`).
+   */
+  | { readonly kind: 'copyOneOfTriggerCards' }
+  /**
    * "For each player, you choose from among the permanents that player controls an artifact, a creature, an enchantment, and a planeswalker. Then each player
    * sacrifices all other nonland permanents they control" (Tragic Arrogance; CR 608.2d, 701.21a, 101.4, D-231): the controller of the effect chooses, for each player
    * (the active player first) and each type of `types` in order, one permanent of that type the player controls (none when there is none; the same permanent may be
@@ -2849,6 +2877,11 @@ export type Effect =
        * instruction comes up (so the plural selectors discard each their own hand); nobody chooses. `count` is 0 and unread. Never with `anyNumber`, `unless` or `random`.
        */
       readonly hand?: true;
+      /**
+       * "Each player who can't discards a card" (CR 701.9, 101.4, Plaguecrafter): with several players named, each chooses their cards in turn order, knowing nothing of the others' choices, and
+       * only when the last has chosen are all the chosen cards discarded at once. Left out, each player's discard happens as that player's turn to act comes. Never with `random` or `hand`.
+       */
+      readonly together?: true;
     }
   | { readonly kind: 'gainLife'; readonly player: PlayerSelector; readonly amount: Amount }
   | { readonly kind: 'loseLife'; readonly player: PlayerSelector; readonly amount: Amount }
@@ -2957,6 +2990,11 @@ export type Effect =
    * game), one `energyChanged` event. Nothing for an amount of 0 or less.
    */
   | { readonly kind: 'gainEnergy'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
+   * "You get an experience counter" (CR 122.1, Meren of Clan Nel Toth): each player the selector names gets `amount` experience counters (a player's own counters, kept
+   * for the rest of the game), one `experienceChanged` event. Nothing for an amount of 0 or less.
+   */
+  | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
    * "You have no maximum hand size for the rest of the game" (CR 402.2, 514.1): the controller of the effect has no maximum hand size from now on, so a cleanup step makes them
    * discard nothing. Not a static ability: it works for the player, not a permanent, and does not end when a permanent leaves. No event; it stays in `SeatState.noMaximumHandSize`.
@@ -3773,6 +3811,12 @@ export type Effect =
        * less finds nothing (the player still searches and shuffles, CR 701.23c).
        */
       readonly maxAmount?: Amount;
+      /**
+       * "Search your library for any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): any number of cards of `filter` may be found (none
+       * included, CR 701.23b) as long as their mana values add up to at most this. A card's mana value in a library counts an {X} as 0 (CR 202.3e). `max` is 1 and unread, the
+       * destinations are one `rest`, and no `sharedLandType`, `zones` or `maxAmount`.
+       */
+      readonly totalManaValue?: number;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;
@@ -4048,8 +4092,11 @@ export type Trigger =
    * "Whenever one or more [tokens you control] enter" (D-218, CR 603.2c, 603.6a): a batch trigger. Every permanent `what` names that enters in one batch of
    * events (a token effect makes them together, a spell that puts several onto the battlefield too) is one occurrence: the ability triggers once however
    * many entered. `what` is read as the permanent is as it enters (the controller of this ability is "you" in the filter). `triggerSubject` is the first of them.
+   * `fromGraveyard` ("..., if they entered or were cast from a graveyard", CR 603.4, 603.6a, 601.2a): only a permanent that entered from a graveyard, or that was a spell cast from a
+   * graveyard, is part of the batch (the zone each came from is read as the event happens, so the others do not count, and a batch with none of them does not trigger). The ability's
+   * `triggerCards` are the permanents of the batch that the trigger names, in the order they entered.
    */
-  | { readonly kind: 'entersBatch'; readonly what: ObjectFilter }
+  | { readonly kind: 'entersBatch'; readonly what: ObjectFilter; readonly fromGraveyard?: true }
   /**
    * "Whenever [a creature] blocks" (CR 509.1g, 702.45a, D-120): once for each creature declared as a blocker
    * in the declare blockers step, the blocker being the subject. A creature that blocks two attackers
@@ -4295,7 +4342,20 @@ export type Trigger =
    * triggers once however many left. A card that goes from a graveyard to a graveyard (its owner's, the same) does not leave it. `triggerSubject` is none;
    * the cards are what `triggerCards` names (Spirit of Resilience, "from among those cards"). Only the graveyard of the controller (`who: 'you'`).
    */
-  | { readonly kind: 'leftGraveyard'; readonly who: 'you' }
+  | {
+      readonly kind: 'leftGraveyard';
+      readonly who: 'you';
+      /**
+       * "Whenever one or more creature cards leave your graveyard" (CR 400.7, 603.2c): only the cards this filter names, read as they were in the graveyard
+       * (`types` or `notTypes`, no zone, controller or owner). Left out, any card.
+       */
+      readonly filter?: ObjectFilter;
+      /**
+       * "Whenever a creature card leaves your graveyard" (CR 603.2, 400.7): not a batch, the ability triggers once for each card that leaves, even when several leave
+       * together. `triggerCards` is then that card.
+       */
+      readonly each?: true;
+    }
   /**
    * "Whenever a land card is put into your graveyard from anywhere" and "Whenever one or more land cards are put into your graveyard from anywhere for the first time each
    * turn" (CR 603.2, 603.2c, 400.7, 404.1): a card put into the graveyard of the player `who` names (`you`: the controller of this ability, who owns the card, CR 404.1) from
@@ -4306,8 +4366,13 @@ export type Trigger =
    */
   | {
       readonly kind: 'putIntoGraveyard';
-      readonly who: 'you';
-      readonly from: 'anywhere' | 'library';
+      /**
+       * `you`: the graveyard of the controller of this ability. `any` ("a creature card is put into a graveyard from anywhere other than the battlefield", CR 603.2,
+       * 404.1): the graveyard of any player; not with `firstTimeEachTurn`.
+       */
+      readonly who: 'you' | 'any';
+      /** `notBattlefield` (CR 700.4): any zone but the battlefield, so a permanent that dies is not counted. */
+      readonly from: 'anywhere' | 'library' | 'notBattlefield';
       readonly filter?: ObjectFilter;
       readonly batch?: true;
       readonly firstTimeEachTurn?: true;
@@ -4616,7 +4681,8 @@ export type Keyword =
   /**
    * CR 702.34a (Flashback), on an instant or sorcery: it may be cast from its owner's graveyard by
    * paying `cost` rather than its mana cost (an alternative cost, CR 118.9), and a spell cast that
-   * way is exiled instead of going anywhere else when it leaves the stack. `mana` and `payLife` costs.
+   * way is exiled instead of going anywhere else when it leaves the stack. `mana` and `payLife` costs, and one `sacrifice` of `count` permanents that match a filter
+   * ("Flashback—Sacrifice three creatures", CR 118.9, 601.2h, 701.21a): chosen after the targets, like the sacrifice of an additional cost.
    */
   | { readonly kind: 'flashback'; readonly cost: readonly Cost[] }
   | { readonly kind: 'ward'; readonly cost: readonly Cost[] }
@@ -5306,6 +5372,12 @@ export type Condition =
    * Only in a `conditional` effect that follows a moving effect in its sequence.
    */
   | { readonly kind: 'movedShareAllCardTypes' }
+  /**
+   * "If that card's mana value is less than or equal to the number of experience counters you have" (CR 202.3, 608.2c, Meren of Clan Nel Toth): the mana value of the
+   * object `of` names (a target, the object that was moved or the one that caused the trigger; as it is, or as it last was, CR 608.2h; an {X} counts 0 anywhere but on
+   * the stack, CR 202.3e) is at most `amount`, a state amount read now. False when `of` names nothing. Only in a `conditional` effect.
+   */
+  | { readonly kind: 'manaValueAtMostAmount'; readonly of: ObjectRef; readonly amount: Amount }
   /**
    * "If a creature card was discarded this way" (D-210, CR 608.2c): the `thisWay` count `what` of this same resolution is at least `count`. Only in a
    * `conditional` effect after an effect that makes the count (`discardedCreature` and `discardedNoncreature` after a discard).

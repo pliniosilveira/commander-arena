@@ -48,6 +48,7 @@ import {
 import { GAIN_CONTROL } from './control';
 import { CONTROLLER_DAMAGE_LOWERINGS } from './controller-damage';
 import { lowerCopyToken } from './copies';
+import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
 import { DACK_LOWERINGS } from './dack';
@@ -64,6 +65,7 @@ import { DRAGON_LOWERINGS } from './dragons';
 import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
+import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
@@ -509,7 +511,11 @@ const RETURN: Lowering<IrClause, Effects> = {
       /^it$/iu.test(chosen.filter.raw.trim()) &&
       !ctx.itIsCard
     ) {
-      return failure(clause);
+      // Meren of Clan Nel Toth: "Choose target creature card in your graveyard. ... return it to the battlefield": "it" is the card the earlier instruction chose from a graveyard (CR 608.2c).
+      const spec = ctx.targets.find((t) => t.id === chosen.ref);
+      if (spec?.what.kind !== 'object' || spec.what.filter.zone !== 'graveyard') {
+        return failure(clause);
+      }
     }
     if (chosen?.kind === 'noun' && chosen.det === 'a') {
       return lowerChosenReturn(clause, chosen, zone);
@@ -1142,7 +1148,15 @@ const CHOOSE_CREATURE_TYPE: Lowering<IrClause, Effects> = {
 };
 
 function playerVerb(
-  verb: 'draw' | 'discard' | 'gainLife' | 'loseLife' | 'gainEnergy' | 'shuffle' | 'mill',
+  verb:
+    | 'draw'
+    | 'discard'
+    | 'gainLife'
+    | 'loseLife'
+    | 'gainEnergy'
+    | 'gainExperience'
+    | 'shuffle'
+    | 'mill',
 ): Lowering<IrClause, Effects> {
   return {
     head: verb,
@@ -1220,6 +1234,16 @@ function playerVerb(
         return {
           ok: true,
           value: [{ kind: 'discard', player: player.value, count: amount.value, random: true }],
+          rule: clause.rule,
+        };
+      }
+      // CR 701.9, 101.4 (Plaguecrafter): "each player who can't discards a card": the players choose in turn and the cards go together.
+      if (verb === 'discard' && player.value.kind === 'couldntSacrificeThisWay') {
+        const blocked = missingFeatures(['selector:discardTogether']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        return {
+          ok: true,
+          value: [{ kind: 'discard', player: player.value, count: amount.value, together: true }],
           rule: clause.rule,
         };
       }
@@ -2104,6 +2128,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   playerVerb('discard'),
   playerVerb('gainLife'),
   playerVerb('gainEnergy'),
+  playerVerb('gainExperience'),
   playerVerb('loseLife'),
   PLAYER_LOCK,
   playerVerb('mill'),
@@ -2202,6 +2227,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...PREPARE_LOWERINGS,
   ...EDHREC_LOWERINGS,
   ...DRAGON_LOWERINGS,
+  ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
@@ -2229,6 +2255,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...HASHATON_GROUP_4_LOWERINGS,
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
+  ...COPY_ONE_OF_THEM_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
@@ -2306,6 +2333,7 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notPutOntoBattlefield' ||
         kind === 'youDont' ||
         kind === 'notDeclaredAttacker' ||
+        kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
         kind === 'unlessReturn'
         ? []

@@ -1022,11 +1022,35 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
           'the permanents that enter are on the battlefield: no zone, stackKind or combat',
         );
       }
+      if (t.fromGraveyard !== undefined && t.fromGraveyard !== true) {
+        issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
+      }
       break;
     case 'leftGraveyard':
     case 'exiledFromLibraryOrGraveyard':
       // D-229: the cards of the controller's own graveyard (and library): `who` is "you".
       if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      if (t.kind === 'leftGraveyard') {
+        if (t.each !== undefined && t.each !== true) {
+          issue(out, `${path}.each`, 'each must be true when present');
+        }
+        // The card is read where it was (its owner's graveyard): no zone, controller or owner.
+        if (t.filter !== undefined) {
+          checkFilter(t.filter, `${path}.filter`, out);
+          if (
+            filterSome(
+              t.filter,
+              (f) => f.zone !== undefined || f.controller !== undefined || f.owner !== undefined,
+            )
+          ) {
+            issue(
+              out,
+              `${path}.filter`,
+              'the card that left the graveyard is read there: the filter names no zone, controller or owner',
+            );
+          }
+        }
+      }
       break;
     case 'doorUnlocked':
       // CR 709.5h: the controller of the ability unlocks its own half; `validateCard` checks the half is a Room's.
@@ -1035,9 +1059,22 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       break;
     case 'putIntoGraveyard':
       // CR 603.2, 404.1: cards put into the controller's own graveyard, from anywhere or from the library.
-      if (!isOneOf(t.who, ['you'])) issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
-      if (!isOneOf(t.from, ['anywhere', 'library'])) {
-        issue(out, `${path}.from`, `from must be "anywhere" or "library", not ${String(t.from)}`);
+      if (!isOneOf(t.who, ['you', 'any'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      if (!isOneOf(t.from, ['anywhere', 'library', 'notBattlefield'])) {
+        issue(
+          out,
+          `${path}.from`,
+          `from must be "anywhere", "library" or "notBattlefield", not ${String(t.from)}`,
+        );
+      }
+      if (t.who === 'any' && t.firstTimeEachTurn !== undefined) {
+        issue(
+          out,
+          `${path}.firstTimeEachTurn`,
+          'firstTimeEachTurn goes with the graveyard of "you"',
+        );
       }
       if (t.batch !== undefined && t.batch !== true) {
         issue(out, `${path}.batch`, 'batch must be true when present');
@@ -1435,7 +1472,8 @@ function checkActivationCosts(
         typeof c.what === 'object' &&
         c.what !== null &&
         'kind' in c.what) ||
-      kind === 'sacrifice' ||
+      // CR 701.21a: sacrificing permanents you control (a filter) is paid wherever the ability works ("Sacrifice a Swamp and a Forest: Return this card from your graveyard to your hand"); sacrificing the source itself needs it on the battlefield.
+      (c?.kind === 'sacrifice' && 'kind' in c.what) ||
       kind === 'discard' ||
       kind === 'tapCreatures';
     // D-491: "you may sacrifice one or more creatures" is an additional cost of a spell, chosen as it is cast. D-583 (CR 602.2b): an activated ability may sacrifice "one or more"
@@ -1617,7 +1655,8 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         // D-232: "from among those cards" is read where the trigger is about the cards that left a graveyard.
         ...(a.trigger.kind === 'leftGraveyard' ||
         (a.trigger.kind === 'putIntoGraveyard' && a.trigger.batch === true) ||
-        (a.trigger.kind === 'discarded' && a.trigger.batch === true)
+        (a.trigger.kind === 'discarded' && a.trigger.batch === true) ||
+        a.trigger.kind === 'entersBatch'
           ? { triggerCards: true }
           : {}),
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),

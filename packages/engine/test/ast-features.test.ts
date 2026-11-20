@@ -124,6 +124,8 @@ describe('the dimensions', () => {
       'didPrevious',
       'movedTotalManaValue',
       'movedShareAllCardTypes',
+      // CR 202.3, 608.2c: "If that card's mana value is less than or equal to the number of experience counters you have".
+      'manaValueAtMostAmount',
       // D-210: "if a creature card was discarded this way".
       'thisWayAtLeast',
       'objectMatches',

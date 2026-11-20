@@ -59,6 +59,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
   discardedThisWay: 'selector:discardedThisWay',
+  // CR 701.21a: "each player who can't" after a sacrifice (Plaguecrafter).
+  couldntSacrificeThisWay: 'selector:couldntSacrificeThisWay',
   // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
 };
@@ -129,6 +131,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
+  'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
 ];
@@ -340,9 +343,13 @@ function lowerFilterAt(
   }
   // D-262: "that share a land type" is a condition on the cards found together, which a filter of one card cannot say: the search lowering takes it off first.
   if (filter.sharedLandType === true) return bad([]);
+  // CR 202.3: "any number of ... with total mana value 6 or less" is also about the cards found together (the search lowering takes it off first).
+  if (filter.anyNumberTotalManaValue !== undefined) return bad([]);
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  // CR 205.2a, 701.21a (Braids): "shares a card type with it", the permanent an earlier sacrifice sacrificed.
+  if (filter.sharesCardTypeWithSacrificed === true) parts.push('selector:sharesCardTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
   if (filter.singleTarget === true) {
     if (inner || filter.zone !== 'stack') return bad([]);
@@ -516,6 +523,9 @@ function lowerFilterAt(
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
+      : {}),
+    ...(filter.sharesCardTypeWithSacrificed === true
+      ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
@@ -1240,6 +1250,12 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'discardedThisWay' });
+    }
+    case 'couldntSacrificeThisWay': {
+      // CR 701.21a: only after a sacrifice of the same text, whose players it names.
+      if (ctx.thisWay !== 'sacrificed') return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'couldntSacrificeThisWay' });
     }
     case 'attackedPlayers': {
       // D-269 (CR 508.6): the permanent of the ability, which `~` is: only an ability of a permanent has attacked.

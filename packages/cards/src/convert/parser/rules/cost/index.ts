@@ -4,7 +4,7 @@
  * "Pay X life" and "Remove a counter from ~" are read; every other cost (exile, tap an untapped
  * creature, ...) is a new rule here plus the engine feature it needs.
  */
-import { choice, fail, literal, map, pattern, satisfy, sequence } from '../../combinators';
+import { choice, fail, literal, many, map, pattern, satisfy, sequence } from '../../combinators';
 import type { IrAmount, IrCost, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
@@ -176,8 +176,12 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice one or more other creatures',
     // Grave Danger (issue 159): the second cost of "Remove three study counters from ~ and sacrifice it": the permanent itself.
     'Sacrifice it',
+    // CR 701.21a: a different permanent for each part.
+    'Sacrifice a Swamp and a Forest',
+    'Sacrifice a creature and a land',
   ],
   rejects: [
+    'Sacrifice a Swamp and',
     'Sacrifice one or more',
     'Sacrifice one or more target artifacts',
     'Sacrifice one or more artifacts an opponent controls',
@@ -189,13 +193,12 @@ export const COST_SACRIFICE = defineRule<IrCost>({
     'Sacrifice all creatures',
     'Sacrifice a creature an opponent controls',
   ],
-  parse: node<IrNoun, IrCost>(
+  parse: node<{ what: IrNoun; also: IrNoun[] }, IrCost>(
     'cost.sacrifice',
     choice(
       // "sacrifice it" after "Remove ... counters from ~ and": the permanent with the ability (issue 159).
-      map(
-        spanned(literal('sacrifice it')),
-        ({ span }): IrNoun => ({
+      map(spanned(literal('sacrifice it')), ({ span }): { what: IrNoun; also: IrNoun[] } => ({
+        what: {
           kind: 'noun',
           det: 'self',
           filter: { raw: '~' },
@@ -204,8 +207,9 @@ export const COST_SACRIFICE = defineRule<IrCost>({
           other: false,
           span,
           rule: 'cost.sacrifice',
-        }),
-      ),
+        },
+        also: [],
+      })),
       map(
         sequence(
           literal('sacrifice '),
@@ -219,11 +223,18 @@ export const COST_SACRIFICE = defineRule<IrCost>({
               'noun.one-or-more-permanents',
             ],
           }),
+          // CR 701.21a, 118.3: "Sacrifice a Swamp and a Forest": a different permanent for each part.
+          many(
+            map(
+              sequence(literal(' and '), family<IrNoun>('noun', { only: ['noun.a-permanent'] })),
+              ([, part]) => part,
+            ),
+          ),
         ),
-        ([, what]) => what,
+        ([, what, also]) => ({ what, also }),
       ),
     ),
-    (what) => ({ kind: 'sacrifice', what }),
+    ({ what, also }) => ({ kind: 'sacrifice', what, ...(also.length > 0 ? { also } : {}) }),
   ),
 });
 

@@ -12,7 +12,12 @@ import type {
   StackAbility,
 } from '@commander-arena/engine';
 import { findEffect, tapChooseText } from '../../game/artifacts-text';
-import { activationCostPart, sacrificeWhat, tappedWhat } from '../../game/cost-text';
+import {
+  activationCostPart,
+  sacrificeParts,
+  sacrificeWhat,
+  tappedWhat,
+} from '../../game/cost-text';
 import { thingsPhrase } from '../../game/filter-text';
 import { devourDetail, devourPrompt } from '../../game/keywords-text';
 import { namesSeveral } from '../../game/player-text';
@@ -413,6 +418,8 @@ export function activationSacrifice(
   if (cost.anyNumber === true && cost.atLeastOne === true) {
     return sacrificeWhat(cost.what, 1, false, true);
   }
+  // CR 701.21a: "Sacrifice a Swamp and a Forest": the choice names a different permanent for each part.
+  if (cost.alongside !== undefined) return sacrificeParts(cost);
   if (decision.min !== decision.max || decision.max < 2) return null;
   return sacrificeWhat(cost.what, decision.max);
 }

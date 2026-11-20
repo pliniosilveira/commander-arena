@@ -74,6 +74,8 @@ const RECURSION_LEAD_CONDITIONS = [
   'condition.x-at-least',
   // Yavimaya Bloomsage: "Then if that creature has power 7 or greater, ~ becomes prepared."
   'condition.that-object-power',
+  // Meren of Clan Nel Toth: "If that card's mana value is less than or equal to the number of experience counters you have, return it to the battlefield."
+  'condition.that-mana-value-at-most',
 ] as const;
 
 /**
@@ -184,7 +186,8 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
     map(
       sequence(
         // Stage P49 (D-206): "Then if ..." says only that the sentence follows the one before it, as every sentence does (CR 608.2c).
-        pattern(/(?:then )?if /iu),
+        // Meren deck, Braids: "For each opponent who doesn't, ..." starts the sentence the way "If they don't, ..." does; its rule reads the words.
+        pattern(/(?:then )?(?:if |(?=for each opponent who doesn['’]t))/iu),
         family<IrCondition>('condition', {
           only: ifYouDo
             ? [
@@ -192,6 +195,7 @@ function leadCondition(ifYouDo: boolean): Parser<IrCondition> {
                 'condition.if-you-do',
                 // Stage P52 (D-210): "If the player doesn't," after "target opponent may have you ...".
                 'condition.player-declines',
+                'condition.each-opponent-declines',
                 // D-403 (Danitha deck, Cosmic Rebirth): "If you don't put it onto the battlefield, put it into your hand."
                 'condition.you-dont-put-it-onto-battlefield',
                 // D-411 (Danitha deck group 2): "If you don't, put a +1/+1 counter on this creature." after "You may put a land card from among them into your hand."

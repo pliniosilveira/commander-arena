@@ -148,6 +148,7 @@ export interface IrNoun extends IrNode {
     | 'attackedBy' // "the player or planeswalker it's attacking" (stage P31, D-140): what the creature `of` attacks
     | 'linkedExile' // "the exiled card" (stage P32, D-147, CR 607.2a): what the linked ability of this permanent exiled
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
+    | 'couldntSacrificeThisWay' // "each player who can't" after a sacrifice (CR 701.21a): the players the sacrifice before it found nothing for
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
@@ -320,10 +321,20 @@ export interface IrFilter {
    */
   readonly sharesCreatureTypeWithIt?: true;
   /**
+   * "a permanent of their choice that shares a card type with it" (Braids, CR 205.2a, 701.21a, 113.7a): the permanent has a card type the permanent an earlier sacrifice of the same
+   * text sacrificed had, as it last was. Read in the filter of a sacrifice only; the engine's `sharesCardTypeWith: 'sacrificed'`.
+   */
+  readonly sharesCardTypeWithSacrificed?: true;
+  /**
    * "up to two basic land cards that share a land type" (D-262, CR 205.3i, 701.23): the cards found share a land type among them, which is a condition on the whole
    * choice and not on a card. A filter that still has it is not lowered; the search lowering takes it off (the engine's `search.sharedLandType`).
    */
   readonly sharedLandType?: true;
+  /**
+   * "any number of creature cards with total mana value 6 or less" (CR 701.23, 202.3): any number of the cards of a library search, with mana values that add up to at most this.
+   * Like `sharedLandType` it is about the cards found together; the search lowering takes it off (the engine's `search.totalManaValue`), any other filter that has it is not lowered.
+   */
+  readonly anyNumberTotalManaValue?: number;
   /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
@@ -458,6 +469,8 @@ export type IrAmount =
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
   | { readonly kind: 'cardsDrawnThisTurn'; readonly span: Span }
+  // "the number of experience counters you have" (Meren of Clan Nel Toth, CR 122.1): the experience counters the controller has now
+  | { readonly kind: 'experienceCounters'; readonly span: Span }
   // "the number of instant and sorcery spells you've cast this turn" (Prismari deck group 1, D-638, CR 601.2i): the spells the controller has cast so far this turn, of the card types named.
   | {
       readonly kind: 'spellsCastThisTurn';
@@ -648,6 +661,8 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'ringBearerChosen' }
     // "it isn't being declared as an attacker" (Hylda deck group 1, D-510, CR 508.1f): part of the event of "becomes tapped", read by the trigger's lowering
     | { readonly kind: 'notDeclaredAttacker' }
+    // "they entered or were cast from a graveyard" (Twilight Diviner, CR 603.4, 603.6a): part of the event of "one or more creatures enter", read by the trigger's lowering
+    | { readonly kind: 'enteredFromGraveyard' }
     // "if that spell's mana cost or that ability's activation cost contains {X}" (Quandrix Unlimited deck group I, CR 107.3, 603.4): part of the events of the cast-or-activate trigger, read by its lowering
     | { readonly kind: 'costContainsX' }
     // "you control a commander" (CR 903.3d), stage P13; stage P29: "you control your commander" (`yours`, CR 903.3)
@@ -716,6 +731,8 @@ export interface IrCondition extends IrNode {
     // Stage P30 (D-135): "if it's a Zombie card", "if it's an Angel" (CR 608.2c): an object an earlier instruction of the
     // text moved or named, against a filter that says what it is (never where it is: no zone, controller or owner)
     | { readonly kind: 'objectMatches'; readonly who: IrNoun; readonly filter: IrFilter }
+    // "that card's mana value is less than or equal to the number of experience counters you have" (Meren of Clan Nel Toth, CR 202.3, 608.2c): the mana value of the object an earlier instruction named, against an amount
+    | { readonly kind: 'manaValueAtMostAmount'; readonly who: IrNoun; readonly amount: IrAmount }
     // "you put a Cave onto the battlefield this way" (stage P37, D-180, CR 608.2c): what the instruction before it put onto the battlefield is, against
     // a filter that says what it is (no zone, controller or owner)
     // `zone` 'hand' (Danitha deck group 2, D-412): "you put a Town card into your hand this way" says where the card went; absent for the battlefield.
@@ -819,7 +836,13 @@ export type IrCost = IrNode &
     | { readonly kind: 'tap' }
     | { readonly kind: 'untap' }
     // `count` is "Sacrifice two artifacts" (stage P29, D-133): 2 or more, a plural noun
-    | { readonly kind: 'sacrifice'; readonly what: IrNoun; readonly count?: number }
+    // `also` is "Sacrifice a Swamp and a Forest" (CR 701.21a): the other parts, each a noun of "a ..."
+    | {
+        readonly kind: 'sacrifice';
+        readonly what: IrNoun;
+        readonly count?: number;
+        readonly also?: readonly IrNoun[];
+      }
     // "Tap three untapped Zombies you control" (stage P29, D-133, CR 118.3): `filter` of the permanents, `count` how many
     | {
         readonly kind: 'tapPermanents';
@@ -1342,6 +1365,13 @@ export interface IrTrigger extends IrNode {
   readonly batch?: true;
   /** 'putIntoGraveyard' (Death Toll deck group B, CR 603.2): "from your library" (the cards came from the library), not "from anywhere". */
   readonly fromLibrary?: true;
+  /**
+   * 'putIntoGraveyard' "a creature card is put into a graveyard from anywhere other than the battlefield" (CR 603.2, 700.4): the graveyard of any player, and any zone but the
+   * battlefield.
+   */
+  readonly fromNotBattlefield?: true;
+  /** 'leftGraveyard' "a creature card leaves your graveyard" (CR 603.2, 400.7): once for each card, not one trigger for the cards that leave together. */
+  readonly each?: true;
   /** 'attackBatch' "Whenever one or more Demons you control attack a player" (Death Toll deck group B, CR 508.1b, 508.6): once for each player attacked as a player, with the creatures that attack them. */
   readonly eachAttackedPlayer?: true;
 }
@@ -1898,6 +1928,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',
+  'experienceCounters',
   'spellsCastThisTurn',
   'greatestManaValueCast',
   'toughnessOf',

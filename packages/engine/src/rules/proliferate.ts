@@ -1,7 +1,7 @@
 /**
  * "Proliferate" (CR 701.34a, D-149): the controller of the resolving spell or ability chooses any number of permanents and/or players that
  * have a counter, then gives each chosen one additional counter of each kind it already has. The permanents are every permanent on the
- * battlefield with a counter, whoever controls it; the players are those with poison counters (the only counters the engine keeps on a
+ * battlefield with a counter, whoever controls it; the players are those with a counter (poison, energy or experience: the counters the engine keeps on a
  * player). They are chosen with a `choosePermanent` decision of purpose `proliferate` (the answer may be empty); with nothing that has
  * a counter nobody is asked and nothing happens. The counters are put by the controller (CR 122.6, 122.6a), so "whenever you put one or
  * more +1/+1 counters" counts them, and a Saga given a lore counter reaches its next chapter (CR 714.2b).
@@ -9,7 +9,7 @@
 import type { ObjectId, SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchObject, patchSeat } from '../state/ops';
-import type { GameState, Instruction, ResolutionContext } from '../state/types';
+import type { GameState, Instruction, ResolutionContext, SeatState } from '../state/types';
 import { bonusCounters, counterBonuses } from './counter-bonus';
 import { blocks, counterBlockers } from './counter-prevention';
 import { done, type StepOutcome } from './step-outcome';
@@ -21,7 +21,12 @@ function hasCounter(counters: Readonly<Record<string, number>>): boolean {
   return Object.values(counters).some((n) => n > 0);
 }
 
-/** The permanents on the battlefield that have a counter, oldest first, and the players who have poison counters. */
+/** Whether a player has a counter of any kind: poison, energy or experience counters (CR 122.1, 701.34a). */
+function hasPlayerCounter(s: SeatState): boolean {
+  return s.poison > 0 || (s.energy ?? 0) > 0 || (s.experience ?? 0) > 0;
+}
+
+/** The permanents on the battlefield that have a counter, oldest first, and the players who have a counter (poison, energy or experience). */
 export function proliferateCandidates(state: GameState): {
   readonly permanents: readonly ObjectId[];
   readonly players: readonly SeatId[];
@@ -31,7 +36,7 @@ export function proliferateCandidates(state: GameState): {
       const obj = state.objects[id];
       return obj !== undefined && hasCounter(obj.counters);
     }),
-    players: state.seats.filter((s) => !s.hasLost && s.poison > 0).map((s) => s.id),
+    players: state.seats.filter((s) => !s.hasLost && hasPlayerCounter(s)).map((s) => s.id),
   };
 }
 
@@ -83,9 +88,22 @@ export function runProliferate(
   const poisoned: SeatId[] = [];
   for (const seat of instruction.players) {
     const s = getSeat(next, seat);
-    if (s.hasLost || s.poison <= 0) continue;
-    next = patchSeat(next, seat, { poison: s.poison + 1 });
-    events.push({ kind: 'poisonChanged', seat, from: s.poison, to: s.poison + 1 });
+    if (s.hasLost || !hasPlayerCounter(s)) continue;
+    // CR 701.34a: one more counter of each kind the player already has.
+    if (s.poison > 0) {
+      next = patchSeat(next, seat, { poison: s.poison + 1 });
+      events.push({ kind: 'poisonChanged', seat, from: s.poison, to: s.poison + 1 });
+    }
+    if ((s.energy ?? 0) > 0) {
+      const had = s.energy ?? 0;
+      next = patchSeat(next, seat, { energy: had + 1 });
+      events.push({ kind: 'energyChanged', seat, from: had, to: had + 1 });
+    }
+    if ((s.experience ?? 0) > 0) {
+      const had = s.experience ?? 0;
+      next = patchSeat(next, seat, { experience: had + 1 });
+      events.push({ kind: 'experienceChanged', seat, from: had, to: had + 1 });
+    }
     poisoned.push(seat);
   }
   events.unshift({

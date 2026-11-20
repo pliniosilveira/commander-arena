@@ -484,6 +484,15 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     sacrifice = sacAlt.filter;
     sacrificeCount = sacAlt.count;
   }
+  // CR 702.34a, 118.9, 601.2h, 701.21a: "Flashback—Sacrifice three creatures" also sacrifices that many permanents the caster controls, chosen after the targets like an additional cost's sacrifice.
+  const flashbackSacrifice =
+    alternative === 'flashback'
+      ? (flashbackCostOf(face)?.find((c) => c.kind === 'sacrifice') ?? null)
+      : null;
+  if (flashbackSacrifice?.kind === 'sacrifice' && !('kind' in flashbackSacrifice.what)) {
+    sacrifice = flashbackSacrifice.what;
+    sacrificeCount = flashbackSacrifice.count ?? 1;
+  }
   const anyType = request.anyType === true || spell.stack?.anyManaType === true;
   return {
     symbols: reduced,

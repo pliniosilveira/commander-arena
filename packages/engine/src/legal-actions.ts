@@ -11,6 +11,7 @@ import { arrangementActions, orderedChoices } from './rules/arrange-choices';
 import { cardTypeCovers } from './rules/card-types-choice';
 import { defaultDivision } from './rules/combat-flow';
 import { crewChoices } from './rules/crew-choices';
+import { distinctAssignments } from './rules/sacrifice-groups';
 import { sharesLandType } from './rules/share-type';
 import { targetAnswerError } from './rules/target-choice';
 import type { Action } from './state/actions';
@@ -288,12 +289,18 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
       // any legal choice is accepted, but a choice among dozens of permanents cannot be listed. A
       // crew cost (CR 702.122a) lists the subsets with enough total power instead.
       return [
-        ...(d.minTotalPower === undefined
-          ? range(d.min, d.max)
-              .flatMap((n) => firstCombinations(d.legal, n, MAX_LISTED_CHOICES))
-              .slice(0, MAX_LISTED_CHOICES)
-              .map((objects) => ({ kind: 'choosePermanents' as const, objects }))
-          : crewChoices(d)),
+        ...(d.groups !== undefined
+          ? // CR 701.21a: the assignments of permanents to the parts of the cost ("Sacrifice a Swamp and a Forest").
+            distinctAssignments(d.groups).map((objects) => ({
+              kind: 'choosePermanents' as const,
+              objects: [...objects],
+            }))
+          : d.minTotalPower === undefined
+            ? range(d.min, d.max)
+                .flatMap((n) => firstCombinations(d.legal, n, MAX_LISTED_CHOICES))
+                .slice(0, MAX_LISTED_CHOICES)
+                .map((objects) => ({ kind: 'choosePermanents' as const, objects }))
+            : crewChoices(d)),
         // A sacrifice paid as a cost can be taken back (CR 733): the activation is rewound.
         ...(d.forCost ? [{ kind: 'cancel' as const }] : []),
         { kind: 'concede' },
@@ -332,7 +339,15 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
         ...(d.purpose === 'putOnTop'
           ? range(d.min, d.max).flatMap((n) => orderedChoices(d.legal, n, MAX_LISTED_CHOICES))
           : range(d.min, d.max).flatMap((n) =>
-              firstCombinations(d.legal, n, MAX_LISTED_CHOICES, sharesTypeOf(d.shareLandType)),
+              firstCombinations(d.legal, n, MAX_LISTED_CHOICES, (chosen) => {
+                if (!sharesTypeOf(d.shareLandType)(chosen)) return false;
+                // CR 202.3 (D-230): the mana values may not add up to more than the limit; checked while combining so a long list still reaches the sets that fit.
+                const total = d.totalManaValue;
+                return (
+                  total === undefined ||
+                  chosen.reduce((sum, id) => sum + (total.values[id] ?? 0), 0) <= total.limit
+                );
+              }),
             )
         )
           // CR 202.3 (D-230): a choice whose mana values add up to more than the limit is no answer.

@@ -326,7 +326,8 @@ export function runInstruction(
         (offered.kind === 'sacrifice' &&
           offered.objects.kind === 'choose' &&
           offered.player === undefined &&
-          sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0) ||
+          sacrificeCandidates(state, player, res.source, offered.objects.filter, res.sacrificed)
+            .length === 0) ||
         // CR 701.9 (Discard): a player with no card in hand cannot discard one, so they do not and the "if they don't" instruction is done for them (Professor Onyx's last
         // loyalty ability rules: an opponent with an empty hand loses the life). Nobody is asked about a discard of nothing when "if they don't" follows; without it the question is
         // asked as it always was (it is what the players who did the thing are counted from, Mog, Moogle Warrior).
@@ -1608,6 +1609,22 @@ function runEffect(
         [{ kind: 'moveCounters', counter: effect.counter, to: effect.to, chosen: null }],
       );
 
+    case 'copyOneOfTriggerCards':
+      // CR 603.2c, 707.2 (Twilight Diviner): the permanents of the batch that are still on the battlefield, one of which the controller copies (rules/populate.ts).
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'populate',
+            among: (res.triggerCards ?? []).filter(
+              (id) => state.objects[id]?.zone === 'battlefield',
+            ),
+            chosen: null,
+          },
+        ],
+      );
+
     case 'populate':
       // CR 701.36 (D-627): the choice of the creature token and its copy come up as the instruction runs (rules/populate.ts).
       return done(state, [], [{ kind: 'populate', chosen: null }]);
@@ -2367,6 +2384,18 @@ function runEffect(
       return done(next, events);
     }
 
+    case 'gainExperience': {
+      // CR 122.1 (Meren of Clan Nel Toth): "You get an experience counter": the player puts that many experience counters on themselves.
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const had = getSeat(next, seat).experience ?? 0;
+        next = patchSeat(next, seat, { experience: had + amount });
+        events.push({ kind: 'experienceChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
     case 'connive': {
       // CR 701.50a, 701.50b, 701.50c (D-209, D-223): each permanent named connives, the players in APNAP order choosing among theirs (rules/connive.ts).
       return done(
@@ -2384,10 +2413,15 @@ function runEffect(
       const count = anyNumber || wholeHand ? 0 : amountOf(state, effect.count, ctx, targets);
       if (count <= 0 && !anyNumber && !wholeHand) return done(state);
       const seats = resolvePlayers(state, effect.player, ctx, targets);
+      // CR 701.9, 101.4 (Plaguecrafter, `discard.together`): with several players, one instruction for the first that keeps the others' turns to choose; all the chosen cards go at once.
+      const group =
+        effect.together === true && seats.length > 1
+          ? { later: seats.slice(1), held: [] }
+          : undefined;
       return done(
         state,
         [],
-        seats.map((seat) => ({
+        (group === undefined ? seats : seats.slice(0, 1)).map((seat) => ({
           kind: 'discard' as const,
           seat,
           count,
@@ -2395,6 +2429,7 @@ function runEffect(
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
+          ...(group === undefined ? {} : { together: group }),
           chosen: null,
         })),
       );
@@ -2872,7 +2907,15 @@ function runEffect(
         if ((seat.energy ?? 0) > 0) {
           removed.push({ kind: 'energyChanged', seat: id, from: seat.energy ?? 0, to: 0 });
         }
-        next = patchSeat(next, id, { poison: 0, energy: 0 });
+        if ((seat.experience ?? 0) > 0) {
+          removed.push({
+            kind: 'experienceChanged',
+            seat: id,
+            from: seat.experience ?? 0,
+            to: 0,
+          });
+        }
+        next = patchSeat(next, id, { poison: 0, energy: 0, experience: 0 });
       }
       return done(next, removed);
     }

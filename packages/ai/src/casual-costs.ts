@@ -189,6 +189,14 @@ export function additionalCostsWorthPaying(view: GameView, spell: ObjectView): b
   return costsWorthPaying(view, spell, costs, false);
 }
 
+/**
+ * Whether the agent would pay the flashback cost of `spell`, a card of its graveyard (`ObjectView.flashbackCost`): a sacrifice only when the permanents it would give up are worth less
+ * than the card (as for an additional cost), life only while it stays high. A card whose view shows no flashback cost is acceptable (the engine lists the option only when it can be paid).
+ */
+export function flashbackWorthPaying(view: GameView, spell: ObjectView): boolean {
+  return costsWorthPaying(view, spell, spell.flashbackCost ?? [], false);
+}
+
 /** The untapped lands the agent controls: the mana it has now. */
 function untappedLands(view: GameView): number {
   return view.battlefield.filter((o) => o.controller === view.viewer && isLand(o) && !o.tapped)
@@ -216,8 +224,14 @@ function costsWorthPaying(
     if (cost.kind === 'sacrifice' && cost.anyNumber === true) continue;
     if (cost.kind === 'sacrifice' && !('kind' in cost.what)) {
       const candidates = sacrificeCandidates(view, cost.what);
-      if (candidates.length === 0) return false;
-      const cheapest = Math.min(...candidates.map((o) => permanentValue(view, o)));
+      // "Sacrifice three creatures" (a flashback cost, CR 118.9): the `count` the agent would give up first must together be worth less than the spell.
+      const count = cost.count ?? 1;
+      if (candidates.length < count) return false;
+      const cheapest = candidates
+        .map((o) => permanentValue(view, o))
+        .sort((a, b) => a - b)
+        .slice(0, count)
+        .reduce((sum, value) => sum + value, 0);
       if (cheapest > worth) return false;
     } else if (cost.kind === 'discard') {
       // The spell itself is on the stack when the cost is paid: the hand without it.

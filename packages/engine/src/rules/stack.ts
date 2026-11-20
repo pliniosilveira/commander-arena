@@ -299,6 +299,12 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                     ...(out.thisWay.discardedBy ?? []),
                   ]),
                 ],
+                couldntSacrifice: [
+                  ...new Set([
+                    ...(res.thisWay?.couldntSacrifice ?? []),
+                    ...(out.thisWay.couldntSacrifice ?? []),
+                  ]),
+                ],
               },
             }),
         // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).

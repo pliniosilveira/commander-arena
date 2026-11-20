@@ -61,6 +61,9 @@ export function playerSubject(
     case 'discardedThisWay':
       // D-210 (CR 701.9): "each player who discarded a card this way draws a card".
       return { text: 'each player who discarded a card this way', base: false };
+    case 'couldntSacrificeThisWay':
+      // CR 701.21a: "each player who can't discards a card" after a sacrifice.
+      return { text: "each player who can't", base: false };
     case 'attackedPlayers':
       // D-269 (CR 508.6): "each player this creature attacked this turn loses the game".
       return { text: 'each player this creature attacked this turn', base: false };

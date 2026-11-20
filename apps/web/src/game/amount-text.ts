@@ -347,6 +347,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): "for each card you've drawn this turn".
       return "the number of cards you've drawn this turn";
+    case 'experienceCounters':
+      // CR 122.1: "the number of experience counters you have".
+      return 'the number of experience counters you have';
     case 'spellsCastThisTurn':
       // D-638 (CR 601.2i): "the number of instant and sorcery spells you've cast this turn".
       return amount.ofTypes === undefined

@@ -349,6 +349,13 @@ export type GameEvent =
       readonly from: number;
       readonly to: number;
     }
+  /** `seat` had `from` experience counters and has `to` (CR 122.1): gained with "You get an experience counter" or by proliferating. */
+  | {
+      readonly kind: 'experienceChanged';
+      readonly seat: SeatId;
+      readonly from: number;
+      readonly to: number;
+    }
   /** CR 722.3a, 722.3c (D-214): `object` became prepared and the copy of its prepare spell was made in exile. */
   | { readonly kind: 'prepared'; readonly object: ObjectId; readonly copy: ObjectId }
   | {

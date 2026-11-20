@@ -232,7 +232,7 @@ type Bare = Omit<IrNoun, 'span' | 'rule'>;
 export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
   id: 'noun.library-card',
   family: 'noun',
-  leading: ['a', 'an', 'up'],
+  leading: ['a', 'an', 'up', 'any'],
   cites: [
     'CR 701.23a (Search)',
     'CR 701.23b (Search)',
@@ -270,6 +270,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'an artifact creature card that shares a creature type with it',
     'up to two basic land cards that share a land type',
     'up to three basic land cards that share a land type',
+    // CR 701.23, 202.3: any number of cards with a total mana value.
+    'any number of creature cards with total mana value 6 or less',
+    'any number of nonland permanent cards with total mana value 4 or less',
     // Issue 104 (CR 201.2): a card of a given name.
     "a card named God-Pharaoh's Gift",
     'a card named Regna, the Redeemer',
@@ -317,6 +320,15 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'up to two basic land cards that share a creature type with it',
     'up to two permanent cards that share a land type',
     'up to two Forest cards that share a land type',
+    'any number of creature cards',
+    'any number of creature cards with total mana value 0 or less',
+    'any number of creature cards with mana value 6 or less',
+    'any number of creature cards with total mana value 6',
+    'any number of creature cards with total mana value 6 or more',
+    'any number of creature card with total mana value 6 or less',
+    'any number of creature cards that share a land type with total mana value 6 or less',
+    'a creature card with total mana value 6 or less',
+    'up to two creature cards with total mana value 6 or less',
     'a card named',
     'a card named gift',
     'a creature card named Regna',
@@ -342,6 +354,24 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           plural: true,
           other: false,
           count: { kind: 'number', value: count.value, span: count.span },
+        }),
+      ),
+      // CR 701.23, 202.3: "any number of creature cards with total mana value 6 or less": any number (none included) whose mana values add up to at most the limit.
+      map(
+        sequence(
+          literal('any number of '),
+          libraryPhrase(true),
+          literal(' with total mana value '),
+          spanned(satisfy(quantity, (n) => n >= 1)),
+          literal(' or less'),
+        ),
+        ([, filter, , limit]): Bare => ({
+          kind: 'noun',
+          det: 'a',
+          filter: { ...filter, anyNumberTotalManaValue: limit.value },
+          upTo: true,
+          plural: true,
+          other: false,
         }),
       ),
       // Issue 160 (D-626): "up to X basic land cards, where X is ...": the count is the X the search rule reads the definition of.

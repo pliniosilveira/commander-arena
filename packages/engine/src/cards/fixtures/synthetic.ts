@@ -27,6 +27,7 @@ import { SYNTHETIC_BIG_DISCOUNT_LIST } from './synthetic-big-discount';
 import { SYNTHETIC_BITE_EXCESS_LIST } from './synthetic-bite-excess';
 import { SYNTHETIC_BLOCK_POWER_LIST } from './synthetic-block-power';
 import { SYNTHETIC_BOOK_EXALTED_LIST } from './synthetic-book-exalted';
+import { SYNTHETIC_BRAIDS_LIST } from './synthetic-braids';
 import { SYNTHETIC_BRUNA_SEARCH_LIST } from './synthetic-bruna-search';
 import { SYNTHETIC_CASTING_TARGETS_LIST } from './synthetic-casting-targets';
 import { SYNTHETIC_CHOOSE_ONE_LIST } from './synthetic-choose-one';
@@ -67,6 +68,7 @@ import { SYNTHETIC_ENTERS_GROUP_LIST } from './synthetic-enters-group';
 import { SYNTHETIC_ESCALATE_LIST } from './synthetic-escalate';
 import { SYNTHETIC_ETERNAL_MIGHT_LIST } from './synthetic-eternal-might';
 import { SYNTHETIC_EXERT_LIST } from './synthetic-exert';
+import { SYNTHETIC_EXPERIENCE_LIST } from './synthetic-experience';
 import { SYNTHETIC_FEATHER_G1_LIST } from './synthetic-feather-g1';
 import { SYNTHETIC_FEATHER_G2_LIST } from './synthetic-feather-g2';
 import { SYNTHETIC_FEATHER_G3_LIST } from './synthetic-feather-g3';
@@ -97,6 +99,7 @@ import { SYNTHETIC_HASHATON_G9_LIST } from './synthetic-hashaton-g9';
 import { SYNTHETIC_HASHATON_G10_LIST } from './synthetic-hashaton-g10';
 import { SYNTHETIC_HASHATON_GROUP_4_LIST } from './synthetic-hashaton-group-4';
 import { SYNTHETIC_HOFRI_LIST } from './synthetic-hofri';
+import { SYNTHETIC_HULK_SEARCH_LIST } from './synthetic-hulk-search';
 import { SYNTHETIC_HYLDA_G1_LIST } from './synthetic-hylda-g1';
 import { SYNTHETIC_HYLDA_G2_LIST } from './synthetic-hylda-g2';
 import { SYNTHETIC_HYLDA_G3_LIST } from './synthetic-hylda-g3';
@@ -114,6 +117,7 @@ import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
+import { SYNTHETIC_LIVING_DEATH_LIST } from './synthetic-living-death';
 import { SYNTHETIC_LOREHOLD_G1_LIST } from './synthetic-lorehold-g1';
 import { SYNTHETIC_LOREHOLD_G2_LIST } from './synthetic-lorehold-g2';
 import { SYNTHETIC_LOREHOLD_G3_LIST } from './synthetic-lorehold-g3';
@@ -519,6 +523,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PLATE_LIST,
   ...SYNTHETIC_ABILITY_COSTS_LIST,
   ...SYNTHETIC_BATCH_LIST,
+  ...SYNTHETIC_BRAIDS_LIST,
   ...SYNTHETIC_RESELECT_LIST,
   ...SYNTHETIC_CHOOSE_ONE_LIST,
   ...SYNTHETIC_TAP_CHOICE_LIST,
@@ -536,6 +541,9 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_RING_LIST,
   ...SYNTHETIC_SNOW_LIST,
   ...SYNTHETIC_BRUNA_SEARCH_LIST,
+  ...SYNTHETIC_HULK_SEARCH_LIST,
+  ...SYNTHETIC_LIVING_DEATH_LIST,
+  ...SYNTHETIC_EXPERIENCE_LIST,
   ...SYNTHETIC_PLANESWALKER_LIST,
   ...SYNTHETIC_PRIDE_WALKER_LIST,
   ...SYNTHETIC_MANA_TRIGGERS_LIST,

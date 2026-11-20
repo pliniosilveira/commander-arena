@@ -1702,12 +1702,20 @@ describe('subjects of triggers and the player an event is about (CR 603.2, 508.1
   });
 
   test('the player of a death and of a combat damage that hit a creature is not an event player; the player of a step is the active player', () => {
-    for (const text of [
-      'Whenever a nontoken creature you control dies, that player loses 1 life.',
-      'Whenever ~ deals combat damage to a creature, that player discards a card.',
-    ]) {
-      expect(drop(text)).toMatchObject({ reason: 'unboundReference' });
-    }
+    // Combat damage to a creature has no event player. A death does: "that player" is the controller
+    // of the creature that died (CR 603.10a, last known information); see
+    // convert-grammar-engine-dies-that-player.test.ts for the full behaviour.
+    expect(
+      drop('Whenever ~ deals combat damage to a creature, that player discards a card.'),
+    ).toMatchObject({
+      reason: 'unboundReference',
+    });
+    expect(
+      abilities(
+        'Whenever a nontoken creature you control dies, that player loses 1 life.',
+        'enchantment',
+      ),
+    ).toMatchObject([{ kind: 'triggered', effect: { kind: 'loseLife', amount: 1 } }]);
     expect(
       abilities(
         "At the beginning of each opponent's upkeep, that player loses 1 life.",
@@ -1798,10 +1806,17 @@ describe('costs that tap or sacrifice other permanents (CR 118.3, 302.6, 701.21)
       ],
       effect: { kind: 'createToken', count: { kind: 'powerOf', of: { kind: 'sacrificedCost' } } },
     });
-    // Only "where X is ..." names it (the older "equal to its power" rules read no sacrificed creature).
-    expect(
-      drop("{1}, Sacrifice a creature: You gain life equal to the sacrificed creature's power."),
-    ).toMatchObject({ stoppedAt: "equal to the sacrificed creature's power." });
+    // "Equal to the sacrificed creature's power" names it too (the amount reads the sacrificed cost).
+    const [drain] = abilities(
+      "{1}, Sacrifice a creature: You gain life equal to the sacrificed creature's power.",
+    );
+    expect(drain).toMatchObject({
+      cost: [
+        { kind: 'mana', symbols: ['1'] },
+        { kind: 'sacrifice', what: { types: ['creature'] } },
+      ],
+      effect: { kind: 'gainLife', amount: { kind: 'powerOf', of: { kind: 'sacrificedCost' } } },
+    });
   });
 
   test.each([

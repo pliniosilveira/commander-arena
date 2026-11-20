@@ -98,3 +98,27 @@ describe('flashback', () => {
     expect(await answer(g)).toEqual({ kind: 'castSpell', object: study, alternative: 'flashback' });
   });
 });
+
+describe('a flashback cost that sacrifices (CR 702.34a, 118.9, 701.21a)', () => {
+  const CARD = 'SYNTHETIC Flash Sacrifice';
+
+  test('the engine offers it with two creatures, but the agent will not give up two good creatures for a cheap spell', async () => {
+    const g = scenario()
+      .seat(0)
+      .graveyard(CARD)
+      .battlefield('Grizzly Bears', 'Grizzly Bears')
+      .seat(1)
+      .build();
+    const id = g.id({ name: CARD, zone: 'graveyard' });
+    const mine = g.view(0).seats.find((s) => s.id === 0);
+    expect(mine?.graveyard.find((o) => o.id === id)?.flashbackCost).toEqual([
+      { kind: 'sacrifice', what: { types: ['creature'] }, count: 2 },
+    ]);
+    expect(await answer(g)).toEqual({ kind: 'pass' });
+  });
+
+  test('with fewer creatures than the cost needs the engine does not offer it', async () => {
+    const g = scenario().seat(0).graveyard(CARD).battlefield('Grizzly Bears').seat(1).build();
+    expect(await answer(g)).toEqual({ kind: 'pass' });
+  });
+});

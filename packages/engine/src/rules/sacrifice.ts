@@ -50,11 +50,20 @@ export function controlledCandidates(
   seat: SeatId,
   source: ObjectId | null,
   filter: ObjectFilter,
+  /** The permanents the resolution sacrificed before (`sharesCardTypeWith: 'sacrificed'`, Braids). */
+  sacrificed?: readonly ObjectId[],
 ): ObjectId[] {
   const scoped: ObjectFilter = { ...filter, zone: 'battlefield', controller: 'you' };
   return objectsInZone(state, 'battlefield').filter((id) => {
     const obj = state.objects[id];
-    return obj !== undefined && matchesFilter(state, obj, scoped, { controller: seat, source });
+    return (
+      obj !== undefined &&
+      matchesFilter(state, obj, scoped, {
+        controller: seat,
+        source,
+        ...(sacrificed === undefined ? {} : { sacrificed }),
+      })
+    );
   });
 }
 

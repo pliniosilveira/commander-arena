@@ -19,12 +19,13 @@ import {
   sequence,
 } from '../../combinators';
 import type { IrAmount, IrArg, IrClause, IrNoun, IrToken, Span } from '../../ir/types';
-import { NUMBER_OR_X } from '../amount/index';
+import { NUMBER_OR_X, quantity } from '../amount/index';
 import { EQUAL_AMOUNTS, FOR_EACH_TAIL as FOR_EACH, scaled } from '../amount/scaled';
 import { CARD_TYPES, typeWords } from '../noun/phrases';
 import { SUBTYPE_WORD_NUMBERED } from '../noun/subtypes';
 import { defineRule, family, spanned } from '../registry';
 import { type Clauses, connectorOf, listWithJoins, makeClause, VERB_LIST_JOIN } from './operands';
+import { exileGraveyardCardsAction, putExiledCardsAction } from './player-exiled';
 import { tokenWithEach } from './token';
 
 const CARDS = pattern(/ cards?(?![\p{L}\p{N}])/iu);
@@ -290,6 +291,33 @@ const energyAction: Action = (subject, you, rule) =>
       ),
   );
 
+/** "get an experience counter", "gets two experience counters" (CR 122.1: the player puts that many experience counters on themselves; Meren of Clan Nel Toth). */
+const experienceAction: Action = (subject, you, rule) =>
+  map(
+    spanned(
+      sequence(
+        verbWord('get', you),
+        choice(
+          map(pattern(/an experience counter(?![\p{L}\p{N}])/iu), () => 1),
+          map(
+            sequence(
+              satisfy(quantity, (n) => n >= 2),
+              pattern(/ experience counters(?![\p{L}\p{N}])/iu),
+            ),
+            ([n]) => n,
+          ),
+        ),
+      ),
+    ),
+    ({ value, span }) =>
+      actionClause(
+        rule,
+        'gainExperience',
+        { player: subject, amount: { kind: 'number', value: value[1], span } },
+        span,
+      ),
+  );
+
 /** "shuffle your library" and "shuffles their library" (CR 701.24). */
 const shuffleAction: Action = (subject, you, rule) =>
   map(
@@ -434,6 +462,8 @@ const createAction: Action = (subject, you, rule) =>
 export const PLAYER_SUBJECTS = [
   // Stage P52 (D-210): "each player who discarded a card this way draws a card".
   'noun.each-player-discarded',
+  // CR 701.21a: "each player who can't discards a card" after a sacrifice.
+  'noun.each-player-cant-sacrifice',
   // D-269: "each player ~ attacked this turn loses the game".
   'noun.each-player-attacked',
   'noun.you-and-player',
@@ -542,6 +572,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'defending player sacrifices a creature of their choice',
     'each player sacrifices all permanents they control that are one or more colors',
     'each opponent sacrifices all creatures they control',
+    // Living Death (CR 404.1, 608.2c): each player's own graveyard, then what they exiled this way.
+    'each player exiles all creature cards from their graveyard',
+    'each player puts all cards they exiled this way onto the battlefield',
+    'each player exiles all creature cards from their graveyard, then sacrifices all creatures they control, then puts all cards they exiled this way onto the battlefield',
     'target player mills two cards',
     'each opponent mills X cards',
     'you mill three cards',
@@ -561,6 +595,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     // Stage P51 (D-209, CR 107.14): energy counters.
     'you get {E}{E}',
     'target player gets {E}',
+    // CR 122.1: experience counters.
+    'you get an experience counter',
+    'you get two experience counters',
+    'target player gets an experience counter',
     'you draw a card, then discard a card at random',
     'target opponent discards a card at random',
     // D-269, CR 104.3e: an effect says that a player loses the game.
@@ -592,6 +630,12 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you and target opponent each lose the game',
     'each player ~ attacked loses the game',
     'each opponent loses the game and you win the game',
+    'you get an experience counters',
+    'you get 1 experience counters',
+    'you get an experience',
+    'you get a experience counter',
+    'you gets an experience counter',
+    'you get an energy counter',
     'you get {E}{R}',
     'you get {E} {E}',
     'you get E',
@@ -609,6 +653,12 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'its controller investigate',
     'you investigates',
     'you sacrifice a creature of their choice',
+    'you exile all creature cards from your graveyard',
+    'each opponent exiles all creature cards from their graveyard',
+    'each player exiles a creature card from their graveyard',
+    'each player exiles all creature cards from your graveyard',
+    'each player puts all cards they exiled this way onto the battlefield tapped',
+    'you put all cards they exiled this way onto the battlefield',
     'each player sacrifices a creature of your choice',
     'each player sacrifices target creature of their choice',
     'each player sacrifices a creature an opponent controls of their choice',
@@ -674,7 +724,10 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
         part('effect.player.mill', millAction),
         alone('effect.player.manifest', manifestAction),
         part('effect.player.energy', energyAction),
+        part('effect.player.experience', experienceAction),
         alone('effect.player.sacrifice', sacrificeAction),
+        alone('effect.player.exile-graveyard', exileGraveyardCardsAction),
+        alone('effect.player.put-exiled', putExiledCardsAction),
         alone('effect.player.investigate', investigateAction),
         alone('effect.player.shuffle', shuffleAction),
         alone('effect.player.create-token', createAction),
