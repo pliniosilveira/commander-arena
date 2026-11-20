@@ -279,6 +279,18 @@ function withLevelBarPeriod(line: string): string {
 }
 
 /**
+ * "Exile target card that's an instant or sorcery from your graveyard" (Mizzix's Mastery, issue 121) says what "Exile target instant or sorcery card from your graveyard" says: a card of
+ * those types, in a graveyard. The words are put in the order the noun rules read (CR 404.1, 205.2a); only a list of card types ("instant or sorcery", "creature", "artifact and/or
+ * enchantment") before "from your graveyard", "from a graveyard" or "in your graveyard" is rewritten.
+ */
+const CARD_THAT_IS_TYPES =
+  /\bcard that['’]s an? ((?:artifact|battle|creature|enchantment|instant|land|planeswalker|sorcery)(?:,? (?:or|and\/or) (?:artifact|battle|creature|enchantment|instant|land|planeswalker|sorcery))*) (?=(?:from (?:your|a) graveyard|in your graveyard)\b)/giu;
+
+export function withCardThatIs(line: string): string {
+  return line.replace(CARD_THAT_IS_TYPES, '$1 card ');
+}
+
+/**
  * "half X" says how it rounds (CR 107.1a), in one of two places that no phrase of the grammar sits next to: after the whole instruction ("create half X Food tokens, rounded
  * up.") or in a sentence of its own for every "half" before it ("... gain half X life and draw half X cards. Round down each time."). The line is written so the rounding follows
  * the amount, as the other "half" phrases have it: "create half X, rounded up Food tokens." The sentence "Round down each time." is dropped once its rounding is written in.
@@ -305,7 +317,9 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
   return out
     .split('\n')
     .map((line) =>
-      withHalfRounding(withLevelBarPeriod(stripAbilityWord(line.replace(/[ \t]+/g, ' ').trim()))),
+      withCardThatIs(
+        withHalfRounding(withLevelBarPeriod(stripAbilityWord(line.replace(/[ \t]+/g, ' ').trim()))),
+      ),
     )
     .filter((line) => line !== '')
     .join('\n');

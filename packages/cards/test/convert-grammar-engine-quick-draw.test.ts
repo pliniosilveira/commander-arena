@@ -318,3 +318,69 @@ test('Midnight Clock: the twelfth hour counter shuffles the hand and graveyard i
   expect(quiet.state.seats[0]?.hand).toHaveLength(2);
   quiet.expect.zone(clock.name, 'battlefield');
 });
+
+// ---- Casting for free
+
+test('Epic Experiment: exile the top X, cast the instants and sorceries with mana value X or less for free, and the rest go to the graveyard', () => {
+  const experiment = load('Epic Experiment');
+  const g = scenario()
+    .define(experiment)
+    .seat(0)
+    .library('Lightning Bolt', 'Divination', 'Island', 'Island', 'Island')
+    .hand(experiment.name)
+    .pool('UURR')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  g.act(0).cast(experiment.name, { x: 2, pay: true });
+  g.passAll();
+  // Only the Bolt (mana value 1) is offered: Divination has mana value 3, more than X.
+  g.act(0).chooseCards({ name: 'Lightning Bolt', zone: 'exile' });
+  g.act(0).chooseTargets({ player: 1 });
+  g.passAll();
+  g.expect.life(1, 37);
+  // The Divination that was not cast goes to the graveyard with nothing left in exile.
+  g.expect.zone('Divination', 'graveyard', { seat: 0 });
+  expect(g.state.exile).toHaveLength(0);
+  g.expect.invariants();
+});
+
+test('Mizzix’s Mastery: exile an instant or sorcery from your graveyard, copy it and cast the copy free; overloaded, every one of them', () => {
+  const mastery = load("Mizzix's Mastery");
+  const build = (pool: string) =>
+    scenario()
+      .define(mastery)
+      .seat(0)
+      .library(...FILLER)
+      .hand(mastery.name)
+      .graveyard('Lightning Bolt', 'Divination')
+      .pool(pool)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  const one = build('RRRR');
+  one
+    .act(0)
+    .cast(mastery.name, { pay: true, targets: [{ name: 'Lightning Bolt', zone: 'graveyard' }] });
+  one.passAll();
+  // The copy is the second Lightning Bolt in exile (the card exiled came first).
+  one.act(0).chooseCards({ name: 'Lightning Bolt', zone: 'exile', nth: 1 });
+  one.act(0).chooseTargets({ player: 1 });
+  one.passAll();
+  one.expect.life(1, 37);
+  // The card exiled stays exiled, and Mizzix's Mastery exiles itself.
+  one.expect.zone('Lightning Bolt', 'exile');
+  one.expect.zone(mastery.name, 'exile');
+  one.expect.zone('Divination', 'graveyard', { seat: 0 });
+  one.expect.invariants();
+  // Overload {5}{R}{R}{R}: both cards are exiled and copied.
+  const all = build('RRRRRRRR');
+  all.act(0).cast(mastery.name, { alternative: 'overload', pay: true });
+  all.passAll();
+  all.act(0).chooseCards({ name: 'Lightning Bolt', zone: 'exile', nth: 1 });
+  all.act(0).chooseTargets({ player: 1 });
+  all.expect.zone('Lightning Bolt', 'exile');
+  all.expect.zone('Divination', 'exile');
+});

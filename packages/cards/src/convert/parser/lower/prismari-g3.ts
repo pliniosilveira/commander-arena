@@ -4,7 +4,7 @@
  * delayed copy of the exiled card). Each refers to "them", "those cards" or "the other cards" of the instruction before it, which the engine names `moved`; `ctx.lastEffectKind` says
  * which instruction that was, so a sentence is read only after the instruction that makes it true.
  */
-import type { Effect } from '@commander-arena/engine';
+import type { Effect, ObjectFilter } from '@commander-arena/engine';
 import type { IrClause } from '../ir/types';
 import { amountArg, arg, type Effects, failure } from './clauses';
 import type { Lowering } from './types';
@@ -66,10 +66,21 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
       }
       max = counted.value;
     }
+    // Epic Experiment (issue 121): only the instants and sorceries, with a mana value no more than the X of the spell, are offered.
+    const typed = arg(clause, 'instantOrSorcery');
+    const limit = arg(clause, 'limitX');
+    const filter: ObjectFilter | undefined =
+      typed?.kind === 'flag' && typed.value
+        ? {
+            anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
+            ...(limit?.kind === 'flag' && limit.value ? { manaValueAtMost: { kind: 'x' } } : {}),
+          }
+        : undefined;
     const effect: Effect = {
       kind: 'castFree',
       objects: { kind: 'moved' },
       ...(max === undefined ? {} : { max }),
+      ...(filter === undefined ? {} : { filter }),
     };
     return { ok: true, value: [effect], rule: clause.rule };
   },
@@ -84,6 +95,18 @@ const PUT_REST_INTO_HAND: Lowering<IrClause, Effects> = {
     // "The rest" are the cards left after spells were cast from among them.
     if (ctx.lastEffectKind !== 'castFree') return failure(clause);
     const effect: Effect = { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'hand' };
+    return { ok: true, value: [effect], rule: clause.rule };
+  },
+};
+
+/** "Then put all cards exiled this way that weren't cast into your graveyard" (Epic Experiment): the cards left after spells were cast from among them. */
+const PUT_REST_INTO_GRAVEYARD: Lowering<IrClause, Effects> = {
+  head: 'putRestIntoGraveyard',
+  id: 'lower.put-rest-into-graveyard',
+  needs: ['effect:moveToZone', 'selector:moved'],
+  lower(clause, ctx) {
+    if (ctx.lastEffectKind !== 'castFree') return failure(clause);
+    const effect: Effect = { kind: 'moveToZone', objects: { kind: 'moved' }, to: 'graveyard' };
     return { ok: true, value: [effect], rule: clause.rule };
   },
 };
@@ -164,6 +187,7 @@ export const PRISMARI_G3_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EXILE_PILES,
   CAST_FROM_AMONG,
   PUT_REST_INTO_HAND,
+  PUT_REST_INTO_GRAVEYARD,
   SHUFFLE_REVEAL_UNTIL_EXILE,
   EXILE_TOP_ANY_NUMBER,
   EXILE_UNTIL_NONLAND,

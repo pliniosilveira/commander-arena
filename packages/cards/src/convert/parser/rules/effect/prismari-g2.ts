@@ -212,6 +212,17 @@ export const EFFECT_EXILE_SELF_TIME_COUNTERS = defineRule<Clauses>({
 });
 
 /**
+ * The words after the exile of `effect.exile-copy-cast`: " and copy it. You may cast the copy without paying its mana cost" or, since Mizzix's Mastery (issue 121), ". For each card exiled
+ * this way, copy it, and you may cast the copy without paying its mana cost" (the card exiled is copied and the copy cast, once for each card the exile moved).
+ */
+const COPY_TAIL = new RegExp(
+  `(?: and copy it\\. you may cast the copy|\\. for each card exiled this way, copy it, and you may cast the copy) without paying its mana cost${BOUNDARY}`,
+  'iu',
+);
+const COPY_TAIL_TEST =
+  /(?: and copy it\. you may cast the copy|\. for each card exiled this way, copy it, and you may cast the copy) without paying its mana cost/iu;
+
+/**
  * `effect.exile-copy-cast`: "Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost." (CR 707.12: an effect
  * can have a player cast a copy of a card; CR 608.2g: during resolution, with no priority; CR 118.9: without paying its mana cost). The two sentences are one instruction (`segment.ts`
  * keeps them together). Any "exile up to one target ... card from your graveyard" that the exile rule reads comes first; the copy is of the card that was exiled. Not read: a copy
@@ -231,6 +242,7 @@ export const EFFECT_EXILE_COPY_CAST = defineRule<Clauses>({
     'exile up to one target instant or sorcery card from your graveyard and copy it. you may cast the copy without paying its mana cost',
     'Exile up to one target instant or sorcery card from your graveyard and copy it. You may cast the copy without paying its mana cost',
     'exile target instant card from your graveyard and copy it. you may cast the copy without paying its mana cost',
+    'exile target instant or sorcery card from your graveyard. for each card exiled this way, copy it, and you may cast the copy without paying its mana cost',
   ],
   rejects: [
     'exile up to one target instant or sorcery card from your graveyard and copy it',
@@ -240,26 +252,18 @@ export const EFFECT_EXILE_COPY_CAST = defineRule<Clauses>({
     'exile up to one target instant or sorcery card from your graveyard and copy it. you may cast the copy without paying its mana cost and draw a card',
     'exile up to one target instant or sorcery card from your graveyard. you may cast the copy without paying its mana cost',
     'exile up to one target instant or sorcery card from your graveyard and copy it. you must cast the copy without paying its mana cost',
+    'exile target instant or sorcery card from your graveyard. for each card exiled this way, copy it, and you may cast the copy',
+    'exile target instant or sorcery card from your graveyard. for each card exiled this way, copy it and cast the copy without paying its mana cost',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.exile-copy-cast';
     // Only a text that carries the copy sentence is this rule's (see `effect.add-mana-stays`).
-    if (
-      !/ and copy it\. you may cast the copy without paying its mana cost/iu.test(
-        ctx.text.slice(pos),
-      )
-    )
-      return fail(ctx, pos);
+    if (!COPY_TAIL_TEST.test(ctx.text.slice(pos))) return fail(ctx, pos);
     const exiled = family<Clauses>('effect', { only: ['effect.exile'] })(ctx, pos);
     if (!exiled.ok) return exiled;
     const [only, ...more] = exiled.value;
     if (only === undefined || more.length > 0) return fail(ctx, pos);
-    const tail = pattern(
-      new RegExp(
-        ` and copy it\\. you may cast the copy without paying its mana cost${BOUNDARY}`,
-        'iu',
-      ),
-    )(ctx, exiled.pos);
+    const tail = pattern(COPY_TAIL)(ctx, exiled.pos);
     if (!tail.ok) return fail(ctx, pos);
     const span = { start: pos, end: tail.pos };
     const copy: IrClause = makeClause(id, 'copyCardAndCast', {}, span);

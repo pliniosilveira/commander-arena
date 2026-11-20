@@ -1356,17 +1356,36 @@ function runEffect(
     case 'copyCardAndCast': {
       // CR 707.12 (D-654): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
       // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
-      const [id] = resolveObjects(state, effect.objects, ctx, targets);
-      const card = id === undefined ? undefined : state.objects[id];
-      if (card === undefined || card.zone !== 'exile' || card.card === null) return done(state);
-      const made = makeCardCopy(state, card.card, res.controller);
+      // Issue 121 (Mizzix's Mastery, overloaded: "For each card exiled this way, copy it, and you may cast the copy"): every card the effect before exiled is copied, and the controller
+      // may cast any number of the copies (a question after each cast, as `castFree` with `max` any asks it); one card is the one question of a single copy.
+      const exiled = resolveObjects(state, effect.objects, ctx, targets).flatMap((id) => {
+        const card = state.objects[id];
+        return card === undefined || card.zone !== 'exile' || card.card === null ? [] : [card];
+      });
+      if (exiled.length === 0) return done(state);
+      let withCopies = state;
+      const copies: ObjectId[] = [];
+      for (const card of exiled) {
+        if (card.card === null) continue;
+        const made = makeCardCopy(withCopies, card.card, res.controller);
+        withCopies = made.state;
+        copies.push(made.copy);
+      }
       return {
         ...done(
-          made.state,
+          withCopies,
           [],
-          [{ kind: 'castFree', objects: { kind: 'moved' }, play: false, chosen: null }],
+          [
+            {
+              kind: 'castFree',
+              objects: { kind: 'moved' },
+              play: false,
+              chosen: null,
+              ...(copies.length > 1 ? { remaining: 'any' as const } : {}),
+            },
+          ],
         ),
-        lastMoved: [made.copy],
+        lastMoved: copies,
       };
     }
     case 'prepare': {

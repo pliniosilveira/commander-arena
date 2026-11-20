@@ -608,6 +608,7 @@ describe('unmatched abilities', () => {
       'effect.exile-two-piles',
       'effect.cast-from-among',
       'effect.put-the-rest-into-your-hand',
+      'effect.put-the-rest-into-your-graveyard',
       'effect.shuffle-reveal-until-exile',
       'effect.exile-top-as-many-times',
       'effect.each-player-exiles-until-nonland',

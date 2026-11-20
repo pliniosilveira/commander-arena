@@ -361,6 +361,13 @@ const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, crea
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
+/**
+ * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
+ * issue 121, CR 707.12): the second sentence is what is done with the copy of each card the first exiles, read as one instruction (`effect.exile-copy-cast`).
+ */
+const EXILE_CARD_SENTENCE = /^exile [^.]* from your graveyard\.$/i;
+const FOR_EACH_EXILED_COPY_IT =
+  /^for each card exiled this way, copy it, and you may cast the copy without paying its mana cost\.$/i;
 
 /**
  * "Reveal cards from the top of your library until you reveal a land card. Put that card onto the battlefield tapped and the rest on the
@@ -857,6 +864,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||

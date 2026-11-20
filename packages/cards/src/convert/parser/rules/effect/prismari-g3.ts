@@ -97,6 +97,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   ],
   examples: [
     'you may cast a spell from among them without paying its mana cost',
+    'you may cast instant and sorcery spells with mana value X or less from among them without paying their mana costs',
+    'you may cast instant and sorcery spells from among them without paying their mana costs',
     'you may cast up to two spells from among the other cards exiled this way without paying their mana costs',
     'you may cast any number of spells from among those cards without paying their mana costs',
     'You may cast a spell from among them without paying its mana cost',
@@ -114,11 +116,14 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast a spell from among them by paying its mana cost',
     'you may cast a spell from among them without paying its mana cost and draw a card',
     'you may cast one spell from among them without paying its mana cost',
+    'you may cast instant and sorcery spells from among them without paying its mana cost',
+    'you may cast creature spells with mana value X or less from among them without paying their mana costs',
+    'you may cast instant and sorcery spells with mana value Y or less from among them without paying their mana costs',
   ],
   parse: (ctx, pos) => {
     const id = 'effect.cast-from-among';
     const head = pattern(
-      /(you may )?cast (a spell|up to two spells|any number of spells) from among (them|those cards|the other cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
+      /(you may )?cast (a spell|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!head.ok) return head;
     const [, may = '', count = '', from = '', cost = ''] = head.value;
@@ -134,6 +139,12 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     const lower = count.toLowerCase();
     if (lower === 'up to two spells') args.max = number(2, span);
     if (lower === 'any number of spells') args.any = flag(id, true, span);
+    // Epic Experiment (issue 121): "instant and sorcery spells with mana value X or less": any number of them, of those types, with a mana value no more than the X of the spell.
+    if (lower.startsWith('instant and sorcery spells')) {
+      args.any = flag(id, true, span);
+      args.instantOrSorcery = flag(id, true, span);
+      if (lower.endsWith('with mana value x or less')) args.limitX = flag(id, true, span);
+    }
     return { ok: true, value: [makeClause(id, 'castFromAmong', args, span)], pos: head.pos };
   },
 });
@@ -165,6 +176,40 @@ export const EFFECT_PUT_THE_REST_HAND = defineRule<Clauses>({
     return {
       ok: true,
       value: [makeClause(id, 'putRestIntoHand', {}, { start: pos, end: r.pos })],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `effect.put-the-rest-into-your-graveyard` (CR 701.13, 400.7; Epic Experiment): "Then put all cards exiled this way that weren't cast into your graveyard." The cards the instructions before it
+ * exiled that are still in exile go to their owner's graveyard. Not read: another zone, "that were cast", another player's graveyard, other words after it.
+ */
+export const EFFECT_PUT_THE_REST_GRAVEYARD = defineRule<Clauses>({
+  id: 'effect.put-the-rest-into-your-graveyard',
+  family: 'effect',
+  leading: ['put'],
+  cites: ['CR 701.13 (Exile)', 'CR 400.7 (General)', 'CR 404.1 (Graveyard)'],
+  examples: [
+    'put all cards exiled this way that weren’t cast into your graveyard',
+    "put all cards exiled this way that weren't cast into your graveyard",
+  ],
+  rejects: [
+    "put all cards exiled this way that weren't cast into your hand",
+    'put all cards exiled this way that were cast into your graveyard',
+    "put all cards exiled this way that weren't cast into their graveyard",
+    "put all cards exiled this way that weren't cast on the bottom of your library",
+    "put all cards exiled this way that weren't cast into your graveyard and draw a card",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.put-the-rest-into-your-graveyard';
+    const r = pattern(
+      /put all cards exiled this way that weren['’]t cast into your graveyard(?![\p{L}\p{N}])(?!\s+(?:and|then)(?![\p{L}\p{N}]))/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause(id, 'putRestIntoGraveyard', {}, { start: pos, end: r.pos })],
       pos: r.pos,
     };
   },
@@ -368,6 +413,7 @@ export const PRISMARI_G3_EFFECT_RULES = [
   quietly(EFFECT_EXILE_TWO_PILES),
   quietly(EFFECT_CAST_FROM_AMONG),
   quietly(EFFECT_PUT_THE_REST_HAND),
+  quietly(EFFECT_PUT_THE_REST_GRAVEYARD),
   quietly(EFFECT_SHUFFLE_REVEAL_UNTIL_EXILE),
   quietly(EFFECT_EXILE_TOP_AS_MANY_TIMES),
   quietly(EFFECT_EACH_PLAYER_EXILES_UNTIL_NONLAND),

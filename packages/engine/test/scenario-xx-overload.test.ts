@@ -563,9 +563,9 @@ describe('the engine refuses what it cannot run', () => {
     ).toMatch(/cannot change this text/);
   });
 
-  test('a target in the graveyard or on the stack cannot be overloaded', () => {
+  test('a target on the stack or in exile cannot be overloaded (one in a graveyard can: issue 121, Mizzix’s Mastery)', () => {
     for (const filter of [
-      { zone: 'graveyard', types: ['creature'] },
+      { zone: 'exile', types: ['creature'] },
       { zone: 'stack', stackKind: 'spell' },
     ]) {
       const card = face({
@@ -580,6 +580,21 @@ describe('the engine refuses what it cannot run', () => {
           .join('|'),
       ).toMatch(/cannot change this text/);
     }
+  });
+
+  test('a target in a graveyard becomes each card there when it is overloaded (Mizzix’s Mastery)', () => {
+    const card = face({
+      spell: {
+        targets: [
+          {
+            id: 't1',
+            what: { kind: 'object', filter: { zone: 'graveyard', types: ['creature'] } },
+          },
+        ],
+        effect: { kind: 'exile', objects: { kind: 'target', id: 't1' } },
+      },
+    });
+    expect(validateCard(card)).toEqual([]);
   });
 
   test('X, a non-mana cost, a second overload and an unknown kind are structural errors', () => {
