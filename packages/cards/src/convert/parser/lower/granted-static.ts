@@ -13,8 +13,8 @@ import type { IrClause } from '../ir/types';
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { lowerAngelStatic } from './angels';
 import { arg, type Effects, failure, operand } from './clauses';
+import { lateLowerers } from './late';
 import { objectSelectorOf } from './nouns';
-import { lowerStatic } from './statics';
 import { type Lowering, newContext } from './types';
 
 /** The static abilities an effect may give for good: the ones the engine reads from an object's abilities after the layers. */
@@ -52,7 +52,12 @@ export const GAIN_STATIC_ABILITY: Lowering<IrClause, Effects> = {
     if (!bound.ok || bound.ability.kind !== 'static') return failure(clause);
     const own = newContext('ability', [], [], ctx.cardName);
     // The permanent itself may be given a characteristic-defining ability (issue 345), which the general static lowering reads.
-    const lowered = itself ? lowerStatic(bound.ability, own) : lowerAngelStatic(bound.ability, own);
+    const general = itself ? lateLowerers() : null;
+    if (itself && general === null) return failure(clause);
+    const lowered =
+      itself && general !== null
+        ? general.static(bound.ability, own)
+        : lowerAngelStatic(bound.ability, own);
     if (!lowered.ok) return failure(clause, lowered.needs);
     if (own.usesX || lowered.value.length === 0) return failure(clause);
     const abilities: Ability[] = [];
