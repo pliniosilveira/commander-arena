@@ -339,6 +339,19 @@ function occurrences(
             },
           ]
         : [];
+    case 'dealsDamage':
+      // CR 120.2, 603.2c: damage of any kind to a player, once for each source and each player; damage prevented entirely, or 0, has no `damageDealt` event (CR 603.2g).
+      return event.kind === 'damageDealt' && event.to.kind === 'player' && event.amount > 0
+        ? [
+            {
+              subject: event.source,
+              seat: null,
+              damaged: event.to,
+              damage: event.amount,
+              player: event.to.seat,
+            },
+          ]
+        : [];
     case 'noncombatDamageDealt':
       // CR 120.2b, 603.2c (D-333): one occurrence for each source and each player it damages. Damage that was prevented entirely, or is 0, has no
       // `damageDealt` event (CR 603.2g); the controller of the source is read as it is or as it last was (CR 113.7a).
@@ -1014,6 +1027,13 @@ function matches(
           ctx,
         )
       );
+    }
+    case 'dealsDamage': {
+      if (!matchesWhat(state, trigger.what, subject, candidate)) return false;
+      const damaged = occ.damaged;
+      if (damaged?.kind !== 'player') return false;
+      // CR 113.7a: "an opponent" is an opponent of the controller of the ability (of the host's controller, for an ability the Aura grants).
+      return trigger.to === 'player' || damaged.seat !== candidate.controller;
     }
     case 'noncombatDamageDealt': {
       // D-333: the source is controlled by the controller of this ability (`you`), and the player damaged is an opponent of it, or any player.

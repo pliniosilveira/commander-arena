@@ -4214,6 +4214,17 @@ export type Trigger =
       readonly filter?: ObjectFilter;
     }
   /**
+   * "Whenever [enchanted creature | this creature] deals damage to an opponent" (CR 120.2, 603.2, 603.2c, 603.2g): damage of any kind (combat or not,
+   * CR 120.2a, 120.2b) that the permanent `what` names deals to a player, once for each player it damages in one damage event. `to` is `opponent` (a
+   * player the controller of this ability does not control: for an ability an Aura grants, its host's controller, CR 113.7a) or `player`. Damage that is
+   * prevented entirely, or is 0, is not dealt and triggers nothing (CR 120.8, 603.2g). `triggerDamage` is the amount and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'dealsDamage';
+      readonly what: TriggerSubject;
+      readonly to: 'opponent' | 'player';
+    }
+  /**
    * "Whenever a source you control deals noncombat damage to an opponent" (CR 120.2b, 603.2, 603.2c, D-333): once for each source and each player it
    * damages, as the damage is dealt, however it was dealt (a spell, an ability, a permanent's trigger) except combat damage (CR 120.2a). Any
    * object can be the source, a spell on the stack and a permanent that has left included (its controller is read as it last was, CR 113.7a), so it is

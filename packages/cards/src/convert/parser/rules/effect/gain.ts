@@ -259,6 +259,8 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
     // Stage P64 (D-217): the keywords first, then the pump (Craterclaw Colossus).
     'creatures you control gain trample and get +X/+0 until end of turn',
     'creatures your opponents control gain defender until end of turn',
+    // Issue 347: a creature type and a land type.
+    'Treefolk and Forests you control gain indestructible until end of turn',
   ],
   rejects: [
     'creatures you control gains flying until end of turn',
@@ -272,7 +274,7 @@ export const EFFECT_GAIN_KEYWORD_ALL = defineRule<Clauses>({
   ],
   parse: gainParser(
     'effect.gain-keyword-all',
-    ['noun.plain-permanents', 'noun.all-permanents'],
+    ['noun.plain-permanents', 'noun.all-permanents', 'noun.creature-land-pair'],
     true,
   ),
 });

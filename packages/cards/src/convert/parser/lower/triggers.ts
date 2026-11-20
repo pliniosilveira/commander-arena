@@ -84,6 +84,7 @@ const ATTACHED_EVENTS: ReadonlySet<string> = new Set([
   'becomesUntapped',
   'becomesTarget',
   'dealsCombatDamage',
+  'dealsDamage',
   'leavesBattlefield',
 ]);
 
@@ -297,6 +298,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       return what.ok
         ? ok({ kind: 'dealsCombatDamage', what: what.value, to: t.damaged ?? 'any' })
         : what;
+    }
+    case 'dealsDamage': {
+      // "Whenever enchanted creature deals damage to an opponent" (issue 347, CR 120.2, 603.2c): damage of any kind to a player.
+      const what = whatOf(t, ctx);
+      if (!what.ok) return what;
+      if (t.damaged !== 'player' && t.damaged !== 'opponent') return failure(t);
+      const missing = missingFeatures(['trigger:dealsDamage']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'dealsDamage', what: what.value, to: t.damaged });
     }
     case 'noncombatDamageDealt': {
       // "Whenever a source you control deals noncombat damage to an opponent" (issue 25, D-333, CR 120.2b, 603.2c): whose source it is and which player it damaged.
@@ -770,6 +780,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ].includes(only.event) &&
       only.actor !== undefined) ||
     ((only.event === 'dealsCombatDamage' ||
+      only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
       only.event === 'noncombatDamageDealt') &&
       only.recipient !== undefined);
@@ -1001,7 +1012,8 @@ function eventAmountThatMany(ability: Triggered): Triggered {
     (e) => e.event === 'cast' && e.subject?.filter.targetCountAtLeast !== undefined,
   );
   const eventDamage = events.every(
-    (e) => e.event === 'lifeGained' || e.event === 'noncombatDamageDealt',
+    (e) =>
+      e.event === 'lifeGained' || e.event === 'noncombatDamageDealt' || e.event === 'dealsDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
   const attackers = events.every((e) => e.event === 'attackBatch');
@@ -1658,6 +1670,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:step',
   'trigger:drawn',
   'trigger:dealsCombatDamage',
+  'trigger:dealsDamage',
   'trigger:leavesBattlefield',
   'trigger:entersUntapped',
   'trigger:leavesToAnyOf',

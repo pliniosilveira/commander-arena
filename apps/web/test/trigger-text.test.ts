@@ -78,6 +78,10 @@ describe('the other new kinds', () => {
       { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'any' },
       'Whenever Pyre Hound deals combat damage',
     ],
+    [
+      { kind: 'dealsDamage', what: { kind: 'this' }, to: 'opponent' },
+      'Whenever Pyre Hound deals damage to an opponent',
+    ],
     // D-373: a player, or a planeswalker.
     [
       { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'playerOrPlaneswalker' },
@@ -210,6 +214,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   step: { kind: 'step', step: 'beginCombat', whose: 'you' },
   drawn: { kind: 'drawn', who: 'you' },
   dealsCombatDamage: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
+  dealsDamage: { kind: 'dealsDamage', what: { kind: 'this' }, to: 'opponent' },
   noncombatDamageDealt: { kind: 'noncombatDamageDealt', by: 'you', to: 'opponent' },
   dealtDamage: { kind: 'dealtDamage', what: { kind: 'this' } },
   leavesBattlefield: { kind: 'leavesBattlefield', what: { kind: 'this' } },

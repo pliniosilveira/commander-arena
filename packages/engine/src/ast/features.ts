@@ -470,6 +470,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'step',
     'drawn',
     'dealsCombatDamage',
+    // CR 120.2: "Whenever enchanted creature deals damage to an opponent" (combat or not).
+    'dealsDamage',
     'leavesBattlefield',
     // D-333: "Whenever a source you control deals noncombat damage to an opponent".
     'noncombatDamageDealt',
@@ -2498,6 +2500,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   step: true,
   drawn: true,
   dealsCombatDamage: true,
+  dealsDamage: true,
   noncombatDamageDealt: true,
   dealtDamage: true,
   leavesBattlefield: true,
