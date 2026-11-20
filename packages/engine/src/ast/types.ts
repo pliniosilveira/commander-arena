@@ -1165,7 +1165,14 @@ export interface TargetSpec {
    * Only a slot of a spell's own text or of an activated or triggered ability (CR 601.2d, 602.2b, 603.3d: the division is announced as the ability is put on
    * the stack), not of a mode or a reflexive ability; a `dealDividedDamage` effect of the same spell or ability must name it.
    */
-  readonly divide?: { readonly total: Amount };
+  readonly divide?: {
+    readonly total: Amount;
+    /**
+     * "Distribute up to that many +1/+1 counters among any number of other target creatures" (CR 601.2d, 603.3d): the controller may divide fewer than `total` (each target
+     * still gets at least 1, and none may be chosen); the shares add up to at most `total`, not exactly it.
+     */
+    readonly upTo?: true;
+  };
   /**
    * "For each opponent, exile up to one target nonland permanent that player controls" (CR 115.1, 601.2c, 603.3d, D-149): the slot takes at most
    * one target for each opponent of the controller who is still in the game, each controlled by that opponent: `what` is an `object`

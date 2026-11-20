@@ -330,7 +330,13 @@ function handlers(
         // D-145 (CR 601.2d): how much of the divided damage is not yet given to a target.
         ...slots.flatMap((s) =>
           s.spec.divide !== undefined && s.count > 0
-            ? [divisionLine(s.spec.divide, sharesLeft(d.specs, ui.targets, s.spec.specId))]
+            ? [
+                divisionLine(
+                  s.spec.divide,
+                  sharesLeft(d.specs, ui.targets, s.spec.specId),
+                  s.spec.divideUpTo === true,
+                ),
+              ]
             : [],
         ),
       ].join('. ');

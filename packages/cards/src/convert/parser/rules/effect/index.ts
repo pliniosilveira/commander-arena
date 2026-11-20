@@ -176,6 +176,7 @@ import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
+import { UP_TO_THAT_MANY_EFFECT_RULES } from './up-to-that-many';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
 import { WIN_GAME_EFFECT_RULES } from './win-game';
@@ -1122,6 +1123,8 @@ export const EFFECT_RULES = [
   ...TROYAN_G4_EFFECT_RULES,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_EFFECT_RULES,
+  // Lathiel: "distribute up to that many +1/+1 counters among any number of other target creatures" (a division of a triggered ability).
+  ...UP_TO_THAT_MANY_EFFECT_RULES,
   // Jeskai free-cast cards (issue 100): "look at the top seven cards ... you may cast ... from among them without paying its mana cost".
   ...JESKAI_CASTFREE_EFFECT_RULES,
   // Stage P34 (D-152): the top cards exiled and played, an extra combat, Discover, revealing the top card, Behold and the rider of mana.
