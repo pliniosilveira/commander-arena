@@ -430,3 +430,73 @@ describe('Molten Slagheap: remove X storage counters, add X mana of black and/or
     expect(g.act(0).try.tapForMana(SLAGHEAP.name, { ability: 2, combination: 'B' }).ok).toBe(false);
   });
 });
+
+// ---- Demolition Field: "{2}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. That land's controller may search their library for a basic land card, put it
+// onto the battlefield, then shuffle. You may search your library for a basic land card, put it onto the battlefield, then shuffle." (CR 701.23a, 608.2d, 701.24, 701.8, 110.2a).
+
+const FIELD = parsed(
+  'SYNTHETIC Parsed Demolition Field',
+  'Land',
+  "{T}: Add {C}.\n{2}, {T}, Sacrifice this land: Destroy target nonbasic land an opponent controls. That land's controller may search their library for a basic land card, put it onto the battlefield, then shuffle. You may search your library for a basic land card, put it onto the battlefield, then shuffle.",
+);
+const ODD_LAND = parsed('SYNTHETIC Parsed Odd Land', 'Land', '{T}: Add {C}.');
+
+test('the real Demolition Field is supported', () => {
+  const imported = real('Demolition Field');
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
+});
+
+describe('Demolition Field: destroy a nonbasic land, then both players may fetch a basic land', () => {
+  const start = () =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(FIELD)
+      .battlefield(FIELD.name, { tapped: false })
+      .battlefield('Plains', 'Plains')
+      .library('Island', 'Forest')
+      .seat(1)
+      .life(20)
+      .define(ODD_LAND)
+      .battlefield(ODD_LAND.name)
+      .battlefield('Mountain')
+      .library('Swamp', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('the land is destroyed and each player fetches a basic land onto the battlefield', () => {
+    const g = start();
+    g.act(0).activate(FIELD.name, { targets: [ODD_LAND.name], pay: true });
+    g.passAll();
+    g.expect.zone(ODD_LAND.name, 'graveyard', { seat: 1 });
+    g.expect.zone(FIELD.name, 'graveyard', { seat: 0 });
+    // The land's controller searches first (their own library), then the controller of the ability.
+    g.act(1).accept();
+    g.act(1).chooseCards('Swamp');
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).chooseCards('Island');
+    g.passAll();
+    g.expect.zone('Swamp', 'battlefield', { seat: 1 });
+    g.expect.zone('Island', 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('either player may decline to search', () => {
+    const g = start();
+    g.act(0).activate(FIELD.name, { targets: [ODD_LAND.name], pay: true });
+    g.passAll();
+    g.act(1).decline();
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    g.expect.zone('Swamp', 'library', { seat: 1 });
+    g.expect.zone('Island', 'library', { seat: 0 });
+  });
+
+  test('a basic land is not a legal target (nonbasic only)', () => {
+    const g = start();
+    expect(() => g.act(0).activate(FIELD.name, { targets: ['Mountain'], pay: true })).toThrow();
+  });
+});

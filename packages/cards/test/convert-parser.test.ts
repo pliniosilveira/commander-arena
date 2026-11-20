@@ -902,6 +902,7 @@ describe('unmatched abilities', () => {
       'effect.have-group-base-pt-source',
       'effect.search',
       'effect.search-by',
+      'effect.search-you-may',
       'effect.prevent-all-create-tokens',
       'effect.prevent-all',
       'effect.prevent-next',

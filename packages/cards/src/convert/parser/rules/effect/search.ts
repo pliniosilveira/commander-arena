@@ -378,4 +378,54 @@ export const EFFECT_SEARCH_BY = defineRule<Clauses>({
   ),
 });
 
-export const SEARCH_RULES = [EFFECT_SEARCH, EFFECT_SEARCH_BY];
+/**
+ * `effect.search-you-may`: "You may search your library for a basic land card, put it onto the battlefield, then shuffle." (Demolition Field; CR 701.23a, 608.2d: the controller
+ * of the effect searches their own library, and the "may" is their choice, made as the effect resolves; CR 701.24 for the shuffle). The same search as `effect.search`, with the
+ * choice of not searching. Only the library of the controller ("your library"); not "their library", not another zone, not "may" later in the sentence.
+ */
+export const EFFECT_SEARCH_YOU_MAY = defineRule<Clauses>({
+  id: 'effect.search-you-may',
+  family: 'effect',
+  leading: ['you'],
+  cites: [
+    'CR 701.23a (Search)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 701.24 (Shuffle)',
+  ],
+  examples: [
+    'you may search your library for a basic land card, put it onto the battlefield, then shuffle',
+    'you may search your library for a basic land card, put it onto the battlefield tapped, then shuffle',
+    'you may search your library for a Plains card, reveal it, put it into your hand, then shuffle',
+  ],
+  rejects: [
+    'you may search their library for a basic land card, put it onto the battlefield, then shuffle',
+    'you may search your graveyard, hand, and/or library for a creature card and put it onto the battlefield',
+    'you may search your library for a basic land card, put them onto the battlefield, then shuffle',
+    'you may search your library for a basic land card, put it onto the battlefield, then shuffle it',
+    'you search your library for a basic land card, put it onto the battlefield, then shuffle',
+    'you may search your library',
+  ],
+  parse: (ctx, pos) => {
+    const head = pattern(/you may (?=search your library for )/iu)(ctx, pos);
+    if (!head.ok) return head;
+    const inner = EFFECT_SEARCH.parse(ctx, head.pos);
+    if (!inner.ok) return inner;
+    const [first, ...rest] = inner.value;
+    if (first === undefined || rest.length > 0 || first.verb !== 'search') return fail(ctx, pos);
+    const span = { start: pos, end: inner.pos };
+    return {
+      ok: true,
+      value: [
+        {
+          ...first,
+          rule: 'effect.search-you-may',
+          args: { ...first.args, may: flag(true, span) },
+          span: { start: pos, end: first.span.end },
+        },
+      ],
+      pos: inner.pos,
+    };
+  },
+});
+
+export const SEARCH_RULES = [EFFECT_SEARCH, EFFECT_SEARCH_BY, EFFECT_SEARCH_YOU_MAY];
