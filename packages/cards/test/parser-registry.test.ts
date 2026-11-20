@@ -801,6 +801,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
   'condition.chose-ring-bearer': permanent((e) => `Whenever the Ring tempts you, if ${e}, scry 3.`),
+  // Food and Fellowship deck, group C: Revolt, the Ring-bearer and the times the Ring has tempted, "two or more creatures you control attack a player", the counters on ~.
+  'condition.permanent-left-under-control': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'condition.this-is-ring-bearer': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'condition.ring-tempted-times': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'condition.ring-bearer-and-tempted': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'trigger.n-or-more-attack-a-player': whenever,
+  'static.pt-counters-on-source': asIs,
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
