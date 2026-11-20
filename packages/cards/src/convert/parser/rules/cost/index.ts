@@ -473,11 +473,10 @@ export const COST_REMOVE_X_COUNTERS = defineRule<IrCost>({
     'Remove all storage counters from ~',
     'Remove X storage counters from target land',
     'Remove X storage counters',
-    'Remove x storage counters from ~',
   ],
   parse: (ctx, pos) =>
     map(
-      spanned(pattern(/remove X ([a-z]+) counters from ~(?![\p{L}\p{N}])/u)),
+      spanned(pattern(/remove x ([a-z]+) counters from ~(?![\p{L}\p{N}])/iu)),
       ({ value, span }): IrCost => ({
         kind: 'removeCountersX',
         counter: (value[1] ?? '').toLowerCase(),
