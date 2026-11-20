@@ -27,7 +27,7 @@ import type { CastAlternativeKind } from '../ast/features';
 import type { Cost, NamedAlternativeKind, ObjectFilter } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
-import type { PaymentPlan, PaymentSource } from '../mana';
+import { manaValue, type PaymentPlan, type PaymentSource } from '../mana';
 import type { ManaColor } from '../mana/types';
 import { definitionOf, getSeat, patchSeat, printedCard } from '../state/ops';
 import type { GameObject, GameState, StackData } from '../state/types';
@@ -148,6 +148,7 @@ export function alternativeOfStack(
   if (stack?.retrace === true) return 'retrace';
   if (stack?.jumpStart === true) return 'jumpStart';
   if (stack?.free === true) return 'free';
+  if (stack?.lifeForMana === true) return 'lifeForMana';
   return stack?.alt;
 }
 
@@ -305,6 +306,23 @@ export interface CostRequest {
   readonly anyType?: true;
 }
 
+/**
+ * The replicate cost of `spell` (CR 702.56a): the one its face prints, or else the one an effect gives it as it is cast ("Each Sliver spell you cast has replicate. The
+ * replicate cost is equal to its mana cost", `grantKeywordToSpells`, CR 613.1f), read from what `derive` gives the spell. Null for a spell with none.
+ */
+export function replicateCostFor(
+  state: GameState,
+  spell: GameObject,
+  face: CardFace | null,
+): readonly Cost[] | null {
+  const printed = replicateCostOf(face);
+  if (printed !== null) return printed;
+  for (const a of derive(state, spell).abilities) {
+    if (a.kind === 'keyword' && a.keyword.kind === 'replicate') return a.keyword.cost;
+  }
+  return null;
+}
+
 /** The ways the caster could pay the additional cost choice of the face: both, or `undefined` once for a face with no choice (D-181). */
 function costOptionsOf(face: CardFace | null): readonly (0 | 1 | undefined)[] {
   return face?.additionalCostChoice === undefined ? [undefined] : [0, 1];
@@ -357,7 +375,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const fromGraveyard =
     zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
   const symbols: string[] =
-    alternative === 'free'
+    alternative === 'free' || alternative === 'lifeForMana'
       ? []
       : flashback !== null
         ? // CR 107.3a: a cost equal to the mana cost has the X of it; a printed flashback cost is paid as it is.
@@ -390,7 +408,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // CR 702.33c: a multikicker cost is paid once for each time the spell is kicked.
   if (kicker !== null) for (let i = 0; i < kicks; i += 1) symbols.push(...manaSymbolsOf(kicker));
   // CR 702.56a: a replicate cost is an additional cost, paid once for each time the caster chose (mana only).
-  const replicate = (request.replicas ?? 0) > 0 ? replicateCostOf(face) : null;
+  const replicate = (request.replicas ?? 0) > 0 ? replicateCostFor(state, spell, face) : null;
   if (replicate !== null) {
     for (let i = 0; i < (request.replicas ?? 0); i += 1) symbols.push(...manaSymbolsOf(replicate));
   }
@@ -453,6 +471,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     lifeOf(additional) +
     (kicker === null ? 0 : lifeOf(kicker) * kicks) +
     (flashback === null ? 0 : lifeOf(flashback)) +
+    // CR 118.9, 202.3e: "pay life equal to that spell's mana value" rather than the mana cost: an {X} counts as the X announced.
+    (alternative === 'lifeForMana' ? manaValue(withX(face?.manaCost ?? [], x)) : 0) +
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;

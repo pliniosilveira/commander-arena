@@ -186,7 +186,7 @@ describe('Gix: a payment by another player, discard X, a free play (CR 118.3, 10
     ).toContain('countX is true, with a count of 0');
   });
 
-  test('mayPlay free is not castOnly', () => {
+  test('mayPlay free names the cards a step before exiled, and spends no mana as though of any color', () => {
     const play = (extra: object): Ability =>
       triggeredBy({
         kind: 'sequence',
@@ -196,9 +196,9 @@ describe('Gix: a payment by another player, discard X, a free play (CR 118.3, 10
         ],
       });
     expect(validateCard(creature([play({ free: true })]))).toEqual([]);
-    expect(messages(creature([play({ free: true, castOnly: true })]))).toContain(
-      'a free play is neither castOnly',
-    );
+    expect(
+      messages(creature([play({ free: true, castOnly: true, anyManaColor: true })])),
+    ).toContain('a free play does not spend mana as though of any color');
   });
 });
 

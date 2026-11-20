@@ -12,6 +12,7 @@
  */
 import type { ObjectId } from '../ids';
 import type { CopiableValues, FaceDownBy, GameObject, GameState } from '../state/types';
+import { intrinsicManaAbilities } from './land-types';
 
 /** CR 708.2a, 701.40a: a 2/2 creature with no name, no subtypes, no mana cost and no text; it has no supertype, no color and no ability either (CR 708.2). */
 export const FACE_DOWN_VALUES: CopiableValues = {
@@ -31,6 +32,33 @@ export const FACE_DOWN_VALUES: CopiableValues = {
   abilities: [],
 };
 
+/**
+ * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 613.2b): the characteristics the effect gives the face-down permanent are those of a land with the
+ * Forest subtype and nothing else: no name, mana cost, color, power, toughness or text. Its mana ability is the one of its basic land type (CR 305.6, `rules/land-types.ts`).
+ */
+export const FACE_DOWN_FOREST_LAND_VALUES: CopiableValues = {
+  characteristics: {
+    name: '',
+    manaCost: null,
+    supertypes: [],
+    types: ['land'],
+    subtypes: ['Forest'],
+    colors: [],
+    power: null,
+    toughness: null,
+    loyalty: null,
+    defense: null,
+    oracleText: '',
+  },
+  // CR 305.6: a land with a basic land type has the intrinsic ability "{T}: Add {G}", which the printed values of a face-down permanent have to carry (derive adds it only to a land that gains the type).
+  abilities: intrinsicManaAbilities(['land'], ['Forest']),
+};
+
+/** The characteristics a face-down permanent has, by what made it face down (CR 708.2, 613.2b). */
+export function faceDownValuesOf(obj: GameObject): CopiableValues {
+  return obj.faceDown?.by === 'forestLand' ? FACE_DOWN_FOREST_LAND_VALUES : FACE_DOWN_VALUES;
+}
+
 /** True for a face-down permanent (on the battlefield or phased out). */
 export function isFaceDown(obj: GameObject): boolean {
   return obj.faceDown !== undefined;
@@ -43,7 +71,10 @@ export function faceDownBy(obj: GameObject): FaceDownBy | null {
 
 /** The label of a face-down permanent, "Face-down creature 2" (CR 708.6): the one thing every player may call it. Null for a face-up object. */
 export function faceDownLabel(obj: GameObject): string | null {
-  return obj.faceDown === undefined ? null : `Face-down creature ${obj.faceDown.n}`;
+  if (obj.faceDown === undefined) return null;
+  return obj.faceDown.by === 'forestLand'
+    ? `Face-down land ${obj.faceDown.n}`
+    : `Face-down creature ${obj.faceDown.n}`;
 }
 
 /**

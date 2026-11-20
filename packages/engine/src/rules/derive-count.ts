@@ -25,6 +25,7 @@ import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { typeViewOf } from './derive-view';
 import { devotionOf } from './devotion';
+import { effectsOn } from './effects-on';
 import { type FilterSubject, matchesFilterWith } from './filter-match';
 import { hasLostAbilities } from './lost-abilities';
 
@@ -236,6 +237,8 @@ export function staticAmountOf(
   // CR 106.4 (issue 81, Omnath): the mana in the pool of the controller.
   if (amount.kind === 'unspentMana')
     return getSeat(state, controllerOf(state, source)).manaPool.length;
+  // CR 122.1, 613.4c (Call for Unity): the counters of the kind on the permanent that has the ability.
+  if (amount.kind === 'countersOnSource') return source.counters[amount.counter] ?? 0;
   if (amount.kind === 'commanderManaValue')
     return commandersManaValue(state, controllerOf(state, source));
   if (amount.kind === 'commanderCasts')
@@ -296,6 +299,20 @@ export function characteristicPtOf(
     if (a.static.power !== undefined) power = staticAmountOf(state, a.static.power, obj);
     if (a.static.toughness !== undefined) {
       toughness = staticAmountOf(state, a.static.toughness, obj);
+    }
+  }
+  // Issue 345 (Beorn's Hospitality, CR 613.1f, 613.4a, 604.3): a characteristic-defining ability an effect gave for good ("gains \"~'s power and toughness are each equal to the number of
+  // lands you control\"") is an ability the object has, which layer 7a reads. The grants are read from the effects on the object, in timestamp order.
+  for (const effect of effectsOn(state, obj.id)) {
+    const granted = effect.change.kind === 'grantAbility' ? effect.change.ability : null;
+    if (granted?.kind !== 'static' || granted.static.kind !== 'characteristicPt') continue;
+    if (!found && hasLostAbilities(state, obj.id)) return null;
+    found = true;
+    if (granted.static.power !== undefined) {
+      power = staticAmountOf(state, granted.static.power, obj);
+    }
+    if (granted.static.toughness !== undefined) {
+      toughness = staticAmountOf(state, granted.static.toughness, obj);
     }
   }
   return found ? { power, toughness } : null;

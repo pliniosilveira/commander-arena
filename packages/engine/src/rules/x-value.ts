@@ -117,6 +117,8 @@ export function spellXCost(
     alternative !== undefined &&
     alternative !== 'retrace' &&
     alternative !== 'jumpStart' &&
+    // `nextSpellPayLife`: the mana cost is still the spell's, so its {X} is announced and counts toward the life paid (CR 202.3e).
+    alternative !== 'lifeForMana' &&
     printed > 0
   )
     return NO_X;

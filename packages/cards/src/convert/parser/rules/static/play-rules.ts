@@ -653,12 +653,103 @@ export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.look-and-play-lands-from-top`: "You may look at the top card of your library any time, and you may play lands from the top of your library." (CR 401.5, 305.1,
+ * 604.1): the two abilities of `static.look-at-top` and `static.play-lands-from-top` in one sentence. Not read: the order reversed, another zone or card kind, a line with more text.
+ */
+export const STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
+  id: 'static.look-and-play-lands-from-top',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 401.5 (Library)', 'CR 305.1 (Lands)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    'You may look at the top card of your library any time, and you may play lands from the top of your library.',
+  ],
+  rejects: [
+    'You may look at the top card of your library any time, and you may play lands from the top of your library',
+    'You may play lands from the top of your library, and you may look at the top card of your library any time.',
+    'You may look at the top card of your library any time, and you may cast spells from the top of your library.',
+    'You may look at the top card of your library any time, and you may play lands from your graveyard.',
+    'You may look at the top card of your library any time and you may play lands from the top of your library.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may look at the top card of your library any time, and you may play lands from the top of your library\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.look-and-play-lands-from-top',
+    );
+    return {
+      ok: true,
+      value: statement(
+        'static.look-and-play-lands-from-top',
+        who,
+        { kind: 'playLandsFromTopOfLibrary', alsoLook: true },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.activate-as-though-haste`: "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, Thousand-Year Elixir; CR 702.10b, 302.6,
+ * 604.1: the creatures' abilities with {T} or {Q} in the cost are not held back by summoning sickness; attacking is not an activation). Not read: another group of creatures, "as
+ * though they had haste" of a spell, a line with more text.
+ */
+export const STATIC_ACTIVATE_AS_THOUGH_HASTE = defineRule<IrStatic>({
+  id: 'static.activate-as-though-haste',
+  family: 'static',
+  leading: ['you'],
+  cites: ['CR 702.10b (Haste)', 'CR 302.6 (Creatures)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: [
+    'You may activate abilities of creatures you control as though those creatures had haste.',
+  ],
+  rejects: [
+    'You may activate abilities of creatures you control as though those creatures had haste',
+    'You may activate abilities of creatures as though those creatures had haste.',
+    'You may activate abilities of creatures you control as though they had haste.',
+    'You may activate abilities of creatures your opponents control as though those creatures had haste.',
+    'You may activate abilities of artifacts you control as though those artifacts had haste.',
+    'You may activate loyalty abilities of creatures you control as though those creatures had haste.',
+    'Creatures you control have haste.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /you may activate abilities of creatures you control as though those creatures had haste\./i,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject(
+      'you',
+      'you',
+      { start: pos, end: pos + 3 },
+      'static.activate-as-though-haste',
+    );
+    return {
+      ok: true,
+      value: statement(
+        'static.activate-as-though-haste',
+        who,
+        { kind: 'activateAsThoughHaste' },
+        { start: pos, end: r.pos },
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
   STATIC_REVEAL_TOP,
   STATIC_PLAY_LANDS_FROM_TOP,
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
+  STATIC_LOOK_AND_PLAY_LANDS_FROM_TOP,
+  STATIC_ACTIVATE_AS_THOUGH_HASTE,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,
   STATIC_OPTIONAL_UNTAP,

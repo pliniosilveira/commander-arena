@@ -63,6 +63,8 @@ import { PRISMARI_G2_CONDITION_RULES } from './prismari-g2';
 import { PRISMARI_G3_CONDITION_RULES } from './prismari-g3';
 import { QUANDRIX_G_CONDITION_RULES } from './quandrix-g';
 import { RECURSION_CONDITION_RULES } from './recursion';
+import { REVOLT_CONDITION_RULES } from './revolt';
+import { RING_TEMPTED_CONDITION_RULES } from './ring-tempted';
 import { SELF_STATE_CONDITION_RULES } from './self-state';
 import { SPELLS_CAST_CONDITION_RULES } from './spells-cast';
 import { CONDITION_THAT_OBJECT_POWER } from './that-object-power';
@@ -564,6 +566,10 @@ export const CONDITION_RULES = [
   ...NO_COUNTERS_CONDITION_RULES,
   ...COUNTER_COUNT_CONDITION_RULES,
   ...RECURSION_CONDITION_RULES,
+  // Revolt (CR 207.2c): "a permanent left the battlefield under your control this turn".
+  ...REVOLT_CONDITION_RULES,
+  // Frodo, Adventurous Hobbit: "~ is your Ring-bearer", "the Ring has tempted you two or more times this game".
+  ...RING_TEMPTED_CONDITION_RULES,
   // Stage P31 (D-140): "you control the artifact with the greatest mana value or tied for the greatest mana value".
   ...ARTIFACT_CONDITION_RULES,
   // Stage P32 (D-147): "you don't control another Dinosaur", "the creature you control has trample".

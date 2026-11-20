@@ -1,5 +1,5 @@
 /** The cast button of a named alternative cost (D-121), from the card's `alternativeCosts`. */
-import type { ObjectView } from '@commander-arena/engine';
+import { manaValue, type ObjectView } from '@commander-arena/engine';
 import { ALTERNATIVE_NAMES, type NamedAlternative } from '../../game/alt-cost';
 import { tappedWhat } from '../../game/cost-text';
 import { foretellCost } from '../../game/later-text';
@@ -15,6 +15,8 @@ import { plural } from './lookup';
  * says what else it costs: "Escape {G}{G}{U}{U}, exile 5 other cards" (`exile` is the count).
  */
 export function alternativeLabel(kind: NamedAlternative, card: ObjectView | undefined): string {
+  // CR 118.9, 202.3e: "Pay 3 life instead of {2}{U}": the life is the card's mana value; with an {X} it is that much plus the X announced next.
+  if (kind === 'lifeForMana') return lifeForManaLabel(card);
   const entry = card?.alternativeCosts?.find((c) => c.kind === kind);
   if (entry === undefined) return ALTERNATIVE_NAMES[kind];
   // D-149 (CR 118.9): "Cast for {W}, tapping four creatures with flying".
@@ -64,4 +66,16 @@ export function sacrificeAlternativeLabel(
 export function foretellCastLabel(card: ObjectView | undefined): string {
   const cost = card === undefined ? null : foretellCost(card);
   return cost === null ? 'Cast for its foretell cost' : `Cast for ${symbolsText(withX(cost, 0))}`;
+}
+
+/**
+ * "Cast by paying 3 life instead of mana" (`lifeForMana`, Marshland Bloodcaster's permission): the button of the choice to pay life equal to the mana value rather than the mana cost. The
+ * mana value is read from the card's printed cost; an {X} counts as the X announced afterwards, so such a card says "life equal to its mana value".
+ */
+export function lifeForManaLabel(card: ObjectView | undefined): string {
+  const cost = card?.manaCost;
+  if (cost === undefined || cost === null || cost.includes('X')) {
+    return 'Cast by paying life equal to its mana value instead of mana';
+  }
+  return `Cast by paying ${manaValue(cost)} life instead of mana`;
 }

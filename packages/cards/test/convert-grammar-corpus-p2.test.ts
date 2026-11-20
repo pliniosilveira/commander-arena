@@ -448,9 +448,12 @@ const CHOICES: readonly Line[] = [
   },
   {
     kind: 'instant',
-    text: 'Other creatures you control get +1/+1 and gain trample until end of turn.',
-    expect: no('Other creatures you control get +1/+1 and gain trample until end of turn.', NONE),
-    note: '"other" with a second change is not read (the rule reads one change and its duration)',
+    text: 'Other creatures you control get +1/+1 and gain trample until your next turn.',
+    expect: no(
+      'Other creatures you control get +1/+1 and gain trample until your next turn.',
+      NONE,
+    ),
+    note: '"other" with a second change and a duration of the end of the turn is read since issue 345 (`effect.gain-keyword-others`); another duration is not',
   },
   {
     kind: 'instant',

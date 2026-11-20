@@ -172,6 +172,8 @@ describe('the dimensions', () => {
       'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
+      // Issue 345: "if no spells were cast last turn".
+      'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
       'thisAttackedThisTurn',
@@ -185,6 +187,8 @@ describe('the dimensions', () => {
       'attackersTotalPower',
       // D-196: "if you control your Ring-bearer".
       'controlsRingBearer',
+      'thisIsRingBearer',
+      'ringTemptedAtLeast',
       'ownsAndControlsNamed',
       // D-286: "as long as this creature is paired with another creature", and the engine's own intervening "if" of soulbond.
       'paired',
@@ -261,6 +265,8 @@ describe('the dimensions', () => {
       'playFromGraveyardOnceEachTurn',
       // CR 305.1: "You may play Forests from your graveyard."
       'playLandsFromGraveyard',
+      // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
+      'activateAsThoughHaste',
       // D-179: "Your opponents can't cast spells during your turn."
       'opponentsCantCastOnYourTurn',
       // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -269,6 +275,10 @@ describe('the dimensions', () => {
       'spellsCantBeCountered',
       // D-192: "Damage isn't removed from this creature during cleanup steps."
       'keepsDamage',
+      // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
+      'legendRuleDoesntApply',
+      'giveChosenCreatureType',
+      'grantEncoreToGraveyardCards',
     ]);
     expect(SUPPORTED_FEATURES.staticSubjectKinds).toEqual(['this', 'attached', 'filter', 'pair']);
     // D-103: X in costs is announced as a spell is cast or an ability activated, and read by `x`.

@@ -654,6 +654,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
     'where X is the greatest power among creatures they control',
+    // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
+    'where X is the amount of life you gained',
   ],
   rejects: [
     'where X is the total mana value of creatures destroyed this way',
@@ -680,6 +682,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the amount of mana spent',
     'where X is the mana spent to cast it',
     'where X is your life',
+    'where X is the amount of life you gain',
+    'where X is the amount of life you gained last turn',
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);
@@ -796,8 +800,12 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
     'for each opponent who drew a card this way',
     'for each player who drew a card this way',
     'for each creature card put into a graveyard this way',
+    'for each card returned this way',
   ],
   rejects: [
+    'for each card returned',
+    'for each creature returned this way',
+    'for each cards returned this way',
     'for each card put into a graveyard this way',
     'for each land card put into a graveyard this way',
     'for each creature put into a graveyard this way',
@@ -851,6 +859,20 @@ export const AMOUNT_FOR_EACH_THIS_WAY = defineRule<IrAmount>({
           span: { start: pos, end: removed.pos },
         },
         pos: removed.pos,
+      };
+    }
+    // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return before it put onto the battlefield.
+    const returned = pattern(/for each card returned this way(?![\p{L}\p{N}])/iu)(ctx, pos);
+    if (returned.ok) {
+      return {
+        ok: true,
+        value: {
+          kind: 'thisWay',
+          what: 'returned',
+          words: ['card'],
+          span: { start: pos, end: returned.pos },
+        },
+        pos: returned.pos,
       };
     }
     // Dread Summons (CR 701.17a, 608.2c): "for each creature card put into a graveyard this way": the creature cards the mill before it put there.

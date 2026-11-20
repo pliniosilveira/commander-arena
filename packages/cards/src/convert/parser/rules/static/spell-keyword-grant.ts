@@ -1,10 +1,10 @@
 /**
  * Static rule of the Hatsune Miku deck (issue 145): "Creature spells you cast have demonstrate." (Silverquill Lecturer, CR 702.144a, 702.51a, 613.1f, 604.2).
  */
-import { choice, fail, literal, map, quiet, sequence } from '../../combinators';
+import { choice, fail, literal, map, pattern, quiet, sequence } from '../../combinators';
 import type { IrNoun, IrStatic } from '../../ir/types';
 import { defineRule } from '../registry';
-import { spellSubject } from './cost';
+import { SPELL, spellSubject } from './cost';
 
 /** The parts of a spell's filter this rule keeps: what the spell is (types, subtypes, colors) and the words it was read from. */
 const ALLOWED: ReadonlySet<string> = new Set([
@@ -103,4 +103,76 @@ export const STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD = defineRule<IrStatic>({
   },
 });
 
-export const SPELL_KEYWORD_GRANT_STATIC_RULES = [STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD];
+/**
+ * `static.each-spell-you-cast-has-replicate`: "Each Sliver spell you cast has replicate. The replicate cost is equal to its mana cost." A static ability of a permanent that gives Replicate
+ * to the spells its controller casts that the subject names (CR 702.56a), the cost being the mana cost of the spell (CR 118.9). The two sentences are one statement: the second says what
+ * the first gives, in the words the card prints. The engine's `grantKeywordToSpells` with `replicateAtManaCost`. The subject is the same one the grant of Demonstrate reads, in the singular
+ * ("Each Sliver spell", "Each creature spell"). Not read: spells of other players ("Each Sliver spell you don't control"), another cost, the first sentence alone, a quality of the spell.
+ */
+export const STATIC_EACH_SPELL_YOU_CAST_HAS_REPLICATE = defineRule<IrStatic>({
+  id: 'static.each-spell-you-cast-has-replicate',
+  family: 'static',
+  leading: ['each'],
+  cites: [
+    'CR 702.56a (Replicate)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 613.1f (Interaction of Continuous Effects)',
+    'CR 604.2 (Handling Static Abilities)',
+  ],
+  examples: [
+    'Each Sliver spell you cast has replicate. The replicate cost is equal to its mana cost.',
+    'Each creature spell you cast has replicate. The replicate cost is equal to its mana cost.',
+    'Each red creature spell you cast has replicate. The replicate cost is equal to its mana cost.',
+  ],
+  rejects: [
+    'Each Sliver spell you cast has replicate.',
+    'Each Sliver spell you cast has replicate. The replicate cost is equal to its mana cost',
+    'Each Sliver spell you cast has replicate. The replicate cost is equal to {1}.',
+    "Each Sliver spell you cast has replicate. The replicate cost is equal to that card's mana cost.",
+    'Each Sliver spell has replicate. The replicate cost is equal to its mana cost.',
+    'Each Sliver spell your opponents cast has replicate. The replicate cost is equal to its mana cost.',
+    'Each Sliver spell you cast has demonstrate. The replicate cost is equal to its mana cost.',
+    'Each Sliver spell you cast has replicate and flying. The replicate cost is equal to its mana cost.',
+    'Each Sliver card in your hand has replicate. The replicate cost is equal to its mana cost.',
+    'Each Sliver spell you cast with flying has replicate. The replicate cost is equal to its mana cost.',
+    'Each Sliver spell you cast has replicate. The replicate cost is equal to its converted mana cost.',
+    'Each Sliver spell you cast gains replicate until end of turn. The replicate cost is equal to its mana cost.',
+  ],
+  parse: (ctx, pos) => {
+    // The words up to the keyword decide whether this is the statement at all ("Each opponent loses ..." never was): their failure is no trace in the diagnostics.
+    const r = sequence(
+      quiet(sequence(literal('each '), spellSubject(SPELL), literal(' you cast has replicate.'))),
+      pattern(/ the replicate cost is equal to its mana cost\./iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [[, filter]] = r.value;
+    if (!Object.keys(filter).every((k) => ALLOWED.has(k))) return fail(ctx, pos);
+    const rule = 'static.each-spell-you-cast-has-replicate';
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...filter, controller: 'you' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos + 5 + filter.raw.length },
+      rule,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [{ kind: 'spellKeyword', keyword: 'replicateAtManaCost' }],
+        span: { start: pos, end: r.pos },
+        rule,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const SPELL_KEYWORD_GRANT_STATIC_RULES = [
+  STATIC_SPELLS_YOU_CAST_HAVE_KEYWORD,
+  STATIC_EACH_SPELL_YOU_CAST_HAS_REPLICATE,
+];

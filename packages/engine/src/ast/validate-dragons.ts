@@ -40,25 +40,45 @@ export function checkDragonsEffect(
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
         // Issue 279: or "each player's library" (`eachPlayer`). Issue 144: or "that player's library", the player of the event (`triggerPlayer`, valid where it is).
         const owner = kindOf(e.from);
-        if (owner !== 'target' && owner !== 'eachPlayer' && owner !== 'triggerPlayer') {
+        if (
+          owner !== 'target' &&
+          owner !== 'eachPlayer' &&
+          owner !== 'triggerPlayer' &&
+          owner !== 'eachOpponent'
+        ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer') or the player of the event ('triggerPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent') or the player of the event ('triggerPlayer')",
           );
         }
       }
       if (e.faceDown !== undefined && e.faceDown !== true) {
         issue(out, `${path}.faceDown`, 'faceDown must be true when present');
       }
+      if (e.lookAt !== undefined) {
+        if (e.lookAt !== true) issue(out, `${path}.lookAt`, 'lookAt must be true when present');
+        if (e.linked !== true || e.faceDown !== true) {
+          issue(out, `${path}.lookAt`, 'looking at the cards exiled needs linked and faceDown');
+        }
+      }
       // CR 607.2a: the cards exiled with the permanent: its own, face up, from the controller's library, so an ability's.
       if (e.linked !== undefined) {
         if (e.linked !== true) issue(out, `${path}.linked`, 'linked must be true when present');
-        if (e.faceDown === true || e.from !== undefined) {
+        // Lobelia, Defender of Bag End (CR 607.2a, 406.3): the cards of each opponent's library, face down, which the controller looked at (`lookAt`).
+        const faceDownLooked = e.faceDown === true && e.lookAt === true;
+        if (!faceDownLooked && (e.faceDown === true || e.from !== undefined)) {
           issue(
             out,
             `${path}.linked`,
-            'a linked exile of the top cards is face up and from the controller’s own library',
+            'a linked exile of the top cards is face up and from the controller’s own library, or face down and looked at (lookAt)',
+          );
+        }
+        if (faceDownLooked && kindOf(e.from) !== 'eachOpponent') {
+          issue(
+            out,
+            `${path}.from`,
+            'the cards looked at and exiled face down are each opponent’s',
           );
         }
         if (scope.owner === 'spell') {
@@ -72,10 +92,25 @@ export function checkDragonsEffect(
       return true;
     case 'mayPlay':
       // D-151: "you may play that card this turn": the cards an earlier effect of the sequence exiled.
-      if (kindOf(e.objects) !== 'moved') {
-        issue(out, `${path}.objects`, "a play permission names the exiled cards: 'moved'");
+      if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
+        issue(
+          out,
+          `${path}.objects`,
+          "a play permission names the exiled cards: 'moved', or the cards exiled with this permanent: 'linkedExile'",
+        );
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
+      }
+      // Lobelia (CR 118.9): "without paying its mana cost", of the cards exiled with this permanent.
+      if (e.free !== undefined) {
+        if (e.free !== true) issue(out, `${path}.free`, 'free must be true when present');
+        if (kindOf(e.objects) !== 'linkedExile' && kindOf(e.objects) !== 'moved') {
+          issue(out, `${path}.free`, "a free play permission names 'linkedExile' or 'moved' cards");
+        }
+        // Issue 101: no mana is spent on a free play, so the any-color rider has nothing to act on.
+        if (e.anyManaColor !== undefined) {
+          issue(out, `${path}.free`, 'a free play does not spend mana as though of any color');
+        }
       }
       if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
@@ -101,17 +136,6 @@ export function checkDragonsEffect(
             out,
             `${path}.duringTurnsAttackedWithCommander`,
             'a permission for turns of a commander attack lasts while exiled and is not castOnly',
-          );
-        }
-      }
-      // Issue 101 (CR 118.9): "play lands and cast spells ... without paying their mana costs": not with castOnly (a land is played), nor with the any-color rider (no mana is spent).
-      if (e.free !== undefined) {
-        if (e.free !== true) issue(out, `${path}.free`, 'free must be true when present');
-        if (e.castOnly !== undefined || e.anyManaColor !== undefined) {
-          issue(
-            out,
-            `${path}.free`,
-            'a free play is neither castOnly nor spends mana as though of any color',
           );
         }
       }
@@ -143,6 +167,9 @@ export function checkDragonsEffect(
       if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
+      return true;
+    case 'nextSpellPayLife':
+      // CR 118.9, 601.2b: no fields: the controller's next spell this turn may be cast by paying life equal to its mana value.
       return true;
     case 'nextSpellModifier': {
       // Issue 121 (CR 601.2f, 702.40a, 702.85a): the next spell the controller casts that the filter describes, in this turn: a spell being cast (no zone), a reduction of generic
@@ -222,6 +249,77 @@ export function checkDragonsEffect(
         );
       }
       return true;
+    case 'revealTopBranches': {
+      // CR 701.20a, 608.2c: the players who reveal, and the branches each described by what the card in the library is.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (!Array.isArray(e.branches) || e.branches.length === 0) {
+        issue(out, `${path}.branches`, 'a revealTopBranches has at least one branch');
+        return true;
+      }
+      let moving = 0;
+      for (const [i, branch] of e.branches.entries()) {
+        const at = `${path}.branches[${i}]`;
+        checkFilter(branch.ifMatches, `${at}.ifMatches`, out);
+        if (
+          filterSome(
+            branch.ifMatches,
+            (f) =>
+              f.zone !== undefined ||
+              f.controller !== undefined ||
+              f.owner !== undefined ||
+              f.stackKind !== undefined ||
+              f.other !== undefined ||
+              readsCombatOrSource(f),
+          )
+        ) {
+          issue(
+            out,
+            `${at}.ifMatches`,
+            'the card is in the library: no zone, controller, owner, stackKind, other, or anything read from the game',
+          );
+        }
+        if (branch.onMatch === undefined && branch.to === undefined) {
+          issue(out, at, 'a branch does something: it writes onMatch, to, or both');
+        }
+        if (branch.onMatch !== undefined) {
+          // `moved` names the card revealed (still in the library) for what a branch does first; no target of its own and no X.
+          checkEffect(
+            branch.onMatch,
+            `${at}.onMatch`,
+            { ...scope, xAllowed: false, movedAvailable: true },
+            out,
+          );
+        }
+        if (branch.to !== undefined) {
+          moving += 1;
+          if (!isOneOf(branch.to, ['battlefield', 'hand'])) {
+            issue(
+              out,
+              `${at}.to`,
+              `a revealed card is put onto the battlefield or into the hand, not ${JSON.stringify(branch.to)}`,
+            );
+          }
+        }
+        if (
+          branch.tapped !== undefined &&
+          (branch.tapped !== true || branch.to !== 'battlefield')
+        ) {
+          issue(
+            out,
+            `${at}.tapped`,
+            'tapped is true, and only for a card put onto the battlefield',
+          );
+        }
+      }
+      if (moving > 1) {
+        issue(
+          out,
+          `${path}.branches`,
+          'at most one branch puts the card somewhere: the card moves once',
+        );
+      }
+      return true;
+    }
     case 'revealTop':
       // CR 701.20 (D-151): the players who reveal, the cards in the library that go on, and where they go.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -567,6 +665,22 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
             'the permanent sacrificed is one the caster controls: no zone, owner, controller, stackKind, or anything read from the game',
           );
         }
+      }
+      return true;
+    case 'activateAsThoughHaste':
+      // CR 702.10b (issue 345): the creatures are battlefield permanents, read for the controller of the permanent with the permanent as the source.
+      checkFilter(s.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          s.creatures,
+          (f) => f.zone !== undefined || f.stackKind !== undefined || readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'the creatures are battlefield permanents: no zone, stackKind, or anything read from the game',
+        );
       }
       return true;
     case 'playLandsFromGraveyard':

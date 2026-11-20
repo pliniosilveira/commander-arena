@@ -158,6 +158,8 @@ export interface Scope {
   readonly triggerAttacked?: boolean;
   /** True in the effect of any triggered ability: `abilityResolvedTimes` counts the resolutions of the ability it belongs to (Galadriel group 1). */
   readonly triggeredAbility?: boolean;
+  /** True in the effect of an activated ability too (issue 345, CR 608.2c): `abilityResolvedTimes` counts the resolutions of a triggered or an activated ability. */
+  readonly activatedAbility?: boolean;
   /** True in the effect of a triggered ability of an attack (`attacks`): an `extraCombat` has a combat phase to follow (D-151). */
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability of an attack batch (`attackBatch`): a creature can enter attacking (`enterAttacking`, CR 508.4) as the declaration has just been made. */
@@ -429,6 +431,14 @@ export function checkFilter(
         'the limit is a number, the power of this, the damage that triggered the ability, the X of this spell or the mana value of the spell that triggered it',
       );
     }
+    // CR 107.3a: "each nonland permanent with mana value X or less" reads the X announced for the spell or ability that has the selector.
+    if (a?.kind === 'x' && ownerScope !== undefined && !ownerScope.xAllowed) {
+      issue(
+        out,
+        `${path}.${limitKey}`,
+        'the X of the limit is used but nothing in this ability or spell has an X',
+      );
+    }
     if (f.manaValue !== undefined) {
       issue(
         out,
@@ -583,9 +593,21 @@ export function checkFilter(
   }
   // D-261: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
   if (f.sharesCreatureTypeWith !== undefined) {
-    if (f.sharesCreatureTypeWith !== 'triggerSubject') {
-      issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
-    } else if (sharesWith !== true) {
+    if (!isOneOf(f.sharesCreatureTypeWith, ['triggerSubject', 'source', 'sacrificed'])) {
+      issue(
+        out,
+        `${path}.sharesCreatureTypeWith`,
+        "sharesCreatureTypeWith is 'triggerSubject', 'source' or 'sacrificed'",
+      );
+    } else if (f.sharesCreatureTypeWith === 'sacrificed') {
+      if (where.afterSacrifice !== true) {
+        issue(
+          out,
+          `${path}.sharesCreatureTypeWith`,
+          "sharesCreatureTypeWith 'sacrificed' is read in the filter of a revealUntil that follows a sacrifice (or the offer of one) in the same sequence",
+        );
+      }
+    } else if (f.sharesCreatureTypeWith === 'triggerSubject' && sharesWith !== true) {
       issue(
         out,
         `${path}.sharesCreatureTypeWith`,
@@ -790,7 +812,8 @@ export function declareTargets(
   /** D-270: only the slot of a triggered ability can name objects of two zones (the one place the engine reads it). */
   crossZoneAllowed = false,
   /** D-386: only the targets of a spell's own text can take as many targets as the X announced (CR 601.2b, 601.2c). */
-  countXAllowed = false,
+  /** `'slot'` (issue 345): only a slot of as many targets as the X announced (an activated ability whose cost has an X); `true` is a spell's own text, which also lets a division and a filter read X. */
+  countXAllowed: boolean | 'slot' = false,
   /** D-513: only the targets of a triggered ability whose event carries a number (a scry) can take up to as many targets as it (CR 603.3d). */
   triggerAmountAllowed = false,
   /** Only the targets of a triggered ability can take up to as many targets as an amount read as it triggers (CR 603.3d). */
@@ -816,7 +839,7 @@ export function declareTargets(
           out,
           undefined,
           undefined,
-          countXAllowed || xFilterAllowed ? { xTarget: true } : {},
+          countXAllowed === true || xFilterAllowed ? { xTarget: true } : {},
         );
         if (
           what.filter.manaValueAtMost !== undefined &&
@@ -1203,7 +1226,7 @@ export function declareTargets(
       if (kindOf(spec.divide.total) === 'x') {
         // CR 107.3a, 601.2b, 601.2d: "Distribute X +1/+1 counters among ...": the X is announced before the targets are chosen and the division, so the total is read as the X
         // announced for the spell (`validateSpell` checks that the spell announces one). Only a spell's own text announces an X before its targets.
-        if (!countXAllowed) {
+        if (countXAllowed !== true) {
           issue(
             out,
             `${p}.divide.total`,
@@ -1460,6 +1483,12 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, path, "'attackedPlayers' needs an ability of a permanent, not a spell");
       }
       break;
+    case 'combatDamagedByNamed':
+      // CR 120.2a: "each opponent dealt combat damage this game by a creature named X": a non-empty name, read from the game history anywhere.
+      if (typeof sel.name !== 'string' || sel.name === '') {
+        issue(out, `${path}.name`, "'combatDamagedByNamed' needs the name of the creature");
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -1533,6 +1562,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'triggerPlayer',
   'attackedPlayers',
+  'combatDamagedByNamed',
 ];
 
 export function checkDamageRecipient(
@@ -1587,6 +1617,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   destroyedOwnNontoken: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
+  returned: 'a moveToZone effect that chooses cards of a graveyard',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
   discarded: 'a discard effect',
@@ -1601,6 +1632,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
+  destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
   discardedTypeCount: 'a discard effect',
 };
@@ -1613,8 +1645,17 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
-  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
+  if (e?.kind === 'destroy')
+    return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
+  if (
+    e?.kind === 'moveToZone' &&
+    e.to === 'battlefield' &&
+    e.objects?.kind === 'choose' &&
+    e.objects.filter?.zone === 'graveyard'
+  ) {
+    return ['returned'];
+  }
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')
@@ -1722,6 +1763,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
+    case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
       checkAmount(a, path, NO_SCOPE, out);
@@ -2022,6 +2064,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeGainedThisTurn':
+    case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
       }
@@ -2038,8 +2081,25 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (a.kind === 'diedThisTurn' && a.modified !== undefined && a.modified !== true) {
         issue(out, `${path}.modified`, 'history modified filter must be true when present');
       }
+      if (a.kind === 'diedThisTurn' && a.leftBattlefield !== undefined) {
+        if (a.leftBattlefield !== true) {
+          issue(
+            out,
+            `${path}.leftBattlefield`,
+            'history leftBattlefield filter must be true when present',
+          );
+        } else if (a.modified !== undefined) {
+          issue(
+            out,
+            `${path}.modified`,
+            'a permanent that left the battlefield is not read as modified',
+          );
+        }
+      }
       for (const key of Object.keys(a)) {
-        if (!['kind', 'types', 'controller', 'token', 'modified'].includes(key)) {
+        if (
+          !['kind', 'types', 'controller', 'token', 'modified', 'leftBattlefield'].includes(key)
+        ) {
           issue(out, `${path}.${key}`, 'history does not record this property');
         }
       }
@@ -2169,6 +2229,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           `thisWay "${a.what}" needs ${THIS_WAY_SOURCES[a.what]} before it in the same sequence`,
+        );
+      } else if (a.what === 'destroyedCreaturesOfAffected') {
+        // Only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
+        issue(
+          out,
+          path,
+          'destroyedCreaturesOfAffected is the whole amount of a loseLife effect, not part of another amount',
         );
       }
       break;
@@ -2493,6 +2560,17 @@ export function checkStaticPtAmount(a: unknown, path: string, plain: boolean, ou
   if (amount?.kind === 'unspentMana') {
     if (!plain) {
       issue(out, path, 'a characteristic-defining ability counts objects, not unspent mana');
+    }
+    return;
+  }
+  // CR 122.1 (Call for Unity): "for each unity counter on this enchantment": plain (+N/+N) only, the counters of one kind on the permanent that has the ability.
+  if (amount?.kind === 'countersOnSource') {
+    if (!plain) {
+      issue(out, path, 'a characteristic-defining ability counts objects, not counters');
+    }
+    const counter = (a as { counter?: unknown }).counter;
+    if (typeof counter !== 'string' || counter.length === 0) {
+      issue(out, `${path}.counter`, 'countersOnSource names the kind of counter');
     }
     return;
   }
@@ -3182,6 +3260,15 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'controlsRingBearer':
       // CR 701.54e (D-196): read from the permanents of the controller; no operand.
       break;
+    case 'thisIsRingBearer':
+      // CR 701.54e: the permanent the condition belongs to is its controller's Ring-bearer; no operand.
+      break;
+    case 'ringTemptedAtLeast':
+      // CR 701.54c: the times the Ring has tempted the controller, a whole number of 1 or more.
+      if (!isCount(c.times) || c.times < 1) {
+        issue(out, `${path}.times`, 'ringTemptedAtLeast times is a whole number of 1 or more');
+      }
+      break;
     case 'thisEnteredThisTurn':
       // D-423 (CR 400.7): the permanent the condition belongs to entered this turn; no operand.
       break;
@@ -3221,6 +3308,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       }
       checkEnumList(out, `${path}.types`, c.types, CARD_TYPES, 'card type');
       checkEnumList(out, `${path}.notTypes`, c.notTypes, CARD_TYPES, 'card type');
+      if (
+        c.subtypes !== undefined &&
+        (!Array.isArray(c.subtypes) ||
+          c.subtypes.length === 0 ||
+          c.subtypes.some((s) => typeof s !== 'string' || s === ''))
+      ) {
+        issue(out, `${path}.subtypes`, 'subtypes must be a non-empty list of names when present');
+      }
       if (c.token !== undefined && typeof c.token !== 'boolean') {
         issue(out, `${path}.token`, 'token must be a boolean when present');
       }
@@ -3297,6 +3392,16 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
     case 'lifeGainedAndLostThisTurn':
       if (Object.keys(c).some((key) => key !== 'kind')) {
         issue(out, path, 'the gained-and-lost-life condition has no extra fields');
+      }
+      break;
+    case 'spellsCastLastTurn':
+      // Issue 345 (CR 601.2i): `none`, or `aPlayerAtLeast` with a positive count.
+      if (c.mode !== 'none' && c.mode !== 'aPlayerAtLeast') {
+        issue(out, `${path}.mode`, 'mode is none or aPlayerAtLeast');
+      } else if (c.mode === 'none' && c.atLeast !== undefined) {
+        issue(out, `${path}.atLeast`, 'none takes no count');
+      } else if (c.mode === 'aPlayerAtLeast' && (!isCount(c.atLeast) || c.atLeast < 1)) {
+        issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
     case 'spellsCastThisTurn':
@@ -3504,6 +3609,18 @@ function checkSacrificeSelector(
     return;
   }
   const choose = sel as ChooseSelector;
+  // CR 603.2c (Descendants' Fury): "sacrifice one of them" names the creatures that dealt the combat damage of the batch trigger.
+  if (choose.fromTriggerSources !== undefined) {
+    if (choose.fromTriggerSources !== true) {
+      issue(out, `${path}.fromTriggerSources`, 'fromTriggerSources must be true when present');
+    } else if (scope.triggerSources !== true) {
+      issue(
+        out,
+        `${path}.fromTriggerSources`,
+        "fromTriggerSources needs a triggered ability of a combatDamageBatch trigger: 'them' are the creatures that dealt the damage",
+      );
+    }
+  }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
   });
@@ -4205,6 +4322,27 @@ function checkSearch(
       );
     }
   }
+  // CR 701.23: "any number of creature cards": no limit but the library; one 'rest' destination, nothing else that changes how many are found.
+  if (e.anyNumber !== undefined) {
+    if (e.anyNumber !== true) {
+      issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+    }
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.maxAmount !== undefined ||
+      e.totalManaValue !== undefined ||
+      e.zones !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        "a search for any number of cards has a max of 1 (unread), one destination of 'rest', and no shared land type, zones, maxAmount or totalManaValue",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {
@@ -4344,6 +4482,8 @@ export const MAY_EFFECT_KINDS = [
   'removeCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
+  'addMana',
 ];
 
 /**
@@ -4460,11 +4600,11 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
       break;
     case 'abilityResolvedTimes':
       // Galadriel group 1 (CR 608.2c): "if this is the second time this ability has resolved this turn": a whole number from 1, in the effect of a triggered ability.
-      if (scope.triggeredAbility !== true) {
+      if (scope.triggeredAbility !== true && scope.activatedAbility !== true) {
         issue(
           out,
           path,
-          'abilityResolvedTimes counts the resolutions of a triggered ability: it is only valid in the effect of one',
+          'abilityResolvedTimes counts the resolutions of a triggered or an activated ability: it is only valid in the effect of one',
         );
       }
       if (!isCount(c.times) || c.times < 1) {
@@ -4656,6 +4796,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkFilter(e.filter, `${path}.filter`, out, scope);
       break;
     case 'chooseCreatureType':
+      // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
+      if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
@@ -5401,6 +5543,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');
@@ -5892,6 +6035,22 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           issue(out, `${path}.putWithSource`, 'a card chosen as the effect runs is not remembered');
         }
       }
+      // CR 708.2, 708.3: "return it to the battlefield face down ... It's a Forest land": the one kind of face-down permanent a card can put onto the battlefield this way.
+      if (e.faceDownAs !== undefined) {
+        if (e.faceDownAs !== 'forestLand') {
+          issue(out, `${path}.faceDownAs`, "faceDownAs must be 'forestLand' when present");
+        }
+        if (e.to !== 'battlefield') {
+          issue(out, `${path}.faceDownAs`, 'only a card put onto the battlefield enters face down');
+        }
+        if (kindOf(e.objects) === 'choose') {
+          issue(
+            out,
+            `${path}.faceDownAs`,
+            'a card chosen as the effect runs does not enter face down',
+          );
+        }
+      }
       // D-207 (CR 303.4g): "attached to target creature ...": an Aura card entering the battlefield, attached to a target of this ability.
       if (e.attachTo !== undefined) {
         if (e.to !== 'battlefield') {
@@ -6214,8 +6373,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     }
     case 'castCard':
       // CR 608.2g (D-350): "you may cast target [card] from a graveyard": the card is a target of the ability (a card in a graveyard when the ability resolves).
-      if (kindOf(e.object) !== 'target') {
-        issue(out, `${path}.object`, 'the card to cast is a target');
+      if (kindOf(e.object) === 'this') {
+        // CR 113.6b (Sproutback Trudge): the card itself, which only an ability that works from its graveyard can name there (`validateCard` checks `functionsIn`).
+        if (scope.owner !== 'ability') {
+          issue(out, `${path}.object`, 'casting this card is the effect of an ability');
+        }
+      } else if (kindOf(e.object) !== 'target') {
+        issue(out, `${path}.object`, 'the card to cast is a target or this card');
       } else {
         checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       }
@@ -6267,7 +6431,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'revealUntil':
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
-      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true);
+      // CR 701.21a (Descendants' Fury): after a sacrifice (or the offer of one) in the same sequence the cards may share a creature type with what was sacrificed.
+      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true, {
+        ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
+      });
       if (
         filterSome(
           e.filter,
@@ -6564,6 +6731,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (kindOf(e.amount) === 'lifeLostThisTurn' || kindOf(e.amount) === 'attackersOfAffected') {
         if (e.kind !== 'loseLife') {
           issue(out, `${path}.amount`, `${kindOf(e.amount)} is the amount of a loseLife effect`);
+        }
+      } else if (
+        kindOf(e.amount) === 'thisWay' &&
+        (e.amount as { what?: unknown }).what === 'destroyedCreaturesOfAffected'
+      ) {
+        // CR 608.2c: "each player loses life equal to the number of creatures they controlled that were destroyed this way": each player's own number.
+        if (e.kind !== 'loseLife') {
+          issue(
+            out,
+            `${path}.amount`,
+            'destroyedCreaturesOfAffected is the amount of a loseLife effect',
+          );
+        } else if (!(scope.thisWay ?? []).includes('destroyedCreaturesOfAffected')) {
+          issue(
+            out,
+            `${path}.amount`,
+            'destroyedCreaturesOfAffected needs a destroy effect before it',
+          );
         }
       } else {
         checkAmount(e.amount, `${path}.amount`, scope, out);

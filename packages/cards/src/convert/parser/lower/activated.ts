@@ -87,6 +87,11 @@ function spendOnlyOf(clause: IrClause): ManaAbility['spendOnly'] | null {
   // "Spend this mana only on costs that contain {X}." (Quandrix Unlimited group E, CR 106.6, 107.3).
   const xCost = clause.args.xCost;
   if (xCost?.kind === 'flag' && xCost.value) return plainClause(clause) ? { xCost: true } : null;
+  // "Spend this mana only to activate abilities." (issue 345, CR 106.6).
+  const abilitiesOnly = clause.args.abilitiesOnly;
+  if (abilitiesOnly?.kind === 'flag' && abilitiesOnly.value) {
+    return plainClause(clause) ? { abilitiesOnly: true } : null;
+  }
   // "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of the qualities.
   const atLeast = clause.args.manaValueAtLeast;
   const hasX = clause.args.hasX;
@@ -257,6 +262,8 @@ function lowerManaAbility(
   colorChosen = false,
 ): LowerResult<readonly Ability[]> | null {
   const [add, ...afterAdd] = clauses;
+  // Issue 345 (Soulbright Flamekin, CR 605.1a): an ability whose first instruction is not "Add ..." is not the mana ability shape, whatever a later instruction (a conditional "add") does.
+  if (add?.verb !== 'addMana') return null;
   const spec = add?.args.mana;
   if (
     spec?.kind === 'manaSpec' &&
@@ -281,9 +288,13 @@ function lowerManaAbility(
   // sentence (stage P32): "If you control a Dragon, add {R}" is not "Add {G}", and only `lowerManaInstead` reads the one that says "instead".
   // "Add X mana of any one color, where X is this creature's power." (CR 107.3c): the one definition of X a mana ability of one sentence may have, read by that production.
   const defines = spec?.kind === 'manaSpec' && spec.what.kind === 'anyOneColorX';
-  const whereOf =
-    ability.body.sentences.length === 1 ? ability.body.sentences[0]?.where : undefined;
-  if (ability.body.sentences.some((s) => s.where !== undefined) && !(defines && whereOf)) {
+  // Issue 345 (Redshift): the sentence of the mana is the first, and later sentences ("Spend this mana only to activate abilities.") define nothing.
+  const whereOf = ability.body.sentences[0]?.where;
+  const laterWhere = ability.body.sentences.slice(1).some((s) => s.where !== undefined);
+  if (
+    ability.body.sentences.some((s) => s.where !== undefined) &&
+    !(defines && whereOf && !laterWhere)
+  ) {
     return failure(ability);
   }
   if (defines && whereOf === undefined) return failure(ability);
@@ -292,7 +303,6 @@ function lowerManaAbility(
   }
   // D-487 (CR 605.1a): mana added by a later instruction of an ability with a target ("Any number of target players each lose 2 life. You add {B}{B}.") is not a mana
   // ability: the ordinary reading runs it through the stack, and refuses mana added where nothing is targeted (`lowerOrdinary`).
-  if (add?.verb !== 'addMana') return null;
   if (spec?.kind !== 'manaSpec' || !plainClause(add)) {
     return failure(ability);
   }
@@ -361,6 +371,7 @@ function lowerManaAbility(
     'ability:mana',
     ...(countsOwnCounters ? (['ability:manaCountOwnCounters'] as const) : []),
     ...(spendOnly?.xCost === true ? (['ability:manaSpendOnlyXCost'] as const) : []),
+    ...(spendOnly?.abilitiesOnly === true ? (['ability:manaSpendOnlyAbilities'] as const) : []),
     ...costs.value.map((c): FeatureRef => `manaCost:${c.kind}`),
     'effect:addMana',
     `manaProduction:${production.kind}`,
@@ -632,8 +643,11 @@ function restrictionsOf(
     // "Activate only once each turn." (stage P31, D-140, CR 602.5b): an ordinary activation's own count; a mana ability has none.
     if (restriction.perTurn !== undefined) {
       if (!allowOnce || oncePerTurn || restriction.perTurn !== 1) return failure(restriction);
-      if (restriction.timing !== undefined || restriction.condition !== undefined) {
-        return failure(restriction);
+      if (restriction.condition !== undefined) return failure(restriction);
+      // Issue 345 (Invigorating Hot Spring): "Activate only as a sorcery and only once each turn." says both in one sentence.
+      if (restriction.timing !== undefined) {
+        if (!allowTiming || timing !== undefined) return failure(restriction);
+        timing = 'sorcery';
       }
       const blocked = gate(restriction, ['ability:oncePerTurn']);
       if (blocked !== null) return blocked;

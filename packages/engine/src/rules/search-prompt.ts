@@ -116,6 +116,12 @@ export function describeSearch(search: SearchEffect): string {
     const shuffle = search.shuffle ? ' Then your library is shuffled.' : '';
     return `Choose any number of ${what === '' ? '' : `${what} `}cards with total mana value ${search.totalManaValue} or less${where}.${shuffle}`;
   }
+  if (search.anyNumber === true) {
+    const place = search.destinations[0];
+    const where = place === undefined ? '' : `; they go ${whereWords(place)}`;
+    const shuffle = search.shuffle ? ' Then your library is shuffled.' : '';
+    return `Choose any number of ${what === '' ? '' : `${what} `}cards${where}.${shuffle}`;
+  }
   const noun = `${what === '' ? '' : `${what} `}${search.max === 1 ? 'card' : 'cards'}${named}${sharing}`;
   const clauses: string[] = [];
   let start = 0;

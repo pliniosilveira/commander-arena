@@ -167,8 +167,12 @@ const PARAMETERIZED: Readonly<
     ),
   // "Devour 2": the number of counters for each creature sacrificed (CR 702.82a).
   devour: (text) =>
-    [...text.matchAll(/\bdevour\s+(\d+)/gi)].map(
-      (m) => [`Dev ${m[1]}`, `Devour ${m[1]} (${devourReminder(Number(m[1]))})`] as const,
+    [...text.matchAll(/\b[Dd]evour\s+(?:([A-Z][a-z]+)\s+)?(\d+)/g)].map(
+      (m) =>
+        [
+          `Dev ${m[2]}`,
+          `Devour ${m[1] === undefined ? '' : `${m[1]} `}${m[2]} (${devourReminder(Number(m[2]), m[1])})`,
+        ] as const,
     ),
   // "Partner with Regna, the Redeemer" (D-490, CR 702.124j): the name of the card, from the line of the Oracle text the object shows.
   partnerWith: (text) =>

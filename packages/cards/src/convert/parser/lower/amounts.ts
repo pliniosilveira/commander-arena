@@ -163,6 +163,13 @@ export function lowerAmount(
       };
     }
     case 'manaValueOf': {
+      // Issue 345 (Tavern Brawler, CR 202.3, 608.2h): "exile the top card of your library. ~ gets +X/+0 until end of turn, where X is that card's mana value": the card the instruction
+      // before it exiled (`moved`), whose mana value is read as the effect runs.
+      if (amount.of.det === 'anaphor' && ctx.exiled === 'top') {
+        const blockedMoved = needs('manaValueOf');
+        if (blockedMoved !== null) return blockedMoved;
+        return { ok: true, value: { kind: 'manaValueOf', of: { kind: 'moved' } }, rule };
+      }
       const of = objectRefOf(amount.of, ctx, { triggerSubject: true, sacrificed: true });
       if (!of.ok) return of;
       const blocked = needs('manaValueOf');
@@ -207,6 +214,9 @@ export function lowerAmount(
       return blocked ?? { ok: true, value: { kind: 'lifePaidAsEntered' }, rule };
     }
     case 'triggerDamage': {
+      // "The amount of life you gained" is the life of a life gain event, so it means nothing in the body of any other ability (CR 119.9).
+      if (amount.life === true && !ctx.lifeGainTrigger)
+        return { ok: false, needs: [], at: amount.span, rule };
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
       if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {
@@ -315,6 +325,7 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'cardsInHandOfAffected' }, rule };
     }
+    case 'lifeGainedOrLostThisTurn':
     case 'lifeGainedThisTurn': {
       const blocked = needs(amount.kind);
       return blocked ?? { ok: true, value: { kind: amount.kind }, rule };
@@ -337,6 +348,9 @@ export function lowerAmount(
           ...(amount.types === undefined ? {} : { types: amount.types as readonly CardType[] }),
           ...(amount.token === undefined ? {} : { token: amount.token }),
           ...(modified ? { modified: true as const } : {}),
+          ...(amount.kind === 'diedThisTurn' && amount.leftBattlefield === true
+            ? { leftBattlefield: true as const }
+            : {}),
         },
         rule,
       };
@@ -587,12 +601,11 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
     }
     case 'exiledAsCost': {
-      // "Exile all cards from all graveyards, then create a token for each card exiled this way" (issue 101, Kaya, Geist Hunter, CR 608.2c): the exile instruction before it is
-      // what the words count, the cards it moved, not the cost of a spell.
+      // Crypt Incursion (CR 608.2c): "Exile all creature cards from target player's graveyard. You gain 3 life for each card exiled this way.": after an exile instruction of the same
+      // text, the cards exiled this way are the ones that instruction moved (the engine's `moved`), not cards exiled to pay an additional cost.
       if (ctx.lastEffectKind === 'exile') {
         const moved = needs('movedCount');
-        if (moved !== null) return moved;
-        return { ok: true, value: { kind: 'movedCount' }, rule };
+        return moved ?? { ok: true, value: { kind: 'movedCount' }, rule };
       }
       const blocked = needs('exiledAsCost');
       if (blocked !== null) return blocked;
@@ -969,6 +982,7 @@ export const AMOUNT_NEEDS = [
   'amount:lifeLostThisTurn',
   'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
+  'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
   'amount:diedThisTurn',
   'amount:cardsDrawnThisTurn',

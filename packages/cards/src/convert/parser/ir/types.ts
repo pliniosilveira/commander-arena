@@ -150,6 +150,7 @@ export interface IrNoun extends IrNode {
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
     | 'couldntSacrificeThisWay' // "each player who can't" after a sacrifice (CR 701.21a): the players the sacrifice before it found nothing for
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
+    | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
@@ -165,6 +166,11 @@ export interface IrNoun extends IrNode {
    * ability before it, which a target noun without it may share.
    */
   readonly otherTarget?: true;
+  /**
+   * "attach ~ to it" (CR 701.3, 603.2): the word was "it", which names the token the sentence made and, where it made none, the object the trigger is about (Hero's
+   * Blade: "Whenever a legendary creature you control enters, you may attach ~ to it").
+   */
+  readonly itWord?: true;
   /**
    * "one or two target creatures", "each of one or two targets" (D-295, CR 115.1, 601.2c): at least this many targets, at most `count`. A target noun
    * without it takes none (`upTo`) or exactly `count`.
@@ -323,6 +329,16 @@ export interface IrFilter {
    */
   readonly sharesCreatureTypeWithIt?: true;
   /**
+   * "a creature card that shares a creature type with the sacrificed creature" (Descendants' Fury, CR 205.3m, 701.21a, 113.7a): the card has a creature type the permanent an earlier
+   * sacrifice of the same text sacrificed had, as it last was. Read in the filter of a library search `revealUntil`; the engine's `sharesCreatureTypeWith: 'sacrificed'`.
+   */
+  readonly sharesCreatureTypeWithSacrificed?: true;
+  /**
+   * "each other creature you control that shares a creature type with it" (Titan of Littjara, CR 205.3m, 702.73a): the permanent has a creature type the source of the ability has. "It" is the
+   * source only in a trigger about the card itself entering or attacking, which the lowering of the ability checks (`usesSharesWithSource`); the engine's `sharesCreatureTypeWith: 'source'`.
+   */
+  readonly sharesCreatureTypeWithSource?: true;
+  /**
    * "a permanent of their choice that shares a card type with it" (Braids, CR 205.2a, 701.21a, 113.7a): the permanent has a card type the permanent an earlier sacrifice of the same
    * text sacrificed had, as it last was. Read in the filter of a sacrifice only; the engine's `sharesCardTypeWith: 'sacrificed'`.
    */
@@ -337,6 +353,11 @@ export interface IrFilter {
    * Like `sharedLandType` it is about the cards found together; the search lowering takes it off (the engine's `search.totalManaValue`), any other filter that has it is not lowered.
    */
   readonly anyNumberTotalManaValue?: number;
+  /**
+   * "any number of creature cards" (CR 701.23, 701.23b; Bilbo, Birthday Celebrant): any number of the cards of a library search, none included, with no limit but the library. Like
+   * `anyNumberTotalManaValue` it is about the cards found together; the search lowering takes it off (the engine's `search.anyNumber`), any other filter that has it is not lowered.
+   */
+  readonly anyNumber?: true;
   /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
@@ -463,6 +484,7 @@ export type IrAmount =
   // "equal to the number of cards in that player's hand" (CR 402.1): each player the damage is dealt to is hurt for their own hand size
   | { readonly kind: 'cardsInHandOfAffected'; readonly span: Span }
   | { readonly kind: 'lifeGainedThisTurn'; readonly span: Span }
+  | { readonly kind: 'lifeGainedOrLostThisTurn'; readonly span: Span }
   | {
       readonly kind: 'enteredThisTurn';
       readonly types?: readonly string[];
@@ -477,6 +499,8 @@ export type IrAmount =
       readonly controller: 'you' | 'any';
       /** "A modified creature died under your control this turn" (CR 700.9): only the permanents that were modified as they died. */
       readonly modified?: true;
+      /** "A permanent left the battlefield under your control this turn" (Revolt, CR 207.2c): every permanent that left it, for any zone. */
+      readonly leftBattlefield?: true;
       readonly span: Span;
     }
   // "for each card you've drawn this turn" (Feather deck group 1, D-450, CR 121.1): the cards the controller has drawn so far this turn
@@ -572,6 +596,7 @@ export type IrAmount =
         | 'sacrificed'
         | 'destroyed'
         | 'destroyedOwnNontoken'
+        | 'destroyedCreaturesOfAffected'
         | 'destroyedValue'
         | 'playersDrew'
         | 'tapped'
@@ -583,7 +608,8 @@ export type IrAmount =
         | 'exiledCreatures'
         | 'damageDealt'
         | 'excessDamageDealt'
-        | 'countersRemoved';
+        | 'countersRemoved'
+        | 'returned';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
       /** "that many" (stage P30): the number of whatever the instruction before it did, whichever words the text uses. */
@@ -591,7 +617,8 @@ export type IrAmount =
       readonly span: Span;
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
-  | { readonly kind: 'triggerDamage'; readonly span: Span }
+  // `life`: "where X is the amount of life you gained" (Field-Tested Frying Pan), read only where the trigger is life being gained.
+  | { readonly kind: 'triggerDamage'; readonly life?: true; readonly span: Span }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"
@@ -709,6 +736,12 @@ export interface IrCondition extends IrNode {
         readonly kind: 'spellsCastThisTurn';
         readonly atLeast: number;
         readonly ofTypes?: readonly string[];
+      }
+    // Issue 345 (CR 601.2i): "no spells were cast last turn" (`none`), "a player cast two or more spells last turn" (`aPlayerAtLeast`)
+    | {
+        readonly kind: 'spellsCastLastTurn';
+        readonly mode: 'none' | 'aPlayerAtLeast';
+        readonly atLeast?: number;
       }
     // Issue 279 (CR 508.1): "you attacked with three or more creatures this turn"
     | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
@@ -836,6 +869,9 @@ export interface IrCondition extends IrNode {
     | { readonly kind: 'castFromZone'; readonly zone: 'graveyard' }
     // Stage P45 (D-197): "you control your Ring-bearer" (CR 701.54e)
     | { readonly kind: 'controlsRingBearer' }
+    // Frodo, Adventurous Hobbit (CR 701.54e, 701.54c): "~ is your Ring-bearer", "the Ring has tempted you two or more times this game"
+    | { readonly kind: 'thisIsRingBearer' }
+    | { readonly kind: 'ringTemptedAtLeast'; readonly times: number }
     | {
         readonly kind: 'playerDealtDamage';
         readonly who: 'you' | 'opponent';
@@ -848,6 +884,7 @@ export interface IrCondition extends IrNode {
         readonly count: number;
         readonly types?: readonly string[];
         readonly notTypes?: readonly string[];
+        readonly subtypes?: readonly string[];
         readonly token?: boolean;
       }
     // D-063: "if A and B", "if A or B", "if not A"
@@ -1136,6 +1173,8 @@ export interface IrToken extends IrNode {
   readonly named?: string;
   /** "... token with flying that's attacking that opponent" (D-648, CR 508.4): the token is created attacking the player a trigger about a player attacking one of your opponents attacked. */
   readonly attackingThatOpponent?: true;
+  /** "a colorless snow artifact token named Icy Manalith" (issue 345, CR 205.4, 111.4): the token has the supertype snow. */
+  readonly snow?: true;
   /**
    * "... token that's tapped and attacking" (CR 508.4, 110.5b): the token enters tapped and attacking a player the declaration of an attack batch trigger attacked, never declared as
    * an attacker. Only in the effect of "whenever one or more ... you control attack".
@@ -1570,6 +1609,16 @@ export type IrStaticEffect =
       readonly amount: number;
       readonly types: readonly string[];
     }
+  // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7): the generic mana taken off the
+  // abilities of the permanents `objects` names (a plural noun with no determiner), whoever activates them.
+  | {
+      readonly kind: 'permanentAbilityCostReduction';
+      readonly amount: number;
+      readonly objects: IrNoun;
+    }
+  // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana." (Agatha of the
+  // Vile Cauldron, issue 345, CR 601.2f, 118.7): the power of the permanent itself taken off the generic mana, leaving at least one mana.
+  | { readonly kind: 'creatureAbilityCostReductionByPower' }
   /**
    * "As an additional cost to cast ~, sacrifice a creature." (stage P13, CR 118.8): costs paid with
    * the spell's total cost. The statement's subject is `~`.
@@ -1608,10 +1657,15 @@ export type IrStaticEffect =
   | { readonly kind: 'lookAtTopOfLibrary' }
   /** "Play with the top card of your library revealed." (CR 401.5, Oracle of Mul Daya). The subject is `you`. */
   | { readonly kind: 'revealTopOfLibrary' }
-  /** "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. */
-  | { readonly kind: 'playLandsFromTopOfLibrary' }
+  /**
+   * "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. `alsoLook` is the sentence "You may look at the top card of
+   * your library any time, and you may play lands from the top of your library.", which is both abilities (issue 345).
+   */
+  | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
+  /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
+  | { readonly kind: 'activateAsThoughHaste' }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of
@@ -1650,7 +1704,7 @@ export type IrStaticEffect =
       readonly types?: readonly string[];
     }
   /** "You may cast artifact spells as though they had flash." (stage P31, CR 601.3b, 702.8a). The subject is `you`. */
-  | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter }
+  | { readonly kind: 'castAsThoughFlash'; readonly spells: IrFilter; readonly anyPlayer?: true }
   /** "Your opponents can't cast spells with mana value 3 or less." (stage P70, D-282, CR 101.2, 601.2). The subject is `you`. */
   | { readonly kind: 'opponentsCantCastSpells'; readonly spells: IrFilter }
   /**
@@ -1707,7 +1761,10 @@ export type IrStaticEffect =
    * "Creature spells you cast have demonstrate." (issue 145, CR 702.144a, 702.51a, 613.1f): the spells the controller casts that the subject names (a noun with `det: 'each'` and the
    * controller `you`) have the keyword `keyword`, a keyword with no parameter.
    */
-  | { readonly kind: 'spellKeyword'; readonly keyword: 'demonstrate' | 'convoke' }
+  | {
+      readonly kind: 'spellKeyword';
+      readonly keyword: 'demonstrate' | 'convoke' | 'replicateAtManaCost';
+    }
   /**
    * "Each creature card in your hand has cycling {1}{U}." (issue 104, CR 702.29a, 613.1f): the cards of the card types in the hand of the controller have a cycling ability with
    * `cost` (a mana cost). The subject of the statement is `you`.
@@ -1807,6 +1864,16 @@ export type IrStaticEffect =
    */
   | { readonly kind: 'ptUnspentMana'; readonly power: boolean; readonly toughness: boolean }
   /**
+   * "Creatures you control get +1/+1 for each unity counter on ~." (CR 122.1, 613.4c): +1 to each stat whose flag is set, for each counter of the kind `counter` on the permanent with
+   * the ability (the engine's `countersOnSource`).
+   */
+  | {
+      readonly kind: 'ptCountersOnSource';
+      readonly power: boolean;
+      readonly toughness: boolean;
+      readonly counter: string;
+    }
+  /**
    * "You may cast creature spells with power 4 or greater from the top of your library. If you cast a creature spell this way, it gains haste until end
    * of turn." (stage P34, D-152, CR 601.3, 401.5, 702.10): the controller may cast the top card of their library when it is a spell `spells`
    * describes (as the card it is); `gainsHaste` is the second sentence. The subject is `you`.
@@ -1852,6 +1919,22 @@ export type IrStaticEffect =
    * subject is `~`.
    */
   | { readonly kind: 'keepsDamage' }
+  /**
+   * "The "legend rule" doesn't apply to Slivers you control." (issue 133, CR 704.5j, 604.1): the permanents of the controller the subject names (a noun with `det: 'each'` and the
+   * controller `you`) are not subject to the legend rule while the permanent has the ability.
+   */
+  | { readonly kind: 'legendRuleDoesntApply' }
+  /**
+   * "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types. The same is true for creature spells you control and creature
+   * cards you own that aren't on the battlefield." (issue 133, CR 613.1d, 607.2d): the subject is the group of permanents (a noun whose filter is the choice of the two groups); the
+   * creature spells and cards outside the battlefield are named by the second sentence.
+   */
+  | { readonly kind: 'chosenTypeGroups' }
+  /**
+   * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (issue 133, CR 702.141a, 613.1f): the creature cards of `cards` in the graveyard of the controller
+   * (the statement's subject, `you`) have Encore with the cost the mana value of the card.
+   */
+  | { readonly kind: 'graveyardEncore'; readonly cards: IrNoun }
   | { readonly kind: 'raw'; readonly text: string };
 
 /** One more subject of a statement and what it gets or has: "~ gets +2/+2 and creatures you control have vigilance". */
@@ -1893,6 +1976,8 @@ export interface IrKeyword extends IrNode {
   readonly quality?: string;
   /** "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): the equip ability attaches only to a creature that is a commander. */
   readonly commanderOnly?: true;
+  /** "Equip legendary creature {3}" (issue 345, CR 702.6c, 205.4): the equip ability attaches only to a legendary creature. */
+  readonly legendaryOnly?: true;
   /** "Protection from red and from blue" (stage P68, D-229, CR 702.16): the color words, as written, lowercase. */
   readonly colors?: readonly string[];
 }
@@ -2009,6 +2094,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'attackersOfAffected',
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  'lifeGainedOrLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
   'cardsDrawnThisTurn',

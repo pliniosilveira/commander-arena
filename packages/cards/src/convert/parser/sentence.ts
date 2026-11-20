@@ -117,6 +117,8 @@ const TURN_CONDITIONS = [
   'condition.no-spell-cast-this-turn',
   // Issue 144 (Great Train Heist): "If it's your combat phase, there is an additional combat phase after this phase." (CR 506.1, 500.8).
   'condition.your-combat-phase',
+  // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
+  'condition.entered-this-turn',
 ] as const;
 
 /**
@@ -150,8 +152,16 @@ const MANA_SPENT_CONDITIONS = [
  */
 const TRIGGER_SPELL_CONDITIONS = ['condition.that-spells-stat'] as const;
 
-/** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
-const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;
+/**
+ * Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). Food and Fellowship deck (Frodo,
+ * Adventurous Hobbit): "Then if ~ is your Ring-bearer and the Ring has tempted you two or more times this game, draw a card." (CR 701.54).
+ */
+const RESOLUTION_CONDITIONS = [
+  'condition.resolved-times',
+  'condition.ring-bearer-and-tempted',
+  'condition.this-is-ring-bearer',
+  'condition.ring-tempted-times',
+] as const;
 
 const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,
@@ -170,6 +180,8 @@ const LEAD_CONDITIONS = [
   'condition.destroyed-this-way',
   // Death Toll deck: "Delirium — Then if there are four or more card types among cards in your graveyard, create ..." (CR 205.2a, 608.2c).
   'condition.card-types-among',
+  // Prize Pig: "Then if there are three or more ribbon counters on ~, remove those counters and untap it." (CR 122.1, 608.2c).
+  'condition.there-are-counters-on-self',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
@@ -272,7 +284,7 @@ interface SentenceOptions {
    * engine does not run stays unread. D-403 (Danitha deck, Cosmic Rebirth): "You may put it onto the battlefield." too, the offer
    * of a card a target phrase of the spell named, which only the pair of sentences of `lowerMayElse` runs.
    */
-  readonly may: boolean | 'discard';
+  readonly may: boolean | 'discard' | 'afterTest';
   /**
    * "If ~ was kicked, ..." may start the sentence and " instead" end it (CR 608.2c, 614.1a). Only
    * the bodies whose lowering handles a conditional sentence ask for it, so a condition is never
@@ -372,14 +384,16 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
  * sentence, and, with "have you", that the controller does them. A player noun and "may"; "you may" is the sentence's own prefix.
  */
 const PLAYER_MAY: Parser<NonNullable<IrSentence['mayBy']>> = quiet((ctx, pos) => {
-  // Looked at first, so that a sentence about a player that does not say "may" stops where it always did.
+  // Looked at first, so that a sentence about a player that does not say "may" stops where it always did. "Its controller may search ..." stays with `effect.search-by` (White Orchid
+  // Phantom, CR 701.23a), which reads the search of that controller's own library.
   const ahead = pattern(
-    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may )/iu,
+    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may |(?:its|that (?:creature|permanent|land|artifact|enchantment|planeswalker)['’]s) controller may (?!search ))/iu,
   )(ctx, pos);
   if (!ahead.ok) return ahead;
   return map(
     sequence(
-      family<IrNoun>('noun', { only: ['noun.player'] }),
+      // "Its controller may draw a card" (Synapse Sliver, CR 109.4, 608.2d): the controller of an object the text named is the player asked.
+      family<IrNoun>('noun', { only: ['noun.player', 'noun.its-controller'] }),
       literal(' may '),
       optional(literal('have you '), null),
     ),
@@ -537,11 +551,21 @@ function plainSentence(options: SentenceOptions): Parser<IrSentence> {
             ),
             null,
           )
-        : options.may && !reflexive
+        : // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add ...": "you may" after a leading test only.
+          (options.may === true || (options.may === 'afterTest' && condition !== undefined)) &&
+            !reflexive
           ? optional(
               choice<'you' | NonNullable<IrSentence['mayBy']>>(
-                map(literal('you may '), () => 'you' as const),
-                PLAYER_MAY,
+                map(
+                  (c, p) => {
+                    // After a leading test only the offer of mana is read here; another "you may" is the clause's own (Conduit of Worlds: "you may cast that card").
+                    const ahead =
+                      options.may === 'afterTest' ? pattern(/(?=you may add )/iu)(c, p) : undefined;
+                    return ahead !== undefined && !ahead.ok ? ahead : literal('you may ')(c, p);
+                  },
+                  () => 'you' as const,
+                ),
+                ...(options.may === 'afterTest' ? [] : [PLAYER_MAY]),
               ),
               null,
             )
@@ -641,7 +665,7 @@ export const SPELL_SENTENCE: Parser<IrSentence> = sentenceParser({
  * them as it reads any body (`lowerSentences`), and refuses them in a mana ability.
  */
 export const ACTIVATED_SENTENCE: Parser<IrSentence> = sentenceParser({
-  may: false,
+  may: 'afterTest',
   conditional: true,
   // Conduit of Worlds: "If you haven't cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn." (CR 608.2c): the lowering
   // reads an "If you do" only after an instruction it can tell was done, and refuses it anywhere else.

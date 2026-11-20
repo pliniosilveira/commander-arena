@@ -463,8 +463,16 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'grantKeywordToSpells':
       // Issue 145 (CR 702.144a, 702.51a): "Creature spells you cast have demonstrate": only the keywords the engine reads from a spell as it is cast, for the spells of the permanent's
       // controller a filter names, as the spells they are on the stack (a spell the controller casts: `controller` is 'you', and nothing else says where or whose it is).
-      if (s.keyword?.kind !== 'demonstrate' && s.keyword?.kind !== 'convoke') {
-        issue(out, `${path}.keyword`, 'only demonstrate and convoke can be given to spells');
+      if (
+        s.keyword?.kind !== 'demonstrate' &&
+        s.keyword?.kind !== 'convoke' &&
+        s.keyword?.kind !== 'replicateAtManaCost'
+      ) {
+        issue(
+          out,
+          `${path}.keyword`,
+          'only demonstrate and convoke (and replicateAtManaCost) can be given to spells',
+        );
       }
       checkFilter(s.what, `${path}.what`, out);
       if (
@@ -495,6 +503,85 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'grantFlashbackToGraveyardCards':
       // CR 702.34a: "Each instant and sorcery card in your graveyard has flashback": the cards of the controller's graveyard a filter names, as the cards they are.
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'legendRuleDoesntApply':
+      // CR 704.5j: "The "legend rule" doesn't apply to Slivers you control": the permanents on the battlefield a filter names, as the permanents they are (`controller` is "you").
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'legendRuleDoesntApply needs a filter of the permanents');
+        break;
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            (f.controller !== undefined && f.controller !== 'you') ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          "the permanents are named by what they are: no zone, owner, stackKind or combat, and the controller is 'you' or absent",
+        );
+      }
+      break;
+    case 'giveChosenCreatureType':
+      // CR 613.1d: "Slivers you control and nontoken creatures you control are the chosen type": the permanents a filter names as they are on the battlefield (`controller` is "you").
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'giveChosenCreatureType needs a filter of the permanents');
+        break;
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            f.chosenType !== undefined ||
+            (f.controller !== undefined && f.controller !== 'you') ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          "the permanents are named by what they are: no zone, owner, stackKind, chosen type or combat, and the controller is 'you' or absent",
+        );
+      }
+      if (s.alsoCardsAndSpells !== undefined && s.alsoCardsAndSpells !== true) {
+        issue(out, `${path}.alsoCardsAndSpells`, 'alsoCardsAndSpells is true or absent');
+      }
+      break;
+    case 'grantEncoreToGraveyardCards':
+      // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'grantEncoreToGraveyardCards needs a filter of the cards');
+        break;
+      }
       checkFilter(s.what, `${path}.what`, out);
       if (
         filterSome(
@@ -1231,6 +1318,11 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'dealtDamageToPlayer':
+      if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'noncombatDamageDealt':
       // D-333: whose source it is and which player it damaged; any object can be the source, so there is no subject to check.
       if (!isOneOf(t.by, ['you', 'any'])) {
@@ -1301,6 +1393,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
+    t?.kind === 'dealtDamageToPlayer' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
@@ -1668,6 +1761,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
+      // CR 113.6b (Sproutback Trudge): "cast this card from your graveyard" names the card in the graveyard its ability works from.
+      if (
+        a.functionsIn !== 'graveyard' &&
+        JSON.stringify(a.effect ?? null).includes('"kind":"castCard","object":{"kind":"this"}')
+      ) {
+        issue(
+          out,
+          `${path}.functionsIn`,
+          "casting this card needs a triggered ability with functionsIn: 'graveyard'",
+        );
+      }
       const targets = declareTargets(
         a.targets,
         `${path}.targets`,
@@ -1994,6 +2098,13 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       }
       checkActivationCosts(a, path, out);
       checkLoyaltyAbility(a, path, out);
+      // Issue 345 (CR 702.177a): "Exhaust": activated only once; a loyalty ability has its own limit.
+      if (a.exhaust !== undefined) {
+        if (a.exhaust !== true) issue(out, `${path}.exhaust`, 'exhaust must be true when present');
+        if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
+          issue(out, `${path}.exhaust`, 'a loyalty ability is limited by CR 606.3: no exhaust');
+        }
+      }
       // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
         issue(
@@ -2029,6 +2140,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
       }
       // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
+      // Issue 345 (Magus of the Candelabra, CR 601.2b, 602.2b): "{X}, {T}: Untap X target lands": a slot of as many targets as the X announced, for an ability whose cost has an X.
       const targets = declareTargets(
         a.targets,
         `${path}.targets`,
@@ -2036,14 +2148,21 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         true,
         false,
         false,
-        false,
+        'slot',
         false,
         false,
         Array.isArray(a.cost) && hasXCost(a.cost),
       );
+      if (
+        (a.targets ?? []).some((t) => t.countX === true) &&
+        !(Array.isArray(a.cost) && hasXCost(a.cost))
+      ) {
+        issue(out, `${path}.targets`, 'X targets need an X in the cost of the ability');
+      }
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,
+        activatedAbility: true,
         xAllowed: Array.isArray(a.cost) && hasXCost(a.cost),
         ...(a.functionsIn === 'graveyard' ? { fromGraveyard: true } : {}),
         // D-133: "the sacrificed creature" is readable where the cost sacrificed something.

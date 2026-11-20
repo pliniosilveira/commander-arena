@@ -37,4 +37,17 @@ const NEXT_SPELL_MODIFIER: Lowering<IrClause, Effects> = {
   },
 };
 
-export const NEXT_SPELL_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [NEXT_SPELL_MODIFIER];
+/** "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b): the engine's `nextSpellPayLife`. */
+const NEXT_SPELL_PAY_LIFE: Lowering<IrClause, Effects> = {
+  head: 'nextSpellPayLife',
+  id: 'lower.next-spell-pay-life',
+  needs: ['effect:nextSpellPayLife'],
+  lower(clause) {
+    return { ok: true, value: [{ kind: 'nextSpellPayLife' }], rule: clause.rule };
+  },
+};
+
+export const NEXT_SPELL_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
+  NEXT_SPELL_MODIFIER,
+  NEXT_SPELL_PAY_LIFE,
+];

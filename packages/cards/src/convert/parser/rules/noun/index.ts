@@ -53,6 +53,7 @@ import { NOUN_LIBRARY_CARD_MANA_VALUE_X } from './library-mv-x';
 import { LOREHOLD_G1_NOUN_RULES } from './lorehold-g1';
 import { LOREHOLD_G2_NOUN_RULES } from './lorehold-g2';
 import { ONE_OR_TWO_NOUN_RULES } from './one-or-two';
+import { NOUN_OTHER_SUBTYPE_PAIR } from './other-subtype-pair';
 import { PAIR_NOUN_RULES } from './pair';
 import {
   graveyardPhrase,
@@ -179,8 +180,11 @@ function targetOf(
   const another = map(sequence(literal('another target '), targetPhrase(false)), ([, filter]) =>
     bare('target', filter, { other: true }),
   );
-  const single = map(sequence(literal('target '), targetPhrase(false)), ([, filter]) =>
-    bare('target', filter),
+  // "target creature you control other than ~" (Rosie Cotton, CR 115.1, 109.1): one target that is not the source of the ability, said after the phrase.
+  const single = map(
+    sequence(literal('target '), targetPhrase(false), optional(literal(' other than ~'), null)),
+    ([, filter, otherThanSelf]) =>
+      bare('target', filter, otherThanSelf === null ? {} : { other: true }),
   );
   // "each of up to two target creatures": the counters of a spell that puts one on each (the engine's
   // target slot already stands for every object chosen for it).
@@ -507,7 +511,10 @@ export const NOUN_ALL_GRAVEYARDS = defineRule<IrNoun>({
   ),
 });
 
-/** `noun.all-graveyard-cards`: "all land cards from your graveyard". */
+/**
+ * `noun.all-graveyard-cards`: "all land cards from your graveyard", and, with the graveyard of a player the text names, "all creature cards from target player's graveyard" (Crypt Incursion,
+ * CR 404.1, 108.3, 115.1: the cards of that kind its owner has there; the player is a target, or each opponent, or each player, carried as `of` as `noun.player-graveyard` does).
+ */
 export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
   id: ID.allGraveyard,
   family: 'noun',
@@ -517,13 +524,52 @@ export const NOUN_ALL_GRAVEYARD_CARDS = defineRule<IrNoun>({
     'all land cards from your graveyard',
     'all cards from a graveyard',
     'all creature cards from all graveyards',
+    "all creature cards from target player's graveyard",
+    'all cards from target opponent’s graveyard',
+    "all land cards from each opponent's graveyard",
   ],
-  rejects: ['all lands', 'each land card from your graveyard'],
-  parse: node<IrFilter, IrNoun>(
-    ID.allGraveyard,
-    map(sequence(literal('all '), graveyardPhrase(true)), ([, filter]) => filter),
-    (filter) => bare('each', filter, { plural: true }),
-  ),
+  rejects: [
+    'all lands',
+    'each land card from your graveyard',
+    "all creature cards from target player's graveyards",
+    "all creature cards from target creature's graveyard",
+    "all creature cards from target player's library",
+    "all creature cards from target player's",
+  ],
+  parse: (ctx, pos) => {
+    const own = node<IrFilter, IrNoun>(
+      ID.allGraveyard,
+      map(sequence(literal('all '), graveyardPhrase(true)), ([, filter]) => filter),
+      (filter) => bare('each', filter, { plural: true }),
+    )(ctx, pos);
+    if (own.ok) return own;
+    const r = sequence(
+      literal('all '),
+      graveyardPhrase(true, 'fromPlayers'),
+      satisfy(
+        family<IrNoun>('noun', { only: [ID.player] }),
+        (n) => n.det === 'target' || n.det === 'eachOpponent' || n.det === 'eachPlayer',
+      ),
+      pattern(new RegExp(`['’]s graveyard${END}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return fail(ctx, pos);
+    const [, filter, of] = r.value;
+    return {
+      ok: true,
+      value: {
+        kind: 'noun',
+        det: 'each',
+        filter: { ...filter, raw: ctx.text.slice(pos, r.pos) },
+        upTo: false,
+        plural: true,
+        other: false,
+        of,
+        span: { start: pos, end: r.pos },
+        rule: ID.allGraveyard,
+      },
+      pos: r.pos,
+    };
+  },
 });
 
 /** `noun.target-permanent`: "target nonland permanent an opponent controls" (CR 110.1, 115.1). */
@@ -556,6 +602,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'up to that many target nonland permanents you control',
     'another target creature',
     'another target nonland permanent you control',
+    'target creature you control other than ~',
+    'target creature other than ~',
     'each of up to two target creatures',
     'each of two target creatures',
     'target Dragon',
@@ -586,6 +634,7 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   rejects: [
     'up to one target creatures',
     'another target creatures',
+    'target creature you control other than',
     'each of target creature',
     'each of up to one target creatures',
     'another creature',
@@ -776,7 +825,34 @@ export const NOUN_PLAIN_PERMANENTS = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.commander-creatures-you-own`: "commander creatures you own" (issue 345, Tavern Brawler; CR 903.3, 108.3): the creatures that are cards their owner designated as a commander and
+ * that you own, whoever controls them (the engine's `commander: 'yours'`). A plural group. Not read: "you control" (`noun.plain-permanents`), the singular, "your commanders",
+ * "commander creatures" with no owner, another card type.
+ */
+export const NOUN_COMMANDER_CREATURES_YOU_OWN = defineRule<IrNoun>({
+  id: 'noun.commander-creatures-you-own',
+  family: 'noun',
+  leading: ['commander'],
+  cites: ['CR 903.3 (Commander)', 'CR 108.3 (Owner)'],
+  examples: ['commander creatures you own', 'Commander creatures you own'],
+  rejects: [
+    'commander creature you own',
+    'commander creatures you control',
+    'commander creatures',
+    'commander permanents you own',
+    'commander creatures your opponents own',
+    'creatures you own',
+  ],
+  parse: node<string, IrNoun>(
+    'noun.commander-creatures-you-own',
+    map(pattern(/commander creatures you own(?![\p{L}\p{N}])/iu), (m) => m[0]),
+    (raw) => bare('each', { types: ['creature'], commander: 'yours', raw }, { plural: true }),
+  ),
+});
+
 export const NOUN_RULES = [
+  NOUN_COMMANDER_CREATURES_YOU_OWN,
   NOUN_ANY_TARGET,
   // Stage P37 (D-180): "target player or planeswalker" and "each creature that player controls", whose first words are those of `noun.player`
   // and of `noun.each-permanent`.
@@ -864,6 +940,8 @@ export const NOUN_RULES = [
   ...HASHATON_GROUP_4_NOUN_RULES,
   // Before `noun.plain-permanents`, which reads the first group of "A you control and other B you control" alone.
   NOUN_SUBTYPE_UNION,
+  // Issue 345: "other Wolves and Werewolves you control", which `noun.other-subtype-permanents` would stop in the middle of.
+  NOUN_OTHER_SUBTYPE_PAIR,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.
   ...GISA_G2_NOUN_RULES,
   // Issue 347: "Treefolk and Forests you control".

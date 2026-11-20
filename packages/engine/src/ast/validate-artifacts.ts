@@ -111,7 +111,9 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.
+        // Lobelia, Defender of Bag End: the permission to play a card exiled with this permanent is a mode of a modal ability.
         (readsLinkedExile(a.effect) ||
+          readsLinkedExile(a.modes) ||
           JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true'))),
   );
   const exiles = face.abilities.some(
@@ -254,6 +256,11 @@ export function checkArtifactsStatic(s: StaticEffect, path: string, out: AstIssu
       } else if ((s.spells as { kind?: unknown }).kind !== 'this') {
         // D-408: `{ kind: 'this' }` is the spell's own ability; anything else is the filter of a permanent's.
         checkDescribing(s.spells as ObjectFilter, `${path}.spells`, out);
+      }
+      if (s.anyPlayer !== undefined && s.anyPlayer !== true) {
+        issue(out, `${path}.anyPlayer`, 'anyPlayer is true or absent');
+      } else if (s.anyPlayer === true && (s.spells as { kind?: unknown } | null)?.kind === 'this') {
+        issue(out, `${path}.anyPlayer`, 'anyPlayer works with a filter of spells, not `this`');
       }
       return true;
     case 'setTypes':

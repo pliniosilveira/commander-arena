@@ -108,7 +108,7 @@ describe('static.pt-count: "gets +N/+M for each ..." (CR 611.3a, 613.4c)', () =>
 
   test.each([
     '~ gets +1/+1 for each artifact you control',
-    '~ gets +1/+1 for each burden counter on ~.',
+    '~ gets +1/+1 for each burden counter on target creature.',
     '~ gets +X/+X for each artifact you control.',
     '~ gets +0/+0 for each artifact you control.',
     '~ gets +1/+1 until end of turn for each artifact you control.',

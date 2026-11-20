@@ -56,6 +56,8 @@ export type SimpleKeyword = Extract<
   | 'riot'
   | 'ascend'
   | 'soulbond'
+  | 'daybound'
+  | 'nightbound'
 >;
 
 /** The engine's keyword node of each `SimpleKeyword`. */
@@ -140,6 +142,9 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   // D-286 (CR 702.95a): Soulbond is printed on a creature and stands for two triggered abilities the engine builds; it can not be granted (the engine's
   // GRANTABLE_KEYWORDS leaves it out, so no list that grants a keyword reads it).
   ['soulbond', 'soulbond'],
+  // CR 702.145 (Daybound and Nightbound): printed on the two faces of a double-faced card (the reminder text is stripped before the line is read), never granted.
+  ['daybound', 'daybound'],
+  ['nightbound', 'nightbound'],
 ];
 
 /** The AST kind of a keyword written as `name` (lowercased words), or undefined. */

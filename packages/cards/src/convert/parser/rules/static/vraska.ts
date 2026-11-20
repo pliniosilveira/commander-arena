@@ -4,12 +4,13 @@
 import { fail, literal } from '../../combinators';
 import type { IrStatic } from '../../ir/types';
 import { defineRule, family } from '../registry';
+import { statement } from './grants';
 
 /**
  * `static.during-your-turn`: "During your turn, equipped creature has flying." (CR 611.3a, 613.8: the effect applies only while it is your turn, which is
  * looked at all the time and which no layer changes). The statement after the comma is one of an attached permanent (`static.attached`: "equipped
  * creature gets +1/+0 and has flying"), so the condition is that of the whole statement. Not read: another turn ("during an opponent's turn"), a
- * condition after the statement ("equipped creature has flying during your turn"), a subject that is not the attached permanent.
+ * condition after the statement ("equipped creature has flying during your turn"), a subject that is not the attached permanent or `~`.
  */
 export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
   id: 'static.during-your-turn',
@@ -19,20 +20,26 @@ export const STATIC_DURING_YOUR_TURN = defineRule<IrStatic>({
   examples: [
     'During your turn, equipped creature has flying.',
     'During your turn, equipped creature gets +1/+0 and has first strike.',
+    // Issue 345 (Radha, Heart of Keld): the permanent itself.
+    'During your turn, ~ has first strike.',
   ],
   rejects: [
     'During your turn, equipped creature has flying',
     "During an opponent's turn, equipped creature has flying.",
     'During your turn equipped creature has flying.',
     'During your turn, creatures you control have flying.',
-    'During your turn, ~ has flying.',
+    'During your turn, ~ has banana.',
     'During your turn, draw a card.',
     'During your turn, equipped creature has banana.',
   ],
   parse: (ctx, pos) => {
     const lead = literal('during your turn, ')(ctx, pos);
     if (!lead.ok) return lead;
-    const inner = family<IrStatic>('static', { only: ['static.attached'] })(ctx, lead.pos);
+    // Issue 345 (Radha, Heart of Keld, CR 611.3a): "During your turn, ~ has first strike.": the permanent itself, what it gets or has.
+    const own = statement('static.during-your-turn', ['noun.self'], 'selfGrant')(ctx, lead.pos);
+    const inner = own.ok
+      ? own
+      : family<IrStatic>('static', { only: ['static.attached'] })(ctx, lead.pos);
     if (!inner.ok) return inner;
     if (inner.value.condition !== undefined) return fail(ctx, pos);
     return {

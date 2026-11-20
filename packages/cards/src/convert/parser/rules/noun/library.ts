@@ -73,7 +73,9 @@ const CARD_WORD = (plural: boolean, spaced = true) =>
  */
 function sharedSuffix(
   plural: boolean,
-): Parser<Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharedLandType'>> {
+): Parser<
+  Pick<IrFilter, 'sharesCreatureTypeWithIt' | 'sharesCreatureTypeWithSacrificed' | 'sharedLandType'>
+> {
   return (ctx, pos) => {
     // Quiet: the words are optional, so their absence is no failure of the line (the diagnostics keep the position they had).
     const r = quiet(
@@ -81,7 +83,8 @@ function sharedSuffix(
         new RegExp(
           plural
             ? ` that share a land type${BOUNDARY}`
-            : ` that shares a creature type with it${BOUNDARY}`,
+            : // Descendants' Fury (CR 701.21a): "with the sacrificed creature", the permanent an earlier sacrifice of the text sacrificed.
+              ` that shares a creature type with (it|the sacrificed creature)${BOUNDARY}`,
           'u',
         ),
       ),
@@ -91,7 +94,9 @@ function sharedSuffix(
       ok: true,
       value: plural
         ? { sharedLandType: true as const }
-        : { sharesCreatureTypeWithIt: true as const },
+        : r.value[1] === 'it'
+          ? { sharesCreatureTypeWithIt: true as const }
+          : { sharesCreatureTypeWithSacrificed: true as const },
       pos: r.pos,
     };
   };
@@ -151,9 +156,11 @@ export function libraryPhrase(plural: boolean): Parser<IrFilter> {
     const shared = sharedSuffix(plural)(ctx, word.pos);
     if (!shared.ok) return shared;
     const sharing = shared.value;
-    const sharesWhat = sharing.sharesCreatureTypeWithIt === true ? 'creature' : 'land';
+    const sharesWhat = sharing.sharedLandType === true ? 'land' : 'creature';
     if (
-      (sharing.sharesCreatureTypeWithIt === true || sharing.sharedLandType === true) &&
+      (sharing.sharesCreatureTypeWithIt === true ||
+        sharing.sharesCreatureTypeWithSacrificed === true ||
+        sharing.sharedLandType === true) &&
       (!('types' in kinds) || !kinds.types.includes(sharesWhat))
     ) {
       return fail(ctx, pos);
@@ -284,6 +291,9 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     // CR 701.23, 202.3: any number of cards with a total mana value.
     'any number of creature cards with total mana value 6 or less',
     'any number of nonland permanent cards with total mana value 4 or less',
+    // CR 701.23, 701.23b (Bilbo, Birthday Celebrant): any number of cards, with no limit.
+    'any number of creature cards',
+    'any number of nonland permanent cards',
     // Issue 104 (CR 201.2): a card of a given name.
     "a card named God-Pharaoh's Gift",
     'a card named Regna, the Redeemer',
@@ -331,7 +341,8 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
     'up to two basic land cards that share a creature type with it',
     'up to two permanent cards that share a land type',
     'up to two Forest cards that share a land type',
-    'any number of creature cards',
+    'any number of creature card',
+    'any number of cards that share a land type',
     'any number of creature cards with total mana value 0 or less',
     'any number of creature cards with mana value 6 or less',
     'any number of creature cards with total mana value 6',
@@ -380,6 +391,18 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
           kind: 'noun',
           det: 'a',
           filter: { ...filter, anyNumberTotalManaValue: limit.value },
+          upTo: true,
+          plural: true,
+          other: false,
+        }),
+      ),
+      // CR 701.23, 701.23b: "any number of creature cards": any number (none included) with no limit but the library.
+      map(
+        sequence(literal('any number of '), libraryPhrase(true)),
+        ([, filter]): Bare => ({
+          kind: 'noun',
+          det: 'a',
+          filter: { ...filter, anyNumber: true as const },
           upTo: true,
           plural: true,
           other: false,

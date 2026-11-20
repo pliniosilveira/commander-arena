@@ -95,6 +95,7 @@ function view(setup: Setup = {}): GameView {
     prioritySeat: 0,
     seats: [seat(0, hand, setup.graveyard), seat(1, null)],
     monarch: null,
+    dayNight: null,
     battlefield: setup.battlefield ?? [],
     exile: [],
     stack: setup.stack ?? [],

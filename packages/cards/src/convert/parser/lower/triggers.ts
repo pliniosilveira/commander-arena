@@ -32,6 +32,7 @@ import { type FeatureRef, missingFeatures } from './features';
 import { lowerModes, MODAL_NEEDS, NO_EFFECT } from './modal';
 import { lowerFilter } from './nouns';
 import { lowerMayInstead, lowerSentences } from './sentences';
+import { usesSharesWithSource } from './sliver-d';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
 type Triggered = Extract<IrAbility, { kind: 'triggered' }>;
@@ -307,6 +308,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       const missing = missingFeatures(['trigger:dealsDamage']);
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: 'dealsDamage', what: what.value, to: t.damaged });
+    }
+    case 'playerDealtDamage': {
+      // "Whenever you're dealt damage" (issue 190, Sun Droplet, CR 120.2, 603.2c): damage of any kind to a player, once for each source.
+      if (t.damaged !== 'you' && t.damaged !== 'opponent' && t.damaged !== 'player') {
+        return failure(t);
+      }
+      const missing = missingFeatures(['trigger:dealtDamageToPlayer']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'dealtDamageToPlayer', who: t.damaged });
     }
     case 'noncombatDamageDealt': {
       // "Whenever a source you control deals noncombat damage to an opponent" (issue 25, D-333, CR 120.2b, 603.2c): whose source it is and which player it damaged.
@@ -790,7 +800,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
-      only.event === 'noncombatDamageDealt') &&
+      only.event === 'noncombatDamageDealt' ||
+      only.event === 'playerDealtDamage') &&
       only.recipient !== undefined);
   // The beginning of a step of another player's turn (CR 102.1: the active player is the player whose turn it is; CR 603.2b): "that player" is the active player, the engine's occurrence player of
   // `step`, `upkeep` and `endStep` (the beginning of your own step was answered above: "you").
@@ -1021,7 +1032,10 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   );
   const eventDamage = events.every(
     (e) =>
-      e.event === 'lifeGained' || e.event === 'noncombatDamageDealt' || e.event === 'dealsDamage',
+      e.event === 'lifeGained' ||
+      e.event === 'noncombatDamageDealt' ||
+      e.event === 'playerDealtDamage' ||
+      e.event === 'dealsDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
   const attackers = events.every((e) => e.event === 'attackBatch');
@@ -1243,6 +1257,13 @@ function lowerTriggeredAbility(
   ctx.castTrigger = triggers.every((t) => t.kind === 'castSpell' && t.self !== true);
   // Unbound Flourishing (CR 707.10): "copy that spell or ability" needs an activation among the events, or there is no ability to copy.
   ctx.activateTrigger = triggers.some((t) => t.kind === 'activatesAbility');
+  // Issue 133 (Diffusion Sliver): "counter that spell or ability unless its controller pays {2}": the triggers are all about becoming a target.
+  ctx.becomesTargetOf =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'becomesTarget')
+      ? triggers.every((t) => t.kind === 'becomesTarget' && t.spellOnly === true)
+        ? 'spell'
+        : 'both'
+      : null;
   // Quandrix Unlimited group E (CR 107.3): "put X +1/+1 counters" of "whenever you cast a spell with {X} in its mana cost" is the X of the spell that was cast.
   ctx.castTriggerX = triggers.every(
     (t) => t.kind === 'castSpell' && t.self !== true && t.filter.xInManaCost === true,
@@ -1411,13 +1432,28 @@ function lowerTriggeredAbility(
   ctx.selfAttackTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
+  ctx.selfEntersOrAttacksTrigger =
+    triggers.length > 0 &&
+    triggers.every(
+      (t) =>
+        (t.kind === 'attacks' || t.kind === 'entersBattlefield') &&
+        'kind' in t.what &&
+        t.what.kind === 'this',
+    );
+  // Titan of Littjara: "shares a creature type with it" is read only where "it" is the card itself.
+  if (!ctx.selfEntersOrAttacksTrigger && usesSharesWithSource(written)) return failure(written);
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's
   // `triggerSubject`), and the binding pass cannot tell that from the permanent: not read.
   if (
     triggers.some((t) => t.kind === 'becomesTarget') &&
-    clauses.some((c) => nounsOfClause(c).some((n) => n.det === 'triggerSubject'))
+    clauses.some((c) =>
+      nounsOfClause(c).some(
+        // Issue 133: "that spell or ability" of `effect.counter-that-unless` is the spell or ability itself, which the lowering of that clause reads as `triggerSubject`.
+        (n) => n.det === 'triggerSubject' && n.rule !== 'effect.counter-that-unless',
+      ),
+    )
   ) {
     return failure(ability);
   }
@@ -1503,6 +1539,7 @@ function lowerTriggeredAbility(
       // Lorehold group 1: "you may exile one of them from your graveyard": the engine's choice of none or one card is the question.
       c.verb === 'exileOneOfThem' ||
       c.verb === 'castCard' ||
+      c.verb === 'castThisFromGraveyard' ||
       c.verb === 'castMovedFree' ||
       // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
       c.verb === 'castFromAmong' ||
@@ -1741,6 +1778,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:lifeGained',
   'trigger:lifeLost',
   'trigger:noncombatDamageDealt',
+  'trigger:dealtDamageToPlayer',
   'trigger:countersAdded',
   'trigger:attackBatch',
   'trigger:unblockedAttackBatch',

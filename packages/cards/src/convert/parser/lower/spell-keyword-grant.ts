@@ -40,7 +40,8 @@ export function lowerSpellKeywordStatic(ability: Static): LowerResult<readonly A
   const blocked = missingFeatures([
     'ability:static',
     'static:grantKeywordToSpells',
-    `keyword:${effect.keyword}`,
+    // "has replicate. The replicate cost is equal to its mana cost" is the engine's Replicate with a cost taken from the spell.
+    effect.keyword === 'replicateAtManaCost' ? 'keyword:replicate' : `keyword:${effect.keyword}`,
   ]);
   if (blocked.length > 0) return fail(blocked);
   const what = lowerFilter(statement.subject);
