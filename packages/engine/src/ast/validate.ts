@@ -1317,6 +1317,32 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.nth`, 'nth must be a positive integer');
       }
       break;
+    case 'damageBatch':
+      // CR 120.2, 603.2c: a filter of the sources, whom they damaged, and how many sources.
+      checkFilter(t.what, `${path}.what`, out);
+      if (
+        filterSome(
+          t.what,
+          (f) => f.zone !== undefined || f.owner !== undefined || f.stackKind !== undefined,
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the source of the damage is on the battlefield: no zone, owner or stackKind',
+        );
+      }
+      if (!isOneOf(t.to, ['player', 'opponents'])) {
+        issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
+      }
+      if (t.atLeast !== undefined && (!isCount(t.atLeast) || t.atLeast < 2)) {
+        issue(
+          out,
+          `${path}.atLeast`,
+          'atLeast is a whole number of 2 or more (one is the default)',
+        );
+      }
+      break;
     case 'dealsCombatDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);
       if (!isOneOf(t.to, ['player', 'opponent', 'creature', 'any', 'playerOrPlaneswalker'])) {
@@ -1878,6 +1904,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         ...(a.trigger.kind === 'combatDamageBatch' ? { triggerSources: true } : {}),
         ...(a.trigger.kind === 'cycled' ? { triggerCycleX: true } : {}),
         ...(a.trigger.kind === 'attackBatch' ? { triggerAttackerCount: true } : {}),
+        ...(a.trigger.kind === 'damageBatch' && a.trigger.to === 'opponents'
+          ? { triggerDamagedPlayerCount: true }
+          : {}),
         ...(triggerHasPlayer(a.trigger) ? { triggerPlayer: true } : {}),
         ...(hasDamage(a.trigger) ? { triggerDamage: true } : {}),
         ...(hasTargetCount(a.trigger) ? { triggerTargetCount: true } : {}),

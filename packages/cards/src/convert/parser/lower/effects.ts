@@ -242,7 +242,7 @@ const GOAD: Lowering<IrClause, Effects> = {
 };
 
 function simple(
-  verb: 'destroy' | 'exile' | 'counter' | 'tap' | 'untap' | 'transform',
+  verb: 'destroy' | 'exile' | 'counter' | 'tap' | 'untap' | 'transform' | 'explore',
 ): Lowering<IrClause, Effects> {
   return {
     head: verb,
@@ -2473,6 +2473,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ATTACK_RANDOM_OPPONENT,
   ATTACK_RANDOM_OPPONENT_ANY,
   simple('transform'),
+  // CR 701.44a (Francisco): "~ explores", "it explores".
+  simple('explore'),
   REGENERATE,
   ADD_MANA,
   CHOOSE_COLOR,

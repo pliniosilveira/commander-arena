@@ -645,6 +645,8 @@ export type IrAmount =
   | { readonly kind: 'triggerTargetCount'; readonly span: Span }
   // Issue 81 (The Ur-Sphinx): "that many" in a "whenever one or more Sphinxes attack" trigger: the creatures of the declaration the trigger counted
   | { readonly kind: 'triggerAttackerCount'; readonly span: Span }
+  // Ahoy Mateys deck, Malcolm: "for each opponent dealt damage": the opponents the group of sources of a damage batch trigger damaged
+  | { readonly kind: 'triggerDamagedPlayerCount'; readonly span: Span }
   // Death Toll deck, Polluted Cistern (CR 205.2a, 603.2c): "for each card type among those cards", the card types of the cards a batch trigger saw, each once
   | { readonly kind: 'cardTypesAmongThoseCards'; readonly span: Span }
   // Stage P34 (D-152, CR 701.57): "a number of tapped Treasure tokens equal to the difference" between 10 and the mana value of the card discovered
@@ -2175,6 +2177,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'lifePaidAsEntered',
   'triggerTargetCount',
   'triggerAttackerCount',
+  'triggerDamagedPlayerCount',
   'cardTypesAmongThoseCards',
   'shortfall',
   'exiledStillThere',

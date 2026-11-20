@@ -360,6 +360,11 @@ export type Amount =
    */
   | { readonly kind: 'triggerAttackerCount' }
   /**
+   * "You create a Treasure token for each opponent dealt damage" (Malcolm, CR 603.2c, 120.2): the number of different opponents of the controller that the sources of a `damageBatch`
+   * trigger with `to: 'opponents'` dealt damage to in the event. Valid only in the effect of such a trigger.
+   */
+  | { readonly kind: 'triggerDamagedPlayerCount' }
+  /**
    * "Each opponent loses 1 life for each card type among those cards" (Polluted Cistern, CR 205.2a, 603.2c, 608.2c): the number of card types (artifact, battle, creature, enchantment,
    * instant, kindred, land, planeswalker, sorcery) the cards that caused the trigger have between them, each counted once however many have it; supertypes and subtypes are no card type.
    * "Those cards" are the cards of the batch (`triggerCards`: the cards put into the graveyard together by a `putIntoGraveyard` trigger with `batch`), as they are now or as they last were.
@@ -4895,6 +4900,19 @@ export type Trigger =
        * designation to the player who dealt it. Read from the `monarchChanged` event of the same damage, or the monarch now when there is none.
        */
       readonly whileMonarch?: true;
+    }
+  /**
+   * "Whenever one or more Pirates you control deal damage to a player | to your opponents" (CR 120.2, 603.2c, 120.8, 603.2g; Francisco, Malcolm): a batch trigger on damage of any
+   * kind (combat or not, CR 120.2a, 120.2b) that a group of sources `what` names (read as they are, or as they last were, the controller of this ability being "you" in the filter)
+   * deals to players in one run of events (all the damage of one step, or of one spell or ability). Damage that is 0 or entirely prevented is not dealt and does not count. `to` is
+   * `player`: once for each player damaged (`triggerPlayer` is that player, "that player"), the combat batch's way; or `opponents`: once for the whole run if any opponent of the
+   * controller was damaged, and `triggerDamagedPlayerCount` is how many opponents were ("for each opponent dealt damage"). `atLeast` is the fewest sources (one when left out).
+   */
+  | {
+      readonly kind: 'damageBatch';
+      readonly what: ObjectFilter;
+      readonly to: 'player' | 'opponents';
+      readonly atLeast?: number;
     }
   /**
    * "Whenever you tap a permanent for {C}, add an additional {C}" (CR 605.1b, 605.4, D-139): a triggered mana ability. It triggers as a

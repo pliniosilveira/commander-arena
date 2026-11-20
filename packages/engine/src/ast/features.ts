@@ -538,6 +538,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapsForMana',
     // D-139: "whenever one or more artifact creatures you control deal combat damage to a player" (CR 603.2c).
     'combatDamageBatch',
+    // CR 120.2, 603.2c: "whenever one or more Pirates you control deal damage to a player" (damage of any kind).
+    'damageBatch',
     // D-149: "whenever you gain life [for the first time each turn]", "whenever you put one or more +1/+1 counters on this creature",
     // "whenever you attack with two or more creatures".
     'lifeGained',
@@ -1468,6 +1470,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // Issue 81 (Shark Typhoon): the X of the cycling cost, in a "when you cycle this card" trigger.
     'triggerCycleX',
     'triggerAttackerCount',
+    // CR 603.2c: "for each opponent dealt damage" of a `damageBatch` trigger.
+    'triggerDamagedPlayerCount',
     // CR 205.2a, 603.2c: "for each card type among those cards" of a batch trigger.
     'cardTypesAmongTriggerCards',
     // D-194: "the number of profit votes" (CR 701.38a).
@@ -2475,6 +2479,8 @@ export const AMOUNT_KINDS = [
   'triggerCycleX',
   /** "that many" in a "whenever one or more Sphinxes attack" trigger (issue 81): the engine's `triggerAttackerCount`. */
   'triggerAttackerCount',
+  /** "for each opponent dealt damage" in a "whenever one or more Pirates deal damage to your opponents" trigger: the engine's `triggerDamagedPlayerCount`. */
+  'triggerDamagedPlayerCount',
   /** "For each card type among those cards" (CR 205.2a, 603.2c): the engine's `cardTypesAmongTriggerCards`, of a batch `putIntoGraveyard` trigger. */
   'cardTypesAmongTriggerCards',
   /** "The number of profit votes" (CR 701.38a, D-194): the engine's `votesFor`. */
@@ -2850,6 +2856,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tappedForMana: true,
   tapsForMana: true,
   combatDamageBatch: true,
+  damageBatch: true,
   lifeGained: true,
   lifeLost: true,
   countersAdded: true,

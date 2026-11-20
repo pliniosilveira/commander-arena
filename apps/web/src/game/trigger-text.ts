@@ -725,6 +725,14 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       const words = SMALL_COUNT_WORDS[trigger.atLeast ?? 1] ?? String(trigger.atLeast);
       return `Whenever ${words} or more ${things} deal combat damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
     }
+    case 'damageBatch': {
+      // CR 120.2, 603.2c: "Whenever one or more Pirates you control deal damage to a player | to your opponents".
+      const core = nounCore(trigger.what, 'creature');
+      if (core === null) return null;
+      const things = `${core.endsWith('s') ? core : `${core}s`}${controlText(trigger.what)}${withText(trigger.what)}`;
+      const words = SMALL_COUNT_WORDS[trigger.atLeast ?? 1] ?? String(trigger.atLeast);
+      return `Whenever ${words} or more ${things} deal damage to ${trigger.to === 'opponents' ? 'your opponents' : 'a player'}`;
+    }
     case 'tappedForMana': {
       // CR 106.12, 605.1b, 303.4: "Whenever enchanted land is tapped for mana", for whoever taps the land the Aura is attached to; any other permanent a player may tap has no words yet.
       if (trigger.by === 'tapper') {

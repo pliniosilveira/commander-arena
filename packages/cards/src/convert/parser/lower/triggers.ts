@@ -346,6 +346,22 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         ...(t.whileMonarch === true ? { whileMonarch: true as const } : {}),
       });
     }
+    case 'damageBatch': {
+      // "Whenever one or more Pirates you control deal damage to a player | to your opponents" (Ahoy Mateys group 1, CR 120.2, 603.2c): the engine's `damageBatch`.
+      if (t.subject === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
+        return failure(t);
+      }
+      const filter = lowerFilter(t.subject);
+      if (!filter.ok) return filter;
+      const missing = missingFeatures(['trigger:damageBatch']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({
+        kind: 'damageBatch',
+        what: filter.value,
+        to: t.damaged === 'opponent' ? 'opponents' : 'player',
+        ...(t.atLeast === undefined ? {} : { atLeast: t.atLeast }),
+      });
+    }
     case 'tappedForMana': {
       // "Whenever you tap a permanent for {C}" (stage P31, D-140, CR 106.12, 605.1b): a mana ability of a permanent the filter matches,
       // activated with {T} by the controller, and the type of mana it made when the text names one.
@@ -807,6 +823,7 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
+      only.event === 'damageBatch' ||
       only.event === 'noncombatDamageDealt' ||
       only.event === 'playerDealtDamage') &&
       only.recipient !== undefined);
@@ -1849,6 +1866,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:entersUntapped',
   'trigger:leavesToAnyOf',
   'trigger:combatDamageBatch',
+  'trigger:damageBatch',
   'trigger:diesBatch',
   'trigger:discarded',
   'trigger:exerted',
