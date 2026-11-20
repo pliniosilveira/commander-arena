@@ -10,6 +10,7 @@ import type { SeatId } from '../ids';
 import type { GameEvent } from '../state/events';
 import { getSeat, patchSeat } from '../state/ops';
 import type { GameState } from '../state/types';
+import { leaveGame } from './leave-game';
 import { monarchAfterLoss } from './monarch';
 import { cannotLoseGame } from './player-protection';
 
@@ -28,6 +29,10 @@ export function loseTheGame(
     events.push({ kind: 'playerLost', seat, reason: 'effect' });
   }
   if (losing.length > 0) {
+    // CR 800.4a: they leave the game together, once all are marked.
+    const left = leaveGame(state, losing);
+    state = left.state;
+    events.push(...left.events);
     const handed = monarchAfterLoss(state);
     state = handed.state;
     events.push(...handed.events);

@@ -76,6 +76,7 @@ import {
   markGraveyardPlay,
   riderOf,
 } from './rules/graveyard-play';
+import { leaveGame } from './rules/leave-game';
 import { canPlayLand } from './rules/legality';
 import { applyLegendRule } from './rules/legend-rule';
 import { activateManaAbility } from './rules/mana-engine';
@@ -288,11 +289,16 @@ function concede(state: GameState, seat: SeatId): Result {
     { kind: 'playerLost', seat, reason: 'concede' },
   ];
   // CR 725.4 (D-127): a monarch who concedes hands the designation on at once.
-  const handed = monarchAfterLoss(next);
+  const left = leaveGame(next, [seat]);
+  events.push(...left.events);
+  const handed = monarchAfterLoss(left.state);
   events.push(...handed.events);
   const end = evaluateGameEnd(handed.state);
   events.push(...end.events);
-  return ok(end.state, events);
+  if (end.state.result) return ok(end.state, events);
+  // CR 800.4j: the game goes on without the seat that left; the next seat in turn order gets priority.
+  const granted = grantPriority({ ...end.state, resolution: null }, seat, events);
+  return ok(granted.state, [...events, ...granted.events]);
 }
 
 function resumeAfterSbaDecision(state: GameState, prior: readonly GameEvent[] = []): Result {

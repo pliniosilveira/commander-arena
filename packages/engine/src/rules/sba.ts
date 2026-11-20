@@ -35,6 +35,7 @@ import { settleDayNight } from './day-night';
 import { derive } from './derive';
 import { settleDestruction } from './destroy-replacement';
 import { replacementSources } from './die-replacement';
+import { leaveGame } from './leave-game';
 import { exemptFromLegendRule, type LegendCandidate, legendRuleDecision } from './legend-rule';
 import { monarchAfterLoss } from './monarch';
 import { endBrokenPairs } from './pairing-sba';
@@ -203,6 +204,10 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     performed = true;
   }
   if (losses.size > 0) {
+    // CR 800.4a: the seats that lost leave the game together, once all are marked (a game that goes on only).
+    const left = leaveGame(state, [...losses.keys()]);
+    state = left.state;
+    events.push(...left.events);
     // CR 725.4 (D-127): a monarch who left the game hands the designation on as they leave.
     const handed = monarchAfterLoss(state);
     state = handed.state;

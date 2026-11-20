@@ -31,7 +31,7 @@ import type { ObjectId, SeatId } from '../ids';
 import type { ChosenTarget } from '../state/chosen';
 import type { NewDecision, TargetChoiceSpec, TriggerChoice } from '../state/decisions';
 import type { GameEvent } from '../state/events';
-import { patchObject, removeFromZone, seatsInOrder } from '../state/ops';
+import { getSeat, patchObject, removeFromZone, seatsInOrder } from '../state/ops';
 import type { GameState, PendingTrigger } from '../state/types';
 import { pushAbilityObject } from './ability-object';
 import { becameTargetEvents } from './becomes-target';
@@ -414,6 +414,14 @@ export function putTriggersOnStack(input: GameState): PutResult {
     state = resumed.state;
     events.push(...resumed.events);
     if (resumed.decision) return { state, events, decision: resumed.decision };
+  }
+  // CR 800.4d: a triggered ability that would be controlled by a player who has left the game is not put on the stack. It is dropped, so the waiting list
+  // empties (a seat that has left is not walked below and nothing else would remove it).
+  if (state.pendingTriggers.some((t) => getSeat(state, t.controller).hasLost)) {
+    state = {
+      ...state,
+      pendingTriggers: state.pendingTriggers.filter((t) => !getSeat(state, t.controller).hasLost),
+    };
   }
   for (const seat of seatsInOrder(state, state.turn.activeSeat)) {
     const mine = state.pendingTriggers.filter((t) => t.controller === seat && t.deferred !== true);
