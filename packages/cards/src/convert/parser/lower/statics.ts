@@ -652,8 +652,7 @@ function readsCombat(filter: ObjectFilter): boolean {
   return (
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
-    // D-416 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
-    filter.modified === true ||
+    // D-416 (CR 700.9): "modified" is read from the counters and attachments (`subjectAffects`, issue 345), so a subject may name it.
     // CR 701.15b: the designation is read from the game, which `derive` does not have while it matches a subject.
     filter.goaded === true ||
     (filter.anyOf?.some(readsCombat) ?? false)

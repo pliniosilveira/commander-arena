@@ -138,7 +138,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 
 ## Unread wordings and small limits
 
-One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read from a cloud session for most of the cards built there: behaviour follows the Comprehensive Rules, and a ruling that disagrees is a bug to report.
+One line per known limit, at most 40 words; delete the line in the change that fixes it. Scryfall's rulings could not be read for most cards built in a cloud session: behaviour follows the Comprehensive Rules; a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
 - "Target spell or creature" is plain text in the web.
@@ -341,10 +341,10 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "For each Aura attached to it" binds "it" only for a static ability with subject `~` or "enchanted creature"; for a group ("Creatures you control get +1/+1 for each Aura attached to it") or an effect it is not.
 - "Attached to" reads only "it" and "a creature", in the singular: not "attached to target creature", "attached to a land" or "attached to a creature you control".
 - `enchanted` is read as "has an Aura attached" for a group ("all creatures that aren't enchanted"); "equipped", "that aren't enchanted or tapped" and the singular "each creature that isn't enchanted" are not read.
-- "Enchanted creature is <one color>" is the only host condition by quality; a creature type, "is red or white", "isn't green" and a keyword or power of the host are not read.
+- "Enchanted creature is <one color or legendary>" is the only host condition by quality; a creature type, "is red or white", "isn't green" and a keyword or power of the host are not read.
 - `abilityCostReduction` names Equip abilities only and a filter on the target; Crew, Cycling and "abilities you activate" are not read.
 - A cost reduction that depends on the targets restricts only the first mandatory target slot: a spell whose second slot could be the cheap target is offered fewer choices than the rules allow.
-- "Modified" is not read in the subject of a static ability, nor as the subject of a "dies" trigger.
+- "Modified" is not read as the subject of a "dies" trigger; a static subject ignores layer 4 Equipment or Aura changes.
 - "Other Elves you control" (`noun.other-subtype-permanents`) is not read by `effect.pump-others`.
 - Umbra armor: the destruction of the Aura takes the Aura's own shield or indestructible and asks no question.
 - Two creatures that each need an answer in one state-based-action check are asked one per check.

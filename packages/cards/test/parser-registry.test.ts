@@ -235,6 +235,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Issue 345: the sorcery timing and the count of one sentence.
+  'restriction.sorcery-once-each-turn': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
   // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),

@@ -5,6 +5,7 @@
 import type { ObjectFilter, StaticSubject } from '../ast/types';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
+import { copiableValues } from './copiable';
 import { type FilterContext, type FilterSubject, matchesFilterWith } from './filter-match';
 import { partnerOf } from './pairing';
 
@@ -29,6 +30,29 @@ function filterOf(subject: Extract<StaticSubject, { kind: 'filter' }>): ObjectFi
     otherFilters.set(subject, filter);
   }
   return filter;
+}
+
+/** Whether a filter, or a member of its `anyOf`, says "modified". */
+function readsModified(filter: ObjectFilter): boolean {
+  return filter.modified === true || filter.anyOf?.some(readsModified) === true;
+}
+
+/**
+ * CR 700.9 (issue 345, Invigorating Hot Spring: "Modified creatures you control have haste."): whether `target` is modified, for the subject of a static ability. `derive` matches
+ * that subject before the layers are settled, so what `isModified` reads through `derive` is read from the copiable values instead (CR 707.2): an Equipment or an Aura by its
+ * printed or copied subtypes. A layer 4 effect that makes an attached permanent an Equipment or an Aura is not seen here (a known limit).
+ */
+function modifiedBeforeLayers(state: GameState, target: GameObject): boolean {
+  if (target.zone !== 'battlefield') return false;
+  if (Object.values(target.counters).some((n) => n > 0)) return true;
+  const owner = controllerOf(state, target);
+  return state.battlefield.some((id) => {
+    const attached = state.objects[id];
+    if (attached === undefined || attached.attachedTo !== target.id) return false;
+    const subtypes = copiableValues(state, attached).characteristics.subtypes;
+    if (subtypes.includes('Equipment')) return true;
+    return subtypes.includes('Aura') && controllerOf(state, attached) === owner;
+  });
 }
 
 /**
@@ -61,7 +85,9 @@ export function subjectAffects(
     const partner = partnerOf(state, source);
     return partner !== null && (source.id === target.id || partner.id === target.id);
   }
-  return matchesFilterWith(state, target, () => view, filterOf(subject), {
+  const filter = filterOf(subject);
+  const seen = readsModified(filter) ? { ...view, modified: modifiedBeforeLayers(state, target) } : view;
+  return matchesFilterWith(state, target, () => seen, filter, {
     ...context,
     attackers: state.combat?.attackers.map((a) => a.object) ?? [],
   });

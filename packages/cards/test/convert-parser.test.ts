@@ -918,6 +918,7 @@ describe('unmatched abilities', () => {
       'restriction.cost-reduction',
       'restriction.cost-reduced-by',
       'restriction.sorcery-and-if',
+      'restriction.sorcery-once-each-turn',
       'restriction.during-your-turn',
       'restriction.cost-reduction-your-turn',
       'token.predefined',

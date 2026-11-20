@@ -588,8 +588,11 @@ function restrictionsOf(
     // "Activate only once each turn." (stage P31, D-140, CR 602.5b): an ordinary activation's own count; a mana ability has none.
     if (restriction.perTurn !== undefined) {
       if (!allowOnce || oncePerTurn || restriction.perTurn !== 1) return failure(restriction);
-      if (restriction.timing !== undefined || restriction.condition !== undefined) {
-        return failure(restriction);
+      if (restriction.condition !== undefined) return failure(restriction);
+      // Issue 345 (Invigorating Hot Spring): "Activate only as a sorcery and only once each turn." says both in one sentence.
+      if (restriction.timing !== undefined) {
+        if (!allowTiming || timing !== undefined) return failure(restriction);
+        timing = 'sorcery';
       }
       const blocked = gate(restriction, ['ability:oncePerTurn']);
       if (blocked !== null) return blocked;
