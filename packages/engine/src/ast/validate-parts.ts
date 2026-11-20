@@ -2515,6 +2515,38 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         );
       }
       break;
+    case 'untapPermanents':
+      // CR 701.26b, 118.3: "Untap two tapped creatures you control": a count of 1 or more, permanents the player controls, on the battlefield, that are
+      // tapped (the engine adds that itself).
+      checkFilter(cost.filter, `${path}.filter`, out);
+      if (!isCount(cost.count) || cost.count < 1) {
+        issue(out, `${path}.count`, 'the number of permanents to untap must be a positive integer');
+      }
+      if (filterSome(cost.filter, (f) => f.controller === 'opponent')) {
+        issue(
+          out,
+          `${path}.filter.controller`,
+          'only permanents you control can be untapped for a cost',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.tapped !== undefined)) {
+        issue(
+          out,
+          `${path}.filter.tapped`,
+          'the permanents untapped for a cost are tapped: the filter does not say so',
+        );
+      }
+      if (filterSome(cost.filter, (f) => f.zone !== undefined && f.zone !== 'battlefield')) {
+        issue(out, `${path}.filter.zone`, 'only permanents on the battlefield can be untapped');
+      }
+      if (filterSome(cost.filter, (f) => f.stackKind !== undefined || f.owner !== undefined)) {
+        issue(
+          out,
+          `${path}.filter`,
+          'an untap cost names permanents by type, subtype, color and the like: no stackKind or owner',
+        );
+      }
+      break;
     case 'blight':
       // D-407 (CR 701.68a): "Blight 1": a positive number of -1/-1 counters.
       if (!isCount(cost.count) || cost.count < 1) {
@@ -6315,6 +6347,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseGame':
       // CR 104.3e (D-269): the players the selector names lose the game; no other operand.
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      break;
+    case 'winGame':
+      // CR 104.2b: one player wins the game; a selector that names several players has no meaning ("each opponent wins").
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (
+        e.player?.kind === 'eachPlayer' ||
+        e.player?.kind === 'eachOpponent' ||
+        e.player?.kind === 'eachOtherOpponent' ||
+        e.player?.kind === 'all'
+      ) {
+        issue(out, `${path}.player`, 'only one player wins the game: name a single player');
+      }
       break;
     case 'setLifeTotal':
       // CR 119.5 (D-201): a whole number, 0 or more.

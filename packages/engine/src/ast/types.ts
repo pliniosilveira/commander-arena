@@ -1290,6 +1290,16 @@ export type Cost =
    */
   | { readonly kind: 'tapPermanents'; readonly filter: ObjectFilter; readonly count: number }
   /**
+   * "Untap two tapped creatures you control" (CR 701.26b, 118.3, 602.2b): the player untaps `count` tapped permanents they control that match `filter`, as part of the cost of an
+   * activated ability. Only a tapped permanent can be untapped, so a player with fewer than `count` of them cannot pay (CR 118.3). The costs are paid in the order the player likes
+   * (CR 601.2h): this one is paid after the mana, so a creature tapped for the mana of the cost may be one of them, and a creature that came under the player's control this turn
+   * may be untapped (CR 302.6: only its own {T} ability is held back). With more candidates than `count` a `choosePermanent` decision of purpose `untapCost` and `forCost` asks. A
+   * permanent that would not untap (a stun counter, CR 122.1d) is untapped as every effect untaps it. The filter's controller is the player (`you` or left out), its zone the
+   * battlefield, and it does not say `tapped`. Different from `untap` (the permanent the ability belongs to, {Q}); refused with another cost that taps permanents of a
+   * filter, a crew cost or a blight cost, and in a mana ability, a spell's additional cost or an alternative cost.
+   */
+  | { readonly kind: 'untapPermanents'; readonly filter: ObjectFilter; readonly count: number }
+  /**
    * "Blight 1" (D-407, CR 701.68): the player puts `count` -1/-1 counters on a creature they control, as part of the cost of an activated ability. The
    * player chooses the creature with a `choosePermanent` decision of purpose `blight` and `forCost` (the engine chooses when only one creature can take the
    * counters, and says so). A creature that can't have -1/-1 counters put on it (`cantHaveCounters`) is not a choice, and a player with no creature that can take
@@ -2904,6 +2914,13 @@ export type Effect =
    * player" and "each player this creature attacked this turn" are all read (CR 104.3e: the effect names the player).
    */
   | { readonly kind: 'loseGame'; readonly player: PlayerSelector }
+  /**
+   * "You win the game." (CR 104.2b: an effect may state that a player wins the game; CR 104.1: the game ends immediately when a player wins): the one player the selector names
+   * wins at once and the game ends, whoever else is in it (a player who "can't lose the game" does not stop it ending). When an opponent of the player has a permanent that says "your
+   * opponents can't win the game" (`opponentsCantWin`) the player does not win: the "can't" effect wins (CR 101.2). Nothing happens for a player who has left the game. The selector
+   * must name one player ("you", "that player", "target player").
+   */
+  | { readonly kind: 'winGame'; readonly player: PlayerSelector }
   /**
    * "Exile them, then meld them into R." (CR 701.42a, 701.42b, 701.42c, 712.4a, D-278), the ability of a meld card: it exiles the permanent it belongs to
    * and the creature named `partner` that its controller both owns and controls, then puts the two cards onto the battlefield as one melded permanent

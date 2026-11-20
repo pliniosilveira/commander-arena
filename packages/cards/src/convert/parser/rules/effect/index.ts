@@ -176,6 +176,7 @@ import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
+import { WIN_GAME_EFFECT_RULES } from './win-game';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
 const TAP_OPERANDS = [
@@ -1137,6 +1138,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_EFFECT_RULES,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
   ...HYLDA_G3_EFFECT_RULES,
+  // Hatsune Miku deck (issue 145): "You win the game."
+  ...WIN_GAME_EFFECT_RULES,
   ...FLASH_PERMISSION_EFFECT_RULES,
   // Quandrix Unlimited deck: "Until end of turn, any time you could activate a mana ability, you may pay 1 life. If you do, add {C}." (Channel).
   ...PLAYER_MANA_ABILITY_EFFECT_RULES,

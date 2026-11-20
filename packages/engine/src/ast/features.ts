@@ -212,6 +212,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
+    // "You win the game." (CR 104.2b).
+    'winGame',
     // D-278: "Exile them, then meld them into X." (CR 701.42a).
     'meld',
     'tap',
@@ -790,6 +792,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // D-407 (CR 701.68): "Blight 1" as the cost of an activated ability.
     'blight',
+    // CR 701.26b: "Untap two tapped creatures you control" as the cost of an activated ability.
+    'untapPermanents',
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
@@ -2365,6 +2369,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   setLifeTotal: true,
   loseLife: true,
   loseGame: true,
+  winGame: true,
   meld: true,
   tap: true,
   untap: true,
@@ -2698,6 +2703,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,
   removeCounters: true,

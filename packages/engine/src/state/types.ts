@@ -924,7 +924,8 @@ export interface CastingContext {
     | 'crew'
     | 'tap'
     | 'bounce'
-    | 'blight';
+    | 'blight'
+    | 'untap';
   /**
    * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.

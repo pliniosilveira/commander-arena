@@ -66,6 +66,7 @@ describe('the dimensions', () => {
       'tapPermanents',
       // D-407: "Blight 1" as the cost of an activated ability.
       'blight',
+      'untapPermanents',
       // D-139: "Put a page counter on this artifact", "Return an artifact you control to its owner's hand".
       'putCounters',
       'returnToHand',
