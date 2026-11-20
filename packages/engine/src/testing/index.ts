@@ -4,6 +4,6 @@
  * never reaches a production bundle, and only test code may import it (`pnpm lint`).
  */
 export { createDriver, type DriverOptions } from './driver';
-export { type ScenarioBuilder, scenario } from './scenario';
+export { type ScenarioBuilder, type ScenarioOptions, scenario } from './scenario';
 export { startGame } from './start';
 export * from './types';

@@ -19,8 +19,16 @@ import {
   type TargetRef,
 } from './types';
 
-/** The seat across the table (the engine supports exactly two seats). */
+/**
+ * The seat across the table. With more than two seats there is no single answer, so the scenario
+ * must name the defending player (`{ player: n }`) itself.
+ */
 export function opponentSeat(state: GameState, seat: SeatId): SeatId {
+  if (state.seats.length > 2) {
+    throw new ScenarioError(
+      `Seat ${seat} has ${state.seats.length - 1} opponents: name the player ({ player: n })`,
+    );
+  }
   return (seat + 1) % state.seats.length;
 }
 
@@ -59,10 +67,14 @@ export function declareBlockersAction(
     kind: 'declareBlockers',
     blocks: blocks.map((b) => ({
       blocker: resolveObject(ctx, b.blocker, { zones: ['battlefield'], seat }).id,
-      attacker: resolveObject(ctx, b.attacker, {
-        zones: ['battlefield'],
-        seat: opponentSeat(ctx.state, seat),
-      }).id,
+      // With several opponents the attacker is found among every other seat's creatures.
+      attacker: resolveObject(
+        ctx,
+        b.attacker,
+        ctx.state.seats.length > 2
+          ? { zones: ['battlefield'] }
+          : { zones: ['battlefield'], seat: opponentSeat(ctx.state, seat) },
+      ).id,
     })),
   };
 }

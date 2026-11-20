@@ -335,8 +335,8 @@ describe('scenario builder: refusals', () => {
   });
 
   test('seat problems', () => {
-    refused(() => scenario().seat(2), /exactly two seats/);
-    refused(() => scenario().hand('Forest'), /Call \.seat\(0\) or \.seat\(1\) before \.hand\(\)/);
+    refused(() => scenario().seat(2), /Seat 2 does not exist: this scenario has 2 seats/);
+    refused(() => scenario().hand('Forest'), /Call \.seat\(n\) before \.hand\(\)/);
     refused(
       () => scenario().seat(0).at('precombatMain', { active: 2 }).build(),
       /active seat 2 does not exist/,
