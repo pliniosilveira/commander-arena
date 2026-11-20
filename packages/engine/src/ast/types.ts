@@ -2383,6 +2383,13 @@ export type Effect =
    */
   | { readonly kind: 'exileFromTriggerCards' }
   /**
+   * "Whenever one or more creature cards are put into your graveyard from your library, put one of them onto the battlefield." (issue 102, Colossal Grave-Reaver; CR 603.2c, 608.2d,
+   * 400.7, 110.2a): of the cards that triggered this ability (`triggerCards`: the cards a batch `putIntoGraveyard` trigger saw put into a graveyard, as the objects they became) the ones
+   * still in a graveyard, the controller chooses one (nothing is asked with one; nothing happens with none) and puts it onto the battlefield under their control. The card put there is
+   * what `moved` names afterwards. Only in a triggered ability whose trigger is a batch `putIntoGraveyard` (`validateCard`).
+   */
+  | { readonly kind: 'putOneOfTriggerCards' }
+  /**
    * "Create a token that's a copy of one of them." (CR 603.2c, 608.2d, 707.2, 111.4, Twilight Diviner): of the permanents that triggered this ability (`triggerCards`: the batch an
    * `entersBatch` trigger saw enter) the ones still on the battlefield, the controller chooses one (nothing is asked with one; with none nothing is created) and creates a token with its
    * copiable values, as `populate` makes one. The token made is what `moved` names afterwards. Only in a triggered ability whose trigger is an `entersBatch` (`validateCard`).

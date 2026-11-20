@@ -85,6 +85,44 @@ export const EFFECT_EXILE_ONE_OF_THEM = defineRule<Clauses>({
 });
 
 /**
+ * `effect.put-one-of-them-onto-battlefield`: "put one of them onto the battlefield" (issue 102, Colossal Grave-Reaver; CR 603.2c, 608.2d, 400.7, 110.2a): of the cards a batch of
+ * cards put into a graveyard is about, the ones still there, the controller puts one onto the battlefield under their control. Only one card, "them" (the cards of the batch) and
+ * the battlefield; the lowering reads it only in the body of a batch `putIntoGraveyard` trigger. Not read: "you may", tapped, "under its owner's control", "put them", another
+ * destination, another number.
+ */
+export const EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD = defineRule<Clauses>({
+  id: 'effect.put-one-of-them-onto-battlefield',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 603.2c (Handling Triggered Abilities)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 400.7 (General)',
+    'CR 110.2a (Permanents)',
+  ],
+  examples: ['put one of them onto the battlefield', 'Put one of them onto the battlefield'],
+  rejects: [
+    'you may put one of them onto the battlefield',
+    'put them onto the battlefield',
+    'put one of them into your hand',
+    'put one of them onto the battlefield tapped',
+    "put one of them onto the battlefield under its owner's control",
+    'put two of them onto the battlefield',
+    'put one of those onto the battlefield',
+    'put one of them onto the battlefield and draw a card',
+    'put one of them',
+  ],
+  parse: single(
+    'effect.put-one-of-them-onto-battlefield',
+    sequence(
+      literal('put one of them onto the battlefield'),
+      pattern(/(?![\p{L}\p{N}])(?!\s+(?:and|then|tapped|under)(?![\p{L}\p{N}]))/u),
+    ),
+    () => ({ verb: 'putOneOfThem', args: {} }),
+  ),
+});
+
+/**
  * `effect.shuffle-cards-into-library`: "shuffle any number of target cards from your graveyard into your library", "shuffle target card from your graveyard into your library" (CR 701.24c,
  * 701.24d, 404.1: the cards go into your library, which is shuffled even when no card is there). The cards are the targets of a phrase of your own graveyard, one or any number. Not read: a
  * graveyard that is not yours, "their library", "on top of", a list, "all", "up to", a count.
@@ -195,6 +233,7 @@ export const EFFECT_DEAL_DAMAGE_TO_ITSELF = defineRule<Clauses>({
 export const LOREHOLD_G1_EFFECT_RULES = [
   quietly(EFFECT_REPEAT_PROCESS),
   quietly(EFFECT_EXILE_ONE_OF_THEM),
+  quietly(EFFECT_PUT_ONE_OF_THEM_ONTO_BATTLEFIELD),
   quietly(EFFECT_SHUFFLE_CARDS_INTO_LIBRARY),
   quietly(EFFECT_DEAL_DAMAGE_TO_ITSELF),
 ];

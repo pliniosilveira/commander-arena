@@ -448,6 +448,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'dealDamageToController',
     // Lorehold group 1: "you may exile one of them from your graveyard" of the cards a batch discard trigger saw (CR 603.2c).
     'exileFromTriggerCards',
+    // Issue 102 (Colossal Grave-Reaver): "put one of them onto the battlefield" of a batch of cards put into a graveyard.
+    'putOneOfTriggerCards',
     // Twilight Diviner: "create a token that's a copy of one of them" of the permanents a batch enters trigger saw (CR 603.2c, 707.2).
     'copyOneOfTriggerCards',
     // D-145: "you may cast a spell ... from your hand without paying its mana cost", "you may play the exiled card" (CR 608.2g).
@@ -2774,6 +2776,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   dealDamageToSelf: true,
   dealDamageToController: true,
   exileFromTriggerCards: true,
+  putOneOfTriggerCards: true,
   copyOneOfTriggerCards: true,
   fight: true,
   castFree: true,

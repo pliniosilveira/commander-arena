@@ -2825,6 +2825,29 @@ function runEffect(
       );
     }
 
+    case 'putOneOfTriggerCards': {
+      // CR 603.2c, 608.2d, 400.7, 110.2a (issue 102): the controller chooses one of the cards that triggered this ability that are still in a graveyard and puts it onto the battlefield
+      // under their control; with one candidate nothing is asked, with none nothing is done.
+      return done(
+        state,
+        [],
+        [
+          {
+            kind: 'chooseMove' as const,
+            filter: { zone: 'graveyard' as const },
+            count: 1,
+            to: 'battlefield' as const,
+            position: 'top' as const,
+            tapped: false,
+            controller: 'you' as const,
+            anyOwner: true as const,
+            among: res.triggerCards ?? [],
+            chosen: null,
+          },
+        ],
+      );
+    }
+
     case 'exileOwnGraveyardCard': {
       // CR 701.13, 101.4 (D-231): each player named chooses a card of their own graveyard, in turn order from the active player; it is exiled.
       const seats = resolvePlayers(state, effect.players, ctx, targets);

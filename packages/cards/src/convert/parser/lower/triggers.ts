@@ -1330,6 +1330,8 @@ function lowerTriggeredAbility(
   ctx.deathOfOther =
     triggers.length > 0 && triggers.every((t) => t.kind === 'dies' && !('kind' in t.what));
   ctx.discardBatchTrigger = triggers.every((t) => t.kind === 'discarded' && t.batch === true);
+  ctx.graveyardBatchTrigger =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.batch === true);
   // Twilight Diviner: "a copy of one of them" names the permanents of a batch of enters.
   ctx.entersBatchTrigger = triggers.every((t) => t.kind === 'entersBatch');
   // D-184: "When you cast this spell": the source is the spell that was cast, which is what "the amount of mana spent to cast it" reads.

@@ -5063,6 +5063,16 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         );
       }
       break;
+    case 'putOneOfTriggerCards':
+      // CR 603.2c (issue 102, Colossal Grave-Reaver): the cards a batch `putIntoGraveyard` trigger saw put into a graveyard, one of which is put onto the battlefield.
+      if (scope.triggerCards !== true) {
+        issue(
+          out,
+          path,
+          'putOneOfTriggerCards needs a trigger about a batch of cards (a batch putIntoGraveyard trigger)',
+        );
+      }
+      break;
     case 'copyOneOfTriggerCards':
       // CR 603.2c, 707.2 (Twilight Diviner): the permanents a batch `entersBatch` trigger saw enter, one of which is copied.
       if (scope.triggerCards !== true) {

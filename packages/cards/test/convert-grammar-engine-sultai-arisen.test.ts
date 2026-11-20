@@ -501,3 +501,47 @@ describe('"Return target creature card from your graveyard to the battlefield. I
     expect(angel?.subtypes).toEqual(expect.arrayContaining(['Angel', 'Zombie']));
   });
 });
+
+describe('"Whenever one or more creature cards are put into your graveyard from your library, put one of them onto the battlefield." (CR 603.2c, 608.2d, 110.2a)', () => {
+  const reaver = parsed(
+    'SYNTHETIC Parsed Reaver',
+    'Creature — Dragon',
+    'Whenever one or more creature cards are put into your graveyard from your library, put one of them onto the battlefield.',
+    { manaCost: '{6}{B}{G}', power: '6', toughness: '6', colors: ['B', 'G'] },
+  );
+  const mill = parsed('SYNTHETIC Parsed Reaver Mill', 'Sorcery', 'Mill three cards.', {
+    manaCost: '{U}',
+    colors: ['U'],
+  });
+  const build = (library: readonly string[]) =>
+    scenario()
+      .seat(0)
+      .define(reaver)
+      .define(mill)
+      .battlefield(reaver.name, 'Island')
+      .hand(mill.name)
+      .library(...library)
+      .seat(1)
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+
+  test('the controller chooses one of the creature cards milled and it enters', () => {
+    const g = build(['Grizzly Bears', 'Serra Angel', 'Island', 'Island', 'Island']);
+    g.act(0).cast(mill.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.act(0).chooseCards('Serra Angel');
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+  });
+
+  test('with no creature card milled nothing happens', () => {
+    const g = build(['Island', 'Island', 'Island', 'Island']);
+    g.act(0).cast(mill.name, { pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.zone('Island', 'graveyard', { seat: 0 });
+  });
+});
