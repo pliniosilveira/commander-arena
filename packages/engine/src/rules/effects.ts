@@ -1596,7 +1596,13 @@ function runEffect(
         res.controller === state.turn.activeSeat
           ? {
               ...state,
-              turn: { ...state.turn, extraLandDrops: state.turn.extraLandDrops + effect.count },
+              turn: {
+                ...state.turn,
+                // CR 107.3a: "play X additional lands": the X of the spell, read as the effect runs; none for 0 or less.
+                extraLandDrops:
+                  state.turn.extraLandDrops +
+                  Math.max(0, amountOf(state, effect.count, ctx, targets)),
+              },
             }
           : state,
       );

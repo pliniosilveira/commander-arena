@@ -23,6 +23,8 @@ import { defineRule, family, spanned } from '../registry';
 import { type Clauses, single } from './operands';
 
 const NOUN = 'noun.library-card';
+/** CR 701.23b: "four basic land cards", a count with a stated quality, is read for the search only. */
+const COUNTED = 'noun.library-cards-counted';
 
 type Place = Pick<IrZoneSpec, 'zone' | 'whose' | 'tapped'>;
 
@@ -211,6 +213,8 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
     'search your library for a basic land card, put that card onto the battlefield tapped, then shuffle',
     'search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle',
     'search your library for up to two basic land cards, put them onto the battlefield tapped, then shuffle',
+    // CR 701.23b (Planar Engineering): a count of cards with a stated quality, put at once.
+    'search your library for four basic land cards, put them onto the battlefield tapped, then shuffle',
     'search your library for a Plains, Island, Swamp, or Mountain card, put it onto the battlefield tapped, then shuffle',
     'search your library for a Forest card, put that card onto the battlefield, then shuffle',
     'search your library for a creature card, reveal it, put it into your hand, then shuffle',
@@ -276,7 +280,7 @@ export const EFFECT_SEARCH = defineRule<Clauses>({
       if (!where.ok) return where;
       const zones = zonesOf(where.value[1] ?? '', { start: pos, end: where.pos });
       if (zones === 'bad') return fail(ctx, pos);
-      const noun = family<IrNoun>('noun', { only: [NOUN] })(ctx, where.pos);
+      const noun = family<IrNoun>('noun', { only: [NOUN, COUNTED] })(ctx, where.pos);
       if (!noun.ok) return noun;
       const cards = noun.value;
       // Issue 160 (D-626, CR 107.3c): "up to X ... cards, where X is the number of tapped creatures you control": the definition comes right after the noun.

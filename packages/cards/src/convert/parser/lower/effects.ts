@@ -118,6 +118,7 @@ import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
 import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
 import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
+import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
@@ -807,7 +808,20 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
     // Issue 103 (CR 701.38b, 608.2c): "You may put a permanent card from your hand onto the battlefield for each free vote": up to that many cards, chosen as it resolves.
     const votes = arg(clause, 'count');
     let count: Amount | undefined;
-    if (votes !== undefined) {
+    // CR 107.3a, 608.2d (Worldsoul's Rage): "Put up to X land cards from your hand and/or graveyard onto the battlefield tapped": up to the X of the spell, from the cards of both places.
+    if (votes !== undefined && votes.kind === 'x') {
+      if (
+        !optional ||
+        to.attacking === true ||
+        filter.value.zone !== 'hand' ||
+        both?.kind !== 'flag'
+      ) {
+        return failure(clause);
+      }
+      const lowered = lowerAmount(votes, ctx, clause.rule);
+      if (!lowered.ok) return lowered;
+      count = lowered.value;
+    } else if (votes !== undefined) {
       if (
         votes.kind !== 'votesFor' ||
         !optional ||
@@ -1622,17 +1636,28 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
     if (blocked.length > 0) return failure(clause, blocked);
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
+    // CR 107.3a, 701.21a (Nahiri's Lithoforming): "Sacrifice X lands": the number of permanents is the X of the spell, read as the effect runs (D-131); with fewer than X to
+    // sacrifice, all of them are (the engine's choice takes what there is).
+    let xCount: Amount | undefined;
+    if (what.count?.kind === 'x') {
+      const x = lowerAmount(what.count, ctx, clause.rule);
+      if (!x.ok) return x;
+      xCount = x.value;
+    }
     const count = what.count?.kind === 'number' ? what.count.value : 1;
     // "... When you do, ~ deals damage equal to that creature's power" (stage P36, D-178, CR 603.12, 608.2h): the one permanent chosen is what
     // "that creature" means in an amount that follows, the engine's `sacrificed`.
     ctx.sacrificedRef =
-      count === 1 && what.anyNumber !== true && !what.plural ? (what.ref ?? null) : null;
+      count === 1 && xCount === undefined && what.anyNumber !== true && !what.plural
+        ? (what.ref ?? null)
+        : null;
     const chosen: ChooseSelector = {
       kind: 'choose',
       filter: filter.value,
       ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
       ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
       ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
+      ...(xCount !== undefined ? { count: xCount } : {}),
       ...(count > 1 && what.anyNumber !== true ? { count } : {}),
     };
     // "Each player sacrifices a creature of their choice." (stage P28, CR 701.21a, 101.4): each player the noun names
@@ -2280,6 +2305,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...POPULATE_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...RAMP_LANDS_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,

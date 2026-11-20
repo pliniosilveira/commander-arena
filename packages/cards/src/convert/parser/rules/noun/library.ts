@@ -224,6 +224,17 @@ function libraryUnion(ctx: Parameters<Parser<IrFilter>>[0], pos: number) {
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
 
+/** CR 701.23b: whether the cards are looked for by a stated quality (a card type, a subtype or a supertype), so the player is not required to find them. A bare "cards" or a named card has none. */
+function hasStatedQuality(filter: IrFilter): boolean {
+  return (
+    filter.named === undefined &&
+    ((filter.types?.length ?? 0) > 0 ||
+      (filter.subtypes?.length ?? 0) > 0 ||
+      (filter.supertypes?.length ?? 0) > 0 ||
+      (filter.anyOf?.length ?? 0) > 0)
+  );
+}
+
 /**
  * `noun.library-card`: "a" or "an" and one card, or "up to N" (two or more) and cards. A count
  * without "up to" ("two basic land cards") is not read: a search for a quality may find fewer
@@ -280,7 +291,7 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
   rejects: [
     'a basic land',
     'basic land card',
-    'two basic land cards',
+    'two cards',
     'up to one basic land card',
     'a Plains or island card',
     'a basic Plains or island card',
@@ -412,4 +423,52 @@ export const NOUN_LIBRARY_CARD = defineRule<IrNoun>({
   ),
 });
 
-export const LIBRARY_NOUN_RULES = [NOUN_LIBRARY_CARD];
+/**
+ * `noun.library-cards-counted`: "four basic land cards" (Planar Engineering; CR 701.23b): a count of two or more cards looked for by a stated quality (a card type, a subtype or a
+ * supertype), so the player is not required to find them all, as for "up to four". Only a search reads it (`effect.search`): "reveal cards until you reveal two land cards" says
+ * another thing (the player must reveal them), so the other rules that read `noun.library-card` do not see this one. Not read: a bare "cards", a named card, one card, "up to".
+ */
+export const NOUN_LIBRARY_CARDS_COUNTED = defineRule<IrNoun>({
+  id: 'noun.library-cards-counted',
+  family: 'noun',
+  // A count can be any number word or digit, so every position is tried.
+  leading: [],
+  cites: ['CR 701.23b (Search)', 'CR 701.23a (Search)', 'CR 205.4g (Supertypes)'],
+  examples: [
+    'four basic land cards',
+    'two basic land cards',
+    'three Forest cards',
+    '2 creature cards',
+  ],
+  rejects: [
+    'two cards',
+    'four basic land card',
+    'one basic land card',
+    'two cards named Regna',
+    'up to four basic land cards',
+    'a basic land card',
+    'four tapped land cards',
+  ],
+  parse: node<Bare, IrNoun>(
+    'noun.library-cards-counted',
+    map(
+      sequence(
+        spanned(satisfy(quantity, (n) => n >= 2)),
+        literal(' '),
+        satisfy(libraryPhrase(true), hasStatedQuality),
+      ),
+      ([count, , filter]): Bare => ({
+        kind: 'noun',
+        det: 'a',
+        filter,
+        upTo: true,
+        plural: true,
+        other: false,
+        count: { kind: 'number', value: count.value, span: count.span },
+      }),
+    ),
+    (b) => b,
+  ),
+});
+
+export const LIBRARY_NOUN_RULES = [NOUN_LIBRARY_CARD, NOUN_LIBRARY_CARDS_COUNTED];

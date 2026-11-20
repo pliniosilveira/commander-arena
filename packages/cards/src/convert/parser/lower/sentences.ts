@@ -1599,9 +1599,14 @@ function countsWhatHappened(
   switch (amount.what) {
     case 'sacrificed': {
       // "Each other player sacrifices a creature of their choice. ... for each creature sacrificed this way."
+      // CR 701.21a (Nahiri's Lithoforming): or the controller's own "Sacrifice X lands. For each land sacrificed this way, ...": a choice of permanents (`a`), not "sacrifice ~".
+      const chosenByController =
+        earlier.args.player === undefined &&
+        earlier.args.objects?.kind === 'noun' &&
+        earlier.args.objects.det === 'a';
       return (
         earlier.verb === 'sacrifice' &&
-        earlier.args.player !== undefined &&
+        (earlier.args.player !== undefined || chosenByController) &&
         (word === 'permanent' || names(earlier.args.objects).every((n) => n === word))
       );
     }
