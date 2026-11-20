@@ -333,3 +333,48 @@ describe('River Kelpie: "Whenever ~ or another permanent enters from a graveyard
     g.expect.handSize(0, 3);
   });
 });
+
+const onBattlefield = (state: { objects: Readonly<Record<string, { zone: string }>> }) =>
+  Object.values(state.objects).filter((o) => o.zone === 'battlefield').length;
+
+describe('"Draw two cards, then discard a card and you lose 2 life. Create X tapped 2/2 black Zombie Druid creature tokens, where X is the number of cards that were put into your graveyard from your hand or library this turn." (CR 404.1, 701.9, 701.17)', () => {
+  const dead = parsed(
+    'SYNTHETIC Parsed Welcome',
+    'Sorcery',
+    'Draw two cards, then discard a card and you lose 2 life. Create X tapped 2/2 black Zombie Druid creature tokens, where X is the number of cards that were put into your graveyard from your hand or library this turn.',
+    { manaCost: '{3}{B}', colors: ['B'] },
+  );
+  const mill = parsed('SYNTHETIC Parsed Welcome Mill', 'Sorcery', 'Mill two cards.', {
+    manaCost: '{U}',
+    colors: ['U'],
+  });
+  const build = () =>
+    base()
+      .define(dead)
+      .define(mill)
+      .hand(dead.name, mill.name)
+      .battlefield('Swamp', 'Swamp', 'Swamp', 'Swamp', 'Island')
+      .library('Island', 'Island', 'Island', 'Island', 'Island')
+      .at('precombatMain')
+      .build();
+
+  test('the discarded card is the one card put into the graveyard this turn from the hand', () => {
+    const g = build();
+    g.act(0).cast(dead.name, { pay: true });
+    g.passAll();
+    g.expect.pending('chooseCards', 0);
+    g.act(0).chooseCards('Plains[0]');
+    g.expect.life(0, 38);
+    expect(onBattlefield(g.state)).toBe(5 + 1);
+  });
+
+  test('cards milled earlier in the turn count as well', () => {
+    const g = build();
+    g.act(0).cast(mill.name, { pay: true });
+    g.passAll();
+    g.act(0).cast(dead.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseCards('Plains[0]');
+    expect(onBattlefield(g.state)).toBe(5 + 3);
+  });
+});

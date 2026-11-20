@@ -2624,6 +2624,8 @@ export interface TurnLog {
   readonly graveyardEntries: readonly {
     readonly seat: SeatId;
     readonly types: readonly CardType[];
+    /** The zone the card was put into the graveyard from (issue 102, "put into your graveyard from your hand or library this turn"). */
+    readonly from: Zone;
   }[];
   /** The modes a triggered ability chose this turn, by the permanent it belongs to (D-151, "choose one that hasn't been chosen this turn"). */
   readonly modesChosen: readonly { readonly source: ObjectId; readonly mode: number }[];

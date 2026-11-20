@@ -1474,6 +1474,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCastThisTurn',
     // D-646: "the greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i).
     'greatestManaValueCast',
+    // Issue 102 (Welcome the Dead): "the number of cards that were put into your graveyard from your hand or library this turn" (CR 404.1).
+    'cardsToGraveyardThisTurn',
     // D-491: "for each creature sacrificed this way" for the additional cost of a spell (CR 118.8).
     'sacrificedAsCost',
     // D-575: "for each card exiled this way" for a spell's additional cost.
@@ -2473,6 +2475,8 @@ export const AMOUNT_KINDS = [
   'spellsCastThisTurn',
   /** "The greatest mana value among instant and sorcery spells you've cast this turn" (CR 202.3, 601.2i, D-646): the engine's `greatestManaValueCast`. */
   'greatestManaValueCast',
+  /** "The number of cards that were put into your graveyard from your hand or library this turn" (issue 102, CR 404.1): the engine's `cardsToGraveyardThisTurn`. */
+  'cardsToGraveyardThisTurn',
   /** "For each creature sacrificed this way" for the additional cost of a spell (CR 118.8, D-491) or the cost of an activated ability (CR 602.2b, D-583): the engine's `sacrificedAsCost`. */
   'sacrificedAsCost',
   /** "For each card exiled this way" for a spell's additional cost (D-575): the engine's `exiledAsCost`. */

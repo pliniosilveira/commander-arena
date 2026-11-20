@@ -393,6 +393,16 @@ export function lowerAmount(
         rule,
       };
     }
+    case 'cardsToGraveyardThisTurn': {
+      // CR 404.1 (issue 102, Welcome the Dead): the controller's cards put into a graveyard this turn from the zones named; `validateCard` refuses it in a static ability.
+      const blocked = needs('cardsToGraveyardThisTurn');
+      if (blocked !== null) return blocked;
+      return {
+        ok: true,
+        value: { kind: 'cardsToGraveyardThisTurn', from: amount.from },
+        rule,
+      };
+    }
     case 'greatestManaValueCast': {
       // CR 202.3, 601.2i (D-646): the greatest mana value among the spells the controller has cast so far this turn, counted as the instruction runs; `validateCard` refuses it in a static ability.
       const blocked = needs('greatestManaValueCast');
@@ -993,6 +1003,7 @@ export const AMOUNT_NEEDS = [
   'amount:experienceCounters',
   'amount:spellsCastThisTurn',
   'amount:greatestManaValueCast',
+  'amount:cardsToGraveyardThisTurn',
   'amount:exiledAsCost',
   'amount:times',
   'amount:toughnessOf',

@@ -1159,7 +1159,11 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
         ...next.turnLog,
         graveyardEntries: [
           ...next.turnLog.graveyardEntries,
-          { seat: old.owner, types: derive(next, getObject(next, newId)).types },
+          {
+            seat: old.owner,
+            types: derive(next, getObject(next, newId)).types,
+            from: old.zone,
+          },
         ],
       },
     };

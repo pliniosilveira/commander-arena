@@ -2091,6 +2091,21 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'cardsDrawnThisTurn':
       // D-450 (CR 121.1): the controller's own count this turn; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
+    case 'cardsToGraveyardThisTurn':
+      // Issue 102 (CR 404.1): the controller's own cards put into a graveyard this turn from the hand and/or the library (statics refuse it in `checkStateAmount`).
+      if (
+        !Array.isArray(a.from) ||
+        a.from.length === 0 ||
+        a.from.some((z) => z !== 'hand' && z !== 'library')
+      ) {
+        issue(out, `${path}.from`, 'from names the hand and/or the library');
+      }
+      for (const key of Object.keys(a)) {
+        if (key !== 'kind' && key !== 'from') {
+          issue(out, `${path}.${key}`, 'cards put into a graveyard this turn reads only the zones');
+        }
+      }
+      break;
     case 'greatestManaValueCast':
     case 'spellsCastThisTurn':
       // D-638 (CR 601.2i): the controller's own count of the spells cast this turn, by card type when `ofTypes` names some (statics refuse it in `checkStateAmount`).

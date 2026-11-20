@@ -530,6 +530,13 @@ export type IrAmount =
       readonly ofTypes?: readonly string[];
       readonly span: Span;
     }
+  // "the number of cards that were put into your graveyard from your hand or library this turn" (issue 102, Welcome the Dead, CR 404.1): the cards the controller owns that went to a graveyard
+  // from the zones named this turn.
+  | {
+      readonly kind: 'cardsToGraveyardThisTurn';
+      readonly from: readonly ('hand' | 'library')[];
+      readonly span: Span;
+    }
   // Stage P28 (D-131): "equal to that creature's toughness", "for each +1/+1 counter on ~"
   | { readonly kind: 'toughnessOf'; readonly of: IrNoun; readonly span: Span }
   | {
@@ -2140,6 +2147,7 @@ const AMOUNT_KINDS: ReadonlySet<string> = new Set([
   'experienceCounters',
   'spellsCastThisTurn',
   'greatestManaValueCast',
+  'cardsToGraveyardThisTurn',
   'toughnessOf',
   'countersOn',
   'aggregate',

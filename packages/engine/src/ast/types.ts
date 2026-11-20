@@ -431,6 +431,16 @@ export type Amount =
    */
   | { readonly kind: 'greatestManaValueCast'; readonly ofTypes?: readonly CardType[] }
   /**
+   * "Create X tapped 2/2 black Zombie Druid creature tokens, where X is the number of cards that were put into your graveyard from your hand or library this turn" (issue 102, Welcome the
+   * Dead; CR 404.1, 400.3, 603.2): how many cards the controller of the spell or ability owns that went to a graveyard this turn from one of these zones (`TurnLog.graveyardEntries`: a
+   * card that was put there from the zone, whether or not it is still there; a token is not a card), read as the instruction runs. Not valid in a static ability: nothing refreshes a
+   * layer effect when a card is put into a graveyard.
+   */
+  | {
+      readonly kind: 'cardsToGraveyardThisTurn';
+      readonly from: readonly ('hand' | 'library')[];
+    }
+  /**
    * "For each creature sacrificed this way" (CR 118.8, 701.21a, 707.10, D-491, Plumb the Forbidden): the number of permanents sacrificed to pay the additional cost of the
    * spell the effect belongs to (the spell is the source of its own "When you cast this spell" ability, or of its own text), read from the spell on the stack or from its last-known
    * information once it has left (CR 113.7a). 0 when none was. Only in the abilities of a spell that name `castSpell` with `self` and in its own text, of a face whose additional
