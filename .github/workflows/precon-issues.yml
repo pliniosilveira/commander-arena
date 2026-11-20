@@ -82,7 +82,7 @@ jobs:
               total=$(grep -cE '^[0-9]+x ' "$f" || true)
               echo "- $(basename "$f" .txt): $named of $total; $(sed -n 2p "$f" | cut -c1-80)"
             done
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
       # The folder has no leading dot: the upload skips hidden files and folders.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
