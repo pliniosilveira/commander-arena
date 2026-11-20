@@ -217,7 +217,13 @@ export function legalActionsForDecision(d: PendingDecision): Action[] {
           // combinations are limited as a choice among many permanents is.
           for (let n = spec.min; n <= spec.max; n += 1) {
             for (const picks of firstCombinations(spec.legal, n, MAX_LISTED_CHOICES)) {
-              for (const shares of divisions(n, spec.divide)) {
+              const ways = divisions(n, spec.divide);
+              // "Up to" (CR 601.2d): giving each target just 1 is a division too.
+              if (spec.divideUpTo === true && n > 0 && n <= spec.divide) {
+                const ones = Array.from({ length: n }, () => 1);
+                if (!ways.some((w) => w.every((v, i) => v === ones[i]))) ways.push(ones);
+              }
+              for (const shares of ways) {
                 options.push(picks.map((t, i) => ({ ...t, share: shares[i] as number })));
               }
             }

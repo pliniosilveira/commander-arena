@@ -152,6 +152,8 @@ export interface TargetChoiceSpec {
    * `share` of at least 1 and the shares add up to this number. Absent for a slot that divides nothing. `max` is never more than it.
    */
   readonly divide?: number;
+  /** With `divide`: "up to" that many (CR 601.2d): the shares may add up to less than `divide`, and no target may be chosen. */
+  readonly divideUpTo?: true;
   /**
    * For a slot of a copy of a spell that divides something (`forCopy`, D-149, CR 707.10, 115.7f): the original division cannot be changed, so the
    * answer holds as many targets as the copy has now (`min` = `max`) and names no share (`divide` is absent). A target left as it is keeps its

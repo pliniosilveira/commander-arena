@@ -677,6 +677,7 @@ describe('unmatched abilities', () => {
       'effect.distribute-counters',
       'effect.remove-counters-self',
       'effect.choose-parity-return',
+      'effect.distribute-counters-up-to-that-many',
       'effect.look-cast-free',
       'effect.counter-exile-cast',
       'effect.destroyed-controller-exile-cast',

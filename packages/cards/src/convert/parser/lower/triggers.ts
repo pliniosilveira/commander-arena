@@ -1238,6 +1238,8 @@ function lowerTriggeredAbility(
   let interveningIf: Condition | undefined;
   let foldedCounters = false;
   const ifWritten = ability.interveningIf ?? lift.condition;
+  // "..., if you gained life this turn, distribute up to that many ...": "that many" is the life gained (CR 119.3, 603.4).
+  ctx.lifeGainedIf = ifWritten?.test.kind === 'lifeGainedThisTurn' && ifWritten.test.atLeast === 1;
   if (ifWritten?.test.kind === 'hadCounters') {
     // "..., if it had counters on it, ..." (stage P33, D-150): a part of the filter of the trigger (see `foldHadCounters`).
     const [only] = triggers;
