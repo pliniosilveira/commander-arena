@@ -76,6 +76,8 @@ export const EFFECT_GAIN_KEYWORD_OTHERS = defineRule<Clauses>({
     'other creatures you control get +1/+1 and gain trample and haste until end of turn',
     'other creatures you control gain trample until end of turn',
     'other creatures you control gain trample and get +1/+0 until end of turn',
+    'other creatures you control get +3/+3 and gain haste until end of turn',
+    'other nonland permanents you control gain hexproof until end of turn',
   ],
   rejects: [
     'other creatures you control gains trample until end of turn',

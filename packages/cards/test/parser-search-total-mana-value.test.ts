@@ -94,9 +94,9 @@ describe('any number of cards with a total mana value', () => {
     });
   });
 
-  test('is not read: no total, a different wording, a single card, a count, a reveal or a split put', () => {
+  // "Any number of creature cards" with no total is read since Bilbo, Birthday Celebrant (`search.anyNumber`, convert-grammar-engine-food-fellowship-a.test.ts).
+  test('is not read: a different wording, a single card, a count, a reveal or a split put', () => {
     for (const text of [
-      'Search your library for any number of creature cards, put them onto the battlefield, then shuffle.',
       'Search your library for any number of creature cards with mana value 6 or less, put them onto the battlefield, then shuffle.',
       'Search your library for any number of creature cards with total mana value 6, put them onto the battlefield, then shuffle.',
       'Search your library for any number of creature cards with total mana value 6 or more, put them onto the battlefield, then shuffle.',

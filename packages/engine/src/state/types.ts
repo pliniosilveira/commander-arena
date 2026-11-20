@@ -1855,6 +1855,11 @@ export type Instruction =
        * without, nobody may look at it (D-187: its `exiledFaceDown` is set, and an effect may let a player look).
        */
       readonly faceDown?: true;
+      /**
+       * With `faceDown` and `linkTo`: the player who looked at the card as it was exiled (Lobelia, Defender of Bag End, CR 406.3) and may go on looking at it; the card is `exiledFaceDown` with
+       * this player in its `lookers`, not Hideaway's (whose looker is whoever controls the permanent).
+       */
+      readonly lookBy?: SeatId;
       /** The land is played (CR 305.1, 305.2a: it counts as the player's land play), as an effect allows (`castFree` with `play`, D-145). */
       readonly playAsLand?: true;
       /**
@@ -2136,7 +2141,8 @@ export type ContinuousChange =
       readonly castOnly?: true;
       /**
        * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
-       * (the plain cast, paying the mana cost, is not allowed by this permission). Only with `castOnly`.
+       * (the plain cast, paying the mana cost, is not allowed by this permission). With `castOnly` (Lorehold group 2), or without it (`mayPlay.free`, Lobelia, Defender of Bag End: a land card
+       * is played as usual).
        */
       readonly free?: true;
       /**
@@ -2465,6 +2471,8 @@ export interface TurnLog {
     readonly object: ObjectId;
     readonly controller: SeatId;
     readonly types: readonly CardType[];
+    /** Its subtypes as it entered (a Food token, "if a Food entered the battlefield under your control this turn"). */
+    readonly subtypes: readonly string[];
     readonly token: boolean;
   }[];
   /** The damage each player has been dealt this turn, by seat (D-151, CR 120.3): all damage that was dealt after prevention, combat or not. */
@@ -2494,6 +2502,15 @@ export interface TurnLog {
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
   readonly graveyarded: readonly ObjectId[];
+  /**
+   * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
+   * whether it is a token. Absent until one left, so the state of a game where none did is as it was.
+   */
+  readonly left?: readonly {
+    readonly controller: SeatId;
+    readonly types: readonly CardType[];
+    readonly token: boolean;
+  }[];
   /** Permanent-to-graveyard events, including tokens, with their characteristics immediately before leaving. */
   readonly died: readonly {
     readonly controller: SeatId;
@@ -2592,6 +2609,12 @@ export interface GameState {
   readonly dayNight?: 'day' | 'night';
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
+  /**
+   * The names of the creatures that have dealt combat damage to each player this game, by the seat that was dealt it (CR 120.2a, 510.2; Gollum, Obsessed Stalker: "each opponent dealt
+   * combat damage this game by a creature named ~"): the name the source had as it dealt the damage (read from the permanent, or from its last-known information when it had
+   * left, CR 113.7a), each once. Damage prevented entirely is not recorded. Absent until a creature dealt combat damage to a player, so the state of a game without any hashes as before.
+   */
+  readonly combatDamagedByNames?: Readonly<Record<number, readonly string[]>>;
   /**
    * The players each creature was declared attacking in the combat phase in progress, or the last one that was (CR 506.1, 508.1, 508.6), with the player who declared it. Rolled into
    * `lastCombatAttacks` as the next combat phase begins. Absent before the first combat of the game.

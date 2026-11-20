@@ -94,8 +94,10 @@ const REPLAY: readonly Line[] = [
   {
     kind: 'enchantment',
     text: 'Creatures you control of the chosen type get +1/+1 for each fellowship counter on ~.',
-    expect: no('fellowship counter on ~.', 'amount.for-each'),
-    note: 'replay: 1 card; a counter is not an object of a filter',
+    expect: {
+      engine: 'it refers to the chosen creature type but does not choose one as it enters',
+    },
+    note: 'replay: 1 card; read since the Food and Fellowship deck (`static.pt-counters-on-source`), refused by the engine: this line chooses no creature type',
   },
   {
     kind: 'enchantment',

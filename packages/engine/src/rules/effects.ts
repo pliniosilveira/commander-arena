@@ -558,9 +558,11 @@ export function runInstruction(
               patchObject(
                 acc,
                 id,
-                instruction.linkTo !== undefined
-                  ? { hideaway: instruction.linkTo }
-                  : { exiledFaceDown: true },
+                instruction.lookBy !== undefined
+                  ? { exiledFaceDown: true as const, lookers: [instruction.lookBy] }
+                  : instruction.linkTo !== undefined
+                    ? { hideaway: instruction.linkTo }
+                    : { exiledFaceDown: true as const },
               ),
             linked,
           )
@@ -1915,7 +1917,7 @@ function runEffect(
       return runEnterAttacking(state, res, effect, ctx, targets);
     case 'mayPlay':
       // D-151: "You may play that card this turn" (rules/impulse.ts).
-      return runMayPlay(state, res, effect);
+      return runMayPlay(state, res, effect, ctx);
     case 'nextSpellModifier':
       // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
       return runNextSpellModifier(state, res, effect, ctx);

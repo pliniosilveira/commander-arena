@@ -289,6 +289,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       if (current === null) return UNKNOWN_AMOUNT;
       const things = current.replace(/ on the battlefield$/, '');
       const yours = amount.controller === 'you' ? ' under your control' : '';
+      if (amount.kind === 'diedThisTurn' && amount.leftBattlefield === true) {
+        return `the number of ${things} that left the battlefield${yours} this turn`;
+      }
       return amount.kind === 'enteredThisTurn'
         ? `the number of ${things} that entered${yours} this turn`
         : amount.types?.length === 1 && amount.types[0] === 'creature'

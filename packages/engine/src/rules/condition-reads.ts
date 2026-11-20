@@ -115,6 +115,7 @@ export function enteredThisTurnHolds(
     if (e.controller !== seat) continue;
     if (condition.types?.some((t) => !e.types.includes(t))) continue;
     if (condition.notTypes?.some((t) => e.types.includes(t))) continue;
+    if (condition.subtypes?.some((t) => !e.subtypes.includes(t))) continue;
     if (condition.token !== undefined && e.token !== condition.token) continue;
     n += 1;
   }

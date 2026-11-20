@@ -5,6 +5,7 @@
  * Unearth (D-124), Echo and Cumulative upkeep (D-127), Suspend (D-128), Storm and Replicate (D-129).
  * `validate.ts` hands each keyword to `checkBatchKeyword` and treats an unknown kind as an error.
  */
+import { isNonCreatureSubtype } from '../characteristics';
 import type { Keyword } from './types';
 import { checkKickerCost } from './validate-cast';
 import {
@@ -235,6 +236,10 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
       // CR 702.82a (D-185): N is a positive whole number.
       if (!isCount(k.count) || k.count < 1) {
         issue(out, `${path}.count`, 'devour N: N is a positive whole number');
+      }
+      // CR 702.82c: "Devour Food N": the quality is an artifact type (a subtype that is no creature type).
+      if (k.of !== undefined && !(typeof k.of === 'string' && isNonCreatureSubtype(k.of))) {
+        issue(out, `${path}.of`, 'devour [quality]: the quality is an artifact type such as Food');
       }
       return true;
     case 'riot':

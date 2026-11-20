@@ -63,6 +63,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   couldntSacrificeThisWay: 'selector:couldntSacrificeThisWay',
   // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
+  // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
+  combatDamagedByNamed: 'selector:combatDamagedByNamed',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -345,6 +347,8 @@ function lowerFilterAt(
   if (filter.sharedLandType === true) return bad([]);
   // CR 202.3: "any number of ... with total mana value 6 or less" is also about the cards found together (the search lowering takes it off first).
   if (filter.anyNumberTotalManaValue !== undefined) return bad([]);
+  // CR 701.23: "any number of creature cards" is about the cards found together as well.
+  if (filter.anyNumber === true) return bad([]);
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
@@ -1299,6 +1303,14 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (ctx.owner !== 'ability') return failure(noun, []);
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
+    }
+    case 'combatDamagedByNamed': {
+      // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.
+      // The tilde is the name the text wrote: the short name it used, or the whole name when it said "named" and then that (a card with a short name too, "Gollum, Obsessed Stalker").
+      const name = ctx.selfName !== '' ? ctx.selfName : ctx.namedWholeName ? ctx.cardName : '';
+      if (name === '') return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'combatDamagedByNamed', name });
     }
     case 'players': {
       // D-131: "you and target opponent each draw two cards": several players at once, each acting once, in the

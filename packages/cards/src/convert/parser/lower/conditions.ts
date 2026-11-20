@@ -585,6 +585,18 @@ export function lowerCondition(
       const blocked = missingFeatures(['condition:controlsRingBearer']);
       return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'controlsRingBearer' });
     }
+    case 'thisIsRingBearer': {
+      // CR 701.54e (Frodo, Adventurous Hobbit): the permanent the ability belongs to is the Ring-bearer of its controller.
+      const blocked = missingFeatures(['condition:thisIsRingBearer']);
+      return blocked.length > 0 ? failure(c, blocked) : ok({ kind: 'thisIsRingBearer' });
+    }
+    case 'ringTemptedAtLeast': {
+      // CR 701.54c (Frodo, Adventurous Hobbit): the times the Ring has tempted the controller.
+      const blocked = missingFeatures(['condition:ringTemptedAtLeast']);
+      return blocked.length > 0
+        ? failure(c, blocked)
+        : ok({ kind: 'ringTemptedAtLeast', times: test.times });
+    }
     case 'manaSpentAtLeast': {
       // CR 601.2h (stage P49, D-206): the mana spent on the spell that caused the trigger.
       const test = c.test;
@@ -722,6 +734,7 @@ export function lowerCondition(
         count: test.count,
         ...(test.types === undefined ? {} : { types: [...test.types] as CardType[] }),
         ...(test.notTypes === undefined ? {} : { notTypes: [...test.notTypes] as CardType[] }),
+        ...(test.subtypes === undefined ? {} : { subtypes: [...test.subtypes] }),
         ...(test.token === undefined ? {} : { token: test.token }),
       });
     }
@@ -836,6 +849,8 @@ export const CONDITION_NEEDS: readonly FeatureRef[] = [
   'condition:castFromZone',
   'condition:spellTargets',
   'condition:controlsRingBearer',
+  'condition:thisIsRingBearer',
+  'condition:ringTemptedAtLeast',
   'condition:paired',
   // D-427 (Danitha group 3): "as long as ~ entered this turn".
   'condition:thisEnteredThisTurn',

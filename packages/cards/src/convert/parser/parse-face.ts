@@ -70,6 +70,13 @@ function tokenSelfName(oracleText: string, options: NormalizeOptions): string {
   return wholeInName.test(oracleText) ? '' : short;
 }
 
+/** The text says "named" and then the whole name of the card ("a creature named Gollum, Obsessed Stalker"): the `~` after "named" is that name, not a shorter one. */
+function namesWholeName(oracleText: string, options: NormalizeOptions): boolean {
+  const whole = selfNames(options)[0] ?? '';
+  if (whole === '') return false;
+  return new RegExp(`\\bnamed ${escapeRegExp(whole)}(?![\\p{L}\\p{N}])`, 'u').test(oracleText);
+}
+
 /**
  * Parses one face's Oracle text. `ability` in an UnparsedAbility is the 0-based index of the
  * line among the normalized ability lines (reminder text removed, bullets joined).
@@ -101,6 +108,7 @@ export function parseFaceText(
       : [...faceSubtypes, 'Aura'];
   const namedInQuotes = namesItselfInQuotes(oracleText, options);
   const selfName = tokenSelfName(oracleText, options);
+  const namedWholeName = namesWholeName(oracleText, options);
   const scope = { targetCount: 0 };
   const abilities: Ability[] = [];
   const spellParts: { parts: SpellParts; index: number; text: string; ruleId: string }[] = [];
@@ -154,6 +162,7 @@ export function parseFaceText(
       name: options.name,
       namedInQuotes,
       selfName,
+      namedWholeName,
     };
     const threshold = symbol === null ? null : Number(symbol[1]);
     const labelled = symbol === null ? text : (symbol[2] ?? '');

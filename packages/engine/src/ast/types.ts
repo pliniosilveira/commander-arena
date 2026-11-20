@@ -180,6 +180,11 @@ export type Amount =
        * it, an Equipment attached, or an Aura its controller controlled attached), read from the game as they left, not from the card in the graveyard.
        */
       readonly modified?: true;
+      /**
+       * "A permanent left the battlefield under your control this turn" (Revolt, an ability word: CR 207.2c; CR 400.7): counts the permanents that left the battlefield for any
+       * zone, a token included (the Revolt rulings), read from `TurnLog.left`, not only those put into a graveyard. Not with `modified`.
+       */
+      readonly leftBattlefield?: true;
     }
   /**
    * The toughness of an object a reference names, read as `powerOf` is (D-131): "you gain life equal to that
@@ -547,6 +552,11 @@ export type StaticPtAmount =
    * are worked out. Plain (+N/+N) only, in a `modifyPt` of the permanent itself.
    */
   | { readonly kind: 'unspentMana' }
+  /**
+   * "Creatures you control get +1/+1 for each unity counter on this enchantment" (CR 122.1, 613.4c, 611.3a): the counters of the kind `counter` on the permanent that has the
+   * static ability (not on the permanent it affects), read each time the characteristics are worked out. Plain (+N/+N) only, in a `modifyPt` of any subject.
+   */
+  | { readonly kind: 'countersOnSource'; readonly counter: string }
   | CountAmount
   | { readonly kind: 'times'; readonly factor: number; readonly of: CountAmount }
   | { readonly kind: 'sum'; readonly of: readonly CountAmount[] };
@@ -1117,7 +1127,13 @@ export type PlayerSelector =
    * has, so a source that has left the battlefield by the time the ability resolves is read as it was (CR 608.2h, last-known information). `of` is
    * `this`, the permanent of the ability; no other creature's attacks are read.
    */
-  | { readonly kind: 'attackedPlayers'; readonly of: { readonly kind: 'this' } };
+  | { readonly kind: 'attackedPlayers'; readonly of: { readonly kind: 'this' } }
+  /**
+   * "Each opponent dealt combat damage this game by a creature named Gollum, Obsessed Stalker" (CR 120.2a, 510.2, 102.2; Gollum, Obsessed Stalker): the opponents of the controller who
+   * are still in the game and have been dealt combat damage by a creature with this name at any time this game, whoever controlled that creature, in the order CR 101.4 gives. The
+   * name is the one the creature had as it dealt the damage (`GameState.combatDamagedByNames`). Read from the game history, so it works in a spell or an ability.
+   */
+  | { readonly kind: 'combatDamagedByNamed'; readonly name: string };
 
 /**
  * A target declaration (CR 115). "any target" is a creature, player, planeswalker or battle
@@ -2239,6 +2255,11 @@ export type Effect =
        * to, as `exile.linked` does, for the `linkedExile` reference or the `exiledWithSource` filter of another ability of the same face. Only in an ability of a permanent, face up.
        */
       readonly linked?: true;
+      /**
+       * "Look at the top card of each opponent's library and exile those cards face down" (Lobelia, Defender of Bag End, CR 406.3, 607.2a): with `linked` and `faceDown`, the controller looked at each card
+       * as it was exiled and may go on looking at it (only they, even if another player gains control of the permanent), while it stays in exile.
+       */
+      readonly lookAt?: true;
     }
   /**
    * "Each player exiles a card from their graveyard" (CR 701.13, 101.4, D-231): each player `players` names, in turn order starting with the active player, chooses a card
@@ -2507,7 +2528,16 @@ export type Effect =
    */
   | {
       readonly kind: 'mayPlay';
-      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * `moved`, or (Lobelia, Defender of Bag End, CR 607.2a) `linkedExile`: "you may play a card exiled with ~": each card the permanent the ability belongs to exiled with its linked ability and that is
+       * still in exile as this resolves.
+       */
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' }>;
+      /**
+       * "... without paying its mana cost" (Lobelia, CR 118.9): each spell cast with this permission is cast for no mana cost (X is 0, CR 107.3b; additional costs are paid), the one way to cast it; a land
+       * card is played as usual. Only with `objects` `linkedExile`.
+       */
+      readonly free?: true;
       /**
        * "You may cast it this turn" (Lorehold group 1, CR 601.2, 305.1): the permission is to cast the card, never to play it as a land, so a land card among `moved` stays where it
        * is. Without it ("you may play that card") a land card is played as a land (a land drop, CR 305.2) and a spell is cast.
@@ -4039,6 +4069,12 @@ export type Effect =
        * destinations are one `rest`, and no `sharedLandType`, `zones` or `maxAmount`.
        */
       readonly totalManaValue?: number;
+      /**
+       * "Search your library for any number of creature cards" (CR 701.23, 701.23b; Bilbo, Birthday Celebrant): any number of the cards of `filter` may be found, none included,
+       * with no limit but the library (the decision's `min` is 0 and its `max` is every card offered). `max` is 1 and unread, the destinations are one `rest`, and no `sharedLandType`,
+       * `zones`, `maxAmount` or `totalManaValue`; the filter states a quality, as "any number of cards" finds one that is a card of a kind.
+       */
+      readonly anyNumber?: true;
       readonly destinations: readonly SearchDestination[];
       readonly reveal: boolean;
       readonly shuffle: boolean;
@@ -5297,10 +5333,11 @@ export type Keyword =
    * CR 702.82a (Devour, D-185): "Devour N" means "As this object enters, you may sacrifice any number of creatures. This permanent enters with N
    * +1/+1 counters on it for each creature sacrificed this way." A static ability, applied as the permanent enters (CR 614.12): its controller
    * is asked which creatures they control to sacrifice (`choosePermanent` of purpose `devour`, none is a legal answer), before it is on the
-   * battlefield, so it cannot sacrifice itself. `count` is N, a positive whole number. One devour ability on a permanent card or a token (the
-   * variant "Devour [quality]", CR 702.82c, is not supported). It cannot be granted.
+   * battlefield, so it cannot sacrifice itself. `count` is N, a positive whole number. One devour ability on a permanent card or a token. It cannot be granted.
+   * `of` is the variant "Devour Food 3" (CR 702.82c, the Devour rulings: "it allows you to sacrifice Foods rather than creatures, but otherwise functions identically"): a
+   * subtype that is not a creature type (an artifact type); the permanents sacrificed are the ones of that subtype the controller controls, creature or not. Left out, creatures.
    */
-  | { readonly kind: 'devour'; readonly count: number }
+  | { readonly kind: 'devour'; readonly count: number; readonly of?: string }
   /**
    * CR 702.136a (Riot, D-185): "You may have this permanent enter with an additional +1/+1 counter on it. If you don't, it gains haste." A static
    * ability, applied as the permanent enters (CR 614.12): its controller chooses between the counter and haste (`chooseOption` of purpose
@@ -5776,6 +5813,8 @@ export type Condition =
       readonly count: number;
       readonly types?: readonly CardType[];
       readonly notTypes?: readonly CardType[];
+      /** "If a Food entered the battlefield under your control this turn": subtypes (all of them) it had as it entered. */
+      readonly subtypes?: readonly string[];
       readonly token?: boolean;
     }
   /**
@@ -5880,6 +5919,16 @@ export type Condition =
    * control and is their Ring-bearer. Not for a static ability.
    */
   | { readonly kind: 'controlsRingBearer' }
+  /**
+   * "If this creature is your Ring-bearer" (CR 701.54e, Frodo, Adventurous Hobbit): the permanent the condition belongs to is on the battlefield under the control of the
+   * controller of the condition and has their Ring-bearer designation. Not for a static ability.
+   */
+  | { readonly kind: 'thisIsRingBearer' }
+  /**
+   * "If the Ring has tempted you two or more times this game" (CR 701.54a, 701.54c): the number of times the Ring has tempted the controller of the condition (`SeatState.ring`) is at
+   * least `times`, a whole number of 1 or more. Not for a static ability.
+   */
+  | { readonly kind: 'ringTemptedAtLeast'; readonly times: number }
   /**
    * "This creature is paired with another creature" (CR 702.95b, D-286): the permanent the condition belongs to is paired with a creature now, and both are
    * on the battlefield (a pair with a member that is phased out, CR 702.26b, gives nothing meanwhile). Read from the pair (`rules/pairing.ts`, `partnerOf`),

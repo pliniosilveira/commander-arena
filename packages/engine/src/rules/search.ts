@@ -175,11 +175,15 @@ export function runSearch(
       // search "simply for a quantity of cards" ("a card", "three cards") must find that many, or
       // as many as the library holds.
       min:
-        hasStatedQuality(search.filter) || total !== undefined
+        hasStatedQuality(search.filter) || total !== undefined || search.anyNumber === true
           ? 0
           : Math.min(search.max, legal.length),
       // CR 202.3: "any number of ... with total mana value N or less": as many as the library holds; the answer is checked against the total.
-      max: total === undefined ? Math.min(search.max, legal.length) : legal.length,
+      // CR 701.23: "any number of creature cards": as many as the library holds, none included.
+      max:
+        total === undefined && search.anyNumber !== true
+          ? Math.min(search.max, legal.length)
+          : legal.length,
       reveal: search.reveal,
       prompt: describeSearch(search),
       // CR 202.3e: a card in a library has no X announced, so an {X} in its cost counts as 0 (`manaValueOfCost`).

@@ -252,6 +252,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
   'static.creature-ability-cost-reduction-power': asIs,
   'static.graveyard-ability-cost-reduction': asIs,
+  // Food and Fellowship deck, group B: the reduction of the abilities of a group of permanents (Sam).
+  'static.permanent-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
   'static.spells-cost-increase-targeting-self': asIs,
@@ -436,6 +438,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // CR 603.4: "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, ..." is read after "if", like every condition.
   'condition.this-counter-count': permanent(
     (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
+  ),
+  // Prize Pig: the counters of one kind on ~, in the "Then if" sentence after the counters an instruction put on.
+  'condition.there-are-counters-on-self': permanent(
+    (e) => `Whenever you gain life, put that many +1/+1 counters on ~. Then if ${e}, draw a card.`,
   ),
   'condition.this-is-token': permanent((e) => `When ~ enters, if ${e}, draw a card.`),
   'static.each': asIs,
@@ -808,6 +814,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
   'condition.chose-ring-bearer': permanent((e) => `Whenever the Ring tempts you, if ${e}, scry 3.`),
+  // Food and Fellowship deck, group C: Revolt, the Ring-bearer and the times the Ring has tempted, "two or more creatures you control attack a player", the counters on ~.
+  'condition.permanent-left-under-control': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'condition.this-is-ring-bearer': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'condition.ring-tempted-times': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'condition.ring-bearer-and-tempted': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'trigger.n-or-more-attack-a-player': whenever,
+  'static.pt-counters-on-source': asIs,
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
@@ -1002,6 +1023,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-269: the players a permanent attacked this turn, as the subject of "loses the game".
   'noun.each-player-attacked': permanent(
     (e) => `At the beginning of your end step, ${e} loses the game.`,
+  ),
+  // CR 120.2a: the opponents a creature of the card's name has dealt combat damage to this game, as the subject of "loses life".
+  'noun.each-opponent-dealt-combat-damage-by-named': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
   ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,

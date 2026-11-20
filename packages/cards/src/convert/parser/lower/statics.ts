@@ -40,6 +40,7 @@ import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
+import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
@@ -396,6 +397,14 @@ function effectOf(
         power: effect.power ? { kind: 'unspentMana' } : 0,
         toughness: effect.toughness ? { kind: 'unspentMana' } : 0,
       });
+    case 'ptCountersOnSource':
+      // CR 122.1, 613.4c (Call for Unity): +1 for each counter of the kind on the permanent that has the ability, worked out as the characteristics are.
+      return ok({
+        kind: 'modifyPt',
+        subject,
+        power: effect.power ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+        toughness: effect.toughness ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+      });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.
       return ok({
@@ -560,6 +569,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:costIncrease'];
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
+    case 'permanentAbilityCostReduction':
     case 'creatureAbilityCostReductionByPower':
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
@@ -572,6 +582,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:modifyPt', 'amount:timesAttacked'];
     case 'ptUnspentMana':
       return ['static:modifyPt', 'amount:unspentMana'];
+    case 'ptCountersOnSource':
+      return ['static:modifyPt', 'amount:countersOnSource'];
     case 'loseAllAbilities':
       return ['static:loseAllAbilities'];
     case 'setColors':
@@ -739,6 +751,7 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'pt':
     case 'ptCount':
     case 'ptTimesAttacked':
+    case 'ptCountersOnSource':
     case 'grantKeyword':
     case 'grantProtection':
     case 'grantAbility':
@@ -1091,6 +1104,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
+  // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7).
+  if (first.kind === 'permanentAbilityCostReduction')
+    return lowerPermanentAbilityCostReduction(ability, first, more.length);
   // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. ..." (issue 345, Agatha of the Vile Cauldron, CR 601.2f, 118.7).
   if (first.kind === 'creatureAbilityCostReductionByPower') {
     const { statement } = ability;

@@ -491,15 +491,12 @@ function checkObjectsAbilityReduction(
     issue(out, `${path}.objects`, 'an ability cost reduction needs a filter of the objects');
   } else {
     checkFilter(s.objects, `${path}.objects`, out);
-    // Issue 345: with a floor (`minTotal`) the creatures on the battlefield are named too.
-    if (
-      s.objects.zone !== 'graveyard' &&
-      !(s.minTotal !== undefined && s.objects.zone === 'battlefield')
-    ) {
+    // CR 113.6b: the abilities of cards in a graveyard or of permanents on the battlefield are the ones named (Sam: "Foods you control"; issue 345: creatures, with a floor).
+    if (s.objects.zone !== 'graveyard' && s.objects.zone !== 'battlefield') {
       issue(
         out,
         `${path}.objects.zone`,
-        'the abilities of cards in a graveyard are the ones named (zone: "graveyard"), or with minTotal the creatures on the battlefield',
+        'the abilities of cards in a graveyard or of permanents are the ones named (zone: "graveyard" or "battlefield")',
       );
     }
     if (s.minTotal !== undefined && (!isCount(s.minTotal) || s.minTotal < 1)) {
@@ -519,7 +516,7 @@ function checkObjectsAbilityReduction(
       issue(
         out,
         `${path}.objects`,
-        'the object with the ability is a card in a graveyard: no stackKind, targetsObject or attachedTo',
+        'the object with the ability is a card in a graveyard or a permanent: no stackKind, targetsObject or attachedTo',
       );
     }
   }

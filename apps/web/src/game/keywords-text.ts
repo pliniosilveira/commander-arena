@@ -11,9 +11,15 @@ export const ENCORE_REMINDER =
 export const ENCORE_EFFECT_TEXT =
   "For each opponent, create a token that's a copy of this card that attacks that opponent this turn if able. The tokens gain haste. Sacrifice them at the beginning of the next end step";
 
-/** The reminder of Devour N (CR 702.82a). */
-export function devourReminder(n: number): string {
-  return `As this enters, you may sacrifice any number of creatures. It enters with ${n} +1/+1 counter${n === 1 ? '' : 's'} on it for each creature sacrificed this way.`;
+/** The plural of a devour quality ("Food" is "Foods", CR 702.82c): what the permanents sacrificed are called, "creatures" without one. */
+function devourKind(quality?: string): string {
+  return quality === undefined ? 'creatures' : `${quality}s`;
+}
+
+/** The reminder of Devour N (CR 702.82a) and of "Devour Food 3" (CR 702.82c). */
+export function devourReminder(n: number, quality?: string): string {
+  const kind = devourKind(quality);
+  return `As this enters, you may sacrifice any number of ${kind}. It enters with ${n} +1/+1 counter${n === 1 ? '' : 's'} on it for each ${quality ?? 'creature'} sacrificed this way.`;
 }
 
 /** The reminder of Riot (CR 702.136a). */
@@ -43,13 +49,13 @@ export function riotAnswerText(option: string): string {
 }
 
 /** "Sacrifice any number of creatures as X enters (devour)." The prompt of the devour question (CR 702.82a). */
-export function devourPrompt(sourceName: string): string {
-  return `Choose any number of creatures to sacrifice as ${sourceName} enters (devour). None is fine.`;
+export function devourPrompt(sourceName: string, quality?: string): string {
+  return `Choose any number of ${devourKind(quality)} to sacrifice as ${sourceName} enters (devour). None is fine.`;
 }
 
 /** The second line of the devour bar: what is chosen so far. */
-export function devourDetail(chosen: number): string {
+export function devourDetail(chosen: number, quality?: string): string {
   return chosen === 0
-    ? 'Click the creatures to sacrifice, or confirm to sacrifice none.'
+    ? `Click the ${devourKind(quality)} to sacrifice, or confirm to sacrifice none.`
     : `${chosen} chosen: it enters with that many sets of +1/+1 counters.`;
 }

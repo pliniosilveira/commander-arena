@@ -465,7 +465,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * For `'devour'` (D-185, CR 702.82a: "As this creature enters, you may sacrifice any number of creatures"): `seat`, the player the permanent
    * `subject` enters under, chooses which of the creatures in `legal` (all they control) to sacrifice; `min` is 0 and `max` is `legal.length`, and the
    * permanent enters with N +1/+1 counters for each one chosen. The permanent has not entered yet: `source` and `subject` are the object it is now,
-   * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back.
+   * or, for a token, the spell or ability creating it. The sacrifice is not a cost and cannot be taken back. With `devourQuality` (CR 702.82c, "Devour Food 3") the
+   * permanents in `legal` are those of that subtype rather than creatures.
    * For `'empowerJace'` (D-201, CR 701.71a: "Choose a Jace planeswalker token you control"): `seat`, the player who empowers, chooses which Jace token of
    * `legal` (all they control) gets the loyalty counters; exactly one. Asked only with two or more.
    * For `'populate'` (D-627, CR 701.36a: "Choose a creature token you control"): `seat`, the player who populates, chooses which creature token of `legal` (all they control)
@@ -518,6 +519,8 @@ export interface ChoosePermanentDecision extends DecisionBase {
    * rewinds the whole activation (CR 733).
    */
   readonly forCost?: boolean;
+  /** For `'devour'` with a quality ("Devour Food 3", CR 702.82c): the subtype of the permanents in `legal`; left out, they are creatures. */
+  readonly devourQuality?: string;
   /**
    * For `'crew'`: the total power the chosen creatures must have, N of "Crew N" (CR 702.122a). The
    * engine refuses a smaller total; any subset that reaches it is legal, and tapping more than

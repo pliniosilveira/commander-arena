@@ -5,7 +5,7 @@
  * their triggered abilities and reads Toxic where combat damage is dealt, so the lowering only builds
  * the keyword with its number.
  */
-import { choice, literal, map, type Parser, sequence } from '../../combinators';
+import { choice, literal, map, type Parser, pattern, sequence } from '../../combinators';
 import type { IrAmount, IrKeyword } from '../../ir/types';
 import { node } from '../registry';
 import { CREW_POWER } from './ward-crew';
@@ -23,9 +23,25 @@ export const NUMBERED_KEYWORDS = [
   'backup',
 ] as const;
 
+/**
+ * "devour Food 3" (CR 702.82c, the variant "Devour [quality]"): the quality, a capitalised type word, between the word and the number. The IR keyword carries it as
+ * `quality`; the lowering reads it only where the engine does (an artifact type).
+ */
+function devourWithQuality(rule: string): Parser<IrKeyword> {
+  return node<[string, IrAmount], IrKeyword>(
+    rule,
+    map(
+      sequence(pattern(/[Dd]evour ([A-Z][a-z]+) (?=[1-9])/u), CREW_POWER),
+      ([head, amount]): [string, IrAmount] => [head[1] ?? '', amount],
+    ),
+    ([quality, amount]) => ({ kind: 'keyword', name: 'devour', params: [amount], quality }),
+  );
+}
+
 /** "toxic 1": the word, a space and a positive whole number in digits (the form Oracle text uses). */
 export function numberedKeyword(rule: string): Parser<IrKeyword> {
   return choice(
+    devourWithQuality(rule),
     ...NUMBERED_KEYWORDS.map((word) =>
       node<IrAmount, IrKeyword>(
         rule,

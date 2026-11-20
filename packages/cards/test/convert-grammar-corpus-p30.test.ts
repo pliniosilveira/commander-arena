@@ -179,7 +179,7 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
     text: '{T}: You may cast target Zombie creature card from a graveyard this turn.',
-    expect: no('from a graveyard this turn.', 'effect.may-cast'),
+    expect: no('this turn.', 'effect.may-cast'),
     note: 'only a card of your own graveyard',
   },
   {

@@ -221,7 +221,7 @@ export const TRIGGER_CAST_NTH = defineRule<IrTrigger>({
 /**
  * `trigger.enters-one-or-more-creatures`: "one or more creatures you control with mana value 3 or less enter" (CR 603.2c, 603.6a: creatures that enter together are
  * one event for the ability; "other" leaves out the permanent with the ability, Twilight Diviner). The engine's `entersBatch`, as `trigger.enters-one-or-more` has it for tokens. Not read: a number, "enters", a controller other than
- * "you", more than one group of types, a group that is not creatures.
+ * "you", more than one group of types, a group that is not creatures or artifacts.
  */
 export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
   id: 'trigger.enters-one-or-more-creatures',
@@ -237,6 +237,9 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     'one or more creatures you control enter',
     'one or more nontoken creatures you control enter',
     'one or more other creatures you control enter',
+    // Food and Fellowship deck, group B (Merry): a group of artifacts is one event for the ability just as a group of creatures is.
+    'one or more artifacts you control enter',
+    'one or more nontoken artifacts you control enter',
   ],
   rejects: [
     'one or more other creatures you control enters',
@@ -246,7 +249,9 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     'one or more creatures your opponents control enter',
     'one or more creatures you control enter tapped',
     'one or more creatures you control enter or',
-    'one or more artifacts you control enter',
+    'one or more lands you control enter',
+    'one or more artifact creatures you control and lands enter',
+    'one or more artifacts your opponents control enter',
     'two or more creatures you control enter',
     'one or more creatures you control with mana value 3 or less enter and',
   ],
@@ -262,7 +267,9 @@ export const TRIGGER_ENTERS_ONE_OR_MORE_CREATURES = defineRule<IrTrigger>({
     const [, other, phrase] = r.value;
     const filter: IrFilter = phrase.value;
     const creatures =
-      filter.anyOf === undefined && filter.types?.length === 1 && filter.types[0] === 'creature';
+      filter.anyOf === undefined &&
+      filter.types?.length === 1 &&
+      (filter.types[0] === 'creature' || filter.types[0] === 'artifact');
     if (!creatures || filter.controller !== 'you') return fail(ctx, pos);
     const subject: IrNoun = {
       ...makeNoun(id, phrase.span, 'a', filter),

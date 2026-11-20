@@ -37,9 +37,11 @@ import { JESKAI_FLASHBACK_STATIC_RULES } from './jeskai-flashback';
 import { KORVOLD_STATIC_RULES } from './korvold';
 import { MELD_STATIC_RULES } from './meld';
 import { OMNATH_STATIC_RULES } from './omnath';
+import { PERMANENT_ABILITY_COST_STATIC_RULES } from './permanent-ability-cost';
 import { PLAY_RULE_STATIC_RULES } from './play-rules';
 import { PRISMARI_G1_STATIC_RULES } from './prismari-g1';
 import { PT_COUNT_STATIC_RULES } from './pt-count';
+import { PT_COUNTERS_ON_SOURCE_STATIC_RULES } from './pt-counters-on-source';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
 import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
@@ -101,6 +103,8 @@ export const STATIC_RULES = [
   ...JESKAI_FLASHBACK_STATIC_RULES,
   ...GRANT_STATIC_RULES,
   ...PT_COUNT_STATIC_RULES,
+  // Call for Unity: "Creatures you control get +1/+1 for each unity counter on ~."
+  ...PT_COUNTERS_ON_SOURCE_STATIC_RULES,
   // CR 702.103: "~ and enchanted creature each get +1/+1 for each creature you control ..." (a bestow card).
   ...BESTOW_PT_STATIC_RULES,
   ...RESTRICTION_STATIC_RULES,
@@ -147,6 +151,8 @@ export const STATIC_RULES = [
   ...DANITHA_G3_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."
   ...GISA_G4_STATIC_RULES,
+  // Food and Fellowship deck, group B (Sam): "Activated abilities of Foods you control cost {1} less to activate."
+  ...PERMANENT_ABILITY_COST_STATIC_RULES,
   // Prismari deck, group 1 (D-641): "~ costs {2}{R} more to cast for each target beyond the first.".
   ...PRISMARI_G1_STATIC_RULES,
   // First Flight deck (D-149): "Spells your opponents cast that target ~ cost {2} more to cast."

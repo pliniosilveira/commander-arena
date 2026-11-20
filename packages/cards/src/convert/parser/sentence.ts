@@ -117,6 +117,8 @@ const TURN_CONDITIONS = [
   'condition.no-spell-cast-this-turn',
   // Issue 144 (Great Train Heist): "If it's your combat phase, there is an additional combat phase after this phase." (CR 506.1, 500.8).
   'condition.your-combat-phase',
+  // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
+  'condition.entered-this-turn',
 ] as const;
 
 /**
@@ -150,8 +152,16 @@ const MANA_SPENT_CONDITIONS = [
  */
 const TRIGGER_SPELL_CONDITIONS = ['condition.that-spells-stat'] as const;
 
-/** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
-const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;
+/**
+ * Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). Food and Fellowship deck (Frodo,
+ * Adventurous Hobbit): "Then if ~ is your Ring-bearer and the Ring has tempted you two or more times this game, draw a card." (CR 701.54).
+ */
+const RESOLUTION_CONDITIONS = [
+  'condition.resolved-times',
+  'condition.ring-bearer-and-tempted',
+  'condition.this-is-ring-bearer',
+  'condition.ring-tempted-times',
+] as const;
 
 const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,
@@ -170,6 +180,8 @@ const LEAD_CONDITIONS = [
   'condition.destroyed-this-way',
   // Death Toll deck: "Delirium — Then if there are four or more card types among cards in your graveyard, create ..." (CR 205.2a, 608.2c).
   'condition.card-types-among',
+  // Prize Pig: "Then if there are three or more ribbon counters on ~, remove those counters and untap it." (CR 122.1, 608.2c).
+  'condition.there-are-counters-on-self',
   ...LEAD_GAME_STATE_CONDITIONS,
   ...TURN_CONDITIONS,
   ...LIFE_LEAD_CONDITIONS,
