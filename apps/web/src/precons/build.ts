@@ -9,7 +9,7 @@ import type { PreconSnapshot, ScryfallClient } from '@commander-arena/cards';
 import type { DeckConfig } from '@commander-arena/engine';
 import { checkPlayable } from '../import/deck';
 import type { DeckStoreApi, ImportService, SavedDeck } from '../import/types';
-import { registerCommanderPrinting } from '../ui/board/commander-printing';
+import { registerDeckPrintings } from '../ui/board/deck-printings';
 import { commanderNameOf, savedDeckChoiceId, savedDeckIdOf } from './choices';
 import { layeredClient } from './layered-client';
 import { snapshotClient } from './snapshot-client';
@@ -31,7 +31,7 @@ export async function buildPreconDeck(
   serviceFor: ServiceFor,
 ): Promise<PreconDeck> {
   const info = infoOf(snapshot);
-  registerCommanderPrinting(snapshot.decklist);
+  registerDeckPrintings(snapshot.decklist);
   try {
     const report = await serviceFor(snapshotClient(snapshot.cards)).run({
       text: snapshot.decklist,
@@ -80,7 +80,7 @@ async function buildFromText(
   text: string,
   service: ImportService,
 ): Promise<PreconDeck> {
-  registerCommanderPrinting(text);
+  registerDeckPrintings(text);
   try {
     const report = await service.run({ text, deckName: info.name });
     const check = checkPlayable(report);
