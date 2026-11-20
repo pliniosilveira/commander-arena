@@ -67,6 +67,11 @@ export interface LowerContext {
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
+   * What the events of the trigger are, when every one is a permanent becoming the target (`becomesTarget`): 'spell' for spells only, 'both' for spells and abilities. "Counter that
+   * spell or ability unless its controller pays {2}" names the spell or ability that targeted, the engine's `triggerSubject` there (Diffusion Sliver, CR 702.21a, 603.2).
+   */
+  becomesTargetOf: 'spell' | 'both' | null;
+  /**
    * The ids of targets an earlier instruction of this text sent away from the battlefield (destroy,
    * exile, return, sacrifice): "it" after them is the card in its new zone, which a tap or an untap
    * cannot reach. Filled by `lowerSentences` as each clause is lowered.
@@ -353,6 +358,7 @@ export function newContext(
     cycleTriggerX: false,
     lifeGainedIf: false,
     activateTrigger: false,
+    becomesTargetOf: null,
     removed: new Set(),
     madeAToken: false,
     tokensMade: false,

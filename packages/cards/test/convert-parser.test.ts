@@ -595,6 +595,7 @@ describe('unmatched abilities', () => {
       'effect.exile-on-resolve',
       'effect.double-x',
       'effect.copy-spell-or-ability',
+      'effect.counter-that-unless',
       'effect.put-commander-from-command-zone',
       'effect.return-to-command-zone-at-end-step',
       'effect.gain-keyword-for-good',

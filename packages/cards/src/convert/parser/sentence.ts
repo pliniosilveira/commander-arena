@@ -372,12 +372,13 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
 const PLAYER_MAY: Parser<NonNullable<IrSentence['mayBy']>> = quiet((ctx, pos) => {
   // Looked at first, so that a sentence about a player that does not say "may" stops where it always did.
   const ahead = pattern(
-    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)) may )/iu,
+    /(?=(?:each (?:other )?(?:player|opponent)|target (?:player|opponent)|its controller|that (?:creature|permanent|land|artifact|enchantment|planeswalker)['’]s controller) may )/iu,
   )(ctx, pos);
   if (!ahead.ok) return ahead;
   return map(
     sequence(
-      family<IrNoun>('noun', { only: ['noun.player'] }),
+      // "Its controller may draw a card" (Synapse Sliver, CR 109.4, 608.2d): the controller of an object the text named is the player asked.
+      family<IrNoun>('noun', { only: ['noun.player', 'noun.its-controller'] }),
       literal(' may '),
       optional(literal('have you '), null),
     ),

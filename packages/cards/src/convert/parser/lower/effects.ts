@@ -294,9 +294,28 @@ const COUNTER_UNLESS: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const costs = arg(clause, 'cost');
     if (objects?.kind !== 'noun' || costs?.kind !== 'costList') return failure(clause);
-    const spell = objectRefOf(objects, ctx);
+    // Issue 133 (Diffusion Sliver, CR 702.21a): "counter that spell or ability unless its controller pays {2}" in a trigger about becoming a target: the spell or ability that
+    // targeted, as the engine's Ward counters it. "That spell" is only said of a trigger about spells.
+    let spell: ReturnType<typeof objectRefOf>;
+    if (objects.det === 'triggerSubject') {
+      const wanted = /^that spell or ability$/iu.test(objects.filter.raw.trim()) ? 'both' : 'spell';
+      if (
+        objects.rule !== 'effect.counter-that-unless' ||
+        ctx.becomesTargetOf === null ||
+        (wanted === 'spell' && ctx.becomesTargetOf !== 'spell')
+      ) {
+        return failure(clause);
+      }
+      const missing = missingFeatures(['selector:triggerSubject']);
+      if (missing.length > 0) return failure(clause, missing);
+      spell = { ok: true, value: { kind: 'triggerSubject' }, rule: clause.rule };
+    } else {
+      spell = objectRefOf(objects, ctx);
+    }
     if (!spell.ok) return spell;
-    if (spell.value.kind !== 'target') return failure(clause);
+    if (spell.value.kind !== 'target' && spell.value.kind !== 'triggerSubject') {
+      return failure(clause);
+    }
     const cost: Cost[] = [];
     for (const item of costs.costs) {
       const lowered = lowerCost(item);
