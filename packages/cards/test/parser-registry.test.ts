@@ -234,6 +234,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, return ${e} to the battlefield, where X is the number of opponents you have.`,
   ),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
+  // Molten Slagheap: the cost of a mana ability that adds X mana (the cost alone, before a colon, is read by the cost family).
+  'cost.remove-x-counters': permanent(
+    (e) => `${e}: Add x mana in any combination of {B} and/or {R}.`,
+  ),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),

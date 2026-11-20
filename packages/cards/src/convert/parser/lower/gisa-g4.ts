@@ -128,7 +128,8 @@ const PUT_COMMANDER_FROM_COMMAND_ZONE: Lowering<IrClause, Effects> = {
           ? { optional: true as const }
           : {}),
       },
-      to: 'battlefield',
+      // Command Beacon (CR 903.3, 408.3): "Put your commander into your hand from the command zone" goes to the hand instead.
+      to: arg(clause, 'toHand')?.kind === 'flag' ? 'hand' : 'battlefield',
     };
     return { ok: true, value: [move], rule: clause.rule };
   },

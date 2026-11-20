@@ -65,3 +65,20 @@ describe('pool helpers (CR 106.4, 106.6)', () => {
     expect(poolColorCounts(emptyPool())).toEqual({ W: 0, U: 0, B: 0, R: 0, G: 0, C: 0 });
   });
 });
+
+describe('the colorless quality (CR 106.6, 105.2c: "Spend this mana only to cast colorless spells")', () => {
+  const COLORLESS_ONLY = {
+    kind: 'spellMatch',
+    qualities: [{ kind: 'colorless' }],
+  } as const;
+
+  test('a spell with no color may be paid with it, a colored spell and an ability may not', () => {
+    expect(restrictionAllows(COLORLESS_ONLY, { types: ['artifact'], colorless: true })).toBe(true);
+    expect(restrictionAllows(COLORLESS_ONLY, { types: ['creature'], colorless: false })).toBe(
+      false,
+    );
+    // A target that does not say (no `colorless` field) is not colorless: nothing is guessed.
+    expect(restrictionAllows(COLORLESS_ONLY, { types: ['artifact'] })).toBe(false);
+    expect(restrictionAllows(COLORLESS_ONLY, { ability: true })).toBe(false);
+  });
+});

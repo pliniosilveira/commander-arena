@@ -1956,6 +1956,14 @@
       "reasons": [],
       "ast": "d61938d8"
     },
+    "33587cb2-0fd3-4e4c-bc5e-e7299cc9dab5": {
+      "name": "Molten Slagheap",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4c6edd3a"
+    },
     "335a6c6a-030f-45d4-806c-467a22962eed": {
       "name": "Final Act",
       "group": "acceptance",
@@ -2551,6 +2559,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "796f4d91"
+    },
+    "42b9d383-3fe2-4fc8-ab86-f80a288d502b": {
+      "name": "Murmuring Bosk",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fa2ad71c"
     },
     "42d7ec93-0943-43e2-9b65-b7edc3349410": {
       "name": "Gadrak, the Crown-Scourge",
@@ -4765,6 +4781,14 @@
       "reasons": [],
       "ast": "5c6a268e"
     },
+    "7e8c2a18-e404-40ff-a9e0-ec3eeb6d576e": {
+      "name": "Command Beacon",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e7b07d2"
+    },
     "7f268b15-ac92-4e98-821b-78d15d9285d9": {
       "name": "Loyal Apprentice",
       "group": "acceptance",
@@ -5249,6 +5273,14 @@
       "reasons": [],
       "ast": "7206efa3"
     },
+    "8d38194e-b607-4ff4-9c19-0e8636d463bf": {
+      "name": "Raging Ravine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ae14f1e2"
+    },
     "8d3c9646-2b6b-4315-939d-5a920efc0a60": {
       "name": "Galadriel of Lothlórien",
       "group": "acceptance",
@@ -5330,6 +5362,14 @@
       "reasons": [],
       "ast": "bbcfccea"
     },
+    "8ea46945-d5ab-4209-b473-4769e7b8b962": {
+      "name": "Shrine of the Forsaken Gods",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "35881dd6"
+    },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
       "group": "acceptance",
@@ -5410,6 +5450,14 @@
       "reasons": [],
       "ast": "c3e6941a"
     },
+    "92acb789-0e42-465c-ac16-40fefec48805": {
+      "name": "Llanowar Reborn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "963be2ce"
+    },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
       "group": "acceptance",
@@ -5433,6 +5481,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3304afae"
+    },
+    "93953926-a644-49bb-9b5a-4c8f19114c7e": {
+      "name": "Demolition Field",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8ff13d6e"
     },
     "939e6f71-185e-41f2-9d54-72cce06f1dce": {
       "name": "Thirst for Knowledge",
@@ -7490,6 +7546,14 @@
       "reasons": [],
       "ast": "c6e5fd37"
     },
+    "cb8ec2e4-8223-4172-8f2c-37c918a573fa": {
+      "name": "Homeward Path",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0812bd7"
+    },
     "cb923c4d-1d2e-4039-90bb-72d1981b9738": {
       "name": "Endless Atlas",
       "group": "training",
@@ -7665,6 +7729,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0089b6"
+    },
+    "d27bb97d-286b-4947-8d7b-443e4df93319": {
+      "name": "Nesting Grounds",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b041ae31"
     },
     "d30d8968-ec24-4155-97e2-28efd52c8810": {
       "name": "Malevolent Rumble",
@@ -9323,8 +9395,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 846,
-      "total": 865
+      "supported": 855,
+      "total": 874
     }
   }
 }

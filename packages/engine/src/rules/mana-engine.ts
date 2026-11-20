@@ -258,7 +258,17 @@ export function activateManaAbility(
       manaPool: getSeat(working, seat).manaPool.filter((_, i) => !spent.has(i)),
     });
   }
-  const paid = payManaAbilityCosts(working, seat, source, found.ability, sacrifice, tapped);
+  // CR 107.3 (Molten Slagheap): "Remove X storage counters": X is the number of mana the chosen combination makes.
+  const paid = payManaAbilityCosts(
+    working,
+    seat,
+    source,
+    found.ability,
+    sacrifice,
+    tapped,
+    undefined,
+    chosen.length,
+  );
   // CR 605.4a (D-139): the triggered mana abilities of "whenever you tap a permanent for {C}" resolve at once, into the same pool.
   const alternatives = additionalManaOptions(working, obj, found.ability, chosen);
   const only = alternatives[0];

@@ -68,6 +68,8 @@ function paymentSourcesFresh(state: GameState, seat: SeatId): PaymentSource[] {
       // sacrifice and life costs and the restriction on activating decide whether the source is on
       // offer.
       if (!canPayPhysicalCosts(state, obj, ability, seat, abilityIndex)) continue;
+      // Molten Slagheap: the mana it makes and the counters it costs are the player's choice of X, which a payment plan does not make; it is activated by hand.
+      if (ability.production.kind === 'countersCombination') continue;
       // CR 605.4, D-139: what a triggered mana ability adds ("add an additional {C}") is made with the mana, so the planner counts it.
       const produces = productionOutcomes(state, obj, ability)
         .filter((o) => o.length > 0)

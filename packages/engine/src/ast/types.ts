@@ -1410,6 +1410,12 @@ export type Cost =
   | { readonly kind: 'exileFromGraveyard'; readonly filter: ObjectFilter; readonly count: number }
   | { readonly kind: 'removeCounters'; readonly counter: string; readonly count: number }
   /**
+   * "Remove X storage counters from this land" as the cost of a mana ability whose production is `countersCombination` of the same counter (Molten Slagheap, CR 107.3, 118.3, 122.1,
+   * 605.3b): X is the number of mana the player chooses to add, so the activation names X by naming the combination (a mana ability uses no stack to announce it). The cost removes X
+   * counters from the permanent; it cannot be paid with fewer, and the ability makes no mana for X = 0. Only in a mana ability.
+   */
+  | { readonly kind: 'removeCountersX'; readonly counter: string }
+  /**
    * The loyalty symbol of a loyalty ability (CR 606.2, 606.4, 606.5, D-200): `change` is the number of loyalty counters the permanent
    * the ability belongs to gets (positive, "[+1]") or loses (negative, "[-2]"), 0 for "[0]", and the string `'x'` for "[-X]" (X is announced
    * as the ability is activated, CR 107.3a, and is at most the permanent's loyalty). An activated ability with this cost is a loyalty ability
@@ -3397,6 +3403,19 @@ export type Effect =
    */
   | { readonly kind: 'moveCountersOnto'; readonly counter: string; readonly to: ObjectFilter }
   /**
+   * "Move a counter from target permanent you control onto a second target permanent." / Graft's "you may move a +1/+1 counter from this permanent onto that creature" (CR 122.1, 122.6,
+   * 608.2d; Nesting Grounds, Llanowar Reborn): one counter moves from the permanent `from` names (a reference: a `target`, `this`...) onto the one `to` names. `counter` is its kind;
+   * left out, any kind: the controller chooses one when the source has counters of more than one kind the destination can have (a `chooseOption` decision of purpose 'effect', the
+   * kinds as options), and it is that kind when there is one. Nothing moves when either permanent has left the battlefield, when they are the same permanent, when the source has no
+   * counter of the kind or when the destination can't have it (CR 122.6).
+   */
+  | {
+      readonly kind: 'moveCounter';
+      readonly from: ObjectRef;
+      readonly to: ObjectRef;
+      readonly counter?: string;
+    }
+  /**
    * "You may play an additional land this turn." (CR 305.2, 305.2a, issue 208): the controller's land plays for this turn go up by `count` (a positive whole number). Only the
    * active player plays lands (CR 305.3), so the effect adds nothing when its controller is not the active player. It does not carry over to another turn.
    * "You may play X additional lands this turn." (Nahiri's Lithoforming, CR 107.3a, 305.2): `count` may be an amount, read as the effect runs; with 0 or less nothing is added.
@@ -4025,6 +4044,16 @@ export type ManaProduction =
    * colors of the five (ten pairs for two mana; colorless is not a color, CR 105.1, 106.1b, so never one of them). At most 4 mana still.
    */
   | { readonly kind: 'anyCombination'; readonly count: number; readonly distinct?: true }
+  /**
+   * "Add X mana in any combination of {B} and/or {R}", with "Remove X storage counters from this land" in the cost (Molten Slagheap, CR 106.1b, 107.3, 605.3b): the player chooses X (1 to the
+   * `counter` counters the permanent has) mana, each of one of `colors`, and the cost removes X counters. The activation names the combination, so it names X. The cost is
+   * `removeCountersX` of the same counter, which a mana ability with this production must have.
+   */
+  | {
+      readonly kind: 'countersCombination';
+      readonly counter: string;
+      readonly colors: readonly ManaColor[];
+    }
   | {
       readonly kind: 'anyColor';
       /**
@@ -6915,12 +6944,13 @@ export interface ManaAbility {
     readonly subtypes?: readonly Subtype[];
     /**
      * "Spend this mana only to cast spells with mana value 5 or greater or spells with {X} in their mana costs." (CR 106.6, 202.3, 107.3): the spell has at least one of
-     * these qualities, as it is cast: `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
+     * these qualities, as it is cast (`colorless`, Shrine of the Forsaken Gods "only to cast colorless spells", CR 105.2c: the spell has no color): `manaValueAtLeast` its mana value (an {X} in the cost counts as the value announced for it on the stack, 0 in a hand, CR 202.3e) is at
      * least the number; `hasX` there is an {X} in its mana cost, whatever X is. With `types` or `subtypes`, the spell is of those as well. Not with `chosenType`.
      */
     readonly qualities?: readonly (
       | { readonly kind: 'manaValueAtLeast'; readonly value: number }
       | { readonly kind: 'hasX' }
+      | { readonly kind: 'colorless' }
     )[];
     /**
      * "Spend this mana only to cast Dragon spells or activate abilities of Dragons." (D-151): the mana may also be spent on an activated ability of

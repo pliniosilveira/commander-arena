@@ -458,6 +458,36 @@ export const COST_REMOVE_COUNTERS = defineRule<IrCost>({
 });
 
 /**
+ * `cost.remove-x-counters`: "Remove X storage counters from ~" (Molten Slagheap; CR 107.3, 118.1, 122.1): X counters of a named kind from the permanent itself, X being the mana the
+ * ability adds (the lowering of a mana ability reads it only there). Not read: a number, "a", "all", "any number of", a kind that is not a word, another permanent.
+ */
+export const COST_REMOVE_X_COUNTERS = defineRule<IrCost>({
+  id: 'cost.remove-x-counters',
+  family: 'cost',
+  leading: ['remove'],
+  cites: ['CR 107.3 (Variables)', 'CR 118.1 (Costs)', 'CR 122.1 (Counters)'],
+  examples: ['Remove X storage counters from ~', 'Remove X charge counters from ~'],
+  rejects: [
+    'Remove X counters from ~',
+    'Remove X +1/+1 counters from ~',
+    'Remove two storage counters from ~',
+    'Remove all storage counters from ~',
+    'Remove X storage counters from target land',
+    'Remove X storage counters',
+  ],
+  parse: (ctx, pos) =>
+    map(
+      spanned(pattern(/remove x ([a-z]+) counters from ~(?![\p{L}\p{N}])/iu)),
+      ({ value, span }): IrCost => ({
+        kind: 'removeCountersX',
+        counter: (value[1] ?? '').toLowerCase(),
+        span,
+        rule: 'cost.remove-x-counters',
+      }),
+    )(ctx, pos),
+});
+
+/**
  * `cost.tap-permanents`: "Tap three untapped Zombies you control", "Tap two untapped artifacts you control", "Tap
  * another untapped creature you control", "Tap an untapped creature you control" (stage P29, D-133, CR 118.3, 602.2,
  * 302.6: tapping permanents is a cost, and only a creature's own {T} ability is held back by summoning sickness). The
@@ -916,6 +946,7 @@ export const COST_RULES = [
   ...DANITHA_G5_COST_RULES,
   COST_PAY_X_LIFE,
   COST_REMOVE_COUNTERS,
+  COST_REMOVE_X_COUNTERS,
   COST_PUT_COUNTERS,
   COST_RETURN_TO_HAND,
   COST_LOYALTY,

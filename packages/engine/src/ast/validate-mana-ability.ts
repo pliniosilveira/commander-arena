@@ -67,6 +67,24 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
       'one mana of a type a permanent produced is only the effect of a "tapped for mana" triggered mana ability (CR 605.1b), not what a mana ability makes',
     );
   }
+  // Molten Slagheap (CR 107.3, 605.3b): "Remove X storage counters" and "Add X mana in any combination" belong together: X is the number of mana chosen.
+  const xCosts = (Array.isArray(a.cost) ? a.cost : []).filter((c) => c?.kind === 'removeCountersX');
+  if (a.production?.kind === 'countersCombination') {
+    const counter = a.production.counter;
+    if (xCosts.length !== 1 || xCosts[0]?.counter !== counter) {
+      issue(
+        out,
+        `${path}.cost`,
+        'countersCombination needs one cost "Remove X counters" of the same kind',
+      );
+    }
+  } else if (xCosts.length > 0) {
+    issue(
+      out,
+      `${path}.cost`,
+      'a cost "Remove X counters" is only for the production countersCombination',
+    );
+  }
   // CR 605.1a, 605.3b: "Add {C} for each charge counter on this artifact" (Elementalist's Palette), "Add {U} for each artifact you control" (Uthros, Titanic Godcore): the count is read as the
   // ability is activated and is what the game says then (a count, the counters on this permanent, ...): no target, no X and no earlier instruction to read. A cost that gives a permanent
   // up or takes counters off could change what it counts, so the two are not combined.
@@ -192,12 +210,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           only.qualities.forEach((q, i) => {
             const ok =
               q?.kind === 'hasX' ||
+              q?.kind === 'colorless' ||
               (q?.kind === 'manaValueAtLeast' && Number.isSafeInteger(q.value) && q.value >= 1);
             if (!ok) {
               issue(
                 out,
                 `${path}.spendOnly.qualities[${i}]`,
-                'a quality is hasX or manaValueAtLeast of a whole number from 1',
+                'a quality is hasX, colorless or manaValueAtLeast of a whole number from 1',
               );
             }
           });

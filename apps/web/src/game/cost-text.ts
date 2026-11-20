@@ -210,6 +210,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
     }
     case 'removeCounters':
       return `Remove ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)}`;
+    case 'removeCountersX':
+      // Molten Slagheap (CR 107.3): X counters, X the mana the ability adds; the text says it as the card does.
+      return `Remove X ${cost.counter} counters from this ${self}`;
     case 'putCounters':
       // D-139: "Put a page counter on this artifact".
       return `Put ${countText(cost.count, `${cost.counter} counter`, `${cost.counter} counters`)} on this ${self}`;

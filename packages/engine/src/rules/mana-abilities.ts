@@ -324,6 +324,12 @@ export function physicalRefusal(
     if ((obj.counters[counter] ?? 0) < count)
       return `${name} has fewer than ${count} ${counter} counters`;
   }
+  // CR 107.3, 118.3 (Molten Slagheap): "Remove X storage counters" needs at least one to remove (X = 0 makes no mana).
+  for (const c of ability.cost) {
+    if (c.kind === 'removeCountersX' && (obj.counters[c.counter] ?? 0) < 1) {
+      return `${name} has no ${c.counter} counters`;
+    }
+  }
   // CR 701.21a, 118.3: "Sacrifice a Spirit" needs a permanent of the kind that the seat controls.
   const kind = sacrificeFilterOf(ability);
   if (kind !== null && sacrificeCandidates(state, seat, obj.id, kind).length === 0) {
@@ -359,6 +365,8 @@ export function payManaAbilityCosts(
   tapped?: ObjectId,
   /** Permanents the engine's choice leaves alone (the other sources of a payment plan, D-625). */
   reserved?: ReadonlySet<ObjectId>,
+  /** The X of a cost "Remove X storage counters" (Molten Slagheap, CR 107.3): the number of mana the player chose to add. */
+  x = 0,
 ): { state: GameState; events: GameEvent[] } {
   let next = state;
   const events: GameEvent[] = [];
@@ -385,6 +393,16 @@ export function payManaAbilityCosts(
       counters: { ...obj.counters, [counter]: (obj.counters[counter] ?? 0) - count },
     });
     events.push({ kind: 'counterRemoved', object: id, counter, count });
+  }
+  // CR 107.3, 118.3, 122.1 (Molten Slagheap): "Remove X storage counters from this land", X the number of mana chosen.
+  for (const cost of ability.cost) {
+    if (cost.kind !== 'removeCountersX' || x <= 0) continue;
+    const obj = next.objects[id];
+    if (obj === undefined) continue;
+    next = patchObject(next, id, {
+      counters: { ...obj.counters, [cost.counter]: (obj.counters[cost.counter] ?? 0) - x },
+    });
+    events.push({ kind: 'counterRemoved', object: id, counter: cost.counter, count: x });
   }
   const life = lifeCostOf(ability);
   if (life > 0) {

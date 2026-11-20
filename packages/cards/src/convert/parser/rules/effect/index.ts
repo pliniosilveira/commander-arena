@@ -98,6 +98,7 @@ import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
+import { LAND_CREATURE_TRIGGER_EFFECT_RULES } from './land-creature-trigger';
 import { LIBRARY_RULES } from './library';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
 import { LOREHOLD_G1_EFFECT_RULES } from './lorehold-g1';
@@ -1124,6 +1125,7 @@ export const EFFECT_RULES = [
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,
+  ...LAND_CREATURE_TRIGGER_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
   ...DEATH_TOLL_C_EFFECT_RULES,
   ...DEATH_TOLL_WINTER_EFFECT_RULES,

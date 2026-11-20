@@ -2813,6 +2813,12 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
         issue(out, `${path}.count`, 'count must be a positive integer');
       }
       break;
+    case 'removeCountersX':
+      // Molten Slagheap (CR 107.3, 122.1): a kind of counter; X is chosen with the mana of the ability, which `checkManaAbility` ties to it.
+      if (typeof cost.counter !== 'string' || cost.counter === '') {
+        issue(out, `${path}.counter`, 'counter name must be non-empty');
+      }
+      break;
     case 'returnToHand':
       // D-139: "Return an artifact you control to its owner's hand": this permanent, or a choice among the player's own.
       if (cost.count !== undefined) {
@@ -4261,6 +4267,8 @@ export const MAY_EFFECT_KINDS = [
   'removeCounters',
   // Death Toll deck, group D (CR 701.8, 608.2c): "you may destroy another target creature. If a creature is destroyed this way, ...".
   'destroy',
+  // Graft (CR 702.58): "you may move a +1/+1 counter from this permanent onto that creature."
+  'moveCounter',
 ];
 
 /**
@@ -5496,6 +5504,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       }
       checkFilter(e.to, `${path}.to`, out);
       break;
+    case 'moveCounter':
+      // CR 122.1 (Nesting Grounds, Graft): one counter, of the kind named or of a kind the controller chooses, from one permanent onto another.
+      checkAffectedObjects(e.from, `${path}.from`, scope, out);
+      checkAffectedObjects(e.to, `${path}.to`, scope, out);
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
+        issue(out, `${path}.counter`, 'moveCounter names a kind of counter when it names one');
+      }
+      break;
     case 'additionalLandDropThisTurn':
       // CR 305.2: a positive whole number of additional land plays.
       if (typeof e.count === 'number' ? !isCount(e.count) || e.count < 1 : e.count === undefined) {
@@ -5660,11 +5676,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         const zone = (e.objects as ChooseSelector).filter?.zone;
         // Issue 103 (Hellkite Courser): "a commander you own from the command zone" is a card chosen from the command zone, only to put onto the battlefield.
         const fromCards = zone === 'hand' || zone === 'graveyard' || zone === 'command';
-        if (zone === 'command' && e.to !== 'battlefield') {
+        // Command Beacon (CR 903.3, 408.3): "Put your commander into your hand from the command zone" is a card chosen from the command zone put into the hand.
+        if (zone === 'command' && e.to !== 'battlefield' && e.to !== 'hand') {
           issue(
             out,
             `${path}.to`,
-            'a commander chosen from the command zone is put onto the battlefield',
+            'a commander chosen from the command zone is put onto the battlefield or into the hand',
           );
         }
         if (

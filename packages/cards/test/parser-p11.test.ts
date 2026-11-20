@@ -395,8 +395,9 @@ describe('"Its controller may search their library ..." (CR 701.23a, 608.2d, 110
       'spell.effect',
     ],
     [
-      'Exile target creature. You may search your library for a basic land card, put it onto the battlefield, then shuffle.',
-      'may search your library for a basic land card, put it onto the battlefield, then shuffle.',
+      // "You may search your library ..." is read since Demolition Field (`effect.search-you-may`); another player's library after "you may" is not.
+      'Exile target creature. You may search their library for a basic land card, put it onto the battlefield, then shuffle.',
+      'may search their library for a basic land card, put it onto the battlefield, then shuffle.',
       'effect.player',
     ],
   ])('%s stops at "%s"', (text, stoppedAt, closestRule) => {

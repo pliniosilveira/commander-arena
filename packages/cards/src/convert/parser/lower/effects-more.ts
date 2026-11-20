@@ -176,7 +176,11 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     // Another player searches their own library, and a "may" is theirs to answer (CR 608.2d).
     const who = arg(clause, 'player');
     const may = arg(clause, 'may');
-    if ((who === undefined) !== (may === undefined)) return failure(clause);
+    // "You may search your library ..." (Demolition Field): the controller's own choice, with no other player named.
+    if (who === undefined && may !== undefined && (may.kind !== 'flag' || !may.value)) {
+      return failure(clause);
+    }
+    if (who !== undefined && may === undefined) return failure(clause);
     let player: PlayerSelector = { kind: 'you' };
     if (who !== undefined) {
       if (who.kind !== 'noun' || may?.kind !== 'flag' || !may.value) return failure(clause);
@@ -190,7 +194,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
         {
           kind: 'search',
           player,
-          ...(who === undefined ? {} : { optional: true as const }),
+          ...(may === undefined ? {} : { optional: true as const }),
           filter: limit === undefined ? filter.value : { ...filter.value, manaValueAtMost: limit },
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),
