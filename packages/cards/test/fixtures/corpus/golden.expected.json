@@ -1,5 +1,5 @@
 {
-  "parserVersion": 172,
+  "parserVersion": 173,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -3554,19 +3554,10 @@
     "5ecf35b1-0bfd-4c60-a791-5a3b918dd630": {
       "name": "Marshland Bloodcaster",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{1}{B}, {T}: Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4706e044"
+      "ast": "80572aec"
     },
     "5f15125e-ae89-471e-b055-226a783bc7c1": {
       "name": "Aetherflux Reservoir",
@@ -9452,7 +9443,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 860,
+      "supported": 861,
       "total": 880
     }
   }
