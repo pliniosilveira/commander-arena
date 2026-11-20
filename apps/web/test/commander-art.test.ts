@@ -13,11 +13,11 @@ const IMG = (id: string) => ({
   art_crop: `https://cards.scryfall.io/art_crop/front/${id}.jpg`,
 });
 
-test('the query asks for one commander by exact name, paper, non-foil, and a special frame', () => {
+test('the query asks for one commander by exact name, paper, and a special frame', () => {
   const q = commanderArtQuery('Giada, Font of Hope');
   expect(q).toContain('!"Giada, Font of Hope"');
   expect(q).toContain('game:paper');
-  expect(q).toContain('is:nonfoil');
+  expect(q).not.toContain('nonfoil');
   for (const frame of ['is:borderless', 'is:extendedart', 'is:showcase', 'is:fullart']) {
     expect(q).toContain(frame);
   }
