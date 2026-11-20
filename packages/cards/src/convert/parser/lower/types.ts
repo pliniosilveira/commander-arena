@@ -328,6 +328,8 @@ export interface LowerContext {
    * ("named Ajani's Pridemate") is written back from it.
    */
   selfName: string;
+  /** True when the text of the face says "named" and then the card's whole name, so a "named ~" in it is the whole name (`cardName`), though `selfName` cannot say which name a token used. */
+  namedWholeName: boolean;
 }
 
 export function newContext(
@@ -411,6 +413,7 @@ export function newContext(
     selfAttackTrigger: false,
     cardName,
     selfName: '',
+    namedWholeName: false,
   };
 }
 

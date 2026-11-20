@@ -654,6 +654,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the total mana value of permanents destroyed this way',
     // CR 109.4, 608.2c: the permanents of the player a target before it names.
     'where X is the greatest power among creatures they control',
+    // CR 119.9: the life of the gain a "whenever you gain life" trigger is about.
+    'where X is the amount of life you gained',
   ],
   rejects: [
     'where X is the total mana value of creatures destroyed this way',
@@ -680,6 +682,8 @@ export const AMOUNT_WHERE_X = defineRule<IrAmount>({
     'where X is the amount of mana spent',
     'where X is the mana spent to cast it',
     'where X is your life',
+    'where X is the amount of life you gain',
+    'where X is the amount of life you gained last turn',
   ],
   parse: (ctx, pos) => {
     const head = pattern(/where X is /)(ctx, pos);

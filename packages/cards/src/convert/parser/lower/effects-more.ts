@@ -88,6 +88,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
     const {
       sharedLandType,
       anyNumberTotalManaValue: totalMV,
+      anyNumber,
       manaValueAtMostX: atMostX,
       ...single
     } = cards.filter;
@@ -99,6 +100,10 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       totalMV === undefined ? [] : missingFeatures(['selector:searchTotalManaValue']);
     if (totaling.length > 0)
       return { ok: false, needs: totaling, at: cards.span, rule: cards.rule };
+    // CR 701.23: "any number of ... cards": every card found goes to the one place, as for the total mana value.
+    const counting = anyNumber === true ? missingFeatures(['selector:searchAnyNumber']) : [];
+    if (counting.length > 0)
+      return { ok: false, needs: counting, at: cards.span, rule: cards.rule };
     const filter = lowerFilter({ ...cards, filter: withoutZone(single) });
     if (!filter.ok) return filter;
     // "a creature card with mana value X or less" (Finale of Devastation, CR 107.3a, 202.3): the X announced for the spell, so only the text of a spell with an X of its own
@@ -126,8 +131,12 @@ export const SEARCH: Lowering<IrClause, Effects> = {
       if (!lowered.ok) return lowered;
       amountValue = lowered.value;
     }
-    const rest = xCount || totalMV !== undefined;
-    if (totalMV !== undefined && (shared || xCount || cards.count !== undefined)) {
+    const anyOf = anyNumber === true;
+    const rest = xCount || totalMV !== undefined || anyOf;
+    if (
+      (totalMV !== undefined || anyOf) &&
+      (shared || xCount || cards.count !== undefined || (totalMV !== undefined && anyOf))
+    ) {
       return failure(clause);
     }
     const max = rest ? 1 : cards.count?.kind === 'number' ? cards.count.value : 1;
@@ -195,6 +204,7 @@ export const SEARCH: Lowering<IrClause, Effects> = {
           max,
           ...(amountValue === null ? {} : { maxAmount: amountValue }),
           ...(totalMV === undefined ? {} : { totalManaValue: totalMV }),
+          ...(anyOf ? { anyNumber: true as const } : {}),
           ...(shared ? { sharedLandType: true as const } : {}),
           ...(zones === undefined ? {} : { zones }),
           destinations,

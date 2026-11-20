@@ -157,8 +157,39 @@ export const EFFECT_CHOOSE_PARITY_RETURN = defineRule<Clauses>({
   ),
 });
 
+/**
+ * `effect.remove-those-counters`: "remove those counters" (Prize Pig, CR 122.1, 122.2, 608.2c): every counter of the kind the sentence's own condition counted ("Then if there are three or more
+ * ribbon counters on ~, remove those counters") comes off the permanent with the ability. The binding pass gives the clause the kind from that condition, so a sentence with no such
+ * condition leaves it unbound and the lowering refuses it. The engine's `removeCounters`. Not read: "all counters", a kind named, a target, "remove those counters from" another permanent.
+ */
+export const EFFECT_REMOVE_THOSE_COUNTERS = defineRule<Clauses>({
+  id: 'effect.remove-those-counters',
+  family: 'effect',
+  leading: ['remove'],
+  cites: [
+    'CR 122.1 (Counters)',
+    'CR 122.2 (Counters)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['remove those counters', 'Remove those counters'],
+  rejects: [
+    'remove all counters',
+    'remove those',
+    'remove those counters from it',
+    'remove those counter',
+    'remove these counters',
+    'remove them',
+  ],
+  parse: single(
+    'effect.remove-those-counters',
+    pattern(/remove those counters(?![\p{L}\p{N}])/iu),
+    () => ({ verb: 'removeThoseCounters', args: {} }),
+  ),
+});
+
 export const QUANDRIX_G_EFFECT_RULES = [
   EFFECT_DISTRIBUTE_COUNTERS,
   EFFECT_REMOVE_COUNTERS_SELF,
+  EFFECT_REMOVE_THOSE_COUNTERS,
   EFFECT_CHOOSE_PARITY_RETURN,
 ];

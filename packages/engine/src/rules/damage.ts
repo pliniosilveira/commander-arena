@@ -70,6 +70,13 @@ function sourceTypesOf(
   return { types: c?.types ?? [], subtypes: c?.subtypes ?? [] };
 }
 
+/** The name the source has now, or had as it last existed if it has left (CR 113.7a); null when nothing is known of it. */
+function sourceNameOf(state: GameState, source: ObjectId): string | null {
+  const live = state.objects[source];
+  if (live !== undefined) return derive(state, live).name;
+  return state.lki[source]?.characteristics.name ?? null;
+}
+
 /** The source as it is now, or as it last existed if it has left (CR 113.7a, 608.2h). */
 function sourceInfo(state: GameState, source: ObjectId): SourceInfo | null {
   const live = state.objects[source];
@@ -243,6 +250,18 @@ export function dealDamageAsking(
   if (to.kind === 'player') {
     // D-139: "whose controller was dealt combat damage by this creature this turn".
     if (combat) {
+      // CR 120.2a: and, for the whole game, the name of the creature that dealt it ("each opponent dealt combat damage this game by a creature named ~").
+      const named = sourceNameOf(state, source);
+      const before = state.combatDamagedByNames?.[to.seat] ?? [];
+      if (named !== null && !before.includes(named)) {
+        state = {
+          ...state,
+          combatDamagedByNames: {
+            ...state.combatDamagedByNames,
+            [to.seat]: [...before, named],
+          },
+        };
+      }
       state = {
         ...state,
         turnLog: {

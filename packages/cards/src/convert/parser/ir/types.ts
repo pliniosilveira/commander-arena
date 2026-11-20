@@ -150,6 +150,7 @@ export interface IrNoun extends IrNode {
     | 'discardedThisWay' // "each player who discarded a card this way" (stage P52, D-210): the players of the discard before it
     | 'couldntSacrificeThisWay' // "each player who can't" after a sacrifice (CR 701.21a): the players the sacrifice before it found nothing for
     | 'attackedPlayers' // "each player ~ attacked this turn" (D-269, CR 508.6): the players this permanent was declared attacking
+    | 'combatDamagedByNamed' // "each opponent dealt combat damage this game by a creature named ~" (CR 120.2a): the opponents a creature of the permanent's name hurt in combat
     | 'selfAndEnchanted' // "~ and enchanted creature" (a bestow card, CR 702.103): the permanent and the creature it is attached to
     | 'pair' // "each of those creatures" (D-286, CR 702.95b): the permanent and the creature it is paired with
     | 'thisCard'; // "this card" (stage P33, D-150, CR 400.7): the card of the ability's source, wherever it is (an Aura in the graveyard)
@@ -337,6 +338,11 @@ export interface IrFilter {
    * Like `sharedLandType` it is about the cards found together; the search lowering takes it off (the engine's `search.totalManaValue`), any other filter that has it is not lowered.
    */
   readonly anyNumberTotalManaValue?: number;
+  /**
+   * "any number of creature cards" (CR 701.23, 701.23b; Bilbo, Birthday Celebrant): any number of the cards of a library search, none included, with no limit but the library. Like
+   * `anyNumberTotalManaValue` it is about the cards found together; the search lowering takes it off (the engine's `search.anyNumber`), any other filter that has it is not lowered.
+   */
+  readonly anyNumber?: true;
   /**
    * "with a counter on it", "with a +1/+1 counter on it" (stage P32, D-147, CR 122.1): the object has a counter, of any kind (`true`) or
    * of the kind named ("+1/+1", "stun").
@@ -585,7 +591,8 @@ export type IrAmount =
       readonly span: Span;
     }
   // Stage P29 (D-133): "you gain that much life": the damage of the event that caused the trigger
-  | { readonly kind: 'triggerDamage'; readonly span: Span }
+  // `life`: "where X is the amount of life you gained" (Field-Tested Frying Pan), read only where the trigger is life being gained.
+  | { readonly kind: 'triggerDamage'; readonly life?: true; readonly span: Span }
   // Galadriel deck, group 3 (CR 706.2): "Scry X, where X is the result": the natural result of the die rolled earlier in the text
   | { readonly kind: 'dieResult'; readonly span: Span }
   // Phyrexian Processor (CR 119.4, 614.12): "where X is the life paid as ~ entered": what the permanent paid for "As ~ enters, pay any amount of life"

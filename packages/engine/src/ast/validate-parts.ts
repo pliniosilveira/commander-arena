@@ -1457,6 +1457,12 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, path, "'attackedPlayers' needs an ability of a permanent, not a spell");
       }
       break;
+    case 'combatDamagedByNamed':
+      // CR 120.2a: "each opponent dealt combat damage this game by a creature named X": a non-empty name, read from the game history anywhere.
+      if (typeof sel.name !== 'string' || sel.name === '') {
+        issue(out, `${path}.name`, "'combatDamagedByNamed' needs the name of the creature");
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -1530,6 +1536,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'triggerPlayer',
   'attackedPlayers',
+  'combatDamagedByNamed',
 ];
 
 export function checkDamageRecipient(
@@ -4157,6 +4164,27 @@ function checkSearch(
       );
     }
   }
+  // CR 701.23: "any number of creature cards": no limit but the library; one 'rest' destination, nothing else that changes how many are found.
+  if (e.anyNumber !== undefined) {
+    if (e.anyNumber !== true) {
+      issue(out, `${path}.anyNumber`, 'anyNumber must be true when present');
+    }
+    if (
+      e.max !== 1 ||
+      e.sharedLandType !== undefined ||
+      e.maxAmount !== undefined ||
+      e.totalManaValue !== undefined ||
+      e.zones !== undefined ||
+      e.destinations?.length !== 1 ||
+      e.destinations[0]?.count !== 'rest'
+    ) {
+      issue(
+        out,
+        `${path}.anyNumber`,
+        "a search for any number of cards has a max of 1 (unread), one destination of 'rest', and no shared land type, zones, maxAmount or totalManaValue",
+      );
+    }
+  }
   // D-262: "that share a land type" is about two or more land cards found together.
   if (e.sharedLandType !== undefined) {
     if (e.sharedLandType !== true) {
@@ -5338,6 +5366,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');
