@@ -97,3 +97,27 @@ describe('"Pay 1 life: Add {C}. Spend this mana only to cast a spell from your g
     grave.expect.pool(0, '');
   });
 });
+
+describe('"{T}, Sacrifice ~: Put your commander into your hand from the command zone." (CR 903.3, 400.3)', () => {
+  test('the commander leaves the command zone for its owner’s hand', () => {
+    const beacon = parsed(
+      'SYNTHETIC Parsed Beacon',
+      'Land',
+      '{T}, Sacrifice ~: Put your commander into your hand from the command zone.',
+    );
+    const g = base()
+      .define(beacon)
+      .battlefield(beacon.name)
+      .commander('Grizzly Bears')
+      .at('precombatMain')
+      .build();
+    g.expect.zone('Grizzly Bears', 'command');
+    g.act(0).activate(beacon.name);
+    g.passAll();
+    // CR 903.9b: a commander that would be put into its owner's hand may go to the command zone instead; the owner declines.
+    g.expect.pending('commanderZone', 0);
+    g.act(0).declineCommandZone();
+    g.expect.zone('Grizzly Bears', 'hand');
+    g.expect.zone(beacon.name, 'graveyard');
+  });
+});

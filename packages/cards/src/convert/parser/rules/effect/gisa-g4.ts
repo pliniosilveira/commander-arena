@@ -351,9 +351,65 @@ export const EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE = defineRule<Clauses>({
   },
 });
 
+/**
+ * `effect.put-commander-into-hand`: "Put your commander into your hand from the command zone." (issue 102, Command Beacon; CR 903.3, 400.3, 608.2d): the commander its owner designated,
+ * from their command zone into their hand; with more than one commander the player picks one as the instruction runs. Not read: "may", another zone or destination, a number, "target",
+ * a commander of another player, a rider after it.
+ */
+export const EFFECT_PUT_COMMANDER_INTO_HAND = defineRule<Clauses>({
+  id: 'effect.put-commander-into-hand',
+  family: 'effect',
+  leading: ['put'],
+  cites: [
+    'CR 903.3 (Commander)',
+    'CR 400.3 (General)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'put your commander into your hand from the command zone',
+    'Put your commander into your hand from the command zone',
+  ],
+  rejects: [
+    'put your commander into your hand',
+    'put your commander onto the battlefield from the command zone',
+    'put your commander into your graveyard from the command zone',
+    'put your commander into your hand from your graveyard',
+    'put target commander into your hand from the command zone',
+    'put two commanders into your hand from the command zone',
+    'put your commander into your hand from the command zone and draw a card',
+    'you may put your commander into your hand from the command zone',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.put-commander-into-hand';
+    const r = spanned(
+      pattern(/put your commander into your hand from the command zone(?![\p{L}\p{N}])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (!endsSentence()(ctx, r.pos)) return fail(ctx, pos);
+    const span = r.value.span;
+    const objects: IrNoun = {
+      kind: 'noun',
+      det: 'a',
+      filter: { raw: 'your commander', commander: 'yours', card: true },
+      upTo: false,
+      plural: false,
+      other: false,
+      span,
+      rule: id,
+    };
+    const toHand: IrArg = { kind: 'flag', value: true, span, rule: id };
+    return {
+      ok: true,
+      value: [makeClause(id, 'putCommanderFromCommandZone', { objects, toHand }, span)],
+      pos: r.pos,
+    };
+  },
+});
+
 /** Quiet: a line these rules do not read stops where it always did. */
 export const GISA_G4_EFFECT_RULES = [
   quietly(EFFECT_PUT_COMMANDER_FROM_COMMAND_ZONE),
+  quietly(EFFECT_PUT_COMMANDER_INTO_HAND),
   quietly(EFFECT_RETURN_TO_COMMAND_AT_END_STEP),
   quietly(EFFECT_GAIN_KEYWORD_FOR_GOOD),
   quietly(EFFECT_EXILE_AT_END_STEP),

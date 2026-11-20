@@ -6071,11 +6071,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         const zone = (e.objects as ChooseSelector).filter?.zone;
         // Issue 103 (Hellkite Courser): "a commander you own from the command zone" is a card chosen from the command zone, only to put onto the battlefield.
         const fromCards = zone === 'hand' || zone === 'graveyard' || zone === 'command';
-        if (zone === 'command' && e.to !== 'battlefield') {
+        // Issue 102 (Command Beacon): or into its owner's hand.
+        if (zone === 'command' && e.to !== 'battlefield' && e.to !== 'hand') {
           issue(
             out,
             `${path}.to`,
-            'a commander chosen from the command zone is put onto the battlefield',
+            'a commander chosen from the command zone is put onto the battlefield or into the hand',
           );
         }
         if (
