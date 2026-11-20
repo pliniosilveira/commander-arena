@@ -161,6 +161,47 @@ export const EFFECT_END_STEP_MADE_TOKENS = defineRule<Clauses>({
 });
 
 /**
+ * `effect.exile-made-token-unless-ring-bearer`: "exile that token unless ~ is your Ring-bearer" (Sauron, the Necromancer; CR 701.54e: the Ring-bearer, CR 603.7c: the instruction of a delayed
+ * sentence "At the beginning of the next end step, ..."): the one token the instruction before made is exiled unless the permanent with the ability is the controller's Ring-bearer as the
+ * delayed ability resolves. The engine's `conditional` on `thisIsRingBearer` (negated) of an `exile` of `moved`. Not read: another object than "that token", another player's Ring-bearer,
+ * "if", another permanent than `~`.
+ */
+export const EFFECT_EXILE_MADE_TOKEN_UNLESS_RING_BEARER = defineRule<Clauses>({
+  id: 'effect.exile-made-token-unless-ring-bearer',
+  family: 'effect',
+  leading: ['exile'],
+  cites: [
+    'CR 701.54e (The Ring Tempts You)',
+    'CR 603.7c (Delayed Triggered Abilities)',
+    'CR 406.1 (Exile)',
+  ],
+  examples: ['exile that token unless ~ is your Ring-bearer'],
+  rejects: [
+    'exile that token',
+    'exile that token if ~ is your Ring-bearer',
+    'exile that token unless ~ is their Ring-bearer',
+    'exile it unless ~ is your Ring-bearer',
+    'exile those tokens unless ~ is your Ring-bearer',
+    'exile that creature unless ~ is your Ring-bearer',
+    'exile that token unless target creature is your Ring-bearer',
+    'exile that token unless ~ is your Ring-bearer and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.exile-made-token-unless-ring-bearer';
+    const r = spanned(
+      pattern(new RegExp(`exile that token unless ~ is your Ring-bearer${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    if (!endsSentence(ctx, r.pos)) return fail(ctx, pos);
+    return {
+      ok: true,
+      value: [makeClause(id, 'exileMadeUnlessRingBearer', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.leave-made-tokens`: "sacrifice those tokens", "exile those tokens" (CR 701.21a, 406.1): the tokens the instruction before made, as the instruction of a delayed
  * sentence ("At the beginning of the next end step, sacrifice those tokens."; issue 81, Venser: "..., sacrifice them."). The engine's `sacrifice` or `exile` of `moved`; the lowering checks that the
  * instruction before it made the tokens, so "them" is never another group. Not read: "it", another object.
@@ -551,6 +592,7 @@ export const EFFECT_BECOMES_COPY_EXCEPT_KEYWORD = defineRule<Clauses>({
 export const PRISMARI_G1_EFFECT_RULES = [
   quietly(EFFECT_MADE_TOKENS_GAIN_KEYWORDS),
   quietly(EFFECT_END_STEP_MADE_TOKENS),
+  quietly(EFFECT_EXILE_MADE_TOKEN_UNLESS_RING_BEARER),
   quietly(EFFECT_LEAVE_MADE_TOKENS),
   quietly(EFFECT_CREATE_OF_THOSE_TOKENS),
   quietly(EFFECT_COPY_EACH_CREATURE_TOKEN_ATTACKING),

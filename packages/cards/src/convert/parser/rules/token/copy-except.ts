@@ -16,7 +16,7 @@ import {
 } from '../../combinators';
 import type { IrAmount, IrNoun, IrToken } from '../../ir/types';
 import { quantity } from '../amount/index';
-import { KEYWORD_WORD, keywordWordsOf } from '../keyword/list';
+import { KEYWORD_WORD, KEYWORD_WORDS, keywordWordsOf } from '../keyword/list';
 import { defineRule, family, node, spanned } from '../registry';
 
 type Bare = Omit<IrToken, 'span' | 'rule'>;
@@ -60,6 +60,9 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
     'a token that’s a copy of that card, except it’s a 4/4 black Zombie',
     'a token that’s a copy of target creature, except it’s a 1/1 white Spirit',
     'a tapped token that’s a copy of ~, except it’s a 2/2 blue and red Elf Wizard',
+    // Sauron, the Necromancer: tapped and attacking, with a keyword.
+    'a tapped and attacking token that’s a copy of that card, except it’s a 3/3 black Wraith with menace',
+    'a token that’s a copy of that card, except it’s a 3/3 black Wraith with menace',
   ],
   rejects: [
     'a token that’s a copy of that card',
@@ -82,8 +85,9 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
           spanned(pattern(/an? /i)),
           ({ span }): IrAmount => ({ kind: 'number', value: 1, span }),
         ),
+        // "tapped" or, since Sauron, the Necromancer, "tapped and attacking" (CR 508.4, 110.5b).
         optional(
-          map(literal('tapped '), () => true as const),
+          map(choice(literal('tapped and attacking '), literal('tapped ')), (w) => w),
           null,
         ),
         pattern(/token that['’]s a copy of /i),
@@ -96,17 +100,27 @@ export const TOKEN_COPY_EXCEPT = defineRule<IrToken>({
           map(literal(' creature'), () => true as const),
           null,
         ),
+        // Sauron, the Necromancer: "..., except it's a 3/3 black Wraith with menace".
+        optional(
+          map(sequence(literal(' with '), KEYWORD_WORDS), ([, words]) => words),
+          null,
+        ),
       ),
-      ([count, tapped, , copyOf, pt, colors, , subtypes]): Bare => ({
+      ([count, tapped, , copyOf, pt, colors, , subtypes, , keywords]): Bare => ({
         kind: 'token',
         copyOf,
         count,
-        ...(tapped === null ? {} : { tapped }),
+        ...(tapped === null
+          ? {}
+          : tapped === 'tapped and attacking '
+            ? { tappedAndAttacking: true as const }
+            : { tapped: true as const }),
         copyExcept: {
           power: Number(pt[1]),
           toughness: Number(pt[2]),
           colors,
           subtypes,
+          ...(keywords === null ? {} : { keywords }),
         },
       }),
     ),

@@ -596,3 +596,52 @@ describe('Saw in Half', () => {
     ]);
   });
 });
+
+describe('Sauron, the Necromancer', () => {
+  const sauron = real('Sauron, the Necromancer');
+
+  const attacked = (ringBearer = false) => {
+    const g = scenario()
+      .define(sauron)
+      .seat(0)
+      .library(...LIBRARY)
+      .ring(ringBearer ? 1 : 0)
+      .battlefield(sauron.name, ringBearer ? { ringBearer: true } : {})
+      .graveyard(BEARS)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers');
+    g.act(0).attack([sauron.name]);
+    g.passAll();
+    return g;
+  };
+  const tokens = (g: ReturnType<typeof attacked>) =>
+    g
+      .view(0)
+      .battlefield.filter((o) => o.name === BEARS && o.controller === 0)
+      .map((o) => ({ pt: [o.power, o.toughness], tapped: o.tapped }));
+
+  test('whenever it attacks it exiles a creature card from your graveyard and makes a tapped and attacking token that is a 3/3 black Wraith copy of it with menace (CR 707.9b, 508.4)', () => {
+    const g = attacked();
+    g.expect.zone(BEARS, 'exile', { seat: 0 });
+    expect(tokens(g)).toEqual([{ pt: [3, 3], tapped: true }]);
+    g.expect.invariants();
+  });
+
+  test('at the beginning of the next end step the token is exiled unless Sauron is your Ring-bearer (CR 603.7c)', () => {
+    const g = attacked();
+    g.advanceTo('end');
+    // The delayed ability triggered as the end step began: it waits on the stack and resolves when both pass.
+    g.passAll();
+    expect(tokens(g)).toEqual([]);
+  });
+
+  test('when Sauron is your Ring-bearer the token stays (CR 701.54e)', () => {
+    const g = attacked(true);
+    g.advanceTo('end');
+    g.passAll();
+    expect(tokens(g)).toHaveLength(1);
+  });
+});

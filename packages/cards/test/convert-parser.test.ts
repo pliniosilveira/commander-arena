@@ -627,6 +627,7 @@ describe('unmatched abilities', () => {
       'effect.cant-be-blocked-by-that-players-creatures',
       'effect.made-tokens-gain-keywords',
       'effect.end-step-made-tokens',
+      'effect.exile-made-token-unless-ring-bearer',
       'effect.leave-made-tokens',
       'effect.create-of-those-tokens',
       'effect.copy-each-creature-token-attacking',

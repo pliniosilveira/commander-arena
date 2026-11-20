@@ -1237,6 +1237,8 @@ export interface IrToken extends IrNode {
     readonly toughness: number;
     readonly colors: readonly string[];
     readonly subtypes: readonly string[];
+    /** "..., except it's a 3/3 black Wraith with menace" (Sauron, the Necromancer, CR 707.9b, 707.9a): the keywords (as written, lowercase) the copy has besides its abilities. */
+    readonly keywords?: readonly string[];
   };
   /**
    * "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103, CR 707.9b): with `copyOf`, the copy has this power and toughness,

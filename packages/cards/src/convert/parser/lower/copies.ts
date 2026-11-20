@@ -65,10 +65,18 @@ export function lowerCopyToken(
       if (letter === undefined) return { ok: false, needs: [], ...at };
       colors.push(letter);
     }
+    // Sauron, the Necromancer (CR 707.9a, 707.9b): "with menace": the keywords the copy has besides the abilities it copies.
+    const keywordAbilities: Ability[] = [];
+    for (const word of token.copyExcept.keywords ?? []) {
+      const kind = keywordKind(word);
+      if (kind === undefined || !isGrantable(kind)) return { ok: false, needs: [], ...at };
+      keywordAbilities.push({ kind: 'keyword', keyword: plainKeyword(kind) });
+    }
     exceptions = {
       setPt: { power: token.copyExcept.power, toughness: token.copyExcept.toughness },
       setColors: colors,
       setCreatureTypes: [...token.copyExcept.subtypes],
+      ...(keywordAbilities.length === 0 ? {} : { abilities: keywordAbilities }),
     };
   }
   // "..., except it's a 4/4 Dragon creature with flying in addition to its other types" (Will of the Temur, issue 103, CR 707.9b): the values the copy has besides the ones it copies.

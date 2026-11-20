@@ -1671,6 +1671,32 @@ function runEffect(
       // made or put onto the battlefield (`moved`, only those): ONE delayed ability for the whole group, as the text says, so a player never has to order the permanents of one effect
       // (this replaces D-459's one ability for each: the ability is now the source's, CR 603.7e, not the permanent's). Its objects are bound as they are now (`boundObjects`); one that has
       // left since is a new object and nothing happens to it (CR 603.7c, 400.7). A permanent whose control changed is not sacrificed by the controller of the ability (CR 701.21a).
+      // Sauron, the Necromancer (CR 701.54e, 603.7c): "At the beginning of the next end step, exile that token unless ~ is your Ring-bearer": the same bound exile, run only when the condition
+      // holds as the ability resolves (the source is the permanent that made the token; `thisIsRingBearer` reads it then, as it last was when it has left).
+      if (
+        effect.effect.kind === 'conditional' &&
+        effect.effect.else === undefined &&
+        effect.effect.effect.kind === 'exile' &&
+        effect.effect.effect.objects.kind === 'moved'
+      ) {
+        const ids = (res.lastMoved ?? []).filter((id) => state.objects[id]?.zone === 'battlefield');
+        if (ids.length === 0) return done(state);
+        const ability: TriggeredAbility = {
+          kind: 'triggered',
+          trigger,
+          effect: {
+            ...effect.effect,
+            effect: { kind: 'exile', objects: { kind: 'boundObjects', ids } },
+          },
+        };
+        return done({
+          ...state,
+          delayedTriggers: [
+            ...state.delayedTriggers,
+            { source: res.source, controller: res.controller, ability },
+          ],
+        });
+      }
       if (
         (effect.effect.kind === 'exile' ||
           effect.effect.kind === 'sacrifice' ||

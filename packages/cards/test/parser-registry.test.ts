@@ -270,6 +270,11 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'effect.put-exiled-with-battlefield': permanent((e) => `{6}, {T}, Sacrifice ~: ${cap(e)}.`),
   'effect.put-target-exiled-with-battlefield': permanent((e) => `{6}, {T}: ${cap(e)}.`),
+  // Sauron, the Necromancer: the delayed sentence that exiles the token it made.
+  'effect.exile-made-token-unless-ring-bearer': spell(
+    (e) =>
+      `Create a 1/1 white Soldier creature token. At the beginning of the next end step, ${e}.`,
+  ),
   // Saw in Half.
   'condition.dies-this-way': spell(
     (e) => `Destroy target creature. If ${e}, its controller gains 1 life.`,
