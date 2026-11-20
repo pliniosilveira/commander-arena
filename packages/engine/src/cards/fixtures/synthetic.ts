@@ -176,6 +176,7 @@ import { SYNTHETIC_SACRIFICE_MANA_LIST } from './synthetic-sacrifice-mana';
 import { SYNTHETIC_SAGA_LIST } from './synthetic-sagas';
 import { SYNTHETIC_SEARCH_LIST } from './synthetic-search';
 import { SYNTHETIC_SEARCH_ZONES_LIST } from './synthetic-search-zones';
+import { SYNTHETIC_SLIVER_B_LIST } from './synthetic-sliver-b';
 import { SYNTHETIC_SNOW_LIST } from './synthetic-snow';
 import { SYNTHETIC_SOULBOND_LIST } from './synthetic-soulbond';
 import { SYNTHETIC_STATICS_ARTIFACTS_LIST } from './synthetic-statics-artifacts';
@@ -464,6 +465,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_HASHATON_GROUP_4_LIST,
   ...SYNTHETIC_DANITHA_G4_LIST,
   ...SYNTHETIC_DANITHA_G5_LIST,
+  ...SYNTHETIC_SLIVER_B_LIST,
   ...SYNTHETIC_DANITHA_G6_LIST,
   ...SYNTHETIC_DANITHA_G7_LIST,
   ...SYNTHETIC_FEATHER_G2_LIST,

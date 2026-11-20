@@ -160,6 +160,8 @@ export interface AbilityReductionSource {
 export interface FlashPermissionSource {
   readonly object: GameObject;
   readonly spells: ObjectFilter;
+  /** "Any player may cast ..." (CR 601.3b): the permission is every player's, not the controller's alone. */
+  readonly anyPlayer: boolean;
 }
 
 /**
@@ -347,7 +349,7 @@ function flashesOf(object: GameObject, abilities: readonly Ability[]): FlashPerm
       a.static.kind === 'castAsThoughFlash' &&
       !('kind' in a.static.spells)
     ) {
-      out.push({ object, spells: a.static.spells });
+      out.push({ object, spells: a.static.spells, anyPlayer: a.static.anyPlayer === true });
     }
   }
   return out;

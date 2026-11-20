@@ -6797,10 +6797,14 @@ export type StaticEffect =
    * commander." It works on the card being cast, in the hand or any zone it is cast from, not on the battlefield, and takes the ability's `condition`
    * (none: always). A `spellTargets` condition is read as CR 601.3b and 601.3d say: the caster may begin to cast the spell as though it had flash if the choice
    * of targets could meet it, and the targets are then chosen from what meets it (`CastingContext.flashTargets`). Another condition is read as the spell is cast.
+   *
+   * `anyPlayer: true` ("Any player may cast Sliver spells as though they had flash.", CR 601.3b, 702.8a): every player, not only the controller of the permanent, may cast the spells
+   * `spells` names at the timing of an instant (the caster is whoever casts the spell, so `controller` in the filter is read relative to the caster). Only with a filter of spells.
    */
   | {
       readonly kind: 'castAsThoughFlash';
       readonly spells: { readonly kind: 'this' } | ObjectFilter;
+      readonly anyPlayer?: true;
     }
   /**
    * "Your opponents can't cast spells during your turn." (CR 101.2, 601.2, 604.1, D-179): while the permanent has the ability (and its `condition`

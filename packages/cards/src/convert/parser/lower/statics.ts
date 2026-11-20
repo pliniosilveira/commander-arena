@@ -1218,12 +1218,16 @@ function lowerOwnStatic(
     void stackKind;
     const spells = lowerFilter(noun(described));
     if (!spells.ok) return spells;
+    // "Any player may cast ..." (CR 601.3b): every player may, so no controller is named; "You may cast ..." names the controller.
     return {
       ok: true,
       value: [
         {
           kind: 'static',
-          static: { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+          static:
+            effect.anyPlayer === true
+              ? { kind: 'castAsThoughFlash', spells: spells.value, anyPlayer: true }
+              : { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
         },
       ],
       rule: ability.rule,
