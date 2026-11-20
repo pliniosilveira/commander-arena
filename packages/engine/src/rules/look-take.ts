@@ -86,7 +86,14 @@ export function runLookTake(state: GameState, res: ResolutionContext, ins: LookT
         state,
         card,
         { ...ins.filter, zone: 'library' },
-        { controller: seat, source: res.source },
+        // CR 608.2d, 205.3m (D-566): "Choose a creature type. ... cards of the chosen type": the type chosen as this effect resolves.
+        {
+          controller: seat,
+          source: res.source,
+          ...(res.chosenCreatureType === undefined
+            ? {}
+            : { sourceChosen: { creatureType: res.chosenCreatureType } }),
+        },
       ) &&
       // D-145: "with mana value less than or equal to the number of lands you control".
       (ins.manaValueAtMost === undefined ||
