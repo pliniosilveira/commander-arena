@@ -179,8 +179,11 @@ function targetOf(
   const another = map(sequence(literal('another target '), targetPhrase(false)), ([, filter]) =>
     bare('target', filter, { other: true }),
   );
-  const single = map(sequence(literal('target '), targetPhrase(false)), ([, filter]) =>
-    bare('target', filter),
+  // "target creature you control other than ~" (Rosie Cotton, CR 115.1, 109.1): one target that is not the source of the ability, said after the phrase.
+  const single = map(
+    sequence(literal('target '), targetPhrase(false), optional(literal(' other than ~'), null)),
+    ([, filter, otherThanSelf]) =>
+      bare('target', filter, otherThanSelf === null ? {} : { other: true }),
   );
   // "each of up to two target creatures": the counters of a spell that puts one on each (the engine's
   // target slot already stands for every object chosen for it).
@@ -556,6 +559,8 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
     'up to that many target nonland permanents you control',
     'another target creature',
     'another target nonland permanent you control',
+    'target creature you control other than ~',
+    'target creature other than ~',
     'each of up to two target creatures',
     'each of two target creatures',
     'target Dragon',
@@ -583,6 +588,7 @@ export const NOUN_TARGET_PERMANENT = defineRule<IrNoun>({
   rejects: [
     'up to one target creatures',
     'another target creatures',
+    'target creature you control other than',
     'each of target creature',
     'each of up to one target creatures',
     'another creature',

@@ -346,7 +346,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - "Attached to" reads only "it" and "a creature", in the singular: not "attached to target creature", "attached to a land" or "attached to a creature you control".
 - `enchanted` is read as "has an Aura attached" for a group ("all creatures that aren't enchanted"); "equipped", "that aren't enchanted or tapped" and the singular "each creature that isn't enchanted" are not read.
 - "Enchanted creature is <one color>" is the only host condition by quality; a creature type, "is red or white", "isn't green" and a keyword or power of the host are not read.
-- `abilityCostReduction` names Equip abilities only and a filter on the target; Crew, Cycling and "abilities you activate" are not read.
+- `abilityCostReduction` names Equip abilities, a filter on the target, or Foods and other artifact subtypes (no mana abilities); Crew, Cycling and "abilities you activate" are not read.
 - A cost reduction that depends on the targets restricts only the first mandatory target slot: a spell whose second slot could be the cheap target is offered fewer choices than the rules allow.
 - "Modified" is not read in the subject of a static ability, nor as the subject of a "dies" trigger.
 - "Other Elves you control" (`noun.other-subtype-permanents`) is not read by `effect.pump-others`.

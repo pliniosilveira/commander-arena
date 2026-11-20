@@ -67,10 +67,12 @@ export function adjustedAbility(
 /**
  * "Activated abilities of creature cards in your graveyard cost {1} less to activate" (D-461, CR 601.2f, 118.7): how much the generic mana of an ability of `source`, a card
  * in a graveyard, goes down, from the permanents with an `abilityCostReduction` of `ofObjects` whose filter matches the card (the permanent that has the static ability is the
- * source and its controller is "you", so `controller: 'you'` is its controller's graveyard). The reductions of several permanents add up. 0 for anything on the battlefield.
+ * source and its controller is "you", so `controller: 'you'` is its controller's graveyard), or, with `zone: 'battlefield'`, "Activated abilities of Foods you control cost {1} less to
+ * activate" (CR 602.2b). The reductions of several permanents add up. 0 for an object in any other zone.
  */
 function objectsReductionFor(state: GameState, source: GameObject): number {
-  if (source.zone !== 'graveyard') return 0;
+  // CR 113.6b: an ability works on the battlefield or, when it says so, in a graveyard; the filter of the reduction names which.
+  if (source.zone !== 'graveyard' && source.zone !== 'battlefield') return 0;
   let total = 0;
   for (const s of abilityReductionSources(state)) {
     if (s.objects === undefined) continue;

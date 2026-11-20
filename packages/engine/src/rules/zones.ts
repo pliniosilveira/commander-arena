@@ -1046,6 +1046,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   }
   // D-151: a permanent that entered this turn (Celebration), under whose control and as which types.
   if (to === 'battlefield') {
+    const entered = derive(next, getObject(next, newId));
     next = {
       ...next,
       turnLog: {
@@ -1055,7 +1056,8 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           {
             object: newId,
             controller,
-            types: derive(next, getObject(next, newId)).types,
+            types: entered.types,
+            subtypes: entered.subtypes,
             token: created.token !== null,
           },
         ],

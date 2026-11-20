@@ -117,6 +117,8 @@ const TURN_CONDITIONS = [
   'condition.no-spell-cast-this-turn',
   // Issue 144 (Great Train Heist): "If it's your combat phase, there is an additional combat phase after this phase." (CR 506.1, 500.8).
   'condition.your-combat-phase',
+  // Food and Fellowship deck, group B (Motivated Pony): "If a Food entered the battlefield under your control this turn, untap those creatures ..." (CR 400.7: the turn log).
+  'condition.entered-this-turn',
 ] as const;
 
 /**

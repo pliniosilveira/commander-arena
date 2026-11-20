@@ -40,6 +40,7 @@ import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
+import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
@@ -560,6 +561,7 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:costIncrease'];
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
+    case 'permanentAbilityCostReduction':
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
       return ['static:costPerExtraTarget'];
@@ -1090,6 +1092,9 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
+  // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7).
+  if (first.kind === 'permanentAbilityCostReduction')
+    return lowerPermanentAbilityCostReduction(ability, first, more.length);
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-641, CR 601.2f).
   if (first.kind === 'costPerExtraTarget') {
     if (
