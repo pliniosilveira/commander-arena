@@ -1030,6 +1030,8 @@ interface CardWords {
   readonly subtypes: readonly string[];
   /** "non-Dragon creature card" (CR 205.3d): creature types the card does not have. */
   readonly notSubtypes?: readonly string[];
+  /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
+  readonly notSupertypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1072,6 +1074,8 @@ export function graveyardPhrase(
                   map(pattern(/ from an opponent['’]s graveyard/i), () => 'opponent' as const),
                   // "all creature cards from all graveyards" (stage P15): every graveyard, so no owner.
                   ...(plural ? [map(literal(' from all graveyards'), () => undefined)] : []),
+                  // "one, two, or three target creature cards from graveyards" (Aberrant Return): any player's graveyards, so no owner.
+                  ...(plural ? [map(literal(' from graveyards'), () => undefined)] : []),
                 );
   const choiceOfTypes: Parser<CardWords> = map(
     sequence(choice(typeChoice(CARD_TYPES, false, 'and/or'), typeChoice(CARD_TYPES)), literal(' ')),
@@ -1090,6 +1094,11 @@ export function graveyardPhrase(
   );
   const typed: Parser<CardWords> = map(
     sequence(
+      // "nonlegendary creature card" (CR 205.4: legendary is a supertype), the engine's `notSupertypes`.
+      optional(
+        map(literal('nonlegendary '), () => ['legendary']),
+        [] as string[],
+      ),
       nonSubtypes,
       many(
         map(
@@ -1105,11 +1114,12 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notSubtypes, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
+      ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
     }),
   );
   // "nonland permanent card" (stage P33, D-150, CR 110.1, 205.2a): a card that is a permanent card is of one of the permanent types, so the
@@ -1209,8 +1219,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
+    // A negated supertype inside a union is another reading, not built here.
+    if (notSupertypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
     if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
@@ -1274,7 +1286,7 @@ export function graveyardPhrase(
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, notSupertypes, extra, subtypeAnyOf },
       ,
       compared,
       atMostX,
@@ -1294,6 +1306,7 @@ export function graveyardPhrase(
           ...filter,
           ...(subtypes.length > 0 ? { subtypes } : {}),
           ...(notSubtypes !== undefined ? { notSubtypes } : {}),
+          ...(notSupertypes !== undefined ? { notSupertypes } : {}),
           ...(anyOf.length > 0
             ? {
                 anyOf: [...anyOf.map((t): IrFilter => ({ types: [t], raw: t })), ...(extra ?? [])],

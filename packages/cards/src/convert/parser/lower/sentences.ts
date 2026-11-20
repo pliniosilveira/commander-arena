@@ -466,6 +466,37 @@ function lowerCantBeRegenerated(
   return { ok: true, value: [{ ...effect, cantBeRegenerated: true }], rule: clause.rule };
 }
 
+/**
+ * "Each of them enters with an additional -1/-1 counter on it." (Aberrant Return, CR 614.1c, 122.6): the permanents the sentence before it put onto the battlefield enter with the
+ * counters, a replacement effect of the entering, so the engine's `withCounters` of that `moveToZone`. Only right after a sentence whose one effect is such a move of several
+ * objects (a target slot of more than one, or every one of a kind), which has no counters of its own yet.
+ */
+function lowerEntersWithAdditional(
+  sentence: IrSentence,
+  previous: Step | undefined,
+): LowerResult<Effects> | null {
+  const [clause, ...more] = sentence.clauses;
+  if (clause?.verb !== 'entersWithAdditionalCounters') return null;
+  if (more.length > 0 || clause.optional || sentence.condition !== undefined) {
+    return refuse(sentence);
+  }
+  if (clause.condition !== undefined || clause.duration !== undefined) return refuse(sentence);
+  const count = clause.args.count;
+  const counter = clause.args.counter;
+  const [effect, ...rest] = previous?.effects ?? [];
+  if (count?.kind !== 'number' || counter?.kind !== 'name') return refuse(sentence);
+  if (effect?.kind !== 'moveToZone' || rest.length > 0) return refuse(sentence);
+  if (effect.to !== 'battlefield' || effect.withCounters !== undefined) return refuse(sentence);
+  if (effect.objects.kind !== 'target' && effect.objects.kind !== 'each') {
+    return refuse(sentence);
+  }
+  return {
+    ok: true,
+    value: [{ ...effect, withCounters: { counter: counter.name, count: count.value } }],
+    rule: clause.rule,
+  };
+}
+
 /** The effects a compound effect holds, each list being a sequence of its own. */
 function nestedLists(effect: Effect): readonly (readonly Effect[])[] {
   switch (effect.kind) {
@@ -2190,6 +2221,13 @@ function lowerStep(
     if (!payAny.ok) return stop(payAny);
     steps.push({ effects: payAny.value, replaceable: false });
     return { last: i + 1 };
+  }
+  const additional = lowerEntersWithAdditional(sentence, steps[steps.length - 1]);
+  if (additional !== null) {
+    if (!additional.ok) return stop(additional);
+    steps.pop();
+    steps.push({ effects: additional.value, replaceable: false });
+    return { last: i };
   }
   const regenerated = lowerCantBeRegenerated(sentence, sentences[i - 1], steps[steps.length - 1]);
   if (regenerated !== null) {

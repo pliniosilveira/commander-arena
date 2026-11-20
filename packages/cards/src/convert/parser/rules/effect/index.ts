@@ -61,6 +61,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
+import { ENTERS_WITH_ADDITIONAL_EFFECT_RULES } from './enters-with-additional';
 import { EXILE_TOP_INSTEAD_EFFECT_RULES } from './exile-top-instead';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
@@ -854,6 +855,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
     "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
+    // Persist (CR 205.4, 122.6, 614.1c): a nonlegendary card of your graveyard, entering with a -1/-1 counter.
+    'return target nonlegendary creature card from your graveyard to the battlefield with a -1/-1 counter on it',
     "return a land you control to its owner's hand",
     'return an artifact you control to its owner’s hand',
     "return a nonland permanent you control to its owner's hand",
@@ -1226,6 +1229,8 @@ export const EFFECT_RULES = [
   ...POPULATE_EFFECT_RULES,
   // Lorwyn Eclipsed (CR 701.68a): "blight 1" as an instruction.
   ...BLIGHT_EFFECT_RULES,
+  // Aberrant Return: "Each of them enters with an additional -1/-1 counter on it." after a put onto the battlefield.
+  ...ENTERS_WITH_ADDITIONAL_EFFECT_RULES,
   // Burning Curiosity: "exile the top three cards instead".
   ...EXILE_TOP_INSTEAD_EFFECT_RULES,
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
