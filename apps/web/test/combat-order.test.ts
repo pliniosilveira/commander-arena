@@ -2,7 +2,7 @@
 import type { ObjectView } from '@commander-arena/engine';
 import { expect, test } from 'vitest';
 import { blockPairs } from '../src/ui/board/BlockArrows';
-import { combatOrder } from '../src/ui/board/combat-order';
+import { combatOrder, keptOrder } from '../src/ui/board/combat-order';
 import type { CombatRole } from '../src/ui/board/resolve';
 
 const obj = (id: string) => ({ id, name: id }) as unknown as ObjectView;
@@ -77,4 +77,23 @@ test('one arrow pair for each blocker and attacker it blocks', () => {
     ['bx', 'o1', 1],
     ['bx', 'o2', 2],
   ]);
+});
+
+test('after the combat the creatures stay where the blocks put them, and a new one comes last', () => {
+  const row = ['x', 'b3', 'y', 'b1', 'b2'].map(obj);
+  const roles = new Map<string, CombatRole>([
+    ['b3', blocker([3])],
+    ['b1', blocker([1])],
+    ['b2', blocker([2])],
+  ]);
+  const kept = ids(combatOrder(row, roles));
+  // The combat is over (no roles), one blocker died and a creature arrived.
+  const later = ['x', 'b3', 'y', 'b2', 'new'].map(obj);
+  expect(ids(keptOrder(later, kept))).toEqual(['b2', 'b3', 'x', 'y', 'new']);
+});
+
+test('with no order kept, or none of its creatures left, the row is as it is', () => {
+  const row = ['x', 'y'].map(obj);
+  expect(keptOrder(row, [])).toBe(row);
+  expect(keptOrder(row, ['gone'])).toBe(row);
 });

@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { handLand } from './locators';
 import { settled } from './settle';
 
@@ -7,6 +7,14 @@ const bar = (page: Page) => page.locator('.dec-bar');
 const mine = (page: Page) => page.locator('[data-field-seat="0"] .board-tile.is-clickable');
 const theirs = (page: Page) => page.locator('[data-field-seat="1"] .board-tile');
 const handCard = (page: Page) => page.locator('.board-hand .is-clickable');
+
+/** How many permanents the tiles stand for: a tile of equal permanents counts for all of them (`data-count`). */
+async function members(tiles: Locator): Promise<number> {
+  const counts = await tiles.evaluateAll((all) =>
+    all.map((tile) => Number(tile.getAttribute('data-count') ?? 1)),
+  );
+  return counts.reduce((sum, n) => sum + n, 0);
+}
 
 /** Plays on until the declare blockers question shows at least `attackers` attackers and `blockers` blockers. */
 export async function reachBlocks(
@@ -26,7 +34,7 @@ export async function reachBlocks(
       const attacking = await theirs(page)
         .locator('xpath=self::*[contains(@class,"is-attacking")]')
         .count();
-      if (attacking >= attackers && (await mine(page).count()) >= blockers) return;
+      if (attacking >= attackers && (await members(mine(page))) >= blockers) return;
       await primary(page).click(); // No Blocks: this combat is not the one wanted
     } else if (await discard.isVisible()) {
       const confirm = discard.getByRole('button', { name: 'Confirm' });

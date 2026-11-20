@@ -8,6 +8,7 @@ import { describe, expect, test } from 'vitest';
 import { attackCandidates, requiredAttackers } from '../src/rules/combat-legality';
 import { derive } from '../src/rules/derive';
 import { type ScenarioGame, scenario } from '../src/testing/index';
+import { getView } from '../src/view';
 import { singleFaceCard } from './dsl-helpers';
 
 const BEARS = 'Grizzly Bears';
@@ -118,6 +119,15 @@ describe('CR 701.15a-b: "Goad target creature."', () => {
     expect(g.act(1).try.declareAttackers([{ attacker: BEARS }]).ok).toBe(true);
   });
 
+  test('the view of every player says who goaded it, and nothing for a creature nobody goaded', () => {
+    const g = goaded();
+    for (const seat of [0, 1] as const) {
+      const battlefield = getView(g.state, seat).battlefield;
+      expect(battlefield.find((o) => o.id === g.id(BEARS))?.goadedBy).toEqual([0]);
+      expect(battlefield.find((o) => o.id === g.id(ANGEL))?.goadedBy).toBeUndefined();
+    }
+  });
+
   test('goaded is a designation of the permanent, not an ability: it has no ability it did not have', () => {
     const g = goaded();
     const bears = g.object(g.id(BEARS));
@@ -199,6 +209,8 @@ describe('CR 701.15b with CR 611.3a: an Aura that says "is goaded"', () => {
   test("it is goaded by the Aura's controller, not by the creature's: it attacks a player other than seat 0", () => {
     const g = enchanted();
     const bears = g.id(BEARS);
+    // The view names the goader of a static ability too (issue 201).
+    expect(getView(g.state, 1).battlefield.find((o) => o.id === bears)?.goadedBy).toEqual([0]);
     const with3 = {
       ...g.state,
       seats: [...g.state.seats, { ...g.state.seats[1], id: 2 }] as typeof g.state.seats,

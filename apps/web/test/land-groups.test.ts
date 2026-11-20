@@ -224,7 +224,9 @@ describe('the size of the columns', () => {
     const lands = Array.from({ length: 14 }, (_, i) =>
       land(`Nonbasic ${String(i).padStart(2, '0')}`),
     );
-    const fit = layoutLands(columnsOf(lands), 700, 80, spec).layout;
+    // A land tile is wider than tall (the top of a card), so fourteen need more room than fourteen squares did.
+    const fit = layoutLands(columnsOf(lands), 800, 80, spec).layout;
+    expect(fit.width).toBeGreaterThan(fit.tile);
     expect(fit.tile).toBeLessThan(70);
     expect(fit.overflow).toBe(false);
     const scroll = layoutLands(columnsOf(lands), 300, 80, spec).layout;

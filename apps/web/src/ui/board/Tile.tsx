@@ -1,8 +1,10 @@
 /**
- * One permanent on the battlefield: an art-less frame with the colour band, name, power and
- * toughness, counters, keyword chips and the state marks of A19. It is the seam where an
- * `art_crop` image replaces the frame later. Tapped is a CSS rotation of the inner frame only;
- * ribbons stay upright on the slot so they remain readable.
+ * One permanent on the battlefield: the top of its printed card (title, cost, art and type line,
+ * `card-top.ts`) under the marks the card does not carry: current power and toughness, counters,
+ * keyword chips and the state marks of A19. Until the image has loaded, and for a card with none
+ * or with a frame that has no top to cut, it is a drawn frame with the colour band and the name
+ * over the art alone. Tapped is a tilt of the inner frame and a small mark in the corner; ribbons stay upright
+ * on the slot so they remain readable.
  */
 import type { ObjectView } from '@commander-arena/engine';
 import type { CSSProperties } from 'react';
@@ -16,6 +18,7 @@ import { EVERY_CREATURE_TYPE, hasEveryCreatureType, kickedWords } from '../forma
 import { useInteraction } from '../interaction';
 import { useDefinedPt } from '../store-context';
 import { Art, artOf } from './art';
+import { cardTopOf } from './card-top';
 import { FaceDownArt } from './face-down-art';
 import { useHoverPreview } from './hover';
 import { chipsOf, restrictionName } from './keywords';
@@ -39,7 +42,7 @@ export interface TileProps {
   readonly w: number;
   readonly h: number;
   readonly role?: CombatRole | undefined;
-  /** More than one identical token stands behind this tile (A19 grouping). */
+  /** More than one equal permanent stands behind this tile (A19 grouping). */
   readonly count?: number;
   /** The group tile owns hover and click for its members; plain tiles leave this off. */
   readonly onActivate?: (() => void) | undefined;
@@ -52,13 +55,14 @@ export function tokenLine(o: Pick<ObjectView, 'types' | 'subtypes'>): string {
 }
 
 function ariaLabel(o: ObjectView, count: number, role: CombatRole | undefined): string {
-  const parts = [count > 1 ? `${count} ${o.name} tokens` : o.name];
+  const parts = [count > 1 ? `${count} ${o.name}${o.isToken ? ' tokens' : ''}` : o.name];
   if (o.power !== null && o.toughness !== null) parts.push(`${o.power}/${o.toughness}`);
   else if (o.printedPt !== undefined)
     parts.push(`${o.printedPt.power}/${o.printedPt.toughness} if crewed`);
   if (isCrewedVehicle(o)) parts.push('crewed');
   if (isBackFaceUp(o)) parts.push('back face');
   if (isMelded(o)) parts.push(`melded from ${meldedFrom(o)}`);
+  if (o.goadedBy !== undefined) parts.push('goaded');
   if (o.pairedWith !== undefined) parts.push('paired with another creature');
   else if (o.pairedPhasedOut === true)
     parts.push('paired, on hold while one of the two is phased out');
@@ -91,7 +95,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
   const ix = useInteraction();
   const drag = useDraggable(o.id, 'permanent', o.name);
   const zone = useDropZone({ kind: 'object', id: o.id });
-  // A stack of identical tokens is one button for several objects: it is not carried.
+  // A stack of equal permanents is one button for several objects: it is not carried.
   const draggable = drag.draggable && count === 1;
   const clickable = ix.clickable.has(o.id);
   const selected = ix.selected.has(o.id);
@@ -105,7 +109,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
   const lore = loreBadge(o);
   const alternative = alternativeBadge(o);
   const chosen = chosenLabel(o);
-  const rotatedMargin = o.tapped ? Math.max(0, (h - w) / 2) : 0;
+  const top = cardTopOf(o);
   const framed = !isFaceDownPermanent(o) && o.support !== 'unsupported';
   const style = {
     '--w': `${w}px`,
@@ -115,7 +119,6 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
     // Issue 22: the border is the card's colours (a land's: its mana). Not for a face-down
     // permanent, and not for an unsupported card, whose dashed red border says so.
     ...(framed ? { '--frame': frameImage(frameColors(o)) } : {}),
-    marginInline: `${rotatedMargin}px`,
   } as CSSProperties;
   const classes = [
     'board-tile',
@@ -144,6 +147,7 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
       className={classes}
       style={style}
       data-object-id={o.id}
+      data-count={count > 1 ? count : undefined}
       aria-label={ariaLabel(o, count, role)}
       aria-pressed={selected}
       tabIndex={clickable || onActivate !== undefined ? 0 : -1}
@@ -191,9 +195,23 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
             isToken={o.isToken}
             commander={o.isCommander}
             {...(o.tokenDefinition === undefined ? {} : { tokenDefinition: o.tokenDefinition })}
-            version="art_crop"
-            className="board-tile-art"
+            version={top === null ? 'art_crop' : 'normal'}
+            className={top === null ? 'board-tile-art' : 'board-tile-art board-tile-top'}
           />
+        )}
+        {top !== null && top.cover < 1 && (
+          // A frame whose type line stands higher (a planeswalker): what the cut would show under it is covered.
+          <span
+            className="board-tile-under"
+            style={{ top: `${(top.cover * 100).toFixed(1)}%` }}
+            aria-hidden="true"
+          />
+        )}
+        {o.isToken && top !== null && (
+          // The printed frame of a token looks like a card's at this size: a stripe in the corner says it is one.
+          <span className="board-tile-token-mark" data-token-mark>
+            Token
+          </span>
         )}
         <span className="board-tile-name">{o.name}</span>
         {o.isToken && h >= 64 && (
@@ -237,6 +255,15 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
                 data-ring-bearer={o.ringBearer}
               >
                 <span aria-hidden="true">{'◎ '}</span>Ring-bearer
+              </span>
+            )}
+            {o.goadedBy !== undefined && (
+              <span
+                className="board-flag board-flag-goad"
+                title="Goaded (CR 701.15): attacks each combat if able, and attacks a player other than the one who goaded it if able. The card preview says who goaded it."
+                data-goaded={o.goadedBy.join(',')}
+              >
+                goaded
               </span>
             )}
             {o.pairedWith !== undefined && (

@@ -1,7 +1,7 @@
 import type { GameView, ObjectView } from '@commander-arena/engine';
 import { describe, expect, test } from 'vitest';
 import { splitAttachments, stripReserve, stripStep } from '../src/ui/board/attach';
-import { groupTokens } from '../src/ui/board/group';
+import { groupEqual } from '../src/ui/board/group';
 import { fitTiles, handStep, layoutRow, type RowSpec } from '../src/ui/board/layout';
 import { rowSpec } from '../src/ui/board/Row';
 import {
@@ -46,12 +46,12 @@ function obj(over: Partial<ObjectView> = {}): ObjectView {
   };
 }
 
-describe('groupTokens (A19)', () => {
+describe('groupEqual (A19)', () => {
   test('identical tokens collapse into one group at the first position', () => {
     const a = obj();
     const bear = obj({ name: 'Bear', isToken: false });
     const b = obj();
-    const entries = groupTokens([a, bear, b]);
+    const entries = groupEqual([a, bear, b]);
     expect(entries).toHaveLength(2);
     expect(entries[0]).toMatchObject({ kind: 'group' });
     expect(entries[0]?.kind === 'group' && entries[0].objects.map((o) => o.id)).toEqual([
@@ -61,13 +61,21 @@ describe('groupTokens (A19)', () => {
     expect(entries[1]).toEqual({ kind: 'single', object: bear });
   });
 
-  test('nontoken permanents never group, however identical', () => {
-    const entries = groupTokens([obj({ isToken: false }), obj({ isToken: false })]);
+  test('equal cards group as equal tokens do, and a card never groups with a token of its name', () => {
+    expect(groupEqual([obj({ isToken: false }), obj({ isToken: false })])).toHaveLength(1);
+    const entries = groupEqual([obj({ isToken: false }), obj()]);
     expect(entries.map((e) => e.kind)).toEqual(['single', 'single']);
   });
 
+  test('a commander never groups, and a group needs the size the caller asks for', () => {
+    const commanders = [obj({ isCommander: true }), obj({ isCommander: true })];
+    expect(groupEqual(commanders).map((e) => e.kind)).toEqual(['single', 'single']);
+    expect(groupEqual([obj(), obj()], undefined, 3)).toHaveLength(2);
+    expect(groupEqual([obj(), obj(), obj()], undefined, 3)).toHaveLength(1);
+  });
+
   test('a lone token stays a single tile', () => {
-    expect(groupTokens([obj()])).toEqual([{ kind: 'single', object: expect.anything() }]);
+    expect(groupEqual([obj()])).toEqual([{ kind: 'single', object: expect.anything() }]);
   });
 
   test.each([
@@ -79,13 +87,24 @@ describe('groupTokens (A19)', () => {
     ['keywords', { keywords: ['flying'] }],
     ['damage', { damage: 1 }],
     ['controller', { controller: 1 }],
-  ] satisfies [string, Partial<ObjectView>][])('tokens differing in %s do not group', (_, over) => {
-    const entries = groupTokens([obj(), obj(over)]);
+    ['owner', { owner: 1 }],
+    ['summoning sickness', { summoningSick: true }],
+    ['the face that is up', { face: 1 }],
+    ['being face down', { faceDown: true, faceDownBy: 'manifest' }],
+    ['a used loyalty ability', { loyaltyUsed: true }],
+    ['a kick', { kicked: true, kicks: 1 }],
+    ['a regeneration shield', { regenerationShields: 1 }],
+    ['a choice made as it entered', { chosen: { color: 'R' } }],
+    ['a control effect', { controlEnds: 'endOfTurn' }],
+    ['rules text', { oracleText: 'Haste' }],
+    ['support', { support: 'unsupported' }],
+  ] as [string, Partial<ObjectView>][])('permanents differing in %s do not group', (_, over) => {
+    const entries = groupEqual([obj(), obj(over)]);
     expect(entries.map((e) => e.kind)).toEqual(['single', 'single']);
   });
 
   test('counter and keyword order does not matter', () => {
-    const entries = groupTokens([
+    const entries = groupEqual([
       obj({ counters: { a: 1, b: 2 }, keywords: ['flying', 'haste'] }),
       obj({ counters: { b: 2, a: 1 }, keywords: ['haste', 'flying'] }),
     ]);
@@ -95,7 +114,7 @@ describe('groupTokens (A19)', () => {
   test('the caller can keep tokens apart by state the view does not carry', () => {
     const a = obj();
     const b = obj();
-    const entries = groupTokens([a, b], (o) => (o.id === a.id ? 'attacking' : ''));
+    const entries = groupEqual([a, b], (o) => (o.id === a.id ? 'attacking' : ''));
     expect(entries.map((e) => e.kind)).toEqual(['single', 'single']);
   });
 });
@@ -103,82 +122,73 @@ describe('groupTokens (A19)', () => {
 const spec: RowSpec = { tileH: 100, preferredW: 74, minW: 56, gap: 6 };
 
 describe('row layout (A19)', () => {
-  test('an unmeasured row draws at the preferred size without grouping', () => {
+  const cards = (n: number, name: string) =>
+    Array.from({ length: n }, () => obj({ isToken: false, name }));
+
+  test('an unmeasured row draws at the preferred size', () => {
     const layout = layoutRow([obj(), obj()], null, spec);
     expect(layout).toMatchObject({ tileW: 74, grouped: false, overflow: false });
     expect(layout.entries).toHaveLength(2);
   });
 
   test('a row with room keeps the preferred width', () => {
-    const fit = fitTiles([false, false, false], 800, spec);
-    expect(fit).toEqual({ tileW: 74, overflow: false });
+    expect(fitTiles(3, 800, spec)).toEqual({ tileW: 74, overflow: false });
   });
 
   test('tiles shrink as the row fills, never below the minimum', () => {
-    const six = fitTiles(Array(10).fill(false), 700, spec);
-    expect(six.tileW).toBeLessThan(74);
-    expect(six.tileW).toBeGreaterThanOrEqual(56);
-    expect(six.overflow).toBe(false);
-    expect(10 * six.tileW + 9 * 6).toBeLessThanOrEqual(700);
-    const tight = fitTiles(Array(20).fill(false), 700, spec);
-    expect(tight.tileW).toBe(56);
-    expect(tight.overflow).toBe(true);
+    const ten = fitTiles(10, 700, spec);
+    expect(ten.tileW).toBeLessThan(74);
+    expect(ten.tileW).toBeGreaterThanOrEqual(56);
+    expect(ten.overflow).toBe(false);
+    expect(10 * ten.tileW + 9 * 6).toBeLessThanOrEqual(700);
+    expect(fitTiles(20, 700, spec)).toEqual({ tileW: 56, overflow: true });
   });
 
-  test('a tapped tile needs its height as room', () => {
-    const upright = fitTiles([false, false, false, false], 300, spec);
-    const oneTapped = fitTiles([true, false, false, false], 300, spec);
-    expect(oneTapped.tileW).toBeLessThan(upright.tileW);
+  test('a tapped tile takes the room of an untapped one: it is tilted, not turned', () => {
+    const row = [obj({ name: 'A' }), obj({ name: 'B', tapped: true }), obj({ name: 'C' })];
+    expect(layoutRow(row, 234, spec)).toMatchObject({ tileW: 74, overflow: false });
   });
 
-  test('below the minimum width identical tokens group; the row stops overflowing', () => {
-    const tokens = Array.from({ length: 24 }, () => obj());
-    const layout = layoutRow(tokens, 600, spec);
+  test('three or more equal permanents always stand as one group, cards as well as tokens', () => {
+    const layout = layoutRow([...cards(3, 'Bears'), obj(), obj(), obj()], 2000, spec);
     expect(layout.grouped).toBe(true);
-    expect(layout.entries).toHaveLength(1);
-    expect(layout.overflow).toBe(false);
+    expect(layout.entries.map((e) => e.kind)).toEqual(['group', 'group']);
+    expect(layout.tileW).toBe(74);
+    expect(layoutRow(cards(3, 'Bears'), null, spec).entries).toHaveLength(1);
   });
 
-  test('nontoken permanents that do not fit scroll instead of grouping', () => {
-    const cards = Array.from({ length: 20 }, () => obj({ isToken: false }));
-    const layout = layoutRow(cards, 600, spec);
+  test('two equal permanents stay apart while the row keeps the preferred size', () => {
+    const layout = layoutRow(cards(2, 'Bears'), 800, spec);
     expect(layout.grouped).toBe(false);
-    expect(layout.overflow).toBe(true);
-    expect(layout.entries).toHaveLength(20);
-    expect(layout.tileW).toBe(56);
+    expect(layout.entries).toHaveLength(2);
   });
 
-  test('tokens are only grouped when the plain row does not fit at the preferred size', () => {
-    const tokens = Array.from({ length: 4 }, () => obj());
-    expect(layoutRow(tokens, 800, spec).grouped).toBe(false);
-  });
-
-  // Issue 368: a row of equal tokens that only fits by shrinking its tiles is grouped instead, so the cards stay readable.
-  test('equal tokens group before the tiles have to shrink, not after they reach the minimum', () => {
-    const tokens = Array.from({ length: 10 }, () => obj());
-    expect(fitTiles(Array(10).fill(false), 700, spec).tileW).toBeLessThan(74);
-    const layout = layoutRow(tokens, 700, spec);
+  // Issue 368: a row that only fits by shrinking its tiles groups its pairs first, so the cards stay readable.
+  test('two equal permanents group before the tiles have to shrink', () => {
+    const row = [...cards(2, 'Bears'), ...cards(2, 'Elves'), ...cards(2, 'Wolves')];
+    expect(fitTiles(6, 300, spec).tileW).toBeLessThan(74);
+    const layout = layoutRow(row, 300, spec);
     expect(layout.grouped).toBe(true);
-    expect(layout.entries).toHaveLength(1);
+    expect(layout.entries).toHaveLength(3);
     expect(layout.tileW).toBe(74);
     expect(layout.overflow).toBe(false);
   });
 
-  test('nontoken permanents still shrink: they do not group', () => {
-    const cards = Array.from({ length: 10 }, () => obj({ isToken: false }));
-    const layout = layoutRow(cards, 700, spec);
-    expect(layout.grouped).toBe(false);
-    expect(layout.tileW).toBeLessThan(74);
-    expect(layout.overflow).toBe(false);
+  test('permanents that all differ shrink, then scroll', () => {
+    const row = Array.from({ length: 10 }, (_, i) => obj({ name: `Card ${i}` }));
+    const shrunk = layoutRow(row, 700, spec);
+    expect(shrunk).toMatchObject({ grouped: false, overflow: false });
+    expect(shrunk.tileW).toBeLessThan(74);
+    const tight = layoutRow([...row, ...row.map((o) => ({ ...o, name: `${o.name}b` }))], 600, spec);
+    expect(tight).toMatchObject({ grouped: false, overflow: true, tileW: 56 });
+    expect(tight.entries).toHaveLength(20);
   });
 
-  test('a mixed row groups the tokens and keeps the other cards at full size when that is enough', () => {
-    const cards = Array.from({ length: 6 }, () => obj({ isToken: false, name: 'Bears' }));
-    const tokens = Array.from({ length: 6 }, () => obj());
-    const layout = layoutRow([...cards, ...tokens], 600, spec);
-    expect(layout.grouped).toBe(true);
-    expect(layout.entries).toHaveLength(7);
-    expect(layout.tileW).toBe(74);
+  test('what the player acts on keeps a permanent out of the group of its equals', () => {
+    const row = cards(4, 'Bears');
+    const attacking = row[0]?.id;
+    const layout = layoutRow(row, 2000, spec, (o) => (o.id === attacking ? 'attacking' : ''));
+    expect(layout.entries.map((e) => e.kind)).toEqual(['single', 'group']);
   });
 });
 
@@ -392,6 +402,8 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     expect(plain.tileH).toBe(128);
     expect(reserved.tileH).toBe(100); // 140 - 2 * 6 padding - 28 for two strips
     expect(reserved.preferredW).toBeLessThan(plain.preferredW);
+    // A tile has the shape of a card's top: wider than tall.
+    expect(plain.preferredW).toBeGreaterThan(plain.tileH);
   });
 
   test('the biggest tiles are a quarter bigger than before issue 137 (108, 84 and 70)', () => {
@@ -411,10 +423,10 @@ describe('attachments are drawn under their host (CR 301.5, 303.4)', () => {
     const a = obj();
     const b = obj();
     const bWithAura: ObjectView = { ...b, attachments: ['o900'] };
-    const entries = groupTokens([a, bWithAura]);
+    const entries = groupEqual([a, bWithAura]);
     expect(entries.map((e) => e.kind)).toEqual(['single', 'single']);
     // Two tokens with nothing attached still group.
-    expect(groupTokens([obj(), obj()])).toHaveLength(1);
+    expect(groupEqual([obj(), obj()])).toHaveLength(1);
   });
 });
 

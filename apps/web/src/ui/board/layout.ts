@@ -3,14 +3,14 @@
  * shrink / group / scroll decision is unit tested.
  */
 import type { ObjectView } from '@commander-arena/engine';
-import { groupTokens, type TileEntry } from './group';
+import { groupEqual, type TileEntry } from './group';
 
 export interface RowSpec {
   /** Tile height in pixels (fixed by the row's available height). */
   readonly tileH: number;
   /** Width at which a tile is drawn while the row has room. */
   readonly preferredW: number;
-  /** Narrowest tile whose name and power/toughness frame stay legible. */
+  /** Narrowest tile worth drawing before the row scrolls. */
   readonly minW: number;
   readonly gap: number;
 }
@@ -18,42 +18,30 @@ export interface RowSpec {
 export interface RowLayout {
   readonly entries: readonly TileEntry[];
   readonly tileW: number;
-  /** Identical tokens were collapsed because the row did not fit at the preferred width. */
+  /** Equal permanents were collapsed into at least one group. */
   readonly grouped: boolean;
   /** Still wider than the row after grouping: the row scrolls horizontally. */
   readonly overflow: boolean;
 }
 
-/** A tapped tile is turned 90 degrees, so it takes its height as horizontal room. */
-export function slotWidth(tapped: boolean, tileW: number, tileH: number): number {
-  return tapped ? Math.max(tileW, tileH) : tileW;
-}
-
-function totalWidth(tapped: readonly boolean[], tileW: number, spec: RowSpec): number {
-  let sum = 0;
-  for (const t of tapped) sum += slotWidth(t, tileW, spec.tileH);
-  return sum + Math.max(0, tapped.length - 1) * spec.gap;
-}
-
-/** The widest tile width in [minW, preferredW] that fits, and whether even that overflows. */
+/** The widest tile width in [minW, preferredW] at which `count` tiles fit, and whether even that overflows. */
 export function fitTiles(
-  tapped: readonly boolean[],
+  count: number,
   width: number,
   spec: RowSpec,
 ): { tileW: number; overflow: boolean } {
-  const n = tapped.length;
-  if (n === 0) return { tileW: spec.preferredW, overflow: false };
-  const tappedCount = tapped.filter(Boolean).length;
-  const upright = n - tappedCount;
-  const free = width - (n - 1) * spec.gap - tappedCount * Math.max(spec.tileH, 0);
-  const ideal = upright > 0 ? Math.floor(free / upright) : spec.preferredW;
+  if (count === 0) return { tileW: spec.preferredW, overflow: false };
+  const ideal = Math.floor((width - (count - 1) * spec.gap) / count);
   const tileW = Math.max(spec.minW, Math.min(spec.preferredW, ideal));
-  return { tileW, overflow: totalWidth(tapped, tileW, spec) > width + 0.5 };
+  return { tileW, overflow: count * tileW + (count - 1) * spec.gap > width + 0.5 };
 }
 
 /**
- * Decides one row: prefer full size, then group identical tokens, then shrink to the minimum, then
- * scroll. `width` null means "not measured yet" (server render): draw at preferred size.
+ * Decides one row. Three or more equal permanents always stand as one group; two do only when the
+ * row cannot keep the preferred tile size without it (issue 368: a group keeps the other cards
+ * readable, so it comes before shrinking). Then the tiles shrink to the minimum, then the row
+ * scrolls. A tapped tile takes the room of an untapped one (it is tilted, not turned). `width` null
+ * means "not measured yet" (server render): draw at preferred size.
  */
 export function layoutRow(
   objects: readonly ObjectView[],
@@ -61,31 +49,26 @@ export function layoutRow(
   spec: RowSpec,
   extraKey?: (o: ObjectView) => string,
 ): RowLayout {
-  const single: TileEntry[] = objects.map((object) => ({ kind: 'single', object }));
+  const piles = groupEqual(objects, extraKey, 3);
   if (width === null) {
-    return { entries: single, tileW: spec.preferredW, grouped: false, overflow: false };
+    return {
+      entries: piles,
+      tileW: spec.preferredW,
+      grouped: piles.length < objects.length,
+      overflow: false,
+    };
   }
-  const tappedOf = (e: TileEntry) => (e.kind === 'single' ? e.object.tapped : e.objects[0]?.tapped);
-  const plain = fitTiles(
-    single.map((e) => tappedOf(e) === true),
-    width,
-    spec,
-  );
-  // Issue 368: identical tokens are grouped as soon as the row cannot keep the preferred tile size (A19 used to group only after the tiles
-  // had shrunk to the minimum and still overflowed): a group keeps the other cards readable, so it comes before shrinking.
-  if (plain.tileW >= spec.preferredW && !plain.overflow)
-    return { entries: single, tileW: plain.tileW, grouped: false, overflow: false };
-  const entries = groupTokens(objects, extraKey);
-  const grouped = entries.length < single.length;
-  if (!grouped) {
-    return { entries: single, tileW: plain.tileW, grouped: false, overflow: plain.overflow };
-  }
-  const fit = fitTiles(
-    entries.map((e) => tappedOf(e) === true),
-    width,
-    spec,
-  );
-  return { entries, tileW: fit.tileW, grouped, overflow: fit.overflow };
+  const roomy = fitTiles(piles.length, width, spec);
+  const pairs =
+    roomy.tileW >= spec.preferredW && !roomy.overflow ? piles : groupEqual(objects, extraKey, 2);
+  const entries = pairs.length < piles.length ? pairs : piles;
+  const fit = entries === piles ? roomy : fitTiles(entries.length, width, spec);
+  return {
+    entries,
+    tileW: fit.tileW,
+    grouped: entries.length < objects.length,
+    overflow: fit.overflow,
+  };
 }
 
 /**

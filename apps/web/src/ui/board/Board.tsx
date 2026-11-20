@@ -8,7 +8,7 @@ import './board.css';
 import { areaClass, battlefieldLabel } from './active-area';
 import { type Attachments, splitAttachments } from './attach';
 import { BlockArrows } from './BlockArrows';
-import { combatOrder } from './combat-order';
+import { combatOrder, keptOrder } from './combat-order';
 import { EmblemStrip } from './EmblemStrip';
 import { ExilePlayStrip } from './ExilePlayStrip';
 import { type ExilePlayable, exilePlayable } from './exile-play';
@@ -47,12 +47,19 @@ function Field({
     () => view.battlefield.filter((o) => o.controller === seat && !attachments.attached.has(o.id)),
     [view, seat, attachments],
   );
+  // The order the last declared blocks gave this player's creatures, by object id.
+  const kept = useRef<readonly string[]>([]);
   // Only your own battlefield takes drops (play a card, take an attacker back).
   const zone = useDropZone({ kind: 'battlefield' });
   const byKind = (kind: RowKind): readonly ObjectView[] => {
     const row = mine.filter((o) => rowKindOf(o) === kind);
-    // Blockers beside the attackers they block, once the blocks are declared (issue 19).
-    return kind === 'creature' ? combatOrder(row, roles) : row;
+    if (kind !== 'creature') return row;
+    // Blockers beside the attackers they block, once the blocks are declared (issue 19); after the
+    // combat they stay where it put them.
+    const before = keptOrder(row, kept.current);
+    const ordered = combatOrder(before, roles);
+    if (ordered !== before) kept.current = ordered.map((o) => o.id);
+    return ordered;
   };
   return (
     <section

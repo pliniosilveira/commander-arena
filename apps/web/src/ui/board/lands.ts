@@ -14,7 +14,7 @@
  *   the nonbasic lands by name.
  * - Inside a column the cards are in the order they entered (the object id), the last one in front.
  *   Tapping a land never moves it: a click on a card taps it and a second click untaps it, as on a
- *   flat row, and the rotation (and a mark on its strip) shows which cards are tapped.
+ *   flat row, and the tilt and a mark in its corner show which cards are tapped.
  */
 import type { ObjectId, ObjectView } from '@commander-arena/engine';
 import { chosenLabel } from '../../game/chosen';
@@ -139,8 +139,10 @@ export function deepest(columns: readonly LandColumn[]): number {
 // ------------------------------------------------------------------------------------- sizes
 
 export interface LandSpec {
-  /** Tile height and width (lands are square) when the row has all the room it wants. */
+  /** Tile height when the row has all the room it wants. */
   readonly maxTile: number;
+  /** Width of a tile over its height (1, a square, when left out). */
+  readonly aspect?: number;
   /** The smallest tile whose name stays legible. */
   readonly minTile: number;
   /**
@@ -156,8 +158,10 @@ export interface LandSpec {
 export interface LandLayout {
   /** Cards a column holds in this row. */
   readonly capacity: number;
-  /** The side of a (square) tile. */
+  /** The height of a tile. */
   readonly tile: number;
+  /** The width of a tile. */
+  readonly width: number;
   /** Distance between the top edges of neighbouring cards of a column. */
   readonly step: number;
   /** Still wider than the row at the smallest tile: the row scrolls sideways. */
@@ -202,18 +206,20 @@ export function layoutLands(
     tile = tileForDepth(capacity, height, spec);
   }
   // One card deep always fits: the row is short, so the tile is as tall as the row allows.
+  const widthOf = (t: number) => Math.round(t * (spec.aspect ?? 1));
   let side = tile ?? Math.max(spec.minTile, Math.min(spec.maxTile, height));
   const columns = groupsOf(capacity);
   const depth = deepest(columns);
   let overflow = false;
   if (width !== null && columns.length > 0) {
-    const fits = (t: number) => columns.length * t + (columns.length - 1) * spec.gap <= width + 0.5;
+    const fits = (t: number) =>
+      columns.length * widthOf(t) + (columns.length - 1) * spec.gap <= width + 0.5;
     while (side > spec.minTile && !fits(side)) side -= 1;
     overflow = !fits(side);
   }
   const room = depth > 1 ? Math.floor((height - side) / (depth - 1)) : 0;
   const step = depth > 1 ? Math.max(1, Math.min(roomyStripOf(side), room)) : 0;
-  return { layout: { capacity, tile: side, step, overflow }, columns };
+  return { layout: { capacity, tile: side, width: widthOf(side), step, overflow }, columns };
 }
 
 /** The height a column of `depth` cards takes. */

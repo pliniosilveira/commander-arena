@@ -112,7 +112,7 @@ describe('token search', () => {
 });
 
 describe('token answers', () => {
-  test('uses only one unambiguous result and Scryfall HTTPS images', () => {
+  test('uses only an unambiguous result and Scryfall HTTPS images', () => {
     expect(parseTokenSearch(answer)).toEqual(images);
     for (const bad of [
       null,
@@ -126,6 +126,58 @@ describe('token answers', () => {
     ]) {
       expect(parseTokenSearch(bad)).toBeNull();
     }
+  });
+
+  test('several cards that are one token with different art give the first image; different tokens give none', () => {
+    // SYNTHETIC answers in the shape of Scryfall's: two printings of one token, kept as two cards.
+    const pest = {
+      name: 'Pest',
+      type_line: 'Token Creature — Pest',
+      oracle_text: 'When this creature dies, you gain 1 life.',
+      power: '1',
+      toughness: '1',
+      colors: ['B', 'G'],
+    };
+    const other = { normal: 'https://cards.scryfall.io/normal/other.jpg' };
+    const two = (second: object) => ({
+      total_cards: 2,
+      has_more: false,
+      data: [
+        { ...pest, image_uris: images },
+        { ...pest, image_uris: other, ...second },
+      ],
+    });
+    expect(parseTokenSearch(two({}))).toEqual(images);
+    expect(parseTokenSearch(two({ oracle_text: '' }))).toBeNull();
+    expect(parseTokenSearch(two({ power: '2' }))).toBeNull();
+    expect(parseTokenSearch(two({ colors: ['B'] }))).toBeNull();
+    expect(parseTokenSearch({ ...two({}), has_more: true })).toBeNull();
+  });
+
+  test('two different tokens of one name: the rules text of the token asked for picks its card', () => {
+    // SYNTHETIC answer in the shape of Scryfall's for the two Pests: Scryfall writes "this creature".
+    const base = { name: 'Pest', type_line: 'Token Creature — Pest', power: '1', toughness: '1' };
+    const attacks = { normal: 'https://cards.scryfall.io/normal/attacks.jpg' };
+    const dies = { normal: 'https://cards.scryfall.io/normal/dies.jpg' };
+    const both = {
+      total_cards: 2,
+      has_more: false,
+      data: [
+        {
+          ...base,
+          oracle_text: 'Whenever this creature attacks, you gain 1 life.',
+          image_uris: attacks,
+        },
+        { ...base, oracle_text: 'When this creature dies, you gain 1 life.', image_uris: dies },
+      ],
+    };
+    expect(parseTokenSearch(both, 'When this token dies, you gain 1 life.')).toEqual(dies);
+    expect(parseTokenSearch(both, 'Whenever this token attacks, you gain 1 life.')).toEqual(
+      attacks,
+    );
+    // No card says it, or nothing to compare with: still ambiguous.
+    expect(parseTokenSearch(both, 'Flying')).toBeNull();
+    expect(parseTokenSearch(both)).toBeNull();
   });
 
   test('shares an in-flight lookup and all image sizes across token instances', async () => {

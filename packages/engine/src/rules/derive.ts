@@ -69,6 +69,8 @@ export interface Derived extends DerivedBase {
   readonly restrictions: readonly Restriction[];
   /** The players that goad it (issue 201, CR 701.15), from static abilities. Read where attackers are declared. */
   readonly goadedBy: readonly SeatId[];
+  /** The other permanents with a static ability that applies to it now (`StaticEffects.affectedBy`). For the view. */
+  readonly affectedBy: readonly ObjectId[];
   /** The creatures this one can't be blocked by, from static abilities (CR 509.1b, D-139). Read where blockers are declared. */
   readonly blockLimits: readonly BlockLimit[];
   /**
@@ -293,6 +295,7 @@ function finish(state: GameState, obj: GameObject, base: DerivedBase, layer6Only
     abilities,
     restrictions: restrictionsOf(state, obj, input.abilities, fx.restrictions, effects, abilities),
     goadedBy: fx.goadedBy,
+    affectedBy: fx.affectedBy,
     blockLimits: fx.blockLimits,
     attachments: fx.attachments,
     attachedTo: fx.attachedTo,

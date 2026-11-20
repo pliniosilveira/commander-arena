@@ -5,9 +5,11 @@
  * marked and the lethal amount; hovering or focusing a row shows the card in the preview panel and
  * lights the creature on the board (`board-highlight.ts`).
  */
+
 import type { DamageChoice, GameView, ObjectView } from '@commander-arena/engine';
 import type { CSSProperties } from 'react';
 import { CardFace } from '../board/CardFace';
+import { cardTopHeight } from '../board/card-top';
 import { useRowFocus } from './board-highlight';
 import { amountTo, bump, divisionHints, recipientsOf, remainingFor } from './damage';
 import { nameOf, objectIndex, recipientLabel } from './lookup';
@@ -28,7 +30,7 @@ export function creatureLine(o: ObjectView | undefined): string {
 function Thumb({ object }: { object: ObjectView }) {
   const size = {
     '--hand-w': `${THUMB_WIDTH}px`,
-    '--hand-h': `${Math.round(THUMB_WIDTH * 1.4)}px`,
+    '--hand-h': `${cardTopHeight(THUMB_WIDTH)}px`,
   } as CSSProperties;
   return (
     <div className="dec-card dec-damage-thumb" style={size} aria-hidden="true">
