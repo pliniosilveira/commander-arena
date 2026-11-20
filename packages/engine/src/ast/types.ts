@@ -364,7 +364,15 @@ export type Amount =
    * opponent's spell is not the controller's), read as the instruction runs. `ofTypes`: only the spells that have at least one of those card types, as they were cast; left out,
    * every spell counts. Not valid in a static ability: nothing refreshes a layer effect when a spell is cast.
    */
-  | { readonly kind: 'spellsCastThisTurn'; readonly ofTypes?: readonly CardType[] }
+  | {
+      readonly kind: 'spellsCastThisTurn';
+      readonly ofTypes?: readonly CardType[];
+      /**
+       * "For each other instant and sorcery spell you've cast this turn" (Lock and Load, issue 121): the spell that is resolving is not counted (it is the source of the instruction, and a
+       * copy of a spell, which is not cast, CR 707.10, has none to leave out). Only on an instant or sorcery spell's own text; the other spells are counted by their object.
+       */
+      readonly otherThanThis?: true;
+    }
   /**
    * "The greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck, group 2, D-646, CR 202.3, 202.3e, 601.2i, 707.10): the largest mana value
    * of the spells the controller of the spell or ability has cast this turn, each as it was cast (`TurnLog.castSpells`: an {X} counts as the number announced, as it does for a
@@ -5089,6 +5097,13 @@ export type Keyword =
    * a positive whole number; `cost` is mana only, with no {X}. One suspend ability on a card that is not a land.
    */
   | { readonly kind: 'suspend'; readonly count: number; readonly cost: readonly Cost[] }
+  /**
+   * CR 702.170a (Plot): "Plot [cost]": a special action that works from the hand ("Any time you have priority during your main phase while the stack is empty, you may exile this
+   * card from your hand and pay [cost]. It becomes a plotted card", the action `plot`, CR 702.170b). A plotted card is exiled face up and its owner may cast it from exile
+   * without paying its mana cost during their main phase while the stack is empty, in any later turn (CR 702.170d); the engine reads that from `GameObject.plottedTurn`.
+   * `cost` is mana only, with no {X}. One plot ability on a card that is not a land.
+   */
+  | { readonly kind: 'plot'; readonly cost: readonly Cost[] }
   /**
    * "Gift a card" (CR 702.174, D-135): as an additional cost to cast the spell the caster may choose an opponent (the gift is
    * promised, CR 702.174k); asked after the kicker and replicate questions and before X and the targets (CR 601.2b). Of a

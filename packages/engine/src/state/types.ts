@@ -246,6 +246,12 @@ export interface GameObject {
    */
   readonly foretoldTurn?: number;
   /**
+   * Present on a card in exile that its owner plotted (CR 702.170a-d): the number of the turn in which it became plotted. Its owner may cast it from exile without paying its mana cost
+   * during their main phase while the stack is empty, in any turn after that one. The card is face up. It is the exile object's own: a new object after any zone change (CR 400.7)
+   * has none. Absent otherwise.
+   */
+  readonly plottedTurn?: number;
+  /**
    * Present (true) on a card in exile that resolved as an Adventure (CR 715.3d): its owner may cast
    * the card's normal face from there, but not as an Adventure again. Absent otherwise; it ends
    * with the object (CR 400.7), whatever zone the card goes to next.

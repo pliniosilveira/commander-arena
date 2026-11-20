@@ -1937,11 +1937,11 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       // D-646 (CR 202.3): and the greatest mana value among them, read the same way.
       checkEnumList(out, `${path}.ofTypes`, a.ofTypes, CARD_TYPES, 'card type');
       for (const key of Object.keys(a)) {
-        if (key !== 'kind' && key !== 'ofTypes') {
+        if (key !== 'kind' && key !== 'ofTypes' && key !== 'otherThanThis') {
           issue(
             out,
             `${path}.${key}`,
-            'spells cast this turn reads only the controller and the card types',
+            'spells cast this turn reads only the controller, the card types and whether to leave out this spell',
           );
         }
       }

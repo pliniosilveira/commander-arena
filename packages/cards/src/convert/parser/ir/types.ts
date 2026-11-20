@@ -475,6 +475,8 @@ export type IrAmount =
   | {
       readonly kind: 'spellsCastThisTurn';
       readonly ofTypes?: readonly string[];
+      // "for each other instant and sorcery spell you've cast this turn" (Lock and Load, issue 121): the spell that is resolving is not counted.
+      readonly otherThanThis?: true;
       readonly span: Span;
     }
   // "the greatest mana value among instant and sorcery spells you've cast this turn" (Prismari deck group 2, D-646, CR 202.3, 601.2i): the largest mana value of the spells the controller

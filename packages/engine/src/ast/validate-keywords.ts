@@ -266,6 +266,19 @@ export function checkBatchKeyword(k: Keyword, path: string, out: AstIssue[]): bo
         });
       }
       return true;
+    case 'plot':
+      // CR 702.170a: "Plot [cost]": a mana cost with no {X}, paid to exile the card.
+      checkCosts(k.cost, `${path}.cost`, out);
+      if (Array.isArray(k.cost)) {
+        k.cost.forEach((c, i) => {
+          if (c?.kind !== 'mana') {
+            issue(out, `${path}.cost[${i}]`, 'a plot cost may be mana only in this engine');
+          } else if (c.symbols?.includes('X')) {
+            issue(out, `${path}.cost[${i}]`, 'X in a plot cost is not supported');
+          }
+        });
+      }
+      return true;
     case 'gift':
       // D-135 and issue 57 group 5: card and tapped Fish gifts have engine effects.
       if (k.gift !== 'card' && k.gift !== 'tappedFish') {

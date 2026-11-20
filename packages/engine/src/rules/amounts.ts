@@ -444,9 +444,14 @@ export function stateAmountOf(
     case 'spellsCastThisTurn': {
       // CR 601.2i (D-638): the spells the controller has cast this turn (a copy is not cast, CR 707.10); `ofTypes` keeps those with one of the card types they were cast with.
       const types = amount.ofTypes;
-      if (types === undefined) return getSeat(state, ctx.controller).spellsCastThisTurn;
+      if (types === undefined && amount.otherThanThis !== true) {
+        return getSeat(state, ctx.controller).spellsCastThisTurn;
+      }
       return state.turnLog.castSpells.filter(
-        (s) => s.seat === ctx.controller && s.types.some((t) => types.includes(t)),
+        (s) =>
+          s.seat === ctx.controller &&
+          (types === undefined || s.types.some((t) => types.includes(t))) &&
+          (amount.otherThanThis !== true || s.object !== ctx.source),
       ).length;
     }
     case 'greatestManaValueCast': {

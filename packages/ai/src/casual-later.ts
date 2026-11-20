@@ -119,7 +119,7 @@ export function chooseSpecialAction(
   type Candidate = { readonly action: Action; readonly rank: readonly number[] };
   const candidates: Candidate[] = [];
   for (const o of d.options) {
-    if (o.kind !== 'suspend' && o.kind !== 'foretell') continue;
+    if (o.kind !== 'suspend' && o.kind !== 'foretell' && o.kind !== 'plot') continue;
     const card = findObject(view, o.object);
     if (card === undefined) continue;
     if (o.kind === 'suspend') {
@@ -131,6 +131,12 @@ export function chooseSpecialAction(
         action: { kind: 'suspend', object: o.object },
         rank: [permanent ? 0 : 1, special?.counters ?? 99, -manaValueOf(card)],
       });
+    } else if (o.kind === 'plot') {
+      // CR 702.170a: plotting pays the plot cost now so the card is cast free later: worth it when that saves mana and the spell is worth casting.
+      const special = card.specialActions?.find((a) => a.kind === 'plot');
+      const saved = manaValueOf(card) - (special === undefined ? 0 : manaValue(special.cost));
+      if (saved < 1 || !worth(view, card)) continue;
+      candidates.push({ action: { kind: 'plot', object: o.object }, rank: [3, -saved, 0] });
     } else {
       const special = card.specialActions?.find((a) => a.kind === 'foretell');
       const saved =

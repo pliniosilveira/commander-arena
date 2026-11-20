@@ -14,6 +14,7 @@ import { LATER_KEYWORD_RULES } from './later';
 import { LIVING_WEAPON_KEYWORD_RULES } from './living-weapon';
 import { numberedKeyword } from './numbered';
 import { PARTNER_WITH_KEYWORD_RULES } from './partner-with';
+import { PLOT_KEYWORD_RULES } from './plot';
 import { protectionKeyword } from './protection';
 import { simpleKeyword } from './simple';
 import { STATION_KEYWORD_RULES } from './station';
@@ -390,4 +391,6 @@ export const KEYWORD_RULES = [
   ...STATION_KEYWORD_RULES,
   // Galadriel deck, group 3 (D-548): "Buyback {2}".
   ...GALADRIEL_G3_KEYWORD_RULES,
+  // CR 702.170a (Plot): "Plot {3}{U}".
+  ...PLOT_KEYWORD_RULES,
 ];

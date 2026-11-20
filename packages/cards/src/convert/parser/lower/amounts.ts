@@ -342,6 +342,7 @@ export function lowerAmount(
           ...(amount.ofTypes === undefined
             ? {}
             : { ofTypes: amount.ofTypes as readonly CardType[] }),
+          ...(amount.otherThanThis === true ? { otherThanThis: true as const } : {}),
         },
         rule,
       };

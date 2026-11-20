@@ -1665,6 +1665,15 @@ export function describeEvent(
         event.objects,
         'CR 608.2d',
       );
+    case 'plotted':
+      // CR 702.170a: the card is exiled face up, so it is named.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'plot', 'plots')} ${name(event.object)}.`,
+        event.seat,
+        [event.object],
+        'CR 702.170a',
+      );
     default: {
       const unreachable: never = event;
       return unreachable;

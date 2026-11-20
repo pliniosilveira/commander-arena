@@ -371,6 +371,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of your end step, choose target creature card in your graveyard. If that card's mana value is less than or equal to ${e}, return it to the battlefield.`,
   ),
   'amount.for-each-card-drawn': spell((e) => `Draw a card ${e}.`),
+  // Lock and Load (issue 121): the count of the other instants and sorceries cast this turn.
+  'amount.for-each-other-spell-cast': spell((e) => `Draw a card ${e}.`),
   // Stage P28 (D-131): the amounts that read the game, the conditions about the state of the game and the player nouns.
   'amount.equal-to': spell((e) => `Exile target creature. You gain life ${e}.`),
   'amount.where-x': spell((e) => `Exile target creature. Draw X cards, ${e}.`),
@@ -742,6 +744,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Galadriel deck, group 3 (issue 43): "you roll a die's highest natural result" follows "Whenever"; the copy is the token of an enters trigger; "up to one target spell" is the noun of a counter.
   'trigger.roll-highest': whenever,
   'keyword.buyback': asIs,
+  // Plot (issue 121): the keyword line stands alone.
+  'keyword.plot': asIs,
   'token.copy-not-legendary': permanent((e) => `When ~ enters, create ${e}.`),
   'noun.target-activated-or-triggered-ability': spell((e) => `Counter ${e}.`),
   'noun.up-to-one-target-spell': spell(

@@ -641,6 +641,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cumulativeUpkeep',
     // D-128: Suspend (CR 702.62a).
     'suspend',
+    // CR 702.170a: Plot.
+    'plot',
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
@@ -2641,6 +2643,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   echo: true,
   cumulativeUpkeep: true,
   suspend: true,
+  plot: true,
   storm: true,
   gravestorm: true,
   replicate: true,

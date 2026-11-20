@@ -103,6 +103,7 @@ import {
   hasKickedTargets,
   libraryCastPermission,
   mayCastFromGraveyard,
+  mayCastPlotted,
   mayPlayFromExile,
   playPermissionBottoms,
   targetSpecsOf,
@@ -264,7 +265,8 @@ export function beginCast(
       (!resolving &&
         alternative === 'free' &&
         zone === 'exile' &&
-        mayPlayFromExile(state, seat, obj, false, true))
+        // CR 702.170d: a plotted card is cast from exile without paying its mana cost, by the plotted status rather than by an alternative cost of the face.
+        (mayPlayFromExile(state, seat, obj, false, true) || mayCastPlotted(state, seat, obj)))
         ? { byEffect: true as const }
         : {}),
       ...(suspended ? { suspended: true as const } : {}),

@@ -72,6 +72,21 @@ describe('special actions of a hand card', () => {
     expect(specialPayPrompt('foretell', ['2'], 'Giant', giant)).toBe('Pay {2} to foretell Giant');
   });
 
+  test('Plot: the label, the prompt and the click that asks instead of acting', () => {
+    const charge = card('Charge', { specialActions: [{ kind: 'plot', cost: ['3', 'R'] }] });
+    expect(specialActionLabel('plot', charge)).toBe('Plot {3}{R}');
+    expect(specialActionLabel('plot', undefined)).toBe('Plot');
+    expect(specialPayPrompt('plot', ['3', 'R'], 'Charge', charge)).toBe(
+      'Pay {3}{R} to plot Charge',
+    );
+    const decision = {
+      kind: 'priority',
+      seat: 0,
+      options: [{ kind: 'pass' }, { kind: 'plot', object: charge.id }],
+    } as unknown as PriorityDecision;
+    expect(playableObjects(decision).has(charge.id)).toBe(true);
+  });
+
   test('a card with only a special action is asked about, never acted on by the click', () => {
     const d = priority({ kind: 'suspend', object: 'o1' });
     expect(playableObjects(d).has('o1')).toBe(true);
