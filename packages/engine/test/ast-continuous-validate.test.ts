@@ -110,9 +110,11 @@ describe('the continuous-effect nodes that are valid and supported', () => {
       // Issue 144: "attacks this combat if able", the duration of a `restrict` of `attacksEachCombat` only.
       'thisCombat',
     ]);
+    // loseAllAbilities with no end is read now (a Treasure that stays one); a non-additive color change still has no end that runs.
     const forever: Effect = {
-      kind: 'loseAllAbilities',
+      kind: 'setColors',
       objects: T1,
+      colors: ['U'],
       duration: 'permanent',
     };
     expect(structure(on(forever))).toEqual([]);
