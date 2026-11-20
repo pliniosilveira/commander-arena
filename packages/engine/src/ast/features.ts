@@ -1285,6 +1285,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sum',
     'extreme',
     'opponentCount',
+    // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
+    'movedCount',
     'opponentsWithMore',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
@@ -2156,6 +2158,8 @@ export const AMOUNT_KINDS = [
   'extreme',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
+  /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */
+  'movedCount',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */

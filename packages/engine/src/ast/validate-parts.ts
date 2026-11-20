@@ -2020,6 +2020,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       break;
     case 'opponentCount':
       break;
+    case 'movedCount':
+      // CR 608.2c: what the instruction before it moved (`moved`): a trailing amount of the same resolution, never a number a static ability reads.
+      break;
     case 'timesKicked':
       // D-110: the card must have a kicker or multikicker (`checkCastFace`).
       break;

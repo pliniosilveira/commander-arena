@@ -46,6 +46,7 @@ type StateAmount = Extract<
       | 'thisWay'
       | 'opponentsWithMore'
       | 'opponentCount'
+      | 'movedCount'
       | 'cardsStillExiled'
       | 'cardsDrawnThisTurn'
       | 'experienceCounters'
@@ -92,6 +93,7 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
     amount.kind === 'thisWay' ||
     amount.kind === 'opponentsWithMore' ||
     amount.kind === 'opponentCount' ||
+    amount.kind === 'movedCount' ||
     amount.kind === 'cardsStillExiled' ||
     amount.kind === 'cardsDrawnThisTurn' ||
     amount.kind === 'experienceCounters' ||
@@ -427,6 +429,9 @@ export function stateAmountOf(
     case 'opponentCount':
       // CR 102.2, 102.3: the opponents of the controller still in the game.
       return opponentsOf(state, ctx.controller).length;
+    case 'movedCount':
+      // CR 608.2c: "that much" after cards were put somewhere: the objects the instruction before it moved (what `moved` names).
+      return (ctx.moved ?? []).length;
     case 'cardsStillExiled':
       // CR 400.7: a card that left exile is a new object, so only the very objects still there count.
       return amount.objects.filter((id) => state.objects[id]?.zone === 'exile').length;

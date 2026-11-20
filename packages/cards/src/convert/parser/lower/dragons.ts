@@ -101,6 +101,8 @@ export const MAY_PLAY: Lowering<IrClause, Effects> = {
     // "You may look at and play those cards for as long as they remain exiled" (stage P41, D-188, CR 406.3): the cards must have been exiled face down.
     const look = arg(clause, 'lookAt');
     if (look !== undefined && (look.kind !== 'flag' || !ctx.exiledFaceDown)) return failure(clause);
+    // "You may play that card for as long as it remains exiled" (CR 406.3): cards exiled face down stay hidden without "look at", so the permission to play them alone is not read.
+    if (look === undefined && lasts === 'whileExiled' && ctx.exiledFaceDown) return failure(clause);
     return {
       ok: true,
       value: [

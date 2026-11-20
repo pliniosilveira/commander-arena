@@ -433,8 +433,8 @@ describe('spell clauses: players, mana and the library', () => {
     });
   });
 
-  test('"any color" mana is not read: the interpreter offers no color choice', () => {
-    expect(spellFace('Add one mana of any color.').unparsed).toHaveLength(1);
+  test('"any color" mana of a spell is read as a choice made as it resolves; a choice between two is still not', () => {
+    expect(spellFace('Add one mana of any color.').unparsed).toHaveLength(0);
     expect(spellFace('Add {G} or {U}.').unparsed).toHaveLength(1);
   });
 });

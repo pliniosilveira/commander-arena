@@ -1034,6 +1034,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // a graveyard, the state of the permanent an Aura enchants and the cost of an ability that depends on the turn.
   'noun.all-permanents-of-target-player': spell((e) => `Tap ${e}.`),
   'noun.all-with-power-above-target': spell((e) => `Destroy ${e}.`),
+  'noun.each-permanent-of-target-player': spell((e) => `Goad ${e}.`),
   'noun.group-of-target-player': spell((e) => `${cap(e)} get +1/+1 until end of turn.`),
   'noun.all-nonland-they-control': spell(() => `All nonland permanents they control phase out.`),
   'noun.those-creatures': spell(
@@ -1097,6 +1098,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, it loses "enchant creature card in a graveyard" and gains "enchant ${e}."`,
   ),
   'condition.it-on-battlefield': permanent((e) => `When ~ enters, if ${e}, you gain 1 life.`),
+  'condition.cards-exiled-with-self': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
   'effect.aura-swaps-enchant': permanent((e) => `When ~ enters, ${e}`),
   'effect.return-enchanted-card-attach': permanent((e) => `When ~ enters, ${cap(e)}.`),
   'effect.controller-sacrifices-linked': permanent((e) => `When ~ leaves the battlefield, ${e}.`),
