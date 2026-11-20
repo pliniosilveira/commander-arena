@@ -237,9 +237,17 @@ export function checkCastFace(
     }
   }
   // Issue 159: casting from the graveyard by sacrificing creatures is a way to cast a spell, so it is on a card that is not a land; Convoke, Improvise and Delve are not combined with it.
-  if (alternatives.some((a) => a?.kind === 'sacrificeFromGraveyard')) {
+  if (
+    alternatives.some(
+      (a) => a?.kind === 'sacrificeFromGraveyard' || a?.kind === 'sacrificePermanents',
+    )
+  ) {
     if (face.types.includes('land')) {
-      issue(out, `${path}.alternativeCosts`, 'sacrificeFromGraveyard is on a spell, not on a land');
+      issue(
+        out,
+        `${path}.alternativeCosts`,
+        'sacrificeFromGraveyard and sacrificePermanents are on a spell, not on a land',
+      );
     }
     if (
       abilities.some(
@@ -253,7 +261,7 @@ export function checkCastFace(
       issue(
         out,
         `${path}.alternativeCosts`,
-        'sacrificeFromGraveyard with convoke, improvise or delve is not supported',
+        'sacrificeFromGraveyard and sacrificePermanents with convoke, improvise or delve are not supported',
       );
     }
   }

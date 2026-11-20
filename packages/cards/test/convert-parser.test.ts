@@ -1270,6 +1270,7 @@ describe('unmatched abilities', () => {
       'static.others-enter-with-counters',
       'static.tap-alt-cost',
       'static.graveyard-sacrifice-alt-cost',
+      'static.sacrifice-alt-cost',
       'static.unspent-mana',
       'static.cast-from-top',
       'static.pt-times-attacked',

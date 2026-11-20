@@ -138,6 +138,7 @@ export function isNamedAlternative(
     alternative === 'morph' ||
     alternative === 'tapPermanents' ||
     alternative === 'sacrificeFromGraveyard' ||
+    alternative === 'sacrificePermanents' ||
     alternative === 'impending'
   );
 }
@@ -511,7 +512,11 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const tap = tapAlt === null ? null : { filter: tapAlt.filter, count: tapAlt.count };
   // Issue 159: a `sacrificeFromGraveyard` alternative cost also sacrifices that many permanents the caster controls (chosen like an additional cost's sacrifice).
   const sacAlt =
-    alternative === 'sacrificeFromGraveyard' ? alternativeOf(face, 'sacrificeFromGraveyard') : null;
+    alternative === 'sacrificeFromGraveyard'
+      ? alternativeOf(face, 'sacrificeFromGraveyard')
+      : alternative === 'sacrificePermanents'
+        ? alternativeOf(face, 'sacrificePermanents')
+        : null;
   if (sacAlt !== null) {
     sacrifice = sacAlt.filter;
     sacrificeCount = sacAlt.count;
@@ -834,7 +839,8 @@ export function alternativeCostsOf(state: GameState, obj: GameObject): Alternati
       cost: symbols,
       ...(exile > 0 ? { exile } : {}),
       ...(tap === null ? {} : { tap }),
-      ...(alt.kind === 'sacrificeFromGraveyard' && sacrifice !== null
+      ...((alt.kind === 'sacrificeFromGraveyard' || alt.kind === 'sacrificePermanents') &&
+      sacrifice !== null
         ? { sacrifice: { filter: sacrifice, count: sacrificeCount ?? 1 } }
         : {}),
     });

@@ -1576,6 +1576,7 @@ export type NamedAlternativeKind =
   | 'morph'
   | 'tapPermanents'
   | 'sacrificeFromGraveyard'
+  | 'sacrificePermanents'
   | 'impending';
 
 /**
@@ -1651,6 +1652,9 @@ export type PermanentAlternativeKind =
  *   paying its mana cost": the card is cast from its owner's graveyard, the `cost` (mana only, no X) is paid instead of the mana cost, and the caster also sacrifices
  *   `count` permanents they control that match `filter` as part of it (the sacrifice is chosen with the same question as the sacrifice of an additional cost). The spell is an
  *   ordinary spell otherwise: it goes to the graveyard when it leaves the stack. Not on a land; not with Convoke, Improvise or Delve.
+ * - `sacrificePermanents` (CR 118.9, 601.2h, 701.21a, Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost": cast from the hand (or any zone the
+ *   card is cast from), the `cost` (mana only, no X, possibly none) is paid instead of the mana cost, and the caster also sacrifices `count` permanents they control that match `filter`
+ *   as part of it, chosen as the sacrifice of an additional cost is. Not on a land; not with Convoke, Improvise or Delve.
  * - `impending` (issue 81, CR 702.176a, Overlord of the Mistmoors): the `cost` (mana only, no X) is paid instead of the mana cost of a permanent spell, and the permanent it becomes enters
  *   with `counters` time counters, is not a creature while it has one, and loses one at the beginning of its controller's end step (the engine reads all of it from `GameObject.alt` and
  *   the counters, `rules/derive-alt.ts`, so the card lists the cost and the number).
@@ -1667,7 +1671,7 @@ export type AlternativeCost =
   | {
       readonly kind: Exclude<
         NamedAlternativeKind,
-        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'impending'
+        'escape' | 'tapPermanents' | 'sacrificeFromGraveyard' | 'sacrificePermanents' | 'impending'
       >;
       readonly cost: readonly Cost[];
       readonly condition?: Condition;
@@ -1692,6 +1696,16 @@ export type AlternativeCost =
       readonly kind: 'sacrificeFromGraveyard';
       readonly cost: readonly Cost[];
       /** The permanents sacrificed as part of the cost (issue 159): ones the caster controls that match. */
+      readonly filter: ObjectFilter;
+      /** How many: at least 1. */
+      readonly count: number;
+      readonly condition?: Condition;
+    }
+  | {
+      readonly kind: 'sacrificePermanents';
+      /** The mana paid besides the sacrifice: {0} for "You may sacrifice a nontoken black creature rather than pay this spell's mana cost" (Flare of Malice). */
+      readonly cost: readonly Cost[];
+      /** The permanents sacrificed as part of the cost (CR 118.9, 601.2h, 701.21a): ones the caster controls that match. */
       readonly filter: ObjectFilter;
       /** How many: at least 1. */
       readonly count: number;

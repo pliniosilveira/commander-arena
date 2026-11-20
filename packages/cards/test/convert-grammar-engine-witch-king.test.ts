@@ -470,3 +470,42 @@ describe('The Darkness Crystal', () => {
     g.expect.invariants();
   });
 });
+
+describe('Flare of Malice', () => {
+  const flare = real('Flare of Malice');
+  const RATS = 'Typhoid Rats'; // a black creature
+
+  const board = (mine: readonly string[]) =>
+    scenario()
+      .define(flare)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(flare.name)
+      .battlefield(...mine)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(ANGEL, BEARS)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('you may sacrifice a nontoken black creature rather than pay its mana cost (CR 118.9, 701.21a)', () => {
+    const g = board([RATS]);
+    g.act(0).cast(flare.name, { alternative: 'sacrificePermanents', pay: true });
+    g.passAll();
+    g.expect.zone(RATS, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('each opponent sacrifices the creature or planeswalker with the greatest mana value among theirs (CR 608.2d)', () => {
+    const g = board([RATS]);
+    g.act(0).cast(flare.name, { alternative: 'sacrificePermanents', pay: true });
+    g.passAll();
+    g.expect.zone(ANGEL, 'graveyard', { seat: 1 });
+    g.expect.zone(BEARS, 'battlefield', { seat: 1 });
+  });
+
+  test('a creature that is not black cannot pay the alternative cost', () => {
+    const g = board([BEARS]);
+    expect(g.act(0).try.cast(flare.name, { alternative: 'sacrificePermanents' }).ok).toBe(false);
+  });
+});

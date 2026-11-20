@@ -1521,6 +1521,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'jumpStart',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
+    // CR 118.9, 701.21a (Flare of Malice): "You may sacrifice a nontoken black creature rather than pay this spell's mana cost".
+    'sacrificePermanents',
   ],
 };
 
@@ -2521,6 +2523,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'retrace',
   'jumpStart',
   'sacrificeFromGraveyard',
+  'sacrificePermanents',
   'impending',
   // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
   'lifeForMana',

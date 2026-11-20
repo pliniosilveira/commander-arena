@@ -1902,6 +1902,15 @@ export type IrStaticEffect =
       readonly count: number;
     }
   /**
+   * "You may sacrifice a nontoken black creature rather than pay ~'s mana cost." (Flare of Malice, CR 118.9, 601.2h, 701.21a): an alternative cost of the face that pays no mana and sacrifices
+   * `count` permanents `what` describes. The subject is `~`.
+   */
+  | {
+      readonly kind: 'sacrificeAlternative';
+      readonly what: IrNoun;
+      readonly count: number;
+    }
+  /**
    * "You don't lose unspent red mana as steps and phases end." (stage P34, D-152, CR 500.5, 106.4): mana of these colors (letters, `C` colorless) in
    * the controller's pool does not empty as a step or a phase ends. The subject is `you`.
    */

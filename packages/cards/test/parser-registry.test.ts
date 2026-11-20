@@ -532,6 +532,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.prevent-damage-to-self': asIs,
   'static.prevent-damage-to-self-remove-counter': asIs,
   'static.graveyard-sacrifice-alt-cost': asIs,
+  'static.sacrifice-alt-cost': asIs,
   // Issue 144 (Goblin Negotiation): the number of tokens follows "create a number of ... tokens".
   'amount.excess-damage-dealt-this-way': spell(
     (e) =>
