@@ -379,6 +379,8 @@ describe('unmatched abilities', () => {
       'cost.return-to-hand',
       'cost.loyalty',
       'trigger.enters-and-cast',
+      'trigger.cast-turn-and-when',
+      'trigger.cast-during-your-turn',
       'trigger.enters-and-token-damage',
       'trigger.cast-from-hand',
       'trigger.token-combat-damage-batch',

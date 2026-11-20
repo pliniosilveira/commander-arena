@@ -1295,8 +1295,8 @@ export interface IrTrigger extends IrNode {
   readonly firstOfKind?: true;
   /** 'classLevel': the level a Class became (CR 716.2). */
   readonly level?: number;
-  /** 'cast': only while the active player is an opponent of this ability's controller. */
-  readonly duringTurn?: 'opponent';
+  /** 'cast': only while the active player is an opponent of this ability's controller (`opponent`) or is the controller (`you`, "during your turn"). */
+  readonly duringTurn?: 'you' | 'opponent';
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */
