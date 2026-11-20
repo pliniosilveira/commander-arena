@@ -283,6 +283,17 @@ export function matchesFilter(
     ...(filter.notTriggerCard === true && ctx.triggerSubject !== undefined
       ? { excludedCards: successorsOf(state, ctx.triggerSubject, () => true) }
       : {}),
+    // CR 508.1 (Shared Animosity): "each other attacking creature": the creature the trigger is about is left out (on the battlefield or as it last was).
+    ...(filter.otherThanTriggerSubject === true && ctx.triggerSubject !== undefined
+      ? {
+          excludedCards: [
+            ...(filter.notTriggerCard === true
+              ? successorsOf(state, ctx.triggerSubject, () => true)
+              : []),
+            ctx.triggerSubject,
+          ],
+        }
+      : {}),
     // CR 202.3: "with lesser mana value": at most one less than the amount.
     ...(filter.manaValueBelow !== undefined
       ? { manaValueLimit: manaValueLimitOf(state, filter.manaValueBelow, ctx) - 1 }
@@ -360,6 +371,7 @@ function readsGame(f: ObjectFilter): boolean {
     f.sharesCreatureTypeWith !== undefined ||
     f.sharesCardTypeWith !== undefined ||
     f.notTriggerCard === true ||
+    f.otherThanTriggerSubject === true ||
     f.controller === 'defendingPlayer' ||
     (f.anyOf?.some(readsGame) ?? false)
   );

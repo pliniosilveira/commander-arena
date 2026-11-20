@@ -382,7 +382,8 @@ export function amountOf(
   // D-131: arithmetic on other amounts. Each is read as the instruction runs, like the amounts it is made of.
   if (amount.kind === 'half') {
     const n = amountOf(state, amount.of, ctx, targets);
-    return amount.round === 'down' ? Math.floor(n / 2) : Math.ceil(n / 2);
+    const divisor = amount.divisor ?? 2;
+    return amount.round === 'down' ? Math.floor(n / divisor) : Math.ceil(n / divisor);
   }
   // D-321, CR 107.1b: a negative result of a calculation counts as 0.
   if (amount.kind === 'minus') {

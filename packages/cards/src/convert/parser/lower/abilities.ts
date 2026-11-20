@@ -695,6 +695,18 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     void zone;
     return built({ kind: 'damageBonus', sources: filter, amount: amount.value });
   }
+  if (event.verb === 'damageDouble') {
+    // CR 614.1a, 120.3 (Angrath's Marauders): the damage a source the controller controls would deal to any permanent or player is doubled.
+    const sources = event.args.sources;
+    if (sources?.kind !== 'noun' || event.condition !== undefined) return failure(ability);
+    const blocked = gate(ability, ['ability:replacement', 'replacement:damageDouble']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(sources);
+    if (!lowered.ok) return lowered;
+    const { zone, ...filter } = lowered.value;
+    void zone;
+    return built({ kind: 'damageDouble', sources: filter });
+  }
   if (event.verb === 'countersPlus') {
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
     // CR 614.1a, 122.6): the engine's `countersPlus` of the permanent. The permanents are the noun's filter as they are on the battlefield (the controller's own, "another"
@@ -1191,6 +1203,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:tokensInstead',
   'replacement:countersPlus',
   'replacement:damageBonus',
+  'replacement:damageDouble',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

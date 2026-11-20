@@ -15,7 +15,8 @@ export function readsTriggerSubject(ability: Ability): boolean {
   const effects = JSON.stringify([ability.effect, ability.modes ?? [], ability.targets ?? []]);
   if (effects.includes('"triggerSubject"') || effects.includes('"triggerCard"')) return true;
   // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card" leaves out the card the permanent that died became, read as the targets are chosen and checked again.
-  if (effects.includes('"notTriggerCard"')) return true;
+  if (effects.includes('"notTriggerCard"') || effects.includes('"otherThanTriggerSubject"'))
+    return true;
   // CR 603.10a, 608.2h (Auntie Ool): "draw a card if you control that creature" reads the permanent the trigger is about, as the ability resolves.
   if (effects.includes('"subjectControlledByYou"') || effects.includes('"subjectStat"'))
     return true;

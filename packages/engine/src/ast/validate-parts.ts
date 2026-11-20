@@ -316,6 +316,21 @@ export function checkFilter(
   ) {
     issue(out, `${path}.hasCounter`, 'hasCounter must be true or the name of a counter');
   }
+  if (f.otherThanTriggerSubject !== undefined) {
+    if (f.otherThanTriggerSubject !== true) {
+      issue(
+        out,
+        `${path}.otherThanTriggerSubject`,
+        'otherThanTriggerSubject must be true when present',
+      );
+    } else if (sharesWith !== true) {
+      issue(
+        out,
+        `${path}.otherThanTriggerSubject`,
+        'otherThanTriggerSubject is read in a count of a trigger about a permanent (the creature the trigger is about is left out)',
+      );
+    }
+  }
   if (f.notTriggerCard !== undefined && f.notTriggerCard !== true) {
     issue(out, `${path}.notTriggerCard`, 'notTriggerCard must be true when present');
   }
@@ -2153,6 +2168,9 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       if (!isOneOf(a.round, ['down', 'up'])) {
         issue(out, `${path}.round`, 'half is rounded "down" or "up" (CR 107.1a)');
       }
+      if (a.divisor !== undefined && a.divisor !== 3) {
+        issue(out, `${path}.divisor`, 'divisor is 3 ("a third of"), or absent for half');
+      }
       checkAmount(a.of, `${path}.of`, scope, out);
       break;
     case 'minus':
@@ -2436,7 +2454,14 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
         }
         checkFilter(rest, `${path}.filter`, out);
       } else {
-        checkFilter(a.filter, `${path}.filter`, out);
+        // CR 603.10a, 205.3m (Shared Animosity): "shares a creature type with it" in a count of a trigger about a permanent reads that permanent (`triggerSubject`).
+        checkFilter(
+          a.filter,
+          `${path}.filter`,
+          out,
+          undefined,
+          scope.triggerSubject === 'permanent',
+        );
       }
       break;
     default:

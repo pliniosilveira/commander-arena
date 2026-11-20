@@ -8,7 +8,7 @@ import type { PreventScope } from '../ast/types';
 import type { ObjectId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
 import type { GameState } from '../state/types';
-import { bonusAmount } from './damage-bonus';
+import { bonusWords } from './damage-bonus';
 import type { DamageModifier } from './damage-modifier';
 import { derive } from './derive';
 import { describeFilter } from './search-prompt';
@@ -39,8 +39,8 @@ export function modifierText(
 ): string {
   const { origin } = modifier;
   if (origin.kind === 'increase') {
-    // CR 614.1a: "it deals that much damage plus 2 instead".
-    return `Deal ${bonusAmount(state, origin.bonus)} more damage (${nameOf(state, origin.bonus.object)})`;
+    // CR 614.1a: "it deals that much damage plus 2 instead", "it deals double that damage instead".
+    return `${bonusWords(state, origin.bonus)} (${nameOf(state, origin.bonus.object)})`;
   }
   if (origin.kind === 'redirect') {
     // CR 614.9 (D-192): the same damage is dealt to the creature with the effect instead.

@@ -296,7 +296,13 @@ export type Amount =
    * "Half the number of ..., rounded down" (D-131): `of` divided by two and rounded as `round` says (CR 107.1a:
    * the rounding is stated; a fraction is never left).
    */
-  | { readonly kind: 'half'; readonly of: Amount; readonly round: 'down' | 'up' }
+  | {
+      readonly kind: 'half';
+      readonly of: Amount;
+      readonly round: 'down' | 'up';
+      /** "A third of their life, rounded up" (CR 107.1a, Dire Fleet Ravager): `of` divided by 3 instead of 2 and rounded as `round` says. Absent: half. */
+      readonly divisor?: 3;
+    }
   /**
    * "Twice the number of ...", "2 life for each ..." (D-131): a whole number of 2 or more times `of`. (A multiple
    * of a power or toughness that may be negative is `times` of a `PtAmount`.)
@@ -902,6 +908,12 @@ export interface ObjectFilter {
    * follows that sacrifice (or the `may` of one) in the same sequence.
    */
   readonly sharesCreatureTypeWith?: 'triggerSubject' | 'source' | 'sacrificed';
+  /**
+   * "Each other attacking creature that shares a creature type with it" (CR 508.1, 205.3m, Shared Animosity): the permanent the trigger is about (`triggerSubject`, a creature that
+   * attacks) is not matched, whoever controls it: "other" is besides that creature, not besides the permanent with the ability. Only in a count read by a trigger about a permanent
+   * (`validateCard`); a trigger that kept no subject on the stack would not know it.
+   */
+  readonly otherThanTriggerSubject?: true;
   /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
@@ -6448,6 +6460,13 @@ export type Replacement =
    * (CR 120.3: each amount is its own event). It is the ability of the permanent (lost with "loses all abilities").
    */
   | { readonly kind: 'damageBonus'; readonly sources: ObjectFilter; readonly amount: number }
+  /**
+   * "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead." (Angrath's Marauders, CR 614.1a, 120.3):
+   * a replacement effect of a permanent on the battlefield for every damage event, combat or not, whose source `sources` matches (read as for `damageBonus`, `controller: 'you'`
+   * required) and whatever the recipient: a player or a permanent of any controller. The same source deals twice the damage; an event of 0 damage is no event. It applies once to an
+   * event (CR 614.5) and the player dealt the damage orders it with the other effects that change the event (CR 616.1, `rules/damage-order.ts`). It is the ability of the permanent.
+   */
+  | { readonly kind: 'damageDouble'; readonly sources: ObjectFilter }
   /**
    * "If you would draw a card, skip that draw instead." (D-332, CR 614.1a, 614.11, 121.6): a replacement effect of a permanent on the battlefield
    * for every card its controller would draw, by an effect or by the draw step. The draw simply does not happen: no card moves, nothing was

@@ -2126,7 +2126,14 @@ function runEffect(
       let lost = 0;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
-        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone, ctx.thisWay);
+        const amount = lifeAmountFor(
+          next,
+          effect.amount,
+          seat,
+          () => everyone,
+          ctx.thisWay,
+          effect.player,
+        );
         const r =
           effect.kind === 'gainLife'
             ? gainLifeOf(next, seat, amount, flow, res.source)

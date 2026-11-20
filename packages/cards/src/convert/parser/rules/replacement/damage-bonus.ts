@@ -120,4 +120,93 @@ export const REPLACEMENT_DAMAGE_BONUS = defineRule<IrAbility>({
   },
 });
 
-export const DAMAGE_BONUS_REPLACEMENT_RULES = [REPLACEMENT_DAMAGE_BONUS].map(quietly);
+/**
+ * `replacement.damage-double`: "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player
+ * instead." (Angrath's Marauders; CR 614.1a, 120.3, 616.1), and the same for a source of a color or card type ("a red source you control"). The engine's
+ * `damageDouble`. Not read: a source of another player or of no player ("a source"), other recipients ("to an opponent", "to a creature"), only combat damage,
+ * another amount form ("plus 2", "triple"), and a missing period.
+ */
+export const REPLACEMENT_DAMAGE_DOUBLE = defineRule<IrAbility>({
+  id: 'replacement.damage-double',
+  family: 'replacement',
+  leading: ['if'],
+  cites: [
+    'CR 614.1a (Replacement Effects)',
+    'CR 120.3 (Damage)',
+    'CR 616.1 (Interaction of Replacement and/or Prevention Effects)',
+  ],
+  examples: [
+    'If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
+    'If a red source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
+  ],
+  rejects: [
+    'If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead',
+    'If a source would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
+    'If a source you control would deal damage to an opponent, it deals double that damage to that player instead.',
+    'If a source you control would deal damage to a creature, it deals double that damage to that creature instead.',
+    'If a source you control would deal damage to a permanent or player, it deals triple that damage to that permanent or player instead.',
+    'If a source you control would deal damage to a permanent or player, it deals that much damage plus 2 instead.',
+    'If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead. Draw a card.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'replacement.damage-double';
+    const head = literal('if a')(ctx, pos);
+    if (!head.ok) return head;
+    // "a source you control" (any color or type), or "a red source you control" / "an artifact source you control".
+    const sourceStart = head.pos + 1;
+    const plain = literal(' source you control')(ctx, head.pos);
+    let sources: IrNoun;
+    let at: number;
+    if (plain.ok) {
+      const span = { start: sourceStart, end: plain.pos };
+      sources = damageSources({ raw: 'source', controller: 'you' }, span, id);
+      at = plain.pos;
+    } else {
+      const article = pattern(/n? /iu)(ctx, head.pos);
+      if (!article.ok) return article;
+      const words = spanned(SOURCE_WORDS)(ctx, article.pos);
+      if (!words.ok) return words;
+      const source = literal(' source you control')(ctx, words.pos);
+      if (!source.ok) return source;
+      sources = damageSources(sourceFilter(words.value.value), words.value.span, id);
+      at = source.pos;
+    }
+    const body = literal(
+      ' would deal damage to a permanent or player, it deals double that damage to that permanent or player instead.',
+    )(ctx, at);
+    if (!body.ok) return body;
+    const span = { start: pos, end: body.pos };
+    const event: IrClause = {
+      kind: 'clause',
+      verb: 'damageDouble',
+      args: { sources },
+      optional: false,
+      span,
+      rule: id,
+    };
+    return { ok: true, value: replacement(id, span, event), pos: body.pos };
+  },
+});
+
+/** The noun of the sources of a damage replacement: each source the filter matches. */
+function damageSources(
+  filter: IrFilter,
+  span: { start: number; end: number },
+  rule: string,
+): IrNoun {
+  return {
+    kind: 'noun',
+    det: 'each',
+    filter,
+    upTo: false,
+    plural: false,
+    other: false,
+    span,
+    rule,
+  };
+}
+
+export const DAMAGE_BONUS_REPLACEMENT_RULES = [
+  REPLACEMENT_DAMAGE_BONUS,
+  REPLACEMENT_DAMAGE_DOUBLE,
+].map(quietly);
