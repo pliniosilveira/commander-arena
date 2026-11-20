@@ -79,9 +79,14 @@ function message(error: unknown): string {
 
 export async function runGame(
   config: GameConfig,
-  agents: readonly [Agent, Agent],
+  agents: readonly Agent[],
   options: RunOptions,
 ): Promise<GameRun> {
+  if (agents.length !== config.decks.length) {
+    throw new Error(
+      `runGame needs one agent per seat: ${config.decks.length} decks, ${agents.length} agents`,
+    );
+  }
   let decisions = 0;
   const now = options.now ?? (() => decisions);
   const budgetMs = options.budgetMs ?? DEFAULT_BUDGET_MS;
