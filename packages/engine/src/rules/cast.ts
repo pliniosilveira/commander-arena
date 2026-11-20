@@ -128,7 +128,11 @@ import {
   remainders,
   usePayOptions,
 } from './pay-options';
-import { playPermissionAnyColor } from './play-permission-color';
+import {
+  playPermissionAnyColor,
+  playPermissionAnyType,
+  playPermissionExiles,
+} from './play-permission-color';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -277,10 +281,16 @@ export function beginCast(
         : {}),
       ...(suspended ? { suspended: true as const } : {}),
       // D-350: what the effect that let the card be cast says about this spell.
-      ...(riders.anyManaType === true ? { anyManaType: true as const } : {}),
+      ...(riders.anyManaType === true ||
+      // Hostage Taker (CR 609.4b): "mana of any type can be spent to cast that spell" of the permission the card is cast with from exile.
+      (zone === 'exile' && !resolving && playPermissionAnyType(state, seat, obj.id))
+        ? { anyManaType: true as const }
+        : {}),
       // D-359: "You may cast target instant or sorcery card from your graveyard this turn. If that spell would be put into your graveyard, exile it instead."
       ...(riders.exileInstead === true ||
-      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
+      (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj)) ||
+      // Dire Fleet Daredevil (CR 614.1a): "If that spell would be put into a graveyard, exile it instead" of the permission the card is cast with from exile.
+      (zone === 'exile' && !resolving && playPermissionExiles(state, seat, obj.id))
         ? { exileInstead: true as const }
         : {}),
       // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" of the permission the card is cast with.

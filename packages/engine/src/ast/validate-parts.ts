@@ -6136,6 +6136,38 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             'a card chosen from the hand or the graveyard is put onto the battlefield (D-544)',
           );
         }
+        // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard", the cards exiled with this permanent.
+        const eachGy = e.objects as ChooseSelector;
+        if (eachGy.eachGraveyard !== undefined) {
+          if (
+            eachGy.eachGraveyard !== true ||
+            e.to !== 'exile' ||
+            zone !== 'graveyard' ||
+            eachGy.optional !== true ||
+            (eachGy.count !== undefined && eachGy.count !== 1) ||
+            eachGy.fromMoved !== undefined ||
+            eachGy.alsoGraveyard !== undefined ||
+            eachGy.minCardTypes !== undefined
+          ) {
+            issue(
+              out,
+              `${path}.objects.eachGraveyard`,
+              "eachGraveyard is true, with an optional choice of one card from the graveyard, to 'exile'",
+            );
+          }
+        }
+        if (e.linked !== undefined) {
+          if (e.linked !== true || e.to !== 'exile') {
+            issue(out, `${path}.linked`, "linked is true, with to 'exile'");
+          }
+          if (scope.owner !== 'ability') {
+            issue(
+              out,
+              `${path}.linked`,
+              'cards exiled with this permanent: an ability of a permanent',
+            );
+          }
+        }
         // D-411: "You may put a land card from among them into your hand" is the one place a choice among moved cards goes (the hand); onto the battlefield from exile too.
         const among = e.objects as ChooseSelector;
         if (

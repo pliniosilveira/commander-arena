@@ -95,6 +95,10 @@ function hasLinkedExile(e: unknown): boolean {
       // CR 607.2a: "exile the top card of your library" whose card another ability of the face reads as "exiled with this enchantment".
       JSON.stringify(e ?? null).includes('"kind":"exileTop"')) &&
       JSON.stringify(e).includes('"linked":true')) ||
+    // King Narfi's Betrayal (CR 607.2a): "you may exile a creature or planeswalker card from each graveyard": a `moveToZone` to exile that says linked.
+    (JSON.stringify(e ?? null).includes('"kind":"moveToZone"') &&
+      JSON.stringify(e).includes('"to":"exile"') &&
+      JSON.stringify(e).includes('"linked":true')) ||
     // D-230: a token that copies a creature and remembers the cards the effect before it exiled holds the link itself.
     JSON.stringify(e ?? null).includes('"linkExiled":true')
   );

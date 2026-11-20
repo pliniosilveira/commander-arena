@@ -1914,6 +1914,12 @@ export interface ChooseSelector {
    * happens. Only with `optional` and `anyNumber`, for a `moveToZone` of cards chosen from the graveyard into exile (`anyNumber` is otherwise a sacrifice's).
    */
   readonly minCardTypes?: number;
+  /**
+   * "Then you may exile a creature or planeswalker card from each graveyard" (King Narfi's Betrayal, CR 608.2d, 404.1): one choice for each graveyard, in turn order from the controller,
+   * each among the cards in that player's graveyard that the filter matches (the controller chooses in all of them: the cards are not theirs). With `optional`, one card or none from
+   * each, with `count` 1. Only for `moveToZone` to exile, with `filter.zone` `graveyard` and no `fromMoved`.
+   */
+  readonly eachGraveyard?: true;
   /** Excludes the cards the permanents you sacrificed earlier in this resolution became. */
   readonly exceptSacrificed?: true;
   /**
@@ -2658,6 +2664,15 @@ export type Effect =
        * can be paid with mana of any color for any colored symbol of its cost (colorless mana still pays generic mana only). Needs `castOnly`: the rider is about casting a spell.
        */
       readonly anyManaColor?: true;
+      /**
+       * "You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell" (Hostage Taker, CR 609.4b): the spell cast with this permission can be
+       * paid with any mana for any symbol of its cost, colored or colorless (`StackData.anyManaType`). Needs `castOnly`: the rider is about casting a spell.
+       */
+      readonly anyManaType?: true;
+      /**
+       * "If that spell would be put into a graveyard, exile it instead" (Dire Fleet Daredevil, CR 614.1a): the spell cast with this permission carries `StackData.exileInstead`. Needs `castOnly`.
+       */
+      readonly exileInstead?: true;
     }
   /**
    * CR 702.85a (Cascade), D-120: the controller exiles cards from the top of their library until they exile a
@@ -3050,6 +3065,11 @@ export type Effect =
        * commander an earlier effect put onto the battlefield (`moved`); the card goes to the command zone of its owner.
        */
       readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
+      /**
+       * "Exile a creature or planeswalker card from each graveyard ... cards exiled with this Saga" (King Narfi's Betrayal, CR 607.2a): the cards exiled are remembered by the permanent the ability
+       * belongs to, as `exile.linked` does, for `linkedExile`. Only with `to` `exile` and a `choose` selector, in an ability of a permanent.
+       */
+      readonly linked?: true;
       /**
        * For library: `top`, `bottom`, or a number N of 2 or more, "Nth from the top" ("third from the top" is 3): the card
        * goes below the first N - 1 cards, or on the bottom when the library has fewer than N cards (CR 401.7, D-135).

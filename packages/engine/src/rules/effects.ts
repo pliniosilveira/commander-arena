@@ -1101,53 +1101,57 @@ function runEffect(
         if (amountOf(state, effect.objects.count ?? 1, ctx, targets) <= 0) {
           return { ...done(state), lastMoved: [] };
         }
+        const sel = effect.objects;
+        // King Narfi's Betrayal (CR 608.2d, 607.2a): "you may exile a creature or planeswalker card from each graveyard": one choice for each graveyard.
+        const graveyards =
+          sel.eachGraveyard === true ? seatsInOrder(state, res.controller) : [undefined];
         return {
           ...done(
             state,
             [],
-            [
-              {
-                kind: 'chooseMove',
-                filter: effect.objects.filter,
-                count: amountOf(state, effect.objects.count ?? 1, ctx, targets),
-                to: effect.to,
-                position: effect.position ?? 'top',
-                ...(effect.objects.optional === true ? { optional: true as const } : {}),
-                ...(effect.objects.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
-                // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
-                ...(effect.objects.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
-                ...(effect.objects.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
-                // CR 205.2a: "any number of cards ... with four or more card types among them".
-                ...(effect.objects.minCardTypes === undefined
-                  ? {}
-                  : { anyNumber: true as const, minCardTypes: effect.objects.minCardTypes }),
-                ...(effect.objects.exceptSacrificed === true
-                  ? {
-                      among: Object.keys(state.objects).filter(
-                        (id) =>
-                          !(res.sacrificed ?? []).some((old) => {
-                            const sacrificed = state.lki[old]?.object;
-                            return (
-                              sacrificed !== undefined &&
-                              controllerOf(state, sacrificed) === res.controller &&
-                              graveyardSuccessors(state, old).includes(id as ObjectId)
-                            );
-                          }),
-                      ) as ObjectId[],
-                    }
-                  : {}),
-                ...(effect.to === 'battlefield'
-                  ? {
-                      tapped: effect.tapped ?? false,
-                      controller: effect.controller ?? ('you' as const),
-                      ...(effect.withCounters === undefined
-                        ? {}
-                        : { withCounters: effect.withCounters }),
-                    }
-                  : {}),
-                chosen: null,
-              },
-            ],
+            graveyards.map((graveyard) => ({
+              kind: 'chooseMove' as const,
+              ...(graveyard === undefined ? {} : { graveyardOf: graveyard }),
+              ...(effect.linked === true && res.source !== null ? { linkTo: res.source } : {}),
+              filter: sel.filter,
+              count: amountOf(state, sel.count ?? 1, ctx, targets),
+              to: effect.to,
+              position: effect.position ?? 'top',
+              ...(sel.optional === true ? { optional: true as const } : {}),
+              ...(sel.alsoGraveyard === true ? { alsoGraveyard: true as const } : {}),
+              // D-411: "from among them": only the cards the effect before it moved can be chosen (CR 608.2c).
+              ...(sel.fromMoved === true ? { among: ctx.moved ?? [] } : {}),
+              ...(sel.fromAnyGraveyard === true ? { anyOwner: true as const } : {}),
+              // CR 205.2a: "any number of cards ... with four or more card types among them".
+              ...(sel.minCardTypes === undefined
+                ? {}
+                : { anyNumber: true as const, minCardTypes: sel.minCardTypes }),
+              ...(sel.exceptSacrificed === true
+                ? {
+                    among: Object.keys(state.objects).filter(
+                      (id) =>
+                        !(res.sacrificed ?? []).some((old) => {
+                          const sacrificed = state.lki[old]?.object;
+                          return (
+                            sacrificed !== undefined &&
+                            controllerOf(state, sacrificed) === res.controller &&
+                            graveyardSuccessors(state, old).includes(id as ObjectId)
+                          );
+                        }),
+                    ) as ObjectId[],
+                  }
+                : {}),
+              ...(effect.to === 'battlefield'
+                ? {
+                    tapped: effect.tapped ?? false,
+                    controller: effect.controller ?? ('you' as const),
+                    ...(effect.withCounters === undefined
+                      ? {}
+                      : { withCounters: effect.withCounters }),
+                  }
+                : {}),
+              chosen: null,
+            })),
           ),
           lastMoved: [],
         };

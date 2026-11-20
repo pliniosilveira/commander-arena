@@ -1356,6 +1356,10 @@ export type Instruction =
       /** "Any number of cards ... with four or more card types among them" (`ChooseSelector.anyNumber` with `minCardTypes`): none, or any number of cards with at least this many card types together. */
       readonly anyNumber?: true;
       readonly minCardTypes?: number;
+      /** "A card from each graveyard" (`ChooseSelector.eachGraveyard`): the candidates are the cards in this player's graveyard (the chooser is still `seat` or the controller). */
+      readonly graveyardOf?: SeatId;
+      /** "Exiled with this Saga" (`moveToZone.linked`, CR 607.2a): the permanent that remembers the cards exiled. */
+      readonly linkTo?: ObjectId;
       readonly chosen: readonly ObjectId[] | null;
     }
   /**
@@ -2226,6 +2230,13 @@ export type ContinuousChange =
        * cast with this permission carries `StackData.anyManaColor` (`rules/cast.ts`, `beginCast`), and the cost of the card is read that way while it is still in exile.
        */
       readonly anyManaColor?: true;
+      /**
+       * "You may cast that card ..., and mana of any type can be spent to cast that spell" (`mayPlay.anyManaType`, Hostage Taker, CR 609.4b): as `anyManaColor`, but any mana pays any symbol, colored or
+       * colorless (`StackData.anyManaType`).
+       */
+      readonly anyManaType?: true;
+      /** "If that spell would be put into a graveyard, exile it instead" (`mayPlay.exileInstead`, Dire Fleet Daredevil, CR 614.1a): the spell carries `StackData.exileInstead`. */
+      readonly exileInstead?: true;
     }
   /**
    * "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (`mayCastEachType`,

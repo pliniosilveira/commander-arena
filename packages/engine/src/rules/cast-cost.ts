@@ -62,7 +62,7 @@ import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
 import { nextSpellReduction } from './next-spell';
 import { payMechanismsOf, payOptionSources } from './pay-options';
-import { playPermissionAnyColor } from './play-permission-color';
+import { playPermissionAnyColor, playPermissionAnyType } from './play-permission-color';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
 import { matchesFilter, type SelectContext } from './select';
@@ -525,7 +525,13 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     sacrifice = flashbackSacrifice.what;
     sacrificeCount = flashbackSacrifice.count ?? 1;
   }
-  const anyType = request.anyType === true || spell.stack?.anyManaType === true;
+  // Hostage Taker (CR 609.4b): the card still in exile is read as the permission that lets it be cast says.
+  const anyType =
+    request.anyType === true ||
+    spell.stack?.anyManaType === true ||
+    (request.excluded !== undefined &&
+      zone === 'exile' &&
+      playPermissionAnyType(state, seat, request.excluded));
   // Issue 144 (CR 609.4b): the card still in exile is read as the permission that lets it be cast says; once on the stack, the spell says it.
   const anyColor =
     spell.stack?.anyManaColor === true ||

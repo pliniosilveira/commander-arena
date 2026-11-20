@@ -152,6 +152,21 @@ export function checkDragonsEffect(
           );
         }
       }
+      // Hostage Taker (CR 609.4b), Dire Fleet Daredevil (CR 614.1a): riders of the spell cast with the permission.
+      for (const rider of ['anyManaType', 'exileInstead'] as const) {
+        if (e[rider] === undefined) continue;
+        if (e[rider] !== true) issue(out, `${path}.${rider}`, `${rider} must be true when present`);
+        if (e.castOnly !== true) {
+          issue(
+            out,
+            `${path}.${rider}`,
+            `${rider} is about the spell that is cast: needs castOnly`,
+          );
+        }
+        if (e.free === true && rider === 'anyManaType') {
+          issue(out, `${path}.${rider}`, 'a free play spends no mana');
+        }
+      }
       return true;
     case 'mayCastEachType':
       // CR 601.2, 118.9: a free cast of one card of each card type, among the cards an earlier effect of the sequence exiled.
