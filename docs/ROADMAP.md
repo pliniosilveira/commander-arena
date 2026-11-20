@@ -141,7 +141,7 @@ The designs for the alternative costs not yet built (Plot, Rebound and others; B
 One line per known limit, at most 40 words; delete the line in the change that fixes it. Behaviour follows the Comprehensive Rules (most Scryfall rulings could not be read from a cloud session); a disagreeing ruling is a bug to report.
 
 - Explore emits no event and ignores APNAP order.
-- Day and night: only daybound and nightbound make it day or night, no condition reads it, and the check runs with the state-based actions, not between steps of one resolution.
+- Day and night: only daybound and nightbound set it, no condition reads it, and it settles with state-based actions.
 - Speed (CR 702.179) is not built; no duration lasts one combat.
 - "The copy targets that token" (CR 707.10e) takes the first legal token; no choice is asked.
 - Plot works from the hand with a mana cost; a card an effect makes plotted (CR 702.170c) and a plot ability working from another zone (CR 702.170f) are not built.
