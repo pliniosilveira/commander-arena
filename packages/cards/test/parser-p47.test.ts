@@ -214,7 +214,8 @@ describe('what the real planeswalkers still stop at (no card is half read)', () 
     ['Jace, the Mind Sculptor', /bottom of that player/],
     ['Nissa, Who Shakes the World', /noncreature land/],
     // Gideon Jura stopped at "attack ~ if able" until the First Flight decks taught the engine `requireAttackSource` (CR 508.1d).
-    ['Tamiyo, Compleated Sage', /Compleated/],
+    // Compleated is read now (CR 702.150a); the first line still unread is her +1.
+    ['Tamiyo, Compleated Sage', /Tap up to one target artifact or creature/],
     ['Narset, Parter of Veils', /can't draw more than one card/],
   ];
   test.each(stops)(
