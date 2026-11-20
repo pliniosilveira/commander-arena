@@ -28,6 +28,10 @@ export const EXPERIENCE_TITLE =
 export const ENERGY_TITLE =
   'Energy counters. {E} is paid by removing one energy counter from yourself; you keep them for the rest of the game (CR 107.14).';
 
+/** Speed (CR 702.179, 702.178): what raises it and what max speed is, for the chip's tooltip. */
+export const SPEED_TITLE =
+  'Speed. A player with a permanent with start your engines! has speed 1. Once each of their turns, when an opponent loses life, it goes up by 1, to at most 4. At 4 the player has max speed (CR 702.179).';
+
 /** The monarch designation (CR 725.2): what it does, for the chip's tooltip. */
 export const MONARCH_TITLE =
   'The monarch. Draws a card at the beginning of their own end step. A creature that deals combat damage to the monarch makes its controller the monarch (CR 725.2).';
@@ -282,7 +286,7 @@ export function PlayerStrip({
         data-seat={seat.id}
         aria-label={`${who}, ${seat.life} life${seat.poison > 0 ? `, ${seat.poison} poison` : ''}${seat.energy !== undefined && seat.energy > 0 ? `, ${seat.energy} energy` : ''}${seat.experience !== undefined && seat.experience > 0 ? `, ${seat.experience} experience` : ''}${
           view.monarch === seat.id ? ', the monarch' : ''
-        }${seat.citysBlessing === true ? ', has the city’s blessing' : ''}${seat.ringTempted === undefined ? '' : `, the Ring has tempted ${seat.ringTempted === 1 ? 'once' : `${seat.ringTempted} times`}`}${clickable ? ', can be chosen' : ''}`}
+        }${seat.citysBlessing === true ? ', has the city’s blessing' : ''}${seat.speed === undefined ? '' : `, speed ${seat.speed} of 4`}${seat.ringTempted === undefined ? '' : `, the Ring has tempted ${seat.ringTempted === 1 ? 'once' : `${seat.ringTempted} times`}`}${clickable ? ', can be chosen' : ''}`}
         aria-pressed={selected}
         tabIndex={clickable ? 0 : -1}
         onClick={() => {
@@ -335,6 +339,15 @@ export function PlayerStrip({
               data-citys-blessing={seat.id}
             >
               <span aria-hidden="true">{'✦ '}</span>City&rsquo;s blessing
+            </span>
+          )}
+          {seat.speed !== undefined && (
+            <span
+              className={`board-flag board-flag-speed${seat.speed >= 4 ? ' is-max' : ''}`}
+              title={SPEED_TITLE}
+              data-speed={seat.speed}
+            >
+              Speed {seat.speed}/4
             </span>
           )}
           {seat.ringTempted !== undefined && (

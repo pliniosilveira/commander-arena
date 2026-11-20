@@ -265,6 +265,11 @@ export function checkContinuousEffect(
         '"until the next untap step" is the duration of doesntUntap only',
       );
     }
+  } else if (e.kind === 'restrict' && e.duration === 'thisCombat') {
+    // CR 506.1, 508.1d, 611.2a: the one duration of "attacks this combat if able".
+    if (e.restriction !== 'attacksEachCombat') {
+      issue(out, `${path}.duration`, '"this combat" is the duration of attacksEachCombat only');
+    }
   } else if (!isOneOf(e.duration, DURATIONS)) {
     issue(out, `${path}.duration`, `unknown duration ${JSON.stringify(e.duration)}`);
   }

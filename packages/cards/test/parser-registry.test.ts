@@ -457,6 +457,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.living-weapon': asIs,
   // Stage P47: "~ can be your commander." is a line of its own.
   'keyword.can-be-commander': asIs,
+  // Issue 144 (CR 702.179a): "Start your engines!" is a line of its own.
+  'keyword.start-your-engines': asIs,
   'cost.loyalty': permanent((e) => `${e}: Draw a card.`),
   'cost.put-counters': permanent((e) => `{T}, ${e}: Draw a card.`),
   'cost.return-to-hand': permanent((e) => `{U}, ${e}: Draw a card.`),

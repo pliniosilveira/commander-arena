@@ -88,6 +88,7 @@ describe('the dimensions', () => {
       'forAsLongAsThisRemains',
       // D-517: "doesn't untap during its controller's next untap step".
       'untilNextUntapStep',
+      'thisCombat',
     ]);
     // Only what the interpreter runs: replacement and `conditional` conditions, and "was kicked".
     expect(SUPPORTED_FEATURES.conditionKinds).toEqual([
@@ -117,6 +118,7 @@ describe('the dimensions', () => {
       'amountIs',
       'amountIsPrime',
       'playerHasDesignation',
+      'maxSpeed',
       // D-235: "Activate only if this Class is level N".
       'classLevelIs',
       'lifeTotal',

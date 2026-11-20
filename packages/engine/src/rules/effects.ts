@@ -159,6 +159,7 @@ import { recordTogether } from './simultaneous';
 import { runPair } from './soulbond';
 import { objectOrLki, sourceInfo } from './source-info';
 import { runSpare, startSpare } from './spare';
+import { increaseSpeed } from './speed';
 import { done, type StepOutcome } from './step-outcome';
 import { runChooseTap } from './tap-choice';
 import { TIME_COUNTER } from './time-counter';
@@ -2492,6 +2493,18 @@ function runEffect(
         const had = getSeat(next, seat).experience ?? 0;
         next = patchSeat(next, seat, { experience: had + amount });
         events.push({ kind: 'experienceChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
+    case 'increaseSpeed': {
+      // CR 702.179c: no speed becomes that value; otherwise it goes up by the amount (rules/speed.ts).
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const raised = increaseSpeed(next, seat, amount);
+        next = raised.state;
+        events.push(...raised.events);
       }
       return done(next, events);
     }

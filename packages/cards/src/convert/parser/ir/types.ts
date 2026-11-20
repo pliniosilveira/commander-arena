@@ -629,7 +629,9 @@ export interface IrDuration extends IrNode {
     // "for as long as ~ remains on the battlefield" (stage P50, D-207, CR 611.2b): the effect of an ability of a permanent ends as that permanent leaves
     | 'whileSelfRemains'
     | 'asLongAs'
-    | 'thisTurn';
+    | 'thisTurn'
+    // "attacks this combat if able" (issue 144, CR 506.1, 508.1d, 611.2a): the requirement ends with the combat phase
+    | 'thisCombat';
   /** "for as long as you control a Dragon" */
   readonly condition?: IrCondition;
 }

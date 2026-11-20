@@ -618,6 +618,8 @@ export interface Expectations {
   ringLevel(seat: SeatId, tempted: number): void;
   /** `seat` has the city's blessing (CR 702.131c, D-264), or does not when `has` is false. */
   citysBlessing(seat: SeatId, has?: boolean): void;
+  /** `seat` has this speed (CR 702.179b), or no speed when `speed` is null. */
+  speed(seat: SeatId, speed: number | null): void;
   /** The Ring-bearer of `seat` is that permanent, or `seat` has none when `card` is null (CR 701.54e, D-196). */
   ringBearer(seat: SeatId, card: CardRef | null): void;
   /**

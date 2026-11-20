@@ -335,6 +335,21 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     }
     case 'playerHasDesignation':
       return designationWords(condition.player, condition.designation, negate);
+    case 'maxSpeed': {
+      // CR 702.179e: "you have max speed", "an opponent has max speed".
+      if (condition.player.kind === 'all') return null;
+      const who =
+        condition.player.kind === 'you'
+          ? 'you'
+          : condition.player.kind === 'eachOpponent'
+            ? 'an opponent'
+            : condition.player.kind === 'eachPlayer'
+              ? 'a player'
+              : playerSubject(condition.player).text;
+      const has = condition.player.kind === 'you' ? 'have' : 'has';
+      const hasNot = condition.player.kind === 'you' ? "don't have" : "doesn't have";
+      return `${who} ${negate ? hasNot : has} max speed`;
+    }
     case 'controlsGreatest':
       return greatestWords(condition, negate);
     case 'ownTurnNumber':

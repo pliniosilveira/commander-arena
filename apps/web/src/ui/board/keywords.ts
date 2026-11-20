@@ -74,6 +74,8 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],
   soulbond: ['Sbd', 'Soulbond'],
+  // Start your engines! (issue 144, CR 702.179a).
+  startYourEngines: ['Eng', 'Start your engines!'],
   // The upkeep slice (D-127).
   echo: ['Ech', 'Echo'],
   cumulativeUpkeep: ['CU', 'Cumulative upkeep'],

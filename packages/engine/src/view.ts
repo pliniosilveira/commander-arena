@@ -476,6 +476,8 @@ export interface SeatView {
   readonly ringTempted?: number;
   /** This player has the city's blessing (CR 702.131c, D-264): public, kept for the rest of the game. Absent until they get it. */
   readonly citysBlessing?: true;
+  /** This player's speed (CR 702.179b): 1 to 4. Public. Absent until they have one. */
+  readonly speed?: number;
   /** The energy counters this player has (CR 107.14, D-209). Public. Absent until the first time. */
   readonly energy?: number;
   /** The experience counters this player has (CR 122.1). Public. Absent until the first time. */
@@ -952,6 +954,7 @@ export function getView(state: GameState, viewer: SeatId): GameView {
       ),
       ...(s.ring === undefined ? {} : { ringTempted: s.ring.tempted }),
       ...(s.citysBlessing === true ? { citysBlessing: true as const } : {}),
+      ...(s.speed === undefined ? {} : { speed: s.speed }),
       ...(s.energy === undefined ? {} : { energy: s.energy }),
       ...(s.experience === undefined ? {} : { experience: s.experience }),
     };
