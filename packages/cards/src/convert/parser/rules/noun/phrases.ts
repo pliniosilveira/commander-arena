@@ -1034,6 +1034,8 @@ interface CardWords {
   readonly notSubtypes?: readonly string[];
   /** "nonlegendary creature card" (CR 205.4): supertypes the card does not have. */
   readonly notSupertypes?: readonly string[];
+  /** "nonland card" (issue 102, CR 205.2a): card types the card does not have. */
+  readonly notTypes?: readonly string[];
   /** Members of the choice that say more than a type (stage P68, D-230: "non-Aura enchantment"), after the types of `anyOf`. */
   readonly extra?: readonly IrFilter[];
   /** D-278: a choice of creature types ("Angel or Human creature card"): the card has one of them, besides the types. */
@@ -1104,6 +1106,11 @@ export function graveyardPhrase(
         map(literal('nonlegendary '), () => ['legendary']),
         [] as string[],
       ),
+      // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
+      optional(
+        map(literal('nonland '), () => ['land']),
+        [] as string[],
+      ),
       nonSubtypes,
       many(
         map(
@@ -1119,10 +1126,11 @@ export function graveyardPhrase(
         [] as string[],
       ),
     ),
-    ([notSupertypes, notSubtypes, subtypes, types]): CardWords => ({
+    ([notSupertypes, notTypes, notSubtypes, subtypes, types]): CardWords => ({
       types,
       anyOf: [],
       subtypes,
+      ...(notTypes.length > 0 ? { notTypes } : {}),
       ...(notSubtypes.length > 0 ? { notSubtypes } : {}),
       ...(notSupertypes.length > 0 ? { notSupertypes } : {}),
     }),
@@ -1224,10 +1232,10 @@ export function graveyardPhrase(
   const kindOfCard: Parser<IrFilter> = (ctx, pos) => {
     const r = sequence(typed, pattern(new RegExp(`card${BOUNDARY}`, 'iu')))(ctx, pos);
     if (!r.ok) return r;
-    const [{ types, subtypes, notSubtypes, notSupertypes }] = r.value;
+    const [{ types, subtypes, notSubtypes, notSupertypes, notTypes }] = r.value;
     if (types.length === 0 && subtypes.length === 0) return fail(ctx, pos);
     // A negated supertype inside a union is another reading, not built here.
-    if (notSupertypes !== undefined) return fail(ctx, pos);
+    if (notSupertypes !== undefined || notTypes !== undefined) return fail(ctx, pos);
     // A negated creature type inside a union is another reading, not built here.
     if (notSubtypes !== undefined) return fail(ctx, pos);
     return {
@@ -1302,7 +1310,7 @@ export function graveyardPhrase(
     )(ctx, pos);
     if (!r.ok) return r;
     const [
-      { types, anyOf, subtypes, notSubtypes, notSupertypes, extra, subtypeAnyOf },
+      { types, anyOf, subtypes, notSubtypes, notSupertypes, notTypes, extra, subtypeAnyOf },
       ,
       compared,
       atMostX,
@@ -1313,7 +1321,7 @@ export function graveyardPhrase(
     ] = r.value;
     const filter = toFilter(
       'graveyard',
-      { ...NO_PARTS, types, controller },
+      { ...NO_PARTS, types, controller, ...(notTypes === undefined ? {} : { notTypes }) },
       ctx.text.slice(pos, r.pos),
     );
     return {
