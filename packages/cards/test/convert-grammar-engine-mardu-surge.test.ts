@@ -497,3 +497,34 @@ describe('Angel of Invention: Fabricate 2 (CR 702.123a)', () => {
     g.expect.invariants();
   });
 });
+
+describe('Divine Visitation: creature tokens become 4/4 Angels (CR 614.1a, 111.2)', () => {
+  const visitation = real('Divine Visitation');
+  const adeline = real('Adeline, Resplendent Cathar');
+
+  test('the card is valid', () => {
+    expect(validateCard(visitation)).toEqual([]);
+  });
+
+  test('the token Adeline would create is a 4/4 white Angel with flying and vigilance instead', () => {
+    const g = scenario()
+      .define(visitation)
+      .define(adeline)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(visitation.name)
+      .battlefield(adeline.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: adeline.name }]);
+    g.passAll();
+    g.expect.zone('Human', 'battlefield', { count: 0 });
+    g.expect.zone('Angel', 'battlefield', { seat: 0, count: 1 });
+    g.expect.pt('Angel', 4, 4);
+    g.expect.derived('Angel', { keywords: ['flying', 'vigilance'], colors: ['W'] });
+    g.expect.invariants();
+  });
+});
