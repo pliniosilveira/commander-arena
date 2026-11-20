@@ -7,10 +7,16 @@ import { createRequestQueue, type RequestQueue } from '@commander-arena/cards';
 import { useEffect, useState } from 'react';
 import { type ArtVersion, type CardArt, parseCardArt } from './image-uris';
 
-/** The search for the special printings of one commander (a double-faced card is asked by its front face). */
-export function commanderArtQuery(name: string): string {
+const SPECIAL = '(is:borderless or is:extendedart or is:showcase or is:fullart)';
+
+/**
+ * The search for the special printings of one commander (a double-faced card is asked by its front face). A non-foil printing is
+ * asked for first; `anyFinish` also accepts a foil-only one, whose picture on Scryfall is a plain scan (a borderless commander of a
+ * Commander set is often foil-only).
+ */
+export function commanderArtQuery(name: string, anyFinish = false): string {
   const front = (name.split(' // ')[0] ?? name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `!"${front}" game:paper is:nonfoil (is:borderless or is:extendedart or is:showcase or is:fullart)`;
+  return `!"${front}" game:paper ${anyFinish ? '' : 'is:nonfoil '}${SPECIAL}`;
 }
 
 /**
@@ -64,14 +70,16 @@ export function useCommanderArt(name: string | null, version: ArtVersion): strin
   const query = name === null || name === '' ? null : commanderArtQuery(name);
   const [found, setFound] = useState<{ query: string; art: CardArt | null } | null>(null);
   useEffect(() => {
-    if (query === null) return;
+    if (query === null || name === null) return;
     let alive = true;
-    void lookup(query).then((art) => {
-      if (alive) setFound({ query, art });
-    });
+    void lookup(query)
+      .then((art) => art ?? lookup(commanderArtQuery(name, true)))
+      .then((art) => {
+        if (alive) setFound({ query, art });
+      });
     return () => {
       alive = false;
     };
-  }, [query]);
+  }, [query, name]);
   return found?.query === query ? (found?.art?.[version] ?? null) : null;
 }

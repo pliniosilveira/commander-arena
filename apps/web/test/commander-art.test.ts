@@ -23,6 +23,12 @@ test('the query asks for one commander by exact name, paper, non-foil, and a spe
   }
 });
 
+test('the second search also accepts a foil-only printing', () => {
+  expect(commanderArtQuery('Ghoulcaller Gisa')).toContain('is:nonfoil');
+  expect(commanderArtQuery('Ghoulcaller Gisa', true)).not.toContain('is:nonfoil');
+  expect(commanderArtQuery('Ghoulcaller Gisa', true)).toContain('is:borderless');
+});
+
 test('a double-faced name is asked by its front face and a quote in a name is escaped', () => {
   expect(commanderArtQuery('Front Name // Back Name')).toContain('!"Front Name"');
   expect(commanderArtQuery('A "Quoted" Name')).toContain('!"A \\"Quoted\\" Name"');
