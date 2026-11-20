@@ -638,6 +638,8 @@ describe('unmatched abilities', () => {
       'effect.deal-damage-to-its-controller',
       'effect.exile-top-each-library',
       'effect.cast-exiled-with-self',
+      'effect.look-exile-top-each-opponent',
+      'effect.may-play-exiled-with-self-free',
       'effect.reveal-top-then',
       'effect.look-top-put',
       'effect.they-become-creatures',
