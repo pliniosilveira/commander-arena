@@ -33,7 +33,7 @@ const untapped = (page: Page) =>
 const untappedOf = (page: Page, name: string) =>
   page.locator('[data-field-seat="0"] .board-tile:not(.is-tapped)', { hasText: name });
 const exileChip = (page: Page) =>
-  page.getByRole('region', { name: 'Cast from exile' }).locator('.board-exile-play');
+  page.getByRole('region', { name: 'Playable from other zones' }).locator('.board-exile-play');
 
 /** Plays on until `ready` holds, playing lands and keeping everything else in the hand. */
 async function playUntil(page: Page, ready: () => Promise<boolean>): Promise<void> {

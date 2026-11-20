@@ -252,10 +252,9 @@ test('an Adventure card in exile: the chip row, the zone list badge and the card
       </DecisionLayer>
     </StoreProvider>,
   );
-  expect(strip).toContain('aria-label="Cast from exile"');
+  expect(strip).toContain('aria-label="Playable from other zones"');
   expect(strip).toContain('aria-label="Cast from exile: Wise Owl"');
   expect(strip).toContain('board-exile-play-name">Wise Owl<');
-  expect(strip).not.toContain('Cast from your graveyard');
 
   const list = renderToStaticMarkup(
     <StoreProvider store={live(session.store)}>

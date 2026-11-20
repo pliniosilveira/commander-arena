@@ -128,3 +128,13 @@ describe('a card in another player’s hand is never the effect’s to play', ()
     expect(canCastDuringResolution(g.state, 0, bears)).toBe(true);
   });
 });
+
+describe('the view says which permanent exiled a Hideaway card', () => {
+  test('only the player who may look at it gets the source (the web shows the card as playable by that ability)', () => {
+    const g = stolen(BEARS);
+    const cache = g.id(CACHE);
+    const card = g.id({ name: BEARS, zone: 'exile', seat: 0 });
+    expect(getView(g.state, 1).exile.find((o) => o.id === card)?.hideawaySource).toBe(cache);
+    expect(getView(g.state, 0).exile.find((o) => o.id === card)?.hideawaySource).toBeUndefined();
+  });
+});
