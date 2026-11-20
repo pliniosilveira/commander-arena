@@ -1717,6 +1717,7 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         triggeredAbility: true,
         ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
+        ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
           ? { postcombatMainTrigger: true }

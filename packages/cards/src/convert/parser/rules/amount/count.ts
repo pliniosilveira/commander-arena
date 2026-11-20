@@ -166,6 +166,9 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
       if (filter.controller !== undefined) return fail(ctx, end);
       filter = { ...filter, attackingYou: true };
       end = attacking.pos;
+    } else if (filter.attacking === true && other.value && filter.controller === undefined) {
+      // CR 508.1k (Ghalta and Mavren): "other attacking creatures" names the objects by what they do, whoever controls them, and needs no "on the battlefield".
+      // Only with "other": the creatures attacking besides the source.
     } else if (filter.controller === undefined) {
       const targeted = TARGET_PLAYER_CONTROLS(ctx, end);
       // Death Toll deck, group D (CR 109.4, 608.2c): "the greatest power among creatures they control": "they" is the player the text names before, which the binding pass finds.
