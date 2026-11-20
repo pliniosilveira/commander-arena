@@ -259,11 +259,20 @@ const COPY_IF_TARGETS =
 const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
 const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
 
+/**
+ * "You may cast it this turn, and mana of any type can be spent to cast that spell. If that spell would be put into a graveyard, exile it instead." (Dire Fleet Daredevil, CR 614.1a): the second
+ * sentence is a rider of the permission the first gives, so the two are read as one (`effect.may-cast-any-type`).
+ */
+const EXILE_INSTEAD_SENTENCE = /^if that spell would be put into a graveyard, exile it instead\.$/i;
+const MAY_CAST_ANY_TYPE_END =
+  /(?:^|, )(?:you may )?cast (?:it|that card) this turn, and mana of any type can be spent to cast that spell\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
   const said = text.slice(span.start, span.end);
   const beforeText = text.slice(before.start, before.end);
+  if (EXILE_INSTEAD_SENTENCE.test(said)) return MAY_CAST_ANY_TYPE_END.test(beforeText);
   if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
