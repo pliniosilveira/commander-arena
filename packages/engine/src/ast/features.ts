@@ -1462,6 +1462,9 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'ward',
   // D-640: annihilator (CR 702.86): "Enchanted creature has annihilator 2"; each instance granted triggers separately (CR 702.86b), like afflict's.
   'annihilator',
+  // CR 702.116a (Myriad): given to a creature by a static ability or an effect ("Creatures you control have myriad"). The engine has two players in a game, so there is never an
+  // opponent other than the defending player and the ability has nothing to do (`docs/ROADMAP.md`); a grant is read as the keyword, which the creature then has.
+  'myriad',
   // D-473: landwalk (CR 702.14): the land type is part of the keyword, and one kind twice is redundant (CR 702.14e).
   'landwalk',
 ];
