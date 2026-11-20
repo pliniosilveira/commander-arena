@@ -644,6 +644,7 @@ describe('unmatched abilities', () => {
       'effect.player-reveals-until-you-put',
       'effect.controller-reveals-until-puts',
       'effect.lead-becomes-land-creature-keywords',
+      'effect.it-becomes-land-creature-keywords',
       'effect.put-any-number-from-hand',
       'effect.player-gets-emblem',
       'effect.repeat-process-again',
