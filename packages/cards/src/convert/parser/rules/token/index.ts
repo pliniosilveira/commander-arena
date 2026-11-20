@@ -82,6 +82,7 @@ const PREDEFINED = [
   'Map',
   'Gingerbrute',
   'Lander',
+  'Wicked Role',
   'Blood',
 ] as const;
 type Predefined = (typeof PREDEFINED)[number];
@@ -133,6 +134,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'a Gingerbrute token',
     // CR 111.10u (Horizon Explorer, Seedship Impact).
     'a Lander token',
+    // CR 111.10, 303.7 (Witch's Mark): a Role token.
+    'a Wicked Role token',
     'X Treasure tokens',
     'X Food tokens',
     'a tapped Treasure token',
@@ -147,6 +150,8 @@ export const TOKEN_PREDEFINED = defineRule<IrToken>({
     'Y Treasure tokens',
     'a tapped Treasure',
     'a tapped tapped Treasure token',
+    'a Wicked token',
+    'a Role token',
   ],
   parse: node<Bare, IrToken>('token.predefined', predefinedToken(COUNT), (b) => b),
 });

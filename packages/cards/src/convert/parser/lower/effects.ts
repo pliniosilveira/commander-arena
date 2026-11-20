@@ -1999,6 +1999,20 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const blocked = missingFeatures([`token:${name}`]);
     if (blocked.length > 0) return { ok: false, needs: blocked, ...at };
     if (name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
+    // CR 111.10, 303.7: a Role token is an Aura token; the engine creates it only attached to the target the text names (`createToken.attachTo`).
+    let attachTo: { kind: 'target'; id: string } | undefined;
+    const host = arg(clause, 'attachTo');
+    if (name === 'Wicked Role') {
+      if (host?.kind !== 'noun' || host.det !== 'target' || count.value !== 1) {
+        return { ok: false, needs: [], ...at };
+      }
+      const ref = objectRefOf(host, ctx);
+      if (!ref.ok) return ref;
+      if (ref.value.kind !== 'target') return failure(clause);
+      attachTo = { kind: 'target', id: ref.value.id };
+    } else if (host !== undefined) {
+      return failure(clause);
+    }
     return {
       ok: true,
       value: [
@@ -2008,6 +2022,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
           count: count.value,
           ...entersTapped,
           ...by,
+          ...(attachTo === undefined ? {} : { attachTo }),
         },
       ],
       rule: clause.rule,
