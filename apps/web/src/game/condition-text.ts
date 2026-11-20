@@ -471,6 +471,9 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'yourMainPhase':
       // D-187 (CR 505.1): "if it's your main phase".
       return `it's ${negate ? 'not ' : ''}your main phase`;
+    case 'clashWon':
+      // CR 701.30d: "if you win" the clash.
+      return negate ? 'you did not win the clash' : 'you win the clash';
     case 'dieResult': {
       // D-271 (CR 706.2, 706.3a): "if the result is 1", "if the result is 4 or more".
       const { cmp, value } = condition.compare;

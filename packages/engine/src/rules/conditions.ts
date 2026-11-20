@@ -88,6 +88,8 @@ export interface ConditionContext {
   readonly performed?: number;
   /** The result of the latest die the resolution rolled, for `dieResult` (D-271). Absent where none was rolled, which fails that condition closed. */
   readonly dieResult?: number;
+  /** Whether the controller won the latest clash of the resolution, for `clashWon` (CR 701.30d). Absent where none happened, which fails that condition closed. */
+  readonly clashWon?: boolean;
   /** What the earlier instructions of this resolution did, for `thisWayAtLeast` (D-210). */
   readonly thisWay?: ThisWayCounts;
   /** For `attackersAttackedYou` (D-149): the players the creatures of the trigger's attack event were declared as attacking. */
@@ -593,6 +595,9 @@ export function evaluateCondition(
           (s) => s.seat === ctx.controller && s.fromGraveyard === true,
         ) || state.turnLog.activated.some((a) => a.fromGraveyard === ctx.controller)
       );
+    case 'clashWon':
+      // CR 701.30d: the controller revealed a card with a higher mana value than every other card revealed in the clash earlier in this resolution.
+      return ctx.clashWon === true;
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die rolled earlier in this resolution against the number; no die rolled, no result.
       if (ctx.dieResult === undefined) return false;

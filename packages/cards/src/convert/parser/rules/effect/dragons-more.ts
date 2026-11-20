@@ -473,6 +473,54 @@ export const EFFECT_DISCARD_ANY_NUMBER = defineRule<Clauses>({
 });
 
 /**
+ * `effect.discard-up-to`: "discard up to two cards" (CR 701.9, 107.1c): the player chooses none to that many cards of their hand. What was discarded is what "that many" counts afterwards. Only
+ * a number, only cards of any kind and only the controller ("discards" with a subject is not read here).
+ */
+export const EFFECT_DISCARD_UP_TO = defineRule<Clauses>({
+  id: 'effect.discard-up-to',
+  family: 'effect',
+  leading: ['discard'],
+  cites: [
+    'CR 701.9 (Discard)',
+    'CR 107.1c (Numbers)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: ['discard up to two cards', 'Discard up to three cards', 'discard up to one card'],
+  rejects: [
+    'discard up to two',
+    'discard up to X cards',
+    'discard up to two creature cards',
+    'discard up to two cards at random',
+    'discards up to two cards',
+    'discard up to two cards and draw a card',
+    'discard any number of cards',
+    'discard two cards',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.discard-up-to';
+    const r = sequence(
+      spanned(pattern(/discard up to /iu)),
+      family<IrAmount>('amount', { only: ['amount.number'] }),
+      pattern(new RegExp(` cards?${BOUNDARY}`, 'iu')),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [lead, amount] = r.value;
+    return {
+      ok: true,
+      value: [
+        makeClause(
+          id,
+          'discard',
+          { player: impliedYou(id, pos), amount, upTo: flag(id, true, lead.span) },
+          lead.span,
+        ),
+      ],
+      pos: r.pos,
+    };
+  },
+});
+
+/**
  * `effect.mana-rider-scry`: "When that mana is spent to cast a creature spell that shares a creature type with your commander, scry 1." (CR 106.6, 603.2,
  * 701.22a, 903.3: mana a mana ability adds may carry an ability that triggers when it is spent on a spell; here the controller of the permanent scries). Like
  * `effect.mana-rider` it says something about the mana ability before it, which the lowering of that ability reads. Only the spell that shares a creature type with
@@ -640,4 +688,5 @@ export const DRAGON_LIBRARY_EFFECT_RULES = [
   EFFECT_MANA_RIDER_COUNTERS_COMMANDER,
   EFFECT_DAMAGE_OTHER_TARGETS,
   EFFECT_DISCARD_ANY_NUMBER,
+  EFFECT_DISCARD_UP_TO,
 ].map(quietly);

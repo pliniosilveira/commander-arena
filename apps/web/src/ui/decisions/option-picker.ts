@@ -22,6 +22,8 @@ export function optionPrompt(
   if (d.purpose === 'assignOpponent') {
     return `Choose a different opponent to gain control of a permanent (${d.sourceName}).`;
   }
+  // CR 701.30b: "clash with an opponent".
+  if (d.purpose === 'clashOpponent') return `Choose an opponent to clash with (${d.sourceName}).`;
   // D-151: a choice among names the card gives, or the chapter a Saga with read ahead starts with.
   if (
     (d.purpose === 'option' ||

@@ -128,6 +128,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'vote') return chooseVote(d);
   // Issue 81 (Dack Fayden): which opponent gains control of a permanent. Nothing in the agent's plans reads it, so the first opponent left, deterministic and always legal.
   if (d.purpose === 'assignOpponent') return chooseFirstReplacement(d);
+  // CR 701.30b: "clash with an opponent": which opponent. Nothing in the agent's plans reads it, so the first, deterministic and always legal.
+  if (d.purpose === 'clashOpponent') return chooseFirstReplacement(d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);
   // CR 122.1, 122.5, 608.2d: the counter to remove or move next (casual-counter-pick.ts).

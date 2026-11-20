@@ -23,11 +23,27 @@ export const ROLL: Lowering<IrClause, Effects> = {
   },
 };
 
-export const ARDEN_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [ROLL];
+/**
+ * `clash`: "clash with an opponent" (CR 701.30b), the engine's `clash`. One clash in a text: "if you win" would otherwise name one of two (as for the roll).
+ */
+export const CLASH: Lowering<IrClause, Effects> = {
+  head: 'clash',
+  id: 'lower.clash',
+  needs: ['effect:clash'],
+  lower: (clause, ctx) => {
+    if (ctx.clashed) return failure(clause);
+    ctx.clashed = true;
+    return { ok: true, value: [{ kind: 'clash' }], rule: clause.rule };
+  },
+};
+
+export const ARDEN_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [ROLL, CLASH];
 
 /** The features the lowerings of this file and its conditions name, for the dimension test. */
 export const ARDEN_NEEDS = [
   'effect:rollDie',
+  'effect:clash',
+  'condition:clashWon',
   'condition:dieResult',
   'condition:thisInYourGraveyard',
   'ability:functionsInGraveyard',

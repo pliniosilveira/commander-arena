@@ -1395,6 +1395,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'setLifeTotal':
       // D-201 (CR 119.5): "Target player's life total becomes 1".
       return `${capital(playerOwner(effect.player, ability))} life total becomes ${effect.amount}`;
+    case 'exchangeLifeWithPt':
+      // CR 701.12g: "Exchange target opponent's life total with this creature's toughness".
+      return `Exchange ${playerOwner(effect.player, ability)} life total with ${effect.object.kind === 'this' ? "this permanent's" : "that permanent's"} ${effect.stat}`;
     case 'reselectAttack':
       // D-139 (CR 508.7).
       return `Reselect which player or permanent ${object(effect.objects)} is attacking`;
@@ -1710,6 +1713,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
       return PROLIFERATE_TEXT;
     case 'shuffle':
       return 'Shuffle your library';
+    case 'clash':
+      // CR 701.30b: "Clash with an opponent".
+      return 'Clash with an opponent';
     case 'rollDie':
       // CR 706.1 (D-271): "Roll a four-sided die".
       return `Roll a ${effect.sides}-sided die`;

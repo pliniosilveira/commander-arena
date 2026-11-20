@@ -28,6 +28,8 @@ export interface StepOutcome {
   readonly performed?: number;
   /** The result of a die this instruction rolled, which becomes `ResolutionContext.dieResult` (D-271). */
   readonly dieResult?: number;
+  /** Whether the controller won the clash this instruction finished, which becomes `ResolutionContext.clashWon` (CR 701.30d). */
+  readonly clashWon?: boolean;
   /** Set by a `may` effect as it comes up: `ResolutionContext.performed` starts again at 0 (D-135). */
   readonly resetPerformed?: true;
 }

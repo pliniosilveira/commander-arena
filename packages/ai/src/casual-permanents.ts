@@ -338,8 +338,21 @@ function answerExert(d: ConfirmOptionalDecision, view: GameView): Action {
   return target ? { kind: 'acceptOptional' } : { kind: 'declineOptional' };
 }
 
+/**
+ * "Put the card you revealed on the bottom of your library?" after a clash (CR 701.30a, 701.30c): a land goes to the bottom when the agent already has the lands it needs
+ * (five on the battlefield), a spell with a mana value of 0 or 1 always does, and anything else stays on top, to be drawn. A card the view does not show stays.
+ */
+function answerClash(d: ConfirmOptionalDecision, view: GameView): Action {
+  const card = d.subject === undefined ? undefined : findObject(view, d.subject);
+  if (card === undefined) return { kind: 'declineOptional' };
+  const lands = view.battlefield.filter((o) => o.controller === view.viewer && isLand(o)).length;
+  const bottom = isLand(card) ? lands >= 5 : manaValueOf(card) <= 1;
+  return bottom ? { kind: 'acceptOptional' } : { kind: 'declineOptional' };
+}
+
 export function confirmOptional(d: ConfirmOptionalDecision, view: GameView): Action {
   if (d.purpose === 'exert') return answerExert(d, view);
+  if (d.purpose === 'clash') return answerClash(d, view);
   // "You may cast that card without paying its mana cost" (Cascade, CR 702.85a): a free spell, always.
   if (d.purpose === 'cascade') return { kind: 'acceptOptional' };
   // "As many times as you choose, you may exile the top card of your library" (D-662): each card exiled is a free spell if the total mana value stays at 13 or less. The agent

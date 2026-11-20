@@ -1226,7 +1226,7 @@ export interface TargetSpec {
   /**
    * "Deals X damage divided as you choose among any number of target creatures" (CR 601.2d, D-145): the caster divides `total` among the
    * targets of this slot as the spell is cast, each target getting at least 1. `total` is read once, as the spell is cast ("where X is the
-   * greatest power among creatures you control as you cast this spell"): any amount that reads the game then (no X, no target). `max`
+   * greatest power among creatures you control as you cast this spell"): any amount that reads the game then (no target), or the X a spell's own text announces ("pay X life"). `max`
    * left out means any number (at most `total`, as each target needs 1); `min` defaults to 0 here. With a total of 0 no target can be chosen.
    * Only a slot of a spell's own text or of an activated or triggered ability (CR 601.2d, 602.2b, 603.3d: the division is announced as the ability is put on
    * the stack), not of a mode or a reflexive ability; a `dealDividedDamage` effect of the same spell or ability must name it.
@@ -3111,6 +3111,11 @@ export type Effect =
        */
       readonly anyNumber?: true;
       /**
+       * "Discard up to two cards" (CR 701.9, 107.1c; Cathartic Pyre): the player chooses none, one or as many as `count` of the cards in their hand (all of a smaller hand may be chosen). What was
+       * discarded is what a later `thisWay` `discarded` amount counts ("then draw that many cards"). Never with `anyNumber`, `hand`, `random`, `unless` or `together`.
+       */
+      readonly upTo?: true;
+      /**
        * "Each player discards their hand" (Lorehold group 3, CR 701.9a, 402.1): every card of the hand of each player the selector names, as many as that player's hand holds when the
        * instruction comes up (so the plural selectors discard each their own hand); nobody chooses. `count` is 0 and unread. Never with `anyNumber`, `unless` or `random`.
        */
@@ -3153,6 +3158,19 @@ export type Effect =
    * that total). `amount` can read a current player life total and perform arithmetic on it.
    */
   | { readonly kind: 'setLifeTotal'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
+   * "Exchange target opponent's life total with this creature's toughness" (CR 701.12a, 701.12g, 119.5, 119.7, 119.8, 613.4b): the one player `player` names and the one permanent `object`
+   * names swap the values: the player gains or loses the life that makes their life total equal the permanent's `stat` as the effect resolves (replacement effects may modify it, and
+   * the life gained or lost triggers what it triggers), and a continuous effect of layer 7b with no end sets the permanent's base `stat` to the life total the player had. If the entire
+   * exchange can't be completed (the player has left the game or the permanent is not on the battlefield, no `stat` of it, a player who can't gain life would be given a higher total, or whose
+   * life total can't change would be given another) nothing happens (CR 701.12a). A player who can't lose life is not read (the engine has no such effect).
+   */
+  | {
+      readonly kind: 'exchangeLifeWithPt';
+      readonly player: PlayerSelector;
+      readonly object: ObjectRef;
+      readonly stat: 'power' | 'toughness';
+    }
   /**
    * CR 701.26a (Tap). `objects` may (D-139) be a `choose` selector, "you may tap X untapped Myr you control" (`anyNumber`, the
    * controller chooses none, some or all of the untapped permanents they control that match, so the X is how many they chose) or
@@ -3785,6 +3803,14 @@ export type Effect =
    * rerolls and triggers on a roll are not built (`docs/ROADMAP.md`).
    */
   | { readonly kind: 'rollDie'; readonly sides: number }
+  /**
+   * "Clash with an opponent" (CR 701.30a-d, 701.30b): the controller chooses an opponent (nothing is asked with one opponent in the game; with none the effect does nothing), then the two
+   * each reveal the top card of their library at the same time (a player with no card reveals none), then the two decide in turn order (CR 101.4) whether to put the card they revealed on the
+   * bottom of their library, and the cards move at the same time. The controller wins the clash if the card they revealed has a higher mana value than every other card revealed (CR 701.30d):
+   * the condition `clashWon` of a later `conditional` or `repeatWhile` of the same resolution reads it. A later clash of the same resolution replaces it. Only the controller clashing
+   * with an opponent: "each player clashes", "clash with target opponent" and a clash that more than two players join are not built.
+   */
+  | { readonly kind: 'clash' }
   /**
    * CR 701.22 (Scry): look at the top `count` cards of the library, put any number of them on the
    * bottom in any order and the rest on top in any order. `player` is left out or `you`: the
@@ -5992,6 +6018,11 @@ export type Condition =
    * Only in a `conditional` after a `rollDie` of the same sequence (`validateCard` checks it); false if no die was rolled.
    */
   | { readonly kind: 'dieResult'; readonly compare: NumberComparison }
+  /**
+   * "If you win" after "clash with an opponent" (CR 701.30d): the controller won the latest `clash` of this resolution. Only in a `conditional` or a `repeatWhile` after a `clash` of the
+   * same sequence (`validateCard` checks it); false if no clash happened.
+   */
+  | { readonly kind: 'clashWon' }
   /**
    * "If this card is in your graveyard" (CR 113.6b, 603.4, D-271): the source of the condition is an object that is in its owner's graveyard, and the
    * controller of the condition is that owner. Read from the object itself (not from last-known information: once the card leaves, it is a new object

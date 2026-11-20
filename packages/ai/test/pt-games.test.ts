@@ -148,8 +148,8 @@ function expectedPt(state: GameState, id: ObjectId): Pt | null {
   // 7b: the last effect that sets base values.
   for (const e of state.continuousEffects) {
     if (e.change.kind === 'setPt' && e.objects.includes(id)) {
-      power = e.change.power;
-      toughness = e.change.toughness;
+      power = e.change.power ?? power;
+      toughness = e.change.toughness ?? toughness;
     }
   }
   // 7c: counters, effects that modify, the statics of the permanents attached and the lords.

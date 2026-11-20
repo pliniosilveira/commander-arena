@@ -1427,6 +1427,23 @@ export type Instruction =
    */
   | { readonly kind: 'exileAnyNumber'; readonly answer: boolean | null }
   /**
+   * "Clash with an opponent" (`clash`, CR 701.30): `opponent` is the opponent who clashes with the controller (null until chosen, `chosen` the option answered, `seat:<n>`), `revealed` the card
+   * each clashing player revealed and its mana value (null until they are revealed), `decisions` whether each player who revealed one has decided to put it on the bottom (in turn order), each recorded as the player answers. See rules/clash.ts.
+   */
+  | {
+      readonly kind: 'clash';
+      readonly opponent: SeatId | null;
+      readonly chosen: string | null;
+      readonly revealed:
+        | readonly {
+            readonly seat: SeatId;
+            readonly card: ObjectId;
+            readonly value: number;
+          }[]
+        | null;
+      readonly decisions: readonly { readonly seat: SeatId; readonly bottom: boolean }[];
+    }
+  /**
    * "Look at the top six cards of your library. You may reveal an artifact card from among them and put it into your hand. Put the rest
    * on the bottom of your library in a random order" (`lookAtTop`, D-139), in two stages: `take` looks, asks which matching cards to take
    * (`chosen` is null until answered; no question when none matches) and moves them to the hand; `rest` puts `left` (the cards looked at
@@ -1549,6 +1566,8 @@ export type Instruction =
       readonly unless?: ObjectFilter;
       /** "Discard any number of cards" (`discard.anyNumber`, D-151): the player chooses none, some or all of the hand. */
       readonly anyNumber?: true;
+      /** "Discard up to two cards" (`discard.upTo`, CR 701.9, 107.1c): the player chooses none to `count` of the hand. */
+      readonly upTo?: true;
       /** "Discard a card at random" (`discard.random`, D-209, CR 701.9b): the cards come from the hand as the game's generator picks them. */
       readonly random?: true;
       /** "Discards their hand" (`discard.hand`, CR 701.9a): the whole hand of `seat` as the instruction comes up; `count` is unread. */
@@ -2018,6 +2037,8 @@ export interface ResolutionContext {
   readonly performed?: number;
   /** The natural result of the latest `rollDie` of this resolution (CR 706.2, D-271), which the condition `dieResult` reads. Absent until a die is rolled. */
   readonly dieResult?: number;
+  /** Whether the controller won the latest `clash` of this resolution (CR 701.30d), which the condition `clashWon` reads. Absent until a clash happens. */
+  readonly clashWon?: boolean;
   /**
    * The keys answered so far to the replacement questions (CR 616.1, D-191) of the instruction at the head of the queue, in the order the
    * questions came: the damage it deals is simulated again with them (nothing is dealt until no question is left) and the next question, if
@@ -2213,7 +2234,8 @@ export type ContinuousChange =
    */
   | { readonly kind: 'nextSpellLife'; readonly seat: SeatId }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
-  | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
+  /** `null` leaves that characteristic as the other effects before it set it (CR 701.12g: an exchange sets only a power or only a toughness). */
+  | { readonly kind: 'setPt'; readonly power: number | null; readonly toughness: number | null }
   | { readonly kind: 'loseAllAbilities' }
   /**
    * "It loses \"enchant creature card in a graveyard\" and gains \"enchant creature put onto the battlefield with this Aura\"" (`replaceEnchant`, CR 613.1f): layer 6, at the effect's timestamp

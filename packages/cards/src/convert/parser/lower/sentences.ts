@@ -1022,8 +1022,12 @@ function lowerRepeatWhile(
     steps.length !== 1 ||
     process === undefined ||
     ctx.targets.length > 0 ||
-    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same).
-    process.effects[process.effects.length - 1]?.kind !== 'mill'
+    // Each pass takes cards out of a library, so the repeat ends (`validateCard` asks the same): a mill, or cards drawn before a clash (CR 701.30d, Hoarder's Greed).
+    !(
+      process.effects[process.effects.length - 1]?.kind === 'mill' ||
+      (process.effects[process.effects.length - 1]?.kind === 'clash' &&
+        process.effects.some((e) => e.kind === 'draw'))
+    )
   ) {
     return refuse(sentence);
   }
@@ -1774,7 +1778,9 @@ function countsWhatHappened(
       // Issue 121 (Bloodthirsty Adversary): "pay {2}{R} any number of times. When you pay this cost one or more times, put that many +1/+1 counters": the number of times paid.
       earlier.verb === 'payAnyNumberOfTimes' ||
       (earlier.verb === 'discard' &&
-        (earlier.args.anyNumber !== undefined || earlier.args.allCards !== undefined))
+        (earlier.args.anyNumber !== undefined ||
+          earlier.args.upTo !== undefined ||
+          earlier.args.allCards !== undefined))
     );
   }
   const [word] = amount.words;

@@ -174,6 +174,8 @@ export interface Scope {
   readonly mayAvailable?: boolean;
   /** The number of sides of the latest `rollDie` earlier in the same sequence: the condition `dieResult` reads its result (CR 706.2, D-271). */
   readonly dieSides?: number;
+  /** True after a `clash` earlier in the same sequence: the condition `clashWon` reads who won it (CR 701.30d). */
+  readonly clashed?: boolean;
   /** True in the effect of a delayed trigger whose creating sequence exiled cards before it: `exiledStillThere` has cards to count (D-151). */
   readonly exiledStillThere?: boolean;
 }
@@ -3413,6 +3415,14 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         issue(out, `${path}.atLeast`, 'atLeast must be a positive integer');
       }
       break;
+    case 'clashWon':
+      // CR 701.30d: who won a clash is read in the `conditional` or `repeatWhile` after the clash (`checkEffectCondition`), nowhere else.
+      issue(
+        out,
+        path,
+        'clashWon reads the clash earlier in the same resolution: it is only valid in a conditional effect after a clash of the same sequence',
+      );
+      break;
     case 'dieResult':
       // D-271, CR 706.2: the result of a die is read in the `conditional` effect after the roll (`checkEffectCondition`), nowhere else.
       issue(
@@ -4626,6 +4636,12 @@ function checkEffectCondition(c: Condition, path: string, scope: Scope, out: Out
         issue(out, `${path}.count`, 'a count of one or more');
       }
       break;
+    case 'clashWon':
+      // CR 701.30d: "If you win": the clash earlier in the same sequence.
+      if (scope.clashed !== true) {
+        issue(out, path, 'clashWon needs a clash before it in the same sequence');
+      }
+      break;
     case 'dieResult': {
       // D-271, CR 706.2, 706.3a: "If the result is 1", "if the result is 4 or more": a number a die of the roll can show.
       const sides = scope.dieSides;
@@ -4847,6 +4863,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           if (child?.kind === 'rollDie' && isCount(child.sides)) {
             after = { ...after, dieSides: child.sides };
           }
+          // CR 701.30d: after a clash, the condition `clashWon` can read who won it.
+          if (child?.kind === 'clash') after = { ...after, clashed: true };
           // D-194: after a vote, the amount `votesFor` can read the tally of its options.
           if (child?.kind === 'vote' && Array.isArray(child.options)) {
             after = { ...after, voteOptions: child.options };
@@ -5086,17 +5104,29 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         issue(out, `${path}.effects`, 'a repeated process needs at least one effect');
         break;
       }
-      if (e.effects[e.effects.length - 1]?.kind !== 'mill') {
+      // CR 701.30d (Hoarder's Greed): or a process that draws cards and ends in a clash, repeated while the controller wins it; each pass draws, so the repeat ends when a library does.
+      const clashes =
+        e.effects[e.effects.length - 1]?.kind === 'clash' &&
+        e.effects.some((child) => child?.kind === 'draw');
+      if (e.effects[e.effects.length - 1]?.kind !== 'mill' && !clashes) {
         issue(
           out,
           `${path}.effects`,
-          'the repeated process ends with a mill (each pass takes cards out of a library, so the repeat ends)',
+          'the repeated process ends with a mill (each pass takes cards out of a library, so the repeat ends), or draws cards and ends with a clash',
         );
       }
       checkEffect({ kind: 'sequence', effects: e.effects }, `${path}.effects`, scope, out);
-      const after = { ...scope, movedAvailable: true };
+      const after = { ...scope, movedAvailable: true, ...(clashes ? { clashed: true } : {}) };
       checkEffectCondition(e.condition, `${path}.condition`, after, out);
-      if (e.condition?.kind !== 'objectMatches' || kindOf(e.condition.of) !== 'moved') {
+      if (clashes) {
+        if (e.condition?.kind !== 'clashWon') {
+          issue(
+            out,
+            `${path}.condition`,
+            'the test of a repeated clash reads who won it (clashWon)',
+          );
+        }
+      } else if (e.condition?.kind !== 'objectMatches' || kindOf(e.condition.of) !== 'moved') {
         issue(
           out,
           `${path}.condition`,
@@ -6670,6 +6700,23 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           );
         }
       }
+      // CR 701.9, 107.1c: "Discard up to N cards": the player chooses how many, up to `count`, so no other way of choosing goes with it.
+      if (e.kind === 'discard' && e.upTo !== undefined) {
+        if (
+          e.upTo !== true ||
+          e.anyNumber !== undefined ||
+          e.hand !== undefined ||
+          e.random !== undefined ||
+          e.unless !== undefined ||
+          e.together !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.upTo`,
+            'upTo is true, and goes with none of anyNumber, hand, random, unless or together',
+          );
+        }
+      }
       // D-139: "discard N cards unless you discard an artifact card": a filter of the cards in the hand.
       if (e.kind === 'discard' && e.unless !== undefined) {
         checkFilter(e.unless, `${path}.unless`, out);
@@ -6771,6 +6818,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player wins the game: name a single player');
+      }
+      break;
+    case 'exchangeLifeWithPt':
+      // CR 701.12g: one player and one permanent swap their values.
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      if (
+        e.player.kind === 'eachOpponent' ||
+        e.player.kind === 'eachOtherOpponent' ||
+        e.player.kind === 'eachPlayerExcept' ||
+        e.player.kind === 'all'
+      ) {
+        issue(out, `${path}.player`, 'an exchange is made by one player: name a single player');
       }
       break;
     case 'setLifeTotal':
@@ -7195,6 +7254,9 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'noMaxHandSizeForGame':
       // CR 402.2: no parameters; it is the controller's.
+      break;
+    case 'clash':
+      // CR 701.30b: the controller clashes with an opponent; no parameters.
       break;
     case 'rollDie':
       // CR 706.1a (D-271): a die has N equally likely outcomes numbered 1 to N; the engine draws from the generator with `nextInt`, which takes up to 2^32.
