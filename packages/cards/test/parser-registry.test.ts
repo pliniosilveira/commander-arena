@@ -431,6 +431,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.this-counter-count': permanent(
     (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
   ),
+  // Prize Pig: the counters of one kind on ~, in the "Then if" sentence after the counters an instruction put on.
+  'condition.there-are-counters-on-self': permanent(
+    (e) => `Whenever you gain life, put that many +1/+1 counters on ~. Then if ${e}, draw a card.`,
+  ),
   'condition.this-is-token': permanent((e) => `When ~ enters, if ${e}, draw a card.`),
   'static.each': asIs,
   'static.conditional-prefix': asIs,

@@ -5,7 +5,7 @@ import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
 import { fromGoldenCard, importCard, parseGolden } from '../src/index';
-import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
+import { NO_OVERRIDES, parsed, parseOnly, spellCard } from './convert-grammar-helpers';
 
 const GOLDEN = parseGolden(
   readFileSync(new URL('./fixtures/corpus/golden.jsonl', import.meta.url), 'utf8'),
@@ -25,6 +25,8 @@ function real(name: string): CardDefinition {
 const FILLER = Array.from({ length: 10 }, () => 'Plains');
 /** SYNTHETIC: gains the controller 3 life. */
 const SIP = parsed('Synthetic Sip', 'Instant', 'You gain 3 life.', { manaCost: '{W}' });
+/** SYNTHETIC: gains the controller 2 life. */
+const TWO = parsed('Synthetic Two', 'Instant', 'You gain 2 life.', { manaCost: '{W}' });
 /** SYNTHETIC: loses the controller 3 life. */
 const NICK = parsed('Synthetic Nick', 'Instant', 'You lose 3 life.', { manaCost: '{B}' });
 
@@ -155,5 +157,80 @@ describe('Field-Tested Frying Pan', () => {
     g.expect.pt('Halfling', 4, 4);
     g.advanceTo('upkeep', { turn: 'next' });
     g.expect.pt('Halfling', 1, 1);
+  });
+});
+
+describe('Prize Pig', () => {
+  const pig = real('Prize Pig');
+  const start = (options: { tapped: boolean }) =>
+    scenario()
+      .define(pig)
+      .define(SIP)
+      .define(TWO)
+      .seat(0)
+      .battlefield(pig.name, { tapped: options.tapped })
+      .battlefield('Plains', 'Plains', 'Plains')
+      .hand(SIP.name, TWO.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(pig)).toEqual([]);
+  });
+
+  test('two life gains below three counters leave the counters and the tap', () => {
+    const g = start({ tapped: true });
+    g.act(0).cast(TWO.name).pay();
+    g.passAll();
+    g.expect.counters(pig.name, { ribbon: 2 });
+    g.expect.tapped(pig.name, true);
+  });
+
+  test('three counters are removed and the Pig untaps (the counters of every gain add up)', () => {
+    const g = start({ tapped: true });
+    g.act(0).cast(TWO.name).pay();
+    g.passAll();
+    g.act(0).cast(SIP.name).pay();
+    g.passAll();
+    // 2 + 3 = 5 ribbon counters: three or more, so all of them come off.
+    g.expect.counters(pig.name, {});
+    g.expect.tapped(pig.name, false);
+    g.expect.invariants();
+  });
+
+  test('already untapped, the counters still come off (ruling 2023-06-16)', () => {
+    const g = start({ tapped: false });
+    g.act(0).cast(SIP.name).pay();
+    g.passAll();
+    g.expect.counters(pig.name, {});
+    g.expect.tapped(pig.name, false);
+  });
+
+  test('the Pig taps for one mana of any color', () => {
+    const g = start({ tapped: false });
+    g.act(0).tapForMana(pig.name, { color: 'G' });
+    g.expect.tapped(pig.name, true);
+    g.expect.pool(0, 'G');
+  });
+});
+
+describe('what the new readings do not take', () => {
+  const status = (text: string) => parseOnly(spellCard('Synthetic Probe', text)).support.status;
+
+  test('"each of them" names several tokens; "them" alone and "it" still do not', () => {
+    expect(status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on each of them.')).toBe('supported');
+    expect(status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on them.')).toBe('unsupported');
+    expect(status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on it.')).toBe('unsupported');
+  });
+
+  test('"the amount of life you gained" is read in a life gain trigger only', () => {
+    expect(status('Draw a card. Target creature gets +X/+X until end of turn, where X is the amount of life you gained.')).toBe('unsupported');
+  });
+
+  test('"remove those counters" needs the counters of the sentence condition', () => {
+    expect(status('Remove those counters.')).toBe('unsupported');
   });
 });

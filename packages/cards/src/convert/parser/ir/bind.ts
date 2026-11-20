@@ -726,7 +726,7 @@ class Binder {
           s.delayed === undefined || seeded === undefined
             ? undefined
             : { ...s.delayed, spell: seeded };
-        const clauses = s.clauses.map((c) => this.clause(c));
+        const clauses = s.clauses.map((c) => withThoseCounters(this.clause(c), condition));
         // "..., where X is that creature's power": the definition follows the clauses in the text.
         return {
           ...s,
@@ -740,6 +740,24 @@ class Binder {
     };
     return { ...bound, sentences: foldTokenAbilities(bound.sentences) };
   }
+}
+
+/**
+ * "Then if there are three or more ribbon counters on ~, remove those counters" (Prize Pig, CR 122.1, 608.2c): "those counters" are the counters of the kind the condition of the
+ * sentence counted, so the clause gets that kind. A sentence whose condition counts no counters on the permanent leaves the clause as it is, which the lowering refuses.
+ */
+function withThoseCounters(clause: IrClause, condition: IrCondition | undefined): IrClause {
+  const test = condition?.test;
+  if (clause.verb !== 'removeThoseCounters') return clause;
+  if (test?.kind !== 'amountIs' || test.amount.kind !== 'countersOn') return clause;
+  if (test.amount.of.det !== 'self') return clause;
+  const counter: IrArg = {
+    kind: 'counterSpec',
+    name: test.amount.counter,
+    span: test.amount.span,
+    rule: clause.rule,
+  };
+  return { ...clause, args: { ...clause.args, counter } };
 }
 
 function spanStart(arg: IrArg): number {
