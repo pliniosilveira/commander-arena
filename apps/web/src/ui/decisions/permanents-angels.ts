@@ -27,6 +27,7 @@ import { isPopulate, POPULATE_BADGE, populatePrompt } from './permanents-populat
 import { isRingBearer, RING_BEARER_BADGE, ringBearerPrompt } from './permanents-ring';
 import { isSoulbond, SOULBOND_BADGE, soulbondPrompt } from './permanents-soulbond';
 import { isUntapChoice, UNTAP_CHOICE_BADGE, untapChoicePrompt } from './permanents-untap';
+import { isUntapCost, UNTAP_COST_BADGE, untapCostPrompt } from './permanents-untap-cost';
 
 type Purposed = Pick<ChoosePermanentDecision, 'purpose'>;
 
@@ -208,6 +209,8 @@ export function angelsPermanentPrompt(
   if (isMoveCounters(decision)) return moveCountersPrompt(decision, index);
   // D-407 (CR 701.68a): "Blight 1", a cost that puts -1/-1 counters on a creature you control.
   if (isBlight(decision)) return blightPrompt(decision, index);
+  // CR 701.26b: "Untap two tapped creatures you control", a cost that untaps permanents.
+  if (isUntapCost(decision)) return untapCostPrompt(decision, index);
   // D-286 (CR 702.95a): "you may pair this creature with another unpaired creature you control".
   if (isSoulbond(decision)) return soulbondPrompt(decision, index);
   // D-216 (CR 701.26a): "Untap up to three lands."
@@ -230,6 +233,7 @@ export function angelsBadge(
   if (isPopulate(decision)) return POPULATE_BADGE;
   if (isMoveCounters(decision)) return MOVE_COUNTERS_BADGE;
   if (isBlight(decision)) return BLIGHT_BADGE;
+  if (isUntapCost(decision)) return UNTAP_COST_BADGE;
   if (isSoulbond(decision)) return SOULBOND_BADGE;
   if (isUntapChoice(decision)) return UNTAP_CHOICE_BADGE;
   if (isConniveOrder(decision)) return 'Connives';

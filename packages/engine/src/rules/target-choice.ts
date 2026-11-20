@@ -182,6 +182,7 @@ export function targetChoiceSpecs(
           : Number.MAX_SAFE_INTEGER,
       ),
       ...(total === null ? {} : { divide: total }),
+      ...(total !== null && spec.divide?.upTo === true ? { divideUpTo: true as const } : {}),
       ...(spec.onePerOpponent === true || spec.differentControllers === true
         ? { onePerGroup: true as const }
         : {}),
@@ -265,8 +266,12 @@ export function targetAnswerError(
       if (shares.some((s) => s === undefined || !Number.isSafeInteger(s) || s < 1)) {
         return 'Each target gets at least 1 of what is divided';
       }
-      if (shares.reduce((n: number, s) => n + (s ?? 0), 0) !== spec.divide) {
-        return `Divide exactly ${spec.divide} among the targets`;
+      const given = shares.reduce((n: number, s) => n + (s ?? 0), 0);
+      // CR 601.2d: "up to that many" may give out fewer; otherwise all of it is given out.
+      if (spec.divideUpTo === true ? given > spec.divide : given !== spec.divide) {
+        return spec.divideUpTo === true
+          ? `Divide at most ${spec.divide} among the targets`
+          : `Divide exactly ${spec.divide} among the targets`;
       }
     }
   }

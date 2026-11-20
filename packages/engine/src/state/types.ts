@@ -246,6 +246,12 @@ export interface GameObject {
    */
   readonly foretoldTurn?: number;
   /**
+   * Present on a card in exile that its owner plotted (CR 702.170a-d): the number of the turn in which it became plotted. Its owner may cast it from exile without paying its mana cost
+   * during their main phase while the stack is empty, in any turn after that one. The card is face up. It is the exile object's own: a new object after any zone change (CR 400.7)
+   * has none. Absent otherwise.
+   */
+  readonly plottedTurn?: number;
+  /**
    * Present (true) on a card in exile that resolved as an Adventure (CR 715.3d): its owner may cast
    * the card's normal face from there, but not as an Adventure again. Absent otherwise; it ends
    * with the object (CR 400.7), whatever zone the card goes to next.
@@ -310,6 +316,8 @@ export interface ChosenValues {
   readonly cardType?: CardType;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
+  /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */
+  readonly lifePaid?: number;
 }
 
 export interface TokenData {
@@ -432,6 +440,11 @@ export interface StackData {
    */
   readonly retrace?: true;
   /**
+   * True when cast from the graveyard by its jump-start ability (CR 702.133a): the mana cost was paid and a card was discarded as an additional cost. The spell is exiled instead of going
+   * anywhere else when it leaves the stack (`rules/zones.ts`). Absent otherwise, and for an ability.
+   */
+  readonly jumpStart?: true;
+  /**
    * True when cast without paying its mana cost (CR 118.9, D-095): the `free` alternative cost.
    * Absent otherwise, and for an ability.
    */
@@ -501,6 +514,8 @@ export interface StackData {
   readonly exileOnResolve?: {
     readonly by: SeatId;
     readonly source: ObjectId;
+    /** Issue 121 (Forger's Foundry): the card is remembered as exiled with `source` and not returned to the hand. */
+    readonly linked?: true;
   };
   /**
    * "Exile this spell with three time counters on it" (D-651, CR 608.2n, 122.1, 702.62b): set on a spell by the effect `exileSpellWithTimeCounters`: the number of time counters. When this
@@ -924,7 +939,8 @@ export interface CastingContext {
     | 'crew'
     | 'tap'
     | 'bounce'
-    | 'blight';
+    | 'blight'
+    | 'untap';
   /**
    * The spell is being cast only because of its own conditional flash ("You may cast this spell as though it had flash if it targets a commander", D-408,
    * CR 601.3b, 601.3d): its targets are chosen from the objects this filter matches. Absent for every other cast.
@@ -1693,6 +1709,8 @@ export type Instruction =
       readonly exileInstead: boolean;
       /** "... without paying its mana cost" (`castCard.free`, CR 118.9): the spell is cast with no mana cost to pay. */
       readonly free?: boolean;
+      /** Issue 121 (`castCard.remember`): the spell cast is what `moved` names afterwards. */
+      readonly remember?: boolean;
     }
   /**
    * "You may [effect]" inside an effect (D-111): the controller of the resolving spell or ability is asked
@@ -2110,6 +2128,18 @@ export type ContinuousChange =
    * casting is decided (`rules/legality.ts`).
    */
   | { readonly kind: 'freeCastPermission'; readonly seat: SeatId; readonly type: CardType }
+  /**
+   * "The next instant or sorcery spell you cast this turn costs {X} less to cast / has storm" (`nextSpellModifier`, issue 121, CR 601.2f, 702.40a): `seat`'s next spell that `spells`
+   * describes costs `lessGeneric` less (generic mana only) and gains `grants`; the cast that it applies to uses it up (`rules/next-spell.ts`: it is removed as the spell is cast). No
+   * layer: read where the cost is determined and as the cast is completed.
+   */
+  | {
+      readonly kind: 'nextSpell';
+      readonly seat: SeatId;
+      readonly spells: ObjectFilter;
+      readonly lessGeneric: number;
+      readonly grants?: 'storm' | 'cascade';
+    }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }

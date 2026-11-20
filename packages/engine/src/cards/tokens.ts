@@ -130,6 +130,25 @@ export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
   Incubator: INCUBATOR_TOKEN,
   // CR 111.10u (Edge of Eternities: Horizon Explorer, Seedship Impact, Larval Scoutlander).
   Lander: LANDER_TOKEN,
+  // CR 111.10t (issue 145, Break Down): "{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery."
+  Junk: artifactToken(
+    'Junk',
+    '{T}, Sacrifice this token: Exile the top card of your library. You may play that card this turn. Activate only as a sorcery.',
+    [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }, { kind: 'sacrifice', what: { kind: 'this' } }],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            { kind: 'exileTop', count: 1 },
+            { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+          ],
+        },
+        timing: 'sorcery',
+      },
+    ],
+  ),
   // CR 111.10a: "{T}, Sacrifice this token: Add one mana of any color."
   Treasure: artifactToken('Treasure', '{T}, Sacrifice this token: Add one mana of any color.', [
     {

@@ -234,6 +234,81 @@ export const TRIGGER_COUNTERS_ADDED = defineRule<IrTrigger>({
   },
 });
 
+const ORDINALS: ReadonlyMap<string, number> = new Map(
+  [
+    'second',
+    'third',
+    'fourth',
+    'fifth',
+    'sixth',
+    'seventh',
+    'eighth',
+    'ninth',
+    'tenth',
+    'eleventh',
+    'twelfth',
+    'thirteenth',
+    'fourteenth',
+    'fifteenth',
+    'sixteenth',
+    'seventeenth',
+    'eighteenth',
+    'nineteenth',
+    'twentieth',
+  ].map((word, i) => [word, i + 2] as const),
+);
+
+/**
+ * `trigger.nth-counter-put`: "the twelfth hour counter is put on ~" (Midnight Clock, CR 122.6, 603.2): the instance of putting that makes the number of counters of the kind on the permanent reach the
+ * ordinal. The engine's `countersAdded` with `reaches`. Not read: "the first" (a count of one is "one or more"), a kind of counter left out, a counter of +1/+1 (the ordinal says a named kind), another
+ * subject than the permanent named, "you put".
+ */
+export const TRIGGER_NTH_COUNTER_PUT = defineRule<IrTrigger>({
+  id: 'trigger.nth-counter-put',
+  family: 'trigger',
+  leading: ['the'],
+  cites: ['CR 122.6 (Counters)', 'CR 603.2 (Handling Triggered Abilities)'],
+  examples: [
+    'the twelfth hour counter is put on ~',
+    'the third time counter is put on ~',
+    'the twentieth page counter is put on ~',
+  ],
+  rejects: [
+    'the first hour counter is put on ~',
+    'the twelfth counter is put on ~',
+    'the twelfth hour counter is put on',
+    'the twelfth hour counters are put on ~',
+    'the twelfth hour counter is removed from ~',
+    'the twelve hour counter is put on ~',
+    'you put the twelfth hour counter on ~',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.nth-counter-put';
+    const head = pattern(/the ([a-z]+) ([a-z]+) counter is put on /iu)(ctx, pos);
+    if (!head.ok) return head;
+    const reaches = ORDINALS.get((head.value[1] ?? '').toLowerCase());
+    const counter = (head.value[2] ?? '').toLowerCase();
+    if (reaches === undefined || counter === '') return fail(ctx, pos);
+    const subject = triggerSubject(id)(ctx, head.pos);
+    if (!subject.ok) return subject;
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'countersAdded',
+        subject: subject.value,
+        by: 'any',
+        counter,
+        reaches,
+        args: {},
+        span: { start: pos, end: subject.pos },
+        rule: id,
+      },
+      pos: subject.pos,
+    };
+  },
+});
+
 /** What the creatures declared must be: "creatures", or a group named by a type ("Angels", "artifact creatures"). */
 function attackersPhrase(rule: string) {
   return (ctx: Parameters<ReturnType<typeof permanentPhrase>>[0], pos: number) => {
@@ -440,6 +515,7 @@ export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
   TRIGGER_LIFE_LOST,
   TRIGGER_COUNTERS_ADDED,
+  TRIGGER_NTH_COUNTER_PUT,
   TRIGGER_ATTACK_BATCH,
   TRIGGER_OPPONENT_ATTACKS,
   TRIGGER_PLAYER_ATTACKS_OPPONENT,

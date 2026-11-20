@@ -5,7 +5,7 @@
 import type { Effect } from '../ast/types';
 import { opponentsOf } from '../state/ops';
 import type { ChosenTarget, GameState, ResolutionContext } from '../state/types';
-import { defendingPlayerOf } from './defending';
+import { attackerDefender, defendingPlayerOf } from './defending';
 import { derive } from './derive';
 import { resolveObjects, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
@@ -21,9 +21,14 @@ export function runEnterAttacking(
 ): StepOutcome {
   const combat = state.combat;
   if (combat === null) return done(state);
-  // The player the source attacks, or the first opponent of the controller (CR 508.4: the controller chooses; with one choice there is none to make).
+  // The player the source attacks; else, when the source is not attacking (an ability of "whenever you attack"), the player the first declared attacker attacks; else the first
+  // opponent of the controller (CR 508.4: the controller chooses; with one choice there is none to make).
+  const [firstAttacker] = combat.attackers;
   const target =
-    defendingPlayerOf(state, res.source) ?? opponentsOf(state, res.controller)[0] ?? null;
+    defendingPlayerOf(state, res.source) ??
+    (firstAttacker === undefined ? null : attackerDefender(state, firstAttacker)) ??
+    opponentsOf(state, res.controller)[0] ??
+    null;
   if (target === null) return done(state);
   const entering = resolveObjects(state, effect.objects, ctx, targets).filter((id) => {
     const obj = state.objects[id];

@@ -266,12 +266,16 @@ describe('what a copy can still not say (CR 707.9 "except", others stay unread)'
     ["Create two tokens that's a copy of target creature.", 'tokens that'],
     ['Create a token that are copies of target creature.', 'token that are'],
     ["Create a token that's a copy of target creature", ''],
-    ["Create a token that's a copy of that creature.", 'that creature'],
     ["Create a token that's a copy of target spell.", 'spell'],
   ] as const)('stays unread: %s', (text, part) => {
     const d = dropped(text, 'sorcery');
     expect(d.reason).toBe('unrecognised');
     expect(d.stoppedAt).toContain(part);
+  });
+
+  test('"that creature" is read (issue 145, Bramble Sovereign) but has nothing to mean in a spell with no creature before it: dropped, never guessed', () => {
+    const d = dropped("Create a token that's a copy of that creature.", 'sorcery');
+    expect(d.reason).toBe('unboundReference');
   });
 
   test('"That token" after a copy is the token the copy made (Prismari group 1, D-643): the engine\'s `moved`, which `createToken` of a copy names', () => {

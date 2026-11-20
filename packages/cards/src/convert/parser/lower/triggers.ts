@@ -580,6 +580,7 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         what: what.value,
         ...(t.counter === undefined ? {} : { counter: t.counter }),
         by: t.by,
+        ...(t.reaches === undefined ? {} : { reaches: t.reaches }),
       });
     }
     case 'playerAttacksOpponent': {
@@ -658,6 +659,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
         const missing = missingFeatures(['trigger:castFirstOfKind']);
         if (missing.length > 0) return failure(t, missing);
         return ok({ kind: 'castSpell', filter: filter.value, by, firstOfKind: true });
+      }
+      // "Whenever an opponent casts a spell during your turn" (CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const missing = missingFeatures(['trigger:castDuringYourTurn']);
+        if (missing.length > 0) return failure(t, missing);
+        return ok({ kind: 'castSpell', filter: filter.value, by, duringTurn: 'you' });
       }
       return ok({ kind: 'castSpell', filter: filter.value, by });
     }
@@ -749,9 +756,10 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
       needs: ['selector:controllerOf', 'selector:triggerSubject'],
     };
   }
-  // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information.
+  // CR 603.10a, 400.7: the player of a death trigger is the controller of the permanent that died, read from last-known information. The player of "whenever a creature an
+  // opponent controls enters" is the controller of the permanent that entered (CR 110.2a): "that player".
   if (
-    (only.event === 'dies' || only.event === 'leavesBattlefield') &&
+    (only.event === 'dies' || only.event === 'leavesBattlefield' || only.event === 'enters') &&
     only.subject !== undefined &&
     only.subject.det !== 'self' &&
     only.actor === undefined
@@ -1251,6 +1259,8 @@ function lowerTriggeredAbility(
   let interveningIf: Condition | undefined;
   let foldedCounters = false;
   const ifWritten = ability.interveningIf ?? lift.condition;
+  // "..., if you gained life this turn, distribute up to that many ...": "that many" is the life gained (CR 119.3, 603.4).
+  ctx.lifeGainedIf = ifWritten?.test.kind === 'lifeGainedThisTurn' && ifWritten.test.atLeast === 1;
   if (ifWritten?.test.kind === 'hadCounters') {
     // "..., if it had counters on it, ..." (stage P33, D-150): a part of the filter of the trigger (see `foldHadCounters`).
     const [only] = triggers;
@@ -1633,7 +1643,9 @@ function lowerTappedForMana(
     clause.duration !== undefined ||
     clause.args.additional === undefined ||
     spec?.kind !== 'manaSpec' ||
-    (spec.what.kind !== 'symbols' && spec.what.kind !== 'anyColor')
+    (spec.what.kind !== 'symbols' &&
+      spec.what.kind !== 'anyColor' &&
+      spec.what.kind !== 'producedType')
   ) {
     return failure(ability);
   }
@@ -1645,12 +1657,31 @@ function lowerTappedForMana(
   if (spec.what.kind === 'anyColor' && (spec.what.count !== undefined || trigger.by !== 'tapper')) {
     return failure(ability);
   }
-  const blocked = missingFeatures(['ability:triggered', 'trigger:tappedForMana', 'effect:addMana']);
+  // CR 106.12a, 605.4a: "one mana of any type that land produced" is for the controller of the ability, and the permanent it names is the kind the trigger names.
+  if (spec.what.kind === 'producedType') {
+    const named = spec.what.noun;
+    const tappedTypes: readonly string[] = trigger.what.types ?? [];
+    if (
+      trigger.by !== 'you' ||
+      trigger.mana !== undefined ||
+      (named !== 'permanent' && !tappedTypes.includes(named))
+    ) {
+      return failure(ability);
+    }
+  }
+  const blocked = missingFeatures([
+    'ability:triggered',
+    'trigger:tappedForMana',
+    'effect:addMana',
+    ...(spec.what.kind === 'producedType' ? (['manaProduction:producedType'] as const) : []),
+  ]);
   if (blocked.length > 0) return failure(ability, blocked);
   const mana: ManaProduction =
     spec.what.kind === 'anyColor'
       ? { kind: 'anyColor' }
-      : { kind: 'fixed', mana: spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[] };
+      : spec.what.kind === 'producedType'
+        ? { kind: 'producedType' }
+        : { kind: 'fixed', mana: spec.what.symbols as ('W' | 'U' | 'B' | 'R' | 'G' | 'C')[] };
   return {
     ok: true,
     value: [{ kind: 'triggered', trigger, effect: { kind: 'addMana', mana } }],

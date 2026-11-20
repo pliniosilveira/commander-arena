@@ -7,7 +7,7 @@
 import type { CardFace } from '../cards/definition';
 import { isNonCreatureSubtype } from '../characteristics';
 import { GRANTABLE_KEYWORDS } from './features';
-import type { Ability, Effect, Replacement, StaticEffect } from './types';
+import type { Ability, Effect, ObjectFilter, Replacement, StaticEffect } from './types';
 import { checkGrantedParameter } from './validate-attach';
 import { isOneOf, kindOf, triggerHasPlayer } from './validate-base';
 import {
@@ -102,6 +102,39 @@ export function checkDragonsEffect(
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       return true;
+    case 'nextSpellModifier': {
+      // Issue 121 (CR 601.2f, 702.40a, 702.85a): the next spell the controller casts that the filter describes, in this turn: a spell being cast (no zone), a reduction of generic
+      // mana read as the effect resolves, and/or Storm or Cascade, the keywords that work as the spell is cast.
+      const { targetsObject, ...spell } = (e.spells ?? {}) as ObjectFilter;
+      if (e.spells === undefined || e.spells === null) {
+        issue(out, `${path}.spells`, 'nextSpellModifier names the spells it applies to');
+      } else {
+        checkFilter(spell, `${path}.spells`, out);
+        if (targetsObject !== undefined) {
+          issue(out, `${path}.spells`, 'nextSpellModifier cannot read what the spell targets');
+        }
+        if (filterSome(spell, (f) => f.zone !== undefined || f.stackKind !== undefined)) {
+          issue(
+            out,
+            `${path}.spells`,
+            'the filter describes a spell being cast: zone and stackKind are not set',
+          );
+        }
+      }
+      if (e.lessGeneric === undefined && e.grants === undefined) {
+        issue(out, path, 'nextSpellModifier needs a reduction or a keyword to grant');
+      }
+      if (e.lessGeneric !== undefined)
+        checkAmount(e.lessGeneric, `${path}.lessGeneric`, scope, out);
+      if (e.grants !== undefined && e.grants !== 'storm' && e.grants !== 'cascade') {
+        issue(
+          out,
+          `${path}.grants`,
+          'a spell is given storm or cascade only: the keywords that work as it is cast',
+        );
+      }
+      return true;
+    }
     case 'exileUntilCast':
       // CR 701.57 (D-151): whole-number limits on the card found and on the card cast, and what happens to the rest.
       for (const key of ['foundAtMost', 'castAtMost'] as const) {
@@ -272,7 +305,23 @@ export function checkDragonsEffect(
     case 'payAnyAmount': {
       // CR 603.12 (D-151): one kind of mana, and a reflexive ability of its own whose "that much" is what was paid.
       // D-257: or a generic {1} paid X times, a most (`atMost`), and an "If you do" instruction (`ifPaid`) in place of the reflexive ability, whose X is the number paid.
-      if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
+      if (e.cost !== undefined) {
+        // Issue 121: "pay {2}{R} any number of times": the mana of one payment, in place of one symbol.
+        if (e.symbol !== undefined) {
+          issue(out, `${path}.symbol`, 'a payment is one symbol or a cost, not both');
+        }
+        if (
+          !Array.isArray(e.cost) ||
+          e.cost.length === 0 ||
+          !e.cost.every((s) => typeof s === 'string' && /^(?:\d+|[WUBRGC])$/.test(s))
+        ) {
+          issue(
+            out,
+            `${path}.cost`,
+            'the cost of one payment is mana symbols: numbers and colors, no X or hybrid',
+          );
+        }
+      } else if (!isOneOf(e.symbol, ['W', 'U', 'B', 'R', 'G', 'C', '1'])) {
         issue(
           out,
           `${path}.symbol`,
@@ -305,7 +354,17 @@ export function checkDragonsEffect(
         }
         return true;
       }
-      const own = declareTargets(e.reflexive?.targets, `${path}.reflexive.targets`, out);
+      // Issue 121: "exile up to that many target cards": a slot of the reflexive ability may take up to as many targets as were paid (`upToTriggerAmount`).
+      const own = declareTargets(
+        e.reflexive?.targets,
+        `${path}.reflexive.targets`,
+        out,
+        false,
+        false,
+        false,
+        false,
+        true,
+      );
       const inner: Scope = {
         owner: scope.owner,
         targets: own,
@@ -392,7 +451,7 @@ export function checkDragonsEffect(
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
       }
-      if (scope.attackTrigger !== true) {
+      if (scope.attackTrigger !== true && scope.attackBatchTrigger !== true) {
         issue(out, path, 'a creature enters attacking in a triggered ability of an attack');
       }
       return true;

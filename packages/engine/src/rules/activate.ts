@@ -40,6 +40,7 @@ import {
   sacrificeGroups,
 } from './activate-costs';
 import { activatedAbilitiesOf, activationRefusal } from './activate-legality';
+import { answerUntapPermanentsCost, payUntap } from './activate-untap';
 import { activationExileDecision, exileChosen, exileCostCandidates } from './activation-exile';
 import { becameTargetEvents } from './becomes-target';
 import { crewCandidates, crewPowerOf, totalPower } from './crew';
@@ -323,6 +324,8 @@ function payRest(state: GameState, events: GameEvent[]): Result {
   if (costs.tapPermanents !== null && costs.mana.length === 0) {
     return payTap(state, events, costs.tapPermanents);
   }
+  // CR 701.26b, 601.2h: the permanents to untap are chosen once the mana is paid, so the creatures tapped for it are among them.
+  if (costs.untapPermanents !== null) return payUntap(state, events, paySacrifice);
   return payBlight(state, events, paySacrifice);
 }
 
@@ -676,6 +679,11 @@ export function answerSacrificeCost(state: GameState, chosen: readonly ObjectId[
     return fail('No sacrifice is being chosen for a cost');
   }
   return sacrificeChosen({ ...state, pending: null }, [], chosen, false);
+}
+
+/** The answer to the question of an untap cost (CR 701.26b): the permanents are untapped, then the sacrifice comes next. */
+export function answerUntapCost(state: GameState, chosen: readonly ObjectId[]): Result {
+  return answerUntapPermanentsCost(state, chosen, paySacrifice);
 }
 
 /** The answer to the question of a blight cost (D-407, CR 701.68a): the creature gets the counters, then the sacrifice comes next. */

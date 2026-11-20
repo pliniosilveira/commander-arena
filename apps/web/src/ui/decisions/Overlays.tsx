@@ -27,6 +27,7 @@ import { commanderZoneDetail } from './commander-zone';
 import { DamagePanel } from './DamagePanel';
 import { Dialog } from './Dialog';
 import { IntroScreen } from './IntroScreen';
+import { LifePaidDialog } from './LifePaidDialog';
 import { attackTargetLabel, myHand, nameOf, objectIndex, plural, sameAttackTarget } from './lookup';
 import { MiniCard } from './MiniCard';
 import { ModesDialog } from './ModesDialog';
@@ -218,6 +219,9 @@ export function ModalOverlay(props: OverlayProps): ReactNode {
       // D-139 (CR 508.7): the attack target of a creature has its own dialog, not the creature-type picker.
       d.purpose === 'attackTarget' ? (
         <AttackTargetDialog key={d.id} d={d} view={view} act={act} />
+      ) : d.purpose === 'lifePaid' ? (
+        // CR 119.4, 614.12: "As this artifact enters, pay any amount of life": a number from 0 to the life total, not a list of buttons.
+        <LifePaidDialog key={d.id} d={d} act={act} />
       ) : d.purpose === 'pile' ? (
         // D-303 (CR 700.3): the two piles the other player made, with their cards.
         <PilesDialog key={d.id} d={d} view={view} act={act} />
@@ -330,7 +334,7 @@ export function DockPanel(props: OverlayProps): ReactNode {
               {unlockPayDetail(index.get(d.source), d.door ?? 0)}
             </p>
           ) : null}
-          {d.purpose === 'suspend' || d.purpose === 'foretell' ? (
+          {d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'plot' ? (
             <p className="dec-sub dec-left" data-special-pay>
               {specialPayDetail(d.purpose, nameOf(index, d.source), index.get(d.source))}
             </p>

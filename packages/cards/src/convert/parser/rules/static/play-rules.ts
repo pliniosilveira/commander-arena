@@ -522,6 +522,8 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     "Untap all creatures you control during each other player's untap step.",
     "Untap ~ during each other player's untap step.",
     'Untap ~ during each other player’s untap step.',
+    // Issue 145 (Prop Room): "each creature", the same group as "all creatures".
+    "Untap each creature you control during each other player's untap step.",
   ],
   rejects: [
     "Untap all creatures you control during each other player's untap step",
@@ -543,6 +545,10 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
     "Untap all creatures you control during each player's untap step.",
     "Untap all creatures you control during each opponent's untap step.",
     "Untap all creatures you control during each other player's upkeep.",
+    "Untap each creatures you control during each other player's untap step.",
+    "Untap each creature during each other player's untap step.",
+    "Untap each creature you control during each other player's untap step if you control a Swamp.",
+    "Untap all creature you control during each other player's untap step.",
   ],
   parse: (ctx, pos) => {
     const rule = 'static.untap-in-others-step';
@@ -563,9 +569,12 @@ export const STATIC_UNTAP_IN_OTHERS_STEP = defineRule<IrStatic>({
         pos: self.pos,
       };
     }
-    const r = pattern(new RegExp(`untap all creatures you control ${tail}`, 'iu'))(ctx, pos);
+    const r = pattern(
+      new RegExp(`untap (?:all creatures|each creature) you control ${tail}`, 'iu'),
+    )(ctx, pos);
     if (!r.ok) return r;
-    const at = 'untap all creatures '.length;
+    const at =
+      /^untap (?:all creatures|each creature) /iu.exec(ctx.text.slice(pos))?.[0].length ?? 0;
     const who = subject(
       'you',
       'you',

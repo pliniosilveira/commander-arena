@@ -365,13 +365,15 @@ export function spentRiderText(rider: {
     readonly sharesTypeWithCommander?: true;
     readonly commander?: true;
     readonly colors?: readonly string[];
+    readonly manaValueAtMost?: number;
   };
   readonly grants:
     | 'haste'
     | { readonly scry: number }
     | { readonly scryCommanderCasts: true }
     | { readonly countersCommanderCasts: true }
-    | { readonly copySpell: 'may' | 'no' };
+    | { readonly copySpell: 'may' | 'no' }
+    | { readonly exileLinked: true };
 }): string | null {
   const { spells, grants } = rider;
   // D-328 (CR 707.10, 707.10c): Pyromancer's Goggles' "When that mana is spent to cast a red instant or sorcery spell, copy that spell and you may choose new targets for the copy".
@@ -388,6 +390,13 @@ export function spentRiderText(rider: {
   // Issue 241 (CR 122.6, 903.8): Opal Palace's "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game".
   if (typeof grants === 'object' && 'countersCommanderCasts' in grants) {
     return "If you spend this mana to cast your commander, it enters with a number of additional +1/+1 counters on it equal to the number of times it's been cast from the command zone this game";
+  }
+  // Issue 121 (CR 607.2a): Forger's Foundry's "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead of putting it into its owner's graveyard as it resolves".
+  if (typeof grants === 'object' && 'exileLinked' in grants) {
+    const kinds = spells.types ?? [];
+    if (kinds.length === 0 || spells.manaValueAtMost === undefined) return null;
+    const limit = ` with mana value ${spells.manaValueAtMost} or less`;
+    return `When you spend this mana to cast ${/^[aeiou]/i.test(kinds[0] ?? '') ? 'an' : 'a'} ${kinds.join(' or ')} spell${limit}, you may exile that spell instead of putting it into its owner's graveyard as it resolves`;
   }
   const nouns = [...(spells.subtypes ?? []), ...(spells.types ?? [])];
   if (nouns.length === 0) return null;

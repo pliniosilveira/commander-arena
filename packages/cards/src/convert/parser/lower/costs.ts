@@ -159,6 +159,14 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         ? ok({ kind: 'tapPermanents', filter: filter.value, count: cost.count })
         : filter;
     }
+    case 'untapPermanents': {
+      // "Untap two tapped creatures you control" (CR 701.26b, 118.3): the engine's `untapPermanents`, a cost of an ordinary activated ability.
+      if (options.ordinary !== true) return failure(cost);
+      const filter = lowerFilter(cost.what);
+      return filter.ok
+        ? ok({ kind: 'untapPermanents', filter: filter.value, count: cost.count })
+        : filter;
+    }
     case 'mill':
       // CR 701.17, 605.3 (stage P51, D-208): the cost of a mana ability, N cards of the library; D-229: of an ordinary activated ability too.
       if (options.mana !== true && options.ordinary !== true) return failure(cost);
@@ -273,6 +281,7 @@ export const COST_NEEDS: readonly FeatureRef[] = [
   'cost:untap',
   'cost:sacrifice',
   'cost:tapPermanents',
+  'cost:untapPermanents',
   'cost:blight',
   'cost:payLife',
   'cost:payXLife',

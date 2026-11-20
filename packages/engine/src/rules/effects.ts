@@ -33,7 +33,7 @@ import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject } from './attach';
-import { runAttackRandomOpponent } from './attack-random-opponent';
+import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
@@ -118,6 +118,7 @@ import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
+import { runNextSpellModifier } from './next-spell';
 import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
@@ -167,6 +168,7 @@ import type { TokenBatch } from './token-replacement';
 import { runTransform } from './transform';
 import { untapPermanent } from './untap';
 import { runVote } from './vote';
+import { winTheGame } from './win-game';
 import { moveObject } from './zones';
 
 /** The counter Cumulative upkeep puts on the permanent (CR 702.24a). */
@@ -960,7 +962,7 @@ function runEffect(
     }
 
     case 'exile': {
-      const ids = resolveObjects(state, effect.objects, ctx, targets)
+      const named = resolveObjects(state, effect.objects, ctx, targets)
         // CR 400.7, 603.10a (D-230): "exile it" in a trigger about a permanent that died: the permanent is gone, the card it became is the one in the graveyard.
         .flatMap((id) =>
           effect.objects.kind === 'triggerSubject' && state.objects[id] === undefined
@@ -968,6 +970,11 @@ function runEffect(
             : [id],
         )
         .filter((id) => state.objects[id] !== undefined);
+      // Issue 121 (Arcane Bombardment, CR 701.13, 701.9b analogue): "exile an instant or sorcery card at random from your graveyard": the one card is picked by the game's seeded generator.
+      const picked =
+        effect.atRandom === true && named.length > 1 ? pickRandom(named, state.rng) : null;
+      const ids = picked === null ? named : [picked[0]];
+      const drawn = picked === null ? state : { ...state, rng: picked[1] };
       // CR 610.3a, 610.3b (D-149): "until this leaves the battlefield": if it already has, as the exile would happen, nothing moves.
       if (
         effect.until === 'sourceLeaves' &&
@@ -994,7 +1001,7 @@ function runEffect(
       };
       // D-283 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
       const together = recordTogether(
-        state,
+        drawn,
         moveInstructions(ids, 'exile').map((i) => {
           if (i.kind !== 'move') return i;
           // Oversimplify (CR 608.2h): the power and the controller of each creature as it is before any of them leaves, for "the total power of creatures they controlled that were exiled this way".
@@ -1309,7 +1316,9 @@ function runEffect(
     case 'exileOnResolve': {
       // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
       const spells = resolveObjects(state, effect.spell, ctx, targets);
-      return done(markExileOnResolve(state, spells, res.controller, res.source));
+      return done(
+        markExileOnResolve(state, spells, res.controller, res.source, effect.linked === true),
+      );
     }
 
     case 'doubleSpellX': {
@@ -1391,17 +1400,36 @@ function runEffect(
     case 'copyCardAndCast': {
       // CR 707.12 (D-654): the card the effect before this exiled is copied, in exile; its controller may cast the copy without paying its mana cost as the effect goes on
       // resolving (CR 608.2g). A copy that is not cast ceases to exist at the next state-based check (CR 704.5e).
-      const [id] = resolveObjects(state, effect.objects, ctx, targets);
-      const card = id === undefined ? undefined : state.objects[id];
-      if (card === undefined || card.zone !== 'exile' || card.card === null) return done(state);
-      const made = makeCardCopy(state, card.card, res.controller);
+      // Issue 121 (Mizzix's Mastery, overloaded: "For each card exiled this way, copy it, and you may cast the copy"): every card the effect before exiled is copied, and the controller
+      // may cast any number of the copies (a question after each cast, as `castFree` with `max` any asks it); one card is the one question of a single copy.
+      const exiled = resolveObjects(state, effect.objects, ctx, targets).flatMap((id) => {
+        const card = state.objects[id];
+        return card === undefined || card.zone !== 'exile' || card.card === null ? [] : [card];
+      });
+      if (exiled.length === 0) return done(state);
+      let withCopies = state;
+      const copies: ObjectId[] = [];
+      for (const card of exiled) {
+        if (card.card === null) continue;
+        const made = makeCardCopy(withCopies, card.card, res.controller);
+        withCopies = made.state;
+        copies.push(made.copy);
+      }
       return {
         ...done(
-          made.state,
+          withCopies,
           [],
-          [{ kind: 'castFree', objects: { kind: 'moved' }, play: false, chosen: null }],
+          [
+            {
+              kind: 'castFree',
+              objects: { kind: 'moved' },
+              play: false,
+              chosen: null,
+              ...(copies.length > 1 ? { remaining: 'any' as const } : {}),
+            },
+          ],
         ),
-        lastMoved: [made.copy],
+        lastMoved: copies,
       };
     }
     case 'prepare': {
@@ -1822,6 +1850,9 @@ function runEffect(
     case 'mayPlay':
       // D-151: "You may play that card this turn" (rules/impulse.ts).
       return runMayPlay(state, res, effect);
+    case 'nextSpellModifier':
+      // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
+      return runNextSpellModifier(state, res, effect, ctx);
     case 'mayCastEachType':
       // CR 601.2, 118.9, 611.2a: "for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (rules/free-cast.ts).
       return runMayCastEachType(state, res, effect);
@@ -1980,6 +2011,14 @@ function runEffect(
       // CR 104.3e (D-269): "each player this creature attacked this turn loses the game": the players the selector names lose it together.
       const lost = loseTheGame(next, resolvePlayers(state, effect.player, ctx, targets));
       return done(lost.state, [...events, ...lost.events]);
+    }
+
+    case 'winGame': {
+      // CR 104.2b: "You win the game": the player the selector names wins and the game ends (CR 104.1), unless an opponent's "your opponents can't win the game" stops it.
+      const [winner] = resolvePlayers(state, effect.player, ctx, targets);
+      if (winner === undefined) return done(next, events);
+      const won = winTheGame(next, winner);
+      return done(won.state, [...events, ...won.events]);
     }
 
     case 'setLifeTotal': {
@@ -2738,6 +2777,7 @@ function runEffect(
           anyManaType: effect.anyManaType === true,
           exileInstead: effect.exileInstead === true,
           ...(effect.free === true ? { free: true } : {}),
+          ...(effect.remember === true ? { remember: true } : {}),
         })),
       );
     }

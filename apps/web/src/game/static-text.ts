@@ -442,6 +442,8 @@ export function replacementWording(replacement: Replacement, noun = 'permanent')
   // D-151 (CR 614.12): a permanent that enters as a copy, or with a choice among names the card gives.
   if (replacement.kind === 'entersAsCopy') return entersAsCopyText(replacement, noun);
   if (replacement.kind === 'asEntersChoose') {
+    // CR 119.4, 614.12: "As this artifact enters, pay any amount of life".
+    if (replacement.what === 'lifePaid') return `As this ${noun} enters, pay any amount of life`;
     return replacement.what === 'option' && replacement.options !== undefined
       ? entersOptionText(replacement.options, noun)
       : null;

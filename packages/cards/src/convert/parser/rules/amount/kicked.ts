@@ -72,6 +72,11 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-own-nontoken-destroyed',
   // Feather deck group 1 (D-450): the cards the controller has drawn this turn.
   'amount.for-each-card-drawn',
+  // Issue 145 (Aetherflux Reservoir): the spells the controller has cast this turn.
+  'amount.for-each-spell-cast',
+  'amount.for-each-spell-color',
+  // Lock and Load (issue 121): the other instants and sorceries the controller has cast this turn.
+  'amount.for-each-other-spell-cast',
   // D-654 (Hateful Eidolon): the Auras the controller controlled that were attached to the creature that died.
   'amount.for-each-aura-attached',
   // Lorehold Spirit deck group 2 (issue 86): the votes for one option of the vote the text made.
@@ -84,4 +89,6 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-card-type',
   // CR 205.2a, 603.2c: the card types among the cards of a batch trigger ("those cards").
   'amount.for-each-card-type-among-those-cards',
+  // Eris, Roar of the Storm (issue 121, CR 202.3): the distinct mana values among the cards of a zone.
+  'amount.for-each-different-mana-value',
 ] as const;

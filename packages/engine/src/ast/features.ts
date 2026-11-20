@@ -127,6 +127,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRiderCopy',
     // Issue 241: "If you spend this mana to cast your commander, it enters with ... additional +1/+1 counters" (`spentRider.grants.countersCommanderCasts`).
     'manaSpentRiderCounters',
+    // Issue 121: "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead" (`spentRider.grants.exileLinked`).
+    'manaSpentRiderExile',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
@@ -214,6 +216,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
+    // "You win the game." (CR 104.2b).
+    'winGame',
     // D-278: "Exile them, then meld them into X." (CR 701.42a).
     'meld',
     'tap',
@@ -432,6 +436,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTopCast',
     // "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9).
     'mayCastEachType',
+    // Issue 121: "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (CR 601.2f, 702.40a).
+    'nextSpellModifier',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -545,6 +551,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castFirstOfKind',
     // D-565: "your first spell during each opponent's turn" (`castSpell` with `duringTurn`).
     'castDuringOpponentTurn',
+    // CR 603.2: "an opponent casts a spell during your turn" (`castSpell` with `duringTurn: 'you'`).
+    'castDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -628,6 +636,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-665: Demonstrate (CR 702.144a); D-667: Retrace (CR 702.81a).
     'demonstrate',
     'retrace',
+    // CR 702.133a: Jump-start, cast from the graveyard by discarding a card, then exiled.
+    'jumpStart',
     // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
     'aftermath',
     // D-124: Unearth (CR 702.84a).
@@ -645,6 +655,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'cumulativeUpkeep',
     // D-128: Suspend (CR 702.62a).
     'suspend',
+    // CR 702.170a: Plot.
+    'plot',
     // D-129: Storm (CR 702.40a) and Replicate (CR 702.56a).
     'storm',
     'replicate',
@@ -734,6 +746,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'anyColorDevotion',
     // "Add X mana of any one color, where X is this creature's power." (`anyColorAmount`)
     'anyColorAmount',
+    // "Add one mana of any type that land produced." (`producedType`, a triggered mana ability)
+    'producedType',
   ],
   // Quandrix Unlimited group E: `delayedCast` ("When you next cast a spell with {X} in its mana cost this turn, ...", Brass Infiniscope).
   manaAbilityAlsoKinds: ['dealDamage', 'loseLife', 'gainLife', 'delayedCast'],
@@ -741,7 +755,17 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute', 'Incubator', 'Lander'],
+  tokenPresets: [
+    'Treasure',
+    'Food',
+    'Clue',
+    'Gold',
+    'Map',
+    'Gingerbrute',
+    'Incubator',
+    'Lander',
+    'Junk',
+  ],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -796,6 +820,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // D-407 (CR 701.68): "Blight 1" as the cost of an activated ability.
     'blight',
+    // CR 701.26b: "Untap two tapped creatures you control" as the cost of an activated ability.
+    'untapPermanents',
     // D-139: "Put a page counter on this artifact" and "Return an artifact you control to its owner's hand" as costs.
     'putCounters',
     'returnToHand',
@@ -1134,6 +1160,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'allCreatureTypes',
     // Issue 104: "Each creature card in your hand has cycling {1}{U}." (CR 702.29a).
     'grantKeywordToHandCards',
+    // Issue 145: "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a).
+    'grantKeywordToSpells',
     // "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a).
     'grantFlashbackToGraveyardCards',
     'noMaximumHandSize',
@@ -1236,6 +1264,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Gingerbrute',
     'Incubator',
     'Lander',
+    'Junk',
     'custom',
     'copyOf',
     'tapped',
@@ -1249,6 +1278,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'x',
     'powerOf',
     'manaValueOf',
+    // Issue 145 (Ancient Cornucopia): "for each of that spell's colors".
+    'colorsOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
     'shortfall',
     'countOf',
@@ -1285,6 +1316,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'greatestPowerAmong',
     // D-518: "the number of card types among cards in your graveyard" (Delirium).
     'cardTypesAmong',
+    // Issue 121: "the number of different mana values among instant and sorcery cards in your graveyard" (Eris).
+    'differentManaValuesAmong',
     // D-187: "for each time it has attacked this turn" (a static ability's +N/+N).
     'timesAttacked',
     // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
@@ -1329,6 +1362,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tappedAsCostPower',
     // Hylda group 3 (CR 107.3m): "When this creature enters, draw X cards": the X of the spell the permanent came from.
     'enteredX',
+    // CR 119.4, 614.12: "where X is the life paid as this artifact entered".
+    'lifePaidAsEntered',
     // D-654: "for each Aura you controlled that was attached to it" (CR 603.10a, 113.7a).
     'aurasAttachedToTriggerSubject',
     // Galadriel group 3: "Scry X, where X is the result" (CR 706.2): the natural result of the die rolled earlier in the same resolution.
@@ -1361,6 +1396,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // D-667: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
     'retrace',
+    // CR 702.133a: Jump-start (cast from the graveyard by discarding a card as an additional cost).
+    'jumpStart',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
   ],
@@ -1508,6 +1545,8 @@ export const ABILITY_FEATURES = [
   'manaSpentRiderCopy',
   /** Issue 241: `spentRider.grants.countersCommanderCasts`: the commander cast with the mana enters with extra +1/+1 counters. */
   'manaSpentRiderCounters',
+  /** Issue 121: `spentRider.grants.exileLinked`: a spell cast with the mana may be exiled as it resolves and is remembered by the permanent (Forger's Foundry). */
+  'manaSpentRiderExile',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
@@ -1578,6 +1617,8 @@ export const TRIGGER_FEATURES = [
   'castFirstOfKind',
   /** "Whenever you cast your first spell during each opponent's turn" (D-565): `castSpell` with `duringTurn`. */
   'castDuringOpponentTurn',
+  /** "Whenever an opponent casts a spell during your turn" (CR 603.2): `castSpell` with `duringTurn: 'you'`. */
+  'castDuringYourTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -1981,6 +2022,8 @@ export const STATIC_KINDS = [
   'allCreatureTypes',
   /** "Each creature card in your hand has cycling {1}{U}." (CR 702.29a, issue 104). */
   'grantKeywordToHandCards',
+  /** "Creature spells you cast have demonstrate." (CR 702.144a, 702.51a, issue 145). */
+  'grantKeywordToSpells',
   /** "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost." (CR 702.34a). */
   'grantFlashbackToGraveyardCards',
   /** "Enchanted creature is goaded" (CR 701.15, issue 201). */
@@ -2095,6 +2138,7 @@ export const TOKEN_KINDS = [
   'Gingerbrute',
   'Incubator',
   'Lander',
+  'Junk',
   'Blood',
   'custom',
   /** "A token that's a copy of target creature" (CR 707.2): the engine's `copyOf`. */
@@ -2115,6 +2159,8 @@ export const AMOUNT_KINDS = [
   'x',
   'powerOf',
   'manaValueOf',
+  /** "For each of that spell's colors" (CR 105.2, issue 145): the engine's `colorsOf`. */
+  'colorsOf',
   /** "The difference" between a number and a mana value (D-151): the engine's `shortfall`. */
   'shortfall',
   'countOf',
@@ -2160,6 +2206,8 @@ export const AMOUNT_KINDS = [
   'greatestPowerAmong',
   /** "The number of card types among cards in your graveyard" (CR 205.2a, D-518): the engine's `cardTypesAmong`. */
   'cardTypesAmong',
+  /** "The number of different mana values among instant and sorcery cards in your graveyard" (CR 202.3, issue 121): the engine's `differentManaValuesAmong`. */
+  'differentManaValuesAmong',
   /** "For each time it has attacked this turn" (CR 508.1, D-187): the engine's `timesAttacked`, a static ability's +N/+N. */
   'timesAttacked',
   /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
@@ -2214,6 +2262,8 @@ export const AMOUNT_KINDS = [
   'tappedAsCostPower',
   /** "When this creature enters, draw X cards" (CR 107.3m, Hylda group 3): the engine's `enteredX`, the X of the spell the permanent came from. */
   'enteredX',
+  /** "Where X is the life paid as this artifact entered" (CR 119.4, 614.12): the engine's `lifePaidAsEntered`, the amount a permanent paid for "pay any amount of life". */
+  'lifePaidAsEntered',
   /** "For each Aura you controlled that was attached to it" (D-654, CR 603.10a): the engine's `aurasAttachedToTriggerSubject`. */
   'aurasAttachedToTriggerSubject',
   /** "Scry X, where X is the result" (CR 706.2, Galadriel group 3): the engine's `dieResult` amount, the natural result of the die rolled earlier in the resolution. */
@@ -2249,6 +2299,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'morph',
   'tapPermanents',
   'retrace',
+  'jumpStart',
   'sacrificeFromGraveyard',
   'impending',
 ] as const;
@@ -2308,6 +2359,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
   manaSpentRiderCounters: true,
+  manaSpentRiderExile: true,
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,
@@ -2377,6 +2429,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   setLifeTotal: true,
   loseLife: true,
   loseGame: true,
+  winGame: true,
   meld: true,
   tap: true,
   untap: true,
@@ -2500,6 +2553,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileUntilCast: true,
   revealTopCast: true,
   mayCastEachType: true,
+  nextSpellModifier: true,
   revealTop: true,
   revealTopDuel: true,
   revealTopBranches: true,
@@ -2569,6 +2623,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castNth: true,
   castFirstOfKind: true,
   castDuringOpponentTurn: true,
+  castDuringYourTurn: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
@@ -2639,6 +2694,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   demonstrate: true,
   retrace: true,
+  jumpStart: true,
   aftermath: true,
   unearth: true,
   encore: true,
@@ -2649,6 +2705,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   echo: true,
   cumulativeUpkeep: true,
   suspend: true,
+  plot: true,
   storm: true,
   gravestorm: true,
   replicate: true,
@@ -2695,6 +2752,7 @@ const MANA_PRODUCTION_TABLE: KindTable<ManaProduction['kind']> = {
   anyCombination: true,
   anyColorDevotion: true,
   anyColorAmount: true,
+  producedType: true,
 };
 const COST_TABLE: KindTable<Cost['kind']> = {
   mana: true,
@@ -2712,6 +2770,7 @@ const COST_TABLE: KindTable<Cost['kind']> = {
   exileThis: true,
   tapCreatures: true,
   tapPermanents: true,
+  untapPermanents: true,
   blight: true,
   exileFromGraveyard: true,
   removeCounters: true,

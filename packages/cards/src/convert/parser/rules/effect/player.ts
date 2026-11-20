@@ -451,7 +451,13 @@ const createAction: Action = (subject, you, rule) =>
     spanned(
       sequence(
         pattern(you ? /create /i : /creates /i),
-        tokenWithEach(['token.predefined', 'token.custom', 'token.number-of']),
+        tokenWithEach([
+          'token.predefined',
+          'token.custom',
+          'token.number-of',
+          'token.copy',
+          'token.copy-that-creature',
+        ]),
       ),
     ),
     ({ value, span }) =>
@@ -540,6 +546,9 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain life equal to its power',
     'you lose life equal to that card’s mana value',
     'its controller creates a 3/3 green Beast creature token',
+    // Issue 145 (Bramble Sovereign, CR 111.2): the controller of the creature makes the copy of it.
+    'its controller creates a token that’s a copy of it',
+    'that creature’s controller creates a token that’s a copy of that creature',
     'its controller creates two Treasure tokens',
     "that creature's controller creates a Treasure token",
     'its controller creates a 2/2 blue Bird creature token with flying',
@@ -646,7 +655,6 @@ export const EFFECT_PLAYER = defineRule<Clauses>({
     'you gain X life for each creature you control',
     'you draw a card for each time',
     'you draw a card for each creature',
-    'its controller creates a token that’s a copy of it',
     'its controller creates a 2/2 blue Bird creature token with flash',
     'its controller creates',
     'its controller create a Treasure token',

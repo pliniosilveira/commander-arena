@@ -875,6 +875,19 @@ export function describeEvent(
           'CR 602.2b',
         );
       }
+      // CR 701.26b, 602.2b: "Untap two tapped creatures you control" as a cost; the untapped lines follow.
+      if (event.purpose === 'untapCost') {
+        const untapped = joinNames(event.objects.map(name));
+        return line(
+          'major',
+          event.automatic
+            ? `${who(event.seat)} must untap ${untapped} to pay for ${label(event.source)}: no other choice.`
+            : `${who(event.seat)} ${verb(event.seat, 'untap', 'untaps')} ${untapped} to pay for ${label(event.source)}.`,
+          event.seat,
+          event.objects,
+          'CR 701.26b',
+        );
+      }
       // D-407 (CR 701.68a, 602.2b): "Blight 1" as a cost; the counter's own line follows.
       if (event.purpose === 'blight') {
         const blighted = joinNames(event.objects.map(name));
@@ -1102,6 +1115,20 @@ export function describeEvent(
           event.seat,
           [],
           'CR 702.16a',
+        );
+      }
+      // CR 119.4, 614.12: "You choose to pay 4 life for Phyrexian Processor." The payment is public; the life lost is logged by its own line.
+      if (event.purpose === 'lifePaid') {
+        const subject =
+          asked?.kind === 'chooseOption' && asked.source === event.source
+            ? asked.sourceName
+            : label(event.source);
+        return line(
+          'major',
+          `${who(event.seat)} ${verb(event.seat, 'choose', 'chooses')} to pay ${event.option} life for ${subject}.`,
+          event.seat,
+          [],
+          'CR 119.4',
         );
       }
       // CR 702.136a (D-185): "You choose a +1/+1 counter for Riot Goblin (riot)." or "... haste ...".
@@ -1664,6 +1691,15 @@ export function describeEvent(
         event.seat,
         event.objects,
         'CR 608.2d',
+      );
+    case 'plotted':
+      // CR 702.170a: the card is exiled face up, so it is named.
+      return line(
+        'major',
+        `${who(event.seat)} ${verb(event.seat, 'plot', 'plots')} ${name(event.object)}.`,
+        event.seat,
+        [event.object],
+        'CR 702.170a',
       );
     default: {
       const unreachable: never = event;

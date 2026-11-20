@@ -366,7 +366,7 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
       break;
     case 'asEntersChoose':
       // CR 614.12a (D-100): what is chosen is a creature type or a color; D-151: or a name from a list the card gives; D-376: or a card type.
-      if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType'])) {
+      if (!isOneOf(r.what, ['creatureType', 'color', 'option', 'cardType', 'lifePaid'])) {
         issue(out, `${path}.what`, `unknown choice ${JSON.stringify(r.what)}`);
       }
       break;
@@ -454,6 +454,39 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
           out,
           `${path}.what`,
           'the cards of a hand are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'grantKeywordToSpells':
+      // Issue 145 (CR 702.144a, 702.51a): "Creature spells you cast have demonstrate": only the keywords the engine reads from a spell as it is cast, for the spells of the permanent's
+      // controller a filter names, as the spells they are on the stack (a spell the controller casts: `controller` is 'you', and nothing else says where or whose it is).
+      if (s.keyword?.kind !== 'demonstrate' && s.keyword?.kind !== 'convoke') {
+        issue(out, `${path}.keyword`, 'only demonstrate and convoke can be given to spells');
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        s.what?.controller !== 'you' ||
+        filterSome(s.what, (f) => f.controller !== undefined && f.controller !== 'you')
+      ) {
+        issue(out, `${path}.what`, "the spells are the ones you cast: controller is 'you'");
+      }
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            f.keywords !== undefined ||
+            f.notKeywords !== undefined ||
+            f.targetsObject !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the spells are named by what they are: no zone, owner, stackKind, keywords, targets, combat or source',
         );
       }
       break;
@@ -824,11 +857,15 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
             'firstOfKind names at least one card type, or one it must not have',
           );
       }
-      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent') {
+      if (t.duringTurn !== undefined && t.duringTurn !== 'opponent' && t.duringTurn !== 'you') {
         issue(out, `${path}.duringTurn`, 'unknown active player condition');
       }
-      if (t.duringTurn !== undefined && (t.nth !== 1 || t.by !== 'you')) {
+      // "your first spell during each opponent's turn" (D-565) is a first spell of the controller; "during your turn" is for any cast trigger.
+      if (t.duringTurn === 'opponent' && (t.nth !== 1 || t.by !== 'you')) {
         issue(out, `${path}.duringTurn`, 'opponent-turn first-spell trigger must be you and nth 1');
+      }
+      if (t.duringTurn !== undefined && t.self !== undefined) {
+        issue(out, `${path}.duringTurn`, 'a self cast trigger has no turn condition');
       }
       break;
     case 'landfall':
@@ -1695,7 +1732,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           ? { triggerAttacked: true }
           : {}),
         triggeredAbility: true,
+        ...(a.trigger.kind === 'tappedForMana' ? { triggeredMana: true } : {}),
         ...(a.trigger?.kind === 'attacks' ? { attackTrigger: true } : {}),
+        ...(a.trigger?.kind === 'attackBatch' ? { attackBatchTrigger: true } : {}),
         ...(mentionsCondition(a.interveningIf, 'yourMainPhase') ? { mainPhaseTrigger: true } : {}),
         ...(a.trigger?.kind === 'step' && a.trigger.step === 'main2'
           ? { postcombatMainTrigger: true }
@@ -1769,7 +1808,9 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           a.effect?.kind === 'addMana' &&
           (a.effect.mana?.kind === 'fixed' ||
             // CR 106.1b, 605.3b: one mana of any color, named as the mana ability is activated.
-            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1)) &&
+            (a.effect.mana?.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
+            // CR 106.12a, 605.4a: one mana of a type the tapped permanent produced.
+            a.effect.mana?.kind === 'producedType') &&
           a.targets === undefined &&
           a.modes === undefined &&
           a.optional !== true &&

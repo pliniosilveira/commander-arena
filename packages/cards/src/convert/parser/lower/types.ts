@@ -62,6 +62,8 @@ export interface LowerContext {
   castTriggerX: boolean;
   /** The triggers are all "When you cycle this card": an X in the body is the X announced for the cycling cost (issue 81, Shark Typhoon, CR 702.29a, 107.3). */
   cycleTriggerX: boolean;
+  /** The one intervening "if" of the triggered ability is "if you gained life this turn" (CR 603.4): "that many" in its body is the life gained this turn (Lathiel). */
+  lifeGainedIf: boolean;
   /** One of the events of the trigger is an ability being activated (`activatesAbility`): "copy that spell or ability" has an ability to copy (Unbound Flourishing, CR 707.10). */
   activateTrigger: boolean;
   /**
@@ -228,6 +230,8 @@ export interface LowerContext {
   lifeGainTrigger: boolean;
   /** True in the body of a triggered ability whose every event is a player scrying (D-513, CR 701.22): the cards looked at are the number its event carries. */
   scryTrigger: boolean;
+  /** True while the reflexive ability of a payment made any number of times is lowered (issue 121, CR 603.12): the number of times paid is the number its event carries. */
+  payReflexive: boolean;
   /** True in the body of a triggered ability (CR 603.3d): the number of targets of a slot ("up to X target ...") may be read as it triggers. */
   triggeredBody: boolean;
   /** True once a `search` of the text was lowered (Lorehold group 1): "If you search your library this way" asks what a search before it did. */
@@ -340,6 +344,7 @@ export function newContext(
     castTrigger: false,
     castTriggerX: false,
     cycleTriggerX: false,
+    lifeGainedIf: false,
     activateTrigger: false,
     removed: new Set(),
     madeAToken: false,
@@ -357,6 +362,7 @@ export function newContext(
     thisWay: 'sacrificed',
     lifeGainTrigger: false,
     scryTrigger: false,
+    payReflexive: false,
     triggeredBody: false,
     discardBatchTrigger: false,
     entersBatchTrigger: false,

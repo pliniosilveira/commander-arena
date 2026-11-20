@@ -16,6 +16,7 @@ import {
   answerReturnCost,
   answerSacrificeCost,
   answerTapCost,
+  answerUntapCost,
   beginActivate,
 } from './rules/activate';
 import { activationRefusal } from './rules/activate-legality';
@@ -191,7 +192,12 @@ function isOffered(options: readonly PriorityOption[], action: Action): boolean 
         (o.face ?? 0) === (action.face ?? 0)
       );
     }
-    if (o.kind === 'suspend' || o.kind === 'foretell' || o.kind === 'turnFaceUp') {
+    if (
+      o.kind === 'suspend' ||
+      o.kind === 'foretell' ||
+      o.kind === 'plot' ||
+      o.kind === 'turnFaceUp'
+    ) {
       return action.kind === o.kind && action.object === o.object;
     }
     if (o.kind === 'unlockDoor') {
@@ -788,6 +794,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
           return beginCast(state, seat, action.object, action.alternative, action.face ?? 0);
         case 'suspend':
         case 'foretell':
+        case 'plot':
           // CR 116.2f, 116.2h (D-128): a special action; it asks for its payment, then exiles the card.
           return beginSpecialAction(state, seat, action.kind, action.object);
         case 'turnFaceUp':
@@ -875,7 +882,7 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
         return answerBlockPayment(state, seat, d.blocks, action);
       }
       // CR 702.62a, 702.143a (D-128): the cost of a special action, paid before the card is exiled.
-      if (d.purpose === 'suspend' || d.purpose === 'foretell') {
+      if (d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'plot') {
         if (action.kind !== 'payAuto' && action.kind !== 'payManual' && action.kind !== 'cancel') {
           return fail('Pay the cost or cancel');
         }
@@ -948,6 +955,8 @@ function dispatch(state: GameState, seat: SeatId, d: PendingDecision, action: Ac
       }
       // D-407 (CR 701.68a): the creature that gets the -1/-1 counters of a blight cost.
       if (d.purpose === 'blight') return answerBlight(state, action.objects);
+      // CR 701.26b: the permanents untapped to pay "Untap two tapped creatures you control".
+      if (d.purpose === 'untapCost') return answerUntapCost(state, action.objects);
       // D-139: the permanents returned to their owners' hands to pay "Return an artifact you control to its owner's hand".
       if (d.purpose === 'bounce') return answerReturnCost(state, action.objects);
       if (d.forCost) {

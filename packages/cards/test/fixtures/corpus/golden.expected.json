@@ -1,6 +1,14 @@
 {
-  "parserVersion": 169,
+  "parserVersion": 171,
   "cards": {
+    "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
+      "name": "Pteramander",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "12f9bf22"
+    },
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
       "group": "acceptance",
@@ -67,6 +75,14 @@
       "reasons": [],
       "ast": "e7704bfc"
     },
+    "01766d9b-b2af-4a27-9e65-08c82e7d7637": {
+      "name": "Pyretic Charge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "06997299"
+    },
     "01a79429-7d57-4a51-9815-a20905ed4707": {
       "name": "Rashmi, Eternities Crafter",
       "group": "acceptance",
@@ -90,6 +106,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1d3d8666"
+    },
+    "01e742ed-660c-43c6-b393-e589a54cbe1b": {
+      "name": "Voice of the Blessed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e15064e5"
     },
     "02090581-61aa-4348-ad57-451be8ee91c2": {
       "name": "Ponder",
@@ -406,6 +430,14 @@
       "reasons": [],
       "ast": "04b35336"
     },
+    "08bc10fd-8901-4836-ad4d-a867e1bcba77": {
+      "name": "Epic Experiment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a30c93b3"
+    },
     "08becc07-28bc-4a2f-a6b0-28a2998d2f50": {
       "name": "Windfall",
       "group": "acceptance",
@@ -494,6 +526,14 @@
       "reasons": [],
       "ast": "2c0452f2"
     },
+    "0b8517c0-0441-4fd9-99ec-2274e57c3cb6": {
+      "name": "Kaza, Roil Chaser",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "51cae8cc"
+    },
     "0ba134d8-ee7d-48ec-8dc6-57942b8e9261": {
       "name": "Liliana of the Veil",
       "group": "acceptance",
@@ -526,14 +566,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "681059ce"
-    },
-    "0c1e2bb8-0629-466c-b435-c4c71cdc755d": {
-      "name": "Sapling of Colfenor",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "b6bb3c3e"
     },
     "0c2841bb-038c-4fbf-8360-bc0a1522b58d": {
       "name": "Exploration",
@@ -582,6 +614,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "dc66dcae"
+    },
+    "0d2fa39a-9cac-4a1f-bb1e-b6162e6d5169": {
+      "name": "Lazotep Quarry",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea9bce64"
     },
     "0d4ecdb1-ec90-497f-a7a4-1c68092b8757": {
       "name": "Teferi's Protection",
@@ -680,14 +720,6 @@
       "reasons": [],
       "ast": "239d9e83"
     },
-    "103d9ad0-d655-4bd5-a899-e9f8869e333d": {
-      "name": "Gaze of Granite",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "46f4cc3b"
-    },
     "1063822f-47d3-42e9-8a21-f62b12609fe1": {
       "name": "Fatehold Chronologist // Peer Review",
       "group": "acceptance",
@@ -719,6 +751,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a94b3829"
+    },
+    "118da256-d1ea-44e8-9026-317e49694d29": {
+      "name": "Forger's Foundry",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9f8edb4f"
     },
     "12397dbf-99a9-40c3-aa7c-76d09baad008": {
       "name": "Teacher's Pest",
@@ -938,14 +978,6 @@
       "reasons": [],
       "ast": "13a8a530"
     },
-    "1820af5c-9cc2-4b77-b4ca-86084442f087": {
-      "name": "Sun Droplet",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "e6657315"
-    },
     "183891b0-b5ec-47f4-8d09-b9d3cfc4e7f1": {
       "name": "God-Eternal Bontu",
       "group": "training",
@@ -1146,6 +1178,14 @@
       "reasons": [],
       "ast": "9ec4ff4a"
     },
+    "1e36a42f-58e2-49bc-8c14-7f75e1d8ef98": {
+      "name": "Arcane Bombardment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a1093f34"
+    },
     "1e7bddbd-e448-4aea-9d18-b44bd45837c5": {
       "name": "Vow of Duty",
       "group": "acceptance",
@@ -1161,14 +1201,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d4f4daf"
-    },
-    "1fa20b05-cc06-4fb7-ae76-677a29e2185a": {
-      "name": "Yedora, Grave Gardener",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "8f37996f"
     },
     "1fb02bad-0d1f-437f-a269-f51cc19b280f": {
       "name": "Havengul Lich",
@@ -1522,14 +1554,6 @@
       "reasons": [],
       "ast": "9564f29c"
     },
-    "2a3712f9-6bed-4068-9064-2b5240fc7b28": {
-      "name": "Gluttonous Troll",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "734f822c"
-    },
     "2abe9303-d498-4aad-b6b2-8b5064bd2ffd": {
       "name": "Rhox Faithmender",
       "group": "acceptance",
@@ -1706,6 +1730,14 @@
       ],
       "reasons": [],
       "ast": "1e8fa4c9"
+    },
+    "2ea2ac09-690d-4cd2-8e3a-fc01ecd7c132": {
+      "name": "Leyline Dowser",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1ab06e4e"
     },
     "2ef0961a-0543-4371-8c2a-333881b735e5": {
       "name": "Tomik, Wielder of Law",
@@ -1891,6 +1923,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "8bf43001"
+    },
+    "32de1b70-f993-4423-b0ef-0762c2b4d1b1": {
+      "name": "Gruff Triplets",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ec255731"
     },
     "32e5339e-9e4f-46f8-b305-f9d6d3ba8bb5": {
       "name": "Lotus Petal",
@@ -2110,6 +2150,22 @@
       "reasons": [],
       "ast": "2b55ad53"
     },
+    "36a9de4c-8073-475d-8679-e50844eef09e": {
+      "name": "Halo Fountain",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e38feca9"
+    },
+    "36c800cb-b1ca-4432-ad3c-4d8b90337f4c": {
+      "name": "Phyrexian Processor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ab9d52b9"
+    },
     "36cd2364-d113-47d1-b2c4-b088d9eb88dd": {
       "name": "Brainstorm",
       "group": "holdout",
@@ -2280,6 +2336,14 @@
       "reasons": [],
       "ast": "ee8bc203"
     },
+    "3b943c3e-1f18-4997-b6d0-28ef75aed88e": {
+      "name": "Bloodthirsty Adversary",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2940f265"
+    },
     "3bb518ff-399b-4ce7-b9ad-a1d563dd7792": {
       "name": "Arch of Orazca",
       "group": "acceptance",
@@ -2407,6 +2471,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "5456ad62"
+    },
+    "40362fe0-a1a9-4d76-8c35-eac474b91af5": {
+      "name": "Mizzix's Mastery",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "21ffc325"
     },
     "406247ee-2b86-4068-b5fa-65cdc83a82f4": {
       "name": "Shardmage's Rescue",
@@ -2792,6 +2864,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c4ff9f42"
+    },
+    "4d211447-9f18-4d23-8f19-cdf6ad3c68ba": {
+      "name": "Soul of Eternity",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "35e954c3"
     },
     "4d60dae0-7be4-4859-99ac-781a27bcfd93": {
       "name": "Thickest in the Thicket",
@@ -3326,6 +3406,14 @@
       "reasons": [],
       "ast": "39bd92c6"
     },
+    "5cbbb3f3-63a4-4983-81ea-8c405b10e63f": {
+      "name": "Voice of Resurgence",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0bf70894"
+    },
     "5cd96cf2-c1c6-4982-8cf8-70c16704e387": {
       "name": "Zombie Trailblazer",
       "group": "acceptance",
@@ -3383,6 +3471,14 @@
       "reasons": [],
       "ast": "48dd05c9"
     },
+    "5e26a688-67d7-48a5-8862-653851bf3784": {
+      "name": "Bramble Sovereign",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea6999e0"
+    },
     "5e62b51d-faec-4aa0-9504-cf2c282d08ea": {
       "name": "Rakdos Charm",
       "group": "acceptance",
@@ -3415,22 +3511,13 @@
       "reasons": [],
       "ast": "940a518a"
     },
-    "5ecf35b1-0bfd-4c60-a791-5a3b918dd630": {
-      "name": "Marshland Bloodcaster",
+    "5f15125e-ae89-471e-b055-226a783bc7c1": {
+      "name": "Aetherflux Reservoir",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "{1}{B}, {T}: Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "4706e044"
+      "ast": "b7e66ba7"
     },
     "5f2be3c2-060a-43e1-b63b-9cd3c78ffcb0": {
       "name": "Ilysian Caryatid",
@@ -3697,6 +3784,14 @@
       "reasons": [],
       "ast": "b5d13efb"
     },
+    "65681a2a-8395-4390-845f-9be974994dcb": {
+      "name": "Octavia, Living Thesis",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c873b58a"
+    },
     "65756e6d-9825-4ed6-91c4-79f1e3bd4ae5": {
       "name": "Supernatural Stamina",
       "group": "acceptance",
@@ -3788,19 +3883,10 @@
     "6789a170-f2c5-4fc0-8a45-2b2361e67410": {
       "name": "Chord of Calling",
       "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.search"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3e496a9e"
+      "ast": "07d0d057"
     },
     "67d60b24-d429-4ded-90d9-06e49f28c396": {
       "name": "Verdant Catacombs",
@@ -3849,6 +3935,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "54c4e96a"
+    },
+    "69872a9a-fe54-4e58-940c-89395af71acd": {
+      "name": "Finale of Devastation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3ce55baf"
     },
     "69a72414-d02f-4a5c-b5c9-8941bb181f61": {
       "name": "Aven Fisher",
@@ -4210,6 +4304,14 @@
       "reasons": [],
       "ast": "241e0be9"
     },
+    "73094bde-5466-41a4-88f9-a98e67f5ed2e": {
+      "name": "Break Down",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "77e2aedb"
+    },
     "7324abaa-48da-439d-9339-b0ea5eea612e": {
       "name": "Unnatural Growth",
       "group": "holdout",
@@ -4283,6 +4385,14 @@
       "reasons": [],
       "ast": "4a55e55b"
     },
+    "756042c5-e444-45d7-8dc6-ae7c83c98438": {
+      "name": "Ghalta and Mavren",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "0b88f6d5"
+    },
     "7565c101-a479-4812-9d18-63918084bfca": {
       "name": "Tetzimoc, Primal Death",
       "group": "acceptance",
@@ -4290,14 +4400,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3ecc6edf"
-    },
-    "75a4ddf5-1b3c-4dde-a6e4-4346e46cebf1": {
-      "name": "Druidic Satchel",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "ea3c947c"
     },
     "75e4448b-5bd7-4ed4-8db8-820cd6d04c12": {
       "name": "Boar Umbra",
@@ -4841,6 +4943,14 @@
       "reasons": [],
       "ast": "0a13d3ed"
     },
+    "83f87884-f0f9-482e-887e-35a8a5c20eb0": {
+      "name": "Smoldering Stagecoach",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7652faf3"
+    },
     "84275aab-f718-4896-b61c-63bf49fb483b": {
       "name": "Merchant of Truth",
       "group": "training",
@@ -4872,6 +4982,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2522c329"
+    },
+    "852657c0-18a4-4b28-b9ae-7728acdb5044": {
+      "name": "Mirari's Wake",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "dbb7c7b6"
     },
     "857db7e0-254a-4920-a71d-9bab6555342f": {
       "name": "Phalanx Leader",
@@ -5252,13 +5370,13 @@
       "reasons": [],
       "ast": "568550ce"
     },
-    "913ec957-5f4e-46b4-a819-9448837f72a3": {
-      "name": "Revival Experiment",
+    "918991a6-7321-419d-8f3d-150fe32d02d2": {
+      "name": "Eris, Roar of the Storm",
       "group": "acceptance",
       "status": "supported",
       "unparsed": [],
       "reasons": [],
-      "ast": "18de27a4"
+      "ast": "78812c81"
     },
     "91fceb34-0f2d-4392-be27-00dcd765637f": {
       "name": "Thriving Bluff",
@@ -5299,6 +5417,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "325dd6e9"
+    },
+    "9355db6e-d8eb-43be-9c1d-04f1806dc366": {
+      "name": "Lock and Load",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a85a697f"
     },
     "9381b4a5-a8e0-412d-bc7f-ae15afa0f135": {
       "name": "Teferi's Reproach",
@@ -5347,14 +5473,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c9be3892"
-    },
-    "94723d61-3e29-4180-91bc-df37c4086a66": {
-      "name": "Willowdusk, Essence Seer",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "03fb6d2d"
     },
     "95e1c368-b58a-4e69-9583-587560ad558d": {
       "name": "Eagle's Rescue",
@@ -5780,6 +5898,14 @@
       "reasons": [],
       "ast": "8cdadbff"
     },
+    "9fe1f3ef-2c30-4ccc-9a67-5349e98e2502": {
+      "name": "Song of Freyalise",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "cf121b27"
+    },
     "a07483b4-c04f-42a4-b979-8b77c11fa8f5": {
       "name": "Slate of Ancestry",
       "group": "acceptance",
@@ -5812,6 +5938,14 @@
       "reasons": [],
       "ast": "92f170b8"
     },
+    "a0c47ab6-dfb4-46ee-a3f7-9e1521b4bb4b": {
+      "name": "Shalai, Voice of Plenty",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e8eeeb88"
+    },
     "a145ff8c-5812-4bcb-bd16-9839dc25121d": {
       "name": "Storm-Kiln Artist",
       "group": "acceptance",
@@ -5827,6 +5961,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f8d50d36"
+    },
+    "a178a789-1f5f-46ca-a90b-574bd236a671": {
+      "name": "Winged Boots",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2d105732"
     },
     "a1cc5e37-b09a-4b7f-afd5-77c1c35aa425": {
       "name": "Carrion Feeder",
@@ -5851,6 +5993,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "011feb27"
+    },
+    "a2a380d8-4df7-4357-862c-ed3fb795db6c": {
+      "name": "Sundering Growth",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3e8aa54b"
     },
     "a3112971-3af4-46e8-b2d6-a8759b39d0d1": {
       "name": "Ganax, Astral Hunter",
@@ -5996,14 +6146,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a92e282b"
-    },
-    "a684df3a-5441-4daa-86d1-c47a91b35e6a": {
-      "name": "Reckless Spite",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "fc94a5f0"
     },
     "a6fd90dc-0ec3-4dce-a77a-4d04f5e254bf": {
       "name": "Winds of Rath",
@@ -6244,6 +6386,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9a395a55"
+    },
+    "ac230b68-f945-4a1a-bd89-33e6d62e3c36": {
+      "name": "Silverquill Lecturer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8ea57511"
     },
     "ac675899-25bb-4f06-9c8c-bf188024495f": {
       "name": "Firemane Commando",
@@ -6553,14 +6703,6 @@
       "reasons": [],
       "ast": "7037decd"
     },
-    "b5516bc9-ec8d-4323-8748-96c49d7d0622": {
-      "name": "Deadly Tempest",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "69941b55"
-    },
     "b5641fcf-135e-43e7-a547-344fac61e279": {
       "name": "Tivash, Gloom Summoner",
       "group": "acceptance",
@@ -6640,6 +6782,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "1dafb6ba"
+    },
+    "b86d3142-568a-4eea-b1ae-5fcfc1453533": {
+      "name": "Boon Reflection",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "d2b05f47"
     },
     "b8f566ea-8283-4afa-9ac8-737e26419283": {
       "name": "Explore",
@@ -6753,6 +6903,14 @@
       "reasons": [],
       "ast": "cb8867d9"
     },
+    "bcd3e6a1-7b76-408d-9236-3791c3e1064a": {
+      "name": "Excavation Technique",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "abb835fc"
+    },
     "bce7e45d-b2c5-43aa-91a6-3a3c24f30850": {
       "name": "Bruna, the Fading Light",
       "group": "training",
@@ -6785,6 +6943,14 @@
       "reasons": [],
       "ast": "1a4191d5"
     },
+    "bdeb440d-a714-40e8-9038-f651e6ae45fb": {
+      "name": "Springleaf Drum",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "820bba93"
+    },
     "be4f47e9-1bd2-4aa9-bc85-3f203ad21639": {
       "name": "Rionya, Fire Dancer",
       "group": "acceptance",
@@ -6800,6 +6966,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bd51f054"
+    },
+    "bec6fb31-60a3-432f-ba36-aebf172f8b27": {
+      "name": "Growing Ranks",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7e23144e"
     },
     "befb211f-37ca-4083-98d4-9ff1f28be3f2": {
       "name": "Goreclaw, Terror of Qal Sisma",
@@ -6865,6 +7039,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3f14f6aa"
+    },
+    "c071257a-63e7-48d0-a677-0b396a09b624": {
+      "name": "Restless Prairie",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "454567ca"
     },
     "c0d8fef4-65f4-4769-982d-b397d2b7e977": {
       "name": "Animate Dead",
@@ -6994,6 +7176,22 @@
       "reasons": [],
       "ast": "21093119"
     },
+    "c46a02db-13d6-477f-9da0-822599470168": {
+      "name": "Dazzling Theater // Prop Room",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a73ba198"
+    },
+    "c4d36522-3ace-4bfb-bf2d-1a366f458698": {
+      "name": "Suture Priest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "bb03dac3"
+    },
     "c4fe854e-8783-492e-bb2e-9f242ada8a5b": {
       "name": "Blight Mound",
       "group": "acceptance",
@@ -7065,6 +7263,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "a019bb51"
+    },
+    "c68faebc-b2cd-461b-b93e-e1fcd4816810": {
+      "name": "Midnight Clock",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "905d70a1"
     },
     "c6d89c4a-351f-4d63-ba57-b978a695191e": {
       "name": "Seedship Impact",
@@ -7324,6 +7530,14 @@
       "reasons": [],
       "ast": "e0321e5a"
     },
+    "cc7d99e8-f9dc-47d3-b6c0-e9308d33c3c0": {
+      "name": "Invincible Hymn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "649f0ddb"
+    },
     "cd2c90ac-2b04-461c-92f3-939871b6b6a3": {
       "name": "Sunken Hollow",
       "group": "training",
@@ -7484,6 +7698,14 @@
       "reasons": [],
       "ast": "d1def719"
     },
+    "d3c56fc4-3611-41b1-952e-4c5311b1510b": {
+      "name": "Lathiel, the Bounteous Dawn",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "12224ef0"
+    },
     "d3f7095a-b287-4858-9d08-242cf18e87cb": {
       "name": "Defiling Daemogoth",
       "group": "acceptance",
@@ -7556,22 +7778,6 @@
       "reasons": [],
       "ast": "82ebee59"
     },
-    "d5b446a4-a761-42f0-acf0-ea0a1a9538d6": {
-      "name": "Pulse of Murasa",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "b4ea72b8"
-    },
-    "d5c4d36c-54b3-4149-906b-a57a670260fc": {
-      "name": "Alhammarret's Archive",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "fff007f3"
-    },
     "d683d985-9888-4d21-8b5f-69e69ce4a03b": {
       "name": "Path to Exile",
       "group": "training",
@@ -7595,6 +7801,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "416ba3c5"
+    },
+    "d6fafb50-9531-4fbf-bb1e-ebb4dd39281c": {
+      "name": "Finale of Promise",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "caf56774"
     },
     "d73191d8-6f94-4fba-acd2-2d0490e3ac00": {
       "name": "The Balrog of Moria",
@@ -7716,14 +7930,6 @@
       "reasons": [],
       "ast": "4e7b1cbf"
     },
-    "d9826660-0f34-4d82-8915-cf2796ab8d9a": {
-      "name": "Sproutback Trudge",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "1118ed8a"
-    },
     "d9a10971-f32b-4978-952d-fed0a5bc9e36": {
       "name": "Krosan Verge",
       "group": "acceptance",
@@ -7844,6 +8050,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "51c00f03"
+    },
+    "dbf0ad03-ab31-49d2-89b1-05b45948a61f": {
+      "name": "Vorinclex, Voice of Hunger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9fee82e9"
     },
     "dc36f81e-d1b0-44a4-bf82-4cd276bc0812": {
       "name": "Thancred Waters",
@@ -8237,6 +8451,14 @@
       "reasons": [],
       "ast": "8eb79426"
     },
+    "e94ef397-f5c5-4b8d-ae27-528352fa1d1e": {
+      "name": "Trostani, Selesnya's Voice",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "f024826f"
+    },
     "e97f9c2b-b41e-4f36-9245-77c0ac125647": {
       "name": "Bloodghast",
       "group": "acceptance",
@@ -8389,6 +8611,14 @@
       "reasons": [],
       "ast": "b082ae89"
     },
+    "ed7ba558-5341-4c7b-a9c5-b382dee88a13": {
+      "name": "Crackling Spellslinger",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ac0d69d5"
+    },
     "edad60c6-80de-4033-af1b-a703ac332983": {
       "name": "Goblin Bombardment",
       "group": "acceptance",
@@ -8412,14 +8642,6 @@
       "unparsed": [],
       "reasons": [],
       "ast": "db3fc478"
-    },
-    "edf46ef0-159d-4f0b-ae14-14e0c8446382": {
-      "name": "Suffer the Past",
-      "group": "acceptance",
-      "status": "supported",
-      "unparsed": [],
-      "reasons": [],
-      "ast": "c6be13d1"
     },
     "ee1db746-f5c1-4dce-82eb-24b273cc9507": {
       "name": "Witherbloom Charm",
@@ -8525,6 +8747,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "f0443af4"
+    },
+    "f0950c95-a297-489d-b166-74bba6af5376": {
+      "name": "Ancient Cornucopia",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "217985f7"
     },
     "f0ead7f5-5c82-40fd-8e89-3e3c5d31fbad": {
       "name": "Cleric Class",
@@ -8785,6 +9015,22 @@
       "reasons": [],
       "ast": "34f415d5"
     },
+    "f7252190-ad24-4ba3-a644-2790dd1d680d": {
+      "name": "Rhys the Redeemed",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "94102982"
+    },
+    "f746612a-fbed-44ca-b2cc-5928e10cf4bb": {
+      "name": "Grove of the Guardian",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "76c8a39f"
+    },
     "f74d8f53-a239-4641-90f1-bf786d57e253": {
       "name": "Brass Infiniscope",
       "group": "acceptance",
@@ -8953,6 +9199,14 @@
       "reasons": [],
       "ast": "6a63a653"
     },
+    "fbb70f54-8c33-4de0-b05c-f0bff9ffa6ce": {
+      "name": "Song of the Worldsoul",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "83235699"
+    },
     "fc0707c7-d504-4ccf-a0d2-3eb6e26e7a57": {
       "name": "Bloodstained Mire",
       "group": "training",
@@ -8992,6 +9246,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "052f1ee9"
+    },
+    "fd51dce2-8e8a-4686-910e-1bbc2825d190": {
+      "name": "Radical Idea",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "da115b8a"
     },
     "fdb96b5c-ecac-4db3-8b9a-24f824149f91": {
       "name": "Nissa, Steward of Elements",
@@ -9053,7 +9315,7 @@
   },
   "summary": {
     "training": {
-      "supported": 156,
+      "supported": 157,
       "total": 176
     },
     "holdout": {
@@ -9061,8 +9323,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 810,
-      "total": 830
+      "supported": 846,
+      "total": 865
     }
   }
 }

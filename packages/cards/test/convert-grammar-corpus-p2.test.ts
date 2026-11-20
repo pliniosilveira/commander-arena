@@ -273,11 +273,17 @@ const SEARCH: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle.',
+    expect: OK,
+    note: 'issue 145 (Finale of Devastation): mana value X or less is read, as the engine filter `manaValueAtMost` of X',
+  },
+  {
+    kind: 'sorcery',
+    text: 'Search your library for a creature card with mana value X or greater, put it onto the battlefield, then shuffle.',
     expect: no(
-      'with mana value X or less, put it onto the battlefield, then shuffle.',
+      'with mana value X or greater, put it onto the battlefield, then shuffle.',
       'effect.search',
     ),
-    note: 'backlog: 2 cards; mana value is not in the engine filter',
+    note: 'SYNTHETIC near miss of the X limit: only "or less" is read (issue 145)',
   },
   {
     kind: 'sorcery',

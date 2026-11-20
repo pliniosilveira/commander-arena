@@ -283,7 +283,7 @@ export function payBarPrompt(d: PayManaDecision, index: Index): string {
   if (d.purpose === 'unlockDoor') {
     return `${unlockPayPrompt(d.totalCost, index.get(d.source), d.door ?? 0)}: tap your mana sources.`;
   }
-  if (d.purpose === 'suspend' || d.purpose === 'foretell') {
+  if (d.purpose === 'suspend' || d.purpose === 'foretell' || d.purpose === 'plot') {
     const prompt = specialPayPrompt(
       d.purpose,
       d.totalCost,
@@ -338,6 +338,7 @@ export function payCancelLabel(d: Pick<PayManaDecision, 'purpose' | 'upkeep'>): 
   if (
     d.purpose === 'suspend' ||
     d.purpose === 'foretell' ||
+    d.purpose === 'plot' ||
     d.purpose === 'turnFaceUp' ||
     d.purpose === 'unlockDoor'
   ) {

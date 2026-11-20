@@ -26,6 +26,7 @@ export function playableObjects(decision: PriorityDecision): ReadonlySet<ObjectI
     else if (
       o.kind === 'suspend' ||
       o.kind === 'foretell' ||
+      o.kind === 'plot' ||
       o.kind === 'turnFaceUp' ||
       o.kind === 'unlockDoor'
     ) {
