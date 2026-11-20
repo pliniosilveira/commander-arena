@@ -1,14 +1,27 @@
+<div align="center">
+
 # Commander Arena
 
-A free, unofficial Magic: The Gathering Commander game that runs in your browser. You play one-on-one against a computer opponent. There is nothing to install and no account to create.
+**Play Magic: The Gathering Commander in your browser.**<br>
+Free and unofficial. One-on-one against a computer opponent. Nothing to install, no account to create.
 
-**[Play now: commander-arena.plinio89s.workers.dev](https://commander-arena.plinio89s.workers.dev)**
+### [▶ Play now](https://commander-arena.plinio89s.workers.dev)
 
-That address always runs the latest version of the game.
+<sub>That address always runs the latest version of the game.</sub>
+
+<br>
 
 [![Card coverage: the share of Commander cards the game fully supports (open the report)](https://pliniosilveira.github.io/commander-arena/coverage.svg)](https://pliniosilveira.github.io/commander-arena/)
 
-The picture shows how many Commander cards the game can play today. It is updated every Monday. If it does not load, the report is at <https://pliniosilveira.github.io/commander-arena/>.
+<sub>How many Commander cards the game can play today, updated every Monday. <a href="https://pliniosilveira.github.io/commander-arena/">Open the full report</a>.</sub>
+
+<br>
+
+[![Nightly tests: the result of the latest full test run on the main branch (open the runs)](https://github.com/pliniosilveira/commander-arena/actions/workflows/full.yml/badge.svg?branch=main&event=schedule)](https://github.com/pliniosilveira/commander-arena/actions/workflows/full.yml?query=event%3Aschedule)
+
+<sub>The full test run, every night when the code has changed. Green: it passed. Red: something failed. <a href="https://github.com/pliniosilveira/commander-arena/actions/workflows/full.yml?query=event%3Aschedule">See the runs</a>.</sub>
+
+</div>
 
 ## Status
 
