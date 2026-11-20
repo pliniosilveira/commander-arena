@@ -110,7 +110,7 @@ describe('Hero of Bladehold: two tokens tapped and attacking (CR 508.4)', () => 
 });
 
 describe('Mobilize (CR 702.181a)', () => {
-  const zurgo = readAbilities('Zurgo Stormrender');
+  const zurgo = real('Zurgo Stormrender');
   const shield = real('Infantry Shield');
 
   test('Zurgo has the keyword with its number, and the engine expands it into one attack trigger', () => {
@@ -142,6 +142,49 @@ describe('Mobilize (CR 702.181a)', () => {
     g.passAll();
     g.expect.zone('Warrior', 'battlefield', { count: 0 });
     g.expect.invariants();
+  });
+
+  test('Zurgo: a token that is sacrificed after combat drains each opponent for 1', () => {
+    const g = scenario()
+      .define(zurgo)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(zurgo.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: zurgo.name }]);
+    g.passAll();
+    g.advanceTo('end');
+    const before = g.state.seats[1]?.life;
+    g.passAll();
+    g.expect.zone('Warrior', 'battlefield', { count: 0 });
+    expect(g.state.seats[1]?.life).toBe((before ?? 0) - 1);
+  });
+
+  test('Zurgo: a token that dies attacking draws its controller a card, and no life is lost', () => {
+    const g = scenario()
+      .define(zurgo)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(zurgo.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Giant Spider', { label: 'giant' })
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: zurgo.name }]);
+    g.passAll();
+    g.advanceTo('declareBlockers', { block: false });
+    g.act(1).declareBlockers([{ blocker: 'giant', attacker: 'Warrior' }]);
+    g.passAll();
+    g.expect.zone('Warrior', 'battlefield', { count: 0 });
+    g.passAll();
+    g.expect.handSize(0, 1);
+    g.expect.life(1, 37);
   });
 
   test('Infantry Shield: the equipped creature has menace and mobilize X, X being its power', () => {

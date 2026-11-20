@@ -247,6 +247,8 @@ const TRAILING_CONDITIONS = [
   ...ATTACKERS_CONDITIONS,
   // Issue 89: "it gets +2/+0 until end of turn if it's attacking one of your opponents" (CR 508.1b).
   'condition.it-attacking-opponents',
+  // Issue 101 (Zurgo Stormrender): "draw a card if it was attacking" (CR 506.4, 603.10a).
+  'condition.it-was-attacking',
 ] as const;
 
 const TRAILING_IF: Parser<{ readonly condition: IrCondition; readonly instead: boolean }> = quiet(

@@ -675,6 +675,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever ~ attacks, create ${e} attached to target creature. The token has enchant creature.`,
   ),
+  'condition.it-was-attacking': permanent(
+    (e) => `Whenever a creature you control dies, you gain 1 life if ${e}.`,
+  ),
   'condition.it-attacking-opponents': permanent(
     (e) => `Whenever enchanted creature attacks, it gets +2/+0 until end of turn if ${e}.`,
   ),
