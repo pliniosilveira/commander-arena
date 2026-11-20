@@ -77,6 +77,28 @@ describe('the issues of scanned decks', () => {
   });
 });
 
+describe('the printings of a scanned deck', () => {
+  test('stay in the decklist of the issue, so the snapshot made from it names them', async () => {
+    const dir = await tempDir();
+    const forms = await writeForms(bulkCards(), dir);
+    const printed = SUPPORTED.replace(
+      '1x SYNTHETIC Vanilla 1',
+      '1x SYNTHETIC Vanilla 1 (zzz) 6',
+    ).replace('1x SYNTHETIC Vanilla 2', '1x SYNTHETIC Vanilla 2 (zzz) 12');
+    await writeFile(path.join(dir, '1.txt'), printed);
+    await writeFile(
+      path.join(dir, 'index.json'),
+      JSON.stringify([{ id: 1, name: 'Good Deck', file: '1.txt', cards: 100 }]),
+    );
+    const {
+      issues: [good],
+    } = await buildIssues(dir, forms.gz);
+    expect(good?.body).toContain('1x SYNTHETIC Vanilla 1 (zzz) 6');
+    expect(good?.body).toContain('2x SYNTHETIC Vanilla 2');
+    expect(good?.body).not.toContain('SYNTHETIC Forest (');
+  });
+});
+
 describe('a deck the app already offers', () => {
   const GOOD = [{ id: 1, name: 'Good Deck', file: '1.txt', cards: 100 }];
 
