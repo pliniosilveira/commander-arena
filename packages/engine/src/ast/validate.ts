@@ -1215,6 +1215,23 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.batch !== undefined && t.batch !== true) {
         issue(out, `${path}.batch`, 'batch must be true when present');
       }
+      if (t.self !== undefined) {
+        // CR 603.6c: "When ~ is put into a graveyard from anywhere": the card itself, from any zone, the graveyard of its owner.
+        if (t.self !== true) issue(out, `${path}.self`, 'self must be true when present');
+        if (
+          t.who !== 'any' ||
+          t.from !== 'anywhere' ||
+          t.filter !== undefined ||
+          t.batch !== undefined ||
+          t.firstTimeEachTurn !== undefined
+        ) {
+          issue(
+            out,
+            `${path}.self`,
+            'self goes with who "any" and from "anywhere", without a filter, batch or firstTimeEachTurn',
+          );
+        }
+      }
       if (t.firstTimeEachTurn !== undefined) {
         if (t.firstTimeEachTurn !== true || t.batch !== true) {
           issue(

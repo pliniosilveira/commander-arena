@@ -203,6 +203,11 @@ export interface LowerContext {
    */
   itIsCard: boolean;
   /**
+   * True in the body of "When ~ is put into a graveyard from anywhere" (Troyan 2 deck, CR 603.6c, 400.7): "it" is the card of the ability itself, in the graveyard it is in as the
+   * ability resolves, which the engine names `this` (the ability is found on that card).
+   */
+  selfGraveyardEntry: boolean;
+  /**
    * True when "it" in the body of a triggered ability is the card of a creature that died (D-284, CR 603.10a): every event of the trigger is `~` dying (not leaving the
    * battlefield some other way, where the card may be anywhere). A subset of `itIsCard`.
    */
@@ -437,6 +442,7 @@ export function newContext(
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,
+    selfGraveyardEntry: false,
     auraDies: false,
     returnedDyingCard: false,
     itDied: false,

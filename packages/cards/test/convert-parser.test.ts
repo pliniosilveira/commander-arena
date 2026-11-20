@@ -479,6 +479,7 @@ describe('unmatched abilities', () => {
       'trigger.scry-or-surveil',
       'trigger.roll-highest',
       'trigger.put-into-graveyard',
+      'trigger.self-put-into-graveyard',
       'trigger.chapter',
       'condition.and',
       'condition.prime-number-of',

@@ -15,6 +15,7 @@ import type {
 } from './game/protocol';
 import type { RevealedCard } from './game/revealed-cards';
 import type { AnimationGate } from './policy/animation-gate';
+import { pointlessSearchAnswer } from './policy/pointless-search';
 import {
   canPassTurn,
   DEFAULT_STOPS,
@@ -265,8 +266,12 @@ export function createAppStore(options: StoreOptions): AppStore {
         if (yielding !== null && verdict === 'end' && pending.kind !== 'payMana') {
           set({ yieldTurn: null });
         }
+        const pointless = pointlessSearchAnswer(view, settings.fullControl);
         if (pending.kind === 'payMana' && !manualPay) {
           action = { kind: 'payAuto' };
+        } else if (pointless !== null) {
+          // A question whose answer cannot matter (`pointless-search.ts`): answered, not asked.
+          action = pointless;
         } else if (
           verdict !== 'end' ||
           (pending.kind === 'priority' && !shouldStop(view, settings))

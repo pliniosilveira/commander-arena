@@ -70,6 +70,7 @@ import {
   triggerSubject,
   youNoun,
 } from './subjects';
+import { TROYAN2_TRIGGER_RULES } from './troyan2';
 import { UNBLOCKED_TRIGGER_RULES } from './unblocked';
 import { UNBOUND_I_TRIGGER_RULES } from './unbound-i';
 import { VRASKA_TRIGGER_RULES } from './vraska';
@@ -1302,5 +1303,7 @@ export const TRIGGER_RULES = [
   ...GALADRIEL_G3_TRIGGER_RULES,
   // Death Toll deck, group B: "a land card is put into your graveyard from anywhere".
   ...DEATH_TOLL_B_TRIGGER_RULES,
+  // Troyan 2 deck (issue 400): "~ is put into a graveyard from anywhere".
+  ...TROYAN2_TRIGGER_RULES,
   TRIGGER_CHAPTER,
 ];

@@ -24,6 +24,13 @@ const SHUFFLE_INTO_LIBRARIES: Lowering<IrClause, Effects> = {
     const moves: Effect[] = [];
     const owners: PlayerSelector[] = [];
     for (const item of itemsOf(named)) {
+      // "When ~ is put into a graveyard from anywhere, shuffle it into its owner's library" (Troyan 2 deck, CR 603.6c, 701.24): "it" is the card of the ability, which is in the
+      // graveyard as the ability resolves; the ability is found on it, so the engine's `this` names it.
+      if (ctx.selfGraveyardEntry && item.det === 'triggerSubject' && itemsOf(named).length === 1) {
+        moves.push({ kind: 'moveToZone', objects: { kind: 'this' }, to: 'library' });
+        owners.push({ kind: 'ownerOf', of: { kind: 'this' } });
+        continue;
+      }
       // One object each: the permanent with the ability (which must still be there to be moved) or a single target of the ability.
       const single =
         item.det === 'self'

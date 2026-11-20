@@ -720,12 +720,19 @@ interface Candidate {
   readonly triggered: readonly { readonly index: number; readonly ability: TriggeredAbility }[];
 }
 
+/** CR 603.6c, 603.10a: "When ~ is put into a graveyard from anywhere" is found on the card in the graveyard it became, wherever it works from. */
+function isSelfGraveyardEntry(trigger: Trigger): boolean {
+  return trigger.kind === 'putIntoGraveyard' && trigger.self === true;
+}
+
 function triggeredOf(abilities: readonly Ability[], inGraveyard = false): Candidate['triggered'] {
   // CR 113.6b (D-151): an ability that works from the graveyard works only there; the others work where the object is checked from.
   // CR 702.29c (D-179): "when you cycle this card" works from whatever zone the card winds up in, so it is found wherever the card is.
   return abilities.flatMap((ability, index) =>
     ability.kind === 'triggered' &&
-    ((ability.functionsIn === 'graveyard') === inGraveyard || ability.trigger.kind === 'cycled')
+    ((ability.functionsIn === 'graveyard') === inGraveyard ||
+      ability.trigger.kind === 'cycled' ||
+      isSelfGraveyardEntry(ability.trigger))
       ? [{ index, ability }]
       : [],
   );
@@ -862,6 +869,8 @@ function matches(
       // CR 709.5h: "you unlock this door": the player is the controller of the ability and the Room is its source; whether the half is the ability's own is checked by the caller.
       return occ.seat === candidate.controller && subject?.id === candidate.id;
     case 'putIntoGraveyard':
+      // CR 603.6c: "When ~ is put into a graveyard from anywhere": only the card with the ability itself.
+      if (trigger.self === true) return subject !== null && subject.id === candidate.id;
       // CR 603.2: the card as it is in the graveyard (or as it last was); the filter names card types only.
       return (
         (trigger.who === 'any' || occ.seat === candidate.controller) &&
@@ -1377,12 +1386,18 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
     const castObject = event.kind === 'spellCast' ? event.object : null;
     // CR 702.29c (D-179): the card that was just cycled, in the graveyard (or exile) it wound up in.
     const cycledObject = event.kind === 'cycled' ? event.object : null;
+    // CR 603.6c: the card that was just put into a graveyard, for its own "When ~ is put into a graveyard from anywhere".
+    const graveyardEntry =
+      event.kind === 'zoneChanged' && event.toZone === 'graveyard' && event.fromZone !== 'graveyard'
+        ? event.to
+        : null;
     const pool = [
       ...new Set([
         ...members,
         ...(beforeDepartures ?? []),
         ...(castObject === null ? [] : [castObject]),
         ...(cycledObject === null ? [] : [cycledObject]),
+        ...(graveyardEntry === null ? [] : [graveyardEntry]),
         ...yard,
       ]),
     ].sort(byAge);
@@ -1416,10 +1431,16 @@ export function findTriggers(state: GameState, events: readonly GameEvent[]): Pe
         const checked = lookBack ? (beforeDepartures ?? members) : members;
         // A `self` cast trigger is found on the spell itself, on the stack, and nowhere else.
         if (ability.trigger.kind === 'cycled' ? id !== cycledObject : false) continue;
+        // The card put into a graveyard has its own entry trigger in any zone it works from; the others look at the battlefield (or the graveyard).
+        const selfEntry = isSelfGraveyardEntry(ability.trigger);
+        if (selfEntry ? id !== graveyardEntry : false) continue;
         if (
           fromStack
             ? id !== castObject
-            : ability.trigger.kind !== 'cycled' && !checked.includes(id) && !yard.includes(id)
+            : ability.trigger.kind !== 'cycled' &&
+              !selfEntry &&
+              !checked.includes(id) &&
+              !yard.includes(id)
         ) {
           continue;
         }

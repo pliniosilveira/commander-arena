@@ -2,6 +2,7 @@ import type { ObjectView } from '@commander-arena/engine';
 import type { CSSProperties } from 'react';
 import { Art, artOf } from '../board/art';
 import { CardFace } from '../board/CardFace';
+import { CARD_TOP_ASPECT } from '../board/card-top';
 import { useHoverProps } from './hover';
 
 interface MiniCardProps {
@@ -34,7 +35,7 @@ export function MiniCard({
   const w = typeof width === 'number' ? `${width}px` : width;
   const size = {
     '--hand-w': w,
-    '--hand-h': `calc(${w} * ${full ? 1.3935 : 1.4})`,
+    '--hand-h': full ? `calc(${w} * 1.3935)` : `calc(${w} / ${CARD_TOP_ASPECT.toFixed(4)})`,
   } as CSSProperties;
   const hoverProps = useHoverProps();
   const body = (

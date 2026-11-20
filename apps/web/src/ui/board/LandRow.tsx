@@ -9,6 +9,7 @@ import { type CSSProperties, useMemo, useRef } from 'react';
 import { useTextScale } from '../panels/text-size';
 import { HostStack } from './Attached';
 import { stripReserve } from './attach';
+import { CARD_TOP_ASPECT } from './card-top';
 import {
   columnHeight,
   deepest,
@@ -23,10 +24,11 @@ import { GAP, PAD_Y, type RowProps } from './row-shape';
 import { Tile } from './Tile';
 import { useRowScroll } from './use-row-scroll';
 
-/** The sizes of the land row for a text size scale: square tiles, as the flat land row had. */
+/** The sizes of the land row for a text size scale: tiles in the shape of a card's top (`card-top.ts`). */
 export function landSpec(scale: number): LandSpec {
   return {
     maxTile: Math.round(88 * scale),
+    aspect: CARD_TOP_ASPECT,
     minTile: 40,
     stackTile: Math.round(48 * scale),
     minStep: Math.round(13 * scale),
@@ -46,12 +48,14 @@ export function landGrow(depth: number): number {
 function LandColumnView({
   column,
   tile,
+  width,
   step,
   roles,
   attachments,
 }: {
   column: LandColumn;
   tile: number;
+  width: number;
   step: number;
 } & Pick<RowProps, 'roles' | 'attachments'>) {
   const count = column.objects.length;
@@ -60,7 +64,7 @@ function LandColumnView({
   const under = count === 1 && only !== undefined ? attachments.get(only.id) : undefined;
   const reserve = under === undefined ? 0 : stripReserve(under.length);
   const style = {
-    width: tile,
+    width,
     height: columnHeight(count, tile, step) + reserve,
   } as CSSProperties;
   return (
@@ -79,12 +83,12 @@ function LandColumnView({
             key={o.id}
             className="board-land-slot"
             data-front={i === count - 1 ? '' : undefined}
-            style={{ top: i * step, width: tile, height: tile, zIndex: i + 1 }}
+            style={{ top: i * step, width, height: tile, zIndex: i + 1 }}
           >
             {under === undefined ? (
-              <Tile object={o} w={tile} h={tile} role={roles.get(o.id)} />
+              <Tile object={o} w={width} h={tile} role={roles.get(o.id)} />
             ) : (
-              <HostStack host={o} attachments={under} w={tile} h={tile} role={roles.get(o.id)} />
+              <HostStack host={o} attachments={under} w={width} h={tile} role={roles.get(o.id)} />
             )}
           </span>
         ))
@@ -152,6 +156,7 @@ export function LandRow({ objects, roles, attachments }: RowProps) {
             key={`${column.key}#${column.part}`}
             column={column}
             tile={layout.tile}
+            width={layout.width}
             step={layout.step}
             roles={roles}
             attachments={attachments}

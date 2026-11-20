@@ -124,6 +124,13 @@ test('the chips: Encore with its cost, Devour with its number, Riot', () => {
   const chips = (keywords: string[], oracleText: string) =>
     chipsOf({ keywords, restrictions: [], oracleText }).map((c) => c.short);
   expect(chips(['encore'], 'Encore {3}{R} (reminder)')).toEqual(['Enc']);
+  // A sentence that gives encore to other cards is not a second encore of the card that says it.
+  expect(
+    chips(
+      ['encore'],
+      'Each SYNTHETIC creature card in your graveyard has encore {X}, where X is its mana value.\nEncore {5}',
+    ),
+  ).toEqual(['Enc']);
   expect(chips(['devour'], 'Devour 2 (As this enters ...)')).toEqual(['Dev 2']);
   expect(chips(['riot'], 'Riot')).toEqual(['Riot']);
   expect(

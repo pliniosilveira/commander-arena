@@ -1,5 +1,5 @@
 {
-  "parserVersion": 179,
+  "parserVersion": 180,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -1618,6 +1618,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "bc8eed8a"
+    },
+    "254f87cc-e0c2-484d-b5e8-1ea8c366990c": {
+      "name": "Worldspine Wurm",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b27c5ee3"
     },
     "25712827-626a-484d-bc52-f3bd6087857f": {
       "name": "Crowded Crypt",
@@ -7882,7 +7890,7 @@
           "text": "{1}{G}, Discard this card: Destroy target artifact, enchantment, or nonbasic land an opponent controls. That player may search their library for a land card with a basic land type, put it onto the battlefield, then shuffle. This ability costs {1} less to activate for each legendary creature you control.",
           "reason": "unrecognised",
           "slot": "effect",
-          "closestRule": "ability.activated"
+          "closestRule": "noun.target-permanent-of-that-player"
         }
       ],
       "reasons": [],
@@ -8183,6 +8191,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "44844338"
+    },
+    "c744b5f4-fbcf-48b8-9d60-5e9c6ac297e0": {
+      "name": "Trygon Predator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "07677f19"
     },
     "c7530ecd-e22f-41e7-a76b-de32809901c8": {
       "name": "Gadwick, the Wizened",
@@ -10523,8 +10539,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 1003,
-      "total": 1022
+      "supported": 1005,
+      "total": 1024
     }
   }
 }

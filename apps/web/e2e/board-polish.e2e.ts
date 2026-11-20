@@ -285,6 +285,12 @@ test("a lifted hand card is drawn over the field: the land stack's count badge d
   await expect(badge).toBeVisible();
   // The badge ignores the pointer, so a hit test would skip it: let it take part, to read the paint order.
   await page.addStyleTag({ content: '.board-land-count { pointer-events: auto !important; }' });
+  // A card in the hand is the top of a card: lifted, it no longer reaches past the player's strip to the
+  // land row. The test lifts it further itself, since what it checks is which of the two is drawn on top.
+  await page.addStyleTag({
+    content:
+      '.board-hand-card:hover { transform: translateY(-190px) scale(1.2) !important; transition: none !important; }',
+  });
   const b = await badge.boundingBox();
   if (b === null) throw new Error('no badge box');
 

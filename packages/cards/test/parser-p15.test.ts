@@ -634,11 +634,16 @@ describe('triggers: "put into a graveyard from the battlefield", "a player sacri
   });
 
   test.each([
-    'When ~ is put into a graveyard from anywhere, draw a card.',
     'When ~ is put into a graveyard, draw a card.',
     'When ~ is put into your graveyard from the battlefield, draw a card.',
   ])('%s is not "dies"', (text) => {
     expect(dropped(text)).toMatchObject({ reason: 'unrecognised' });
+  });
+
+  test('"from anywhere" is its own event, any zone and not only a death (Troyan 2 deck, CR 603.6c)', () => {
+    expect(abilities('When ~ is put into a graveyard from anywhere, draw a card.')).toMatchObject([
+      { trigger: { kind: 'putIntoGraveyard', who: 'any', from: 'anywhere', self: true } },
+    ]);
   });
 
   test('dying and attacking are two events of one ability (CR 603.2c)', () => {

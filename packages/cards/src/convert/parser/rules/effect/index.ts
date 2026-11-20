@@ -441,6 +441,7 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
     'destroy ~',
     'destroy up to two target creatures',
     'destroy up to one target artifact or enchantment',
+    'destroy target artifact or enchantment that player controls',
   ],
   rejects: [
     'destroy it',
@@ -449,7 +450,14 @@ export const EFFECT_DESTROY = defineRule<Clauses>({
   ],
   parse: single(
     'effect.destroy',
-    sequence(literal('destroy '), operands(SELF_OR_PERMANENT_OPERANDS, 'effect.destroy')),
+    sequence(
+      literal('destroy '),
+      // "destroy target artifact or enchantment that player controls" (Trygon Predator, CR 701.8, 109.4): the permanents of the player of the trigger.
+      operands(
+        [...SELF_OR_PERMANENT_OPERANDS, 'noun.target-permanent-of-that-player'],
+        'effect.destroy',
+      ),
+    ),
     ([, objects]) => ({ verb: 'destroy', args: { objects } }),
   ),
 });

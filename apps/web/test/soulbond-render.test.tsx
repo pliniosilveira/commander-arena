@@ -13,7 +13,7 @@ vi.mock('../src/ui/decisions/hover', () => ({ useHoverProps: () => () => ({}) })
 
 import { GameHost } from '../src/game/host';
 import { createAppStore } from '../src/store';
-import { groupTokens, tokenKey } from '../src/ui/board/group';
+import { groupEqual, permanentKey } from '../src/ui/board/group';
 import { PreviewPanel } from '../src/ui/board/PreviewPanel';
 import { Tile } from '../src/ui/board/Tile';
 import { PermanentPanel } from '../src/ui/decisions/PermanentPanel';
@@ -170,9 +170,9 @@ describe('identical tokens', () => {
     };
     const paired: ObjectView = { ...unpaired(a), pairedWith: 'o99' };
     const plain = unpaired(b);
-    expect(tokenKey(paired)).not.toBe(tokenKey(plain));
-    expect(groupTokens([paired, plain])).toHaveLength(2);
+    expect(permanentKey(paired)).not.toBe(permanentKey(plain));
+    expect(groupEqual([paired, plain])).toHaveLength(2);
     // Two that are not paired are one group.
-    expect(groupTokens([unpaired(a), plain])).toHaveLength(1);
+    expect(groupEqual([unpaired(a), plain])).toHaveLength(1);
   });
 });

@@ -669,8 +669,28 @@
     opacity 0.15s ease;
 }
 
+/* A tapped permanent is tilted, not turned 90 degrees: a tile is wider than tall, and turned it
+   would need a row as tall as the tile is wide. A small mark in its corner says it too (the tilt
+   alone is slight, and little of it shows on the strip a land stack leaves of a card); the picture
+   is not darkened. */
 .board-tile.is-tapped .board-tile-inner {
-  transform: rotate(90deg);
+  transform: rotate(7deg);
+}
+
+.board-tile.is-tapped::after {
+  content: "⟳";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 2;
+  width: 1.25em;
+  font-size: calc(10px * var(--text-scale));
+  line-height: 1.25;
+  text-align: center;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg-sunken) 70%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 /* Issue 22: a card is framed in its colours (a land in the colours of its mana). The colours are an
@@ -928,6 +948,11 @@
 .board-flag-soulbond {
   color: var(--accent);
   border-color: var(--accent);
+}
+
+.board-flag-goad {
+  color: var(--bad);
+  border-color: var(--bad);
 }
 
 .board-flag-turn {
@@ -1196,10 +1221,10 @@
   border-radius: 6px;
 }
 
-/* A stack of identical tokens is tapped or untapped as a whole (grouping never mixes the two), so
-   the card behind the front one turns with it. The offset is the upright one in the rotated frame. */
+/* A stack of equal permanents is tapped or untapped as a whole (grouping never mixes the two), so
+   the card behind the front one tilts with it. */
 .board-tile.is-tapped .board-tile-stack {
-  transform: rotate(90deg) translate(-3px, -4px);
+  transform: rotate(7deg) translate(4px, -3px);
 }
 
 .board-count {
@@ -1557,6 +1582,16 @@
   margin: 0;
 }
 
+/* "Affected by": one line per permanent, its name and its rules text. */
+.preview-affecting {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 /* Every face of a split, Adventure or double-faced card; the one that is up is marked. */
 .board-preview-faces {
   margin-top: 10px;
@@ -1685,8 +1720,8 @@
 
 .board-zone-card > .board-card {
   flex: none;
-  /* A quarter bigger, as the hand (issue 137). */
-  height: 188px;
+  /* The top of the card, as in the hand: 135 wide over the shape of card-top.ts. */
+  height: 123px;
 }
 
 /*
@@ -1807,6 +1842,166 @@
   z-index: 1;
 }
 
+/* The top of the printed card (card-top.ts): the image is as wide as the tile and the tile cuts it
+   under the type line. Once it has loaded, the printed title and type line replace the drawn band,
+   name and token line, and the marks keep clear of the title bar and the type line. */
+/* The printed black border is trimmed off the sides and the top (3.4 percent of the card's width,
+   `BORDER` in card-top.ts): the picture is that much wider than its frame and starts that much
+   above it. A margin in percent is of the frame's width, which is what the trim is a share of. */
+.board-tile-top,
+.board-card-image.board-card-top {
+  inset: 0 auto auto -3.65%;
+  width: 107.3%;
+  height: auto;
+  margin-top: -3.65%;
+  object-fit: fill;
+}
+
+/* The printed frame carries the card's colours, so the tile has no border of its own unless the
+   border says something: it can be clicked, it is selected, it attacks or blocks, or the engine does
+   not support it. */
+.board-tile:not(.is-clickable, .is-selected, .is-attacking, .is-blocking, .is-unsupported)
+.board-tile-inner:has(> .board-tile-top.is-loaded) {
+  border-width: 0;
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded)
+  > :is(.board-tile-band, .board-tile-name, .board-tile-token) {
+  display: none;
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-kw {
+  margin-top: calc(var(--h) * 0.18);
+}
+
+.board-tile:not(.is-compact) .board-tile-inner:has(> .board-tile-top.is-loaded) .board-tile-chips {
+  margin-bottom: calc(var(--h) * 0.13);
+}
+
+/* "Token": a thin blue band across the top left corner of a token drawn as a card top (the drawn
+   frame says it in its second line). A tapped token has its tapped mark under the band. */
+.board-tile-inner > .board-tile-token-mark {
+  position: absolute;
+  top: calc(8px * var(--text-scale));
+  left: calc(-17px * var(--text-scale));
+  display: none;
+  width: calc(56px * var(--text-scale));
+  padding: 0;
+  font-size: calc(6px * var(--text-scale));
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--bg-sunken);
+  background: var(--mana-u);
+  transform: rotate(-45deg);
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-token-mark {
+  display: block;
+}
+
+.board-tile.is-token.is-tapped::after {
+  top: calc(22px * var(--text-scale));
+}
+
+.board-tile-inner > .board-tile-under {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
+  background: var(--bg-raised);
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-under {
+  display: block;
+}
+
+/* The same picture on a card in a hand, a zone viewer or a decision (CardFace.tsx, the hand
+   variant). It lies over the drawn frame; the marks and the corner number stay on it, and the
+   cost is drawn only when a tax or a reduction changed it, on the right under the printed one. */
+.board-card-hand {
+  position: relative;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) {
+  border-width: 0;
+}
+
+.board-hand-card:is(.is-clickable, .is-selected) .board-card-hand:has(> .board-card-top.is-loaded),
+.board-zone-card:is(.is-clickable, .is-selected) .board-card-hand:has(> .board-card-top.is-loaded) {
+  border-width: 2px;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-foot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  padding: 0 3px 3px;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head {
+  display: none;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head:has(.board-cost-now) {
+  position: absolute;
+  top: 17%;
+  right: 3px;
+  z-index: 4;
+  display: flex;
+  width: auto;
+  padding: 0;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head .board-card-name {
+  display: none;
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-head .mana-cost {
+  padding: 0 2px;
+  background: var(--bg-sunken);
+  border-radius: 8px;
+}
+
+/* In the hand the card is whole: the picture fills the card with its printed border, the printed
+   power and toughness stand for the corner number, and nothing under the type line is covered. */
+.board-hand-card .board-card-image.board-card-top {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin-top: 0;
+}
+
+.board-hand-card .board-card-hand:has(> .board-card-top.is-loaded) .board-stat,
+.board-hand-card .board-card-hand:has(> .board-card-top.is-loaded) > .board-card-under {
+  display: none;
+}
+
+.board-hand-card
+  .board-card-hand:has(> .board-card-top.is-loaded)
+  > .board-card-head:has(.board-cost-now) {
+  top: 12%;
+}
+
+.board-card-under {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  display: none;
+  background: var(--bg-raised);
+}
+
+.board-card-hand:has(> .board-card-top.is-loaded) > .board-card-under {
+  display: block;
+}
+
 .board-tile-name,
 .board-tile-foot {
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
@@ -1887,21 +2082,6 @@
 .board-land-slot > .board-tile,
 .board-land-slot > .board-stack {
   display: block;
-}
-
-/* A tapped land is turned 90 degrees in its square, so the part of it that shows in a stack is its
-   side: a mark on the strip says which cards are tapped. */
-.board-land-slot:not([data-front]) .board-tile.is-tapped::after {
-  content: "⟳";
-  position: absolute;
-  top: 0;
-  right: 3px;
-  z-index: 2;
-  color: var(--accent);
-  font-size: calc(11px * var(--text-scale));
-  line-height: 1.1;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
-  pointer-events: none;
 }
 
 /* How many cards the column holds, off the top-right corner. */

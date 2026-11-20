@@ -179,9 +179,10 @@ const PARAMETERIZED: Readonly<
     [...text.matchAll(/\bpartner with ([^(\n]+)/gi)].map(
       (m) => ['Ptn', `Partner with ${(m[1] ?? '').trim()}`] as const,
     ),
-  // "Encore {3}{R}": one chip per instance (CR 702.141a).
+  // "Encore {3}{R}": one chip per instance (CR 702.141a). Only a line that starts with the keyword is the
+  // object's own: "Each Sliver creature card in your graveyard has encore {X}" gives it to other cards.
   encore: (text) =>
-    [...text.matchAll(/\bencore\s*((?:\{[^}]+\})+)/gi)].map(
+    [...text.matchAll(/^encore\s*((?:\{[^}]+\})+)/gim)].map(
       (m) => ['Enc', `${withCost('Encore', m[1] ?? '')} (${ENCORE_REMINDER})`] as const,
     ),
   // "Eternalize {5}{U}{U}": one chip per instance (CR 702.129a).

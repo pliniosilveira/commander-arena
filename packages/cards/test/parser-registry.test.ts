@@ -1115,6 +1115,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.graveyard-events': whenever,
   // Death Toll deck, group B (CR 603.2): the trigger of cards put into your graveyard.
   'trigger.put-into-graveyard': whenever,
+  'trigger.self-put-into-graveyard': whenever,
   'trigger.cards-exiled-library-graveyard': whenever,
   'trigger.cast-nth': whenever,
   // CR 603.2: a spell cast in a named turn, and two events of one sentence.
