@@ -1,8 +1,19 @@
 // Nine requested lands of the "deck support" issues, run as written. Each group imports a SYNTHETIC card through the grammar, defines it in an engine scenario and plays it through
 // applyAction. The wording of each text is that of the real card, taken from the card data the deck support workflow fetched from Scryfall for the issue.
+import { readFileSync } from 'node:fs';
 import { scenario } from '@commander-arena/engine/testing';
 import { describe, expect, test } from 'vitest';
-import { parsed } from './convert-grammar-helpers';
+import { fromGoldenCard, type GoldenCard, importCard, parseGolden } from '../src/index';
+import { NO_OVERRIDES, parsed } from './convert-grammar-helpers';
+
+const CORPUS = new URL('./fixtures/corpus/golden.jsonl', import.meta.url);
+const GOLDEN: readonly GoldenCard[] = parseGolden(readFileSync(CORPUS, 'utf8'));
+
+const real = (name: string) => {
+  const card = GOLDEN.find((c) => c.name === name);
+  if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
+  return importCard(fromGoldenCard(card), undefined, NO_OVERRIDES);
+};
 
 // ---- Raging Ravine: "{2}{R}{G}: Until end of turn, this land becomes a 3/3 red and green Elemental creature with \"Whenever this creature attacks, put a +1/+1 counter on it.\" It's still
 // a land." (CR 205.1b, 611.2a, 613.1d, 613.1f, 613.4b, 603.1).
@@ -66,6 +77,18 @@ const GREEN = parsed('SYNTHETIC Parsed Green Bear', 'Creature — Bear', '', {
   colors: ['G'],
   power: '2',
   toughness: '2',
+});
+
+test('the real Shrine of the Forsaken Gods is supported and lowers to a restricted, conditional mana ability', () => {
+  const imported = real('Shrine of the Forsaken Gods');
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
+  expect(imported.definition.faces[0]?.abilities[1]).toMatchObject({
+    kind: 'mana',
+    production: { kind: 'fixed', mana: ['C', 'C'] },
+    spendOnly: { qualities: [{ kind: 'colorless' }] },
+    activateOnlyIf: { kind: 'controlsAtLeast' },
+  });
 });
 
 describe('Shrine of the Forsaken Gods: two colorless mana for colorless spells, with seven lands', () => {
