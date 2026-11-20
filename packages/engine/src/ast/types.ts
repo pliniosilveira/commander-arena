@@ -5052,6 +5052,12 @@ export type Keyword =
    */
   | { readonly kind: 'mobilize'; readonly count: number | 'power' }
   /**
+   * CR 702.123a (Fabricate, issue 101): "Fabricate N" means "When this permanent enters, you may put N +1/+1 counters on it. If you don't, create N 1/1 colorless Servo artifact creature
+   * tokens." A triggered ability the engine writes when it derives the object's abilities (`rules/derive-keywords.ts`), asked as `playersMay`; each instance triggers separately
+   * (CR 702.123b). `count` is N, a positive integer. Printed only.
+   */
+  | { readonly kind: 'fabricate'; readonly count: number }
+  /**
    * CR 702.165a (Backup, D-230): "Backup N" means "When this creature enters, put N +1/+1 counters on target creature. If that's another creature, it also gains the
    * non-backup abilities of this creature printed below this one until end of turn." A triggered ability the engine writes when it derives the object's abilities
    * (`rules/derive-keywords.ts`), from the abilities printed after the keyword; they are fixed as the ability goes on the stack (CR 702.165d).

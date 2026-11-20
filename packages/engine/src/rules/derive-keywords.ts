@@ -218,6 +218,43 @@ const MOBILIZE_TOKEN: TokenDefinition = {
   ],
 };
 
+/** CR 702.123a: the token of Fabricate, "a 1/1 colorless Servo artifact creature token". */
+const SERVO_TOKEN: TokenDefinition = {
+  name: 'Servo',
+  manaCost: null,
+  supertypes: [],
+  types: ['artifact', 'creature'],
+  subtypes: ['Servo'],
+  colors: [],
+  power: 1,
+  toughness: 1,
+  loyalty: null,
+  defense: null,
+  oracleText: '',
+  abilities: [],
+};
+
+/**
+ * CR 702.123a (Fabricate, issue 101): "When this permanent enters, you may put N +1/+1 counters on it. If you don't, create N 1/1 colorless Servo artifact creature tokens." The
+ * controller is asked once, as the ability resolves (`playersMay`): yes puts the counters on this permanent, no makes the tokens.
+ */
+function fabricateAbility(count: number): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+    effect: {
+      kind: 'playersMay',
+      players: { kind: 'you' },
+      effect: { kind: 'addCounters', objects: { kind: 'this' }, counter: '+1/+1', count },
+      otherwise: {
+        kind: 'createToken',
+        token: { kind: 'custom', definition: SERVO_TOKEN },
+        count,
+      },
+    },
+  };
+}
+
 /**
  * CR 702.181a (Mobilize, issue 101): "Whenever this creature attacks, create N 1/1 red Warrior creature tokens. Those tokens enter tapped and attacking. Sacrifice them at the
  * beginning of the next end step." The tokens are made tapped, then `enterAttacking` puts them in the combat against the player the creature attacks (CR 508.4); each carries the
@@ -740,6 +777,8 @@ export function expansionOf(ability: Ability): Ability[] {
       return [afflictAbility(ability.keyword.count)];
     case 'mobilize':
       return [mobilizeAbility(ability.keyword.count)];
+    case 'fabricate':
+      return [fabricateAbility(ability.keyword.count)];
     case 'partnerWith':
       // CR 702.124j (D-490): the second of the two abilities "Partner with [name]" represents.
       return [partnerWithAbility(ability.keyword.name)];

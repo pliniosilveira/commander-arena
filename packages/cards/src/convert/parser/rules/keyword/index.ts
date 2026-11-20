@@ -119,6 +119,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Afflict 3',
     'Flying, afflict 2',
     'Mobilize 1',
+    'Fabricate 2',
     'Flying, infect',
     'Infect, wither',
     'Trample, toxic 1',

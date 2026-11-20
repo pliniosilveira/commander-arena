@@ -51,6 +51,7 @@ const EXECUTABLE_KEYWORDS = [
   'annihilator', // scenario-xx-exalted-annihilator
   'afflict', // scenario-xx-gisa-g1-afflict (D-472)
   'mobilize', // convert-grammar-engine-mardu-surge (issue 101, on the real cards)
+  'fabricate', // convert-grammar-engine-mardu-surge (issue 101, on the real card)
   'backup', // convert-grammar-engine-p69 (Guardian Scalelord, on the real card)
   'persist', // scenario-xx-persist-undying
   'undying', // scenario-xx-persist-undying
@@ -154,6 +155,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   annihilator: { kind: 'annihilator', count: 2 },
   afflict: { kind: 'afflict', count: 3 },
   mobilize: { kind: 'mobilize', count: 1 },
+  fabricate: { kind: 'fabricate', count: 2 },
   backup: { kind: 'backup', count: 1 },
   persist: { kind: 'persist' },
   undying: { kind: 'undying' },

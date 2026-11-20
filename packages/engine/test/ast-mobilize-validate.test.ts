@@ -55,3 +55,23 @@ describe('Mobilize N (CR 702.181a)', () => {
     );
   });
 });
+
+describe('Fabricate N (CR 702.123a)', () => {
+  const fabricate = (count: unknown): Ability => ({
+    kind: 'keyword',
+    keyword: { kind: 'fabricate', count } as never,
+  });
+
+  test('a printed fabricate takes a positive whole number', () => {
+    expect(validateCard(creature([fabricate(2)]))).toEqual([]);
+    for (const count of [0, -1, 1.5, 'power']) {
+      expect(messages(creature([fabricate(count)])), String(count)).toContain(
+        'fabricate needs a positive integer',
+      );
+    }
+  });
+
+  test('it cannot be granted: only keywords without parameters, afflict, mobilize and the like can', () => {
+    expect(GRANTABLE_KEYWORDS).not.toContain('fabricate');
+  });
+});

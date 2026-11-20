@@ -453,3 +453,47 @@ describe('Mindblade Render: combat damage dealt by a Warrior (CR 510.2, 603.4)',
     g.expect.life(0, 40);
   });
 });
+
+describe('Angel of Invention: Fabricate 2 (CR 702.123a)', () => {
+  const angel = real('Angel of Invention');
+  const board = () =>
+    scenario()
+      .define(angel)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(angel.name)
+      .battlefield('Plains', 'Plains', 'Plains', 'Plains', 'Plains')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(angel)).toEqual([]);
+  });
+
+  test('accepting puts two +1/+1 counters on it and makes no token', () => {
+    const g = board();
+    g.act(0).cast(angel.name, { pay: true });
+    g.passAll();
+    g.expect.pending('confirmOptional', 0);
+    g.act(0).accept();
+    g.passAll();
+    g.expect.counters(angel.name, { '+1/+1': 2 });
+    g.expect.zone('Servo', 'battlefield', { count: 0 });
+    g.expect.pt(angel.name, 4, 3);
+  });
+
+  test('declining creates two 1/1 colorless Servo artifact creatures, which the Angel makes 2/2', () => {
+    const g = board();
+    g.act(0).cast(angel.name, { pay: true });
+    g.passAll();
+    g.act(0).decline();
+    g.passAll();
+    g.expect.counters(angel.name, {});
+    g.expect.zone('Servo', 'battlefield', { seat: 0, count: 2 });
+    g.expect.derived('Servo[0]', { types: ['artifact', 'creature'], colors: [] });
+    g.expect.pt('Servo[0]', 2, 2);
+    g.expect.invariants();
+  });
+});

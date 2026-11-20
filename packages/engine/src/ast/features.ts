@@ -616,6 +616,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'afflict',
     // Issue 101: Mobilize N (CR 702.181).
     'mobilize',
+    // Issue 101: Fabricate N (CR 702.123).
+    'fabricate',
     // D-230: Backup N (CR 702.165).
     'backup',
     'persist',
@@ -2716,6 +2718,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   annihilator: true,
   afflict: true,
   mobilize: true,
+  fabricate: true,
   backup: true,
   persist: true,
   undying: true,
