@@ -1268,6 +1268,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCantBeCountered',
     // D-192: "Damage isn't removed from this creature during cleanup steps."
     'keepsDamage',
+    // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
+    'legendRuleDoesntApply',
+    // "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types." (CR 613.1d), "Each Sliver creature card in your graveyard has encore {X}" (CR 702.141a).
+    'giveChosenCreatureType',
+    'grantEncoreToGraveyardCards',
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
@@ -2148,6 +2153,12 @@ export const STATIC_KINDS = [
   'playLandsFromGraveyard',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
+  /** "The \"legend rule\" doesn't apply to Slivers you control" (CR 704.5j): the engine's `legendRuleDoesntApply`. */
+  'legendRuleDoesntApply',
+  /** "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types" (CR 613.1d): the engine's `giveChosenCreatureType`. */
+  'giveChosenCreatureType',
+  /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
+  'grantEncoreToGraveyardCards',
 ] as const;
 export type StaticKind = (typeof STATIC_KINDS)[number];
 

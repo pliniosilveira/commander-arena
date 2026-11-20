@@ -22,6 +22,8 @@ import type { GameEvent } from '../state/events';
 import type { GameObject, GameState } from '../state/types';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { legendExemptionSources } from './derive-statics';
+import { matchesFilter } from './select';
 import { recordObjectsTogether } from './simultaneous';
 import { moveObject } from './zones';
 
@@ -29,6 +31,21 @@ import { moveObject } from './zones';
 export interface LegendCandidate {
   readonly object: GameObject;
   readonly name: string;
+}
+
+/**
+ * CR 704.5j, 604.1: whether a static ability of a permanent on the battlefield says the legend rule doesn't apply to `obj` ("The "legend rule" doesn't apply to Slivers you control"):
+ * the permanent is then not one of the candidates, so it neither has to be chosen among duplicates nor makes another permanent of its name one.
+ */
+export function exemptFromLegendRule(state: GameState, obj: GameObject): boolean {
+  return legendExemptionSources(state).some((source) =>
+    matchesFilter(
+      state,
+      obj,
+      { ...source.what, zone: 'battlefield' },
+      { controller: controllerOf(state, source.object), source: source.object.id },
+    ),
+  );
 }
 
 /** Numeric order of object ids: the order objects came to exist, so a list is in a fixed order. */

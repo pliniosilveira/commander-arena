@@ -6833,7 +6833,35 @@ export type StaticEffect =
    * is not countered by a spell or ability that tries to (it stays on the stack and resolves). It is a static ability of a permanent on the
    * battlefield, so a permanent that lost its abilities gives none. The spell's own "can't be countered" is the `restriction` of its own face.
    */
-  | { readonly kind: 'spellsCantBeCountered'; readonly spells: ObjectFilter };
+  | { readonly kind: 'spellsCantBeCountered'; readonly spells: ObjectFilter }
+  /**
+   * "The "legend rule" doesn't apply to Slivers you control." (CR 704.5j, 604.1): while the permanent has the ability, the legend rule is not applied to the permanents on the battlefield that
+   * `what` matches, as they are after the layers (`controller` is relative to the controller of the permanent: "you"). They are not counted as legendary duplicates: two of them with the
+   * same name stay, and one of them does not make another permanent of that name, which the rule still covers, a duplicate. Read where state-based actions are checked (`rules/sba.ts`). A
+   * permanent that lost all its abilities gives none (CR 613.1f).
+   */
+  | { readonly kind: 'legendRuleDoesntApply'; readonly what: ObjectFilter }
+  /**
+   * "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types. The same is true for creature spells you control and
+   * creature cards you own that aren't on the battlefield." (CR 205.3m, 613.1d, 604.3, 607.2d): the permanents on the battlefield that `what` matches (`controller` is relative to the
+   * controller of the permanent: "you"), as they are after layer 3, also have the creature type this permanent chose as it entered, in layer 4 with the permanent's timestamp.
+   * With `alsoCardsAndSpells` the same is true for the creature spells its controller controls and the creature cards its controller owns outside the battlefield (a graveyard, a
+   * hand, a library, exile, the command zone: the effect works in every zone, as Changeling does, CR 702.73a). Without a type chosen, nothing is given. Needs `asEntersChoose` of
+   * `creatureType` on the same face. What `what` matches is read from the object before this effect (CR 613.8: no effect of this kind depends on another one).
+   */
+  | {
+      readonly kind: 'giveChosenCreatureType';
+      readonly what: ObjectFilter;
+      readonly alsoCardsAndSpells?: true;
+    }
+  /**
+   * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (CR 702.141a, 613.1f, 604.3, 202.3): a static ability of a permanent on the battlefield that
+   * gives the cards in its controller's graveyard that `what` matches (the cards as they are in the graveyard: its types and the like; no zone, controller or owner) an Encore ability
+   * whose cost is the generic mana of the card's own mana value. It works from the graveyard only (the ability functions there), is read as the cards are looked at (a card that enters
+   * a graveyard has it at once, a card that leaves does not), and is not given to a card that has an Encore of its own (it keeps that one). A permanent that lost all its abilities
+   * gives nothing (CR 613.1f).
+   */
+  | { readonly kind: 'grantEncoreToGraveyardCards'; readonly what: ObjectFilter };
 
 // ---- Abilities (CR 113)
 

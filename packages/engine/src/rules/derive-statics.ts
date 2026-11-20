@@ -217,6 +217,18 @@ interface SpellGrantSource {
   readonly conditionKey?: string;
 }
 
+/** A static ability of a permanent that gives Encore to the cards of its controller's graveyard (`grantEncoreToGraveyardCards`, CR 702.141a, 613.1f). */
+export interface EncoreGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+}
+
+/** A static ability of a permanent that stops the legend rule applying to the permanents `what` names (`legendRuleDoesntApply`, CR 704.5j). */
+export interface LegendExemptionSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+}
+
 /** A static ability of a permanent that gives flashback to the cards of its controller's graveyard (`grantFlashbackToGraveyardCards`, CR 702.34a, 613.1f). */
 export interface FlashbackGrantSource {
   readonly object: GameObject;
@@ -250,6 +262,10 @@ interface BoardIndex {
   readonly handGrants: readonly HandGrantSource[];
   /** Permanents with a `grantKeywordToSpells` static ability, in battlefield order (issue 145). */
   readonly spellGrants: readonly SpellGrantSource[];
+  /** Permanents with a `grantEncoreToGraveyardCards` static ability, in battlefield order. */
+  readonly encoreGrants: readonly EncoreGrantSource[];
+  /** Permanents with a `legendRuleDoesntApply` static ability, in battlefield order. */
+  readonly legendExemptions: readonly LegendExemptionSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
@@ -425,6 +441,29 @@ function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGr
   return out;
 }
 
+function encoreGrantsOf(object: GameObject, abilities: readonly Ability[]): EncoreGrantSource[] {
+  const out: EncoreGrantSource[] = [];
+  for (const a of abilities) {
+    if (a.kind === 'static' && a.static.kind === 'grantEncoreToGraveyardCards') {
+      out.push({ object, what: a.static.what });
+    }
+  }
+  return out;
+}
+
+function legendExemptionsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): LegendExemptionSource[] {
+  const out: LegendExemptionSource[] = [];
+  for (const a of abilities) {
+    if (a.kind === 'static' && a.static.kind === 'legendRuleDoesntApply') {
+      out.push({ object, what: a.static.what });
+    }
+  }
+  return out;
+}
+
 function spellGrantsOf(object: GameObject, abilities: readonly Ability[]): SpellGrantSource[] {
   const out: SpellGrantSource[] = [];
   for (const a of abilities) {
@@ -480,6 +519,8 @@ function buildIndex(state: GameState): BoardIndex {
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
+  const legendExemptions: LegendExemptionSource[] = [];
+  const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
   for (const id of state.battlefield) {
     const object = state.objects[id];
@@ -498,6 +539,8 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
+    legendExemptions.push(...legendExemptionsOf(object, printed));
+    encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
       const list = attachments.get(object.attachedTo);
       if (list === undefined) attachments.set(object.attachedTo, [id]);
@@ -572,6 +615,8 @@ function buildIndex(state: GameState): BoardIndex {
     handGrants,
     spellGrants,
     flashbackGrants,
+    legendExemptions,
+    encoreGrants,
     attachments,
   };
 }
@@ -625,6 +670,16 @@ export function libraryCastSources(state: GameState): readonly LibraryCastSource
 /** The permission "Once during each of your turns, you may play a land or cast a spell from your graveyard" of the permanents on the battlefield (D-232). */
 export function graveyardPlaySources(state: GameState): readonly GraveyardPlaySource[] {
   return indexOf(state).graveyardPlays;
+}
+
+/** The permanents on the battlefield that give Encore to the cards of their controller's graveyard (CR 702.141a). */
+export function encoreGrantSources(state: GameState): readonly EncoreGrantSource[] {
+  return indexOf(state).encoreGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that stop the legend rule applying to permanents (CR 704.5j). */
+export function legendExemptionSources(state: GameState): readonly LegendExemptionSource[] {
+  return indexOf(state).legendExemptions;
 }
 
 /** The static abilities of the permanents on the battlefield that give flashback to the cards of their controller's graveyard (CR 702.34a). */
@@ -802,6 +857,35 @@ function handGrantsOn(state: GameState, target: GameObject, base: StaticBase): S
 }
 
 /**
+ * The Encore the static abilities of the permanents on the battlefield give to `target`, a card in a graveyard (`grantEncoreToGraveyardCards`, CR 702.141a, 613.1f): "Each Sliver
+ * creature card in your graveyard has encore {X}, where X is its mana value." The graveyard is the one of the permanent's controller, `what` is read against the card as it is after
+ * layers 4 and 5 (`base`), and the cost is the generic mana of its mana value (CR 202.3: an {X} in its mana cost counts as 0 away from the stack, which `base.manaValue` is).
+ */
+function graveyardGrantsOn(state: GameState, target: GameObject, base: StaticBase): StaticGrant[] {
+  const sources = indexOf(state).encoreGrants;
+  if (sources.length === 0) return [];
+  const grants: StaticGrant[] = [];
+  for (const source of sources) {
+    if (target.owner !== controllerOf(state, source.object)) continue;
+    const filter: ObjectFilter = { ...source.what, zone: 'graveyard' };
+    if (
+      !matchesFilterWith(state, target, () => base, filter, subjectContextOf(state, source.object))
+    ) {
+      continue;
+    }
+    const value = base.manaValue ?? 0;
+    grants.push({
+      ability: {
+        kind: 'keyword',
+        keyword: { kind: 'encore', cost: [{ kind: 'mana', symbols: [String(value)] }] },
+      },
+      timestamp: source.object.timestamp,
+    });
+  }
+  return grants;
+}
+
+/**
  * The keywords the static abilities of the permanents on the battlefield give to `target`, a spell on the stack (issue 145, `grantKeywordToSpells`, CR 702.144a, 702.51a, 613.1f):
  * "Creature spells you cast have demonstrate." The spell is the one its controller cast, so `what` is read with the permanent's controller as "you" against the spell as it is after
  * layers 4 and 5 (`base`). A copy of a spell is not cast (CR 707.10) and an ability on the stack is no spell: neither gets a keyword. The object may be the card as it is cast
@@ -857,6 +941,7 @@ export function staticEffectsOn(
 ): StaticEffects {
   if (target.zone === 'hand') return otherZoneEffects(handGrantsOn(state, target, base));
   if (target.zone === 'stack') return otherZoneEffects(spellGrantsOn(state, target, base));
+  if (target.zone === 'graveyard') return otherZoneEffects(graveyardGrantsOn(state, target, base));
   if (target.zone !== 'battlefield') return otherZoneEffects([]);
   const index = indexOf(state);
   const grants: StaticGrant[] = [];
