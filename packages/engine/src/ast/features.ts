@@ -930,6 +930,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenType',
     'notChosenType',
     'chosenColor',
+    // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
+    'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
     'thisCard',
@@ -1759,6 +1761,8 @@ export const SELECTOR_KINDS = [
   'chosenType',
   'notChosenType',
   'chosenColor',
+  /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
+  'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */

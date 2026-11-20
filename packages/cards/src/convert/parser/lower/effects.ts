@@ -130,6 +130,7 @@ import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
@@ -2419,6 +2420,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
+  // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
+  ...SLIVER_D_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,

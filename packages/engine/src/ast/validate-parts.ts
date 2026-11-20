@@ -4600,6 +4600,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkFilter(e.filter, `${path}.filter`, out, scope);
       break;
     case 'chooseCreatureType':
+      // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
+      if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {

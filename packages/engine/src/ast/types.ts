@@ -1863,7 +1863,12 @@ export type Effect =
       /** "Put two +1/+1 counters on a creature you control" (D-653): the controller must choose `count` permanents (or all there are when fewer), not up to that many. */
       readonly exactly?: true;
     }
-  | { readonly kind: 'chooseCreatureType' }
+  /**
+   * "Choose a creature type" as the effect resolves (CR 205.3m, 608.2d): the controller chooses. With `players` (Harsh Mercy: "Each player chooses a creature type", CR 101.4): each player the
+   * selector names chooses one, one after the other in turn order (the active player first), and the creature types chosen are what `notChosenType` and `chosenType` read afterwards (an
+   * object matches `chosenType` with any of them; `notChosenType` with none of them).
+   */
+  | { readonly kind: 'chooseCreatureType'; readonly players?: PlayerSelector }
   | { readonly kind: 'forEachPlayer'; readonly players: PlayerSelector; readonly effect: Effect }
   | { readonly kind: 'prepare'; readonly objects: ObjectSelector }
   /**
