@@ -75,6 +75,21 @@ export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
       pos: diedAny.pos,
     };
   }
+  // CR 111.1, 603.6a (issue 101, Thalisse): "the number of tokens you created this turn" counts the tokens that entered the battlefield under your control this turn (a token is created
+  // as it is put onto the battlefield, so every token created is one that entered).
+  const created = pattern(/the number of tokens you created this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (created.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'enteredThisTurn',
+        controller: 'you',
+        token: true,
+        span: { start: pos, end: created.pos },
+      },
+      pos: created.pos,
+    };
+  }
   const entries = pattern(
     /the number of (nontoken |token )?(creatures|permanents) you had enter the battlefield under your control this turn(?![\p{L}\p{N}])/iu,
   )(ctx, pos);

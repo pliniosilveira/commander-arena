@@ -378,3 +378,34 @@ describe('Bone Devourer: counters for the creatures that died this turn (CR 614.
     g.expect.invariants();
   });
 });
+
+describe('Thalisse, Reverent Medium: X tokens for the tokens created this turn (CR 111.1, 603.6a)', () => {
+  const thalisse = real('Thalisse, Reverent Medium');
+  const adeline = real('Adeline, Resplendent Cathar');
+
+  test('the card is valid', () => {
+    expect(validateCard(thalisse)).toEqual([]);
+  });
+
+  test('at the end step it creates one 1/1 Spirit with flying for each token created this turn', () => {
+    const g = scenario()
+      .define(thalisse)
+      .define(adeline)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(thalisse.name)
+      .battlefield(adeline.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: adeline.name }]);
+    g.passAll();
+    g.expect.zone('Human', 'battlefield', { seat: 0, count: 1 });
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.zone('Spirit', 'battlefield', { seat: 0, count: 1 });
+    g.expect.derived('Spirit', { keywords: ['flying'] });
+  });
+});
