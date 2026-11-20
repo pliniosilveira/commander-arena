@@ -272,6 +272,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'lifeLostThisTurn':
       // D-365 (CR 119.3): read for each player the instruction affects.
       return 'the life that player lost this turn';
+    case 'attackersOfAffected':
+      // Issue 101 (CR 508.1b): read for each player the instruction affects.
+      return 'the number of creatures attacking them';
     case 'lifeGainedThisTurn':
       return 'the amount of life you gained this turn';
     case 'lifeGainedOrLostThisTurn':
@@ -306,6 +309,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
         ? `the greatest ${stat} among ${things}`
         : `the total ${stat} of ${things}`;
     }
+    case 'differentNamesAmong':
+      // Issue 101 (CR 201.2).
+      return 'the number of differently named permanents';
     case 'cardTypesAmong': {
       // D-518 (CR 205.2a): "the number of card types among cards in your graveyard" (Delirium).
       const cards = thingsPhrase(amount.filter, true);

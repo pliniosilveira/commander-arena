@@ -41,4 +41,36 @@ export const AMOUNT_LIFE_LOST_THIS_TURN = defineRule<IrAmount>({
   },
 });
 
-export const HASHATON_G2_AMOUNT_RULES = [AMOUNT_LIFE_LOST_THIS_TURN];
+/**
+ * `amount.attackers-of-affected`: "equal to the number of creatures attacking them" (issue 101, Within Range; CR 508.1b, 506.3): the creatures attacking the player the life loss
+ * affects, read for each of them. The engine's `attackersOfAffected`.
+ */
+export const AMOUNT_ATTACKERS_OF_AFFECTED = defineRule<IrAmount>({
+  id: 'amount.attackers-of-affected',
+  family: 'amount',
+  leading: ['equal'],
+  cites: ['CR 508.1b (Declare Attackers Step)', 'CR 506.3 (Combat)'],
+  examples: ['equal to the number of creatures attacking them'],
+  rejects: [
+    'equal to the number of creatures attacking you',
+    'equal to the number of creatures attacking',
+    'equal to the number of creatures attacking them this turn',
+    'equal to the number of attacking creatures',
+    'equal to the number of creature attacking them',
+    'equal to the number of creatures that attacked them',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/equal to the number of creatures attacking them(?![\p{L}\p{N}])/iu)(
+      ctx,
+      pos,
+    );
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'attackersOfAffected', span: { start: pos, end: r.pos } },
+      pos: r.pos,
+    };
+  },
+});
+
+export const HASHATON_G2_AMOUNT_RULES = [AMOUNT_LIFE_LOST_THIS_TURN, AMOUNT_ATTACKERS_OF_AFFECTED];

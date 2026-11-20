@@ -1307,6 +1307,15 @@ function lowerTriggeredAbility(
     const blocked = missingFeatures(['trigger:entersFromGraveyard']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers[0] = { ...only, fromGraveyard: true };
+  } else if (ifWritten?.test.kind === 'damageDealtByType') {
+    // "Whenever your opponents are dealt combat damage, if any of that damage was dealt by a Warrior, ..." (issue 101, Mindblade Render, CR 510.2, 603.4): the batch trigger
+    // counts the sources that match its filter, so "if any of that damage was dealt by a [type]" is the type in the filter of the sources, read as the damage is dealt.
+    const [only] = triggers;
+    if (events.length !== 1 || only?.kind !== 'combatDamageBatch') return failure(ifWritten, []);
+    triggers[0] = {
+      ...only,
+      what: { ...only.what, subtypes: [...(only.what.subtypes ?? []), ifWritten.test.subtype] },
+    };
   } else if (ifWritten?.test.kind === 'notDeclaredAttacker') {
     // "Whenever a creature an opponent controls becomes tapped, if it isn't being declared as an attacker, ..." (Hylda deck, D-510, CR 508.1f): a part of the event of the one
     // `becomesTapped` trigger, read as it happens (the engine's `notAsAttacker`), not an intervening "if" of its own.

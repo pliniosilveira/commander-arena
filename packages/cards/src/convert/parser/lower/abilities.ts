@@ -418,7 +418,16 @@ function lowerStation(ability: IrKeyword, ctx: LowerContext): LowerResult<readon
  */
 function lowerNumbered(
   ability: IrKeyword,
-  kind: 'toxic' | 'annihilator' | 'afflict' | 'bushido' | 'hideaway' | 'devour' | 'backup',
+  kind:
+    | 'toxic'
+    | 'annihilator'
+    | 'afflict'
+    | 'mobilize'
+    | 'fabricate'
+    | 'bushido'
+    | 'hideaway'
+    | 'devour'
+    | 'backup',
 ): LowerResult<readonly Ability[]> {
   const [count, ...more] = ability.params;
   if (count?.kind !== 'number' || more.length > 0 || ability.cost !== undefined) {
@@ -569,6 +578,8 @@ export function lowerKeyword(
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
     ability.name === 'afflict' ||
+    ability.name === 'mobilize' ||
+    ability.name === 'fabricate' ||
     ability.name === 'bushido' ||
     ability.name === 'hideaway' ||
     ability.name === 'devour' ||
@@ -1027,6 +1038,21 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
       }
       return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
     }
+    // "equal to the number of creatures that died this turn" (issue 101, Bone Devourer, CR 614.12, 700.4): read from the turn's history as it enters.
+    if (count?.kind === 'diedThisTurn') {
+      const blocked = gate(ability, [
+        'ability:replacement',
+        'replacement:entersWithCounters',
+        'amount:diedThisTurn',
+      ]);
+      if (blocked !== null) return blocked;
+      const counted = lowerAmount(count, newContext('ability', []), ability.rule);
+      if (!counted.ok) return counted;
+      if (typeof counted.value !== 'object' || counted.value.kind !== 'diedThisTurn') {
+        return failure(ability);
+      }
+      return built({ kind: 'entersWithCounters', counter: counter.name, count: counted.value });
+    }
     // "for each other Zombie you control and each Zombie card in your graveyard" (issue 159): each count as it enters, added.
     if (count?.kind === 'sum') {
       const blocked = gate(ability, [
@@ -1118,6 +1144,8 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:mobilize',
+  'keyword:fabricate',
   'keyword:partnerWith',
   'keyword:bushido',
   'keyword:affinity',

@@ -312,6 +312,12 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'lifeLostThisTurn' }, rule };
     }
+    case 'attackersOfAffected': {
+      // CR 508.1b (issue 101): each affected player's own count of the creatures attacking them; refused for any instruction but a `loseLife` of a player other than "you".
+      const blocked = needs('attackersOfAffected');
+      if (blocked !== null) return blocked;
+      return { ok: true, value: { kind: 'attackersOfAffected' }, rule };
+    }
     case 'cardsInHandOfAffected': {
       // CR 402.1: the engine reads each player's own hand as the damage is dealt to them; the damage lowering refuses it where the recipients are not players, and
       // `validateCard` refuses it in any other amount.
@@ -453,6 +459,21 @@ export function lowerAmount(
       const filter = countFilter(amount.of);
       if (!filter.ok) return filter;
       return { ok: true, value: { kind: 'cardTypesAmong', filter: filter.value }, rule };
+    }
+    case 'differentNamesAmong': {
+      // "The number of differently named tokens you control" (issue 101, CR 201.2): the engine's `differentNamesAmong`, of permanents on the battlefield.
+      const blocked = needs('differentNamesAmong');
+      if (blocked !== null) return blocked;
+      if (amount.of.filter.zone !== undefined && amount.of.filter.zone !== 'battlefield') {
+        return { ok: false, needs: [], at: amount.span, rule };
+      }
+      const filter = countFilter(amount.of);
+      if (!filter.ok) return filter;
+      return {
+        ok: true,
+        value: { kind: 'differentNamesAmong', filter: filter.value },
+        rule,
+      };
     }
     case 'differentManaValuesAmong': {
       // "For each different mana value among instant and sorcery cards in your graveyard" (issue 121, CR 202.3): the engine's `differentManaValuesAmong`, of a zone outside the battlefield.
@@ -959,6 +980,7 @@ export const AMOUNT_NEEDS = [
   'amount:manaSpent',
   'amount:lifeLostThisWay',
   'amount:lifeLostThisTurn',
+  'amount:attackersOfAffected',
   'amount:lifeGainedThisTurn',
   'amount:lifeGainedOrLostThisTurn',
   'amount:enteredThisTurn',
@@ -982,6 +1004,7 @@ export const AMOUNT_NEEDS = [
   'amount:greatestPowerAmong',
   'amount:cardTypesAmong',
   'amount:differentManaValuesAmong',
+  'amount:differentNamesAmong',
   'amount:half',
   'amount:multiple',
   'amount:minus',

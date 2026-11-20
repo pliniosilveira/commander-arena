@@ -132,6 +132,10 @@ export function runMayPlay(
         seat: res.controller,
         // Lorehold group 1: "you may cast it this turn" is no permission to play a land.
         ...(effect.castOnly === true ? { castOnly: true as const } : {}),
+        // Issue 101 (Neriv): "during any turn you attacked with a commander".
+        ...(effect.duringTurnsAttackedWithCommander === true
+          ? { whenAttackedWithCommander: true as const }
+          : {}),
         // Lobelia (CR 118.9): "without paying its mana cost": a spell is cast for no mana cost; a land is played as usual (`mayPlayFromExile`).
         ...(effect.free === true ? { free: true as const } : {}),
         // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell".

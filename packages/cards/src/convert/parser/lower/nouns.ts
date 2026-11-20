@@ -289,6 +289,7 @@ function lowerFilterAt(
   // D-145 (stage P32): "with a counter on it" (CR 122.1) and "commander" (CR 903.3).
   if (filter.hasCounter !== undefined) parts.push('selector:hasCounter');
   if (filter.commander !== undefined) parts.push('selector:commander');
+  if (filter.isSelf === true) parts.push('selector:isSource');
   // D-180 (stage P37): "that was put there from the battlefield this turn" (CR 700.4), a card of a graveyard (the engine reads it of the filter of
   // a target or an `each` selector, never of a member of a choice).
   if (filter.putFromBattlefieldThisTurn === true) {
@@ -527,6 +528,7 @@ function lowerFilterAt(
       : { colorCount: { cmp: filter.colorCount.cmp, value: filter.colorCount.value } }),
     ...(filter.hasCounter === undefined ? {} : { hasCounter: filter.hasCounter }),
     ...(filter.commander === undefined ? {} : { commander: filter.commander }),
+    ...(filter.isSelf === true ? { isSource: true as const } : {}),
     ...(filter.manaValueX === true ? { manaValueX: true as const } : {}),
     ...(filter.controllerDamagedBySource === true
       ? { controllerDealtDamageBySource: true as const }

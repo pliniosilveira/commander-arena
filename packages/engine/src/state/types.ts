@@ -2150,6 +2150,8 @@ export type ContinuousChange =
       readonly seat: SeatId;
       /** "You may cast it this turn" (`mayPlay.castOnly`, Lorehold group 1): the card may be cast, not played as a land. */
       readonly castOnly?: true;
+      /** "During any turn you attacked with a commander, you may play those cards" (`mayPlay.duringTurnsAttackedWithCommander`, issue 101): usable only in a turn the seat declared a commander as an attacker. */
+      readonly whenAttackedWithCommander?: true;
       /**
        * "You may cast that card this turn without paying its mana cost" (`mayCast.free`, Lorehold group 2, CR 118.9): the card is cast for no mana cost, as the alternative cost `free`
        * (the plain cast, paying the mana cost, is not allowed by this permission). With `castOnly` (Lorehold group 2), or without it (`mayPlay.free`, Lobelia, Defender of Bag End: a land card
@@ -2287,6 +2289,17 @@ export type ContinuousChange =
       readonly seat: SeatId;
       /** Jace, Multiverse Architect: only the planeswalkers of this subtype `seat` controls are barred, not the player. */
       readonly planeswalkerSubtype?: string;
+    }
+  /**
+   * "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead" (`doubleTokens`, issue 101, CR 614.1a,
+   * 614.5): no layer and no fixed set (`objects` is empty): read as tokens would be created (`rules/token-replacement.ts`), for the tokens `filter` matches, with `controller` as "you"
+   * and `source` the permanent that made the effect.
+   */
+  | {
+      readonly kind: 'tokensDoubled';
+      readonly filter: ObjectFilter;
+      readonly controller: SeatId;
+      readonly source: ObjectId;
     }
   /**
    * "Until your next turn, creatures your opponents control enter tapped" (`permanentsEnterTapped`, CR 614.1c, 614.12, D-519): no layer and no fixed set (`objects` is

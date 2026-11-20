@@ -196,6 +196,89 @@ function afflictAbility(count: number): Ability {
   };
 }
 
+/** CR 702.181a: the token of Mobilize, "a 1/1 red Warrior creature token", with the sacrifice at the next end step as an ability of its own. */
+const MOBILIZE_TOKEN: TokenDefinition = {
+  name: 'Warrior',
+  manaCost: null,
+  supertypes: [],
+  types: ['creature'],
+  subtypes: ['Warrior'],
+  colors: ['R'],
+  power: 1,
+  toughness: 1,
+  loyalty: null,
+  defense: null,
+  oracleText: '',
+  abilities: [
+    {
+      kind: 'triggered',
+      trigger: { kind: 'step', step: 'endStep', whose: 'each' },
+      effect: { kind: 'sacrifice', objects: { kind: 'this' } },
+    },
+  ],
+};
+
+/** CR 702.123a: the token of Fabricate, "a 1/1 colorless Servo artifact creature token". */
+const SERVO_TOKEN: TokenDefinition = {
+  name: 'Servo',
+  manaCost: null,
+  supertypes: [],
+  types: ['artifact', 'creature'],
+  subtypes: ['Servo'],
+  colors: [],
+  power: 1,
+  toughness: 1,
+  loyalty: null,
+  defense: null,
+  oracleText: '',
+  abilities: [],
+};
+
+/**
+ * CR 702.123a (Fabricate, issue 101): "When this permanent enters, you may put N +1/+1 counters on it. If you don't, create N 1/1 colorless Servo artifact creature tokens." The
+ * controller is asked once, as the ability resolves (`playersMay`): yes puts the counters on this permanent, no makes the tokens.
+ */
+function fabricateAbility(count: number): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'entersBattlefield', what: { kind: 'this' } },
+    effect: {
+      kind: 'playersMay',
+      players: { kind: 'you' },
+      effect: { kind: 'addCounters', objects: { kind: 'this' }, counter: '+1/+1', count },
+      otherwise: {
+        kind: 'createToken',
+        token: { kind: 'custom', definition: SERVO_TOKEN },
+        count,
+      },
+    },
+  };
+}
+
+/**
+ * CR 702.181a (Mobilize, issue 101): "Whenever this creature attacks, create N 1/1 red Warrior creature tokens. Those tokens enter tapped and attacking. Sacrifice them at the
+ * beginning of the next end step." The tokens are made tapped, then `enterAttacking` puts them in the combat against the player the creature attacks (CR 508.4); each carries the
+ * sacrifice as its own triggered ability, which is the next end step because the tokens are made in combat.
+ */
+function mobilizeAbility(count: number | 'power'): Ability {
+  return {
+    kind: 'triggered',
+    trigger: { kind: 'attacks', what: { kind: 'this' } },
+    effect: {
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'createToken',
+          token: { kind: 'custom', definition: MOBILIZE_TOKEN },
+          count: count === 'power' ? { kind: 'powerOf', of: { kind: 'this' } } : count,
+          tapped: true,
+        },
+        { kind: 'enterAttacking', objects: { kind: 'moved' } },
+      ],
+    },
+  };
+}
+
 /**
  * CR 702.124j (D-490): "Partner with [name]" is also "When this permanent enters, target player may search their library for a card named [name], reveal it, put it into
  * their hand, then shuffle." The searching player is the target, who makes the choices.
@@ -692,6 +775,10 @@ export function expansionOf(ability: Ability): Ability[] {
       return [annihilatorAbility(ability.keyword.count)];
     case 'afflict':
       return [afflictAbility(ability.keyword.count)];
+    case 'mobilize':
+      return [mobilizeAbility(ability.keyword.count)];
+    case 'fabricate':
+      return [fabricateAbility(ability.keyword.count)];
     case 'partnerWith':
       // CR 702.124j (D-490): the second of the two abilities "Partner with [name]" represents.
       return [partnerWithAbility(ability.keyword.name)];

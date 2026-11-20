@@ -83,7 +83,7 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
         );
       }
       if (t.what !== undefined) {
-        checkFilter(t.what, `${path}.what`, out);
+        checkFilter(t.what, `${path}.what`, out, undefined, undefined, { sourceOk: true });
         if (
           filterSome(
             t.what,
