@@ -55,6 +55,46 @@ export const CONDITION_PLAYER_DECLINES = defineRule<IrCondition>({
   },
 });
 
+/**
+ * `condition.each-opponent-declines`: "for each opponent who doesn't" (Meren deck, Braids, Arisen Nightmare; CR 608.2d, 608.2c, 101.4): after "each opponent may sacrifice a permanent",
+ * what is done for each opponent who did not, as "If they don't" does for the players a "may" sentence asked. The sentence parser reads it where it reads "if" (the words start
+ * the sentence). Not read: "for each opponent who does", "for each player who doesn't", "for each opponent who didn't", "each opponent who doesn't" (no "for").
+ */
+export const CONDITION_EACH_OPPONENT_DECLINES = defineRule<IrCondition>({
+  id: 'condition.each-opponent-declines',
+  family: 'condition',
+  leading: ['for'],
+  cites: [
+    'CR 608.2d (Resolving Spells and Abilities)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+    'CR 101.4 (Handling Simultaneous Decisions)',
+  ],
+  examples: ["for each opponent who doesn't", 'For each opponent who doesn’t'],
+  rejects: [
+    'for each opponent who does',
+    "for each player who doesn't",
+    "for each opponent who didn't",
+    "each opponent who doesn't",
+    "for each opponents who doesn't",
+    "for an opponent who doesn't",
+    "for each opponent who doesn'ts",
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/for each opponent who doesn['’]t(?![\p{L}\p{N}'’])/iu)(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: {
+        kind: 'condition',
+        test: { kind: 'declined' },
+        span: { start: pos, end: r.pos },
+        rule: 'condition.each-opponent-declines',
+      },
+      pos: r.pos,
+    };
+  },
+});
+
 /** `condition.discarded-this-way`: "a creature card was discarded this way", "a noncreature card was discarded this way" (CR 608.2c, 701.9). */
 export const CONDITION_DISCARDED_THIS_WAY = defineRule<IrCondition>({
   id: 'condition.discarded-this-way',
@@ -136,6 +176,7 @@ export const CONDITION_DISCARDED_SPELL_THIS_WAY = defineRule<IrCondition>({
 
 export const CHOOSER_CONDITION_RULES = [
   CONDITION_PLAYER_DECLINES,
+  CONDITION_EACH_OPPONENT_DECLINES,
   CONDITION_DISCARDED_THIS_WAY,
   CONDITION_DISCARDED_SPELL_THIS_WAY,
 ];

@@ -105,7 +105,13 @@ export function runChooseSacrifice(
   if (instruction.chosen !== null) {
     return proceed(instruction.chosen, [chosenEvent(instruction.chosen, false)]);
   }
-  const candidates = sacrificeCandidates(state, seat, res.source, instruction.filter);
+  const candidates = sacrificeCandidates(
+    state,
+    seat,
+    res.source,
+    instruction.filter,
+    res.sacrificed,
+  );
   const legal =
     instruction.greatest === undefined
       ? candidates

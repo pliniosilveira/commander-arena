@@ -891,6 +891,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'condition.player-declines': permanent(
     (e) => `When ~ enters, target opponent may have you draw a card. If ${e}, you gain 1 life.`,
   ),
+  // Meren deck, Braids: the sentence for the opponents who declined starts with the words instead of an "if".
+  'condition.each-opponent-declines': permanent(
+    (e) =>
+      `At the beginning of your end step, each opponent may discard a card. ${cap(e)}, that player loses 1 life.`,
+  ),
+  // Meren deck, Braids: the permanent an opponent may sacrifice after the sacrifice of the sentence before it.
+  'noun.a-permanent-sharing-type': permanent(
+    (e) =>
+      `At the beginning of your end step, you may sacrifice a creature. If you do, each opponent may sacrifice ${e}.`,
+  ),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,

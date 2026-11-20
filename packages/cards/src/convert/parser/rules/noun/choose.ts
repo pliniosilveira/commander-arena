@@ -17,6 +17,7 @@ import {
 import type { IrComparison, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, family, node, spanned } from '../registry';
+import { BRAIDS_NOUN_RULES } from './braids';
 import { graveyardPhrase, PLURAL_TYPE_UNION, permanentPhrase, withoutZone } from './phrases';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
@@ -497,6 +498,8 @@ export const NOUN_EACH_PERMANENT_THEY_CONTROL = defineRule<IrNoun>({
 export const CHOOSE_NOUN_RULES = [
   NOUN_SELF,
   NOUN_A_GREATEST_PERMANENT,
+  // Meren deck, Braids: "a permanent of their choice that shares a card type with it", before the plain "a permanent" that would read its first words.
+  ...BRAIDS_NOUN_RULES,
   NOUN_A_PERMANENT,
   NOUN_ANY_NUMBER_PERMANENTS,
   NOUN_ONE_OR_MORE_PERMANENTS,

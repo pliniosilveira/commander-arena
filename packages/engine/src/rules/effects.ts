@@ -326,7 +326,8 @@ export function runInstruction(
         (offered.kind === 'sacrifice' &&
           offered.objects.kind === 'choose' &&
           offered.player === undefined &&
-          sacrificeCandidates(state, player, res.source, offered.objects.filter).length === 0) ||
+          sacrificeCandidates(state, player, res.source, offered.objects.filter, res.sacrificed)
+            .length === 0) ||
         // CR 701.9 (Discard): a player with no card in hand cannot discard one, so they do not and the "if they don't" instruction is done for them (Professor Onyx's last
         // loyalty ability rules: an opponent with an empty hand loses the life). Nobody is asked about a discard of nothing when "if they don't" follows; without it the question is
         // asked as it always was (it is what the players who did the thing are counted from, Mog, Moogle Warrior).

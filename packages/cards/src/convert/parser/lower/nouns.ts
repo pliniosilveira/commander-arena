@@ -131,6 +131,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
+  'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
 ];
@@ -347,6 +348,8 @@ function lowerFilterAt(
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  // CR 205.2a, 701.21a (Braids): "shares a card type with it", the permanent an earlier sacrifice sacrificed.
+  if (filter.sharesCardTypeWithSacrificed === true) parts.push('selector:sharesCardTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
   if (filter.singleTarget === true) {
     if (inner || filter.zone !== 'stack') return bad([]);
@@ -520,6 +523,9 @@ function lowerFilterAt(
     ...(filter.singleTarget === true ? { singleTarget: true as const } : {}),
     ...(filter.sharesCreatureTypeWithIt === true
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
+      : {}),
+    ...(filter.sharesCardTypeWithSacrificed === true
+      ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),

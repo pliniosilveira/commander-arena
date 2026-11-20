@@ -808,8 +808,11 @@ export interface ObjectFilter {
   /**
    * "that shares a card type with it" (CR 205.2a, 603.3d, Baral and Kari Zev): the object has at least one card type that the spell the trigger is about (`triggerSubject` of a
    * `castSpell` trigger) has, as that spell is on the stack or as it last was. Read in the filter of a `castFree` in the effect of that trigger.
+   * `sacrificed` (CR 205.2a, 701.21a, 113.7a; Braids, Arisen Nightmare): the permanent an earlier `sacrifice` of this resolution sacrificed (the first one), with the card types it
+   * last had on the battlefield: "each opponent may sacrifice a permanent that shares a card type with it" matches a permanent with ANY of them. Read in the filter of a `choose` of
+   * a `sacrifice` that comes after that sacrifice (or the `may` of one) in the same sequence.
    */
-  readonly sharesCardTypeWith?: 'triggerSubject';
+  readonly sharesCardTypeWith?: 'triggerSubject' | 'sacrificed';
   /** "Of the chosen color" (D-100): as `chosenType`, for `chosen.color` and an `asEntersChoose` of `color`. */
   readonly chosenColor?: true;
   /**
