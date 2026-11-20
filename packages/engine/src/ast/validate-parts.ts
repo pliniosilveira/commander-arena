@@ -3800,6 +3800,24 @@ function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Ou
   if (sel.atLeastOne !== undefined) {
     issue(out, `${path}.atLeastOne`, 'atLeastOne belongs to a sacrifice choice (D-187)');
   }
+  // Issue 102 (Tasigur): "of an opponent's choice": an opponent picks among the controller's own cards of a graveyard; not an offer, not a choice among cards moved.
+  if (sel.chosenBy !== undefined) {
+    if (
+      sel.chosenBy !== 'opponent' ||
+      sel.filter?.zone !== 'graveyard' ||
+      sel.filter?.controller !== 'you' ||
+      sel.optional !== undefined ||
+      sel.fromMoved !== undefined ||
+      sel.alsoGraveyard !== undefined ||
+      sel.anyNumber !== undefined
+    ) {
+      issue(
+        out,
+        `${path}.chosenBy`,
+        "chosenBy is 'opponent', for a card of the controller's graveyard, with no optional, fromMoved, alsoGraveyard or anyNumber",
+      );
+    }
+  }
   if (sel.count !== undefined) {
     if (typeof sel.count === 'number' && (!isCount(sel.count) || sel.count < 1)) {
       issue(out, `${path}.count`, 'count must be a positive integer');

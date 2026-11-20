@@ -572,3 +572,32 @@ describe('"Whenever you cast a spell, each opponent reveals cards from the top o
     g.expect.zone('Grizzly Bears', 'library', { seat: 1 });
   });
 });
+
+describe('"{2}: Mill two cards, then return a nonland card of an opponent’s choice from your graveyard to your hand." (CR 608.2d, 101.4)', () => {
+  const golden = parsed(
+    'SYNTHETIC Parsed Golden Fang',
+    'Creature — Human Shaman',
+    "{2}: Mill two cards, then return a nonland card of an opponent's choice from your graveyard to your hand.",
+    { manaCost: '{5}{B}', power: '4', toughness: '5', colors: ['B'] },
+  );
+  test('the opponent picks the card, the controller gets it', () => {
+    const g = scenario()
+      .seat(0)
+      .define(golden)
+      .battlefield(golden.name, 'Swamp', 'Swamp')
+      .graveyard('Island', 'Lightning Bolt')
+      .library('Grizzly Bears', 'Forest', 'Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+    g.act(0).activate(golden.name).pay();
+    g.passAll();
+    // The cards are the controller's, the one asked is the opponent (nonland: Lightning Bolt or Grizzly Bears).
+    g.expect.pending('chooseCards', 1);
+    g.act(1).chooseCards({ name: 'Lightning Bolt', seat: 0, zone: 'graveyard' });
+    g.expect.zone('Lightning Bolt', 'hand', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+  });
+});

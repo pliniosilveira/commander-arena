@@ -1898,6 +1898,13 @@ export interface ChooseSelector {
    */
   readonly optional?: true;
   /**
+   * "Return a nonland card of an opponent's choice from your graveyard to your hand" (issue 102, Tasigur, the Golden Fang; CR 608.2d, 101.4): an opponent of the controller chooses the
+   * card, among the cards the controller owns in the zone the filter names (the opponent is asked; the cards are the controller's). With more than two players the controller has no
+   * say in which opponent: it is the first one in turn order who is still in the game, as for `opponentChoosesCard`. Only for `moveToZone`, with `filter.zone` `graveyard` and `controller` `you`,
+   * not with `optional`, `fromMoved`, `alsoGraveyard` or `anyNumber`.
+   */
+  readonly chosenBy?: 'opponent';
+  /**
    * "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d, 400.7j): the candidates are only the cards the effect
    * before it moved (`moved`: the new objects of the cards a `mill` put into the graveyard) that are still in the graveyard and that the filter matches, not
    * every card the controller has there. Only for `moveToZone` to the hand, with `filter.zone` `graveyard`, after an effect that moved cards (`validateCard`).

@@ -404,6 +404,8 @@ export interface IrFilter {
   readonly castFromHand?: true;
   /** "from a graveyard" (issue 102, River Kelpie, CR 601.2a): a spell that was cast from a graveyard (the engine's `castFromGraveyard`). */
   readonly castFromGraveyard?: true;
+  /** "of an opponent's choice" (issue 102, Tasigur, CR 608.2d): an opponent chooses the card; the engine's `ChooseSelector.chosenBy`. */
+  readonly chosenByOpponent?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */

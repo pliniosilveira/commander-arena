@@ -1339,6 +1339,8 @@ export type Instruction =
       readonly to: 'hand' | 'graveyard' | 'library' | 'battlefield' | 'exile' | 'command';
       /** The player who chooses among the cards they own (`exileOwnGraveyardCard`, D-231): the controller of the effect when left out. */
       readonly seat?: SeatId;
+      /** The player who is asked, when it is not the owner of the cards (`ChooseSelector.chosenBy`, issue 102: "of an opponent's choice"): `seat` or the controller when left out. */
+      readonly decider?: SeatId;
       /** The nonland cards that really go to exile are counted as `thisWay` `exiledNonland` (D-231). */
       readonly countsNonland?: true;
       readonly position: 'top' | 'bottom' | number;

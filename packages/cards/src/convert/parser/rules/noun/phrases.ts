@@ -1303,6 +1303,8 @@ export function graveyardPhrase(
         ),
         undefined,
       ),
+      // Issue 102 (Tasigur): "a nonland card of an opponent's choice from your graveyard", read only where the caller asks for it (`allowNonland`).
+      optional(allowNonland ? quiet(literal(" of an opponent's choice")) : fail, null),
       owner,
       // "... from an opponent's graveyard that was put there from the battlefield this turn" (stage P37, D-180, CR 700.4).
       optional(quiet(PUT_THERE_THIS_TURN), false),
@@ -1315,6 +1317,7 @@ export function graveyardPhrase(
       atMostX,
       equalsX,
       limitAmount,
+      byOpponent,
       controller,
       putThere,
     ] = r.value;
@@ -1339,6 +1342,7 @@ export function graveyardPhrase(
               ? {}
               : { anyOf: subtypeAnyOf.map((w): IrFilter => ({ subtypes: [w], raw: w })) }),
           ...(putThere ? { putFromBattlefieldThisTurn: true as const } : {}),
+          ...(byOpponent === null ? {} : { chosenByOpponent: true as const }),
           ...(atMostX ? { manaValueAtMostX: true as const } : {}),
           ...(equalsX ? { manaValueX: true as const } : {}),
           ...(limitAmount === undefined ? {} : { manaValueAtMostAmount: limitAmount }),

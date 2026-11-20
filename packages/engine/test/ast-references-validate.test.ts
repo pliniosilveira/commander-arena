@@ -143,6 +143,8 @@ describe('amounts that read an object', () => {
       'spellsCastThisTurn',
       // D-646 (CR 202.3, 601.2i): the greatest mana value among the spells cast this turn.
       'greatestManaValueCast',
+      // Issue 102: the cards put into your graveyard from your hand or library this turn.
+      'cardsToGraveyardThisTurn',
       'sacrificedAsCost',
       // D-575: the cards selected for a spell's optional hand-exile cost.
       'exiledAsCost',

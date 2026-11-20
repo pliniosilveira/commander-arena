@@ -1109,6 +1109,11 @@ function runEffect(
               {
                 kind: 'chooseMove',
                 filter: effect.objects.filter,
+                // Issue 102 (Tasigur): "of an opponent's choice": the first opponent in turn order is asked (CR 101.4, as for `opponentChoosesCard`).
+                ...(effect.objects.chosenBy === 'opponent' &&
+                opponentsOf(state, res.controller)[0] !== undefined
+                  ? { decider: opponentsOf(state, res.controller)[0] as SeatId }
+                  : {}),
                 count: amountOf(state, effect.objects.count ?? 1, ctx, targets),
                 to: effect.to,
                 position: effect.position ?? 'top',

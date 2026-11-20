@@ -158,6 +158,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealUntilGraveyard',
     // Issue 102 (Consuming Aberration): "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (`revealUntil` with `perPlayer`).
     'revealUntilEachPlayer',
+    // Issue 102 (Tasigur): "return a nonland card of an opponent's choice from your graveyard to your hand" (`ChooseSelector.chosenBy`).
+    'chosenByOpponent',
     // "X can't be greater than the number of players in the game." (`SpellText.xAtMost`, CR 107.3a, 601.2b).
     'spellXAtMost',
     // "You may have ~ enter as a copy of any creature on the battlefield, except it enters with X additional +1/+1 counters on it" (`entersAsCopy.withX`, CR 707.9b, 107.3m).
@@ -1712,6 +1714,8 @@ export const ABILITY_FEATURES = [
   'revealUntilGraveyard',
   /** "Each opponent reveals cards from the top of their library until they reveal a land card, then puts those cards into their graveyard" (issue 102, CR 701.20, 101.4): the engine's `revealUntil` with `perPlayer` and `rest: 'graveyard'`. */
   'revealUntilEachPlayer',
+  /** "A card of an opponent's choice from your graveyard" (issue 102, CR 608.2d): the engine's `ChooseSelector.chosenBy`. */
+  'chosenByOpponent',
   /** "X can't be greater than the number of players in the game." (CR 107.3a, 601.2b): the engine's `SpellText.xAtMost`, a limit on the X announced for the spell. */
   'spellXAtMost',
   /** "..., except it enters with X additional +1/+1 counters on it" (CR 707.9b, 107.3m): the engine's `entersAsCopy.withX`. */
@@ -2613,6 +2617,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   revealUntilCount: true,
   revealUntilGraveyard: true,
   revealUntilEachPlayer: true,
+  chosenByOpponent: true,
   spellXAtMost: true,
   copyEntersWithX: true,
   lookTakeAll: true,

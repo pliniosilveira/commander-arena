@@ -100,6 +100,8 @@ export function runChooseMove(
 ): StepOutcome {
   // D-231: "each player exiles a card from their graveyard": the player the instruction names chooses among their own cards.
   const chooser = instruction.seat ?? res.controller;
+  // Issue 102 (Tasigur): "of an opponent's choice": the cards are the chooser's, an opponent is the one asked.
+  const decider = instruction.decider ?? chooser;
   // D-411 (CR 608.2c): "You may put a land card from among them into your hand" is the offer itself, so what "if you do" and "if you don't" read starts again
   // at 0 as it is made, as a `may` effect does (D-135); the card moved, if one is, is what it counts.
   // CR 608.2c: an offer ("you may exile a creature card from your graveyard. If you do, ...") starts what "if you do" reads again, as a `may` does.
@@ -110,7 +112,7 @@ export function runChooseMove(
   const run = (objects: readonly ObjectId[], automatic: boolean): StepOutcome => {
     const event: GameEvent = {
       kind: 'permanentsChosen',
-      seat: chooser,
+      seat: decider,
       source: res.object,
       objects,
       purpose: 'effect',
@@ -216,7 +218,7 @@ export function runChooseMove(
       front: [],
       needs: {
         kind: 'chooseCards',
-        seat: chooser,
+        seat: decider,
         source: res.object,
         purpose: 'move',
         zone,
@@ -228,28 +230,34 @@ export function runChooseMove(
         ...(instruction.minCardTypes === undefined
           ? {}
           : { minCardTypes: { count: instruction.minCardTypes, types: typesOf } }),
-        prompt: `Choose ${
-          instruction.minCardTypes !== undefined
-            ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
-            : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
-        } ${
-          instruction.among !== undefined && zone === 'exile'
-            ? 'from among the cards exiled this way'
-            : instruction.among !== undefined
-              ? 'from among the cards put into your graveyard'
-              : zone === 'exile'
-                ? 'exiled with this permanent'
-                : instruction.alsoGraveyard === true
-                  ? 'from your hand or graveyard'
-                  : zone === 'command'
-                    ? 'from your command zone'
-                    : `from your ${zone}`
-        } to put ${WHERE[instruction.to]}`.replace(
-          'from among the cards put into your graveyard',
-          instruction.anyOwner === true
-            ? 'from among the cards put into a graveyard'
-            : 'from among the cards put into your graveyard',
-        ),
+        prompt:
+          // Issue 102 (Tasigur): an opponent chooses a card of the controller's graveyard for the controller's hand.
+          decider !== chooser
+            ? `Choose ${max} card${max === 1 ? '' : 's'} from your opponent's ${zone} to put ${WHERE[
+                instruction.to
+              ].replace('your', 'their')}`
+            : `Choose ${
+                instruction.minCardTypes !== undefined
+                  ? `any number of cards with ${instruction.minCardTypes} or more card types among them`
+                  : `${optional ? 'up to ' : ''}${max} card${max === 1 ? '' : 's'}`
+              } ${
+                instruction.among !== undefined && zone === 'exile'
+                  ? 'from among the cards exiled this way'
+                  : instruction.among !== undefined
+                    ? 'from among the cards put into your graveyard'
+                    : zone === 'exile'
+                      ? 'exiled with this permanent'
+                      : instruction.alsoGraveyard === true
+                        ? 'from your hand or graveyard'
+                        : zone === 'command'
+                          ? 'from your command zone'
+                          : `from your ${zone}`
+              } to put ${WHERE[instruction.to]}`.replace(
+                'from among the cards put into your graveyard',
+                instruction.anyOwner === true
+                  ? 'from among the cards put into a graveyard'
+                  : 'from among the cards put into your graveyard',
+              ),
       },
     };
   }
@@ -259,7 +267,7 @@ export function runChooseMove(
     front: [],
     needs: {
       kind: 'choosePermanent',
-      seat: chooser,
+      seat: decider,
       source: res.object,
       purpose: 'effect',
       min,

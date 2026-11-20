@@ -83,6 +83,7 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     'you may return a creature card from your graveyard to the battlefield',
     // Issue 102 (Tasigur, the Golden Fang): a card that is not a land card.
     'return a nonland card from your graveyard to your hand',
+    "return a nonland card of an opponent's choice from your graveyard to your hand",
     // Issue 102 (Teval, the Balanced Scale): the same choice, entering tapped.
     'you may return a land card from your graveyard to the battlefield tapped',
   ],
