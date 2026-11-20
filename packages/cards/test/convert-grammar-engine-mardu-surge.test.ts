@@ -23,13 +23,6 @@ function real(name: string): CardDefinition {
   return imported.definition;
 }
 
-/** The definition the grammar reads, without the check that every ability of the card was read (for a test of the abilities that were). */
-function readAbilities(name: string): CardDefinition {
-  const card = GOLDEN.find((c) => c.name === name);
-  if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
-  return importCard(fromGoldenCard(card), undefined, NO_OVERRIDES).definition;
-}
-
 const BEARS = 'Grizzly Bears';
 const LIBRARY = Array.from({ length: 8 }, () => 'Island');
 
