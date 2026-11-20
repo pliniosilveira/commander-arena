@@ -618,6 +618,26 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     if (blocked !== null) return blocked;
     return built({ kind: 'lifeGainBonus', amount: amount.value });
   }
+  if (event.verb === 'damageBonus') {
+    // CR 614.1a, 120.3 (Tannuk deck, issue 347): the damage a source the controller controls would deal to an opponent or their permanents is more by this number.
+    const amount = event.args.amount;
+    const sources = event.args.sources;
+    if (
+      amount?.kind !== 'number' ||
+      amount.value < 1 ||
+      sources?.kind !== 'noun' ||
+      event.condition !== undefined
+    ) {
+      return failure(ability);
+    }
+    const blocked = gate(ability, ['ability:replacement', 'replacement:damageBonus']);
+    if (blocked !== null) return blocked;
+    const lowered = lowerFilter(sources);
+    if (!lowered.ok) return lowered;
+    const { zone, ...filter } = lowered.value;
+    void zone;
+    return built({ kind: 'damageBonus', sources: filter, amount: amount.value });
+  }
   if (event.verb === 'countersPlus') {
     // "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead." (Quandrix Unlimited deck, group A,
     // CR 614.1a, 122.6): the engine's `countersPlus` of the permanent. The permanents are the noun's filter as they are on the battlefield (the controller's own, "another"
@@ -1094,6 +1114,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'replacement:skipDraw',
   'replacement:tokensInstead',
   'replacement:countersPlus',
+  'replacement:damageBonus',
   'replacement:drawInstead',
   'replacement:umbraArmor',
 ];

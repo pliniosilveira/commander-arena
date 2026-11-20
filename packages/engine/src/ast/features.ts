@@ -687,6 +687,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersAsCopy',
     // D-192: "All damage that would be dealt to you and other permanents you control is dealt to this creature instead."
     'redirectDamage',
+    // CR 614.1a: "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+    'damageBonus',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
@@ -2649,6 +2651,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   groupEntersTapped: true,
   entersAsCopy: true,
   redirectDamage: true,
+  damageBonus: true,
   skipDraw: true,
   drawInstead: true,
   umbraArmor: true,
