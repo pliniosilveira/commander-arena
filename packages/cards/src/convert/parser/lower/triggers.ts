@@ -700,6 +700,10 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       // "Whenever a land card is put into your graveyard from anywhere" (Death Toll deck, group B, CR 603.2, 603.2c): the kind of card is a filter on the card in the graveyard.
       const missing = missingFeatures(['trigger:putIntoGraveyard']);
       if (missing.length > 0) return failure(t, missing);
+      // "When ~ is put into a graveyard from anywhere" (Troyan 2 deck, CR 603.6c): the card with the ability, from any zone; no filter, no batch.
+      if (t.subject?.det === 'self') {
+        return ok({ kind: 'putIntoGraveyard', who: 'any', from: 'anywhere', self: true });
+      }
       const kind = t.subject?.filter;
       const filter =
         t.subject === undefined || (kind?.types === undefined && kind?.notTypes === undefined)
@@ -1495,6 +1499,9 @@ function lowerTriggeredAbility(
       'kind' in t.what &&
       t.what.kind === 'this',
   );
+  // Troyan 2 deck (CR 603.6c): "When ~ is put into a graveyard from anywhere": "it" is the card of the ability itself.
+  ctx.selfGraveyardEntry =
+    triggers.length > 0 && triggers.every((t) => t.kind === 'putIntoGraveyard' && t.self === true);
   // D-657: "When enchanted creature dies, return this card from your graveyard to the battlefield": the Aura has gone to the graveyard as well.
   ctx.auraDies = triggers.every(
     (t) => t.kind === 'dies' && 'kind' in t.what && t.what.kind === 'attached',

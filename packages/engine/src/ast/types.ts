@@ -4817,6 +4817,12 @@ export type Trigger =
       readonly filter?: ObjectFilter;
       readonly batch?: true;
       readonly firstTimeEachTurn?: true;
+      /**
+       * "When ~ is put into a graveyard from anywhere" (CR 603.2, 603.6c, 603.10a, 404.1): the card with this ability is the card put into the graveyard, wherever it came from
+       * (the battlefield, a hand, a library, the stack, exile); the ability is found on the card in the graveyard it became (the source of the ability is that object, so `this`
+       * names it), whether or not the ability works from the graveyard. Only with `who` `any` and `from` `anywhere`, without `filter`, `batch` or `firstTimeEachTurn`.
+       */
+      readonly self?: true;
     }
   /**
    * "When you unlock this door" (CR 709.5h, 709.5f, 709.5e): a half of a Room, the one whose rules text has this ability (`door: 'this'`), is given its unlocked designation by `who`

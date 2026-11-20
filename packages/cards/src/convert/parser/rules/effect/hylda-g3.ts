@@ -30,6 +30,7 @@ export const EFFECT_SHUFFLE_INTO_LIBRARIES = defineRule<Clauses>({
     "shuffle target creature into its owner's library",
     "shuffle ~ into its owner's library",
     "shuffle ~ and target artifact into their owners' libraries",
+    "shuffle it into its owner's library",
   ],
   rejects: [
     "shuffle ~ and your graveyard into their owner's library",
@@ -40,7 +41,7 @@ export const EFFECT_SHUFFLE_INTO_LIBRARIES = defineRule<Clauses>({
     "shuffle ~ and target creature into their owners' libraries.",
     'shuffle your library',
     "shuffle target creature into its owner's library and draw a card",
-    "shuffle it into its owner's library",
+    "shuffle it into their owners' libraries",
     "shuffle ~ and target creature into the top of their owners' libraries",
   ],
   parse: (ctx, pos) => {
@@ -50,7 +51,8 @@ export const EFFECT_SHUFFLE_INTO_LIBRARIES = defineRule<Clauses>({
         /(?=shuffle [^.]*? into (?:its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}]))/iu,
       ),
       literal('shuffle '),
-      operands(SELF_OR_PERMANENT_OPERANDS, 'effect.shuffle-into-libraries'),
+      // "it" (Troyan 2 deck, CR 603.6c): the card of a "When ~ is put into a graveyard from anywhere" ability, the one trigger whose "it" the lowering reads.
+      operands([...SELF_OR_PERMANENT_OPERANDS, 'noun.it'], 'effect.shuffle-into-libraries'),
       pattern(/ into (its owner['’]s library|their owners['’] libraries)(?![\p{L}\p{N}])/iu),
     )(ctx, pos);
     if (!r.ok) return r;
