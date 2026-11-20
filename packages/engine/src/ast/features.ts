@@ -754,6 +754,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'redirectDamage',
     // CR 614.1a: "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
     'damageBonus',
+    // CR 614.1a: "If a source you control would deal damage to a permanent or player, it deals double that damage to that permanent or player instead."
+    'damageDouble',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
@@ -945,6 +947,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 205.3m (Titan of Littjara, Descendants' Fury): `sharesCreatureTypeWith` of the source of the ability, or of the creature an earlier sacrifice sacrificed.
     'sharesCreatureTypeWithSource',
     'sharesCreatureTypeWithSacrificed',
+    // CR 205.3m (Shared Animosity): "each other attacking creature" besides the creature the trigger is about (`ObjectFilter.otherThanTriggerSubject`).
+    'otherThanTriggerSubject',
     // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
     'chooseFromTriggerSources',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
@@ -1836,6 +1840,8 @@ export const SELECTOR_KINDS = [
   'sharesCreatureTypeWithSource',
   /** "A creature card that shares a creature type with the sacrificed creature" (CR 205.3m, 701.21a, Descendants' Fury): `ObjectFilter.sharesCreatureTypeWith: 'sacrificed'`. */
   'sharesCreatureTypeWithSacrificed',
+  /** "Each other attacking creature that shares a creature type with it" (CR 205.3m, 508.1, Shared Animosity): the engine's `ObjectFilter.otherThanTriggerSubject`. */
+  'otherThanTriggerSubject',
   /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
   'chooseFromTriggerSources',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
@@ -2966,6 +2972,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   entersAsCopy: true,
   redirectDamage: true,
   damageBonus: true,
+  damageDouble: true,
   skipDraw: true,
   drawInstead: true,
   umbraArmor: true,

@@ -10,11 +10,11 @@ import { type AstIssue, checkFilter, filterSome, issue } from './validate-parts'
 
 /** "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead" (CR 614.1a). */
 function checkDamageBonus(
-  r: Extract<Replacement, { kind: 'damageBonus' }>,
+  r: Extract<Replacement, { kind: 'damageBonus' | 'damageDouble' }>,
   path: string,
   out: AstIssue[],
 ): void {
-  if (!isCount(r.amount) || r.amount < 1) {
+  if (r.kind === 'damageBonus' && (!isCount(r.amount) || r.amount < 1)) {
     issue(out, `${path}.amount`, 'the extra damage is a positive whole number');
   }
   if (r.sources === null || typeof r.sources !== 'object') {
@@ -52,7 +52,7 @@ function checkDamageBonus(
 
 /** The replacement kinds D-192 and `damageBonus` add. True when `r` is one of them (it was checked here). */
 export function checkRedirectReplacement(r: Replacement, path: string, out: AstIssue[]): boolean {
-  if (r?.kind === 'damageBonus') {
+  if (r?.kind === 'damageBonus' || r?.kind === 'damageDouble') {
     checkDamageBonus(r, path, out);
     return true;
   }

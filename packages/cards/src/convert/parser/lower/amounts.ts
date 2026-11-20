@@ -591,7 +591,16 @@ export function lowerAmount(
       if (blocked !== null) return blocked;
       const of = lowerAmount(amount.of, ctx, rule);
       if (!of.ok) return of;
-      return { ok: true, value: { kind: 'half', of: of.value, round: amount.round }, rule };
+      return {
+        ok: true,
+        value: {
+          kind: 'half',
+          of: of.value,
+          round: amount.round,
+          ...(amount.divisor === undefined ? {} : { divisor: amount.divisor }),
+        },
+        rule,
+      };
     }
     case 'multiple': {
       const blocked = needs('multiple');

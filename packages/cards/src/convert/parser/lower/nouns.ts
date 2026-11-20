@@ -137,6 +137,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:sharesCreatureTypeWith',
   'selector:sharesCreatureTypeWithSource',
   'selector:sharesCreatureTypeWithSacrificed',
+  'selector:otherThanTriggerSubject',
   'selector:chooseFromTriggerSources',
   'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
@@ -359,6 +360,7 @@ function lowerFilterAt(
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  if (filter.otherThanIt === true) parts.push('selector:otherThanTriggerSubject');
   // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
   if (filter.sharesCreatureTypeWithSacrificed === true) {
     parts.push('selector:sharesCreatureTypeWithSacrificed');
@@ -553,6 +555,7 @@ function lowerFilterAt(
     ...(filter.sharesCreatureTypeWithIt === true
       ? { sharesCreatureTypeWith: 'triggerSubject' as const }
       : {}),
+    ...(filter.otherThanIt === true ? { otherThanTriggerSubject: true as const } : {}),
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),

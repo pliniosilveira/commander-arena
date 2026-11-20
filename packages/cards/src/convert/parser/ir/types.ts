@@ -335,6 +335,11 @@ export interface IrFilter {
    */
   readonly sharesCreatureTypeWithIt?: true;
   /**
+   * "each other attacking creature that shares a creature type with it" (Shared Animosity, CR 508.1, 205.3m): the count leaves out the creature the trigger is about, with
+   * `sharesCreatureTypeWithIt`. The engine's `otherThanTriggerSubject`.
+   */
+  readonly otherThanIt?: true;
+  /**
    * "a creature card that shares a creature type with the sacrificed creature" (Descendants' Fury, CR 205.3m, 701.21a, 113.7a): the card has a creature type the permanent an earlier
    * sacrifice of the same text sacrificed had, as it last was. Read in the filter of a library search `revealUntil`; the engine's `sharesCreatureTypeWith: 'sacrificed'`.
    */
@@ -567,6 +572,8 @@ export type IrAmount =
       readonly kind: 'half';
       readonly of: IrAmount;
       readonly round: 'down' | 'up';
+      /** "a third of their life, rounded up" (CR 107.1a): divided by 3 instead of 2. */
+      readonly divisor?: 3;
       readonly span: Span;
     }
   // "twice the number of ...", "2 life for each ...": a whole number of 2 or more times an amount

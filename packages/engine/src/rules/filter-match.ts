@@ -218,6 +218,9 @@ export function matchesFilterWith(
   if (filter.other && ctx.source !== null && obj.id === ctx.source) return false;
   // CR 400.7, 603.10a (Puca's Covenant): "another target permanent card": not the card the permanent the trigger is about became.
   if (filter.notTriggerCard === true && (ctx.excludedCards ?? []).includes(obj.id)) return false;
+  // CR 508.1 (Shared Animosity): "each other attacking creature": not the creature the trigger is about, which the caller lists in `excludedCards`.
+  if (filter.otherThanTriggerSubject === true && (ctx.excludedCards ?? []).includes(obj.id))
+    return false;
   // D-437: "a spell that targets this creature": the object is the permanent that has the ability.
   if (filter.isSource === true && (ctx.source === null || obj.id !== ctx.source)) return false;
   if (filter.controller === 'you' && controllerOf(state, obj) !== ctx.controller) return false;
