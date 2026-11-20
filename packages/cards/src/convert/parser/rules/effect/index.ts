@@ -176,6 +176,7 @@ import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
+import { WITHERBLOOM_C_EFFECT_RULES } from './witherbloom-c';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
 const TAP_OPERANDS = [
@@ -1212,6 +1213,8 @@ export const EFFECT_RULES = [
   ...CHOSEN_COLOR_MANA_EFFECT_RULES,
   // Gisa deck, group 3 (issue 41, D-484): "each opponent chooses a permanent they control of each permanent type and sacrifices the rest".
   ...GISA_G3_EFFECT_RULES,
+  // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
+  ...WITHERBLOOM_C_EFFECT_RULES,
   // D-393, D-394 (Hashaton, group 9): the body of Rona, Tolarian Obliterator.
   ...HASHATON_G9_EFFECT_RULES,
   ...DANITHA_G1B_EFFECT_RULES,

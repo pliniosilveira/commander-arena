@@ -568,7 +568,8 @@ export type IrAmount =
         | 'discardedTypeCount'
         | 'exiledCreatures'
         | 'damageDealt'
-        | 'countersRemoved';
+        | 'countersRemoved'
+        | 'returned';
       readonly words: readonly string[];
       readonly who?: 'opponent' | 'player';
       /** "that many" (stage P30): the number of whatever the instruction before it did, whichever words the text uses. */

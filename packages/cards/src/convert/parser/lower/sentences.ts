@@ -1697,6 +1697,9 @@ function countsWhatHappened(
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
+    case 'returned':
+      // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return of one card per permanent type before it put onto the battlefield.
+      return earlier.verb === 'returnOnePerPermanentType';
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
       return earlier.verb === 'removeAllCounters';

@@ -428,7 +428,9 @@ export type ThisWayKind =
   | 'damageDealt'
   // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
   // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
-  | 'exiledPowerOwn';
+  | 'exiledPowerOwn'
+  // Revival Experiment (CR 608.2c): "You lose 3 life for each card returned this way": the cards a `moveToZone` of a `choose` selector put from a graveyard onto the battlefield in this resolution.
+  | 'returned';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:

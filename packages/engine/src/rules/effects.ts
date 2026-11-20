@@ -576,6 +576,11 @@ export function runInstruction(
       result.newObject !== null &&
       hidden.objects[result.newObject]?.zone === 'exile' &&
       !derive(state, subject).types.includes('land');
+    // CR 608.2c: a card that really went from a graveyard onto the battlefield is counted, for "for each card returned this way".
+    const countedReturned =
+      instruction.countsReturned === true &&
+      result.newObject !== null &&
+      hidden.objects[result.newObject]?.zone === 'battlefield';
     // Oversimplify (CR 608.2h): a creature that really went to exile adds its power, as it was before any of them left, to what its controller lost "this way".
     const exiledPower =
       instruction.exiledPower !== undefined &&
@@ -594,10 +599,11 @@ export function runInstruction(
       ...done(hidden, moveEvents),
       lastMoved,
       performed: 1,
-      ...(countedNonland || exiledPower !== undefined || exiledCreature
+      ...(countedNonland || countedReturned || exiledPower !== undefined || exiledCreature
         ? {
             thisWay: {
               ...(countedNonland ? { exiledNonland: 1 } : {}),
+              ...(countedReturned ? { returned: 1 } : {}),
               ...(exiledCreature ? { exiledCreatures: 1 } : {}),
               ...(exiledPower === undefined
                 ? {}

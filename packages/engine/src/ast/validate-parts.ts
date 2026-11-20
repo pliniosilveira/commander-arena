@@ -1584,6 +1584,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   destroyedOwnNontoken: 'a destroy effect',
   destroyedValue: 'a destroy effect',
   exiledNonland: 'an exileOwnGraveyardCard effect',
+  returned: 'a moveToZone effect that chooses cards of a graveyard',
   playersDrew: 'a draw effect',
   tapped: 'a tap effect',
   discarded: 'a discard effect',
@@ -1611,6 +1612,14 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
   if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
+  if (
+    e?.kind === 'moveToZone' &&
+    e.to === 'battlefield' &&
+    e.objects?.kind === 'choose' &&
+    e.objects.filter?.zone === 'graveyard'
+  ) {
+    return ['returned'];
+  }
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
   if (e?.kind === 'discard')

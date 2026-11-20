@@ -127,11 +127,16 @@ export function runChooseMove(
         instruction.tapped ?? false,
         instruction.controller,
         instruction.withCounters,
-      ).map((i) =>
-        i.kind === 'move' && instruction.countsNonland === true
-          ? { ...i, countsNonland: true as const }
-          : i,
-      ),
+      ).map((i) => {
+        if (i.kind !== 'move') return i;
+        // CR 608.2c: a card put from a graveyard onto the battlefield by this choice is what "returned this way" counts.
+        const returns = instruction.to === 'battlefield' && instruction.filter.zone === 'graveyard';
+        return {
+          ...i,
+          ...(instruction.countsNonland === true ? { countsNonland: true as const } : {}),
+          ...(returns ? { countsReturned: true as const } : {}),
+        };
+      }),
     );
     const entries =
       instruction.to === 'battlefield'
