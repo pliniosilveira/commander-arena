@@ -6426,6 +6426,12 @@ export type StaticEffect =
    */
   | { readonly kind: 'playLandsFromTopOfLibrary' }
   /**
+   * "You may activate abilities of creatures you control as though those creatures had haste." (CR 702.10b, 302.6, issue 345): while the permanent has the ability, a creature `creatures`
+   * describes (read for the controller of the permanent: "you" is usual, the source is the permanent) is not held back by summoning sickness from an ability with {T} or {Q} in its
+   * cost. It is no haste: the creature still cannot attack, and it is not shown with the keyword. A creature of another player never gets it.
+   */
+  | { readonly kind: 'activateAsThoughHaste'; readonly creatures: ObjectFilter }
+  /**
    * "You may cast artifact spells as though they had flash" (D-139, CR 601.3b, 702.8a): its controller may cast the spells `spells` names at
    * the timing of an instant. `spells` describes the spell as it is cast (its card types, colors, mana value, ...; `controller` relative
    * to the controller of the permanent: "you" is usual, and a spell of another player never gets it, as the permission is the

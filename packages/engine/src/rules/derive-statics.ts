@@ -173,6 +173,12 @@ export interface LibraryCastSource {
   readonly sacrifice?: ObjectFilter;
 }
 
+/** A static ability of a permanent that lets its controller activate the abilities of some creatures as though they had haste (`activateAsThoughHaste`, issue 345). */
+export interface HasteActivationSource {
+  readonly object: GameObject;
+  readonly creatures: ObjectFilter;
+}
+
 /**
  * A static ability of a permanent that lets its controller, once during each of their turns, play a land or cast a spell from their graveyard
  * (`playFromGraveyardOnceEachTurn`, D-232): read by `rules/graveyard-play.ts`. A permanent that lost all its abilities has none (CR 613.1f).
@@ -229,6 +235,8 @@ interface BoardIndex {
   readonly libraryCasts: readonly LibraryCastSource[];
   /** Permanents with a `playLandsFromTopOfLibrary` static ability, in battlefield order (issue 345). */
   readonly libraryLandPlays: readonly GameObject[];
+  /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
+  readonly hasteActivations: readonly HasteActivationSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
@@ -437,6 +445,7 @@ function buildIndex(state: GameState): BoardIndex {
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
   const libraryLandPlays: GameObject[] = [];
+  const hasteActivations: HasteActivationSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
@@ -456,6 +465,11 @@ function buildIndex(state: GameState): BoardIndex {
     libraryCasts.push(...libraryCastsOf(object, printed));
     if (printed.some((a) => a.kind === 'static' && a.static.kind === 'playLandsFromTopOfLibrary')) {
       libraryLandPlays.push(object);
+    }
+    for (const a of printed) {
+      if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
+        hasteActivations.push({ object, creatures: a.static.creatures });
+      }
     }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
     handGrants.push(...handGrantsOf(object, printed));
@@ -531,6 +545,7 @@ function buildIndex(state: GameState): BoardIndex {
     flashes,
     libraryCasts,
     libraryLandPlays,
+    hasteActivations,
     graveyardPlays,
     handGrants,
     flashbackGrants,
@@ -583,6 +598,11 @@ export function abilityReductionSources(state: GameState): readonly AbilityReduc
 /** The permanents whose static ability lets their controller play lands from the top of their library (`playLandsFromTopOfLibrary`, issue 345). */
 export function libraryLandPlaySources(state: GameState): readonly GameObject[] {
   return indexOf(state).libraryLandPlays;
+}
+
+/** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
+export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
+  return indexOf(state).hasteActivations;
 }
 
 export function libraryCastSources(state: GameState): readonly LibraryCastSource[] {

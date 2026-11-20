@@ -185,10 +185,12 @@ function lowerCostedKeyword(
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
-  if ((ability.quality !== undefined ||
-    ability.commanderOnly === true ||
-    ability.legendaryOnly === true) &&
-    name !== 'equip') {
+  if (
+    (ability.quality !== undefined ||
+      ability.commanderOnly === true ||
+      ability.legendaryOnly === true) &&
+    name !== 'equip'
+  ) {
     return failure(ability);
   }
   return {

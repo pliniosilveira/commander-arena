@@ -24,6 +24,7 @@ export type PlayRuleEffect = Extract<
       | 'lookAtTopOfLibrary'
       | 'playLandsFromGraveyard'
       | 'playLandsFromTopOfLibrary'
+      | 'activateAsThoughHaste'
       | 'attackTax'
       | 'optionalUntap'
       | 'crewSaddleBonus'
@@ -38,6 +39,7 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
     effect.kind === 'lookAtTopOfLibrary' ||
     effect.kind === 'playLandsFromGraveyard' ||
     effect.kind === 'playLandsFromTopOfLibrary' ||
+    effect.kind === 'activateAsThoughHaste' ||
     effect.kind === 'attackTax' ||
     effect.kind === 'blockTax' ||
     effect.kind === 'optionalUntap' ||
@@ -55,6 +57,8 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
       return ['static:lookAtTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
+    case 'activateAsThoughHaste':
+      return ['static:activateAsThoughHaste'];
     case 'playLandsFromTopOfLibrary':
       return effect.alsoLook === true
         ? ['static:lookAtTopOfLibrary', 'static:playLandsFromTopOfLibrary']
@@ -119,6 +123,15 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
         rule: at.rule,
       };
     }
+    // "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b): the creatures of the controller.
+    case 'activateAsThoughHaste':
+      return ok({
+        kind: 'static',
+        static: {
+          kind: 'activateAsThoughHaste',
+          creatures: { types: ['creature'], controller: 'you' },
+        },
+      });
     case 'optionalUntap':
       return ok({ kind: 'static', static: { kind: 'optionalUntap' } });
     // "~ saddles Mounts and crews Vehicles as though its power were 2 greater." (Galadriel deck group 3, CR 702.122a): the creature itself, a bonus to the power it counts for the cost.
@@ -171,6 +184,7 @@ export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:lookAtTopOfLibrary',
   'static:playLandsFromGraveyard',
   'static:playLandsFromTopOfLibrary',
+  'static:activateAsThoughHaste',
   'static:attackTax',
   'static:blockTax',
   'static:optionalUntap',

@@ -448,6 +448,22 @@ export function checkDragonsStatic(s: StaticEffect, path: string, out: AstIssue[
       return true;
     case 'playLandsFromTopOfLibrary':
       return true;
+    case 'activateAsThoughHaste':
+      // CR 702.10b (issue 345): the creatures are battlefield permanents, read for the controller of the permanent with the permanent as the source.
+      checkFilter(s.creatures, `${path}.creatures`, out);
+      if (
+        filterSome(
+          s.creatures,
+          (f) => f.zone !== undefined || f.stackKind !== undefined || readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.creatures`,
+          'the creatures are battlefield permanents: no zone, stackKind, or anything read from the game',
+        );
+      }
+      return true;
     case 'playLandsFromGraveyard':
       // CR 305.1: the land cards that may be played from the graveyard, as the card in the graveyard is.
       if (s.lands !== undefined) {

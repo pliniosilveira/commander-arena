@@ -86,7 +86,9 @@ export function subjectAffects(
     return partner !== null && (source.id === target.id || partner.id === target.id);
   }
   const filter = filterOf(subject);
-  const seen = readsModified(filter) ? { ...view, modified: modifiedBeforeLayers(state, target) } : view;
+  const seen = readsModified(filter)
+    ? { ...view, modified: modifiedBeforeLayers(state, target) }
+    : view;
   return matchesFilterWith(state, target, () => seen, filter, {
     ...context,
     attackers: state.combat?.attackers.map((a) => a.object) ?? [],

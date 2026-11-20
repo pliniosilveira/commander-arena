@@ -1523,6 +1523,8 @@ export type IrStaticEffect =
    * time, and you may play lands from the top of your library.", which is both abilities.
    */
   | { readonly kind: 'playLandsFromTopOfLibrary'; readonly alsoLook?: true }
+  /** "You may activate abilities of creatures you control as though those creatures had haste." (issue 345, CR 702.10b, 302.6): the subject is `you`. */
+  | { readonly kind: 'activateAsThoughHaste' }
   /**
    * "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking
    * you." and "Creatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of

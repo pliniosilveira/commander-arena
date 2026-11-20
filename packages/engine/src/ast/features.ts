@@ -1187,6 +1187,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'playLandsFromGraveyard',
     // Issue 345 (CR 305.1, 401.5): "You may play lands from the top of your library."
     'playLandsFromTopOfLibrary',
+    // Issue 345 (CR 702.10b, 302.6): "You may activate abilities of creatures you control as though those creatures had haste."
+    'activateAsThoughHaste',
     // D-179: "Your opponents can't cast spells during your turn."
     'opponentsCantCastOnYourTurn',
     // D-282: "Your opponents can't cast spells with mana value 3 or less."
@@ -2022,6 +2024,8 @@ export const STATIC_KINDS = [
   'playLandsFromGraveyard',
   /** "You may play lands from the top of your library" (CR 305.1, 401.5, issue 345): `playLandsFromTopOfLibrary`. */
   'playLandsFromTopOfLibrary',
+  /** "You may activate abilities of creatures you control as though those creatures had haste" (CR 702.10b, 302.6, issue 345): `activateAsThoughHaste`. */
+  'activateAsThoughHaste',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
 ] as const;
