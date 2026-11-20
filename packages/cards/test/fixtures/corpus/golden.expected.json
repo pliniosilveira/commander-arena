@@ -1170,6 +1170,14 @@
       "reasons": [],
       "ast": "57e20b87"
     },
+    "20b32052-f66f-4eb8-b56e-00d531907f19": {
+      "name": "Vivid Marsh",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e14dcceb"
+    },
     "20e94d0f-6887-45f8-a137-877011d786c6": {
       "name": "Gisa and Geralf",
       "group": "acceptance",
@@ -1585,6 +1593,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "15f24ab3"
+    },
+    "2da7c49f-cc1e-45d9-9cbf-067e92b0daef": {
+      "name": "Vivid Creek",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "816c2426"
     },
     "2dbe8aaa-2e34-4552-8da7-cf8ecbbaa7b6": {
       "name": "Biomass Mutation",
@@ -5163,6 +5179,14 @@
       "reasons": [],
       "ast": "568550ce"
     },
+    "91fceb34-0f2d-4392-be27-00dcd765637f": {
+      "name": "Thriving Bluff",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ccb59907"
+    },
     "92116bbd-c7ad-4033-8d98-3ea09fea8ae7": {
       "name": "Quandrix Apprentice",
       "group": "acceptance",
@@ -5923,6 +5947,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "cafe2ebe"
+    },
+    "a8052556-8962-4130-86a8-6fb7b6a324f7": {
+      "name": "Thriving Grove",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8cbc7078"
     },
     "a80a1f84-ea49-4c8d-912d-c7036b814a6c": {
       "name": "Augusta, Order Returned",
@@ -6705,6 +6737,14 @@
       "reasons": [],
       "ast": "dc6ef299"
     },
+    "bff416bb-d193-4c45-b2c1-7c297dbfad08": {
+      "name": "Thriving Moor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3947e681"
+    },
     "bffdfe7b-f17a-41b6-a460-80280fe497d4": {
       "name": "Collective Resistance",
       "group": "training",
@@ -7291,6 +7331,14 @@
       "reasons": [],
       "ast": "ec33b7e1"
     },
+    "d1946630-e224-40db-8f0d-388b09622288": {
+      "name": "Thriving Heath",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "73120e05"
+    },
     "d1deba03-b26a-4a0d-b242-24bb3a3f9ea6": {
       "name": "Bootleggers' Stash",
       "group": "acceptance",
@@ -7506,6 +7554,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "b98a5bcd"
+    },
+    "d8e2efe0-33a4-4303-9e83-ac42ea5df8cb": {
+      "name": "Vivid Crag",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "85d1603d"
     },
     "d9068051-b51c-4700-b492-30b148e3a72c": {
       "name": "Yavimaya Bloomsage // Channel",
@@ -7747,6 +7803,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "e99a2316"
+    },
+    "dee99df5-628f-4a4e-a203-4dfddc927373": {
+      "name": "Vivid Meadow",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "3c21c835"
     },
     "df08ac72-010f-42f8-beb3-6d645c638e1e": {
       "name": "Uthros, Titanic Godcore",
@@ -8860,8 +8924,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 787,
-      "total": 806
+      "supported": 795,
+      "total": 814
     }
   }
 }
