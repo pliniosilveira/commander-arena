@@ -166,6 +166,8 @@ describe('the dimensions', () => {
       'castFromGraveyardThisTurn',
       // D-318: "Activate only if you've cast three or more spells this turn".
       'spellsCastThisTurn',
+      // Issue 345: "if no spells were cast last turn".
+      'spellsCastLastTurn',
       // Issue 279: "if you attacked with three or more creatures this turn".
       'attackedWithCreaturesThisTurn',
       'dieResult',
