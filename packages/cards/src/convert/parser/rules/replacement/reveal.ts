@@ -81,7 +81,9 @@ export const REPLACEMENT_ENTERS_TAPPED_UNLESS_REVEALS = defineRule<IrAbility>({
     // A creature type (one only) names the card revealed, as Murmuring Bosk's "a Treefolk card" (CR 205.3m, Creature Types).
     if (
       !what.value.behold &&
-      !what.value.types.every((t) => new RegExp(`^${LAND_TYPE}$`, 'u').test(t) || CREATURE_TYPES.has(t))
+      !what.value.types.every(
+        (t) => new RegExp(`^${LAND_TYPE}$`, 'u').test(t) || CREATURE_TYPES.has(t),
+      )
     ) {
       return fail(ctx, pos);
     }

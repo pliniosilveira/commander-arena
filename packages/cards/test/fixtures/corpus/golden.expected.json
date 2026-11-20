@@ -1,5 +1,5 @@
 {
-  "parserVersion": 168,
+  "parserVersion": 169,
   "cards": {
     "0030578c-afaf-4072-a62b-2510bdceb64a": {
       "name": "Lattice Library",
@@ -2452,19 +2452,10 @@
     "42b9d383-3fe2-4fc8-ab86-f80a288d502b": {
       "name": "Murmuring Bosk",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "As ~ enters, you may reveal a Treefolk card from your hand. If you don't, ~ enters tapped.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.enters-tapped-unless-reveals-or"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "250e45d8"
+      "ast": "fa2ad71c"
     },
     "42d7ec93-0943-43e2-9b65-b7edc3349410": {
       "name": "Gadrak, the Crown-Scourge",
@@ -5112,19 +5103,10 @@
     "8d38194e-b607-4ff4-9c19-0e8636d463bf": {
       "name": "Raging Ravine",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{2}{R}{G}: Until end of turn, ~ becomes a 3/3 red and green Elemental creature with \"Whenever ~ attacks, put a +1/+1 counter on it.\" It's still a land.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "effect.lead-becomes-land-creature-keywords"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1e326c3c"
+      "ast": "ae14f1e2"
     },
     "8d3c9646-2b6b-4315-939d-5a920efc0a60": {
       "name": "Galadriel of Lothlórien",
@@ -9067,7 +9049,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 796,
+      "supported": 798,
       "total": 823
     }
   }

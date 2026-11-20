@@ -30,7 +30,7 @@ describe('Raging Ravine: a land that becomes a 3/3 Elemental and grows when it a
 
   test('it becomes a 3/3 red and green Elemental creature and is still a land', () => {
     const g = start();
-    g.act(0).activate(RAVINE.name, { index: 1, pay: true });
+    g.act(0).activate(RAVINE.name, { pay: true });
     g.passAll();
     g.expect.derived(RAVINE.name, {
       types: ['land', 'creature'],
@@ -43,7 +43,7 @@ describe('Raging Ravine: a land that becomes a 3/3 Elemental and grows when it a
 
   test('attacking puts a +1/+1 counter on it (CR 603.1)', () => {
     const g = start();
-    g.act(0).activate(RAVINE.name, { index: 1, pay: true });
+    g.act(0).activate(RAVINE.name, { pay: true });
     g.passAll();
     g.advanceTo('declareAttackers');
     g.act(0).attack([RAVINE.name]);
