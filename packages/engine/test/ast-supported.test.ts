@@ -316,6 +316,7 @@ describe('supported feature gate', () => {
         // D-596: "When this Class becomes level N".
         'classLevel',
         'dealsCombatDamage',
+        'dealsDamage',
         'dealtDamage',
         'combatDamageBatch',
         'countersAdded',

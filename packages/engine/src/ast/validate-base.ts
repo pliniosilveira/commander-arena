@@ -43,6 +43,7 @@ export function triggerHasPlayer(t: Trigger): boolean {
     case 'dealtDamage':
     case 'combatDamageBatch':
     case 'noncombatDamageDealt':
+    case 'dealsDamage':
     case 'lifeGained':
     case 'lifeLost':
     case 'attackBatch':

@@ -1183,6 +1183,12 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         }
       }
       break;
+    case 'dealsDamage':
+      checkTriggerSubject(t.what, true, `${path}.what`, out);
+      if (!isOneOf(t.to, ['opponent', 'player'])) {
+        issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
+      }
+      break;
     case 'noncombatDamageDealt':
       // D-333: whose source it is and which player it damaged; any object can be the source, so there is no subject to check.
       if (!isOneOf(t.by, ['you', 'any'])) {
@@ -1251,6 +1257,7 @@ function hasDamage(t: Trigger): boolean {
   return (
     t?.kind === 'dealtDamage' ||
     t?.kind === 'dealsCombatDamage' ||
+    t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
@@ -1317,6 +1324,7 @@ function subjectOf(t: Trigger): 'permanent' | 'stack' | undefined {
     case 'discarded':
     case 'permanentSacrificed':
     case 'dealsCombatDamage':
+    case 'dealsDamage':
     case 'dealtDamage':
     case 'leavesBattlefield':
     case 'countersAdded':
