@@ -669,11 +669,30 @@ function handReserve(state: GameState, seat: SeatId, spell: GameObject): readonl
     if (id === spell.id) continue;
     const obj = state.objects[id];
     if (obj === undefined) continue;
+    for (const color of costColorsOf(state, obj)) colors.add(color);
+  }
+  return [...colors];
+}
+
+const costColors = new WeakMap<GameState, Map<ObjectId, readonly ManaColor[]>>();
+
+/** The colors in the mana cost of a card, in order of appearance: kept for the state, since every spell the listing checks asks for the whole hand. */
+function costColorsOf(state: GameState, obj: GameObject): readonly ManaColor[] {
+  let byObject = costColors.get(state);
+  if (byObject === undefined) {
+    byObject = new Map();
+    costColors.set(state, byObject);
+  }
+  let found = byObject.get(obj.id);
+  if (found === undefined) {
+    const colors = new Set<ManaColor>();
     for (const symbol of derive(state, obj).manaCost ?? []) {
       for (const letter of symbol.match(/[WUBRG]/g) ?? []) colors.add(letter as ManaColor);
     }
+    found = [...colors];
+    byObject.set(obj.id, found);
   }
-  return [...colors];
+  return found;
 }
 
 /**

@@ -565,6 +565,13 @@ export function planPayment(request: PaymentRequest): PaymentPlan | null {
   });
 }
 
+/** The units of mana a profile asks the sources for: its colored, snow and generic demands (not the activation costs of costed abilities). */
+function demandUnits(demand: readonly number[]): number {
+  let n = 0;
+  for (let i = 0; i < DIMS; i += 1) n += demand[i] ?? 0;
+  return n;
+}
+
 function planOnce(request: PaymentRequest): PaymentPlan | null {
   const profiles = buildProfiles(
     request.cost,
@@ -572,6 +579,15 @@ function planOnce(request: PaymentRequest): PaymentPlan | null {
     request.lifeAvailable,
     'anyType' in request.spell && request.spell.anyType === true,
   );
+  // Every unit of mana pays exactly one demand (`assignUnits`), so a cost with more mana in its cheapest profile than the pool and every
+  // source could ever make cannot be paid: the search below is skipped (the common case of a player with no mana to spare).
+  let supply = request.pool.length;
+  for (const source of request.sources) {
+    let most = 0;
+    for (const outcome of source.produces) if (outcome.length > most) most = outcome.length;
+    supply += most;
+  }
+  if (profiles.every((profile) => demandUnits(profile.demand) > supply)) return null;
   let best: { solution: Solution; life: number } | null = null;
   // Each subset of costed abilities is a separate search (the empty one first); see the header.
   for (const selection of selections(costedCandidates(request))) {
