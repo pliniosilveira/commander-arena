@@ -39,7 +39,24 @@ export function clean(text: string): string {
 interface ApiCard {
   readonly quantity?: unknown;
   readonly categories?: unknown;
-  readonly card?: { readonly oracleCard?: { readonly name?: unknown }; readonly name?: unknown };
+  readonly card?: {
+    readonly oracleCard?: { readonly name?: unknown };
+    readonly name?: unknown;
+    readonly edition?: { readonly editioncode?: unknown };
+    readonly collectorNumber?: unknown;
+  };
+}
+
+/** Letters, digits and dashes only: a printing's set code and collector number come from outside and go into a decklist line. */
+const SET = /^[a-z0-9]{2,6}$/i;
+const COLLECTOR = /^[0-9a-z]{1,6}(?:-[0-9a-z]{1,3})?$/i;
+
+/** ` (set) number` for a card whose answer names its printing, otherwise nothing (the line then names only the card). */
+function printingOf(card: ApiCard['card']): string {
+  const set = card?.edition?.editioncode;
+  const number = card?.collectorNumber;
+  if (typeof set !== 'string' || typeof number !== 'string') return '';
+  return SET.test(set) && COLLECTOR.test(number) ? ` (${set.toLowerCase()}) ${number}` : '';
 }
 
 export interface ArchidektDeck {
@@ -107,7 +124,7 @@ export function deckFromApi(id: number, answer: unknown): ArchidektDeck | string
       left: held?.left === true || left,
     });
     if (left) continue;
-    const line = `${quantity}x ${clean(cardName)}`;
+    const line = `${quantity}x ${clean(cardName)}${printingOf(raw.card)}`;
     (categories.some((c) => /^commander$/i.test(c)) ? commander : main).push(line);
     count += quantity;
   }
