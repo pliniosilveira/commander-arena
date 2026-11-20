@@ -1,6 +1,7 @@
 // The Mardu Surge deck (issue 101): the REAL Oracle text of each card (the corpus's golden.jsonl, taken from the issue) goes through the grammar as a card with no override, is defined in
 // an engine scenario and is played through applyAction, so the nodes the parser writes for the real text are what the engine runs.
 // Group 1, Myriad granted (CR 702.116a, CR 613.1f): Legion Loyalty, Blade of Selves and Ironwill Forger.
+// Group 2, tokens that are tapped and attacking (CR 508.4, 111.2): Hero of Bladehold.
 import { readFileSync } from 'node:fs';
 import { type CardDefinition, validateCard } from '@commander-arena/engine';
 import { scenario } from '@commander-arena/engine/testing';
@@ -66,5 +67,37 @@ describe('Myriad granted (CR 702.116a, 613.1f)', () => {
       .at('precombatMain', { active: 0 })
       .build();
     g.expect.derived('bears', { keywords: ['myriad'] });
+  });
+});
+
+describe('Hero of Bladehold: two tokens tapped and attacking (CR 508.4)', () => {
+  const hero = real('Hero of Bladehold');
+
+  test('the card is valid', () => {
+    expect(validateCard(hero)).toEqual([]);
+  });
+
+  test('attacking creates two 1/1 white Soldier tokens that enter tapped and attacking, never declared', () => {
+    const g = scenario()
+      .define(hero)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(hero.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: hero.name }]);
+    g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    g.expect.zone('Soldier', 'battlefield', { seat: 0, count: 2 });
+    g.expect.tapped('Soldier[0]');
+    g.expect.tapped('Soldier[1]');
+    g.expect.combat({
+      attackers: [hero.name, 'Soldier[0]', 'Soldier[1]'],
+      unblocked: [hero.name, 'Soldier[0]', 'Soldier[1]'],
+    });
+    g.expect.invariants();
   });
 });
