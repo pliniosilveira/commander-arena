@@ -158,6 +158,11 @@ export type Amount =
   | { readonly kind: 'cardsInHandOfAffected' }
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
+  /**
+   * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
+   * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
+   */
+  | { readonly kind: 'lifeGainedOrLostThisTurn' }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
   | {
       readonly kind: 'enteredThisTurn';
@@ -456,7 +461,12 @@ export type ThisWayKind =
   | 'excessDamageDealt'
   // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
   // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
-  | 'exiledPowerOwn';
+  | 'exiledPowerOwn'
+  // Deadly Tempest (CR 608.2c, 608.2h): "each player loses life equal to the number of creatures they controlled that were destroyed this way": the whole amount of a `loseLife`, read for
+  // each player it affects as the number of creatures that player controlled (as they were just before they died) that the `destroy` effects of this resolution destroyed.
+  | 'destroyedCreaturesOfAffected'
+  // Revival Experiment (CR 608.2c): "You lose 3 life for each card returned this way": the cards a `moveToZone` of a `choose` selector put from a graveyard onto the battlefield in this resolution.
+  | 'returned';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -2450,6 +2460,26 @@ export type Effect =
       readonly otherwiseTo?: 'hand';
     }
   /**
+   * "Reveal the top card of your library. If it's a creature card, create a 1/1 green Saproling creature token. If it's a land card, put that card onto the battlefield under
+   * your control. If it's a noncreature, nonland card, you gain 2 life." and "Whenever ~ attacks, reveal the top card of your library. If it's a creature card, you gain life
+   * equal to that card's toughness, lose life equal to its power, then put it into your hand." (CR 701.20a Reveal, 608.2c, 608.2h): each player `player` names reveals the top
+   * card of their own library once (a `cardsRevealed` event; nothing for an empty library), and then each branch of `branches` whose `ifMatches` describes the card as it was
+   * revealed is done, in the order written (a card both a creature and a land is a match of both). A branch first runs its `onMatch` effect as that player ("you" is the player
+   * who revealed; `moved` names the card revealed, still in the library, so "that card's toughness" is `toughnessOf` `moved`), then puts the card into the place `to` names. A
+   * branch that moves the card away leaves a later branch that moves it nothing to move (a card that is no longer on top of the library stays where it went). The card stays on top
+   * when no branch moves it.
+   */
+  | {
+      readonly kind: 'revealTopBranches';
+      readonly player: PlayerSelector;
+      readonly branches: readonly {
+        readonly ifMatches: ObjectFilter;
+        readonly onMatch?: Effect;
+        readonly to?: 'battlefield' | 'hand';
+        readonly tapped?: true;
+      }[];
+    }
+  /**
    * "At the beginning of your upkeep, you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card
    * revealed by the other player. You each put the card you revealed into your hand." (CR 701.20a Reveal, 119.3, 202.3): each of the two players `players` names reveals the top
    * card of their own library (nothing for an empty library: the other player then loses no life), each loses life equal to the mana value of the card the OTHER player revealed,
@@ -2563,6 +2593,12 @@ export type Effect =
       readonly lessGeneric?: Amount;
       readonly grants?: 'storm' | 'cascade';
     }
+  /**
+   * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, Marshland Bloodcaster, CR 118.9, 601.2b,
+   * 601.2f, 202.3e, 119.4, 611.2a): until end of turn, the controller may cast the next spell they cast by the alternative cost `lifeForMana`: no mana cost, and life equal to the spell's
+   * mana value (an {X} counts as the X announced). The effect is used up by the next spell the controller casts, used or not, and ends with the turn (`rules/next-spell-life.ts`).
+   */
+  | { readonly kind: 'nextSpellPayLife' }
   /**
    * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand"
    * (CR 701.20a Reveal, 608.2g, 118.9, 107.3b, 202.3e): the controller reveals the top card of their library (nothing happens with an empty library; the card stays on top
@@ -2916,6 +2952,12 @@ export type Effect =
        * had where it was, the owner's for a card; that was wrong.)
        */
       readonly controller?: 'owner' | 'you';
+      /**
+       * "Return it to the battlefield face down ... It's a Forest land" (CR 708.2, 708.3, 613.2b): the permanents enter face down, as a land with the Forest subtype and no other
+       * characteristic (the face-down status `forestLand`); the card's own enters replacements and triggers do not apply (CR 708.3). Only with `to` `battlefield` and a selector
+       * that is not `choose`. A face-down permanent of this kind is never turned face up.
+       */
+      readonly faceDownAs?: 'forestLand';
       /**
        * For battlefield: the permanents enter with `count` counters of the kind on them ("return it to
        * the battlefield with a -1/-1 counter on it", Persist, CR 702.79a), put on as they enter (CR 122.6
@@ -3828,7 +3870,11 @@ export type Effect =
    */
   | {
       readonly kind: 'castCard';
-      readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
+      /**
+       * A target, or `this` (Sproutback Trudge: "At the beginning of your end step, if you gained life this turn, you may cast this creature from your graveyard", CR 113.6b,
+       * 608.2g): the card with the ability, in the graveyard it works from (only in a triggered ability with `functionsIn: 'graveyard'`).
+       */
+      readonly object: Extract<ObjectRef, { readonly kind: 'target' | 'this' }>;
       readonly anyManaType?: true;
       readonly exileInstead?: true;
       /**
@@ -4442,6 +4488,16 @@ export type Trigger =
       readonly kind: 'noncombatDamageDealt';
       readonly by: 'you' | 'any';
       readonly to: 'opponent' | 'player';
+    }
+  /**
+   * "Whenever you're dealt damage" (CR 120.2, 120.3, 603.2, 603.2c, 603.2g; Sun Droplet): damage of any kind, from any source, that a player `who` names is dealt (`you`: the controller of
+   * this ability; `opponent`: a player the controller does not control, CR 113.7a; `player`: any player), once for each source and each player it damages in one damage event.
+   * Damage that is prevented entirely, or is 0, is not dealt and triggers nothing (CR 120.8, 603.2g). `triggerDamage` is the amount that source dealt to that player ("that many")
+   * and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'dealtDamageToPlayer';
+      readonly who: 'you' | 'opponent' | 'player';
     }
   /**
    * "Whenever [a creature | this] is dealt damage" (CR 120.3, 603.2, D-133): once for each source that deals damage to

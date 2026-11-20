@@ -40,6 +40,8 @@ const ALTERNATIVES = [
   'morph',
   'tapPermanents',
   'impending',
+  // `nextSpellPayLife`: not listed on a face, but granted by an effect (the list of cards is the one of the ordinary cast).
+  'lifeForMana',
 ] as const;
 
 export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[] {

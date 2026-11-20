@@ -117,6 +117,7 @@ import { SYNTHETIC_LAYER_LIST } from './synthetic-layers';
 import { SYNTHETIC_LAYOUT_LIST } from './synthetic-layouts';
 import { SYNTHETIC_LIBRARY_LIST } from './synthetic-library';
 import { SYNTHETIC_LIBRARY_ARTIFACTS_LIST } from './synthetic-library-artifacts';
+import { SYNTHETIC_LIFE_COST_LIST } from './synthetic-life-cost';
 import { SYNTHETIC_LIFE_GAIN_LIST } from './synthetic-life-gain';
 import { SYNTHETIC_LIVING_LIST } from './synthetic-living';
 import { SYNTHETIC_LIVING_DEATH_LIST } from './synthetic-living-death';
@@ -582,6 +583,7 @@ export const SYNTHETIC_ALL_LIST: readonly CardDefinition[] = [
   ...SYNTHETIC_PRISMARI_G3_LIST,
   ...SYNTHETIC_JUMP_START_LIST,
   ...SYNTHETIC_QUICK_DRAW_LIST,
+  ...SYNTHETIC_LIFE_COST_LIST,
 ];
 
 export const SYNTHETIC_CARDS: Readonly<Record<string, CardDefinition>> = Object.fromEntries(

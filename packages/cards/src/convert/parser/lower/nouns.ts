@@ -1216,8 +1216,33 @@ function selectorOf(
         rule: noun.rule,
       };
     }
-    const filter = lowerFilter(noun);
-    if (!filter.ok) return filter;
+    // "Destroy each nonland permanent with mana value X or less" (CR 107.3a, 202.3): the limit is the X announced for the spell (or the X the sentence defines), read as the
+    // effect resolves; the flag is replaced by the engine's `manaValueAtMost`.
+    let eachLimit: ObjectFilter['manaValueAtMost'];
+    let eachNoun = noun;
+    if (noun.filter.manaValueAtMostX === true) {
+      const refused = gate(noun, ['selector:manaValueAtMost']);
+      if (refused !== null) return refused;
+      const defined = ctx.xIs;
+      if (defined === null) {
+        ctx.usesX = true;
+        eachLimit = { kind: 'x' };
+      } else {
+        defined.used = true;
+        const amount = defined.lower === undefined ? failure(noun, []) : defined.lower();
+        if (!amount.ok) return amount;
+        eachLimit = amount.value;
+      }
+      const { manaValueAtMostX: _x, ...rest } = noun.filter;
+      void _x;
+      eachNoun = { ...noun, filter: rest };
+    }
+    const lowered = lowerFilter(eachNoun);
+    if (!lowered.ok) return lowered;
+    const filter =
+      eachLimit === undefined
+        ? lowered
+        : { ...lowered, value: { ...lowered.value, manaValueAtMost: eachLimit } };
     // "Target player's graveyard": the cards in it, selected by their owner (CR 108.3, 404.1).
     if (noun.of !== undefined) {
       const owned = gate(noun, ['selector:ownerRef']);

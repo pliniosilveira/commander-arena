@@ -49,6 +49,7 @@ import { chooseTurnFaceUp } from './casual-face-down';
 import { isHelpfulSpell } from './casual-helpful';
 import { chooseSpecialAction } from './casual-later';
 import { hasWorthwhileMode, isModalText } from './casual-modes';
+import { PAY_LIFE_ABOVE } from './casual-permanents';
 import { grantsLandDrops } from './casual-play-rules';
 import { isPreventionSpell, preventionKey, worthCastingPrevention } from './casual-prevention';
 import { chooseUnlockDoor } from './casual-rooms';
@@ -61,6 +62,7 @@ import {
   manaValueOf,
   opposingCreatures,
   ownCreatureCount,
+  ownLife,
   withoutReminder,
 } from './casual-view';
 import { multikickerHasRoom, needsPaidX, xSpellHasRoom } from './casual-x';
@@ -159,6 +161,11 @@ export interface Play {
   readonly face: number | undefined;
   /** True for the cast without paying the mana cost (`alternative: 'free'`). */
   readonly free?: true;
+  /**
+   * True for the cast that pays life equal to the mana value rather than the mana cost (`alternative: 'lifeForMana'`, Marshland Bloodcaster's permission). Always with `free` (no
+   * mana is spent), and used only for a card with no ordinary cast, while the life left stays above `PAY_LIFE_ABOVE`.
+   */
+  readonly lifeForMana?: true;
   /** The named alternative cost the play pays (Overload, Evoke, Dash, Spectacle: `casual-alt-costs.ts`, D-121, D-124). */
   readonly alt?: NamedAlternativeKind;
 }
@@ -244,15 +251,22 @@ export function spellPlays(
       continue;
     const base = findObject(view, o.object);
     if (base === undefined) continue;
-    const free = o.alternative === 'free';
+    const life = o.alternative === 'lifeForMana';
+    const free = o.alternative === 'free' || life;
     const alt = o.alternative === undefined || free ? undefined : o.alternative;
     const play: Play = {
       obj: asFace(base, o.face),
       face: o.face,
       ...(free ? { free: true } : {}),
+      ...(life ? { lifeForMana: true as const } : {}),
       ...(alt === undefined ? {} : { alt }),
     };
     if (!allowed(view, play.obj, activations)) continue;
+    // CR 118.9: paying life rather than mana is a last resort of the agent: never when it would leave it in danger (as for a shock land), and no spell with an {X} (it asks the
+    // question of X as for any cast: the mana is the limit it reasons about).
+    if (life && (needsPaidX(play.obj) || ownLife(view) - manaValueOf(play.obj) <= PAY_LIFE_ABOVE)) {
+      continue;
+    }
     // D-103: X is 0 for a spell cast without paying its mana cost or for an alternative cost (CR 107.3b), which makes an
     // instant or sorcery with an {X} worth nothing; and a paid one is cast only with some X to spend. D-237: the same
     // for a creature that enters with X +1/+1 counters and dies on arrival at X = 0 (issue 131).
@@ -275,7 +289,12 @@ export function spellPlays(
     // cost (D-121) replaces it when `chooseNamedAlternative` wants it.
     const perFace = new Map<number | undefined, Play>();
     const named = new Map<number | undefined, Map<NamedAlternativeKind, Play>>();
+    const paidWithLife = new Map<number | undefined, Play>();
     for (const p of plays) {
+      if (p.lifeForMana === true) {
+        paidWithLife.set(p.face, p);
+        continue;
+      }
       if (p.alt !== undefined) {
         const forFace = named.get(p.face) ?? new Map<NamedAlternativeKind, Play>();
         forFace.set(p.alt, p);
@@ -298,6 +317,8 @@ export function spellPlays(
       const chosen = kind === undefined ? undefined : offered.get(kind);
       if (chosen !== undefined) perFace.set(face, chosen);
     }
+    // Life is paid only for a face the mana cannot cast.
+    for (const [face, p] of paidWithLife) if (!perFace.has(face)) perFace.set(face, p);
     return pickFace([...perFace.values()]) ?? [];
   });
 }
@@ -347,6 +368,7 @@ export function choosePriorityAction(
         object: chosen.obj.id,
         ...(chosen.free === true ? { alternative: 'free' as const } : {}),
         ...(chosen.alt === undefined ? {} : { alternative: chosen.alt }),
+        ...(chosen.lifeForMana === true ? { alternative: 'lifeForMana' as const } : {}),
         ...withFace(chosen.face),
       };
     }
