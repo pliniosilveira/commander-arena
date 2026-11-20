@@ -1934,7 +1934,14 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
         }
       }
       // CR 601.2d, 602.2b: an activated ability announces its division as it is activated.
-      const targets = declareTargets(a.targets, `${path}.targets`, out, true);
+      // Issue 345 (Magus of the Candelabra, CR 601.2b, 602.2b): "{X}, {T}: Untap X target lands": a slot of as many targets as the X announced, for an ability whose cost has an X.
+      const targets = declareTargets(a.targets, `${path}.targets`, out, true, false, false, 'slot');
+      if (
+        (a.targets ?? []).some((t) => t.countX === true) &&
+        !(Array.isArray(a.cost) && hasXCost(a.cost))
+      ) {
+        issue(out, `${path}.targets`, 'X targets need an X in the cost of the ability');
+      }
       const scopeOf = (declared: Scope['targets']): Scope => ({
         owner: 'ability',
         targets: declared,

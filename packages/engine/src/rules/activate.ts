@@ -50,7 +50,7 @@ import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrif
 import { setPending } from './set-pending';
 import { recordObjectsTogether } from './simultaneous';
 import { sourceInfo } from './source-info';
-import { targetChoiceSpecs } from './target-choice';
+import { maxTargetCountX, targetChoiceSpecs } from './target-choice';
 import { payableEquipTargets } from './target-payable';
 import { collectTriggers } from './triggers';
 import { abilityXCost, hasX, largestPayableX } from './x-value';
@@ -172,7 +172,17 @@ export function toActivationX(state: GameState, events: GameEvent[]): Result {
   const before = casting.snapshot;
   const obj = before.objects[activation.source];
   if (obj === undefined) return fail('The source is gone');
-  const max = largestPayableX((x) => costRefusal(before, seat, obj, ability.cost, x) === null);
+  // Issue 345 (CR 601.2b): an "X target ..." slot needs X legal targets, so no X larger than they are is offered.
+  const slotCtx = { controller: seat, source: activation.source, stackObject: casting.object };
+  const stackObject = state.objects[casting.object];
+  const countLimit =
+    stackObject === undefined
+      ? Number.MAX_SAFE_INTEGER
+      : maxTargetCountX(state, targetSpecsOf(state, stackObject), slotCtx);
+  const max = Math.min(
+    countLimit,
+    largestPayableX((x) => costRefusal(before, seat, obj, ability.cost, x) === null),
+  );
   if (max === 0) return toActivationTargets(setX(state, 0), events);
   const info = sourceInfo(before, activation.source);
   return ok(
@@ -213,7 +223,10 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
   const object = casting === null ? undefined : state.objects[casting.object];
   if (!casting || !activation || object === undefined) return fail('No activation is in progress');
   // A modal ability has the targets of the modes chosen for it (CR 601.2c, 700.2c, D-114).
-  const specs = targetSpecsOf(state, object);
+  // Issue 345: a slot of "X target ..." with X = 0 has no target to choose, as for a spell (D-386).
+  const specs = targetSpecsOf(state, object).filter(
+    (spec) => spec.countX !== true || activation.x > 0,
+  );
   if (specs.length === 0)
     return payCosts({ ...state, casting: { ...casting, stage: 'targets' } }, events);
   // CR 601.2c: the source of the ability is the permanent; the ability itself never targets itself.
@@ -231,7 +244,7 @@ export function toActivationTargets(state: GameState, events: GameEvent[] = []):
           specs,
           ctx,
           modal === null ? undefined : specModes(modal, object.stack?.chosenModes ?? []),
-          0,
+          activation.x,
           null,
           // D-425: an Equip ability that is cheaper for some targets is payable only with them: only those are offered.
           payableEquipTargets(casting.snapshot, casting, specs, {

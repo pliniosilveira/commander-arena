@@ -638,6 +638,62 @@ export const TOKEN_DEFINED_PT = defineRule<IrToken>({
   ),
 });
 
+/**
+ * `token.noncreature-named`: "a colorless snow artifact token named Icy Manalith with \"{T}: Add one mana of any color.\"" (issue 345, Svella, Ice Shaper; CR 111.4, 205.4 snow,
+ * 111.3): a token that is no creature (so it has no power or toughness and no creature type), with the name the effect gives it and the abilities in its quotes. One token. Not read:
+ * a color, a creature type, a number for the count, "creature", no name, no quoted ability, a keyword besides the quotes, another card type.
+ */
+export const TOKEN_NONCREATURE_NAMED = defineRule<IrToken>({
+  id: 'token.noncreature-named',
+  family: 'token',
+  leading: ['a'],
+  cites: ['CR 111.4 (Tokens)', 'CR 111.3 (Tokens)', 'CR 205.4 (Supertypes)'],
+  examples: [
+    'a colorless snow artifact token named Icy Manalith with "{T}: Add one mana of any color."',
+    'a colorless artifact token named Gem with "{T}: Add {C}."',
+  ],
+  rejects: [
+    'a colorless snow artifact token named Icy Manalith',
+    'a colorless snow artifact token with "{T}: Add one mana of any color."',
+    'a green snow artifact token named Icy Manalith with "{T}: Add one mana of any color."',
+    'a colorless snow artifact creature token named Icy Manalith with "{T}: Add one mana of any color."',
+    'two colorless snow artifact tokens named Icy Manalith with "{T}: Add one mana of any color."',
+    'a colorless snow enchantment token named Icy Manalith with "{T}: Add one mana of any color."',
+    'a colorless snow artifact token named Icy Manalith with flying',
+    'a colorless snow artifact token named icy with "{T}: Add one mana of any color."',
+  ],
+  parse: node<Bare, IrToken>(
+    'token.noncreature-named',
+    map(
+      sequence(
+        spanned(literal('a colorless ')),
+        optional(
+          map(literal('snow '), () => true as const),
+          null,
+        ),
+        literal('artifact token named '),
+        TOKEN_NAME,
+        literal(' with '),
+        satisfy(
+          tokenWith(TOKEN_QUOTED_ABILITY_OR_CREW_BONUS),
+          (w) => w.abilities.length > 0 && w.keywords.length === 0,
+        ),
+      ),
+      ([article, snow, , named, , { abilities }]): Bare => ({
+        kind: 'token',
+        colors: [],
+        types: ['artifact'],
+        subtypes: [],
+        named,
+        ...(snow === null ? {} : { snow }),
+        count: { kind: 'number', value: 1, span: article.span },
+        abilities,
+      }),
+    ),
+    (b) => b,
+  ),
+});
+
 /** "a number of": a count that the sentence gives after the tokens, "equal to ..." (a placeholder of 1 until then). */
 const A_NUMBER_OF: Parser<IrAmount> = map(
   spanned(pattern(/a number of(?![\p{L}\p{N}])/iu)),
@@ -765,6 +821,8 @@ export const TOKEN_RULES = [
   TOKEN_NAMED_LEGENDARY,
   // Death Toll deck, group C: a token with no numbers whose own characteristic-defining ability defines them.
   TOKEN_DEFINED_PT,
+  // Issue 345: a named token that is no creature.
+  TOKEN_NONCREATURE_NAMED,
   TOKEN_NUMBER_OF,
   // Before `token.copy`: a family takes the first rule that reads, and the plain copy would stop short of ", except it's ...".
   TOKEN_COPY_EXCEPT,

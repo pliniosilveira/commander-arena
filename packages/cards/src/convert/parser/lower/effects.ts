@@ -1957,7 +1957,16 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       : (token.power === undefined) !== (token.toughness === undefined)
         ? null
         : token.power === undefined;
-  if (!creature || definesPt === null) {
+  // Issue 345 (Svella, Ice Shaper, CR 111.4, 205.4): "a colorless snow artifact token named Icy Manalith with \"{T}: Add one mana of any color.\"": a token that is no creature, has no
+  // power or toughness and no keywords, only the abilities in its quotes.
+  const noncreature =
+    !creature &&
+    token.power === undefined &&
+    token.toughness === undefined &&
+    token.ptAmount !== true &&
+    (token.keywords ?? []).length === 0 &&
+    types.length > 0;
+  if (!noncreature && (!creature || definesPt === null)) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -1994,7 +2003,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   const defines = abilities.filter(
     (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
   );
-  if (definesPt ? defines.length !== 1 : defines.length > 0) return { ok: false, needs: [], ...at };
+  if (noncreature ? defines.length > 0 : definesPt ? defines.length !== 1 : defines.length > 0) {
+    return { ok: false, needs: [], ...at };
+  }
   // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (D-266): the card's own short name, which normalization wrote as the tilde;
   // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
   const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
@@ -2003,12 +2014,15 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     // CR 111.4: the name the effect gives the token, or else its creature types.
     name: named ?? subtypes.join(' '),
     manaCost: null,
-    supertypes: token.legendary === true ? ['legendary'] : [],
+    supertypes: [
+      ...(token.legendary === true ? (['legendary'] as const) : []),
+      ...(token.snow === true ? (['snow'] as const) : []),
+    ],
     types,
     subtypes,
     colors,
-    power: token.power ?? (token.ptAmount === true ? 0 : '*'),
-    toughness: token.toughness ?? (token.ptAmount === true ? 0 : '*'),
+    power: noncreature ? null : (token.power ?? (token.ptAmount === true ? 0 : '*')),
+    toughness: noncreature ? null : (token.toughness ?? (token.ptAmount === true ? 0 : '*')),
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in

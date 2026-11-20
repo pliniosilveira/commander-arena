@@ -212,8 +212,14 @@ describe('the AST: where "modified" may stand (validateCard)', () => {
       ],
     });
 
-  test('a static ability cannot name modified creatures in its subject: derive matches it before the attachments are known', () => {
-    const issues = validateCard(card({ types: ['creature'], modified: true, controller: 'you' }));
+  test('a static ability may name modified creatures in its subject: subjectAffects reads the counters and attachments (issue 345)', () => {
+    expect(validateCard(card({ types: ['creature'], modified: true, controller: 'you' }))).toEqual(
+      [],
+    );
+  });
+
+  test('a static ability cannot name goaded creatures in its subject: derive matches it before the designation is known', () => {
+    const issues = validateCard(card({ types: ['creature'], goaded: true, controller: 'you' }));
     expect(issues.map((i) => i.message)).toEqual([
       'a static ability cannot read resolution-only values or compare power with its source',
     ]);
