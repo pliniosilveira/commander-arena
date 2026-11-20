@@ -20,11 +20,7 @@ export const STATIC_CANT_BE_SACRIFICED = defineRule<IrStatic>({
     'CR 101.2 (Golden Rules)',
     'CR 604.1 (Handling Static Abilities)',
   ],
-  examples: [
-    "~ can't be sacrificed.",
-    'This artifact can’t be sacrificed.',
-    "This creature can't be sacrificed.",
-  ],
+  examples: ["~ can't be sacrificed.", '~ can’t be sacrificed.'],
   rejects: [
     "~ can't be sacrificed",
     "~ can't be sacrificed until end of turn.",
