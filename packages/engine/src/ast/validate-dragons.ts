@@ -344,11 +344,15 @@ export function checkDragonsEffect(
       return true;
     case 'extraCombat':
       // CR 500.8 (D-151): "after this phase": the combat phase the attack is part of.
-      if (scope.attackTrigger !== true && scope.mainPhaseTrigger !== true) {
+      if (
+        scope.attackTrigger !== true &&
+        scope.mainPhaseTrigger !== true &&
+        scope.combatPhaseCondition !== true
+      ) {
         issue(
           out,
           path,
-          'an additional combat phase is added by a triggered ability of an attack or one that checks that it is your main phase',
+          'an additional combat phase is added by a triggered ability of an attack, one that checks that it is your main phase, or an effect that checks that it is your combat phase',
         );
       }
       // D-187: "At the beginning of that combat, untap all creatures you control": a delayed group untap, with no target and nothing to read from the

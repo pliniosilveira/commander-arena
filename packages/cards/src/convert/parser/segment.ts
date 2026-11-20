@@ -38,6 +38,8 @@ export interface AbilitySkeleton {
   readonly chapter?: true;
   /** activated: each cost, split on commas outside quotes and braces. */
   readonly costs: readonly Span[];
+  /** activated, "Boast — {cost}: ..." (CR 702.142a): the keyword adds "Activate only if this creature attacked this turn and only once each turn". */
+  readonly boast?: true;
   /** activated: trailing "Activate only ..." sentences. */
   readonly restrictions: readonly Span[];
   /** triggered, activated, other: the sentences of the body, each with its period. */
@@ -71,7 +73,7 @@ const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER =
-  /^(?:choose\b|tiered(?:\n|$)|you may choose two\. each mode must target a different player\.(?:\n|$))/i;
+  /^(?:choose\b|tiered(?:\n|$)|spree(?:\n|$)|you may choose two\. each mode must target a different player\.(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
 /** "You may have ~ enter as a copy of any creature on the battlefield, except ..." (issue 104, CR 614.12): the replacement effect of a permanent that enters as a copy, said without "As". */
 const REPLACEMENT_ENTER_AS_COPY = /^you may have ~ enter as a copy of\b/i;
@@ -1109,6 +1111,9 @@ function reflexiveModal(
   };
 }
 
+/** "Boast — " before the cost of an activated ability (CR 702.142a). */
+const BOAST_PREFIX = /^Boast — /u;
+
 const EMPTY = { costs: [], restrictions: [], sentences: [], modes: [] } as const;
 
 /** "• Khans — ": the bullet of a choice among named options and the name (stage P34, D-152). */
@@ -1186,6 +1191,13 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
       ...shifted(segment(text.slice(by), face), text, by),
       option: bullet[1] ?? '',
     };
+  }
+  // "Boast — Sacrifice another creature or artifact: ..." (CR 702.142a): the keyword word and its dash, then an ordinary activated ability.
+  const boast = BOAST_PREFIX.exec(text);
+  if (boast !== null) {
+    const by = boast[0].length;
+    const inner = segment(text.slice(by), face);
+    if (inner.head === 'activated') return { ...shifted(inner, text, by), boast: true };
   }
   const whole = { start: 0, end: text.length };
   const base = { text, face, whole, ...EMPTY };

@@ -862,6 +862,8 @@ export interface DelayedTrigger {
   readonly untilEndOfCombat?: true;
   readonly repeat?: true;
   readonly watched?: ObjectId;
+  /** "Whenever a creature you control deals combat damage to that player this turn" (issue 144, CR 603.7c): the ability triggers only for damage dealt to this player, fixed as it was created. */
+  readonly damagedPlayer?: SeatId;
   /**
    * "When you cast it this turn" (`mayCast.whenCast`, issue 159, CR 603.7): the ability triggers only for a spell cast from this card (`GameObject.card`: the card is a new
    * object on the stack, CR 400.7, but it is the same card).

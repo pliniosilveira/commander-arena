@@ -314,6 +314,7 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
   }
   out = out.replace(SELF_NOUN_RE, '~');
   out = tokenSelfInQuotes(out);
+  let spree = false;
   return out
     .split('\n')
     .map((line) =>
@@ -322,6 +323,11 @@ export function normalizeOracleText(text: string, options: NormalizeOptions): st
       ),
     )
     .filter((line) => line !== '')
+    .map((line) => {
+      // Spree (CR 702.172b): the plus signs before the modes "do not have additional rules meaning": they are the bullets of the modal text.
+      if (/^spree$/iu.test(line)) spree = true;
+      return spree && /^\+ (?=\{)/u.test(line) ? line.replace(/^\+ /u, '• ') : line;
+    })
     .join('\n');
 }
 

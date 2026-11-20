@@ -2308,8 +2308,9 @@ export type Effect =
    * "After this phase, there is an additional combat phase" (CR 500.8, 500.10, D-151): when the phase that is now going on is over, one more combat
    * phase follows it (beginning of combat, declare attackers, ... end of combat), then the turn goes on as it would have. Several of them add up, the
    * most recently created occurring first (CR 500.8); the phase is added to the turn state (`TurnState.addedPhases`) and may follow a main phase as well
-   * as a combat phase (D-187: "there's an additional combat phase after this phase"). Only in a triggered ability of an attack (`attacks`) or one whose
-   * intervening "if" is `yourMainPhase`, which are the places the phase that is going on is known to be a main phase or a combat phase.
+   * as a combat phase (D-187: "there's an additional combat phase after this phase"). Only in a triggered ability of an attack (`attacks`), one whose
+   * intervening "if" is `yourMainPhase`, or the effect of a `conditional` whose condition is `yourCombatPhase` (issue 144): the places the phase that is going on is known
+   * to be a main phase or a combat phase.
    * `atBeginning` (D-187): "At the beginning of that combat, untap all creatures you control": an effect that a delayed triggered ability of the same
    * controller runs as the beginning of combat step of that added phase begins (CR 603.7); it names no target.
    */
@@ -2554,6 +2555,20 @@ export type Effect =
   | {
       readonly kind: 'delayedCombatDamageTurn';
       readonly filter: ObjectFilter;
+      readonly effect: Effect;
+    }
+  /**
+   * "Choose target opponent. Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token." (CR 603.7, 603.7c, 510.3a, 514.2, issue 144,
+   * Great Train Heist): a delayed triggered ability of the controller of the spell or ability, created as it resolves, that triggers each time a source `filter` names (a creature the
+   * controller controls, as it is when the damage is dealt) deals combat damage to the one player `player` names, until the end of the turn (CR 514.2), once for each such creature
+   * (CR 603.2c). The player is fixed as the ability is created (CR 603.7c: nothing of the spell is left to name later), and is a target of the spell or ability; one who is no longer a
+   * legal target as it resolves, or who has left the game, makes none (CR 608.2b). `effect` runs each time, with the controller of the spell or ability as "you"; it names no target,
+   * and reads nothing of the spell.
+   */
+  | {
+      readonly kind: 'delayedCombatDamageToPlayer';
+      readonly filter: ObjectFilter;
+      readonly player: Extract<PlayerSelector, { readonly kind: 'target' }>;
       readonly effect: Effect;
     }
   /**
@@ -5529,6 +5544,11 @@ export type Condition =
    */
   | { readonly kind: 'yourMainPhase' }
   /**
+   * "If it's your combat phase, there is an additional combat phase after this phase." (issue 144, CR 506.1, 500.8): true while the game is in the combat phase of a turn of
+   * the condition's controller. Read where the condition is read; the stack empties before a phase ends (CR 117.4), so a spell resolving in a combat step is read in that phase.
+   */
+  | { readonly kind: 'yourCombatPhase' }
+  /**
    * "During your turn, equipped creature has flying." (CR 611.3a, 613.8, D-206): true while the active player is the controller of the ability
    * or static ability. The active player is no characteristic and no layer changes it, so a static ability may read it. Read where the condition is
    * read (a static ability's `condition` each time its effect is looked at; an `interveningIf` as the event happens and as the ability resolves).
@@ -5640,6 +5660,11 @@ export type Condition =
    * since still counts. Reads the turn log only, so it is read as the ability is activated or resolves. Not for a static ability.
    */
   | { readonly kind: 'attackedWithCreaturesThisTurn'; readonly atLeast: number }
+  /**
+   * "Activate only if this creature attacked this turn" (CR 702.142a, Boast): the permanent the condition belongs to was declared as an attacker this turn, in any combat
+   * phase, from `TurnLog.attacked` (kept by the id the creature has now: a permanent that left and came back is a new object, CR 400.7). Reads the turn log only.
+   */
+  | { readonly kind: 'thisAttackedThisTurn' }
   /**
    * "If you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn" (issue 159, CR 601.2a, 602.2, 603.4): the controller of the condition has
    * cast a spell from a graveyard this turn, or activated an ability of a card that was in a graveyard as it was activated (`TurnLog.castSpells` and `TurnLog.activated`, the

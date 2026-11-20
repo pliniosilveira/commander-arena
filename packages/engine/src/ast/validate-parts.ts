@@ -159,6 +159,8 @@ export interface Scope {
   readonly attackTrigger?: boolean;
   /** True in the effect of a triggered ability whose intervening "if" is `yourMainPhase`: an `extraCombat` follows a main phase (D-187). */
   readonly mainPhaseTrigger?: boolean;
+  /** True in the effect of a `conditional` whose condition is `yourCombatPhase`: an `extraCombat` follows the combat phase that is going on (issue 144). */
+  readonly combatPhaseCondition?: boolean;
   /** True in the effect of a triggered ability of "the beginning of your postcombat main phase" (`step: 'main2'`): an `extraBeginningPhase` follows that phase (D-356). */
   readonly postcombatMainTrigger?: boolean;
   /** True after a `may` effect in the same sequence: `didPrevious` and `reflexive` have something to read (D-135). */
@@ -2922,6 +2924,7 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
       break;
     case 'cardLeftYourGraveyard':
     case 'yourMainPhase':
+    case 'yourCombatPhase':
     case 'yourTurn':
       // D-187, D-206: no parameters.
       break;
@@ -3206,6 +3209,9 @@ export function checkCondition(c: Condition, path: string, out: Out): void {
         path,
         'dieResult reads the die rolled earlier in the same resolution: it is only valid in a conditional effect after a rollDie of the same sequence',
       );
+      break;
+    case 'thisAttackedThisTurn':
+      // CR 702.142a (Boast): no parameters; the permanent the ability belongs to.
       break;
     case 'thisInYourGraveyard':
       // D-271, CR 113.6b: no parameters; where it may stand is checked with the trigger (validate.ts).
@@ -5206,6 +5212,21 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkEffect(e.effect, `${path}.effect`, scope, out);
       break;
     }
+    case 'delayedCombatDamageToPlayer': {
+      // Issue 144 (CR 603.7c, 510.3a): the sources are creatures the controller controls; the player is a target of the spell or ability; what the ability does names no target and
+      // reads nothing of the spell (nothing of it is left when the ability triggers).
+      checkFilter(e.filter, `${path}.filter`, out);
+      if (e.filter?.controller !== 'you' || e.filter?.zone !== undefined) {
+        issue(
+          out,
+          `${path}.filter`,
+          "the sources are creatures the controller controls (controller 'you'), as they are on the battlefield",
+        );
+      }
+      checkPlayerSelector(e.player, `${path}.player`, scope, out);
+      checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
+      break;
+    }
     case 'delayedCombatDamage':
       checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       checkEffect(e.effect, `${path}.effect`, { ...scope, targets: new Map() }, out);
@@ -6513,7 +6534,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       // CR 608.2c: "If [condition], [effect]. Otherwise, [else]." Both branches see the same
       // targets and X as the rest of the spell or ability.
       checkEffectCondition(e.condition, `${path}.condition`, scope, out);
-      checkEffect(e.effect, `${path}.effect`, scope, out);
+      checkEffect(
+        e.effect,
+        `${path}.effect`,
+        e.condition.kind === 'yourCombatPhase' ? { ...scope, combatPhaseCondition: true } : scope,
+        out,
+      );
       if (e.else !== undefined) checkEffect(e.else, `${path}.else`, scope, out);
       break;
     case 'may':

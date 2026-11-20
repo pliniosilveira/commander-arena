@@ -525,6 +525,7 @@ describe('unmatched abilities', () => {
       'condition.put-this-way',
       'condition.milled-this-way',
       'condition.your-main-phase',
+      'condition.your-combat-phase',
       'condition.ring-bearer',
       'condition.it-targets',
       'condition.mana-spent-at-least',
@@ -1168,6 +1169,7 @@ describe('unmatched abilities', () => {
       'static.keeps-damage',
       'static.triggers-additional-time-attacking',
       'static.triggers-additional-time',
+      'static.triggers-additional-time-another',
       'static.triggers-additional-time-cause',
       'static.graveyard-play-once-each-turn',
       'static.opponents-cant-gain-life',
@@ -1186,6 +1188,7 @@ describe('unmatched abilities', () => {
       'modal.choose-not-repeated-source',
       'modal.choose-repeatable',
       'modal.tiered',
+      'modal.spree',
       'modal.choose-may-different',
     ]);
   });

@@ -1461,6 +1461,34 @@ function runEffect(
         ],
       });
     }
+    case 'delayedCombatDamageToPlayer': {
+      // CR 603.7, 603.7c, 510.3a, 514.2 (issue 144): "Whenever a creature you control deals combat damage to that player this turn, create a tapped Treasure token": a delayed
+      // ability of the controller, for damage to the player the spell targeted, which is fixed as it is made. A player that is not there (not a legal target any more) gets none.
+      const [damaged] = resolvePlayers(state, effect.player, ctx, targets);
+      if (damaged === undefined) return done(state);
+      return done({
+        ...state,
+        delayedTriggers: [
+          ...state.delayedTriggers,
+          {
+            source: res.source,
+            controller: res.controller,
+            repeat: true as const,
+            untilEndOfTurn: true as const,
+            damagedPlayer: damaged,
+            ability: {
+              kind: 'triggered' as const,
+              trigger: {
+                kind: 'dealsCombatDamage' as const,
+                what: effect.filter,
+                to: 'player' as const,
+              },
+              effect: effect.effect,
+            },
+          },
+        ],
+      });
+    }
     case 'delayedTrigger': {
       // CR 603.7, 603.7d, 603.7e (D-128): a delayed triggered ability, created as the spell or ability resolves. It
       // belongs to its controller and refers to the source only as the thing that created it (CR 603.7c: the source

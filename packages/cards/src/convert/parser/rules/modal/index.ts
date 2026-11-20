@@ -376,6 +376,46 @@ export const MODAL_TIERED = defineRule<IrModeHeader>({
 });
 
 /**
+ * `modal.spree`: "Spree" (CR 702.172a, 702.172b, 700.2h; the reminder text "(Choose one or more additional costs.)" is dropped before the rules read the line): one or more
+ * modes are chosen, and "as an additional cost to cast this spell, pay the costs associated with those modes". Each mode names its cost before the effect, "+ {2} — ...", and the
+ * plus sign is a bullet (the normalization). The modal reading takes the cost off the bullets (`IrModes.costs`), as Tiered does.
+ */
+export const MODAL_SPREE = defineRule<IrModeHeader>({
+  id: 'modal.spree',
+  family: 'modal',
+  leading: ['spree'],
+  cites: [
+    'CR 702.172a (Spree)',
+    'CR 702.172b (Spree)',
+    'CR 700.2 (General)',
+    'CR 700.2h (General)',
+    'CR 601.2f (Casting Spells)',
+  ],
+  examples: ['Spree', 'spree'],
+  rejects: [
+    'Spree {1}',
+    'Spree —',
+    'Spree (Choose one or more additional costs.)',
+    'Spree, flying',
+    'Sprees',
+    'Choose one —',
+    'Tiered',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/spree$/i)(ctx, pos);
+    if (!r.ok) return r;
+    const header: IrModeHeader = {
+      kind: 'modeHeader',
+      choose: { min: 1, max: 'all' },
+      costed: true,
+      span: { start: pos, end: r.pos },
+      rule: 'modal.spree',
+    };
+    return { ok: true, value: header, pos: r.pos };
+  },
+});
+
+/**
  * `modal.choose-may-different`: "you may choose two. Each mode must target a different player." (CR 700.2, 700.2b, 700.2d): the controller of a triggered ability chooses no
  * mode or exactly two of them as it goes on the stack, and no target is chosen for two of the modes (the engine's `ModeChoice.allOrNone` and `differentTargets`).
  */
@@ -424,5 +464,6 @@ export const MODAL_RULES = [
   MODAL_CHOOSE_NOT_REPEATED_SOURCE,
   MODAL_CHOOSE_REPEATABLE,
   MODAL_TIERED,
+  MODAL_SPREE,
   MODAL_CHOOSE_MAY_DIFFERENT,
 ];
