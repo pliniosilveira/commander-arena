@@ -449,6 +449,11 @@ export interface IrFilter {
    * the other targets of the text (the binding pass walks it, as it walks the controller of the filter); only the group of an effect reads it (`selectorOf`).
    */
   readonly powerGreaterThanNoun?: IrNoun;
+  /**
+   * "all other cards with the same name as that card" (Echoing Return, CR 201.2, 608.2c): the engine's `sameNameAs` of the target this noun is. A target noun of its own, numbered with the
+   * other targets of the text; the binding pass walks it as it walks `powerGreaterThanNoun`.
+   */
+  readonly sameNameAsNoun?: IrNoun;
   /** "with power less than ~'s power" (issue 160, D-628, CR 208.1): the engine's `powerLessThanSource`. */
   readonly powerLessThanSource?: true;
   /** "any target": a creature, player, planeswalker or battle (CR 115.4). */

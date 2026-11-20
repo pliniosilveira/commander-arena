@@ -1063,6 +1063,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) =>
       `Whenever one or more creatures deal combat damage to you, each opponent sacrifices ${e}.`,
   ),
+  // Echoing Return: the target card and the cards with its name, returned together.
+  'noun.target-card-and-same-name': spell((e) => `Return ${e} to your hand.`),
   'condition.discarded-this-way': permanent(
     (e) =>
       `At the beginning of your end step, each player may discard a card. If ${e}, you gain 1 life.`,

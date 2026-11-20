@@ -237,6 +237,18 @@ export function checkFilter(
       checkRef(f.powerGreaterThan, 'object', `${path}.powerGreaterThan`, ownerScope, out);
     }
   }
+  // CR 201.2, 608.2c: "with the same name as that card" names an object the effect knows, so only an `each` selector reads it.
+  if (f.sameNameAs !== undefined) {
+    if (ownerScope === undefined) {
+      issue(
+        out,
+        `${path}.sameNameAs`,
+        "sameNameAs is only read in the 'each' selector of an effect (not in a target slot, trigger, condition, static ability, search or cost)",
+      );
+    } else {
+      checkRef(f.sameNameAs, 'object', `${path}.sameNameAs`, ownerScope, out);
+    }
+  }
   if (f.owner !== undefined) {
     if (ownerScope === undefined) {
       issue(
@@ -757,6 +769,7 @@ export const readsCombatOrSourceBesidesCommander = (f: ObjectFilter): boolean =>
   f.powerAboveBase === true ||
   f.basePowerIs !== undefined ||
   f.powerGreaterThan !== undefined ||
+  f.sameNameAs !== undefined ||
   f.manaValueX !== undefined ||
   f.controllerDealtDamageBySource !== undefined ||
   f.putFromBattlefieldThisTurn !== undefined ||

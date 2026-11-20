@@ -324,3 +324,36 @@ describe('Orcish Bowmasters', () => {
     g.expect.stack([`${bowmasters.name} (ability)`, `${bowmasters.name} (ability)`]);
   });
 });
+
+describe('Echoing Return', () => {
+  const echo = real('Echoing Return');
+
+  const play = (graveyard: readonly string[], target: string) => {
+    const g = scenario()
+      .define(echo)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(echo.name)
+      .graveyard(...graveyard)
+      .pool('B')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(echo.name, { targets: [target], pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('returns the target creature card and every other card with the same name from your graveyard to your hand (CR 201.2)', () => {
+    const g = play([BEARS, BEARS, ELVES, ANGEL], `${BEARS}[0]`);
+    g.expect.handSize(0, 2);
+    g.expect.zone(ELVES, 'graveyard', { seat: 0 });
+    g.expect.zone(ANGEL, 'graveyard', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('a creature card with a different name stays: only the target comes back when it is alone', () => {
+    const g = play([BEARS, ELVES], BEARS);
+    g.expect.handSize(0, 1);
+    g.expect.zone(ELVES, 'graveyard', { seat: 0 });
+  });
+});

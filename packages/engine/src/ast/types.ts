@@ -885,6 +885,12 @@ export interface ObjectFilter {
    */
   readonly powerGreaterThan?: ObjectRef;
   /**
+   * "Return target creature card and all other cards with the same name as that card from your graveyard to your hand" (Echoing Return, CR 201.2, 608.2c): the object has the same
+   * name as the object this reference names (the target card included, which has its own name), read as the effect resolves. Read only in the filter of an `each` selector of an effect,
+   * which knows the targets (as `powerGreaterThan` is). A reference that names nothing matches nothing.
+   */
+  readonly sameNameAs?: ObjectRef;
+  /**
    * "Of the chosen type" (D-100) or "of that type" after a resolving choice (D-566): the object has
    * the creature type the source permanent chose as it entered, or the resolving instruction chose
    * in this resolution. Matches nothing without either choice.

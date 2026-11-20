@@ -83,6 +83,8 @@ export interface SelectContext {
   readonly controllers?: readonly SeatId[];
   /** The power `powerGreaterThan` of an `each` filter compares with, read as the effect resolves (see `FilterContext.powerLimit`). */
   readonly powerLimit?: number | null;
+  /** The name `sameNameAs` of an `each` filter compares with, read as the effect resolves (see `FilterContext.nameLimit`). */
+  readonly nameLimit?: string | null;
   /**
    * An object a `countOf` does not count: the card of a spell that is not on the stack yet while its
    * cost is looked at beforehand (`canCast`), which the real cast has already moved there (CR 601.2a).
@@ -865,13 +867,24 @@ export function resolveObjects(
                   .map((id) => powerOfObject(state, id))
                   .find((p) => p !== null) ?? null,
             };
+      // CR 201.2, 608.2c: "with the same name as that card", read now, with the targets: the name of the first object the reference names.
+      const nameRef = selector.filter.sameNameAs;
+      const named =
+        nameRef === undefined
+          ? limited
+          : {
+              ...limited,
+              nameLimit:
+                resolveObjects(state, nameRef, ctx, targets)
+                  .map((id) => derive(state, getObject(state, id)).name)
+                  .find((n) => n !== undefined) ?? null,
+            };
       // D-151: "each other creature" besides the one the effect names (`except`), read now, with the targets.
       const left =
         selector.except === undefined ? [] : resolveObjects(state, selector.except, ctx, targets);
       return objectsInZone(state, zone).filter(
         (id) =>
-          !left.includes(id) &&
-          matchesFilter(state, getObject(state, id), selector.filter, limited),
+          !left.includes(id) && matchesFilter(state, getObject(state, id), selector.filter, named),
       );
     }
     default: {

@@ -704,6 +704,21 @@ const RETURN_IT_TO_BATTLEFIELD: Parser<{ objects: IrNoun | IrNounList; to: IrZon
 );
 
 /**
+ * "return target creature card and all other cards with the same name as that card from your graveyard to your hand" (Echoing Return, CR 201.2, 400.3, 608.2c): the cards of your
+ * graveyard with the name of the target card, which the noun says in full (the "from your graveyard" is part of it).
+ */
+const RETURN_SAME_NAME: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }> = quiet(
+  map(
+    sequence(
+      literal('return '),
+      operands(['noun.target-card-and-same-name'], 'effect.return'),
+      TO_YOUR_HAND,
+    ),
+    ([, objects, to]) => ({ objects, to }),
+  ),
+);
+
+/**
  * "return that nonland permanent card to the battlefield", "return that card to your hand" (stage P33, D-150, CR 608.2c): the card an earlier
  * instruction of the text chose from a graveyard, which the lowering checks it is.
  */
@@ -863,6 +878,8 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     "return it to its owner's hand",
     "return it to the battlefield tapped under its owner's control",
     "return it to the battlefield tapped under its owner's control with a +1/+1 counter on it",
+    // Echoing Return (CR 201.2, 608.2c): the target card and every card of your graveyard with its name.
+    'return target creature card and all other cards with the same name as that card from your graveyard to your hand',
     // Persist (CR 205.4, 122.6, 614.1c): a nonlegendary card of your graveyard, entering with a -1/-1 counter.
     'return target nonlegendary creature card from your graveyard to the battlefield with a -1/-1 counter on it',
     "return a land you control to its owner's hand",
@@ -932,6 +949,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_HAND,
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
+      RETURN_SAME_NAME,
       RETURN_FROM_GRAVEYARD,
       RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND,
       RETURN_THAT_CARD,

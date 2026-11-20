@@ -1118,6 +1118,7 @@ describe('unmatched abilities', () => {
       'noun.group-of-target-player',
       'noun.each-permanent-of-target-player',
       'noun.all-with-power-above-target',
+      'noun.target-card-and-same-name',
       'noun.auras-equipment-modified',
       'noun.all-permanents',
       'noun.each-permanent-that-is',
