@@ -669,11 +669,28 @@
     opacity 0.15s ease;
 }
 
-/* A tapped permanent is tilted and dimmed, not turned 90 degrees: a tile is wider than tall, and
-   turned it would need a row as tall as the tile is wide. */
+/* A tapped permanent is tilted, not turned 90 degrees: a tile is wider than tall, and turned it
+   would need a row as tall as the tile is wide. A small mark in its corner says it too (the tilt
+   alone is slight, and little of it shows on the strip a land stack leaves of a card); the picture
+   is not darkened. */
 .board-tile.is-tapped .board-tile-inner {
   transform: rotate(7deg);
-  filter: brightness(0.6);
+}
+
+.board-tile.is-tapped::after {
+  content: "⟳";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  z-index: 2;
+  width: 1.25em;
+  font-size: calc(10px * var(--text-scale));
+  line-height: 1.25;
+  text-align: center;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg-sunken) 70%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
 /* Issue 22: a card is framed in its colours (a land in the colours of its mana). The colours are an
@@ -1203,7 +1220,6 @@
    the card behind the front one tilts with it. */
 .board-tile.is-tapped .board-tile-stack {
   transform: rotate(7deg) translate(4px, -3px);
-  filter: brightness(0.6);
 }
 
 .board-count {
@@ -1995,21 +2011,6 @@
 .board-land-slot > .board-tile,
 .board-land-slot > .board-stack {
   display: block;
-}
-
-/* Little of the tilt of a tapped land shows on the strip a stack leaves of it: a mark on the strip
-   says which cards are tapped. */
-.board-land-slot:not([data-front]) .board-tile.is-tapped::after {
-  content: "⟳";
-  position: absolute;
-  top: 0;
-  right: 3px;
-  z-index: 2;
-  color: var(--accent);
-  font-size: calc(11px * var(--text-scale));
-  line-height: 1.1;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
-  pointer-events: none;
 }
 
 /* How many cards the column holds, off the top-right corner. */

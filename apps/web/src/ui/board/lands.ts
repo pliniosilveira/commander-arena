@@ -14,7 +14,7 @@
  *   the nonbasic lands by name.
  * - Inside a column the cards are in the order they entered (the object id), the last one in front.
  *   Tapping a land never moves it: a click on a card taps it and a second click untaps it, as on a
- *   flat row, and the tilt and the dimming (and a mark on its strip) show which cards are tapped.
+ *   flat row, and the tilt and a mark in its corner show which cards are tapped.
  */
 import type { ObjectId, ObjectView } from '@commander-arena/engine';
 import { chosenLabel } from '../../game/chosen';
