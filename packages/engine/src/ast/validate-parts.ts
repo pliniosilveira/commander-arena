@@ -3,6 +3,7 @@
  * selectors, amounts, costs and effects. `validate.ts` composes these for abilities, spells and
  * cards. Nothing here mutates its input; every function appends to an issue list.
  */
+import { TOKEN_PRESETS } from '../cards/tokens';
 import { CARD_TYPES, COLORS, isNonCreatureSubtype, SUPERTYPES } from '../characteristics';
 import { FILTERABLE_KEYWORDS } from './features';
 import type {
@@ -3293,6 +3294,10 @@ function movesObjects(e: Effect): boolean {
   if (e?.kind === 'sequence') return Array.isArray(e.effects) && e.effects.some(movesObjects);
   // Lorehold group 1: "you may exile that card from your graveyard. If you do, you may play that card this turn": the card a declined `may` did not exile is no card (`moved` is empty).
   if (e?.kind === 'may') return movesObjects(e.effect);
+  // CR 608.2c: "If you do, put a +1/+1 counter on this creature and exile the top card of your library. You may play that card this turn.": the cards the branch that ran moved are "that card"; when the condition fails nothing moved and `moved` is empty (`lastMoved` outlives the queued branch).
+  if (e?.kind === 'conditional') {
+    return movesObjects(e.effect) || (e.else !== undefined && movesObjects(e.else));
+  }
   // D-139: a `createToken` produces objects `moved` names too ("create a token, then attach this to it").
   return (
     e?.kind === 'exile' ||
@@ -3348,6 +3353,7 @@ const TOKEN_PRESET_NAMES: readonly TokenPreset[] = [
   'Gingerbrute',
   'Incubator',
   'Lander',
+  'Wicked Role',
 ];
 
 /** The player selectors that name one player: what an effect with a single "it" (`exileRandomFromHand`) takes. */
@@ -3877,7 +3883,13 @@ function checkAuraTokenAttachment(
   scope: Scope,
   out: Out,
 ): void {
-  const definition = e.token?.kind === 'custom' ? e.token.definition : undefined;
+  // A predefined Role token (CR 111.10, 303.7) is an Aura token too: it is created attached to its host like a custom one.
+  const definition =
+    e.token?.kind === 'custom'
+      ? e.token.definition
+      : e.token?.kind === 'preset'
+        ? TOKEN_PRESETS[e.token.preset]
+        : undefined;
   const isAura = definition?.subtypes?.includes('Aura') === true;
   if (e.attachTo === undefined) {
     if (isAura) {

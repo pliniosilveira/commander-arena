@@ -1082,6 +1082,7 @@ export interface IrToken extends IrNode {
     | 'Map'
     | 'Gingerbrute'
     | 'Lander'
+    | 'Wicked Role'
     | 'Blood';
   readonly power?: number;
   readonly toughness?: number;

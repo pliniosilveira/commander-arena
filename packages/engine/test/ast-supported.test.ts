@@ -383,6 +383,7 @@ describe('supported feature gate', () => {
       'Gingerbrute',
       'Incubator',
       'Lander',
+      'Wicked Role',
     ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',

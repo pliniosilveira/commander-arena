@@ -116,10 +116,11 @@ const FLAVOR_LABEL = /^(\p{Lu}[\p{L}'’!?-]*(?: [\p{L}'’!?-]+){0,5}) — (?=\
 /**
  * Labels that look like a flavor word and are not (CR 207.2d only covers italic labels without a rules meaning): the head of a mode list
  * ("Choose one —", CR 700.2), a chapter ("I —", CR 714.2), and the keywords whose text has a dash with spaces ("Boast — {1}: ..." adds a restriction to
- * the ability that follows, CR 702.142a; "Forecast —", "Companion —", "Solved —", "Level N —" and "To solve —" have rules meaning too). The keyword
+ * the ability that follows, CR 702.142a; "Forecast —", "Companion —", "Solved —", "Level N —", "To solve —" and "Max speed —" (CR 702.179: the ability works only at max speed) have rules meaning too). The keyword
  * forms written with no spaces ("Escape—", "Ward—", "Equip—") never match the pattern above. A line with one of these is left as it is.
  */
-const NOT_A_FLAVOR_WORD = /^(?:choose\b|boast$|forecast$|companion$|solved$|level\b|to solve$)/i;
+const NOT_A_FLAVOR_WORD =
+  /^(?:choose\b|boast$|forecast$|companion$|solved$|level\b|to solve$|max speed$)/i;
 const CHAPTER_NUMERAL = /^[IVX]+$/;
 
 /**

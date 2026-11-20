@@ -258,6 +258,33 @@ describe('the moved reference and the owner control option (CR 400.7j, 110.2)', 
     expect(structure(on(nested))).toEqual([]);
   });
 
+  test('moved works after a conditional whose branch moved cards (CR 608.2c, "If you do, exile the top card. You may play that card")', () => {
+    const afterConditional: Effect = {
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'conditional',
+          condition: { kind: 'opponentsAtLeast', count: 1 },
+          effect: { kind: 'exileTop', count: 1 },
+        },
+        { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+      ],
+    };
+    expect(structure(on(afterConditional))).toEqual([]);
+    const noMove: Effect = {
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'conditional',
+          condition: { kind: 'opponentsAtLeast', count: 1 },
+          effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+        },
+        { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+      ],
+    };
+    expectIssue(structure(on(noMove)), "'moved' needs an exile, destroy or moveToZone effect");
+  });
+
   test("controller is only valid, as 'owner' or 'you', when moving to the battlefield", () => {
     const mine: Effect = {
       kind: 'sequence',
