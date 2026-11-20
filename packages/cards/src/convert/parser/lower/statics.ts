@@ -318,6 +318,9 @@ function effectOf(
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
+    case 'cantBeSacrificed':
+      // CR 701.21a, 101.2: said of the permanent itself.
+      return subject.kind === 'this' ? ok({ kind: 'cantBeSacrificed' }) : failure(at);
     case 'cantHaveCounters':
       // CR 122.6, 101.2 (Hashaton deck group 3, D-380): the permanents the subject names can't have counters of the kind put on them: a group, `~` or the attached permanent.
       return subject.kind === 'filter' || subject.kind === 'this' || subject.kind === 'attached'
@@ -631,6 +634,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:cantGainLife'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
+    case 'cantBeSacrificed':
+      return ['static:cantBeSacrificed'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -1347,6 +1352,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   // Hashaton deck group 6 (D-377, CR 702.16): "You have protection from the chosen card type."
   'static:playerProtection',
   'static:cantHaveCounters',
+  'static:cantBeSacrificed',
   'ability:functionsInGraveyard',
   'ability:staticCondition',
   'staticSubject:this',

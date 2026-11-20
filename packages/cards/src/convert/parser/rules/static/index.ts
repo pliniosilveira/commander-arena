@@ -15,6 +15,7 @@ import { ANGEL_PLAY_RULES } from './angels-play';
 import { ARTIFACT_STATIC_RULES } from './artifacts';
 import { BESTOW_PT_STATIC_RULES } from './bestow-pt';
 import { BLOCK_POWER_STATIC_RULES } from './block-power';
+import { CANT_BE_SACRIFICED_STATIC_RULES } from './cant-be-sacrificed';
 import { CONDITIONAL_STATIC_RULES } from './conditional';
 import { COST_STATIC_RULES } from './cost';
 import { DANITHA_G3_STATIC_RULES } from './danitha-g3';
@@ -147,6 +148,7 @@ export const STATIC_RULES = [
   ...SHALAI_STATIC_RULES,
   // Hashaton deck, group 3 (D-380): "Creatures you control can't have -1/-1 counters put on them."
   ...HASHATON_G3_STATIC_RULES,
+  ...CANT_BE_SACRIFICED_STATIC_RULES,
   // Issue 26 (the Danitha deck, D-428): "Equip abilities you activate that target enchanted creature cost {3} less to activate."
   ...DANITHA_G3_STATIC_RULES,
   // Issue 41 (the Gisa deck, D-461): "Activated abilities of creature cards in your graveyard cost {1} less to activate."

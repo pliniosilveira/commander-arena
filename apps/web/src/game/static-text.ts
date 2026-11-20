@@ -261,6 +261,9 @@ export function lordWording(effect: StaticEffect, ctx: StaticContext): string | 
       const words = RESTRICTION_WORDS[effect.restriction];
       return `${subject.text} ${subject.many ? words.many : words.one}`;
     }
+    case 'cantBeSacrificed':
+      // CR 701.21a (Hithlain Rope): "This permanent can't be sacrificed".
+      return "This permanent can't be sacrificed";
     case 'cantHaveCounters': {
       // D-380 (CR 122.6, 101.2): "Creatures you control can't have -1/-1 counters put on them".
       const subject = subjectWords(effect.subject, ctx);
