@@ -27,7 +27,6 @@ export const STATIC_OPPONENTS_CANT_GAIN_LIFE = defineRule<IrStatic>({
   rejects: [
     "Your opponents can't gain life",
     "Each opponent can't gain life.",
-    "Players can't gain life.",
     "You can't gain life.",
     "Your opponents can't lose life.",
     "Your opponents can't gain life until end of turn.",

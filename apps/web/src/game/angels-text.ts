@@ -124,8 +124,14 @@ export function angelsStaticWording(effect: StaticEffect, noun: string): string 
         ? 'You have protection from the chosen card type'
         : `You have protection from ${effect.types.join(' and ')}`;
     case 'cantGainLife':
-      // D-363 (CR 119.7): the opponents of the controller are the only group the engine reads.
-      return "Your opponents can't gain life";
+      // D-363 (CR 119.7): the opponents of the controller, or every player.
+      return effect.who === 'players'
+        ? "Players can't gain life"
+        : "Your opponents can't gain life";
+    case 'damageCantBePrevented':
+      return "Damage can't be prevented";
+    case 'damageAsThoughWither':
+      return 'All damage is dealt as though its source had wither';
     case 'opponentsCantCastOnYourTurn':
       // D-179 (CR 101.2): the condition, if there is one, is said by `conditionalWording`.
       return "Your opponents can't cast spells during your turn";

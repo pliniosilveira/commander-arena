@@ -1,0 +1,147 @@
+/**
+ * Static ability rules of three world-rule lines (Everlasting Torment): "Players can't gain life." (CR 119.7, 604.1), "Damage can't be prevented." (CR 615.12)
+ * and "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d). Each is a line of its own: the permanent changes a rule of the game, whoever
+ * controls it. The subject is a noun the lowering ignores for the two damage lines (there is no player or permanent it is said of).
+ */
+import { literal, pattern, sequence } from '../../combinators';
+import type { IrNoun, IrStatic } from '../../ir/types';
+import { defineRule, quietly, spanned } from '../registry';
+import { staticOf, subjectNoun } from './angels-words';
+
+/** The subject of the damage lines: "damage", said of no player (the noun is read only for its span). */
+function damageNoun(span: { readonly start: number; readonly end: number }, rule: string): IrNoun {
+  return {
+    kind: 'noun',
+    det: 'each',
+    filter: { raw: 'damage' },
+    upTo: false,
+    plural: false,
+    other: false,
+    span,
+    rule,
+  };
+}
+
+/**
+ * `static.players-cant-gain-life`: "Players can't gain life." (CR 119.7: while the permanent has the ability, no player can gain life, by any means: an effect,
+ * lifelink, an exchange that would raise the life total; CR 604.1). Not read: "You", "Each opponent" and "Your opponents" (another rule), "lose life", a duration or
+ * a condition, and more words after it.
+ */
+export const STATIC_PLAYERS_CANT_GAIN_LIFE = defineRule<IrStatic>({
+  id: 'static.players-cant-gain-life',
+  family: 'static',
+  leading: ['players'],
+  cites: ['CR 119.7 (Life)', 'CR 604.1 (Handling Static Abilities)', 'CR 101.2 (Golden Rules)'],
+  examples: ["Players can't gain life.", 'Players can’t gain life.'],
+  rejects: [
+    "Players can't gain life",
+    "Each player can't gain life.",
+    "Players can't lose life.",
+    "Players can't gain life until end of turn.",
+    "Players can't gain life as long as you control a Dragon.",
+    "Players can't gain life and you draw a card.",
+    "Players can't gain or lose life.",
+    "Target player can't gain life.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(literal('players')),
+      pattern(/ can['’]t gain life/iu),
+      literal('.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [who] = r.value;
+    return {
+      ok: true,
+      value: staticOf(
+        'static.players-cant-gain-life',
+        {
+          ...subjectNoun('you', 'players', who.span, 'static.players-cant-gain-life'),
+          det: 'eachPlayer',
+          plural: true,
+        },
+        [{ kind: 'cantGainLife', who: 'players' }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/** `static.damage-cant-be-prevented`: "Damage can't be prevented." (CR 615.12, 604.1). Not read: a source or a recipient, "this turn", a condition. */
+export const STATIC_DAMAGE_CANT_BE_PREVENTED = defineRule<IrStatic>({
+  id: 'static.damage-cant-be-prevented',
+  family: 'static',
+  leading: ['damage'],
+  cites: ['CR 615.12 (Prevention Effects)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: ["Damage can't be prevented.", 'Damage can’t be prevented.'],
+  rejects: [
+    "Damage can't be prevented",
+    "Combat damage can't be prevented.",
+    "Damage can't be prevented this turn.",
+    "Damage that would be dealt to you can't be prevented.",
+    "Damage can't be prevented as long as you control a Dragon.",
+    "Damage can't be prevented and you draw a card.",
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(spanned(pattern(/damage can['’]t be prevented/iu)), literal('.'))(ctx, pos);
+    if (!r.ok) return r;
+    const [read] = r.value;
+    const id = 'static.damage-cant-be-prevented';
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        damageNoun(read.span, id),
+        [{ kind: 'damageCantBePrevented' }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+/** `static.all-damage-as-though-wither`: "All damage is dealt as though its source had wither." (CR 702.80a, 120.3d, 604.1). */
+export const STATIC_ALL_DAMAGE_AS_THOUGH_WITHER = defineRule<IrStatic>({
+  id: 'static.all-damage-as-though-wither',
+  family: 'static',
+  leading: ['all'],
+  cites: ['CR 702.80a (Wither)', 'CR 120.3 (Damage)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: ['All damage is dealt as though its source had wither.'],
+  rejects: [
+    'All damage is dealt as though its source had wither',
+    'All damage is dealt as though its source had infect.',
+    'All combat damage is dealt as though its source had wither.',
+    'All damage is dealt as though its source had wither until end of turn.',
+    'All damage is dealt as though its source had wither and you draw a card.',
+    'Damage is dealt as though its source had wither.',
+  ],
+  parse: (ctx, pos) => {
+    const r = sequence(
+      spanned(pattern(/all damage is dealt as though its source had wither/iu)),
+      literal('.'),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [read] = r.value;
+    const id = 'static.all-damage-as-though-wither';
+    return {
+      ok: true,
+      value: staticOf(
+        id,
+        damageNoun(read.span, id),
+        [{ kind: 'damageAsThoughWither' }],
+        pos,
+        r.pos,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
+export const WORLD_RULES_STATIC_RULES = [
+  STATIC_PLAYERS_CANT_GAIN_LIFE,
+  STATIC_DAMAGE_CANT_BE_PREVENTED,
+  STATIC_ALL_DAMAGE_AS_THOUGH_WITHER,
+].map(quietly);

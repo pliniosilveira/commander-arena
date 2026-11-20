@@ -15,6 +15,13 @@ import { read, withoutFeature } from './parser-p5-helpers';
 
 const CASES = [
   ['static:cantGainLife', 'Your opponents can’t gain life.', 'creature'],
+  ['static:cantGainLife', 'Players can’t gain life.', 'enchantment'],
+  ['static:damageCantBePrevented', 'Damage can’t be prevented.', 'enchantment'],
+  [
+    'static:damageAsThoughWither',
+    'All damage is dealt as though its source had wither.',
+    'enchantment',
+  ],
   [
     'amount:lifeLostThisTurn',
     'At the beginning of each end step, each opponent loses life equal to the life that player lost this turn.',
