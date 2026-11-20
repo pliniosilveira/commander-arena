@@ -57,4 +57,49 @@ export const EFFECT_CREATE_TOKENS_PER_OPPONENT_TAPPED_ATTACKING = defineRule<Cla
   },
 });
 
-export const MARDU_SURGE_EFFECT_RULES = [EFFECT_CREATE_TOKENS_PER_OPPONENT_TAPPED_ATTACKING];
+/**
+ * `effect.double-tokens-this-turn`: "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead." (CR 614.1a,
+ * 614.5, 611.2a; Kaya, Geist Hunter): the replacement effect of the doubling permanents, as an effect that lasts until the turn ends. The engine's `doubleTokens`. Not read: another
+ * duration, a kind of token, "an opponent's", a different count, no "instead".
+ */
+export const EFFECT_DOUBLE_TOKENS_THIS_TURN = defineRule<Clauses>({
+  id: 'effect.double-tokens-this-turn',
+  family: 'effect',
+  leading: ['until'],
+  cites: [
+    'CR 614.1a (Replacement Effects)',
+    'CR 614.5 (Replacement Effects)',
+    'CR 611.2a (Continuous Effects)',
+    'CR 111.2 (Tokens)',
+  ],
+  examples: [
+    'until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead',
+    'Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead',
+  ],
+  rejects: [
+    'until your next turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead',
+    'until end of turn, if one or more tokens would be created under your control, three times that many of those tokens are created instead',
+    'until end of turn, if one or more tokens would be created under an opponent’s control, twice that many of those tokens are created instead',
+    'until end of turn, if one or more artifact tokens would be created under your control, twice that many of those tokens are created instead',
+    'until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created',
+    'if one or more tokens would be created under your control, twice that many of those tokens are created instead',
+    'until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead and draw a card',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(
+      /until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead(?![\p{L}\p{N}])/iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: [makeClause('effect.double-tokens-this-turn', 'doubleTokensThisTurn', {}, span)],
+      pos: r.pos,
+    };
+  },
+});
+
+export const MARDU_SURGE_EFFECT_RULES = [
+  EFFECT_CREATE_TOKENS_PER_OPPONENT_TAPPED_ATTACKING,
+  EFFECT_DOUBLE_TOKENS_THIS_TURN,
+];

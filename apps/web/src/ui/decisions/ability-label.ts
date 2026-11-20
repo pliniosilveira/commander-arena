@@ -1509,6 +1509,9 @@ function effectText(effect: Effect, ability: WithTargets, self: string, defs: De
     case 'requireAttack':
       // D-179 (CR 508.1d): "Until your next turn, creatures your opponents control attack each combat if able".
       return requireAttackText(effect) ?? UNSAID;
+    case 'doubleTokens':
+      // Issue 101 (CR 614.1a): "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead".
+      return 'until end of turn, twice as many tokens are created under your control';
     case 'permanentsEnterTapped':
       // D-519 (CR 614.1c, 614.12): "Until your next turn, creatures your opponents control enter tapped".
       return entersTappedText(effect) ?? UNSAID;

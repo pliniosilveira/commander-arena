@@ -572,6 +572,13 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'multiple', factor: amount.factor, of: of.value }, rule };
     }
     case 'exiledAsCost': {
+      // "Exile all cards from all graveyards, then create a token for each card exiled this way" (issue 101, Kaya, Geist Hunter, CR 608.2c): the exile instruction before it is
+      // what the words count, the cards it moved, not the cost of a spell.
+      if (ctx.lastEffectKind === 'exile') {
+        const moved = needs('movedCount');
+        if (moved !== null) return moved;
+        return { ok: true, value: { kind: 'movedCount' }, rule };
+      }
       const blocked = needs('exiledAsCost');
       if (blocked !== null) return blocked;
       return { ok: true, value: { kind: 'exiledAsCost' }, rule };

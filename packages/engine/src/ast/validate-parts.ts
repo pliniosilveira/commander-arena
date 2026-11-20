@@ -6609,6 +6609,30 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'preventDamage':
       scope.checkContinuous(e, path, scope, out);
       break;
+    case 'doubleTokens':
+      // Issue 101: the tokens as they would be on the battlefield, read for the controller: no zone, owner, stack kind, combat, tapped state or trigger player.
+      checkFilter(e.tokens, `${path}.tokens`, out);
+      if (
+        filterSome(
+          e.tokens,
+          (f) =>
+            f.zone !== undefined ||
+            f.stackKind !== undefined ||
+            f.owner !== undefined ||
+            f.controlledBy !== undefined ||
+            f.tapped !== undefined ||
+            readsCombatOrSource(f) ||
+            f.controller === 'triggerPlayer' ||
+            f.controller === 'defendingPlayer',
+        )
+      ) {
+        issue(
+          out,
+          `${path}.tokens`,
+          'the tokens that are created twice over are named by type, color, controller and the like: no zone, owner, stackKind, tapped, combat or trigger player',
+        );
+      }
+      break;
     case 'permanentsEnterTapped':
       // D-519: a replacement of the game read as a permanent enters: a filter relative to the controller, with no zone, owner, stack kind, combat or trigger player.
       checkFilter(e.permanents, `${path}.permanents`, out);

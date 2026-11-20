@@ -3541,6 +3541,13 @@ export type Effect =
       readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
     }
   /**
+   * "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead." (issue 101, Kaya, Geist Hunter; CR 614.1a,
+   * 111.2, 611.2a, 614.5): the same replacement as the `tokensInstead` of mode `double`, a permanent's ability, here an effect of the game that lasts until the turn ends: while it lasts,
+   * the tokens `tokens` matches (as they would be on the battlefield, read for the controller of the effect as "you") that the controller of the effect would create are created twice
+   * over. It is applied once to one event (CR 614.5), so two of them make four. It does not depend on the source: it goes on if the source leaves the battlefield.
+   */
+  | { readonly kind: 'doubleTokens'; readonly tokens: ObjectFilter }
+  /**
    * "Until your next turn, creatures your opponents control enter tapped." (CR 614.1c, 614.12, 611.2a, D-519): a replacement effect of the game for a group of
    * permanents that is not a set fixed as the effect resolves (CR 611.2c is about changes to characteristics): every permanent `permanents` matches as it would enter the
    * battlefield (a card put there from any zone, a token) enters tapped while the effect lasts, read for the controller of the effect ("your opponents" is

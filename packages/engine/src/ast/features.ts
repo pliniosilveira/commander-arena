@@ -279,6 +279,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'requireAttackSource',
     // D-519: "Until your next turn, creatures your opponents control enter tapped".
     'permanentsEnterTapped',
+    // Issue 101: "Until end of turn, if one or more tokens would be created under your control, twice that many are created instead" (CR 614.1a).
+    'doubleTokens',
     // D-189: "Gain control of target creature until end of turn", "... until the end of your next turn", "... for as long as you control this" (CR 613.1b).
     'gainControl',
     // Galadriel group 3: "Exchange control of this enchantment and target nonland permanent" (CR 701.12a, 701.12b).
@@ -2506,6 +2508,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   attackRandomOpponent: true,
   requireAttackSource: true,
   permanentsEnterTapped: true,
+  doubleTokens: true,
   gainControl: true,
   exchangeControl: true,
   returnControlToOwners: true,

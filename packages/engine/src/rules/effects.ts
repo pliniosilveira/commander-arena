@@ -46,6 +46,7 @@ import {
   runBecomeCopy,
   runCantAttackPlaneswalkers,
   runContinuous,
+  runDoubleTokens,
   runEntersTappedGroup,
   runRequireAttack,
   runRequireAttackSource,
@@ -3289,6 +3290,10 @@ function runEffect(
     case 'requireAttackSource':
       // CR 508.1d, 611.2c: creatures of the named player attack this permanent if able, during that player's next turn.
       return runRequireAttackSource(state, effect, ctx, targets);
+
+    case 'doubleTokens':
+      // CR 614.1a, 614.5 (issue 101): "until end of turn, if one or more tokens would be created under your control, twice that many are created instead".
+      return runDoubleTokens(state, effect, ctx);
 
     case 'permanentsEnterTapped':
       // CR 614.1c, 614.12 (D-519): "creatures your opponents control enter tapped", read as a permanent enters.

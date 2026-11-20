@@ -130,3 +130,22 @@ describe('the number of creatures attacking them (CR 508.1b)', () => {
     ).toContain('attackersOfAffected is the amount of a loseLife effect');
   });
 });
+
+describe('tokens created twice over until end of turn (CR 614.1a, 614.5)', () => {
+  const double = (tokens: unknown): Effect => ({ kind: 'doubleTokens', tokens: tokens as never });
+
+  test('doubleTokens names the tokens as they would be created', () => {
+    expect(
+      validateCard(creature([attackTrigger(double({ token: true, controller: 'you' }))])),
+    ).toEqual([]);
+  });
+
+  test('a filter that reads a zone, an owner or the combat is refused', () => {
+    for (const bad of [{ zone: 'battlefield' }, { owner: 'you' }, { attacking: true }]) {
+      expect(
+        messages(creature([attackTrigger(double({ token: true, ...bad }))])),
+        JSON.stringify(bad),
+      ).toContain('the tokens that are created twice over are named by');
+    }
+  });
+});

@@ -528,3 +528,87 @@ describe('Divine Visitation: creature tokens become 4/4 Angels (CR 614.1a, 111.2
     g.expect.invariants();
   });
 });
+
+describe('Kaya, Geist Hunter: tokens (CR 114, 606, 614.1a, 614.5)', () => {
+  const kaya = real('Kaya, Geist Hunter');
+  const hero = real('Hero of Bladehold');
+
+  const board = () =>
+    scenario()
+      .define(kaya)
+      .define(hero)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(kaya.name)
+      .battlefield(hero.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(kaya)).toEqual([]);
+  });
+
+  test('−2: until end of turn the tokens created under your control are created twice over', () => {
+    const g = board();
+    g.act(0).activate(kaya.name, { ability: 1 });
+    g.passAll();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: hero.name }]);
+    g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    // Hero makes two Soldiers: twice that many is four.
+    g.expect.zone('Soldier', 'battlefield', { seat: 0, count: 4 });
+  });
+
+  test('−2 ends with the turn (CR 514.2)', () => {
+    const g = board();
+    g.act(0).activate(kaya.name, { ability: 1 });
+    g.passAll();
+    expect(g.state.continuousEffects.some((e) => e.change.kind === 'tokensDoubled')).toBe(true);
+    g.advanceTo('upkeep', { turn: 'next' });
+    expect(g.state.continuousEffects.some((e) => e.change.kind === 'tokensDoubled')).toBe(false);
+  });
+
+  test('−6: exile all cards from all graveyards, then a 1/1 white Spirit with flying for each card exiled', () => {
+    const g = scenario()
+      .define(kaya)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(kaya.name, { counters: { loyalty: 7 } })
+      .graveyard('Island', 'Island')
+      .seat(1)
+      .library(...LIBRARY)
+      .graveyard('Forest')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(kaya.name, { ability: 2 });
+    g.passAll();
+    g.expect.zone('Spirit', 'battlefield', { seat: 0, count: 3 });
+    g.expect.derived('Spirit[0]', { keywords: ['flying'], colors: ['W'] });
+  });
+
+  test('+1: creatures you control gain deathtouch, and a creature token gets a +1/+1 counter', () => {
+    const g = scenario()
+      .define(kaya)
+      .define(hero)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(kaya.name)
+      .battlefield(hero.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: hero.name }]);
+    g.act(0).orderTriggers(0, 1);
+    g.passAll();
+    g.advanceTo('postcombatMain');
+    g.act(0).activate(kaya.name, { ability: 0, targets: ['Soldier[0]'] });
+    g.passAll();
+    g.expect.derived(hero.name, { keywords: ['battleCry', 'deathtouch'] });
+    g.expect.counters('Soldier[0]', { '+1/+1': 1 });
+  });
+});
