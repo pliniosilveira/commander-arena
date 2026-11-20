@@ -111,6 +111,7 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   // D-386: "X target creature cards from your graveyard" (`TargetSpec.countX`).
   'selector:countX',
   'selector:greatest',
+  'selector:least',
   'selector:giftRecipient',
   'selector:attacking',
   'selector:colorCount',
@@ -780,6 +781,7 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
         noun.otherTarget === true ||
         noun.atLeastOne === true ||
         noun.greatest !== undefined ||
+        noun.least !== undefined ||
         noun.filter.manaValueAtMostX === true ||
         noun.filter.manaValueAtMostAmount !== undefined ||
         noun.upTo !== true

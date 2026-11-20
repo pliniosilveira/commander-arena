@@ -1111,6 +1111,8 @@ export type Instruction =
       readonly atLeastOne?: true;
       /** "A creature with the greatest power among creatures they control" (`ChooseSelector.greatest`, D-135). */
       readonly greatest?: 'power' | 'toughness' | 'manaValue';
+      /** "A creature with the least power among creatures they control" (`ChooseSelector.least`). */
+      readonly least?: 'power' | 'toughness' | 'manaValue';
       /** "Sacrifice one of them" (`ChooseSelector.fromTriggerSources`): only the permanents that dealt the combat damage of the batch trigger. */
       readonly fromTriggerSources?: true;
       readonly chosen: readonly ObjectId[] | null;

@@ -291,6 +291,9 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
     'an artifact with the greatest mana value among artifacts they control',
     'a nonland permanent with the greatest mana value among nonland permanents they control',
     'a creature with the greatest power among creatures that player controls',
+    'a creature with the least power among creatures they control',
+    'a creature or planeswalker with the greatest mana value among creatures and planeswalkers they control',
+    'a permanent with the least mana value among permanents they control',
   ],
   rejects: [
     'a creature with the greatest power among creatures you control',
@@ -299,13 +302,16 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
     'a creature with the greatest power among artifacts they control',
     'a creature with the greatest power among creatures',
     'a creature with the greatest power among creature they control',
-    'a creature with the least power among creatures they control',
+    'a creature with the least loyalty among creatures they control',
     'a creature with the greatest power',
     'a creature with the greatest loyalty among creatures they control',
     'creatures with the greatest power among creatures they control',
     'a creature an opponent controls with the greatest power among creatures they control',
   ],
-  parse: node<{ filter: IrFilter; greatest: 'power' | 'toughness' | 'manaValue' }, IrNoun>(
+  parse: node<
+    { filter: IrFilter; stat: 'power' | 'toughness' | 'manaValue'; least: boolean },
+    IrNoun
+  >(
     'noun.a-greatest-permanent',
     (ctx, pos) => {
       const head = sequence(
@@ -314,24 +320,24 @@ export const NOUN_A_GREATEST_PERMANENT = defineRule<IrNoun>({
           map(permanentPhrase(false, 'all'), withoutZone),
           (filter) => filter.controller === undefined,
         ),
-        pattern(/ with the greatest (power|toughness|mana value) among /i),
+        pattern(/ with the (greatest|least) (power|toughness|mana value) among /i),
         satisfy(
-          map(permanentPhrase(true, 'all'), withoutZone),
+          map(choice(PLURAL_TYPE_UNION, permanentPhrase(true, 'all')), withoutZone),
           (filter) => filter.controller === undefined,
         ),
         choice(literal(' they control'), literal(' that player controls')),
       )(ctx, pos);
       if (!head.ok) return head;
-      const [, once, word, among] = head.value;
+      const [, once, words, among] = head.value;
       // The same kind of permanent, once in the singular and once in the plural.
       const kind = (filter: IrFilter) => JSON.stringify({ ...filter, raw: '' });
       if (kind(once) !== kind(among)) return fail(ctx, pos);
-      const stat = (word[1] ?? '').toLowerCase();
-      const greatest =
-        stat === 'power' ? 'power' : stat === 'toughness' ? 'toughness' : 'manaValue';
-      return { ok: true, value: { filter: once, greatest }, pos: head.pos };
+      const word = (words[2] ?? '').toLowerCase();
+      const stat = word === 'power' ? 'power' : word === 'toughness' ? 'toughness' : 'manaValue';
+      const least = (words[1] ?? '').toLowerCase() === 'least';
+      return { ok: true, value: { filter: once, stat, least }, pos: head.pos };
     },
-    ({ filter, greatest }) => bare('a', filter, { greatest }),
+    ({ filter, stat, least }) => bare('a', filter, least ? { least: stat } : { greatest: stat }),
   ),
 });
 

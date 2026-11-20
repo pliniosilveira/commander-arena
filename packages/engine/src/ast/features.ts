@@ -1058,6 +1058,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 115.1, 608.2b: "up to three target cards from their graveyard" after "target player" (`TargetSpec.ownedByTarget`).
     'ownedByTarget',
     'greatest',
+    'least',
     'giftRecipient',
     // D-210: "each player who discarded a card this way" (`PlayerSelector` `discardedThisWay`).
     'discardedThisWay',
@@ -1972,6 +1973,8 @@ export const SELECTOR_KINDS = [
   'ownedByTarget',
   /** "A creature with the greatest power among creatures they control" (D-135): the engine's `ChooseSelector.greatest`. */
   'greatest',
+  /** "A creature with the least power among creatures they control" (CR 701.21a): the engine's `ChooseSelector.least`. */
+  'least',
   /** "The chosen player" of a gift (CR 702.174a, D-135): the engine's `PlayerSelector` `giftRecipient`. */
   'giftRecipient',
   /** "Each player who discarded a card this way" (CR 701.9, D-210): the engine's `PlayerSelector` `discardedThisWay`. */

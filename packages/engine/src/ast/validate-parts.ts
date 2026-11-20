@@ -3730,6 +3730,12 @@ function checkSacrificeSelector(
   ) {
     issue(out, `${path}.greatest`, `unknown stat ${JSON.stringify(choose.greatest)}`);
   }
+  if (choose.least !== undefined && !isOneOf(choose.least, ['power', 'toughness', 'manaValue'])) {
+    issue(out, `${path}.least`, `unknown stat ${JSON.stringify(choose.least)}`);
+  }
+  if (choose.least !== undefined && choose.greatest !== undefined) {
+    issue(out, `${path}.least`, 'a choice is of the greatest or of the least, not both');
+  }
   // D-131: a number, or an amount read as the effect runs ("each player sacrifices X creatures").
   if (choose.count !== undefined) {
     if (typeof choose.count === 'number' && (!isCount(choose.count) || choose.count < 1)) {
@@ -3746,8 +3752,8 @@ function checkSacrificeSelector(
  */
 function checkChooseTap(sel: ChooseSelector, path: string, scope: Scope, out: Out): void {
   checkFilter(sel.filter, `${path}.filter`, out);
-  if (sel.greatest !== undefined || sel.optional !== undefined) {
-    issue(out, path, 'greatest and optional do not belong to a tap choice');
+  if (sel.greatest !== undefined || sel.least !== undefined || sel.optional !== undefined) {
+    issue(out, path, 'greatest, least and optional do not belong to a tap choice');
   }
   if (sel.filter?.controller !== 'you') {
     issue(
@@ -3809,6 +3815,7 @@ function checkChooseUntap(sel: ChooseSelector, path: string, scope: Scope, out: 
     sel.anyNumber !== undefined ||
     sel.atLeastOne !== undefined ||
     sel.greatest !== undefined ||
+    sel.least !== undefined ||
     sel.optional !== undefined
   ) {
     issue(
@@ -3854,9 +3861,14 @@ function checkChooseMove(sel: ChooseSelector, path: string, scope: Scope, out: O
   }
   if (
     sel.greatest !== undefined ||
+    sel.least !== undefined ||
     (sel.anyNumber !== undefined && sel.minCardTypes === undefined)
   ) {
-    issue(out, path, 'anyNumber and greatest belong to a sacrifice choice (D-135)');
+    issue(
+      out,
+      path,
+      'anyNumber and greatest belong to a sacrifice choice (D-135), and so does least',
+    );
   }
   // CR 205.2a: "you may exile any number of cards from your graveyard with four or more card types among them": a number of card types for the cards chosen together.
   if (sel.minCardTypes !== undefined) {
@@ -6475,6 +6487,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           choose.anyNumber !== undefined ||
           choose.atLeastOne !== undefined ||
           choose.greatest !== undefined ||
+          choose.least !== undefined ||
           choose.optional !== undefined
         ) {
           issue(

@@ -1864,6 +1864,11 @@ export interface ChooseSelector {
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
   /**
+   * "A creature with the least power among creatures they control" (CR 701.21a, 608.2d; the mirror of `greatest`): the choice is limited to the permanents the filter matches
+   * that have the smallest value of this stat among them (the player chooses among the tied ones). Only for `sacrifice`, and not with `greatest`.
+   */
+  readonly least?: 'power' | 'toughness' | 'manaValue';
+  /**
    * "You may put an artifact card from your hand onto the battlefield" (D-139): the controller chooses none up to `count` of the
    * candidates instead of exactly `count` (a question is asked whenever there is a candidate). Only for `moveToZone`.
    */

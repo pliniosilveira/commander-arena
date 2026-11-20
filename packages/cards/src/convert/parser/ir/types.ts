@@ -203,6 +203,8 @@ export interface IrNoun extends IrNode {
    * of the filter that have the greatest value of this stat among them.
    */
   readonly greatest?: 'power' | 'toughness' | 'manaValue';
+  /** "a creature with the least power among creatures they control" (CR 701.21a): as `greatest`, the permanents with the smallest value of the stat. */
+  readonly least?: 'power' | 'toughness' | 'manaValue';
   /** "target player's graveyard" has `of` = target player. */
   readonly of?: IrNoun;
   /**
