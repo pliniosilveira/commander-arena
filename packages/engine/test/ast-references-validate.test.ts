@@ -68,6 +68,7 @@ describe('amounts that read an object', () => {
       'x',
       'powerOf',
       'manaValueOf',
+      'colorsOf',
       // D-151: "the difference" (Discover).
       'shortfall',
       'countOf',
