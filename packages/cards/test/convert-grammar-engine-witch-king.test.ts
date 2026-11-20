@@ -101,3 +101,31 @@ describe('Ringwraiths', () => {
     g.expect.invariants();
   });
 });
+
+describe('Crypt of Agadeem', () => {
+  const crypt = real('Crypt of Agadeem');
+  const RATS = 'Typhoid Rats'; // black 1/1
+
+  const board = (graveyard: readonly string[]) =>
+    scenario()
+      .define(crypt)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(crypt.name)
+      .graveyard(...graveyard)
+      .pool('CC')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('{2}, {T}: adds {B} for each black creature card in your graveyard, and no other card counts (CR 106.1, 205.2a)', () => {
+    const g = board([RATS, RATS, BEARS, ANGEL]);
+    g.act(0).tapForMana(crypt.name, { ability: 2 });
+    g.expect.pool(0, 'BB');
+  });
+
+  test('with no black creature card in the graveyard it adds nothing and is not offered', () => {
+    const g = board([BEARS]);
+    expect(g.act(0).try.tapForMana(crypt.name, { ability: 2 }).ok).toBe(false);
+    g.expect.pool(0, 'CC');
+  });
+});

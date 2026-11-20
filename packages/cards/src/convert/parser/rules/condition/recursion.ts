@@ -188,9 +188,7 @@ export const CONDITION_IT_MATCHES = defineRule<IrCondition>({
       pos,
     );
     // "that creature is legendary" (Ringwraiths, CR 205.4 supertypes): the adjective alone, with no article and no type after it.
-    const bare = lead.ok
-      ? lead
-      : spanned(pattern(/(that [a-z]+ (?:is|was)) /iu))(ctx, pos);
+    const bare = lead.ok ? lead : spanned(pattern(/(that [a-z]+ (?:is|was)) /iu))(ctx, pos);
     if (!bare.ok) return bare;
     const what = lead.ok
       ? WHAT_IT_IS(ctx, lead.pos)
