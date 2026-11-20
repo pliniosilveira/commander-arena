@@ -2362,7 +2362,7 @@
     },
     {
       "oracleId": "8d0da2f9-0e05-4a94-8d42-fd57d06b09ba",
-      "scryfallId": "54820d80-f32e-4e2f-a0e2-4db781444217",
+      "scryfallId": "2a8a7696-b5d9-4378-9d5c-2c9007e4df63",
       "name": "Stella Lee, Wild Card",
       "layout": "normal",
       "faces": [
@@ -2380,11 +2380,11 @@
             "U"
           ],
           "imageUris": {
-            "normal": "https://cards.scryfall.io/normal/front/5/4/54820d80-f32e-4e2f-a0e2-4db781444217.jpg?1793187478",
-            "large": "https://cards.scryfall.io/large/front/5/4/54820d80-f32e-4e2f-a0e2-4db781444217.jpg?1793187478",
-            "artCrop": "https://cards.scryfall.io/art_crop/front/5/4/54820d80-f32e-4e2f-a0e2-4db781444217.jpg?1793187478"
+            "normal": "https://cards.scryfall.io/normal/front/2/a/2a8a7696-b5d9-4378-9d5c-2c9007e4df63.jpg?1783911971",
+            "large": "https://cards.scryfall.io/large/front/2/a/2a8a7696-b5d9-4378-9d5c-2c9007e4df63.jpg?1783911971",
+            "artCrop": "https://cards.scryfall.io/art_crop/front/2/a/2a8a7696-b5d9-4378-9d5c-2c9007e4df63.jpg?1783911971"
           },
-          "artist": "Oliver Barrett"
+          "artist": "Fajareka Setiawan"
         }
       ],
       "cmc": 3,
