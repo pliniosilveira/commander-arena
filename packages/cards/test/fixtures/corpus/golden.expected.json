@@ -1868,6 +1868,23 @@
       "reasons": [],
       "ast": "d61938d8"
     },
+    "33587cb2-0fd3-4e4c-bc5e-e7299cc9dab5": {
+      "name": "Molten Slagheap",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{1}, Remove X storage counters from ~: Add X mana in any combination of {B} and/or {R}.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "cost.remove-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "a9d4f311"
+    },
     "335a6c6a-030f-45d4-806c-467a22962eed": {
       "name": "Final Act",
       "group": "acceptance",
@@ -2431,6 +2448,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "796f4d91"
+    },
+    "42b9d383-3fe2-4fc8-ab86-f80a288d502b": {
+      "name": "Murmuring Bosk",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 0,
+          "text": "As ~ enters, you may reveal a Treefolk card from your hand. If you don't, ~ enters tapped.",
+          "reason": "unrecognised",
+          "slot": "replacement",
+          "closestRule": "replacement.enters-tapped-unless-reveals-or"
+        }
+      ],
+      "reasons": [],
+      "ast": "250e45d8"
     },
     "42d7ec93-0943-43e2-9b65-b7edc3349410": {
       "name": "Gadrak, the Crown-Scourge",
@@ -4590,6 +4624,23 @@
       "reasons": [],
       "ast": "5c6a268e"
     },
+    "7e8c2a18-e404-40ff-a9e0-ec3eeb6d576e": {
+      "name": "Command Beacon",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{T}, Sacrifice ~: Put your commander into your hand from the command zone.",
+          "reason": "unrecognised",
+          "slot": "amount",
+          "closestRule": "effect.add-counters"
+        }
+      ],
+      "reasons": [],
+      "ast": "c0602cf8"
+    },
     "7f268b15-ac92-4e98-821b-78d15d9285d9": {
       "name": "Loyal Apprentice",
       "group": "acceptance",
@@ -5058,6 +5109,23 @@
       "reasons": [],
       "ast": "7206efa3"
     },
+    "8d38194e-b607-4ff4-9c19-0e8636d463bf": {
+      "name": "Raging Ravine",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "{2}{R}{G}: Until end of turn, ~ becomes a 3/3 red and green Elemental creature with \"Whenever ~ attacks, put a +1/+1 counter on it.\" It's still a land.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "effect.lead-becomes-land-creature-keywords"
+        }
+      ],
+      "reasons": [],
+      "ast": "1e326c3c"
+    },
     "8d3c9646-2b6b-4315-939d-5a920efc0a60": {
       "name": "Galadriel of Lothlórien",
       "group": "acceptance",
@@ -5139,6 +5207,23 @@
       "reasons": [],
       "ast": "bbcfccea"
     },
+    "8ea46945-d5ab-4209-b473-4769e7b8b962": {
+      "name": "Shrine of the Forsaken Gods",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{T}: Add {C}{C}. Spend this mana only to cast colorless spells. Activate only if you control seven or more lands.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "56f03a54"
+    },
     "8f28b65b-4b73-4080-9cdc-d236ad99f39c": {
       "name": "Track Down",
       "group": "acceptance",
@@ -5211,6 +5296,22 @@
       "reasons": [],
       "ast": "c3e6941a"
     },
+    "92acb789-0e42-465c-ac16-40fefec48805": {
+      "name": "Llanowar Reborn",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 2,
+          "text": "Graft 1",
+          "reason": "unrecognised",
+          "closestRule": "none"
+        }
+      ],
+      "reasons": [],
+      "ast": "ad0d71a4"
+    },
     "92d95e12-fa51-4360-88e4-9078ccc5d8d3": {
       "name": "Cindervines",
       "group": "acceptance",
@@ -5226,6 +5327,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3304afae"
+    },
+    "93953926-a644-49bb-9b5a-4c8f19114c7e": {
+      "name": "Demolition Field",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{2}, {T}, Sacrifice ~: Destroy target nonbasic land an opponent controls. That land's controller may search their library for a basic land card, put it onto the battlefield, then shuffle. You may search your library for a basic land card, put it onto the battlefield, then shuffle.",
+          "reason": "unrecognised",
+          "slot": "noun",
+          "closestRule": "effect.player"
+        }
+      ],
+      "reasons": [],
+      "ast": "9beb00b8"
     },
     "939e6f71-185e-41f2-9d54-72cce06f1dce": {
       "name": "Thirst for Knowledge",
@@ -7179,6 +7297,14 @@
       "reasons": [],
       "ast": "c6e5fd37"
     },
+    "cb8ec2e4-8223-4172-8f2c-37c918a573fa": {
+      "name": "Homeward Path",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e0812bd7"
+    },
     "cb923c4d-1d2e-4039-90bb-72d1981b9738": {
       "name": "Endless Atlas",
       "group": "training",
@@ -7346,6 +7472,23 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0089b6"
+    },
+    "d27bb97d-286b-4947-8d7b-443e4df93319": {
+      "name": "Nesting Grounds",
+      "group": "acceptance",
+      "status": "unsupported",
+      "unparsed": [
+        {
+          "face": 0,
+          "ability": 1,
+          "text": "{1}, {T}: Move a counter from target permanent you control onto a second target permanent. Activate only as a sorcery.",
+          "reason": "unrecognised",
+          "slot": "effect",
+          "closestRule": "ability.activated"
+        }
+      ],
+      "reasons": [],
+      "ast": "109c9d12"
     },
     "d30d8968-ec24-4155-97e2-28efd52c8810": {
       "name": "Malevolent Rumble",
@@ -8924,8 +9067,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 795,
-      "total": 814
+      "supported": 796,
+      "total": 823
     }
   }
 }
