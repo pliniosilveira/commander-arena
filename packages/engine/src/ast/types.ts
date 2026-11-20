@@ -4625,6 +4625,11 @@ export type Trigger =
       readonly kind: 'drawn';
       readonly who: 'you' | 'opponent' | 'any';
       readonly nth?: number;
+      /**
+       * "Whenever an opponent draws a card except the first one they draw in each of their draw steps" (Orcish Bowmasters, CR 504.1, 121.1): every draw but the one that is the first the
+       * active player makes in their draw step. Not with `nth`.
+       */
+      readonly exceptFirstInDrawStep?: true;
     }
   /**
    * "Whenever [a creature] deals combat damage [to a player | to a creature]" (CR 120.2a, 510.2, 603.2,

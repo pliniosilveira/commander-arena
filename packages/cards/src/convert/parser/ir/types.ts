@@ -1414,6 +1414,8 @@ export interface IrTrigger extends IrNode {
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
   /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
   readonly nth?: number;
+  /** "... draws a card except the first one they draw in each of their draw steps" (CR 504.1): the engine's `drawn` trigger `exceptFirstInDrawStep`. */
+  readonly exceptFirstInDrawStep?: true;
   /** 'cast': only the first spell of the kind the subject names that the actor casts each turn ("your first instant or sorcery spell each turn", CR 601.2i). */
   readonly firstOfKind?: true;
   /** 'classLevel': the level a Class became (CR 716.2). */

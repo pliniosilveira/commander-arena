@@ -15,6 +15,7 @@ import { copiableValues } from './copiable';
 import { withCopyExceptions } from './copy-exceptions';
 import type { OrderFlow } from './damage-order';
 import { replacementSources } from './die-replacement';
+import { isFirstDrawOfDrawStep } from './draw-replace';
 import { drawSkippedBy } from './draw-skip';
 import { gainLife, type LifeGainResult } from './life-gain';
 import { lifeTotalIsLocked } from './player-lock';
@@ -113,6 +114,7 @@ export function drawCard(
     return { kind: 'done', state, events: [{ kind: 'drawSkipped', seat, source: skippedBy }] };
   }
   // CR 504.1 (D-379): a draw of the active player in their own draw step; "the first one you draw in each of your draw steps" reads that it was made.
+  const firstInDrawStep = isFirstDrawOfDrawStep(state, seat);
   if (state.turn.step === 'draw' && state.turn.activeSeat === seat) {
     state = { ...state, turn: { ...state.turn, drewInDrawStep: true } };
   }
@@ -132,7 +134,13 @@ export function drawCard(
   if (moved.newObject !== null && moved.state.objects[moved.newObject]?.zone === 'hand') {
     // D-111: the nth card this turn, for "whenever you draw your second card each turn".
     const nth = getSeat(moved.state, seat).cardsDrawnThisTurn + 1;
-    events.push({ kind: 'cardDrawn', seat, object: moved.newObject, nth });
+    events.push({
+      kind: 'cardDrawn',
+      seat,
+      object: moved.newObject,
+      nth,
+      ...(firstInDrawStep ? { firstInDrawStep: true as const } : {}),
+    });
     return {
       kind: 'done',
       state: patchSeat(moved.state, seat, { cardsDrawnThisTurn: nth }),

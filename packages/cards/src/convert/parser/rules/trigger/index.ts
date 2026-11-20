@@ -1133,7 +1133,7 @@ export const TRIGGER_CHAPTER = defineRule<IrTrigger>({
 /**
  * `trigger.enters-and-cast`: "~ enters and whenever you cast a spell with mana value 4 or greater" (stage P48, D-205, CR 603.2c, 603.6a, 601.2i): one
  * ability that two events cause, each by its own words ("When ~ enters and whenever you cast ..."). Like `trigger.or` it lowers to one engine ability
- * for each event, sharing the effect. The second event is `trigger.cast` as the card writes it; two entering events or any other pair are not read.
+ * for each event, sharing the effect. The second event is `trigger.cast` (or a card played or drawn) as the card writes it; two entering events or any other pair are not read.
  */
 export const TRIGGER_ENTERS_AND_CAST = quietly(
   defineRule<IrTrigger>({
@@ -1152,6 +1152,8 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
       '~ enters and whenever you cast your first spell with {X} in its mana cost each turn',
       // Death Toll deck, group D: the second event may be a card played (a land played or a spell cast).
       '~ enters and whenever you play a card with two or more card types',
+      // Orcish Bowmasters: the second event may be a card drawn.
+      '~ enters and whenever an opponent draws a card except the first one they draw in each of their draw steps',
     ],
     rejects: [
       '~ enters and whenever you play a card',
@@ -1174,7 +1176,7 @@ export const TRIGGER_ENTERS_AND_CAST = quietly(
         ),
         literal(' and whenever '),
         family<IrTrigger>('trigger', {
-          only: ['trigger.cast', 'trigger.cast-x', 'trigger.play-card'],
+          only: ['trigger.cast', 'trigger.cast-x', 'trigger.play-card', 'trigger.drawn'],
         }),
       )(ctx, pos);
       if (!r.ok) return r;

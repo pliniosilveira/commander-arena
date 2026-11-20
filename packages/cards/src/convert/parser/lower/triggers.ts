@@ -539,7 +539,12 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'drawn': {
       const who = whoOf(t.actor);
       if (who === null) return failure(t);
-      return ok({ kind: 'drawn', who, ...(t.nth === undefined ? {} : { nth: t.nth }) });
+      return ok({
+        kind: 'drawn',
+        who,
+        ...(t.nth === undefined ? {} : { nth: t.nth }),
+        ...(t.exceptFirstInDrawStep === true ? { exceptFirstInDrawStep: true as const } : {}),
+      });
     }
     case 'chapter':
       return lowerChapter(t);

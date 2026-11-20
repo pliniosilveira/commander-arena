@@ -92,6 +92,8 @@ interface Occurrence {
   readonly toZone?: Zone;
   /** For `drawn`: how many cards the player has drawn this turn, this one included. */
   readonly nth?: number;
+  /** For `drawn`: this was the first card the active player drew in their draw step (CR 504.1). */
+  readonly firstInDrawStep?: true;
   /** For `attacks`: whom the creature was declared as attacking (CR 508.1b). */
   readonly attackTarget?: AttackTarget;
   /** The player the event is about, for `triggerPlayer` (D-133). */
@@ -326,7 +328,15 @@ function occurrences(
     case 'drawn':
       // CR 121.1: a card drawn; a draw that was replaced (CR 903.9b) has no `cardDrawn` event.
       return event.kind === 'cardDrawn'
-        ? [{ subject: event.object, seat: event.seat, nth: event.nth, player: event.seat }]
+        ? [
+            {
+              subject: event.object,
+              seat: event.seat,
+              nth: event.nth,
+              player: event.seat,
+              ...(event.firstInDrawStep === true ? { firstInDrawStep: true as const } : {}),
+            },
+          ]
         : [];
     case 'dealsCombatDamage':
       // CR 120.2a, 510.2: one occurrence for each source and each object or player it damages. Damage
@@ -1022,6 +1032,8 @@ function matches(
     case 'drawn':
       if (trigger.who === 'you' && occ.seat !== candidate.controller) return false;
       if (trigger.who === 'opponent' && occ.seat === candidate.controller) return false;
+      // CR 504.1 (Orcish Bowmasters): "except the first one they draw in each of their draw steps".
+      if (trigger.exceptFirstInDrawStep === true && occ.firstInDrawStep === true) return false;
       return trigger.nth === undefined || occ.nth === trigger.nth;
     case 'dealsCombatDamage': {
       if (!matchesWhat(state, trigger.what, subject, candidate)) return false;

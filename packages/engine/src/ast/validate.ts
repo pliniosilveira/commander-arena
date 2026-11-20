@@ -1299,6 +1299,15 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       if (t.nth !== undefined && (!isCount(t.nth) || t.nth < 1)) {
         issue(out, `${path}.nth`, 'nth must be a positive integer');
       }
+      // CR 504.1 (Orcish Bowmasters): "except the first one they draw in each of their draw steps": every draw but one, so not with a count.
+      if (t.exceptFirstInDrawStep !== undefined) {
+        if (t.exceptFirstInDrawStep !== true) {
+          issue(out, `${path}.exceptFirstInDrawStep`, 'exceptFirstInDrawStep must be true');
+        }
+        if (t.nth !== undefined) {
+          issue(out, `${path}.exceptFirstInDrawStep`, 'exceptFirstInDrawStep does not go with nth');
+        }
+      }
       break;
     case 'dealsCombatDamage':
       checkTriggerSubject(t.what, true, `${path}.what`, out);

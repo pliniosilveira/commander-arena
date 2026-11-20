@@ -265,3 +265,62 @@ describe('Witch-king of Angmar', () => {
     g.expect.invariants();
   });
 });
+
+describe('Orcish Bowmasters', () => {
+  const bowmasters = real('Orcish Bowmasters');
+  const DIVINATION = 'Divination'; // {2}{U}: draw two cards
+
+  test('when it enters it deals 1 damage to any target, then amasses Orcs 1: a 0/0 Orc Army token with a +1/+1 counter (CR 701.47a)', () => {
+    const g = scenario()
+      .define(bowmasters)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(bowmasters.name)
+      .pool('CB')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(bowmasters.name, { pay: true });
+    g.passAll();
+    g.act(0).chooseTargets({ player: 1 } as never);
+    g.passAll();
+    g.expect.life(1, 39);
+    g.expect.invariants();
+  });
+
+  const opponentDraws = (draws: 'drawStep' | 'divination') => {
+    const g = scenario()
+      .define(bowmasters)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(bowmasters.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .hand(DIVINATION)
+      .battlefield('Island', 'Island', 'Island')
+      .at(draws === 'drawStep' ? 'upkeep' : 'precombatMain', { active: 1 })
+      .build();
+    if (draws === 'drawStep') {
+      g.advanceTo('draw');
+    } else {
+      g.act(1).cast(DIVINATION, { pay: true });
+      g.passAll();
+    }
+    return g;
+  };
+
+  test('the first card an opponent draws in their draw step does not trigger it (CR 504.1)', () => {
+    const g = opponentDraws('drawStep');
+    g.expect.stack([]);
+    g.expect.handSize(1, 2); // Divination and the card of the draw step
+  });
+
+  test('every other card an opponent draws does: two cards drawn by a spell trigger it twice', () => {
+    const g = opponentDraws('divination');
+    // Each trigger asks for its target as it is put on the stack (CR 603.3d): the player chooses the first, then the second.
+    g.act(0).chooseTargets({ player: 1 } as never);
+    g.act(0).chooseTargets({ player: 1 } as never);
+    g.expect.stack([`${bowmasters.name} (ability)`, `${bowmasters.name} (ability)`]);
+  });
+});

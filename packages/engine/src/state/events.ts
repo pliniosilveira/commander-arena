@@ -93,6 +93,8 @@ export type GameEvent =
       readonly seat: SeatId;
       readonly object: ObjectId;
       readonly nth: number;
+      /** Present, and `true`, when this was the first card the active player drew in the draw step that is going on (CR 504.1): the `drawn` trigger's `exceptFirstInDrawStep` reads it. */
+      readonly firstInDrawStep?: true;
     }
   | { readonly kind: 'drewFromEmptyLibrary'; readonly seat: SeatId }
   /**
