@@ -368,7 +368,7 @@ function joinInsteadLines(lines: readonly string[]): string[] {
  * is unread as a whole, as the line was alone.
  */
 const REFERENCE_LINE =
-  /^(?:If [^\n]+?, untap those lands\.|If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.)$/u;
+  /^(?:If [^\n]+?, untap those lands\.|If [^\n]+?, (?:exile|destroy|return|sacrifice|tap|untap|put) (?:it|that (?:creature|permanent|artifact|land|enchantment|planeswalker))\.|That creature gets [^\n]+ instead if [^\n]+\.|Return that card from your graveyard to the battlefield instead if [^\n]+\.)$/u;
 
 function joinReferenceLines(lines: readonly string[]): string[] {
   const out: string[] = [];

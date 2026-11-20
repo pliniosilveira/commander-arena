@@ -193,3 +193,34 @@ describe('Nazgûl', () => {
     g.expect.invariants();
   });
 });
+
+describe('Stitch Together', () => {
+  const stitch = real('Stitch Together');
+
+  const play = (filler: number) => {
+    const g = scenario()
+      .define(stitch)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(stitch.name)
+      .graveyard(BEARS, ...Array.from({ length: filler }, () => 'Swamp'))
+      .pool('BB')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).cast(stitch.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('with fewer than seven cards in the graveyard the creature card returns to its owner’s hand (CR 608.2c)', () => {
+    const g = play(5); // six cards with the creature
+    g.expect.zone(BEARS, 'hand', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('threshold: with seven or more cards in the graveyard it returns to the battlefield instead (CR 614.1a)', () => {
+    const g = play(6); // seven cards with the creature
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+});

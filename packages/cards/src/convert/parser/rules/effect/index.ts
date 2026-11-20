@@ -712,9 +712,11 @@ const RETURN_THAT_CARD: Parser<{ objects: IrNoun | IrNounList; to: IrZoneSpec }>
     sequence(
       literal('return '),
       operands(['noun.that-card'], 'effect.return'),
+      // Stitch Together (CR 608.2c): "Return that card from your graveyard to the battlefield instead if ...": the card the first sentence returned, said with where it is.
+      optional(literal(' from your graveyard'), null),
       choice(TO_THE_BATTLEFIELD, TO_YOUR_HAND),
     ),
-    ([, objects, to]) => ({ objects, to }),
+    ([, objects, , to]) => ({ objects, to }),
   ),
 );
 
