@@ -339,6 +339,7 @@ describe('supported feature gate', () => {
         'lifeGained',
         'lifeLost',
         'noncombatDamageDealt',
+        'dealtDamageToPlayer',
         'permanentSacrificed',
         'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".

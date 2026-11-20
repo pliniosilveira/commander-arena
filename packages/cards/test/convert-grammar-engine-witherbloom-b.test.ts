@@ -165,3 +165,123 @@ describe('the engine refuses what would read nothing (Deadly Tempest)', () => {
     );
   });
 });
+
+const droplet = parsed(
+  'SYNTHETIC Parsed Droplet',
+  'Artifact',
+  "Whenever you're dealt damage, put that many charge counters on ~.\nAt the beginning of each upkeep, you may remove a charge counter from ~. If you do, you gain 1 life.",
+  { manaCost: '{2}' },
+);
+const zap = parsed(
+  'SYNTHETIC Parsed Droplet Zap',
+  'Instant',
+  '~ deals 3 damage to target player.',
+  { manaCost: '{R}', colors: ['R'] },
+);
+
+describe('Sun Droplet: "Whenever you\'re dealt damage, put that many charge counters on ~." (CR 120.2, 603.2)', () => {
+  const board = (active: 0 | 1) =>
+    defs()
+      .define(droplet)
+      .define(zap)
+      .seat(0)
+      .library('Island', 'Island')
+      .battlefield(droplet.name)
+      .hand(zap.name)
+      .battlefield('Mountain')
+      .seat(1)
+      .library('Island', 'Island')
+      .hand(zap.name)
+      .battlefield('Mountain')
+      .at('precombatMain', { active })
+      .build();
+
+  test('damage dealt to you puts that many counters on it', () => {
+    const g = board(1);
+    g.act(1).cast(zap.name, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.expect.life(0, 37);
+    g.passAll();
+    g.expect.counters(droplet.name, { charge: 3 });
+    g.expect.invariants();
+  });
+
+  test('damage dealt to an opponent of its controller does not', () => {
+    const g = board(0);
+    g.act(0).cast(zap.name, { targets: [{ player: 1 }], pay: true });
+    g.passAll();
+    g.expect.life(1, 37);
+    g.expect.counters(droplet.name, {});
+  });
+
+  test('at the beginning of each upkeep it may remove a counter to gain 1 life', () => {
+    const g = board(1);
+    g.act(1).cast(zap.name, { targets: [{ player: 0 }], pay: true });
+    g.passAll();
+    g.passAll();
+    g.expect.counters(droplet.name, { charge: 3 });
+    g.advanceTo('upkeep', { turn: 'next' });
+    g.passAll();
+    g.act(0).accept();
+    g.expect.counters(droplet.name, { charge: 2 });
+    g.expect.life(0, 38);
+  });
+});
+
+const trudge = parsed(
+  'SYNTHETIC Parsed Trudge',
+  'Creature — Fungus Beast',
+  'This spell costs {X} less to cast, where X is the amount of life you gained this turn.\nTrample\nAt the beginning of your end step, if you gained life this turn, you may cast ~ from your graveyard.',
+  { manaCost: '{7}{G}{G}', power: '9', toughness: '7', colors: ['G'] },
+);
+
+describe('Sproutback Trudge: "At the beginning of your end step, if you gained life this turn, you may cast ~ from your graveyard." (CR 113.6b, 603.4, 608.2g)', () => {
+  const start = () =>
+    defs()
+      .define(trudge)
+      .seat(0)
+      .library('Island', 'Island')
+      .graveyard(trudge.name)
+      .hand(feast.name)
+      .battlefield('Forest')
+      .battlefield('Forest')
+      .battlefield('Forest')
+      .battlefield('Forest')
+      .battlefield('Forest')
+      .seat(1)
+      .library('Island', 'Island')
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('life gained this turn: at the end step it may be cast from the graveyard, paying its reduced cost', () => {
+    const g = start();
+    g.act(0).cast(feast.name, { pay: true });
+    g.passAll();
+    g.expect.life(0, 45);
+    g.advanceTo('end');
+    g.passAll();
+    g.act(0).accept();
+    g.act(0).payAuto();
+    g.expect.stack([trudge.name]);
+    g.passAll();
+    g.expect.zone(trudge.name, 'battlefield', { seat: 0 });
+    g.expect.invariants();
+  });
+
+  test('declining leaves it in the graveyard', () => {
+    const g = start();
+    g.act(0).cast(feast.name, { pay: true });
+    g.passAll();
+    g.advanceTo('end');
+    g.passAll();
+    g.act(0).decline();
+    g.expect.zone(trudge.name, 'graveyard', { seat: 0 });
+  });
+
+  test('no life gained this turn: nothing triggers', () => {
+    const g = start();
+    g.advanceTo('end');
+    expect(g.state.stack).toHaveLength(0);
+    g.expect.zone(trudge.name, 'graveyard', { seat: 0 });
+  });
+});

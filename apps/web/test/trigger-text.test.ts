@@ -216,6 +216,7 @@ const SAMPLES: Record<Trigger['kind'], Trigger> = {
   dealsCombatDamage: { kind: 'dealsCombatDamage', what: { kind: 'this' }, to: 'player' },
   dealsDamage: { kind: 'dealsDamage', what: { kind: 'this' }, to: 'opponent' },
   noncombatDamageDealt: { kind: 'noncombatDamageDealt', by: 'you', to: 'opponent' },
+  dealtDamageToPlayer: { kind: 'dealtDamageToPlayer', who: 'you' },
   dealtDamage: { kind: 'dealtDamage', what: { kind: 'this' } },
   leavesBattlefield: { kind: 'leavesBattlefield', what: { kind: 'this' } },
   permanentSacrificed: { kind: 'permanentSacrificed', by: 'you' },

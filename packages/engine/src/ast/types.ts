@@ -3673,7 +3673,11 @@ export type Effect =
    */
   | {
       readonly kind: 'castCard';
-      readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
+      /**
+       * A target, or `this` (Sproutback Trudge: "At the beginning of your end step, if you gained life this turn, you may cast this creature from your graveyard", CR 113.6b,
+       * 608.2g): the card with the ability, in the graveyard it works from (only in a triggered ability with `functionsIn: 'graveyard'`).
+       */
+      readonly object: Extract<ObjectRef, { readonly kind: 'target' | 'this' }>;
       readonly anyManaType?: true;
       readonly exileInstead?: true;
       /**
@@ -4268,6 +4272,16 @@ export type Trigger =
       readonly kind: 'noncombatDamageDealt';
       readonly by: 'you' | 'any';
       readonly to: 'opponent' | 'player';
+    }
+  /**
+   * "Whenever you're dealt damage" (CR 120.2, 120.3, 603.2, 603.2c, 603.2g; Sun Droplet): damage of any kind, from any source, that a player `who` names is dealt (`you`: the controller of
+   * this ability; `opponent`: a player the controller does not control, CR 113.7a; `player`: any player), once for each source and each player it damages in one damage event.
+   * Damage that is prevented entirely, or is 0, is not dealt and triggers nothing (CR 120.8, 603.2g). `triggerDamage` is the amount that source dealt to that player ("that many")
+   * and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'dealtDamageToPlayer';
+      readonly who: 'you' | 'opponent' | 'player';
     }
   /**
    * "Whenever [a creature | this] is dealt damage" (CR 120.3, 603.2, D-133): once for each source that deals damage to

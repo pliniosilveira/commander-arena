@@ -5959,8 +5959,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     }
     case 'castCard':
       // CR 608.2g (D-350): "you may cast target [card] from a graveyard": the card is a target of the ability (a card in a graveyard when the ability resolves).
-      if (kindOf(e.object) !== 'target') {
-        issue(out, `${path}.object`, 'the card to cast is a target');
+      if (kindOf(e.object) === 'this') {
+        // CR 113.6b (Sproutback Trudge): the card itself, which only an ability that works from its graveyard can name there (`validateCard` checks `functionsIn`).
+        if (scope.owner !== 'ability') {
+          issue(out, `${path}.object`, 'casting this card is the effect of an ability');
+        }
+      } else if (kindOf(e.object) !== 'target') {
+        issue(out, `${path}.object`, 'the card to cast is a target or this card');
       } else {
         checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       }

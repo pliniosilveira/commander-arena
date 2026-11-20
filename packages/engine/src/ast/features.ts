@@ -477,6 +477,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'leavesBattlefield',
     // D-333: "Whenever a source you control deals noncombat damage to an opponent".
     'noncombatDamageDealt',
+    // CR 120.2: "Whenever you're dealt damage" (Sun Droplet).
+    'dealtDamageToPlayer',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -2523,6 +2525,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   dealsCombatDamage: true,
   dealsDamage: true,
   noncombatDamageDealt: true,
+  dealtDamageToPlayer: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,
