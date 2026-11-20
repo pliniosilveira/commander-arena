@@ -60,6 +60,7 @@ import { asFace } from './layouts';
 import { libraryCastSacrificeOf } from './library-cast-cost';
 import { applyPaymentPlan, planFor } from './mana-engine';
 import type { PlanOptions } from './mana-sources';
+import { nextSpellReduction } from './next-spell';
 import { payMechanismsOf, payOptionSources } from './pay-options';
 import { lifeTotalIsLocked } from './player-lock';
 import { sacrificeCandidates, tapCandidates } from './sacrifice';
@@ -242,6 +243,8 @@ function reductionFor(
     if (!matchesFilter(state, spell, { ...source.spells, zone: 'stack' }, ctx)) continue;
     total += amountOf(state, source.amount, ctx, []);
   }
+  // Issue 121: "The next instant or sorcery spell you cast this turn costs {X} less to cast" (`nextSpellModifier`).
+  total += nextSpellReduction(state, seat, spell);
   return total;
 }
 

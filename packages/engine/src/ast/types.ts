@@ -2469,6 +2469,19 @@ export type Effect =
       readonly lasts: PlayUntil;
     }
   /**
+   * "The next instant or sorcery spell you cast this turn costs {X} less to cast" and "the next instant or sorcery spell you cast this turn has storm" (Kaza, Roil Chaser, Crackling
+   * Spellslinger, Smoldering Stagecoach, issue 121, CR 601.2f, 118.7a, 702.40a, 702.85a, 611.2a): until end of turn, the first spell the controller of this effect casts that `spells`
+   * describes (a spell being cast, as `costReduction`'s filter does: no zone) is changed. `lessGeneric` is read as this resolves (Kaza: "the number of Wizards you control as this ability
+   * resolves") and takes that much off the generic part of the spell's cost (CR 601.2f, 118.7a: never below zero); `grants` gives the spell the keyword (only storm and cascade, which
+   * work as the spell is cast: CR 702.40a, 702.85a). The effect is used up by the cast that matches (a spell that does not match leaves it for a later one) and ends with the turn.
+   */
+  | {
+      readonly kind: 'nextSpellModifier';
+      readonly spells: ObjectFilter;
+      readonly lessGeneric?: Amount;
+      readonly grants?: 'storm' | 'cascade';
+    }
+  /**
    * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand"
    * (CR 701.20a Reveal, 608.2g, 118.9, 107.3b, 202.3e): the controller reveals the top card of their library (nothing happens with an empty library; the card stays on top
    * while the question is asked). When it is not a land card, its mana value (an {X} in a library counts as 0) is less than `manaValueBelow` and it could be cast now (a legal

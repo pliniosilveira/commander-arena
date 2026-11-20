@@ -643,6 +643,7 @@ describe('unmatched abilities', () => {
       'effect.copy-spell-twice',
       'effect.tap-and-stun-those-creatures',
       'effect.adapt',
+      'effect.next-spell-modifier',
       'effect.owner-puts-on-library',
       'effect.incubate',
       'effect.cast-milled-each-player',

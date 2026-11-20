@@ -186,3 +186,77 @@ test('Pteramander: Adapt 4 puts four counters on it only once, and the ability c
   const poor = build(6, 'U');
   poor.expect.illegal(0, { activate: pteramander.name });
 });
+
+// ---- The next spell
+
+test('Kaza, Roil Chaser: the next instant or sorcery costs {X} less, X the Wizards you control', () => {
+  const kaza = load('Kaza, Roil Chaser');
+  const g = scenario()
+    .define(kaza)
+    .seat(0)
+    .library(...FILLER)
+    .battlefield(kaza.name)
+    .hand('Divination')
+    .pool('UU')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  // Divination costs {2}{U}: with one Wizard it costs {1}{U}.
+  expect(castableFromHand(g, 'Divination')).toBe(false);
+  g.act(0).activate(kaza.name);
+  g.passAll();
+  expect(castableFromHand(g, 'Divination')).toBe(true);
+  g.act(0).cast('Divination', { pay: true });
+  g.passAll();
+  expect(g.state.seats[0]?.hand).toHaveLength(2);
+  g.expect.invariants();
+});
+
+test('Crackling Spellslinger: cast it, and the next instant or sorcery you cast this turn has storm', () => {
+  const slinger = load('Crackling Spellslinger');
+  const g = scenario()
+    .define(slinger)
+    .seat(0)
+    .library(...FILLER)
+    .hand(slinger.name, 'Lightning Bolt')
+    .pool('RRRRRR')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  g.act(0).cast(slinger.name, { pay: true });
+  // The spell resolves and its enters trigger with it.
+  g.passAll();
+  g.act(0).cast('Lightning Bolt', { pay: true, targets: [{ player: 1 }] });
+  // The Bolt, and its storm trigger above it: one spell was cast before it.
+  expect(g.state.stack).toHaveLength(2);
+  // The storm trigger resolves and asks about new targets for the copy: it keeps the opponent.
+  g.passAll();
+  g.act(0).chooseTargets({ player: 1 });
+  g.passAll();
+  g.expect.life(1, 40 - 6);
+});
+
+test('Smoldering Stagecoach: when it attacks, the next instant and the next sorcery cascade', () => {
+  const coach = load('Smoldering Stagecoach');
+  const g = scenario()
+    .define(coach)
+    .seat(0)
+    .library(...FILLER)
+    .battlefield(coach.name)
+    .battlefield('Grizzly Bears', { count: 2 })
+    .hand('Lightning Bolt')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  // Crew 2: the Bears tap, the Vehicle becomes a creature and attacks.
+  g.act(0).activate(coach.name);
+  g.act(0).choosePermanents('Grizzly Bears[0]', 'Grizzly Bears[1]');
+  g.passAll();
+  g.advanceTo('declareAttackers');
+  g.act(0).declareAttackers([{ attacker: coach.name, target: { player: 1 } }]);
+  g.passAll();
+  expect(g.state.continuousEffects.filter((e) => e.change.kind === 'nextSpell')).toHaveLength(2);
+});

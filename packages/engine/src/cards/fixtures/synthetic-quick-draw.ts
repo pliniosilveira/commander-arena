@@ -13,6 +13,10 @@ const INSTANT_OR_SORCERY_IN_YOUR_GRAVEYARD: ObjectFilter = {
   anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
 };
 
+const INSTANT_OR_SORCERY: ObjectFilter = {
+  anyOf: [{ types: ['instant'] }, { types: ['sorcery'] }],
+};
+
 export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
   // "This spell costs {2} less to cast for each different mana value among instant and sorcery cards in your graveyard." ({8}{U} sorcery: you gain 1 life)
   singleFace({
@@ -41,5 +45,89 @@ export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
       },
     ],
     spell: { effect: { kind: 'gainLife', player: { kind: 'you' }, amount: 1 } },
+  }),
+  // "{T}: The next instant or sorcery spell you cast this turn costs {X} less to cast, where X is the number of Wizards you control as this ability resolves." (a 1/2 Wizard)
+  singleFace({
+    name: 'SYNTHETIC Discount Wizard',
+    manaCost: ['U', 'R'],
+    types: ['creature'],
+    subtypes: ['Human', 'Wizard'],
+    colors: ['U', 'R'],
+    colorIdentity: ['U', 'R'],
+    power: 1,
+    toughness: 2,
+    oracleText:
+      '{T}: The next instant or sorcery spell you cast this turn costs {X} less to cast, where X is the number of Wizards you control as this ability resolves.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'nextSpellModifier',
+          spells: INSTANT_OR_SORCERY,
+          lessGeneric: {
+            kind: 'countOf',
+            filter: { zone: 'battlefield', controller: 'you', subtypes: ['Wizard'] },
+          },
+        },
+      },
+    ],
+  }),
+  // "{T}: The next instant or sorcery spell you cast this turn has storm." (a 2/2)
+  singleFace({
+    name: 'SYNTHETIC Storm Granter',
+    manaCost: ['R'],
+    types: ['creature'],
+    subtypes: ['Human'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 2,
+    toughness: 2,
+    oracleText: '{T}: The next instant or sorcery spell you cast this turn has storm.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'nextSpellModifier',
+          spells: INSTANT_OR_SORCERY,
+          grants: 'storm',
+        },
+      },
+    ],
+  }),
+  // "{T}: The next instant spell and the next sorcery spell you cast this turn each have cascade." (a 2/2)
+  singleFace({
+    name: 'SYNTHETIC Cascade Granter',
+    manaCost: ['R'],
+    types: ['creature'],
+    subtypes: ['Human'],
+    colors: ['R'],
+    colorIdentity: ['R'],
+    power: 2,
+    toughness: 2,
+    oracleText:
+      '{T}: The next instant spell and the next sorcery spell you cast this turn each have cascade.',
+    abilities: [
+      {
+        kind: 'activated',
+        cost: [{ kind: 'tap' }],
+        effect: {
+          kind: 'sequence',
+          effects: [
+            {
+              kind: 'nextSpellModifier',
+              spells: { types: ['instant'] },
+              grants: 'cascade',
+            },
+            {
+              kind: 'nextSpellModifier',
+              spells: { types: ['sorcery'] },
+              grants: 'cascade',
+            },
+          ],
+        },
+      },
+    ],
   }),
 ];

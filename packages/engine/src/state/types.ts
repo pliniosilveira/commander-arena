@@ -2111,6 +2111,18 @@ export type ContinuousChange =
    * casting is decided (`rules/legality.ts`).
    */
   | { readonly kind: 'freeCastPermission'; readonly seat: SeatId; readonly type: CardType }
+  /**
+   * "The next instant or sorcery spell you cast this turn costs {X} less to cast / has storm" (`nextSpellModifier`, issue 121, CR 601.2f, 702.40a): `seat`'s next spell that `spells`
+   * describes costs `lessGeneric` less (generic mana only) and gains `grants`; the cast that it applies to uses it up (`rules/next-spell.ts`: it is removed as the spell is cast). No
+   * layer: read where the cost is determined and as the cast is completed.
+   */
+  | {
+      readonly kind: 'nextSpell';
+      readonly seat: SeatId;
+      readonly spells: ObjectFilter;
+      readonly lessGeneric: number;
+      readonly grants?: 'storm' | 'cascade';
+    }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }

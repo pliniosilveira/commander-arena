@@ -430,6 +430,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'revealTopCast',
     // "Until end of turn, for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (CR 601.2, 118.9).
     'mayCastEachType',
+    // Issue 121: "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (CR 601.2f, 702.40a).
+    'nextSpellModifier',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -2499,6 +2501,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   exileUntilCast: true,
   revealTopCast: true,
   mayCastEachType: true,
+  nextSpellModifier: true,
   revealTop: true,
   revealTopDuel: true,
   replaceEnchant: true,

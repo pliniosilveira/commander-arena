@@ -112,6 +112,7 @@ import {
 import { applyPaymentPlan, payableSources } from './mana-engine';
 import { manaValueOfCost } from './mana-value';
 import { legalModeSets, modalOfSpellText, modesDecision, printedOrder, specModes } from './modes';
+import { applyNextSpellEffects } from './next-spell';
 import { payByTapping } from './pay-manual';
 import {
   colorsOfChoice,
@@ -1663,6 +1664,8 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
       commanderCasts: { ...next.commanderCasts, [card]: (next.commanderCasts[card] ?? 0) + 1 },
     };
   }
+  // Issue 121 (CR 601.2f, 702.40a, 702.85a): the effects that name this spell, "the next instant or sorcery spell you cast this turn", are used up and give it their keyword.
+  next = applyNextSpellEffects(next, casting.seat, casting.object);
   // CR 601.2c: the spell's targets became targets as they were chosen; Ward and the like see it now.
   events.push(...becameTargetEvents(next, casting.object, casting.seat));
   // CR 700.13 (D-464): casting a spell that targets an opponent, what they control or a card in their graveyard is committing a crime.

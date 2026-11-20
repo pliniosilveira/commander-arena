@@ -118,6 +118,7 @@ import { becomeMonarch } from './monarch';
 import { isCardZoneChoice, runChooseMove } from './move-choice';
 import { runMoveCounters } from './move-counters';
 import { nextMainStep } from './next-main';
+import { runNextSpellModifier } from './next-spell';
 import { runOwnerLibraryChoice } from './owner-library-choice';
 import { phaseOut } from './phasing';
 import { runPileSeparate, startPileSeparate } from './pile-separate';
@@ -1786,6 +1787,9 @@ function runEffect(
     case 'mayPlay':
       // D-151: "You may play that card this turn" (rules/impulse.ts).
       return runMayPlay(state, res, effect);
+    case 'nextSpellModifier':
+      // Issue 121 (CR 601.2f, 702.40a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (rules/next-spell.ts).
+      return runNextSpellModifier(state, res, effect, ctx);
     case 'mayCastEachType':
       // CR 601.2, 118.9, 611.2a: "for each nonland card type, you may cast a spell of that type from among the exiled cards without paying its mana cost" (rules/free-cast.ts).
       return runMayCastEachType(state, res, effect);
