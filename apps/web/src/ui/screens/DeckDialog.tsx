@@ -72,8 +72,7 @@ export function DeckDialog({
   const shown = inTab.filter(
     (deck) =>
       matchesColorFilter(deck.colors, colorFilter) &&
-      (needle === '' ||
-        `${deck.name} ${deck.commander}`.toLowerCase().includes(needle)),
+      (needle === '' || `${deck.name} ${deck.commander}`.toLowerCase().includes(needle)),
   );
 
   // A random button chooses a deck at once.
