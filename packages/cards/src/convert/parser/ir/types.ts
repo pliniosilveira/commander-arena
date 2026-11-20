@@ -1098,6 +1098,11 @@ export interface IrToken extends IrNode {
   readonly named?: string;
   /** "... token with flying that's attacking that opponent" (D-648, CR 508.4): the token is created attacking the player a trigger about a player attacking one of your opponents attacked. */
   readonly attackingThatOpponent?: true;
+  /**
+   * "... token that's tapped and attacking" (CR 508.4, 110.5b): the token enters tapped and attacking a player the declaration of an attack batch trigger attacked, never declared as
+   * an attacker. Only in the effect of "whenever one or more ... you control attack".
+   */
+  readonly tappedAndAttacking?: true;
   /** "Smaug, a legendary 6/6 red Dragon creature token" (stage P45, D-197, CR 205.4): the token has the supertype legendary. */
   readonly legendary?: true;
   /** "a token that's a copy of target creature" (CR 707.2): the permanent copied. */

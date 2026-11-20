@@ -1210,6 +1210,17 @@ function lowerTriggeredAbility(
           needs: ['selector:triggerAttackedPlayer'],
         }
       : null;
+  // CR 508.4: "create a token that's tapped and attacking" after "whenever one or more Goblins you control attack": it attacks a player the declaration attacked (the first one).
+  ctx.attackBatchPlayer =
+    triggers.length === 1 &&
+    triggers[0]?.kind === 'attackBatch' &&
+    triggers[0].who === 'you' &&
+    triggers[0].attackedEnchantedPlayer !== true
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
   ctx.enchantedPlayerTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);

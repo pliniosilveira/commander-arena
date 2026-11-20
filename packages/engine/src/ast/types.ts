@@ -1050,7 +1050,8 @@ export type PlayerSelector =
   | { readonly kind: 'triggerPlayer' }
   /**
    * "That opponent" in a `playerAttacksOpponent` trigger (CR 508.6, D-648): the player the declaration attacked that made the ability trigger. Valid only in the effect or the
-   * intervening "if" of such a trigger (`validateCard`); nobody once that player has left the game.
+   * intervening "if" of such a trigger, or of an `attackBatch` trigger (issue 144, General Kreat: a token "that's tapped and attacking" attacks the first player the declaration
+   * attacked; CR 508.4 lets the controller choose, `docs/ROADMAP.md`) (`validateCard`); nobody once that player has left the game.
    */
   | { readonly kind: 'triggerAttackedPlayer' }
   /** The player whose `playersMay` answer declined the current `otherwise` effect (D-576). */
