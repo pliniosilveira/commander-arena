@@ -326,6 +326,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
             }),
         // D-271: the die the instruction rolled, which "if the result is 1" of a later instruction reads (a later roll replaces it).
         ...(out.dieResult === undefined ? {} : { dieResult: out.dieResult }),
+        ...(out.clashWon === undefined ? {} : { clashWon: out.clashWon }),
         // D-135: what the instruction did, for "if you do" and "when you do"; a `may` effect starts it again.
         ...(out.resetPerformed === true
           ? { performed: 0 }
@@ -1014,6 +1015,37 @@ export function answerResolutionAssign(state: GameState, option: string): Resolv
   const head = res?.queue[0];
   if (!res || head?.kind !== 'assignControl') return null;
   const updated: Instruction = { ...head, chosen: option };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/** Records the opponent the controller chose to clash with (CR 701.30b) on the instruction that asked, and continues. Null when no such question is waiting. */
+export function answerResolutionClashOpponent(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'clash') return null;
+  const updated: Instruction = { ...head, chosen: option };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/** Records the answer of a clashing player (CR 701.30a, 701.30c): put the card they revealed on the bottom of their library, or not. Null when no such question is waiting. */
+export function answerResolutionClash(state: GameState, accept: boolean): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  const asked = state.pending;
+  if (!res || head?.kind !== 'clash' || asked?.kind !== 'confirmOptional') return null;
+  const updated: Instruction = {
+    ...head,
+    decisions: [...head.decisions, { seat: asked.seat, bottom: accept }],
+  };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],

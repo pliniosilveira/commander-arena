@@ -224,6 +224,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainLife',
     // D-201: "Target player's life total becomes N" (CR 119.5).
     'setLifeTotal',
+    // CR 701.12g: "Exchange target opponent's life total with this creature's toughness".
+    'exchangeLifeWithPt',
     'loseLife',
     // D-269: "Each player this creature attacked this turn loses the game." (CR 104.3e).
     'loseGame',
@@ -303,6 +305,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'shuffle',
     // D-271: "roll a four-sided die" (CR 706.1, 706.2) and, read by `dieResult`, "if the result is 1".
     'rollDie',
+    // CR 701.30: "clash with an opponent" and, read by `clashWon`, "if you win".
+    'clash',
     'scry',
     'surveil',
     // Issue 81 (Map token, Restless Anchorage): "target creature you control explores" (CR 701.44).
@@ -1043,6 +1047,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 701.21a (Plaguecrafter): "each player who can't" (`PlayerSelector` `couldntSacrificeThisWay`) and `discard.together`.
     'couldntSacrificeThisWay',
     'discardTogether',
+    // CR 701.9 (Cathartic Pyre): "discard up to two cards" (`discard.upTo`).
+    'discardUpTo',
     // D-139: "two or more colors" (`ObjectFilter.colorCount`).
     'colorCount',
     // Zimone's Hypothesis: "power of the chosen quality" (`ObjectFilter.powerParity`).
@@ -1181,6 +1187,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'thisAttackedThisTurn',
     // D-271: "if the result is 1" (after a die roll), "if this card is in your graveyard".
     'dieResult',
+    // CR 701.30d: "If you win" after a clash.
+    'clashWon',
     // "If X is 10 or more" (CR 107.3, 608.2c).
     'thisInYourGraveyard',
     // CR 603.4 (Animate Dead): "if it's on the battlefield".
@@ -1927,6 +1935,8 @@ export const SELECTOR_KINDS = [
   'couldntSacrificeThisWay',
   /** "Each player who can't discards a card" (CR 701.9, 101.4): all the cards chosen are discarded at once, the engine's `discard.together`. */
   'discardTogether',
+  /** "Discard up to two cards" (CR 701.9, 107.1c, Cathartic Pyre): the player chooses none to N, the engine's `discard.upTo`. */
+  'discardUpTo',
   /** "Permanents that are two or more colors", "monocolored" (CR 105.2, D-139): the engine's `ObjectFilter.colorCount`. */
   'colorCount',
   /** "Each creature with an odd power" (Zimone's Hypothesis): the engine's `ObjectFilter.powerParity`. */
@@ -2077,6 +2087,8 @@ export const CONDITION_KINDS = [
   'thisAttackedThisTurn',
   /** "If the result is 1" after a die roll (CR 706.2, D-271): the engine's `dieResult`. */
   'dieResult',
+  /** "If you win" after a clash (CR 701.30d): the engine's `clashWon`. */
+  'clashWon',
   /** "If this card is in your graveyard" (CR 113.6b, D-271): the engine's `thisInYourGraveyard`. */
   'thisInYourGraveyard',
   /** "If it's on the battlefield" (CR 603.4, 400.7, Animate Dead): the engine's `thisOnBattlefield`. */
@@ -2569,6 +2581,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   becomeCopyOfCard: true,
   gainLife: true,
   setLifeTotal: true,
+  exchangeLifeWithPt: true,
   loseLife: true,
   loseGame: true,
   winGame: true,
@@ -2612,6 +2625,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   returnControlToOwners: true,
   shuffle: true,
   rollDie: true,
+  clash: true,
   scry: true,
   surveil: true,
   explore: true,

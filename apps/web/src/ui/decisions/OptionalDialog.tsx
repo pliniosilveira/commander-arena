@@ -36,6 +36,7 @@ const DIALOG_LABELS: Readonly<
   castCard: 'Cast from a graveyard',
   exileMore: 'Exile another card',
   exert: 'Exert',
+  clash: 'Clash',
 };
 
 /**

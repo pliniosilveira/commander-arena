@@ -47,6 +47,38 @@ export const SET_LIFE_TOTAL: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "Exchange target opponent's life total with ~'s toughness." (CR 701.12g): the engine's `exchangeLifeWithPt`, for one player the noun names and the permanent the ability is on.
+ */
+export const EXCHANGE_LIFE_PT: Lowering<IrClause, Effects> = {
+  head: 'exchangeLifeWithPt',
+  id: 'lower.exchange-life-pt',
+  needs: ['effect:exchangeLifeWithPt'],
+  lower(clause, ctx) {
+    const player = arg(clause, 'player');
+    const object = arg(clause, 'object');
+    const power = arg(clause, 'power');
+    if (player?.kind !== 'noun' || object?.kind !== 'noun' || object.ref !== 'self') {
+      return failure(clause);
+    }
+    if (power?.kind !== 'flag') return failure(clause);
+    const who = playerSelectorOf(player, ctx);
+    if (!who.ok) return who;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'exchangeLifeWithPt',
+          player: who.value,
+          object: { kind: 'this' },
+          stat: power.value ? 'power' : 'toughness',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** The abilities of the emblem the quoted text says, in the engine's AST (CR 114.4). */
 export function lowerEmblemAbilities(
   quoted: IrQuotedAbility,
@@ -118,6 +150,7 @@ export const PLANESWALKER_NEEDS: readonly FeatureRef[] = [
   'effect:empowerJace',
   'effect:createEmblem',
   'effect:setLifeTotal',
+  'effect:exchangeLifeWithPt',
   'ability:static',
   'ability:triggered',
   'ability:activated',
@@ -127,4 +160,5 @@ export const PLANESWALKER_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   EMPOWER_JACE,
   GET_EMBLEM,
   SET_LIFE_TOTAL,
+  EXCHANGE_LIFE_PT,
 ];

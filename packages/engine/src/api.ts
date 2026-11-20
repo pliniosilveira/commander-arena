@@ -99,6 +99,8 @@ import {
   answerResolutionCards,
   answerResolutionChoice,
   answerResolutionChooseOne,
+  answerResolutionClash,
+  answerResolutionClashOpponent,
   answerResolutionCommanderChoice,
   answerResolutionCounterPick,
   answerResolutionCreatureType,
@@ -386,6 +388,8 @@ function answerConfirm(
   if (d.purpose === 'buyback') return answerBuyback(state, accept);
   // CR 118.8, 601.2b (D-181): "sacrifice an artifact or creature or pay {4}": which way, asked while the spell is being cast.
   if (d.purpose === 'costChoice') return answerCostChoice(state, accept);
+  // CR 701.30c: "put the card you revealed on the bottom of your library?", asked of each clashing player as the clash resolves.
+  if (d.purpose === 'clash') return finishResolutionAnswer(answerResolutionClash(state, accept));
   // CR 702.21a: "pay [cost] or it is countered" (Ward), asked of the spell's controller as the
   // ability resolves.
   if (
@@ -488,6 +492,11 @@ function answerChooseOption(
     // CR 508.7 (D-139): the attack target a creature is reselected to.
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionReselect(state, option));
+  }
+  if (d.purpose === 'clashOpponent') {
+    // CR 701.30b: the opponent the controller chose to clash with.
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionClashOpponent(state, option));
   }
   if (d.purpose === 'assignOpponent') {
     // Issue 81 (Dack Fayden): the opponent the controller chose for a permanent.

@@ -336,7 +336,15 @@ export const DEAL_DIVIDED_DAMAGE: Lowering<IrClause, Effects> = {
     } finally {
       ctx.readAsCast = false;
     }
-    if (typeof total === 'object' && total !== null && total.kind === 'x') return failure(clause);
+    // CR 107.3a, 601.2b: the X a spell announces is known before its targets are chosen, so only a spell's own text divides it (the validation refuses an ability).
+    if (
+      typeof total === 'object' &&
+      total !== null &&
+      total.kind === 'x' &&
+      ctx.owner !== 'spell'
+    ) {
+      return failure(clause);
+    }
     const id = declareDividedTarget(to, ctx, total);
     if (!id.ok) return id;
     return {

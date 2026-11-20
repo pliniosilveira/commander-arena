@@ -101,4 +101,37 @@ export const EFFECT_ROLL_DIE = defineRule<Clauses>({
   },
 });
 
-export const ARDEN_EFFECT_RULES = [EFFECT_ROLL_DIE].map(quietly);
+/**
+ * `effect.clash`: "clash with an opponent" (CR 701.30, 701.30b: choose an opponent; you and that opponent each reveal the top card of their library and may put it on the bottom, and
+ * whoever revealed the card with the higher mana value wins). The controller clashes; "each player clashes", "clash with target opponent" and "clashes" are other instructions and are
+ * not read. Who won is read by the sentence after it ("If you win, ...", `condition.you-win-clash`).
+ */
+export const EFFECT_CLASH = defineRule<Clauses>({
+  id: 'effect.clash',
+  family: 'effect',
+  leading: ['clash'],
+  cites: ['CR 701.30 (Clash)', 'CR 701.30b (Clash)'],
+  examples: ['clash with an opponent', 'Clash with an opponent'],
+  rejects: [
+    'clash with target opponent',
+    'clash with each opponent',
+    'clash with a player',
+    'clash',
+    'clashes with an opponent',
+    'each player clashes',
+    'clash with an opponent and draw a card',
+    'clash with an opponents',
+    'clash with an opponent twice',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(pattern(new RegExp(`clash with an opponent${BOUNDARY}`, 'iu')))(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: [makeClause('effect.clash', 'clash', {}, r.value.span)],
+      pos: r.pos,
+    };
+  },
+});
+
+export const ARDEN_EFFECT_RULES = [EFFECT_ROLL_DIE, EFFECT_CLASH].map(quietly);

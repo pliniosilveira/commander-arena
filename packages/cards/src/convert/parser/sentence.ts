@@ -172,6 +172,8 @@ const LEAD_CONDITIONS = [
   ...TRIGGER_SPELL_CONDITIONS,
   ...RESOLUTION_CONDITIONS,
   ...DIE_CONDITIONS,
+  // CR 701.30d (Hoarder's Greed): "If you win, repeat this process." after a clash.
+  'condition.you-win-clash',
   // Stage P52 (D-210): "If a creature card was discarded this way, ..." after a discard.
   'condition.discarded-this-way',
   // D-358: "If you discarded an instant or sorcery card this way, ..." after a discard.

@@ -502,6 +502,16 @@ export function optionalAsk(d: ConfirmOptionalDecision, index: Index): OptionalA
       cancellable: true,
     };
   }
+  if (d.purpose === 'clash') {
+    // CR 701.30a, 701.30c: "clash with an opponent": the card this player revealed is the top card of their library; they may put it on the bottom. Nothing is rewound.
+    const card = (d.subject === undefined ? undefined : index.get(d.subject)?.name) ?? 'the card';
+    return {
+      prompt: `${d.sourceName}: you revealed ${card}. Put it on the bottom of your library?`,
+      yes: 'Put it on the bottom',
+      no: 'Leave it on top',
+      cancellable: false,
+    };
+  }
   if (d.purpose === 'exileMore') {
     // D-662 (CR 701.13, 608.2d): "As many times as you choose, you may exile the top card of your library": asked again after each card, with what was exiled so far.
     const exiled = (d.exiled ?? []).flatMap((id) => {

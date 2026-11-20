@@ -144,6 +144,8 @@ export interface LowerContext {
    * reads it. Null before any roll; a second roll in one text is refused.
    */
   dieSides: number | null;
+  /** True once the text clashed (CR 701.30b): "If you win" reads who won it. A second clash in one text is refused. */
+  clashed: boolean;
   /**
    * The groups of "each" a text named so far, by the reference the binding pass gave them (D-517, CR 608.2c): "Tap all creatures target player controls. Those creatures don't
    * untap during that player's next untap step." reads "those creatures" as the same group, which the engine names by the selector again (the group is the same one as the
@@ -407,6 +409,7 @@ export function newContext(
     graveyardSource: false,
     usedGraveyardSource: false,
     dieSides: null,
+    clashed: false,
     eachMentions: new Map(),
     chosenObjectRefs: new Set(),
     staticCondition: false,

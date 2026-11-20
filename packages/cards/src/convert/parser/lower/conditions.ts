@@ -180,6 +180,13 @@ export function lowerCondition(
         ? failure(c, blocked)
         : ok({ kind: 'attackedWithCreaturesThisTurn', atLeast: test.atLeast });
     }
+    case 'clashWon': {
+      // CR 701.30d: who won the clash the text made before this condition; a condition with no clash before it in the text is not one of the text.
+      const blocked = missingFeatures(['condition:clashWon']);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.clashed !== true) return failure(c, []);
+      return ok({ kind: 'clashWon' });
+    }
     case 'dieResult': {
       // CR 706.2, 706.3a (D-271): the result of the die the text rolled before this condition, read by a `conditional`. A condition with no roll before it
       // in the text, or a number the die cannot show (the condition would never, or always, hold), is not a condition of the text.

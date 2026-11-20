@@ -629,7 +629,8 @@ export type GameEvent =
         | 'riot'
         | 'vote'
         | 'protectionColor'
-        | 'protectionCardType';
+        | 'protectionCardType'
+        | 'clashOpponent';
       readonly option: string;
     }
   /**

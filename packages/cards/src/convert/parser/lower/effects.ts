@@ -1291,6 +1291,18 @@ function playerVerb(
           rule: clause.rule,
         };
       }
+      // "Discard up to two cards" (CR 701.9, 107.1c): the player chooses none to N; what was discarded is what "that many" counts afterwards.
+      if (verb === 'discard' && arg(clause, 'upTo') !== undefined) {
+        const blocked = missingFeatures(['selector:discardUpTo']);
+        if (blocked.length > 0) return failure(clause, blocked);
+        if (typeof amount.value !== 'number') return failure(clause);
+        ctx.thisWay = 'discarded';
+        return {
+          ok: true,
+          value: [{ kind: 'discard', player: player.value, count: amount.value, upTo: true }],
+          rule: clause.rule,
+        };
+      }
       // "Discard two cards unless you discard an artifact card" (stage P31, D-140, CR 701.9): the one card of a kind instead.
       const unless = arg(clause, 'unless');
       if (unless !== undefined) {

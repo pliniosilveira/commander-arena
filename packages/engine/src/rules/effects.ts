@@ -41,6 +41,7 @@ import { makeCardCopy } from './card-copy';
 import { changeTargetInstructions } from './change-source';
 import { runOpponentChoosesCard, startOpponentChoosesCard } from './choose-aside';
 import { runChooseOne } from './choose-one';
+import { newClash, runClash } from './clash';
 import { evaluateCondition } from './conditions';
 import { conniveInstruction, runConniveNext } from './connive';
 import {
@@ -87,6 +88,7 @@ import { runEmpowerJace } from './empower';
 import { requireAttackingPlayer } from './encore';
 import { runEnterAttacking } from './enter-attacking';
 import { auraTokenCanEnterAttached, runEnterToken } from './enter-token';
+import { runExchangeLifeWithPt } from './exchange-life';
 import { runExileAnyNumber } from './exile-any-number';
 import { markExileOnResolve } from './exile-on-resolve';
 import { runExilePiles, startExilePiles } from './exile-piles';
@@ -270,6 +272,7 @@ export function runInstruction(
   if (instruction.kind === 'auraEntry') return runAuraEntry(state, res, instruction);
   if (instruction.kind === 'reselectAttack') return runReselectAttack(state, res, instruction);
   if (instruction.kind === 'assignControl') return runAssignControl(state, res, instruction);
+  if (instruction.kind === 'clash') return runClash(state, res, instruction);
   if (instruction.kind === 'chooseOne') return runChooseOne(state, res, instruction);
   if (instruction.kind === 'protectionColor') {
     return runProtectionColor(state, res, instruction, contextOf(state, res), targets);
@@ -2100,6 +2103,10 @@ function runEffect(
       return done(won.state, [...events, ...won.events]);
     }
 
+    case 'exchangeLifeWithPt':
+      // CR 701.12g: the life total of a player and the power or toughness of a permanent swap.
+      return runExchangeLifeWithPt(state, effect, ctx, targets, flow, res.source);
+
     case 'setLifeTotal': {
       // CR 119.5 (D-201): the player gains or loses the life that takes their life total to the number; a player who has it already does neither.
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
@@ -2501,6 +2508,10 @@ function runEffect(
       return { ...done(next, events), performed: shuffled };
     }
 
+    case 'clash':
+      // CR 701.30b: the controller clashes with an opponent, in stages (rules/clash.ts); who won is what `clashWon` reads.
+      return done(state, [], [newClash()]);
+
     case 'rollDie': {
       // CR 706.1, 706.2 (D-271): the controller rolls one die; the result stays for the rest of this resolution, which `dieResult` reads.
       const rolled = rollDie(next, res.controller, effect.sides);
@@ -2619,6 +2630,7 @@ function runEffect(
           seat,
           count,
           ...(anyNumber ? { anyNumber: true as const } : {}),
+          ...(effect.upTo === true ? { upTo: true as const } : {}),
           ...(wholeHand ? { hand: true as const } : {}),
           ...(effect.random === true ? { random: true as const } : {}),
           ...(effect.unless === undefined ? {} : { unless: effect.unless }),
@@ -3196,6 +3208,7 @@ function runEffect(
         ...(res.performed === undefined ? {} : { performed: res.performed }),
         // D-271: "If the result is 1": the die the earlier instruction rolled.
         ...(res.dieResult === undefined ? {} : { dieResult: res.dieResult }),
+        ...(res.clashWon === undefined ? {} : { clashWon: res.clashWon }),
       });
       const chosen = holds ? effect.effect : effect.else;
       return chosen === undefined
