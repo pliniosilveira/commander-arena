@@ -847,6 +847,7 @@ describe('unmatched abilities', () => {
       'effect.untap',
       'effect.add-additional-mana',
       'effect.controller-adds-additional-mana',
+      'effect.add-mana-of-produced-type',
       'effect.add-mana',
       'effect.choose-color',
       'effect.choose-creature-type',

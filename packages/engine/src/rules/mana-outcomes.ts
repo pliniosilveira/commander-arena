@@ -207,6 +207,9 @@ function plainOutcomes(
       const identity = commanderIdentity(state, seat);
       return identity.length === 0 ? [[]] : identity.map((c) => [c]);
     }
+    case 'producedType':
+      // CR 605.1b: only the effect of a triggered mana ability (`validateCard` refuses it as what a mana ability makes), read in `mana-triggers.ts`: no mana of its own.
+      return [[]];
     default: {
       const unreachable: never = p;
       return unreachable;

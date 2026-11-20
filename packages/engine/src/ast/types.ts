@@ -3991,7 +3991,14 @@ export type ManaProduction =
    * of mana, chosen as the ability resolves (CR 605.3b), so the choice is part of the activation.
    * At least two combinations that differ as multisets; the order inside one does not matter.
    */
-  | { readonly kind: 'combination'; readonly options: readonly (readonly ManaColor[])[] };
+  | { readonly kind: 'combination'; readonly options: readonly (readonly ManaColor[])[] }
+  /**
+   * "Whenever you tap a land for mana, add one mana of any type that land produced." (Mirari's Wake, Vorinclex, Voice of Hunger; CR 106.12a, 605.1b, 605.4a): one mana
+   * of a type the mana ability that was tapped for mana produced (colorless is a type, CR 106.1b). With a single type produced there is nothing to choose; with several (a
+   * land that makes {W}{U}) the activation names the type, like `anyColor`. Only the effect of a `tappedForMana` trigger (`validateCard`): a mana ability or a spell has no
+   * mana ability that produced mana for it to read.
+   */
+  | { readonly kind: 'producedType' };
 
 // ---- Triggers (CR 603)
 

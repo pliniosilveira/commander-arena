@@ -20,7 +20,9 @@ type ManaTrigger = Extract<Trigger, { kind: 'tappedForMana' }>;
 /** What a triggered mana ability adds: mana of fixed types, or one mana of a color its player chooses (CR 106.1b). */
 type Extra =
   | { readonly kind: 'fixed'; readonly mana: readonly ManaColor[] }
-  | { readonly kind: 'anyColor' };
+  | { readonly kind: 'anyColor' }
+  // CR 106.12a, 605.4a: one mana of a type the tapped permanent's mana ability produced ("any type that land produced").
+  | { readonly kind: 'produced' };
 
 interface Source {
   readonly object: GameObject;
@@ -61,6 +63,8 @@ function scan(state: GameState): Index {
         });
       } else if (a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) {
         sources.push({ object, trigger: a.trigger, extra: { kind: 'anyColor' } });
+      } else if (a.effect.mana.kind === 'producedType') {
+        sources.push({ object, trigger: a.trigger, extra: { kind: 'produced' } });
       }
     }
   }
@@ -120,8 +124,13 @@ export function additionalManaOptions(
     ) {
       continue;
     }
+    // CR 106.12a: the mana the ability produced, not what other triggered mana abilities add to it; one alternative for each type it made.
     const adds: ManaColor[][] =
-      src.extra.kind === 'fixed' ? [[...src.extra.mana]] : ANY_COLORS.map((c) => [c]);
+      src.extra.kind === 'fixed'
+        ? [[...src.extra.mana]]
+        : src.extra.kind === 'produced'
+          ? [...new Set(produced)].map((c) => [c])
+          : ANY_COLORS.map((c) => [c]);
     options = options.flatMap((so) => adds.map((a) => [...so, ...a]));
   }
   return options;

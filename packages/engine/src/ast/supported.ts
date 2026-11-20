@@ -789,8 +789,8 @@ function walkAbility(
       if (
         a.trigger.kind === 'tappedForMana' &&
         a.effect.kind === 'addMana' &&
-        a.effect.mana.kind === 'anyColor' &&
-        (a.effect.mana.count ?? 1) === 1
+        ((a.effect.mana.kind === 'anyColor' && (a.effect.mana.count ?? 1) === 1) ||
+          a.effect.mana.kind === 'producedType')
       ) {
         return;
       }
