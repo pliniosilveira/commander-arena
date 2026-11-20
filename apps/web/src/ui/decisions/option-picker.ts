@@ -32,6 +32,7 @@ export function optionPrompt(
       d.purpose === 'meldOrder' ||
       d.purpose === 'protectionColor' ||
       d.purpose === 'protectionCardType' ||
+      d.purpose === 'counterPick' ||
       d.purpose === 'vote') &&
     d.options !== undefined
   ) {

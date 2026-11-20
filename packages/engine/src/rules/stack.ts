@@ -839,6 +839,7 @@ export function answerResolutionEntersChosen(
     d?.kind !== 'chooseOption' ||
     d.purpose === 'replacement' ||
     d.purpose === 'meldOrder' ||
+    d.purpose === 'counterPick' ||
     d.purpose === 'pile'
   )
     return null;
@@ -1092,6 +1093,24 @@ export function answerResolutionProtectionColor(
   const color = colorOfAnswer(option);
   if (color === null) return null;
   const updated: Instruction = { ...head, chosen: color };
+  return continueResolution(
+    { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
+    [],
+  );
+}
+
+/**
+ * Records the answer to "Remove any number of counters ..." / "Move a counter ..." (CR 122.1, 122.5, 608.2d): the option chosen among the counters that may be taken, or the one that stops,
+ * on the `counterPick` instruction that asked. Then continues. Null when no such question is waiting or the answer is not one of its options.
+ */
+export function answerResolutionCounterPick(
+  state: GameState,
+  option: string,
+): ResolveOutcome | null {
+  const res = state.resolution;
+  const head = res?.queue[0];
+  if (!res || head?.kind !== 'counterPick') return null;
+  const updated: Instruction = { ...head, chosen: option };
   return continueResolution(
     { ...state, pending: null, resolution: { ...res, queue: [updated, ...res.queue.slice(1)] } },
     [],

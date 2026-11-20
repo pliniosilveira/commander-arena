@@ -33,7 +33,8 @@ export function optionText(
     | 'riot'
     | 'vote'
     | 'protectionColor'
-    | 'protectionCardType',
+    | 'protectionCardType'
+    | 'counterPick',
   option: string,
 ): string {
   // D-451: "gains protection from the color of your choice", answered with a color letter.
@@ -68,8 +69,10 @@ export function purposeNoun(
     | 'vote'
     | 'meldOrder'
     | 'protectionColor'
-    | 'protectionCardType',
+    | 'protectionCardType'
+    | 'counterPick',
 ): string {
+  if (purpose === 'counterPick') return 'counter';
   if (purpose === 'meldOrder') return 'order of the two cards';
   if (purpose === 'protectionColor') return 'color';
   if (purpose === 'protectionCardType') return 'card type';

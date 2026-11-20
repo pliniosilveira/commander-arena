@@ -53,6 +53,7 @@ import { lowerCopyToken } from './copies';
 import { COPY_ONE_OF_THEM_LOWERINGS } from './copy-one-of-them';
 import { COPY_SPELL, EXILE_ON_RESOLVE } from './copy-spell';
 import { lowerCost } from './costs';
+import { COUNTER_CHOICE_LOWERINGS } from './counter-choice';
 import { DACK_LOWERINGS } from './dack';
 import { DAMAGE_BATCH_LOWERINGS } from './damage-batch';
 import { DANITHA_G1B_LOWERINGS } from './danitha-g1b';
@@ -1890,11 +1891,16 @@ const DOUBLE_COUNTERS: Lowering<IrClause, Effects> = {
   needs: ['effect:doubleCounters'],
   lower(clause, ctx) {
     const counter = arg(clause, 'counter');
-    if (counter?.kind !== 'counterSpec') return failure(clause);
+    // No kind named: "each kind of counter on it" (Ferrafor), every kind the object has.
+    if (counter !== undefined && counter.kind !== 'counterSpec') return failure(clause);
     return eachObject(
       clause,
       ctx,
-      (objects) => ({ kind: 'doubleCounters', objects, counter: counter.name }),
+      (objects) => ({
+        kind: 'doubleCounters',
+        objects,
+        ...(counter === undefined ? {} : { counter: counter.name }),
+      }),
       'objects',
       { triggerSubject: true },
     );
@@ -2466,6 +2472,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
+  ...COUNTER_CHOICE_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,
   ...RETURN_CONTROL_LOWERINGS,

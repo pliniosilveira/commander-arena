@@ -219,6 +219,13 @@ function instanceSpec(mode: SpellMode, spec: TargetSpec, occurrence: number): Ta
     ...(spec.differentFrom !== undefined && sameMode.has(spec.differentFrom)
       ? { differentFrom: instanceId(spec.differentFrom, occurrence) }
       : {}),
+    ...(spec.alsoDifferentFrom !== undefined
+      ? {
+          alsoDifferentFrom: spec.alsoDifferentFrom.map((id) =>
+            sameMode.has(id) ? instanceId(id, occurrence) : id,
+          ),
+        }
+      : {}),
     ...(spec.ownedByTarget !== undefined && sameMode.has(spec.ownedByTarget)
       ? { ownedByTarget: instanceId(spec.ownedByTarget, occurrence) }
       : {}),

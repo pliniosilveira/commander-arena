@@ -1218,6 +1218,21 @@ export type Instruction =
       readonly count: number;
       readonly chosen: readonly ObjectId[] | null;
     }
+  /**
+   * "Remove any number of counters from among permanents", "Remove up to three counters from target permanent", "Move a counter from target permanent onto a second target
+   * permanent" (`removeChosenCounters`, `moveCounter`; CR 122.1, 122.5): one counter at a time, a `chooseOption` decision of purpose 'counterPick' says which. `objects` are the permanents the
+   * counters may come off, read when the effect started; `to` the permanent a move puts the counter on (null for a removal); `left` the counters that may still be taken (null: any number);
+   * `removed` the counters taken so far; `chosen` the answer (an option of the decision), null until then. See rules/counter-pick.ts.
+   */
+  | {
+      readonly kind: 'counterPick';
+      readonly mode: 'remove' | 'move';
+      readonly objects: readonly ObjectId[];
+      readonly to: ObjectId | null;
+      readonly left: number | null;
+      readonly removed: number;
+      readonly chosen: string | null;
+    }
   | {
       readonly kind: 'moveCounters';
       readonly counter: string;

@@ -1827,8 +1827,9 @@ function countsWhatHappened(
       // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return of one card per permanent type before it put onto the battlefield.
       return earlier.verb === 'returnOnePerPermanentType';
     case 'countersRemoved':
-      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
-      return earlier.verb === 'removeAllCounters';
+      // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it. Eventide's Shadow: "the number of counters removed this way" after counters the
+      // controller chose to remove.
+      return earlier.verb === 'removeAllCounters' || earlier.verb === 'removeChosenCounters';
     case 'excessDamageDealt':
     // Issue 144 (Goblin Negotiation): "tokens equal to the amount of excess damage dealt to that creature this way": a `dealDamage` before it.
     case 'damageDealt':

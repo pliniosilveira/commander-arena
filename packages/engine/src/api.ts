@@ -100,6 +100,7 @@ import {
   answerResolutionChoice,
   answerResolutionChooseOne,
   answerResolutionCommanderChoice,
+  answerResolutionCounterPick,
   answerResolutionCreatureType,
   answerResolutionDevour,
   answerResolutionEntersChosen,
@@ -511,6 +512,11 @@ function answerChooseOption(
     // CR 702.16a, 608.2d (D-514): the card type the controller chose for "gains protection from the card type of your choice".
     if (!d.options.includes(option)) return fail('That is not one of the options');
     return finishResolutionAnswer(answerResolutionProtectionCardType(state, option));
+  }
+  if (d.purpose === 'counterPick') {
+    // CR 122.1, 122.5, 608.2d: the counter the controller takes (or "Done") for "remove any number of counters" and "move a counter".
+    if (!d.options.includes(option)) return fail('That is not one of the options');
+    return finishResolutionAnswer(answerResolutionCounterPick(state, option));
   }
   if (d.purpose === 'pile') {
     // CR 700.3 (D-303): the pile the chooser picked.

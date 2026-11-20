@@ -303,6 +303,8 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
     case 'aggregate': {
       const things = thingsPhrase(amount.filter, true);
       if (things === null) return UNKNOWN_AMOUNT;
+      // CR 122.1: the counters of every kind on the objects, added together.
+      if (amount.stat === 'counters') return `the number of counters among ${things}`;
       const stat = STAT_WORDS[amount.stat];
       return amount.how === 'greatest'
         ? `the greatest ${stat} among ${things}`

@@ -9,6 +9,7 @@
  */
 import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@commander-arena/engine';
 import { chooseCardType } from './casual-card-type';
+import { chooseCounterPick } from './casual-counter-pick';
 import { chooseNamedOption } from './casual-dragons';
 import { chooseRiot } from './casual-keywords';
 import { chooseLifePaid } from './casual-life-paid';
@@ -129,6 +130,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'assignOpponent') return chooseFirstReplacement(d);
   if (d.purpose === 'attackTarget') return chooseAttackTargetAnswer(view, d);
   if (d.purpose === 'effect') return chooseOfferedInstruction(d);
+  // CR 122.1, 122.5, 608.2d: the counter to remove or move next (casual-counter-pick.ts).
+  if (d.purpose === 'counterPick') return chooseCounterPick(view, d);
   // CR 702.136a (D-185): the counter or haste of riot.
   if (d.purpose === 'riot') return chooseRiot(view, d);
   // D-151: a name from a list the card gives, the chapter of a Saga with read ahead (casual-dragons.ts).

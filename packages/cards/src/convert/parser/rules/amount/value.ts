@@ -162,6 +162,31 @@ const AGGREGATE = (rule: string): Parser<IrAmount> => {
   };
 };
 
+/**
+ * "the number of counters among creatures target player controls" (Ferrafor, Young Yew; CR 122.1, 608.2c): the counters of every kind on the objects a group names, added together.
+ * The engine's `aggregate` of the stat `counters`. The group is plural, as in a count of objects; "counters" has no kind of its own (the total of every kind).
+ */
+const COUNTERS_AMONG = (rule: string): Parser<IrAmount> => {
+  const group = counted(rule, true);
+  return (ctx, pos) => {
+    const head = spanned(pattern(/the number of counters among /iu))(ctx, pos);
+    if (!head.ok) return head;
+    const of = group(ctx, head.pos);
+    if (!of.ok) return of;
+    return {
+      ok: true,
+      value: {
+        kind: 'aggregate',
+        how: 'total',
+        stat: 'counters',
+        of: of.value,
+        span: { start: pos, end: of.pos },
+      },
+      pos: of.pos,
+    };
+  };
+};
+
 /** "your devotion to black", "your devotion to white and blue" (CR 700.5): the colors, as the words write them. */
 const DEVOTION: Parser<IrAmount> = (ctx, pos) => {
   const r = spanned(
@@ -350,6 +375,20 @@ const LIFE_TOTAL =
     return { ok: true, value: { kind: 'lifeTotalOf', of, span: r.value.span }, pos: r.pos };
   };
 
+/**
+ * "the number of counters removed this way" (Eventide's Shadow, CR 122.1, 608.2c): the counters the `removeChosenCounters` before it took off, which the engine counts as `thisWay`
+ * `countersRemoved`. The lowering refuses it unless the same text removed counters before.
+ */
+const COUNTERS_REMOVED_THIS_WAY: Parser<IrAmount> = (ctx, pos) => {
+  const r = spanned(pattern(/the number of counters removed this way(?![\p{L}\p{N}])/iu))(ctx, pos);
+  if (!r.ok) return r;
+  return {
+    ok: true,
+    value: { kind: 'thisWay', what: 'countersRemoved', words: ['counter'], span: r.value.span },
+    pos: r.pos,
+  };
+};
+
 /** One number read from the game: what "plus", "half" and "twice" combine. */
 const ATOM = (rule: string): Parser<IrAmount> =>
   choice(
@@ -361,6 +400,8 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     CARD_TYPES_AMONG_THOSE_VALUE,
     NUMBER_OF_ANY_COUNTERS(rule),
     NUMBER_OF_COUNTERS(rule),
+    COUNTERS_REMOVED_THIS_WAY,
+    COUNTERS_AMONG(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),
     ATTACKERS_GREATEST_POWER,

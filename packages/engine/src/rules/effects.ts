@@ -57,6 +57,7 @@ import { copiableValues } from './copiable';
 import { runCopyFromCards, startCopyFromCards } from './copy-card';
 import { copiedSpell, copyInstructions } from './copy-source';
 import { bonusCounters, counterBonuses, counterCountOn } from './counter-bonus';
+import { runCounterPick } from './counter-pick';
 import { blocks, counterBlocked, counterBlockers } from './counter-prevention';
 import {
   asking,
@@ -284,6 +285,7 @@ export function runInstruction(
   if (instruction.kind === 'populate') return runPopulate(state, res, instruction, flow);
   if (instruction.kind === 'blight') return runBlight(state, res, instruction);
   if (instruction.kind === 'moveCounters') return runMoveCounters(state, res, instruction);
+  if (instruction.kind === 'counterPick') return runCounterPick(state, res, instruction);
   if (instruction.kind === 'conniveNext') return runConniveNext(state, res, instruction);
   if (instruction.kind === 'spare') return runSpare(state, res, instruction);
   if (instruction.kind === 'splitExiled') return runSplitExiled(state, res, instruction);
@@ -2314,20 +2316,26 @@ function runEffect(
       const blockers = counterBlockers(state);
       const bonuses = counterBonuses(state);
       for (const id of resolveObjects(state, effect.objects, ctx, targets)) {
-        const count = next.objects[id]?.counters[effect.counter] ?? 0;
-        if (count <= 0) continue;
-        const put = putCountersOn(
-          state,
-          next,
-          id,
-          effect.counter,
-          count,
-          ctx.controller,
-          blockers,
-          bonuses,
-        );
-        next = put.state;
-        events.push(...put.events);
+        // "each kind of counter on it": the kinds it has as the effect begins for it, each doubled by its own count (CR 701.10 Double).
+        const kinds =
+          effect.counter === undefined
+            ? Object.entries(next.objects[id]?.counters ?? {})
+            : [[effect.counter, next.objects[id]?.counters[effect.counter] ?? 0] as const];
+        for (const [counter, count] of kinds) {
+          if (count <= 0) continue;
+          const put = putCountersOn(
+            state,
+            next,
+            id,
+            counter,
+            count,
+            ctx.controller,
+            blockers,
+            bonuses,
+          );
+          next = put.state;
+          events.push(...put.events);
+        }
       }
       return done(next, events);
     }
@@ -3070,6 +3078,46 @@ function runEffect(
       moved = patchObject(moved, to.id, { counters: toCounters });
       return done(moved, events);
     }
+
+    case 'moveCounter': {
+      // CR 122.5: one counter, of a kind the controller chooses, from the first permanent to the second (rules/counter-pick.ts).
+      const fromId = resolveObjects(state, effect.from, ctx, targets)[0];
+      const toId = resolveObjects(state, effect.to, ctx, targets)[0];
+      if (fromId === undefined || toId === undefined || fromId === toId) return done(next);
+      return done(
+        next,
+        [],
+        [
+          {
+            kind: 'counterPick',
+            mode: 'move',
+            objects: [fromId],
+            to: toId,
+            left: 1,
+            removed: 0,
+            chosen: null,
+          },
+        ],
+      );
+    }
+
+    case 'removeChosenCounters':
+      // CR 122.1, 608.2d: the controller takes counters off the permanents the selector names, one at a time (rules/counter-pick.ts).
+      return done(
+        next,
+        [],
+        [
+          {
+            kind: 'counterPick',
+            mode: 'remove',
+            objects: resolveObjects(state, effect.objects, ctx, targets),
+            to: null,
+            left: effect.upTo ?? null,
+            removed: 0,
+            chosen: null,
+          },
+        ],
+      );
 
     case 'removeAllPlayerCounters': {
       const removed: GameEvent[] = [];
