@@ -4796,6 +4796,8 @@ export type Trigger =
        * together. `triggerCards` is then that card.
        */
       readonly each?: true;
+      /** "Whenever a card leaves your graveyard during your turn" (issue 102, Kishla Skimmer, CR 603.2): only while the controller of this ability is the active player. */
+      readonly duringTurn?: 'you';
     }
   /**
    * "Whenever a land card is put into your graveyard from anywhere" and "Whenever one or more land cards are put into your graveyard from anywhere for the first time each

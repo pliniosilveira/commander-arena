@@ -193,3 +193,39 @@ describe('"Whenever ~ attacks, mill three cards. Then you may return a land card
     g.expect.zone('Forest', 'graveyard', { seat: 0 });
   });
 });
+
+describe('"Whenever a card leaves your graveyard during your turn, draw a card. This ability triggers only once each turn." (CR 603.2, 400.7)', () => {
+  const skimmer = parsed(
+    'SYNTHETIC Parsed Skimmer',
+    'Creature — Bird Scout',
+    'Flying\nWhenever a card leaves your graveyard during your turn, draw a card. This ability triggers only once each turn.',
+    { manaCost: '{G}{U}', power: '2', toughness: '2', colors: ['G', 'U'] },
+  );
+  const regrowth = parsed(
+    'SYNTHETIC Parsed Regrowth',
+    'Sorcery',
+    'Return target card from your graveyard to your hand.',
+    { manaCost: '{G}', colors: ['G'] },
+  );
+  const build = (seat: 0 | 1) =>
+    scenario()
+      .seat(0)
+      .define(skimmer)
+      .define(regrowth)
+      .battlefield(skimmer.name, 'Forest', 'Forest')
+      .hand(regrowth.name)
+      .graveyard('Swamp', 'Plains')
+      .library('Island', 'Island', 'Island')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .seat(seat)
+      .at('precombatMain', { active: seat })
+      .build();
+
+  test('a card leaving the graveyard in its controller’s turn draws a card', () => {
+    const g = build(0);
+    g.act(0).cast(regrowth.name, { targets: ['Swamp'], pay: true });
+    g.passAll();
+    g.expect.handSize(0, 2);
+  });
+});

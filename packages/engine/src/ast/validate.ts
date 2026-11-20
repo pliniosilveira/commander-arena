@@ -1163,6 +1163,9 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         if (t.each !== undefined && t.each !== true) {
           issue(out, `${path}.each`, 'each must be true when present');
         }
+        if (t.duringTurn !== undefined && t.duringTurn !== 'you') {
+          issue(out, `${path}.duringTurn`, "duringTurn must be 'you' when present");
+        }
         // The card is read where it was (its owner's graveyard): no zone, controller or owner.
         if (t.filter !== undefined) {
           checkFilter(t.filter, `${path}.filter`, out);

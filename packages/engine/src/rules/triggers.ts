@@ -846,6 +846,10 @@ function matches(
       return subject !== null && matchesFilter(state, subject, trigger.what, ctx);
     case 'leftGraveyard': {
       if (occ.seat !== candidate.controller) return false;
+      // CR 603.2 (issue 102, Kishla Skimmer): "during your turn": the active player is the controller of this ability.
+      if (trigger.duringTurn === 'you' && state.turn.activeSeat !== candidate.controller) {
+        return false;
+      }
       if (trigger.filter === undefined) return true;
       // CR 400.7: the card as it was in the graveyard (its last-known information).
       const card = occ.card === undefined ? null : objectOrLki(state, occ.card);

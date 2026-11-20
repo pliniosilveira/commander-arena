@@ -587,6 +587,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castDuringOpponentTurn',
     // CR 603.2: "an opponent casts a spell during your turn" (`castSpell` with `duringTurn: 'you'`).
     'castDuringYourTurn',
+    // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
+    'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
     // (`notAsAttacker`) and "Whenever you tap one or more untapped creatures" (`batch`).
     'tappedBy',
@@ -1754,6 +1756,8 @@ export const TRIGGER_FEATURES = [
   'castDuringOpponentTurn',
   /** "Whenever an opponent casts a spell during your turn" (CR 603.2): `castSpell` with `duringTurn: 'you'`. */
   'castDuringYourTurn',
+  /** "Whenever a card leaves your graveyard during your turn" (issue 102, CR 603.2): `leftGraveyard` with `duringTurn`. */
+  'leftGraveyardDuringYourTurn',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -2851,6 +2855,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castFirstOfKind: true,
   castDuringOpponentTurn: true,
   castDuringYourTurn: true,
+  leftGraveyardDuringYourTurn: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,

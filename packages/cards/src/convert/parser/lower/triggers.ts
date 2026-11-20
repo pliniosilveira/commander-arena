@@ -683,11 +683,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
           ? null
           : lowerFilter(t.subject);
       if (filter !== null && !filter.ok) return filter;
+      // "... during your turn" (issue 102, Kishla Skimmer, CR 603.2): the active player is the controller of this ability.
+      if (t.duringTurn === 'you') {
+        const during = missingFeatures(['trigger:leftGraveyardDuringYourTurn']);
+        if (during.length > 0) return failure(t, during);
+      }
       return ok({
         kind: 'leftGraveyard',
         who: 'you',
         ...(filter === null ? {} : { filter: filter.value }),
         ...(t.each === true ? { each: true as const } : {}),
+        ...(t.duringTurn === 'you' ? { duringTurn: 'you' as const } : {}),
       });
     }
     case 'exiledFromLibraryOrGraveyard': {
