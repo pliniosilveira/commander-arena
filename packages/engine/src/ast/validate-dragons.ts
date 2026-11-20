@@ -40,25 +40,45 @@ export function checkDragonsEffect(
         checkPlayerSelector(e.from, `${path}.from`, scope, out);
         // Issue 279: or "each player's library" (`eachPlayer`). Issue 144: or "that player's library", the player of the event (`triggerPlayer`, valid where it is).
         const owner = kindOf(e.from);
-        if (owner !== 'target' && owner !== 'eachPlayer' && owner !== 'triggerPlayer') {
+        if (
+          owner !== 'target' &&
+          owner !== 'eachPlayer' &&
+          owner !== 'triggerPlayer' &&
+          owner !== 'eachOpponent'
+        ) {
           issue(
             out,
             `${path}.from`,
-            "the library whose top cards are exiled is a target, each player's ('eachPlayer') or the player of the event ('triggerPlayer')",
+            "the library whose top cards are exiled is a target, each player's ('eachPlayer'), each opponent's ('eachOpponent') or the player of the event ('triggerPlayer')",
           );
         }
       }
       if (e.faceDown !== undefined && e.faceDown !== true) {
         issue(out, `${path}.faceDown`, 'faceDown must be true when present');
       }
+      if (e.lookAt !== undefined) {
+        if (e.lookAt !== true) issue(out, `${path}.lookAt`, 'lookAt must be true when present');
+        if (e.linked !== true || e.faceDown !== true) {
+          issue(out, `${path}.lookAt`, 'looking at the cards exiled needs linked and faceDown');
+        }
+      }
       // CR 607.2a: the cards exiled with the permanent: its own, face up, from the controller's library, so an ability's.
       if (e.linked !== undefined) {
         if (e.linked !== true) issue(out, `${path}.linked`, 'linked must be true when present');
-        if (e.faceDown === true || e.from !== undefined) {
+        // Lobelia, Defender of Bag End (CR 607.2a, 406.3): the cards of each opponent's library, face down, which the controller looked at (`lookAt`).
+        const faceDownLooked = e.faceDown === true && e.lookAt === true;
+        if (!faceDownLooked && (e.faceDown === true || e.from !== undefined)) {
           issue(
             out,
             `${path}.linked`,
-            'a linked exile of the top cards is face up and from the controller’s own library',
+            'a linked exile of the top cards is face up and from the controller’s own library, or face down and looked at (lookAt)',
+          );
+        }
+        if (faceDownLooked && kindOf(e.from) !== 'eachOpponent') {
+          issue(
+            out,
+            `${path}.from`,
+            'the cards looked at and exiled face down are each opponent’s',
           );
         }
         if (scope.owner === 'spell') {
@@ -72,10 +92,21 @@ export function checkDragonsEffect(
       return true;
     case 'mayPlay':
       // D-151: "you may play that card this turn": the cards an earlier effect of the sequence exiled.
-      if (kindOf(e.objects) !== 'moved') {
-        issue(out, `${path}.objects`, "a play permission names the exiled cards: 'moved'");
+      if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
+        issue(
+          out,
+          `${path}.objects`,
+          "a play permission names the exiled cards: 'moved', or the cards exiled with this permanent: 'linkedExile'",
+        );
       } else {
         checkRef(e.objects, 'object', `${path}.objects`, scope, out);
+      }
+      // Lobelia (CR 118.9): "without paying its mana cost", of the cards exiled with this permanent.
+      if (e.free !== undefined) {
+        if (e.free !== true) issue(out, `${path}.free`, 'free must be true when present');
+        if (kindOf(e.objects) !== 'linkedExile') {
+          issue(out, `${path}.free`, "a free play permission names 'linkedExile' cards");
+        }
       }
       if (!isOneOf(e.lasts, ['endOfTurn', 'endOfYourNextTurn', 'yourNextEndStep', 'whileExiled'])) {
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);

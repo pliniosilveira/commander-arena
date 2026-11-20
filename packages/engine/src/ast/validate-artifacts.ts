@@ -111,7 +111,9 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
       // D-207: "Put a card exiled with this artifact into its owner's graveyard": a choice among the cards of the linked exile.
       ((a?.kind === 'triggered' || a?.kind === 'activated') &&
         // Lorehold group 2: "Choose target card exiled with this creature": a target slot of the cards the permanent exiled.
+        // Lobelia, Defender of Bag End: the permission to play a card exiled with this permanent is a mode of a modal ability.
         (readsLinkedExile(a.effect) ||
+          readsLinkedExile(a.modes) ||
           JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true'))),
   );
   const exiles = face.abilities.some(

@@ -2229,6 +2229,11 @@ export type Effect =
        * to, as `exile.linked` does, for the `linkedExile` reference or the `exiledWithSource` filter of another ability of the same face. Only in an ability of a permanent, face up.
        */
       readonly linked?: true;
+      /**
+       * "Look at the top card of each opponent's library and exile those cards face down" (Lobelia, Defender of Bag End, CR 406.3, 607.2a): with `linked` and `faceDown`, the controller looked at each card
+       * as it was exiled and may go on looking at it (only they, even if another player gains control of the permanent), while it stays in exile.
+       */
+      readonly lookAt?: true;
     }
   /**
    * "Each player exiles a card from their graveyard" (CR 701.13, 101.4, D-231): each player `players` names, in turn order starting with the active player, chooses a card
@@ -2477,7 +2482,16 @@ export type Effect =
    */
   | {
       readonly kind: 'mayPlay';
-      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' }>;
+      /**
+       * `moved`, or (Lobelia, Defender of Bag End, CR 607.2a) `linkedExile`: "you may play a card exiled with ~": each card the permanent the ability belongs to exiled with its linked ability and that is
+       * still in exile as this resolves.
+       */
+      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' | 'linkedExile' }>;
+      /**
+       * "... without paying its mana cost" (Lobelia, CR 118.9): each spell cast with this permission is cast for no mana cost (X is 0, CR 107.3b; additional costs are paid), the one way to cast it; a land
+       * card is played as usual. Only with `objects` `linkedExile`.
+       */
+      readonly free?: true;
       /**
        * "You may cast it this turn" (Lorehold group 1, CR 601.2, 305.1): the permission is to cast the card, never to play it as a land, so a land card among `moved` stays where it
        * is. Without it ("you may play that card") a land card is played as a land (a land drop, CR 305.2) and a spell is cast.

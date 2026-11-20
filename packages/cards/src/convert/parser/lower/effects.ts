@@ -73,6 +73,7 @@ import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
+import { FOOD_D_LOWERINGS } from './food-d';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
@@ -2412,6 +2413,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
+  ...FOOD_D_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,

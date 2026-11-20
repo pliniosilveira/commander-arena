@@ -40,6 +40,11 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
     }
     const faceDown = arg(clause, 'faceDown');
     if (faceDown !== undefined && faceDown.kind !== 'flag') return failure(clause);
+    // Lobelia, Defender of Bag End (CR 607.2a, 406.3): "look at the top card of each opponent's library and exile those cards face down": remembered by the permanent, and looked at.
+    const linked = arg(clause, 'linked');
+    const lookAt = arg(clause, 'lookAt');
+    if (linked !== undefined && linked.kind !== 'flag') return failure(clause);
+    if (lookAt !== undefined && lookAt.kind !== 'flag') return failure(clause);
     ctx.exiled = 'top';
     ctx.exiledFaceDown = faceDown?.value === true;
     return {
@@ -50,6 +55,8 @@ export const EXILE_TOP: Lowering<IrClause, Effects> = {
           count: count.value,
           ...(from === undefined ? {} : { from }),
           ...(faceDown?.value === true ? { faceDown: true as const } : {}),
+          ...(linked?.value === true ? { linked: true as const } : {}),
+          ...(lookAt?.value === true ? { lookAt: true as const } : {}),
         },
       ],
       rule: clause.rule,

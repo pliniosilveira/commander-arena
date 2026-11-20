@@ -18,7 +18,7 @@ import type {
   ResolutionContext,
 } from '../state/types';
 import { amountOf, moveInstructions, moving } from './effect-support';
-import { resolvePlayers, type SelectContext } from './select';
+import { resolveObjects, resolvePlayers, type SelectContext } from './select';
 import { done, type StepOutcome } from './step-outcome';
 
 /** The steps of a turn that come before its end step (CR 500.1): "your next end step" is this turn's while one of them is current. */
@@ -68,9 +68,20 @@ export function runExileTop(
   // CR 607.2a: "exiled with this enchantment": the permanent the ability belongs to remembers the cards (face up: the link of a face-down card is Hideaway's, which is another one).
   if (effect.linked === true && res.source !== null) {
     const source = res.source;
+    // Lobelia, Defender of Bag End (CR 607.2a, 406.3): "look at the top card of each opponent's library and exile those cards face down": linked, face down, and the controller looked.
+    const lookBy = effect.lookAt === true ? res.controller : undefined;
     return moving(
       state,
-      moves.map((m) => (m.kind === 'move' ? { ...m, linkTo: source } : m)),
+      moves.map((m) =>
+        m.kind === 'move'
+          ? {
+              ...m,
+              linkTo: source,
+              ...(effect.faceDown === true ? { faceDown: true as const } : {}),
+              ...(lookBy === undefined ? {} : { lookBy }),
+            }
+          : m,
+      ),
     );
   }
   return moving(
@@ -85,10 +96,16 @@ export function runMayPlay(
   state: GameState,
   res: ResolutionContext,
   effect: Extract<Effect, { kind: 'mayPlay' }>,
+  ctx?: SelectContext,
 ): StepOutcome {
   // D-327 (CR 601.2, 305.1): "Mill a card. You may play that card this turn.": a card its owner (the controller) milled is in their graveyard. A card in
   // exile is the effect's to name whoever owns it; a card in a graveyard only when its owner is the one who may play it ("from your graveyard").
-  const cards = (res.lastMoved ?? []).filter((id) => {
+  // Lobelia, Defender of Bag End (CR 607.2a): "a card exiled with ~": the cards the permanent exiled with its linked ability that are still in exile.
+  const named =
+    effect.objects.kind === 'linkedExile' && ctx !== undefined
+      ? resolveObjects(state, effect.objects, ctx, [])
+      : (res.lastMoved ?? []);
+  const cards = named.filter((id) => {
     const card = state.objects[id];
     return card?.zone === 'exile' || (card?.zone === 'graveyard' && card.owner === res.controller);
   });
@@ -115,6 +132,8 @@ export function runMayPlay(
         seat: res.controller,
         // Lorehold group 1: "you may cast it this turn" is no permission to play a land.
         ...(effect.castOnly === true ? { castOnly: true as const } : {}),
+        // Lobelia (CR 118.9): "without paying its mana cost": a spell is cast for no mana cost; a land is played as usual (`mayPlayFromExile`).
+        ...(effect.free === true ? { free: true as const } : {}),
         // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell".
         ...(effect.anyManaColor === true ? { anyManaColor: true as const } : {}),
       },
