@@ -1260,7 +1260,7 @@ export interface IrTrigger extends IrNode {
   /** "each of your main phases" (Frontier Siege): the postcombat main phase too, besides the step. */
   readonly alsoStep?: 'main2';
   readonly step?: 'draw' | 'main1' | 'beginCombat' | 'combatEnd' | 'main2' | 'upkeep' | 'endStep';
-  /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). */
+  /** 'drawn': the nth card the player draws each turn ("your second card each turn", CR 121.1). 'countersAdded' (issue 345): the nth counter of the kind on the permanent ("the fourth plan counter is put on ~"). */
   readonly nth?: number;
   /** 'cast': only the first spell of the kind the subject names that the actor casts each turn ("your first instant or sorcery spell each turn", CR 601.2i). */
   readonly firstOfKind?: true;

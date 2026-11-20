@@ -234,6 +234,61 @@ export const TRIGGER_COUNTERS_ADDED = defineRule<IrTrigger>({
   },
 });
 
+const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'];
+
+/**
+ * `trigger.nth-counter-put`: "the fourth plan counter is put on ~" (issue 345, Claim the Kingdom; CR 122.6, 603.2, 603.4): the ability triggers when counters of the kind are put on the
+ * permanent itself and it then has that many of them, which the engine reads as the intervening "if" of the lowering (`nth`). One kind of counter by name, the permanent itself only. Not read: a
+ * number that is not an ordinal of the table, "one or more", another subject, a counter of no kind, "+1/+1".
+ */
+export const TRIGGER_NTH_COUNTER_PUT = defineRule<IrTrigger>({
+  id: 'trigger.nth-counter-put',
+  family: 'trigger',
+  leading: ['the'],
+  cites: [
+    'CR 122.6 (Counters)',
+    'CR 603.2 (Handling Triggered Abilities)',
+    'CR 603.4 (Handling Triggered Abilities)',
+  ],
+  examples: ['the fourth plan counter is put on ~', 'the second charge counter is put on ~'],
+  rejects: [
+    'the fourth plan counter is put on',
+    'the fourth plan counter is put on target creature',
+    'the fourth plan counters are put on ~',
+    'the fourth counter is put on ~',
+    'the four plan counter is put on ~',
+    'the ninth plan counter is put on ~',
+    'the fourth +1/+1 counter is put on ~',
+    'the fourth plan counter is removed from ~',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'trigger.nth-counter-put';
+    const head = pattern(
+      new RegExp(`the (${ORDINALS.join('|')}) ([a-z]+) counter is put on `, 'iu'),
+    )(ctx, pos);
+    if (!head.ok) return head;
+    const subject = triggerSubject(id)(ctx, head.pos);
+    if (!subject.ok) return subject;
+    if (subject.value.det !== 'self') return fail(ctx, pos);
+    const nth = ORDINALS.indexOf((head.value[1] ?? '').toLowerCase()) + 1;
+    return {
+      ok: true,
+      value: {
+        kind: 'trigger',
+        event: 'countersAdded',
+        subject: subject.value,
+        by: 'any',
+        counter: (head.value[2] ?? '').toLowerCase(),
+        nth,
+        args: {},
+        span: { start: pos, end: subject.pos },
+        rule: id,
+      },
+      pos: subject.pos,
+    };
+  },
+});
+
 /** What the creatures declared must be: "creatures", or a group named by a type ("Angels", "artifact creatures"). */
 function attackersPhrase(rule: string) {
   return (ctx: Parameters<ReturnType<typeof permanentPhrase>>[0], pos: number) => {
@@ -440,6 +495,7 @@ export const ANGEL_TRIGGER_RULES = [
   TRIGGER_LIFE_GAINED,
   TRIGGER_LIFE_LOST,
   TRIGGER_COUNTERS_ADDED,
+  TRIGGER_NTH_COUNTER_PUT,
   TRIGGER_ATTACK_BATCH,
   TRIGGER_OPPONENT_ATTACKS,
   TRIGGER_PLAYER_ATTACKS_OPPONENT,

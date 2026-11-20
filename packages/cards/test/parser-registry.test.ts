@@ -507,6 +507,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
+  'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,

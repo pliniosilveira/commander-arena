@@ -709,6 +709,8 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   'attacks',
   'becomesTapped',
   'becomesUntapped',
+  // Issue 345 (CR 122.6): counters are put on a permanent on the battlefield, so "it" is still the permanent (Claim the Kingdom: "sacrifice it").
+  'countersAdded',
   // CR 701.37: the permanent has just become monstrous, and is on the battlefield.
   'becomesMonstrous',
   // The creature has just been declared a blocker, or has just become blocked (stage P21, CR 509.3).

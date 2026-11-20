@@ -1231,6 +1231,20 @@ function lowerTriggeredAbility(
       return failure(ifWritten, []);
     }
   }
+  // "When the fourth plan counter is put on ~" (issue 345, CR 603.4): the permanent has that many counters of the kind as the counters are put on it, checked as it happens and as the
+  // ability resolves, which is the engine's intervening "if" of a count.
+  const nthCounter = ability.trigger.nth;
+  if (ability.trigger.event === 'countersAdded' && nthCounter !== undefined) {
+    const kind = ability.trigger.counter;
+    if (kind === undefined || interveningIf !== undefined || events.length !== 1) {
+      return failure(ability.trigger);
+    }
+    interveningIf = {
+      kind: 'amountIs',
+      amount: { kind: 'countersOn', of: { kind: 'this' }, counter: kind },
+      compare: { cmp: 'atLeast', value: nthCounter },
+    };
+  }
   // "When ~ enters during the declare attackers step" (stage P31, D-140, CR 603.4): the step is checked as the event happens and as the
   // ability resolves, which is the engine's intervening `duringStep`, joined with any "if" the text has.
   const during = ability.trigger.during;
