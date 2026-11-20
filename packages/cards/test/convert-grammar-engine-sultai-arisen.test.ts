@@ -286,3 +286,50 @@ describe('"{T}: Create a 2/2 black Zombie Druid creature token. Activate only du
     g.expect.zone('Zombie Druid', 'battlefield', { seat: 0 });
   });
 });
+
+describe('River Kelpie: "Whenever ~ or another permanent enters from a graveyard, draw a card." and "Whenever a player casts a spell from a graveyard, draw a card." (CR 603.6a, 601.2a)', () => {
+  const kelpie = parsed(
+    'SYNTHETIC Parsed Kelpie',
+    'Creature — Beast',
+    'Whenever ~ or another permanent enters from a graveyard, draw a card.\nWhenever a player casts a spell from a graveyard, draw a card.',
+    { manaCost: '{3}{U}{U}', power: '3', toughness: '3', colors: ['U'] },
+  );
+  const reanimate = parsed(
+    'SYNTHETIC Parsed Reanimate',
+    'Sorcery',
+    'Return target creature card from your graveyard to the battlefield.',
+    { manaCost: '{B}', colors: ['B'] },
+  );
+  const flashbackSpell = parsed(
+    'SYNTHETIC Parsed Flash Spell',
+    'Sorcery',
+    'You gain 1 life.\nFlashback {1}',
+    { manaCost: '{1}', colors: [] },
+  );
+  const build = () =>
+    base()
+      .define(kelpie)
+      .define(reanimate)
+      .define(flashbackSpell)
+      .battlefield(kelpie.name, 'Swamp', 'Swamp', 'Swamp')
+      .hand(reanimate.name, 'Grizzly Bears')
+      .graveyard('Serra Angel', flashbackSpell.name)
+      .library('Island', 'Island', 'Island', 'Island')
+      .at('precombatMain')
+      .build();
+
+  test('a permanent that enters from a graveyard draws a card; one cast from the hand does not', () => {
+    const g = build();
+    g.act(0).cast(reanimate.name, { targets: ['Serra Angel'], pay: true });
+    g.passAll();
+    g.expect.zone('Serra Angel', 'battlefield', { seat: 0 });
+    g.expect.handSize(0, 2);
+  });
+
+  test('a spell cast from a graveyard draws a card', () => {
+    const g = build();
+    g.act(0).cast(flashbackSpell.name, { alternative: 'flashback', pay: true });
+    g.passAll();
+    g.expect.handSize(0, 3);
+  });
+});

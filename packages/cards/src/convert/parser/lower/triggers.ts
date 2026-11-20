@@ -186,11 +186,17 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
     case 'enters': {
       const what = entersWhat(t, ctx);
       if (!what.ok) return what;
+      // "enters from a graveyard" (issue 102, River Kelpie, CR 603.6a): the zone it came from, as the event is noticed.
+      if (t.fromGraveyard === true) {
+        const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
+        if (blocked.length > 0) return failure(t, blocked);
+      }
       // "enters untapped", "enters tapped" (stage P30, D-135, CR 603.6a): how it entered, as the event is noticed.
       return ok({
         kind: 'entersBattlefield',
         what: what.value,
         ...(t.entersTapped === undefined ? {} : { tapped: t.entersTapped }),
+        ...(t.fromGraveyard === true ? { fromGraveyard: true as const } : {}),
       });
     }
     case 'attacks': {
@@ -1390,7 +1396,7 @@ function lowerTriggeredAbility(
     // is a part of the event of the one `entersBatch` trigger, read as they enter (the engine's `fromGraveyard`), not an intervening "if" of its own.
     const [only] = triggers;
     if (events.length !== 1 || only?.kind !== 'entersBatch') return failure(ifWritten, []);
-    const blocked = missingFeatures(['trigger:entersFromGraveyard']);
+    const blocked = missingFeatures(['trigger:entersBattlefieldFromGraveyard']);
     if (blocked.length > 0) return failure(ifWritten, blocked);
     triggers[0] = { ...only, fromGraveyard: true };
   } else if (ifWritten?.test.kind === 'damageDealtByType') {
@@ -1886,7 +1892,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:tappedBy',
   'trigger:tapBatch',
   'trigger:notAsAttacker',
-  'trigger:entersFromGraveyard',
+  'trigger:entersBattlefieldFromGraveyard',
   'trigger:scries',
   'trigger:surveils',
   'trigger:rollsHighest',

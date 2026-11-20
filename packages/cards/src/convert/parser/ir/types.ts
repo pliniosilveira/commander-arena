@@ -402,6 +402,8 @@ export interface IrFilter {
   readonly notCastFromHand?: true;
   /** "from your hand" (Prismari deck group 1, D-638, CR 601.2a): a spell that was cast from the hand (the engine's `castFromHand`). */
   readonly castFromHand?: true;
+  /** "from a graveyard" (issue 102, River Kelpie, CR 601.2a): a spell that was cast from a graveyard (the engine's `castFromGraveyard`). */
+  readonly castFromGraveyard?: true;
   /** "with {X} in its mana cost" (Quandrix Unlimited deck group E, CR 107.3, 202.1): a spell whose mana cost has an {X} (the engine's `xInManaCost`). */
   readonly xInManaCost?: true;
   /** "your first spell with {X} in its mana cost each turn" (Quandrix Unlimited deck group E, CR 601.2i): the first such spell the caster cast this turn (the engine's `firstXSpellThisTurn`). */
@@ -1413,6 +1415,8 @@ export interface IrTrigger extends IrNode {
   readonly level?: number;
   /** 'cast': only while the active player is an opponent of this ability's controller (`opponent`) or is the controller (`you`, "during your turn"). */
   readonly duringTurn?: 'you' | 'opponent';
+  /** 'enters' (issue 102, River Kelpie, CR 603.6a): "enters from a graveyard", the permanent came from a graveyard. */
+  readonly fromGraveyard?: true;
   /** 'attacks' alone (stage P21, CR 506.5): it triggers only when the creature is the only one declared as an attacker. */
   readonly alone?: true;
   /** 'becomesTarget' (stage P36, D-178, CR 603.2): "becomes the target of a spell", only a spell triggers it, not an ability. */

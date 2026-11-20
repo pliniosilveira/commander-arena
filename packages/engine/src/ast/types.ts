@@ -665,6 +665,11 @@ export interface ObjectFilter {
    */
   readonly castFromHand?: true;
   /**
+   * "Whenever a player casts a spell from a graveyard" (issue 102, River Kelpie, CR 601.2a, 601.2i): the spell on the stack was cast from a graveyard. Read from the spell itself as it is
+   * cast (the zone it came from), so only a spell is matched. Not with `notCastFromHand` or `castFromHand`.
+   */
+  readonly castFromGraveyard?: true;
+  /**
    * "Whenever you cast a spell with {X} in its mana cost" (Quandrix Unlimited deck, group E, CR 107.3, 202.1, 601.2i): the spell's mana cost has at least one {X} symbol, read from the
    * characteristics of the card or the spell as it is (a copy has the cost of what it copies). In a cost reduction (`costReduction.spells`) it is read as the cost is determined.
    */
@@ -4437,6 +4442,11 @@ export type Trigger =
        * its enters replacements, CR 614.1c, left it in). Left out, either way triggers.
        */
       readonly tapped?: boolean;
+      /**
+       * "Whenever this creature or another permanent enters from a graveyard" (issue 102, River Kelpie; CR 603.6a, 400.7): only a permanent that came onto the battlefield from a
+       * graveyard (the zone it moved from, read as the event happens), never a token and not a spell that was merely cast from there.
+       */
+      readonly fromGraveyard?: true;
     }
   | { readonly kind: 'dies'; readonly what: TriggerSubject; readonly graveyardOwner?: 'you' }
   /**

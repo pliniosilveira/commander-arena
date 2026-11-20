@@ -336,6 +336,7 @@ export function checkFilter(
     'putFromBattlefieldThisTurn',
     'notCastFromHand',
     'castFromHand',
+    'castFromGraveyard',
     'xInManaCost',
     'firstXSpellThisTurn',
     'enteredThisTurn',

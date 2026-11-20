@@ -886,6 +886,14 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
       ) {
         issue(out, `${path}.tapped`, 'tapped must be a boolean when present');
       }
+      // Issue 102 (River Kelpie): "enters from a graveyard" belongs to the enters trigger.
+      if (
+        t.kind === 'entersBattlefield' &&
+        t.fromGraveyard !== undefined &&
+        t.fromGraveyard !== true
+      ) {
+        issue(out, `${path}.fromGraveyard`, 'fromGraveyard must be true when present');
+      }
       // D-110: "attacks alone" (CR 506.5) is a flag of the attacks trigger.
       if (t.kind === 'attacks' && t.alone !== undefined && t.alone !== true) {
         issue(out, `${path}.alone`, 'alone must be true when present');

@@ -264,6 +264,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `At the beginning of combat on your turn, create ${e}, where X is the number of creatures you control.`,
   ),
   'trigger.cast-from-hand': whenever,
+  'trigger.cast-from-graveyard': whenever,
   'trigger.token-combat-damage-batch': whenever,
   'trigger.enters-and-token-damage': permanent((e) => `When ${e}, you gain 1 life.`),
   'effect.exile-instead-when-leaving': permanent(
@@ -310,6 +311,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.landfall': whenever,
   'trigger.sacrifice': whenever,
   'trigger.or-subjects': whenever,
+  'trigger.enters-from-graveyard': whenever,
   'trigger.cast': whenever,
   'trigger.becomes-target': whenever,
   'trigger.upkeep': atStep,

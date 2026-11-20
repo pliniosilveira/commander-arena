@@ -587,6 +587,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'castDuringOpponentTurn',
     // CR 603.2: "an opponent casts a spell during your turn" (`castSpell` with `duringTurn: 'you'`).
     'castDuringYourTurn',
+    // Issue 102 (River Kelpie): "enters from a graveyard" (`entersBattlefield` with `fromGraveyard`).
+    'entersBattlefieldFromGraveyard',
     // Issue 102 (Kishla Skimmer): "Whenever a card leaves your graveyard during your turn" (`leftGraveyard` with `duringTurn`).
     'leftGraveyardDuringYourTurn',
     // D-510: "Whenever you tap an untapped creature an opponent controls" (`becomesTapped` with `by`), "if it isn't being declared as an attacker"
@@ -928,6 +930,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'notCastFromHand',
     // D-638: "an instant or sorcery spell ... from your hand" (`ObjectFilter.castFromHand`).
     'castFromHand',
+    // Issue 102 (River Kelpie): "a spell cast from a graveyard" (`ObjectFilter.castFromGraveyard`).
+    'castSpellFromGraveyard',
     // Quandrix Unlimited group E: "a spell with {X} in its mana cost" / "your first such spell each turn" (`ObjectFilter.xInManaCost`, `firstXSpellThisTurn`).
     'xInManaCost',
     'firstXSpellThisTurn',
@@ -1758,6 +1762,8 @@ export const TRIGGER_FEATURES = [
   'castDuringYourTurn',
   /** "Whenever a card leaves your graveyard during your turn" (issue 102, CR 603.2): `leftGraveyard` with `duringTurn`. */
   'leftGraveyardDuringYourTurn',
+  /** "Whenever this creature or another permanent enters from a graveyard" (issue 102, CR 603.6a): `entersBattlefield` with `fromGraveyard`. */
+  'entersBattlefieldFromGraveyard',
   /** "Whenever you tap an untapped creature an opponent controls" (CR 701.26a, D-510): the engine's `becomesTapped` with `by`. */
   'tappedBy',
   /** "Whenever a creature becomes tapped, if it isn't being declared as an attacker" (CR 508.1f, D-510): the engine's `becomesTapped` with `notAsAttacker`. */
@@ -1882,6 +1888,8 @@ export const SELECTOR_KINDS = [
   'notCastFromHand',
   /** "A spell you cast from your hand" (CR 601.2a, D-638): the engine's `ObjectFilter.castFromHand`. */
   'castFromHand',
+  /** "A spell cast from a graveyard" (CR 601.2a, issue 102): the engine's `ObjectFilter.castFromGraveyard`. */
+  'castSpellFromGraveyard',
   /** "A spell with {X} in its mana cost" (CR 107.3, 601.2i): the engine's `ObjectFilter.xInManaCost`. */
   'xInManaCost',
   /** "Your first spell with {X} in its mana cost each turn" (CR 601.2i): the engine's `ObjectFilter.firstXSpellThisTurn`. */
@@ -2856,6 +2864,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   castDuringOpponentTurn: true,
   castDuringYourTurn: true,
   leftGraveyardDuringYourTurn: true,
+  entersBattlefieldFromGraveyard: true,
   tappedBy: true,
   notAsAttacker: true,
   tapBatch: true,
