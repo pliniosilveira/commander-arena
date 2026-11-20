@@ -1107,7 +1107,13 @@ export type PlayerSelector =
    * has, so a source that has left the battlefield by the time the ability resolves is read as it was (CR 608.2h, last-known information). `of` is
    * `this`, the permanent of the ability; no other creature's attacks are read.
    */
-  | { readonly kind: 'attackedPlayers'; readonly of: { readonly kind: 'this' } };
+  | { readonly kind: 'attackedPlayers'; readonly of: { readonly kind: 'this' } }
+  /**
+   * "Each opponent dealt combat damage this game by a creature named Gollum, Obsessed Stalker" (CR 120.2a, 510.2, 102.2; Gollum, Obsessed Stalker): the opponents of the controller who
+   * are still in the game and have been dealt combat damage by a creature with this name at any time this game, whoever controlled that creature, in the order CR 101.4 gives. The
+   * name is the one the creature had as it dealt the damage (`GameState.combatDamagedByNames`). Read from the game history, so it works in a spell or an ability.
+   */
+  | { readonly kind: 'combatDamagedByNamed'; readonly name: string };
 
 /**
  * A target declaration (CR 115). "any target" is a creature, player, planeswalker or battle

@@ -993,6 +993,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.each-player-attacked': permanent(
     (e) => `At the beginning of your end step, ${e} loses the game.`,
   ),
+  // CR 120.2a: the opponents a creature of the card's name has dealt combat damage to this game, as the subject of "loses life".
+  'noun.each-opponent-dealt-combat-damage-by-named': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
+  ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,
   ),

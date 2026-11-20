@@ -1005,6 +1005,7 @@ describe('unmatched abilities', () => {
       'noun.each-player-discarded',
       'noun.each-player-cant-sacrifice',
       'noun.each-player-attacked',
+      'noun.each-opponent-dealt-combat-damage-by-named',
       'noun.paired-creatures',
       'noun.player',
       'noun.target-spell',

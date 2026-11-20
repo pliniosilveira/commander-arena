@@ -864,6 +864,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachOtherOpponent',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
+    // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
+    'combatDamagedByNamed',
     // D-648: "that opponent" of a `playerAttacksOpponent` trigger.
     'triggerAttackedPlayer',
     'controllerOf',
@@ -1677,6 +1679,8 @@ export const SELECTOR_KINDS = [
   'eachOtherOpponent',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
+  /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
+  'combatDamagedByNamed',
   /** "That opponent" of a `playerAttacksOpponent` trigger (CR 508.6, D-648): the engine's `triggerAttackedPlayer`. */
   'triggerAttackedPlayer',
   'controllerOf',

@@ -472,6 +472,8 @@ export const PLAYER_SUBJECTS = [
   'noun.each-player-cant-sacrifice',
   // D-269: "each player ~ attacked this turn loses the game".
   'noun.each-player-attacked',
+  // Gollum, Obsessed Stalker: "each opponent dealt combat damage this game by a creature named ~ loses life equal to ...".
+  'noun.each-opponent-dealt-combat-damage-by-named',
   'noun.you-and-player',
   // D-486: "any number of target players each lose 2 life and sacrifice a creature of their choice".
   'noun.any-number-target-players',

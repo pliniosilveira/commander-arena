@@ -115,6 +115,8 @@ const PLAYER_DETS: ReadonlySet<IrNoun['det']> = new Set([
   'defendingPlayer',
   // D-269: "each player ~ attacked this turn": several players, so a later "that player" is bound to it and refused by the lowering.
   'attackedPlayers',
+  // "each opponent dealt combat damage this game by a creature named ~": several players, as above.
+  'combatDamagedByNamed',
 ]);
 
 function isPlayerNoun(noun: IrNoun): boolean {

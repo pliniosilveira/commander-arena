@@ -208,7 +208,8 @@ export function lowerAmount(
     }
     case 'triggerDamage': {
       // "The amount of life you gained" is the life of a life gain event, so it means nothing in the body of any other ability (CR 119.9).
-      if (amount.life === true && !ctx.lifeGainTrigger) return { ok: false, needs: [], at: amount.span, rule };
+      if (amount.life === true && !ctx.lifeGainTrigger)
+        return { ok: false, needs: [], at: amount.span, rule };
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
       if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {

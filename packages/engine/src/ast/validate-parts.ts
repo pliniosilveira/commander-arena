@@ -1457,6 +1457,12 @@ export function checkPlayerSelector(sel: PlayerSelector, path: string, scope: Sc
         issue(out, path, "'attackedPlayers' needs an ability of a permanent, not a spell");
       }
       break;
+    case 'combatDamagedByNamed':
+      // CR 120.2a: "each opponent dealt combat damage this game by a creature named X": a non-empty name, read from the game history anywhere.
+      if (typeof sel.name !== 'string' || sel.name === '') {
+        issue(out, `${path}.name`, "'combatDamagedByNamed' needs the name of the creature");
+      }
+      break;
     case 'discardedThisWay':
       // D-210: "each player who discarded a card this way": a discard before it in the same sequence.
       if (!(scope.thisWay ?? []).includes('discarded')) {
@@ -1530,6 +1536,7 @@ export const PLAYER_ONLY = [
   'defendingPlayer',
   'triggerPlayer',
   'attackedPlayers',
+  'combatDamagedByNamed',
 ];
 
 export function checkDamageRecipient(
@@ -5351,6 +5358,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         e.player?.kind === 'eachOpponent' ||
         e.player?.kind === 'eachOtherOpponent' ||
         e.player?.kind === 'attackedPlayers' ||
+        e.player?.kind === 'combatDamagedByNamed' ||
         e.player?.kind === 'all'
       ) {
         issue(out, `${path}.player`, 'only one player can be the monarch (CR 725.3)');

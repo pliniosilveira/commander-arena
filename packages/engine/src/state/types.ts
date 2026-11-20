@@ -2562,6 +2562,12 @@ export interface GameState {
   /** What has happened this turn that abilities ask about (D-139): see `TurnLog`. */
   readonly turnLog: TurnLog;
   /**
+   * The names of the creatures that have dealt combat damage to each player this game, by the seat that was dealt it (CR 120.2a, 510.2; Gollum, Obsessed Stalker: "each opponent dealt
+   * combat damage this game by a creature named ~"): the name the source had as it dealt the damage (read from the permanent, or from its last-known information when it had
+   * left, CR 113.7a), each once. Damage prevented entirely is not recorded. Absent until a creature dealt combat damage to a player, so the state of a game without any hashes as before.
+   */
+  readonly combatDamagedByNames?: Readonly<Record<number, readonly string[]>>;
+  /**
    * The players each creature was declared attacking in the combat phase in progress, or the last one that was (CR 506.1, 508.1, 508.6), with the player who declared it. Rolled into
    * `lastCombatAttacks` as the next combat phase begins. Absent before the first combat of the game.
    */

@@ -333,11 +333,13 @@ describe('Bilbo, Birthday Celebrant', () => {
     const all = start(111);
     all.act(0).activate(bilbo.name).pay();
     all.passAll();
-    all.act(0).chooseCards(
-      { name: 'Grizzly Bears', zone: 'library', nth: 0 },
-      { name: 'Grizzly Bears', zone: 'library', nth: 1 },
-      { name: 'Grizzly Bears', zone: 'library', nth: 2 },
-    );
+    all
+      .act(0)
+      .chooseCards(
+        { name: 'Grizzly Bears', zone: 'library', nth: 0 },
+        { name: 'Grizzly Bears', zone: 'library', nth: 1 },
+        { name: 'Grizzly Bears', zone: 'library', nth: 2 },
+      );
     all.expect.zone('Grizzly Bears', 'battlefield', { seat: 0, count: 3 });
   });
 
@@ -362,7 +364,67 @@ describe('Bilbo, Birthday Celebrant', () => {
     });
     expect(validateCard(mutate({ max: 2 })).length).toBeGreaterThan(0);
     expect(validateCard(mutate({ totalManaValue: 6 })).length).toBeGreaterThan(0);
-    expect(validateCard(mutate({ destinations: [{ zone: 'hand', count: 1 }] })).length).toBeGreaterThan(0);
+    expect(
+      validateCard(mutate({ destinations: [{ zone: 'hand', count: 1 }] })).length,
+    ).toBeGreaterThan(0);
+  });
+});
+
+describe('Gollum, Obsessed Stalker', () => {
+  const gollum = real('Gollum, Obsessed Stalker');
+  const start = () =>
+    scenario()
+      .define(gollum)
+      .define(SIP)
+      .seat(0)
+      .battlefield(gollum.name)
+      .battlefield('Grizzly Bears', 'Plains')
+      .hand(SIP.name)
+      .library(...FILLER)
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(gollum)).toEqual([]);
+  });
+
+  test('an opponent it dealt combat damage to loses the life you gained this turn, at your end step', () => {
+    const g = start();
+    g.playCombat({ attack: [gollum.name], until: 'postcombatMain' });
+    g.expect.life(1, 39);
+    g.act(0).cast(SIP.name).pay();
+    g.passAll();
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.life(1, 36);
+    g.expect.life(0, 43);
+  });
+
+  test('the damage counts for the whole game, not only the turn it was dealt', () => {
+    const g = start();
+    g.playCombat({ attack: [gollum.name], until: 'postcombatMain' });
+    g.expect.life(1, 39);
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.advanceTo('precombatMain', { turn: 'next' });
+    g.expect.step('precombatMain', { active: 0 });
+    g.act(0).cast(SIP.name).pay();
+    g.passAll();
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.life(1, 36);
+  });
+
+  test('an opponent never dealt combat damage by it loses nothing, even if another creature hit them', () => {
+    const g = start();
+    g.playCombat({ attack: ['Grizzly Bears'], until: 'postcombatMain' });
+    g.expect.life(1, 38);
+    g.act(0).cast(SIP.name).pay();
+    g.passAll();
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.life(1, 38);
   });
 });
 
@@ -370,13 +432,25 @@ describe('what the new readings do not take', () => {
   const status = (text: string) => parseOnly(spellCard('Synthetic Probe', text)).support.status;
 
   test('"each of them" names several tokens; "them" alone and "it" still do not', () => {
-    expect(status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on each of them.')).toBe('supported');
-    expect(status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on them.')).toBe('unsupported');
-    expect(status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on it.')).toBe('unsupported');
+    expect(
+      status(
+        'Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on each of them.',
+      ),
+    ).toBe('supported');
+    expect(
+      status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on them.'),
+    ).toBe('unsupported');
+    expect(
+      status('Create three 1/1 white Soldier creature tokens. Put a +1/+1 counter on it.'),
+    ).toBe('unsupported');
   });
 
   test('"the amount of life you gained" is read in a life gain trigger only', () => {
-    expect(status('Draw a card. Target creature gets +X/+X until end of turn, where X is the amount of life you gained.')).toBe('unsupported');
+    expect(
+      status(
+        'Draw a card. Target creature gets +X/+X until end of turn, where X is the amount of life you gained.',
+      ),
+    ).toBe('unsupported');
   });
 
   test('"remove those counters" needs the counters of the sentence condition', () => {
