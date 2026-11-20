@@ -1,8 +1,7 @@
 /** A resolving spell gives a target creature an activated or triggered ability until end of turn. */
 import type { IrClause, IrQuotedAbility } from '../ir/types';
-import { lowerGrantedMana } from './activated';
 import { arg, type Effects, eachObject, failure } from './clauses';
-import { lowerQuotedGrantedAbility } from './quoted-ability';
+import { lowerQuotedGrantedAbility, lowerQuotedGrantedManaAbility } from './quoted-ability';
 import type { Lowering } from './types';
 
 export const GRANT_ABILITY: Lowering<IrClause, Effects> = {
@@ -44,7 +43,12 @@ export const GRANT_MANA_ABILITY: Lowering<IrClause, Effects> = {
     if (clause.duration?.scope !== 'untilYourNextTurn') return failure(clause);
     const quoted = arg(clause, 'ability');
     if (quoted?.kind !== 'quoted') return failure(clause);
-    const mana = lowerGrantedMana(quoted as IrQuotedAbility, ['creature']);
+    const mana = lowerQuotedGrantedManaAbility(
+      quoted as IrQuotedAbility,
+      clause,
+      ['creature'],
+      ctx,
+    );
     if (!mana.ok) return mana;
     return eachObject(
       clause,
