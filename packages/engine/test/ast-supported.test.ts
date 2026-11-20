@@ -57,6 +57,7 @@ const EXECUTABLE_KEYWORDS = [
   'wither', // scenario-xx-infect-toxic
   'toxic', // scenario-xx-infect-toxic
   'splitSecond', // scenario-xx-split-second
+  'startYourEngines', // scenario-xx-speed-s144
   'typecycling', // scenario-xx-typecycling
   'multikicker', // scenario-xx-multikicker
   'buyback', // scenario-xx-galadriel-g3-spells
@@ -158,6 +159,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   wither: { kind: 'wither' },
   toxic: { kind: 'toxic', count: 1 },
   splitSecond: { kind: 'splitSecond' },
+  startYourEngines: { kind: 'startYourEngines' },
   typecycling: {
     kind: 'typecycling',
     filter: { subtypes: ['Island'] },
