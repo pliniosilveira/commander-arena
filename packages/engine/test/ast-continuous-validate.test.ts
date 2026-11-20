@@ -107,6 +107,8 @@ describe('the continuous-effect nodes that are valid and supported', () => {
       'forAsLongAsThisRemains',
       // D-517: "doesn't untap during its controller's next untap step", the duration of a `restrict` of `doesntUntap` only.
       'untilNextUntapStep',
+      // Issue 144: "attacks this combat if able", the duration of a `restrict` of `attacksEachCombat` only.
+      'thisCombat',
     ]);
     const forever: Effect = {
       kind: 'loseAllAbilities',
