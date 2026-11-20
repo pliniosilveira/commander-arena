@@ -370,6 +370,13 @@ const FOR_EACH_PREVENTED_SENTENCE = /^for each 1 damage prevented this way, crea
  * second sentence is what is done with the copy the first makes, so the two are read as one instruction (`effect.exile-copy-cast`).
  */
 const EXILE_AND_COPY_IT = /^exile [^.]* and copy it\.$/i;
+/**
+ * "Each opponent may create X 1/1 red Elemental creature tokens with haste. For each opponent who does, create X 1/1 red Elemental creature tokens with haste." (Tempt with Vengeance, issue 101,
+ * CR 101.4, 111.2): the second sentence counts the opponents the first offered the tokens to who took them, so the two are read as one instruction
+ * (`effect.opponents-may-create-tokens`).
+ */
+const EACH_OPPONENT_MAY_CREATE = /^each opponent may create [^.]*\.$/i;
+const FOR_EACH_OPPONENT_WHO_DOES_CREATE = /^for each opponent who does, create [^.]*\.$/i;
 const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.$/i;
 /**
  * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
@@ -932,6 +939,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PLAYER_MANA_ABILITY_SENTENCE) && said(b, IF_YOU_DO_ADD_SENTENCE)) ||
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
+        (said(a, EACH_OPPONENT_MAY_CREATE) && said(b, FOR_EACH_OPPONENT_WHO_DOES_CREATE)) ||
         (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
         (said(a, COPY_EACH_EXILED_WITH) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, PAY_REFLEXIVE_AND_COPY_THEM) && said(b, MAY_CAST_ANY_COPIES)) ||

@@ -2268,6 +2268,61 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   DOUBLE_COUNTERS,
   CREATE_TOKEN,
   {
+    // "Each opponent may create X 1/1 ... tokens. For each opponent who does, create X 1/1 ... tokens." (Tempt with Vengeance, issue 101, CR 101.4, 111.2, 608.2d): each opponent is
+    // asked once; one who accepts creates the first tokens, and the controller of the spell creates the second for them, which is what "for each opponent who does" comes to.
+    head: 'opponentsMayCreateTokens',
+    id: 'lower.opponents-may-create-tokens',
+    needs: ['effect:playersMay', 'effect:createToken'],
+    lower: (clause, ctx) => {
+      const theirs = arg(clause, 'token');
+      const ours = arg(clause, 'bonus');
+      if (theirs?.kind !== 'token' || ours?.kind !== 'token') return failure(clause);
+      const lowered = [theirs, ours].map((token) =>
+        lowerCreateToken({ ...clause, verb: 'createToken', args: { token } }, ctx),
+      );
+      const [a, b] = lowered;
+      if (a === undefined || b === undefined) return failure(clause);
+      if (!a.ok) return a;
+      if (!b.ok) return b;
+      const [offered, ...restA] = a.value;
+      const [given, ...restB] = b.value;
+      if (
+        offered?.kind !== 'createToken' ||
+        given?.kind !== 'createToken' ||
+        restA.length > 0 ||
+        restB.length > 0 ||
+        offered.controller !== undefined ||
+        given.controller !== undefined
+      ) {
+        return failure(clause);
+      }
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'playersMay',
+            players: { kind: 'eachOpponent' },
+            runsAs: 'chooser',
+            effect: {
+              kind: 'sequence',
+              effects: [
+                offered,
+                {
+                  ...given,
+                  controller: {
+                    kind: 'controllerOf',
+                    of: { kind: ctx.owner === 'spell' ? 'thisSpell' : 'this' },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        rule: clause.rule,
+      };
+    },
+  },
+  {
     head: 'createPerOpponent',
     id: 'lower.create-per-opponent',
     needs: ['effect:forEachPlayer', 'effect:createToken'],

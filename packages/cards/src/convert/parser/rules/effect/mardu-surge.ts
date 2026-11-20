@@ -58,6 +58,54 @@ export const EFFECT_CREATE_TOKENS_PER_OPPONENT_TAPPED_ATTACKING = defineRule<Cla
 });
 
 /**
+ * `effect.opponents-may-create-tokens`: "Each opponent may create X 1/1 red Elemental creature tokens with haste. For each opponent who does, create X 1/1 red Elemental creature tokens
+ * with haste." (Tempt with Vengeance; CR 101.4, 111.2, 608.2d): the two sentences of the offer are one instruction (`segment.ts` keeps them together). Each opponent, in turn order, is
+ * asked; one who accepts creates the tokens of the first sentence and the controller of the spell creates the tokens of the second for them. The tokens are the ones the token family reads.
+ * Not read: another kind of player, "each player", a second sentence that does not count the opponents who did, no second sentence.
+ */
+export const EFFECT_OPPONENTS_MAY_CREATE_TOKENS = defineRule<Clauses>({
+  id: 'effect.opponents-may-create-tokens',
+  family: 'effect',
+  leading: ['each'],
+  cites: [
+    'CR 101.4 (Golden Rules)',
+    'CR 111.2 (Tokens)',
+    'CR 608.2d (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'each opponent may create X 1/1 red Elemental creature tokens with haste. for each opponent who does, create X 1/1 red Elemental creature tokens with haste',
+    'Each opponent may create X 1/1 red Elemental creature tokens with haste. For each opponent who does, create X 1/1 red Elemental creature tokens with haste',
+  ],
+  rejects: [
+    'each opponent may create X 1/1 red Elemental creature tokens with haste',
+    'each opponent may create X 1/1 red Elemental creature tokens with haste. for each opponent, create X 1/1 red Elemental creature tokens with haste',
+    'each player may create X 1/1 red Elemental creature tokens with haste. for each player who does, create X 1/1 red Elemental creature tokens with haste',
+    'each opponent may create X 1/1 red Elemental creature tokens with haste. for each opponent who does, create X 1/1 red Elemental creature tokens with haste and draw a card',
+    'each opponent may create X 1/1 red Elemental creature tokens with haste and draw a card. for each opponent who does, create X 1/1 red Elemental creature tokens with haste',
+    'each opponent creates X 1/1 red Elemental creature tokens with haste. for each opponent who does, create X 1/1 red Elemental creature tokens with haste',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'effect.opponents-may-create-tokens';
+    const head = literal('each opponent may create ')(ctx, pos);
+    if (!head.ok) return head;
+    const first = family<IrToken>('token')(ctx, head.pos);
+    if (!first.ok) return first;
+    const mid = pattern(/\. for each opponent who does, create /iu)(ctx, first.pos);
+    if (!mid.ok) return fail(ctx, pos);
+    const second = family<IrToken>('token')(ctx, mid.pos);
+    if (!second.ok) return fail(ctx, pos);
+    const span = { start: pos, end: second.pos };
+    const clause: IrClause = makeClause(
+      id,
+      'opponentsMayCreateTokens',
+      { token: first.value, bonus: second.value },
+      span,
+    );
+    return { ok: true, value: [clause], pos: second.pos };
+  },
+});
+
+/**
  * `effect.double-tokens-this-turn`: "Until end of turn, if one or more tokens would be created under your control, twice that many of those tokens are created instead." (CR 614.1a,
  * 614.5, 611.2a; Kaya, Geist Hunter): the replacement effect of the doubling permanents, as an effect that lasts until the turn ends. The engine's `doubleTokens`. Not read: another
  * duration, a kind of token, "an opponent's", a different count, no "instead".
@@ -101,5 +149,6 @@ export const EFFECT_DOUBLE_TOKENS_THIS_TURN = defineRule<Clauses>({
 
 export const MARDU_SURGE_EFFECT_RULES = [
   EFFECT_CREATE_TOKENS_PER_OPPONENT_TAPPED_ATTACKING,
+  EFFECT_OPPONENTS_MAY_CREATE_TOKENS,
   EFFECT_DOUBLE_TOKENS_THIS_TURN,
 ];

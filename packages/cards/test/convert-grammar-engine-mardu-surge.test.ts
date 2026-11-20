@@ -612,3 +612,45 @@ describe('Kaya, Geist Hunter: tokens (CR 114, 606, 614.1a, 614.5)', () => {
     g.expect.counters('Soldier[0]', { '+1/+1': 1 });
   });
 });
+
+describe('Tempt with Vengeance: the tempting offer (CR 101.4, 111.2, 608.2d)', () => {
+  const tempt = real('Tempt with Vengeance');
+  const board = () =>
+    scenario()
+      .define(tempt)
+      .seat(0)
+      .library(...LIBRARY)
+      .hand(tempt.name)
+      .battlefield('Mountain', 'Mountain', 'Mountain')
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+
+  test('the card is valid', () => {
+    expect(validateCard(tempt)).toEqual([]);
+  });
+
+  test('an opponent who accepts makes X Elementals and so do you again; every token has haste', () => {
+    const g = board();
+    g.act(0).cast(tempt.name, { x: 2, pay: true });
+    g.passAll();
+    g.expect.pending('confirmOptional', 1);
+    g.act(1).accept();
+    g.passAll();
+    g.expect.zone('Elemental', 'battlefield', { seat: 0, count: 4 });
+    g.expect.zone('Elemental', 'battlefield', { seat: 1, count: 2 });
+    g.expect.derived('Elemental[0]', { keywords: ['haste'], colors: ['R'] });
+    g.expect.invariants();
+  });
+
+  test('an opponent who declines makes nothing, and you only get the first X', () => {
+    const g = board();
+    g.act(0).cast(tempt.name, { x: 2, pay: true });
+    g.passAll();
+    g.act(1).decline();
+    g.passAll();
+    g.expect.zone('Elemental', 'battlefield', { seat: 0, count: 2 });
+    g.expect.zone('Elemental', 'battlefield', { seat: 1, count: 0 });
+  });
+});

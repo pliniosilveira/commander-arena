@@ -550,6 +550,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
   'trigger.attack-with-self-or-commander': whenever,
+  'effect.opponents-may-create-tokens': spell((e) => `${cap(e)}.`),
   'effect.double-tokens-this-turn': permanent((e) => `When ~ enters, ${e}.`),
   'trigger.opponents-dealt-combat-damage': whenever,
   'condition.damage-dealt-by-type': permanent(
