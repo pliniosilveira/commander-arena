@@ -147,7 +147,7 @@ One line per known limit, at most 40 words; delete the line in the change that f
 - The HeuristicAgent holds protection mana only when it costs no mana the turn would spend, with a commander or a creature worth saving on the battlefield; a counterspell is still cast by mana value, not by simulation.
 - `putIntoGraveyard` reads your own graveyard only; Hedge Shredder ("put them onto the battlefield tapped") stays unsupported. Effects that unlock or lock a Room half, and "fully unlocks" (CR 709.5f, 709.5g, 709.5i), are not built.
 - `attackBatch.eachAttackedPlayer` (Demonic Covenant) splits the attack by player in `rules/triggers.ts`; three or more players are untested (the scenario DSL has two seats).
-- The mana estimate of the agents (`unitsOf`) does not read restricted mana ("Spend this mana only ...") or a cost beyond tapping; the hand payment that holds mana open skips such sources.
+- The agents' mana estimate (`unitsOf`) ignores restricted mana ("Spend this mana only ...") and costs beyond tapping; hand payment holding mana open skips such sources, and Molten Slagheap's X ability is hand-only.
 - A spell with a target tax (Skybonder) is offered when the cheapest cost is payable, though no target leaves it payable; the agents cancel it (CR 601.2c, 601.2f).
 - An Aftermath half that targets "target card from a graveyard" is offered when its own card is the only one there (CR 601.2a); the agents cancel it.
 - A prepared copy of a spell (CR 722.3c) was offered, then the engine refused `payAuto` ("You cannot pay that cost"); cause not traced. The agents cancel it and do not cast it again that turn.
