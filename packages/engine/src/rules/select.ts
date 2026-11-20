@@ -42,6 +42,8 @@ export interface SelectContext {
    * "this" mean that permanent (a creature may target itself with its own ability).
    */
   readonly stackObject?: ObjectId;
+  /** The X of the ability that would be activated is not announced yet (the legality check of an activation, CR 602.2b): `manaValueX` then matches any card with a mana value. */
+  readonly xUnannounced?: true;
   /** What the previous move effect of this resolution produced: the `moved` reference (CR 400.7j). */
   readonly moved?: readonly ObjectId[];
   /** What the `triggerSubject` reference means: the object whose event caused this trigger. */
@@ -373,8 +375,12 @@ function subjectSubtypesOf(
 /** The X of the resolving spell or ability: `ctx.x`, else the source's own stack data (CR 107.3a); none if neither has one. */
 function xFilterContext(state: GameState, ctx: SelectContext): { x?: number; xUnannounced?: true } {
   const source = ctx.source === null ? undefined : state.objects[ctx.source];
-  const x = ctx.x ?? source?.stack?.x;
+  // CR 602.2b: while an ability is activated its own object on the stack holds the X announced for it (`stackObject`); `source` is the permanent.
+  const own = ctx.stackObject === undefined ? undefined : state.objects[ctx.stackObject];
+  const x = ctx.x ?? own?.stack?.x ?? source?.stack?.x;
   if (x !== null && x !== undefined) return { x };
+  // CR 107.3a, 602.2b: whether an ability could be activated is asked before its X is announced: any value of X may still be chosen.
+  if (ctx.xUnannounced === true) return { xUnannounced: true };
   // CR 601.2b: a spell still in a zone it can be cast from (its card is checked before it is cast) has announced no X yet.
   return source !== undefined && source.zone !== 'stack' && source.zone !== 'battlefield'
     ? { xUnannounced: true }

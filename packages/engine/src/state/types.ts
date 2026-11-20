@@ -2155,6 +2155,8 @@ export type ContinuousChange =
   | { readonly kind: 'playerProtectionEverything' }
   /** Prevents all increases and decreases to the player's life total (D-607). */
   | { readonly kind: 'playerCantChangeLifeTotal' }
+  /** The players of the effect can't cast spells until the effect ends (`playerCantCastSpells`, CR 101.2): read wherever the engine decides whether a spell can be cast (`rules/cast-restrictions.ts`). */
+  | { readonly kind: 'playerCantCastSpells' }
   /**
    * "Creatures your opponents control attack each combat if able [and attack a player other than you if able]" (`requireAttack`, CR 508.1d, 611.2c,
    * D-179): no layer and no fixed set (`objects` is empty): the requirement is read where attackers are declared (`rules/combat-legality.ts`), for

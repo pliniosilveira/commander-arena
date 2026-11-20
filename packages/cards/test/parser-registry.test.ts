@@ -116,6 +116,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Stage P24: the play rules are lines of their own.
   'static.additional-land': asIs,
   'static.look-at-top': asIs,
+  'static.reveal-top': asIs,
+  'static.play-lands-from-top': asIs,
   'static.play-lands-from-graveyard': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
@@ -768,6 +770,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
+  // Conduit of Worlds: the condition leads the sentence that offers to cast the card.
+  'condition.no-spell-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
   // Issue 279 (Windfall).
   'amount.discarded-most-this-way': spell(
     (e) => `Each player discards their hand, then draws cards ${e}.`,

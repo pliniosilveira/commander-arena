@@ -70,8 +70,12 @@ export function acceptCastCard(state: GameState): Result {
     source: res.source,
     accepted: true,
   };
-  return ok({ ...begun.state, resolution: { ...resolving, queue: a.rest } }, [
-    accepted,
-    ...begun.events,
-  ]);
+  // CR 608.2c: a spell was cast, which "if you do" reads (`performed`), as for `castFree`.
+  return ok(
+    {
+      ...begun.state,
+      resolution: { ...resolving, queue: a.rest, performed: (resolving.performed ?? 0) + 1 },
+    },
+    [accepted, ...begun.events],
+  );
 }

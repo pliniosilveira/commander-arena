@@ -184,6 +184,84 @@ export const STATIC_LOOK_AT_TOP = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.reveal-top`: "Play with the top card of your library revealed." (CR 401.5, 701.20: the top card of the library is revealed to every player; a rule of its own, not "you may
+ * look at"). The engine's `revealTopOfLibrary`. Not read: another library, "of each player's library", a count, another word for the zone, a line with more text.
+ */
+export const STATIC_REVEAL_TOP = defineRule<IrStatic>({
+  id: 'static.reveal-top',
+  family: 'static',
+  leading: ['play'],
+  cites: ['CR 401.5 (Library)', 'CR 604.1 (Handling Static Abilities)'],
+  examples: ['Play with the top card of your library revealed.'],
+  rejects: [
+    'Play with the top card of your library revealed',
+    "Play with the top card of each player's library revealed.",
+    "Play with the top card of your opponents' libraries revealed.",
+    'Play with the top two cards of your library revealed.',
+    'Play with your hand revealed.',
+    'Play with the top card of your graveyard revealed.',
+    'Play with the top card of your library revealed. You may play lands from the top of your library.',
+    'You may look at the top card of your library any time.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/play with the top card of your library revealed\./i)(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject('you', 'you', { start: pos, end: pos + 4 }, 'static.reveal-top');
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: statement('static.reveal-top', who, { kind: 'revealTopOfLibrary' }, span),
+      pos: r.pos,
+    };
+  },
+});
+
+/**
+ * `static.play-lands-from-top`: "You may play lands from the top of your library." (CR 305.1, 401.5, 604.1, 305.2: the permission only says where the land card may come from;
+ * when a land may be played, and how many, are those of the turn). The engine's `playLandsFromTopOfLibrary`. Not read: another card kind ("cast spells from the top"), a basic land
+ * type, another zone, another player's library, a count, "once during each of your turns", and a line with more text.
+ */
+export const STATIC_PLAY_LANDS_FROM_TOP = defineRule<IrStatic>({
+  id: 'static.play-lands-from-top',
+  family: 'static',
+  leading: ['you'],
+  cites: [
+    'CR 305.1 (Lands)',
+    'CR 305.2 (Lands)',
+    'CR 401.5 (Library)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: ['You may play lands from the top of your library.'],
+  rejects: [
+    'You may play lands from the top of your library',
+    'You may play a land from the top of your library.',
+    'You may play Forests from the top of your library.',
+    'You may play lands from the top of your graveyard.',
+    "You may play lands from the top of an opponent's library.",
+    'You may play lands from your library.',
+    'You may cast spells from the top of your library.',
+    'You may play lands from the top of your library this turn.',
+    'You may play lands from the top of your library. You may look at the top card of your library any time.',
+  ],
+  parse: (ctx, pos) => {
+    const r = pattern(/you may play lands from the top of your library\./i)(ctx, pos);
+    if (!r.ok) return r;
+    const who = subject('you', 'you', { start: pos, end: pos + 3 }, 'static.play-lands-from-top');
+    const span = { start: pos, end: r.pos };
+    return {
+      ok: true,
+      value: statement(
+        'static.play-lands-from-top',
+        who,
+        { kind: 'playLandsFromTopOfLibrary' },
+        span,
+      ),
+      pos: r.pos,
+    };
+  },
+});
+
 /** The plural words of the basic land types, as the Oracle text of a card names them ("Forests", "Plains"), with the type each is. */
 const BASIC_LAND_PLURALS: ReadonlyMap<string, string> = new Map([
   ['plains', 'Plains'],
@@ -569,6 +647,8 @@ export const STATIC_ATTACK_TAX_COUNTERS = defineRule<IrStatic>({
 export const PLAY_RULE_STATIC_RULES = [
   STATIC_ADDITIONAL_LAND,
   STATIC_LOOK_AT_TOP,
+  STATIC_REVEAL_TOP,
+  STATIC_PLAY_LANDS_FROM_TOP,
   STATIC_PLAY_LANDS_FROM_GRAVEYARD,
   STATIC_ATTACK_TAX,
   STATIC_ATTACK_TAX_COUNTERS,

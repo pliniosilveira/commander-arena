@@ -1549,6 +1549,10 @@ export type IrStaticEffect =
     }
   /** "You may look at the top card of your library any time." (stage P24, D-125, CR 401.5). The subject is `you`. */
   | { readonly kind: 'lookAtTopOfLibrary' }
+  /** "Play with the top card of your library revealed." (CR 401.5, Oracle of Mul Daya). The subject is `you`. */
+  | { readonly kind: 'revealTopOfLibrary' }
+  /** "You may play lands from the top of your library." (CR 305.1, 401.5, Oracle of Mul Daya). The subject is `you`. */
+  | { readonly kind: 'playLandsFromTopOfLibrary' }
   /** "You may play Forests from your graveyard.", "You may play lands from your graveyard." (Death Toll deck, group D, CR 305.1): `landType` is the basic land type named, none for any land. The subject is `you`. */
   | { readonly kind: 'playLandsFromGraveyard'; readonly landType?: string }
   /**

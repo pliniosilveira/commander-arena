@@ -163,19 +163,27 @@ function auditView(state: GameState, viewer: SeatId, audit: Audit): void {
   const exemptIds = new Set<ObjectId>(searching?.legal ?? arranging?.cards ?? []);
   // The third exception (CR 401.5, D-125): a permanent that says "You may look at the top card of your library
   // any time" shows its controller the top card of their own library, in their own view and nowhere else.
+  // The fourth (CR 401.5): "Play with the top card of your library revealed" shows the top card to every player.
   for (const seat of view.seats) {
-    if (seat.id !== viewer) {
+    const revealed = view.battlefield.some(
+      (o) =>
+        o.controller === seat.id &&
+        o.oracleText.toLowerCase().includes('play with the top card of your library revealed'),
+    );
+    if (seat.id !== viewer && !revealed) {
       expect(seat.libraryTop, `viewer ${viewer} sees seat ${seat.id}'s top card`).toBeUndefined();
       continue;
     }
     if (seat.libraryTop === undefined) continue;
     audit.topCardViews += 1;
-    expect(seat.libraryTop.id).toBe(state.seats[viewer]?.library[0]);
-    const source = view.battlefield.some(
-      (o) =>
-        o.controller === viewer &&
-        o.oracleText.toLowerCase().includes('look at the top card of your library'),
-    );
+    expect(seat.libraryTop.id).toBe(state.seats[seat.id]?.library[0]);
+    const source =
+      revealed ||
+      view.battlefield.some(
+        (o) =>
+          o.controller === viewer &&
+          o.oracleText.toLowerCase().includes('look at the top card of your library'),
+      );
     expect(source, 'a top card is shown with no permanent that allows it').toBe(true);
     exemptIds.add(seat.libraryTop.id);
   }

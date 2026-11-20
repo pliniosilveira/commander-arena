@@ -9,6 +9,7 @@ import type { GameObject, GameState, StackData } from '../state/types';
 import { evaluateCondition } from './conditions';
 import { controllerOf } from './control';
 import { derive } from './derive';
+import { castIsLocked } from './player-lock';
 import { mayHaveStatic } from './printed-statics';
 import { matchesFilter } from './select';
 import { staticConditionHolds } from './static-conditions';
@@ -126,6 +127,8 @@ export function castForbiddenByOpponentsPermanent(
   spell?: GameObject,
   x = 0,
 ): boolean {
+  // CR 101.2, 611.2a: "You can't cast additional spells this turn": an effect that lasts until end of turn, for every way of casting.
+  if (castIsLocked(state, seat)) return true;
   // CR 101.2, 604.1 (D-282): "Your opponents can't cast spells with mana value 3 or less": a spell that a permanent of an opponent of the caster describes.
   if (spell !== undefined && forbiddenBySpellFilter(state, seat, spell, x)) return true;
   const active = state.turn.activeSeat;
