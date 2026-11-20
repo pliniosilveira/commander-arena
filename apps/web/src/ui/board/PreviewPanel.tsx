@@ -169,6 +169,14 @@ function PreviewDetails({ object }: { object: ObjectView }) {
   if (object.attachedToPlayer !== undefined && view !== null) {
     facts.push(`Enchants ${seatLabel(view, object.attachedToPlayer)} (CR 303.4b)`);
   }
+  // CR 701.15 (D-639): a goaded creature says who goaded it; it attacks each combat if able, and not that player if able.
+  if (object.goadedBy !== undefined) {
+    const by =
+      view === null
+        ? ''
+        : ` by ${object.goadedBy.map((seat) => seatLabel(view, seat)).join(' and ')}`;
+    facts.push(`Goaded${by}: attacks each combat if able, another player if able (CR 701.15)`);
+  }
   // CR 702.95b (D-286): the creature this one is paired with, while the pair stands (the engine says it only then).
   if (object.pairedWith !== undefined && view !== null) {
     const partner = findObject(view, object.pairedWith);

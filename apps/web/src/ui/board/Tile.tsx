@@ -62,6 +62,7 @@ function ariaLabel(o: ObjectView, count: number, role: CombatRole | undefined): 
   if (isCrewedVehicle(o)) parts.push('crewed');
   if (isBackFaceUp(o)) parts.push('back face');
   if (isMelded(o)) parts.push(`melded from ${meldedFrom(o)}`);
+  if (o.goadedBy !== undefined) parts.push('goaded');
   if (o.pairedWith !== undefined) parts.push('paired with another creature');
   else if (o.pairedPhasedOut === true)
     parts.push('paired, on hold while one of the two is phased out');
@@ -254,6 +255,15 @@ export function Tile({ object: o, w, h, role, count = 1, onActivate }: TileProps
                 data-ring-bearer={o.ringBearer}
               >
                 <span aria-hidden="true">{'◎ '}</span>Ring-bearer
+              </span>
+            )}
+            {o.goadedBy !== undefined && (
+              <span
+                className="board-flag board-flag-goad"
+                title="Goaded (CR 701.15): attacks each combat if able, and attacks a player other than the one who goaded it if able. The card preview says who goaded it."
+                data-goaded={o.goadedBy.join(',')}
+              >
+                goaded
               </span>
             )}
             {o.pairedWith !== undefined && (

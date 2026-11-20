@@ -950,6 +950,11 @@
   border-color: var(--accent);
 }
 
+.board-flag-goad {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
 .board-flag-turn {
   color: var(--accent);
   border-color: var(--accent);

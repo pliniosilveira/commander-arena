@@ -22,6 +22,7 @@ import { copiableValues } from './rules/copiable';
 import { derive, oracleTextOf } from './rules/derive';
 import { faceDownBy, faceDownLabel, withoutFaceDown } from './rules/face-down';
 import { turnUpSymbols } from './rules/face-down-legality';
+import { goadersOf } from './rules/goad';
 import { INHERENT_TEXT, inherentName } from './rules/inherent';
 import { keywordsOf } from './rules/keywords';
 import { loyaltyActivatedThisTurn } from './rules/loyalty';
@@ -89,6 +90,12 @@ export interface ObjectView {
    * with the designation. Public. Absent otherwise.
    */
   readonly ringBearer?: SeatId;
+  /**
+   * For a goaded creature on the battlefield (CR 701.15): the players that goaded it, by an effect whose time has not ended (CR 701.15a) or by a static ability such as
+   * an Aura's (issue 201). It attacks each combat if able, and a player other than each of them if able (CR 701.15b). Public: goaded is a designation every player
+   * sees. Absent when no player goads it.
+   */
+  readonly goadedBy?: readonly SeatId[];
   /**
    * The creature this one is paired with (CR 702.95b, D-286): the object it is linked to while the pair stands and both are on the battlefield
    * (`partnerOf`: never a stale link, never a creature that is phased out). A melded permanent is one object, so its id is the one of the permanent. Public.
@@ -706,6 +713,8 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
   const inherentShown = obj.stack?.inherent === undefined ? null : inherentName(obj.stack.inherent);
   const inherentText = obj.stack?.inherent === undefined ? null : INHERENT_TEXT[obj.stack.inherent];
   const bearerSeat = ringBearerSeat(state, obj);
+  const goaders =
+    obj.zone === 'battlefield' ? [...new Set([...goadersOf(state, obj.id), ...d.goadedBy])] : [];
   const partner = partnerOf(state, obj);
   const activated = activatedAbilitiesOf(state, obj);
   const landwalks = d.abilities.flatMap((a) =>
@@ -761,6 +770,7 @@ function objectView(state: GameState, id: ObjectId, viewer: SeatId): ObjectView 
     summoningSick: obj.zone === 'battlefield' && isSummoningSick(state, obj),
     ...controlEndsOf(state, obj),
     ...(bearerSeat === null ? {} : { ringBearer: bearerSeat }),
+    ...(goaders.length === 0 ? {} : { goadedBy: goaders }),
     ...(partner === null ? {} : { pairedWith: partner.id }),
     ...(partner === null && isPaired(state, obj) ? { pairedPhasedOut: true as const } : {}),
     ...(asCreature && wouldBeSummoningSick(state, obj)
