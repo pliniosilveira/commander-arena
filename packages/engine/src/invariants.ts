@@ -174,15 +174,15 @@ export function checkInvariants(state: GameState): string[] {
         problems.push(`${id} has mana spent that it cannot have`);
       }
     }
-    // CR 702.56a (D-129): a count of replicate payments belongs to a spell whose face has a replicate cost, and is at
-    // least 1 when present.
+    // CR 702.56a (D-129): a count of replicate payments belongs to a spell that has a replicate cost, and is at least 1 when
+    // present. The face prints it or an effect gave it as the spell was cast (the permanent may have left since, CR 113.7a), and a given cost is a mana cost.
     if (obj.stack?.replicated !== undefined) {
       const n = obj.stack.replicated;
       if (
         !Number.isSafeInteger(n) ||
         n < 1 ||
         obj.stack.kind !== 'spell' ||
-        replicateCostOf(face) === null
+        (replicateCostOf(face) === null && (face?.manaCost ?? null) === null)
       ) {
         problems.push(`${id} was replicated ${n} times, which it cannot be`);
       }

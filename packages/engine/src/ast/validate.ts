@@ -460,8 +460,16 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
     case 'grantKeywordToSpells':
       // Issue 145 (CR 702.144a, 702.51a): "Creature spells you cast have demonstrate": only the keywords the engine reads from a spell as it is cast, for the spells of the permanent's
       // controller a filter names, as the spells they are on the stack (a spell the controller casts: `controller` is 'you', and nothing else says where or whose it is).
-      if (s.keyword?.kind !== 'demonstrate' && s.keyword?.kind !== 'convoke') {
-        issue(out, `${path}.keyword`, 'only demonstrate and convoke can be given to spells');
+      if (
+        s.keyword?.kind !== 'demonstrate' &&
+        s.keyword?.kind !== 'convoke' &&
+        s.keyword?.kind !== 'replicateAtManaCost'
+      ) {
+        issue(
+          out,
+          `${path}.keyword`,
+          'only demonstrate and convoke (and replicateAtManaCost) can be given to spells',
+        );
       }
       checkFilter(s.what, `${path}.what`, out);
       if (
@@ -492,6 +500,85 @@ function checkStatic(s: StaticEffect, path: string, out: AstIssue[]): void {
       break;
     case 'grantFlashbackToGraveyardCards':
       // CR 702.34a: "Each instant and sorcery card in your graveyard has flashback": the cards of the controller's graveyard a filter names, as the cards they are.
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.controller !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          'the cards of a graveyard are named by what they are: no zone, controller, owner, stackKind or combat',
+        );
+      }
+      break;
+    case 'legendRuleDoesntApply':
+      // CR 704.5j: "The "legend rule" doesn't apply to Slivers you control": the permanents on the battlefield a filter names, as the permanents they are (`controller` is "you").
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'legendRuleDoesntApply needs a filter of the permanents');
+        break;
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            (f.controller !== undefined && f.controller !== 'you') ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          "the permanents are named by what they are: no zone, owner, stackKind or combat, and the controller is 'you' or absent",
+        );
+      }
+      break;
+    case 'giveChosenCreatureType':
+      // CR 613.1d: "Slivers you control and nontoken creatures you control are the chosen type": the permanents a filter names as they are on the battlefield (`controller` is "you").
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'giveChosenCreatureType needs a filter of the permanents');
+        break;
+      }
+      checkFilter(s.what, `${path}.what`, out);
+      if (
+        filterSome(
+          s.what,
+          (f) =>
+            f.zone !== undefined ||
+            f.owner !== undefined ||
+            f.stackKind !== undefined ||
+            f.chosenType !== undefined ||
+            (f.controller !== undefined && f.controller !== 'you') ||
+            readsCombatOrSource(f),
+        )
+      ) {
+        issue(
+          out,
+          `${path}.what`,
+          "the permanents are named by what they are: no zone, owner, stackKind, chosen type or combat, and the controller is 'you' or absent",
+        );
+      }
+      if (s.alsoCardsAndSpells !== undefined && s.alsoCardsAndSpells !== true) {
+        issue(out, `${path}.alsoCardsAndSpells`, 'alsoCardsAndSpells is true or absent');
+      }
+      break;
+    case 'grantEncoreToGraveyardCards':
+      // CR 702.141a: "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value": the cards of the controller's graveyard a filter names, as they are there.
+      if (s.what === undefined || s.what === null || typeof s.what !== 'object') {
+        issue(out, `${path}.what`, 'grantEncoreToGraveyardCards needs a filter of the cards');
+        break;
+      }
       checkFilter(s.what, `${path}.what`, out);
       if (
         filterSome(
