@@ -1,5 +1,5 @@
 {
-  "parserVersion": 172,
+  "parserVersion": 173,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -8582,33 +8582,10 @@
     "e9208fc2-616d-4c32-bd66-76a8bf85a6b5": {
       "name": "Hound Tamer // Untamed Pup",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "Daybound",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        },
-        {
-          "face": 1,
-          "ability": 1,
-          "text": "Other Wolves and Werewolves you control have trample.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "static.permanents"
-        },
-        {
-          "face": 1,
-          "ability": 3,
-          "text": "Nightbound",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b511748a"
+      "ast": "ce939466"
     },
     "e9319f13-1f2b-429c-9d61-e58a3cbec86a": {
       "name": "Goblin Anarchomancer",
@@ -9498,7 +9475,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 864,
+      "supported": 865,
       "total": 884
     }
   }
