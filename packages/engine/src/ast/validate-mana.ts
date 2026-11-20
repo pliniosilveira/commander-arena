@@ -82,6 +82,19 @@ export function checkManaProduction(mp: ManaProduction, path: string, out: Out):
       if (mp.or !== undefined && !isOneOf(mp.or, MANA_COLORS)) {
         issue(out, `${path}.or`, `unknown mana color ${JSON.stringify(mp.or)}`);
       }
+      // Issue 144: "Add four mana of the chosen color": a whole number of 2 or more, of the chosen color alone.
+      if (mp.count !== undefined) {
+        if (!Number.isSafeInteger(mp.count) || mp.count < 2) {
+          issue(
+            out,
+            `${path}.count`,
+            'count is a whole number of 2 or more (one mana is the plain production)',
+          );
+        }
+        if (mp.or !== undefined) {
+          issue(out, `${path}.count`, 'a count of the chosen color has no other color to choose');
+        }
+      }
       break;
     case 'couldProduce':
       // The `lands` filter is checked with the mana ability (validate-mana-ability.ts).

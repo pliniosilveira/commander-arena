@@ -271,13 +271,23 @@ function buildProfiles(
     .map(({ p }) => p);
 }
 
+/**
+ * Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability": the mana of any other color is left out of the plan. `null` is a color nobody chose,
+ * which no mana is.
+ */
+function onlyColorOf(request: PaymentRequest): ManaColor | null | undefined {
+  return 'ability' in request.spell ? request.spell.onlyColor : undefined;
+}
+
 function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]): Item[] {
   const reserve = new Set<ManaColor>(request.reserve ?? []);
   const items: Item[] = [];
+  const only = onlyColorOf(request);
 
   // Pool mana first: free in every tier component (SPEC 10 "spend pool mana first").
   request.pool.forEach((mana, poolIndex) => {
     if (!restrictionAllows(mana.restriction, request.spell)) return;
+    if (only !== undefined && mana.color !== only) return;
     const vec = new Array<number>(COMPONENTS).fill(0);
     vec[C_POOL] = mana.restriction === null ? 1 : 0;
     items.push({
@@ -336,6 +346,7 @@ function buildItems(request: PaymentRequest, selection: readonly PaymentSource[]
       source.produces.forEach((colors, outcome) => {
         if (colors.length === 0) return;
         if (!restrictionAllows(source.restriction, request.spell)) return;
+        if (only !== undefined && colors.some((c) => c !== only)) return;
         const vec = new Array<number>(COMPONENTS).fill(0);
         vec[TIER_COMPONENT[source.tier]] = 1;
         vec[C_RESERVE] = reserveColors.size;

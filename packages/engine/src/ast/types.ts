@@ -1232,9 +1232,23 @@ export interface TargetSpec {
 // ---- Costs (CR 118)
 
 export type Cost =
-  | { readonly kind: 'mana'; readonly symbols: readonly ManaSymbol[] }
+  | {
+      readonly kind: 'mana';
+      readonly symbols: readonly ManaSymbol[];
+      /**
+       * "Spend only mana of the chosen color to activate this ability." (issue 144, Throne of Eldraine; CR 602.2b): every mana that pays this cost is of the color the permanent chose as it
+       * entered (an `asEntersChoose` of `color` on the same face); with no color chosen none can pay it. Only the mana cost of an ordinary activated ability.
+       */
+      readonly onlyChosenColor?: true;
+    }
   | { readonly kind: 'tap' }
   | { readonly kind: 'untap' }
+  /**
+   * "Exert ~" (issue 144, CR 701.43a, 701.43b): as the cost of a mana ability, the permanent itself does not untap during its controller's next untap step (the `restrict` of
+   * `doesntUntap` of the exert of an attacker, `rules/exert.ts`). It may be exerted whether or not it is tapped and whether or not it was already exerted. No `exerted` event is
+   * made: that event is of an exerted attacker, for the abilities linked to "You may exert ~ as it attacks". Only the cost of a mana ability, with the permanent itself.
+   */
+  | { readonly kind: 'exert' }
   /**
    * "Pay 2 life" (CR 119.4, 118.3), or (D-135) "Pay life equal to the number of colors in your commanders' color identity": an
    * `Amount` that reads the game as the ability is activated, once (the validator allows what an `amountIs` condition does:
@@ -4011,6 +4025,10 @@ export type ManaProduction =
    */
   | {
       readonly kind: 'chosenColor';
+      /**
+       * "{T}: Add four mana of the chosen color." (issue 144, Throne of Eldraine; CR 106.1, 614.12, 607.2d): this many mana (2 or more) of the chosen color instead of one. Not with `or`.
+       */
+      readonly count?: number;
       /**
        * "{T}: Add {U} or one mana of the chosen color." (issue 184, Thriving Isle; CR 106.1, 605.3b, 607.2d): the ability adds one mana of this color or of the
        * chosen one, chosen as it resolves (so the activation names it). Left out, the mana is of the chosen color alone.
@@ -6875,6 +6893,12 @@ export interface ManaAbility {
      * with an {X} in it or the activation cost of an ability with an {X} in it. Alone: no `types`, `subtypes` or `chosenType`.
      */
     readonly xCost?: true;
+    /**
+     * "Spend this mana only to cast monocolored spells of that color." (issue 144, Throne of Eldraine; CR 106.6, 105.2a): the spell has exactly one color, the color the permanent chose
+     * as it entered (`GameObject.chosen.color`), read as the mana is made; with no color chosen the mana can be spent on no spell. Alone: no `types`, `subtypes`, `chosenType` or
+     * `qualities`.
+     */
+    readonly monocoloredChosen?: true;
   };
   /**
    * "{T}: Add {R}. If that mana is spent on a Dragon creature spell, it gains haste until end of turn." (D-151, CR 106.6, 702.10): the mana the ability

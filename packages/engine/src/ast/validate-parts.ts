@@ -2494,9 +2494,13 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
   switch (cost?.kind) {
     case 'mana':
       checkManaSymbols(cost.symbols, `${path}.symbols`, out);
+      if (cost.onlyChosenColor !== undefined && cost.onlyChosenColor !== true) {
+        issue(out, `${path}.onlyChosenColor`, 'onlyChosenColor must be true when present');
+      }
       break;
     case 'tap':
     case 'untap':
+    case 'exert':
     case 'payXLife':
     case 'discardX':
       break;

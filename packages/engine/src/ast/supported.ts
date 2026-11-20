@@ -564,6 +564,12 @@ function activationCostIssues(
         path: `${path}[${i}]`,
         message: 'X in the cost of a keyword is not implemented by the engine yet',
       });
+    } else if (c.kind === 'mana' && c.onlyChosenColor === true && !allowX) {
+      out.push({
+        path: `${path}[${i}]`,
+        message:
+          'spending only mana of the chosen color is run only for the mana cost of an activated ability',
+      });
     } else if (c.kind === 'payLife' && typeof c.amount !== 'number' && !allowLifeAmount) {
       out.push({
         path: `${path}[${i}]`,

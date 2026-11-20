@@ -175,6 +175,7 @@ import { SACRIFICE_RULES } from './sacrifice';
 import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
@@ -1205,6 +1206,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_D1_EFFECT_RULES,
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
+  // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
+  ...THRONE_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.

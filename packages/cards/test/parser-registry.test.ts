@@ -104,6 +104,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // Issue 245 (Vivid Grove).
   'replacement.enters-tapped-with-counters': asIs,
   'replacement.enters-tapped-unless': asIs,
+  // Issue 144 (Den of the Bugbear).
+  'replacement.enters-tapped-if': asIs,
   'replacement.enters-tapped-unless-pays': asIs,
   'replacement.enters-tapped-unless-reveals': asIs,
   'replacement.enters-tapped-unless-reveals-or': asIs,
@@ -232,6 +234,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
       `When ~ enters, return ${e} to the battlefield, where X is the number of opponents you have.`,
   ),
   'cost.remove-counters': permanent((e) => `${e}: Draw a card.`),
+  // Issue 144 (Arena of Glory).
+  'cost.exert': permanent((e) => `{R}, ${e}: Draw a card.`),
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
@@ -325,6 +329,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.number-of': permanent((e) => `When ~ dies, create ${e}.`),
   'noun.self': spell((e) => `Put a +1/+1 counter on ${e}.`),
   'noun.a-permanent': spell((e) => `Sacrifice ${e}.`),
+  // Issue 144 (Fountainport).
+  'noun.a-token': permanent((e) => `Sacrifice ${e}: Draw a card.`),
   'noun.up-to-one-permanent': spell((e) => `Put two +1/+1 counters on ${e}.`),
   'noun.up-to-graveyard-cards': spell((e) => `Return ${e} to your hand.`),
   'noun.any-target': spell((e) => `~ deals 1 damage to ${e}.`),

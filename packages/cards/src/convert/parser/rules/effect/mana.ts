@@ -151,9 +151,12 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
     // Kami of Whispered Hopes, Astral Cornucopia: a mana ability's count of mana of one chosen color.
     'add x mana of any one color',
     'add one mana of that color for each charge counter on ~',
+    // Issue 144 (Throne of Eldraine): a count of mana of the chosen color.
+    'add four mana of the chosen color',
+    'add two mana of the chosen color',
   ],
   rejects: [
-    'add two mana of the chosen color',
+    'add five mana of the chosen color',
     'add one mana of the chosen type',
     'add one mana of the chosen colors',
     'add {G} or {G}',
@@ -228,6 +231,11 @@ export const EFFECT_ADD_MANA = defineRule<Clauses>({
             // Stage P33 (D-150): one mana of the color the permanent chose (the engine's `chosenColor`).
             map(pattern(/one mana of the chosen color(?![\p{L}\p{N}])/iu), () => ({
               kind: 'chosenColor' as const,
+            })),
+            // Issue 144 (Throne of Eldraine, CR 106.1b, 607.2d): "four mana of the chosen color", all of the one color the permanent chose.
+            map(pattern(/(two|three|four) mana of the chosen color(?![\p{L}\p{N}])/iu), (m) => ({
+              kind: 'chosenColor' as const,
+              count: COMBINATION_COUNT[(m[1] ?? '').toLowerCase()] ?? 2,
             })),
             map(literal('one mana of any color'), () => ({ kind: 'anyColor' as const })),
             // Nykthos, Shrine to Nyx (CR 605.3b, 700.5): after "Choose a color.", as many mana of it as the devotion to it. Read here, lowered only after that sentence.

@@ -956,6 +956,7 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
     case 'commanderIdentity':
       return { kind: 'commanderIdentity' };
     case 'chosenColor':
+      if (spec.what.count !== undefined) return { kind: 'chosenColor', count: spec.what.count };
       return spec.what.or === undefined
         ? { kind: 'chosenColor' }
         : { kind: 'chosenColor', or: spec.what.or };
@@ -1947,6 +1948,26 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     return {
       ok: true,
       value: [{ ...made, forEachOpponent: { mustAttack: true } }],
+      rule: clause.rule,
+    };
+  }
+  // Issue 144 (CR 508.4, 110.5b): "create a 1/1 red Goblin creature token that's tapped and attacking": the token enters tapped, then the engine's `enterAttacking` puts it in the combat
+  // against whom the source attacks, never declared as an attacker. Only where the source is the attacker ("Whenever this creature attacks"): anywhere else the controller chooses whom
+  // it attacks (CR 508.4), which the engine does not ask.
+  if (token.tappedAndAttacking === true && ctx.selfAttackTrigger) {
+    const blockedAttack = missingFeatures(['effect:enterAttacking', 'token:tapped']);
+    if (blockedAttack.length > 0) {
+      return { ok: false, needs: blockedAttack, at: token.span, rule: token.rule };
+    }
+    const { tappedAndAttacking: _flag, ...plain } = token;
+    const inner = lowerCreateToken(
+      { ...clause, args: { ...clause.args, token: { ...plain, tapped: true } } },
+      ctx,
+    );
+    if (!inner.ok) return inner;
+    return {
+      ok: true,
+      value: [...inner.value, { kind: 'enterAttacking', objects: { kind: 'moved' } }],
       rule: clause.rule,
     };
   }

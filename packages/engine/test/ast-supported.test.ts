@@ -419,6 +419,8 @@ describe('supported feature gate', () => {
       'tapPermanents',
       // Issue 245 (PR #280): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).
       'removeCounters',
+      // Issue 144: "{R}, {T}, Exert this land: Add {R}{R}" (Arena of Glory).
+      'exert',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
