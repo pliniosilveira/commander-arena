@@ -1525,7 +1525,16 @@ export type Cost =
    * combined with a mana or sacrifice cost it is refused (see `docs/ROADMAP.md`).
    */
   | { readonly kind: 'tapCreatures'; readonly totalPower: number }
-  | { readonly kind: 'exileFromGraveyard'; readonly filter: ObjectFilter; readonly count: number }
+  | {
+      readonly kind: 'exileFromGraveyard';
+      readonly filter: ObjectFilter;
+      readonly count: number;
+      /**
+       * "{X}, {T}, Exile X cards from your graveyard: ..." (issue 102, Necropolis Fiend; CR 107.3a, 602.2b): the number of cards is the X announced for the ability (none for
+       * X = 0). Only in the cost of an activated ability that has {X} in its mana cost; `count` is 1.
+       */
+      readonly countX?: true;
+    }
   | { readonly kind: 'removeCounters'; readonly counter: string; readonly count: number }
   /**
    * The loyalty symbol of a loyalty ability (CR 606.2, 606.4, 606.5, D-200): `change` is the number of loyalty counters the permanent

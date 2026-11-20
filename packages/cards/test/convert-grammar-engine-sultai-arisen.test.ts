@@ -411,3 +411,31 @@ describe('"{1}{G}, {T}, Return ~ to its owner’s hand: Reveal the top four card
     g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
   });
 });
+
+describe('"{X}, {T}, Exile X cards from your graveyard: Target creature gets -X/-X until end of turn." (CR 107.3a, 602.2b, 118.3)', () => {
+  const fiend = parsed(
+    'SYNTHETIC Parsed Fiend',
+    'Creature — Demon',
+    '{X}, {T}, Exile X cards from your graveyard: Target creature gets -X/-X until end of turn.',
+    { manaCost: '{7}{B}{B}', power: '5', toughness: '5', colors: ['B'] },
+  );
+  const build = () =>
+    base()
+      .define(fiend)
+      .battlefield(fiend.name, 'Swamp', 'Swamp', 'Swamp')
+      .graveyard('Plains', 'Plains', 'Forest')
+      .seat(1)
+      .battlefield('Serra Angel')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+
+  test('X cards leave the graveyard and the target gets -X/-X', () => {
+    const g = build();
+    g.act(0).activate(fiend.name).x(2).targets(['Serra Angel']).pay();
+    g.act(0).chooseCards('Plains[0]', 'Plains[1]');
+    g.passAll();
+    g.expect.pt('Serra Angel', 2, 2);
+    expect(g.state.exile).toHaveLength(2);
+  });
+});

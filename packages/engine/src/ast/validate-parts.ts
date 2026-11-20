@@ -3000,6 +3000,10 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
       if (!isCount(cost.count) || cost.count < 1) {
         issue(out, `${path}.count`, 'count must be a positive integer');
       }
+      // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard" has the count 1 and `countX`.
+      if (cost.countX !== undefined && (cost.countX !== true || cost.count !== 1)) {
+        issue(out, `${path}.countX`, 'countX must be true, with a count of 1');
+      }
       break;
     case 'loyalty':
       // CR 606.4, 606.5 (D-200): [+N], [-N], [0] or [-X].

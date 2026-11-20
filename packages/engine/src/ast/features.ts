@@ -171,6 +171,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'modeDifferentTargets',
     // D-488: "{B}, Sacrifice X creatures: ..." (`Cost` `sacrifice` with `countX`, CR 107.3a, 602.2b).
     'sacrificeX',
+    // Issue 102 (Necropolis Fiend): "{X}, {T}, Exile X cards from your graveyard: ..." (`Cost` `exileFromGraveyard` with `countX`, CR 107.3a, 602.2b).
+    'exileFromGraveyardX',
     // Issue 101: "{4}{B}{B}{B}, Discard X cards: ..." (`Cost` `discard` with `countX`, CR 107.3a, 602.2b).
     'discardCostX',
     // D-491: "As an additional cost to cast this spell, you may sacrifice one or more creatures" (`Cost` `sacrifice` with `anyNumber`, CR 118.8, 601.2b).
@@ -1718,6 +1720,8 @@ export const ABILITY_FEATURES = [
   'modeDifferentTargets',
   /** "{B}, Sacrifice X creatures: ..." (D-488, CR 107.3a, 602.2b, 118.3): a `sacrifice` cost with `countX`, the X announced as the ability is activated. */
   'sacrificeX',
+  /** "Exile X cards from your graveyard" in the cost of an activated ability (issue 102, CR 107.3a, 602.2b): an `exileFromGraveyard` cost with `countX`. */
+  'exileFromGraveyardX',
   /** "Discard X cards" in the cost of an activated ability (issue 101, CR 107.3a, 602.2b): a `discard` cost with `countX`. */
   'discardCostX',
   /** "As an additional cost to cast this spell, you may sacrifice one or more creatures" (D-491, CR 118.8, 601.2b, 601.2h): a `sacrifice` cost with `anyNumber` in a face's `additionalCosts`, chosen as the cost is paid. */
@@ -2607,6 +2611,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   modeAllOrNone: true,
   modeDifferentTargets: true,
   sacrificeX: true,
+  exileFromGraveyardX: true,
   discardCostX: true,
   optionalSacrifice: true,
   optionalBlight: true,

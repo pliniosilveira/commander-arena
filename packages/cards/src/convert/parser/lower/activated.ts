@@ -767,6 +767,10 @@ function prepare(
     ...(costs.value.some((c) => c.kind === 'discard' && c.countX === true)
       ? (['ability:discardCostX'] as const)
       : []),
+    // Issue 102 (Necropolis Fiend): "Exile X cards from your graveyard".
+    ...(costs.value.some((c) => c.kind === 'exileFromGraveyard' && c.countX === true)
+      ? (['ability:exileFromGraveyardX'] as const)
+      : []),
     // D-583: "Sacrifice one or more artifacts".
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
       ? (['ability:sacrificeOneOrMore'] as const)
@@ -1056,6 +1060,7 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:xCost',
   'ability:sacrificeX',
   'ability:discardCostX',
+  'ability:exileFromGraveyardX',
   'ability:sacrificeOneOrMore',
   'ability:sacrificeEach',
 ];
