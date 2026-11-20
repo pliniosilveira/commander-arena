@@ -249,3 +249,31 @@ describe('For each opponent, a token tapped and attacking (CR 508.4, 101.4)', ()
     g.expect.derived('bears', { keywords: [] });
   });
 });
+
+describe('Legion Warboss: a token that gains haste and must attack this combat (CR 508.1d, 506.1)', () => {
+  const warboss = real('Legion Warboss');
+
+  test('the card is valid', () => {
+    expect(validateCard(warboss)).toEqual([]);
+  });
+
+  test('at the beginning of combat a Goblin is created with haste, and it must attack', () => {
+    const g = scenario()
+      .define(warboss)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(warboss.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('beginningOfCombat');
+    g.passAll();
+    g.expect.zone('Goblin', 'battlefield', { seat: 0, count: 1 });
+    g.expect.derived('Goblin', { keywords: ['haste'] });
+    g.advanceTo('declareAttackers', { attack: false });
+    // The Goblin must attack (it is "if able": the engine refuses a declaration without it).
+    g.expect.illegal(0, { declareAttackers: [{ attacker: warboss.name }] });
+    g.expect.legal(0, { declareAttackers: [{ attacker: 'Goblin' }] });
+  });
+});
