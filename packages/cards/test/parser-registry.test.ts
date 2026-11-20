@@ -1020,6 +1020,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Group 2b-b (D-328): the rider that copies the spell the mana is spent on follows the "Add" sentence of its mana ability.
   'effect.mana-rider-copy': permanent((e) => `{T}: Add {R}. ${cap(e)}.`),
+  // Forger's Foundry (issue 121): the rider of the mana the ability before it adds.
+  'effect.mana-rider-exile': permanent((e) => `{T}: Add {U}. ${cap(e)}.`),
   // Group 2 (D-230).
   'noun.each-permanent-that-is': spell((e) => `Put two +1/+1 counters on ${e}.`),
   // Bruna deck, Ajani (D-268).

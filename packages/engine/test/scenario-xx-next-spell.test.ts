@@ -140,3 +140,36 @@ describe('"The next instant spell and the next sorcery spell you cast this turn 
     expect(g.state.stack).toHaveLength(1);
   });
 });
+
+describe('"When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead" (Forger\'s Foundry, CR 607.2a)', () => {
+  const FOUNDRY = 'SYNTHETIC Exile Foundry';
+  const SMALL = 'SYNTHETIC Plot Draw'; // {2}{U} sorcery, mana value 3
+  const BIG = 'SYNTHETIC Value Discount'; // {8}{U} sorcery, mana value 9 (full price needs nine mana)
+
+  test('the card is valid', () => {
+    expect(validateCard(syntheticCard(FOUNDRY))).toEqual([]);
+  });
+
+  test('the mana of the artifact pays for the spell: the spell is exiled as it resolves and remembered as exiled with the artifact', () => {
+    const g = game(
+      (b) => b.battlefield(FOUNDRY).hand(SMALL).battlefield('Island', { count: 2 }),
+      '',
+    );
+    g.act(0).cast(SMALL, { pay: true });
+    // The Foundry's mana was spent: its trigger is on the stack above the spell.
+    expect(g.state.stack.length).toBeGreaterThanOrEqual(2);
+    // The trigger resolves first and asks whether to exile the spell.
+    g.pass();
+    g.pass();
+    g.act(0).accept();
+    g.passAll();
+    g.expect.zone(SMALL, 'exile');
+    g.expect.invariants();
+  });
+
+  test('a spell with a mana value above 3 does not trigger it', () => {
+    const g = game((b) => b.battlefield(FOUNDRY).hand(BIG).battlefield('Island', { count: 8 }), '');
+    g.act(0).cast(BIG, { pay: true });
+    expect(g.state.stack).toHaveLength(1);
+  });
+});

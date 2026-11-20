@@ -37,7 +37,7 @@ const EXILE_PILES: Lowering<IrClause, Effects> = {
 const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
   head: 'castFromAmong',
   id: 'lower.cast-from-among',
-  needs: ['effect:castFree', 'selector:moved'],
+  needs: ['effect:castFree', 'selector:moved', 'selector:exiledWithSource'],
   acceptsOptional: true,
   lower(clause, ctx) {
     const other = arg(clause, 'other');
@@ -47,10 +47,14 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
     if (!may.value && !clause.optional) return failure(clause);
     // "The other cards exiled this way" are the cards the opponent did not choose; "them" and "those cards" are the cards an instruction exiled.
     const before = ctx.lastEffectKind;
+    // Forger's Foundry (issue 121): "from among cards exiled with ~": the cards the permanent exiled, named by the permanent, not by an instruction before it.
+    const linked = arg(clause, 'linked');
+    const fromLinked = linked?.kind === 'flag' && linked.value;
     if (
-      other.value
+      !fromLinked &&
+      (other.value
         ? before !== 'opponentChoosesCard'
-        : before === null || !EXILES_CARDS.includes(before)
+        : before === null || !EXILES_CARDS.includes(before))
     ) {
       return failure(clause);
     }
@@ -78,7 +82,7 @@ const CAST_FROM_AMONG: Lowering<IrClause, Effects> = {
         : undefined;
     const effect: Effect = {
       kind: 'castFree',
-      objects: { kind: 'moved' },
+      objects: fromLinked ? { kind: 'linkedExile' } : { kind: 'moved' },
       ...(max === undefined ? {} : { max }),
       ...(filter === undefined ? {} : { filter }),
     };

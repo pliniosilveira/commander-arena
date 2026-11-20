@@ -365,6 +365,13 @@ const MAY_CAST_THE_COPY = /^you may cast the copy without paying its mana cost\.
  * "Exile target card that's an instant or sorcery from your graveyard. For each card exiled this way, copy it, and you may cast the copy without paying its mana cost." (Mizzix's Mastery,
  * issue 121, CR 707.12): the second sentence is what is done with the copy of each card the first exiles, read as one instruction (`effect.exile-copy-cast`).
  */
+/**
+ * "Then copy each card exiled with ~. You may cast any number of the copies without paying their mana costs." (Arcane Bombardment, issue 121, CR 707.12): the second sentence is what is
+ * done with the copies the first makes, read as one instruction (`effect.copy-linked-exiled-and-cast`).
+ */
+const COPY_EACH_EXILED_WITH = /^(?:then )?copy each card exiled with ~\.$/i;
+const MAY_CAST_ANY_COPIES =
+  /^you may cast any number of the copies without paying their mana costs\.$/i;
 const EXILE_CARD_SENTENCE = /^exile [^.]* from your graveyard\.$/i;
 const FOR_EACH_EXILED_COPY_IT =
   /^for each card exiled this way, copy it, and you may cast the copy without paying its mana cost\.$/i;
@@ -865,6 +872,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, PREVENT_ALL_SENTENCE) && said(b, FOR_EACH_PREVENTED_SENTENCE)) ||
         (said(a, EXILE_AND_COPY_IT) && said(b, MAY_CAST_THE_COPY)) ||
         (said(a, EXILE_CARD_SENTENCE) && said(b, FOR_EACH_EXILED_COPY_IT)) ||
+        (said(a, COPY_EACH_EXILED_WITH) && said(b, MAY_CAST_ANY_COPIES)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_FROM_AMONG)) ||
         (said(a, REVEAL_THE_TOP) && said(b, PUT_ALL_REVEALED_HAND)) ||
         (said(a, COUNTER_TARGET_SPELL) && said(b, EXILE_COUNTERED_THEN_CAST)) ||

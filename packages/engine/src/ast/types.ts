@@ -1830,7 +1830,10 @@ export type Effect =
    */
   | {
       readonly kind: 'copyCardAndCast';
-      readonly objects: Extract<ObjectRef, { readonly kind: 'moved' | 'boundObjects' }>;
+      readonly objects: Extract<
+        ObjectRef,
+        { readonly kind: 'moved' | 'boundObjects' | 'linkedExile' }
+      >;
     }
   | {
       readonly kind: 'delayedCombatDamage';
@@ -2598,7 +2601,15 @@ export type Effect =
    * by another effect is not changed: the "if you do" is false for it) and its controller's delayed triggered ability returns the card to its owner's hand at the beginning of the next
    * end step (the one that is exiled; one that left exile since is a new object, CR 400.7). Does nothing when the spell has left the stack as this resolves.
    */
-  | { readonly kind: 'exileOnResolve'; readonly spell: ObjectRef }
+  | {
+      readonly kind: 'exileOnResolve';
+      readonly spell: ObjectRef;
+      /**
+       * "You may exile that spell instead of putting it into its owner's graveyard as it resolves" (Forger's Foundry, issue 121, CR 607.2a): the card is exiled as it resolves and the
+       * permanent the ability belongs to remembers it as exiled with it (`linkedExile`), and it is not returned to the hand. Only in an ability of a permanent.
+       */
+      readonly linked?: true;
+    }
   /**
    * "Double the value of X." (CR 107.3, 107.3a, Unbound Flourishing): the X announced for the spell `spell` names (the spell whose casting caused the trigger: `triggerSubject`)
    * becomes twice its value, as it is on the stack: every X in its text and in the permanent it becomes ("enters with X counters", CR 107.3m) reads the new value, and so does a copy
@@ -2735,6 +2746,11 @@ export type Effect =
       readonly kind: 'exile';
       readonly objects: ObjectSelector;
       readonly linked?: true;
+      /**
+       * "Exile an instant or sorcery card at random from your graveyard" (Arcane Bombardment, issue 121, CR 701.13): of the objects `objects` names, one is exiled, picked by the game's seeded
+       * generator (nobody chooses); with one or none there is nothing to pick. With `each` of a filter of cards in a zone outside the battlefield.
+       */
+      readonly atRandom?: true;
       /**
        * "Exile target nonland permanent ... until this enchantment leaves the battlefield" (CR 610.3, D-149): the cards are returned to the battlefield
        * under their owners' control (CR 610.3c) when the permanent the ability belongs to leaves the battlefield. If it has left already as the
@@ -6865,6 +6881,8 @@ export interface ManaAbility {
        * spent (a spell with no color is none of them). With `types` it is "a red instant or sorcery spell": of a color and of a type.
        */
       readonly colors?: readonly Color[];
+      /** "... to cast an instant or sorcery spell with mana value 3 or less" (issue 121, CR 202.3e): the mana value of the spell as it is cast (the X announced counts) is no more than this. */
+      readonly manaValueAtMost?: number;
     };
     /**
      * `{ scryCommanderCasts: true }` (D-229): "scry X, where X is the number of times it's been cast from the command zone this game": X is the number of
@@ -6880,7 +6898,13 @@ export interface ManaAbility {
        * +1/+1 counters (this cast included), for each such mana spent on it. Read as the permanent enters.
        */
       | { readonly countersCommanderCasts: true }
-      | { readonly copySpell: 'may' | 'no' };
+      | { readonly copySpell: 'may' | 'no' }
+      /**
+       * `{ exileLinked: true }` (issue 121, Forger's Foundry, CR 106.6, 603.2, 607.2a): "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that
+       * spell instead of putting it into its owner's graveyard as it resolves": a triggered ability of the permanent that made the mana goes on the stack above the spell, and when its
+       * controller chooses to, the spell is exiled as it resolves and the permanent remembers it (`linkedExile`). Each mana spent is its own trigger.
+       */
+      | { readonly exileLinked: true };
   };
   /**
    * "{T}: Add one mana of any color. If you control a creature with power 4 or greater, add two mana of any one color instead." (D-145,

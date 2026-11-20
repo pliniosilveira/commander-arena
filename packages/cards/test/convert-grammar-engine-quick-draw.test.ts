@@ -384,3 +384,65 @@ test('Mizzix’s Mastery: exile an instant or sorcery from your graveyard, copy 
   all.expect.zone('Lightning Bolt', 'exile');
   all.expect.zone('Divination', 'exile');
 });
+
+test('Arcane Bombardment: the first instant or sorcery each turn exiles one from the graveyard at random, and its copy may be cast free', () => {
+  const bombardment = load('Arcane Bombardment');
+  const g = scenario()
+    .define(bombardment)
+    .seat(0)
+    .library(...FILLER)
+    .battlefield(bombardment.name)
+    .hand('Divination', 'Divination')
+    .graveyard('Lightning Bolt')
+    .pool('UUUUUU')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  g.act(0).cast({ name: 'Divination', nth: 0 }, { pay: true });
+  // The Divination, and the trigger above it: the only card in the graveyard is the one it exiles.
+  expect(g.state.stack).toHaveLength(2);
+  g.passAll();
+  g.act(0).chooseCards({ name: 'Lightning Bolt', zone: 'exile', nth: 1 });
+  g.act(0).chooseTargets({ player: 1 });
+  g.passAll();
+  g.expect.life(1, 37);
+  g.expect.zone('Lightning Bolt', 'exile');
+  g.expect.invariants();
+  // The second spell of the turn does not trigger it.
+  g.act(0).cast('Divination', { pay: true });
+  expect(g.state.stack).toHaveLength(1);
+});
+
+test('Forger’s Foundry: its mana pays for a cheap spell that is exiled with it, and later the exiled spells are cast free', () => {
+  const foundry = load("Forger's Foundry");
+  const g = scenario()
+    .define(foundry)
+    .seat(0)
+    .library(...FILLER, ...FILLER)
+    .battlefield(foundry.name)
+    .battlefield('Island', { count: 2 })
+    .battlefield('Island', { count: 5, tapped: true })
+    .hand('Divination')
+    .seat(1)
+    .library(...FILLER)
+    .at('precombatMain', { active: 0, turn: 3 })
+    .build();
+  // Divination ({2}{U}) paid with the Foundry's mana and two Islands.
+  g.act(0).cast('Divination', { pay: true });
+  expect(g.state.stack.length).toBeGreaterThanOrEqual(2);
+  g.pass();
+  g.pass();
+  g.act(0).accept();
+  g.passAll();
+  g.expect.zone('Divination', 'exile');
+  // In a later turn: {3}{U}{U}, {T} casts it free from among the cards exiled with the Foundry.
+  g.advanceTo('precombatMain', { turn: 'next' });
+  g.advanceTo('precombatMain', { turn: 'next' });
+  g.act(0).activate(foundry.name, { ability: 1, pay: true });
+  g.passAll();
+  g.act(0).chooseCards({ name: 'Divination', zone: 'exile' });
+  g.passAll();
+  expect(g.state.seats[0]?.hand.length).toBeGreaterThanOrEqual(2);
+  g.expect.invariants();
+});

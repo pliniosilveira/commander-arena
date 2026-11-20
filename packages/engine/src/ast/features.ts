@@ -127,6 +127,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'manaSpentRiderCopy',
     // Issue 241: "If you spend this mana to cast your commander, it enters with ... additional +1/+1 counters" (`spentRider.grants.countersCommanderCasts`).
     'manaSpentRiderCounters',
+    // Issue 121: "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead" (`spentRider.grants.exileLinked`).
+    'manaSpentRiderExile',
     // D-327: "Mill a card. You may play that card this turn." (`mayPlay` of the cards a `mill` put into the graveyard).
     'mayPlayFromGraveyard',
     // D-411: "Mill four cards. You may put a land card from among them into your hand." (`ChooseSelector.fromMoved`: the choice among the cards `moved` names).
@@ -1511,6 +1513,8 @@ export const ABILITY_FEATURES = [
   'manaSpentRiderCopy',
   /** Issue 241: `spentRider.grants.countersCommanderCasts`: the commander cast with the mana enters with extra +1/+1 counters. */
   'manaSpentRiderCounters',
+  /** Issue 121: `spentRider.grants.exileLinked`: a spell cast with the mana may be exiled as it resolves and is remembered by the permanent (Forger's Foundry). */
+  'manaSpentRiderExile',
   /** "Mill a card. You may play that card this turn" (D-327, CR 601.2, 305.1): the engine's `mayPlay` of a card a `mill` put into its owner's graveyard. */
   'mayPlayFromGraveyard',
   /** "Mill four cards. You may put a land card from among them into your hand" (D-411, CR 608.2c, 608.2d): the engine's `ChooseSelector.fromMoved` of a `moveToZone`. */
@@ -2310,6 +2314,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   manaDistinctColors: true,
   manaSpentRiderCopy: true,
   manaSpentRiderCounters: true,
+  manaSpentRiderExile: true,
   mayPlayFromGraveyard: true,
   chooseAmongMoved: true,
   chooseAlsoGraveyard: true,

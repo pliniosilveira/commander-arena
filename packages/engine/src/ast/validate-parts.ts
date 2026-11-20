@@ -5338,6 +5338,17 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
           'exileOnResolve names the spell that was cast (triggerSubject)',
         );
       }
+      // Issue 121: "exiled with this artifact": only an ability of a permanent remembers what it exiles.
+      if (e.linked !== undefined) {
+        if (e.linked !== true) issue(out, `${path}.linked`, 'linked must be true when present');
+        if (scope.owner !== 'ability') {
+          issue(
+            out,
+            `${path}.linked`,
+            'only an ability of a permanent can link what it exiles to it',
+          );
+        }
+      }
       break;
     case 'doubleSpellX':
       // CR 107.3 (Unbound Flourishing): the spell whose casting caused the trigger.
@@ -5490,6 +5501,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
             out,
             `${path}.linked`,
             'only an ability of a permanent can link what it exiles to it',
+          );
+        }
+      }
+      // Issue 121: "at random": one card of an `each` selector.
+      if (e.atRandom !== undefined) {
+        if (e.atRandom !== true)
+          issue(out, `${path}.atRandom`, 'atRandom must be true when present');
+        if (kindOf(e.objects) !== 'each') {
+          issue(
+            out,
+            `${path}.objects`,
+            "an exile at random picks one of an 'each' selector's objects",
           );
         }
       }
@@ -5869,11 +5892,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'copyCardAndCast':
       // D-654 (CR 707.12): the card an earlier effect of the same sequence exiled ("copy it"), as it is in exile.
-      if (kindOf(e.objects) !== 'moved') {
+      // Issue 121 (Arcane Bombardment): or the cards the permanent exiled with its linked ability ("copy each card exiled with this enchantment").
+      if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
         issue(
           out,
           `${path}.objects`,
-          "copyCardAndCast copies the card an effect before it exiled (objects: 'moved')",
+          "copyCardAndCast copies the card an effect before it exiled (objects: 'moved') or the cards exiled with this permanent ('linkedExile')",
         );
       } else {
         checkRef(e.objects as ObjectRef, 'object', `${path}.objects`, scope, out);
@@ -5888,11 +5912,12 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
         if (e.max !== 'any' && !(Number.isSafeInteger(e.max) && e.max >= 2)) {
           issue(out, `${path}.max`, "max is a whole number of 2 or more, or 'any'");
         }
-        if (kindOf(e.objects) !== 'moved') {
+        // Issue 121 (Forger's Foundry): or the cards the permanent exiled with its linked ability ("from among cards exiled with this artifact").
+        if (kindOf(e.objects) !== 'moved' && kindOf(e.objects) !== 'linkedExile') {
           issue(
             out,
             `${path}.max`,
-            "several spells are cast from the cards an effect before moved ('moved')",
+            "several spells are cast from the cards an effect before moved ('moved') or the cards exiled with this permanent ('linkedExile')",
           );
         }
         if (e.play === true) {

@@ -512,6 +512,8 @@ export interface StackData {
   readonly exileOnResolve?: {
     readonly by: SeatId;
     readonly source: ObjectId;
+    /** Issue 121 (Forger's Foundry): the card is remembered as exiled with `source` and not returned to the hand. */
+    readonly linked?: true;
   };
   /**
    * "Exile this spell with three time counters on it" (D-651, CR 608.2n, 122.1, 702.62b): set on a spell by the effect `exileSpellWithTimeCounters`: the number of time counters. When this

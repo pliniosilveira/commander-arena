@@ -130,4 +130,32 @@ export const SYNTHETIC_QUICK_DRAW_LIST: readonly CardDefinition[] = [
       },
     ],
   }),
+  // "{T}: Add {U}. When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead of putting it into its owner's graveyard as it
+  // resolves." and "{3}{U}{U}, {T}: You may cast any number of spells from among cards exiled with this artifact without paying their mana costs. Activate only as a sorcery."
+  singleFace({
+    name: 'SYNTHETIC Exile Foundry',
+    manaCost: ['2', 'U'],
+    types: ['artifact'],
+    colors: ['U'],
+    colorIdentity: ['U'],
+    oracleText:
+      "{T}: Add {U}. When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead of putting it into its owner's graveyard as it resolves. {3}{U}{U}, {T}: You may cast any number of spells from among cards exiled with this artifact without paying their mana costs. Activate only as a sorcery.",
+    abilities: [
+      {
+        kind: 'mana',
+        cost: [{ kind: 'tap' }],
+        production: { kind: 'fixed', mana: ['U'] },
+        spentRider: {
+          spells: { types: ['instant', 'sorcery'], manaValueAtMost: 3 },
+          grants: { exileLinked: true },
+        },
+      },
+      {
+        kind: 'activated',
+        cost: [{ kind: 'mana', symbols: ['3', 'U', 'U'] }, { kind: 'tap' }],
+        timing: 'sorcery',
+        effect: { kind: 'castFree', objects: { kind: 'linkedExile' }, max: 'any' },
+      },
+    ],
+  }),
 ];

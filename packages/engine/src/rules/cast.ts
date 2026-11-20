@@ -1489,6 +1489,16 @@ function withSpentRiders(
     if (r.colors !== undefined && !spell.colors.some((c) => r.colors?.includes(c) === true)) {
       return false;
     }
+    // Issue 121 (CR 202.3e): "with mana value 3 or less": the value the spell has on the stack, with the X announced.
+    if (r.manaValueAtMost !== undefined) {
+      const onStack = state.objects[casting.object];
+      if (
+        onStack === undefined ||
+        manaValueOfCost(derive(state, onStack).manaCost, onStack) > r.manaValueAtMost
+      ) {
+        return false;
+      }
+    }
     if (r.commander === true) {
       // CR 903.3 (D-229): the spell is a card its caster owns and designated as a commander.
       const card = state.objects[casting.object]?.card;
@@ -1574,7 +1584,25 @@ function withSpentRiders(
       subject: casting.object,
     });
   }
-  const triggers = [...scries, ...copies];
+  // Issue 121 (Forger's Foundry, CR 106.6, 603.2, 607.2a): "When you spend this mana to cast an instant or sorcery spell with mana value 3 or less, you may exile that spell instead of
+  // putting it into its owner's graveyard as it resolves": a triggered ability of the permanent that made the mana, for each mana spent, waiting to go on the stack above the spell.
+  const exiles: PendingTrigger[] = [];
+  for (const r of riders) {
+    if (r.kind !== 'exileLinked' || r.source === undefined || !matches(r)) continue;
+    exiles.push({
+      source: r.source,
+      controller: casting.seat,
+      abilityIndex: -1,
+      ability: {
+        kind: 'triggered',
+        trigger: { kind: 'step', step: 'endStep', whose: 'you' },
+        optional: true,
+        effect: { kind: 'exileOnResolve', spell: { kind: 'triggerSubject' }, linked: true },
+      },
+      subject: casting.object,
+    });
+  }
+  const triggers = [...scries, ...copies, ...exiles];
   return triggers.length === 0
     ? next
     : { ...next, pendingTriggers: [...next.pendingTriggers, ...triggers] };

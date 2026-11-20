@@ -33,7 +33,7 @@ import { runAmass } from './amass';
 import { runArrange, runPutOnTop } from './arrange';
 import { runAssignControl } from './assign-control';
 import { attachEntered, attachObject } from './attach';
-import { runAttackRandomOpponent } from './attack-random-opponent';
+import { pickRandom, runAttackRandomOpponent } from './attack-random-opponent';
 import { entryAttachment, runAuraEntry, withAuraEntries } from './aura-entry';
 import { runBehold } from './behold';
 import { makeCardCopy } from './card-copy';
@@ -933,7 +933,7 @@ function runEffect(
     }
 
     case 'exile': {
-      const ids = resolveObjects(state, effect.objects, ctx, targets)
+      const named = resolveObjects(state, effect.objects, ctx, targets)
         // CR 400.7, 603.10a (D-230): "exile it" in a trigger about a permanent that died: the permanent is gone, the card it became is the one in the graveyard.
         .flatMap((id) =>
           effect.objects.kind === 'triggerSubject' && state.objects[id] === undefined
@@ -941,6 +941,11 @@ function runEffect(
             : [id],
         )
         .filter((id) => state.objects[id] !== undefined);
+      // Issue 121 (Arcane Bombardment, CR 701.13, 701.9b analogue): "exile an instant or sorcery card at random from your graveyard": the one card is picked by the game's seeded generator.
+      const picked =
+        effect.atRandom === true && named.length > 1 ? pickRandom(named, state.rng) : null;
+      const ids = picked === null ? named : [picked[0]];
+      const drawn = picked === null ? state : { ...state, rng: picked[1] };
       // CR 610.3a, 610.3b (D-149): "until this leaves the battlefield": if it already has, as the exile would happen, nothing moves.
       if (
         effect.until === 'sourceLeaves' &&
@@ -967,7 +972,7 @@ function runEffect(
       };
       // D-283 (CR 603.10a): exiled together, so what each was is recorded before the first moves.
       const together = recordTogether(
-        state,
+        drawn,
         moveInstructions(ids, 'exile').map((i) => {
           if (i.kind !== 'move') return i;
           // Oversimplify (CR 608.2h): the power and the controller of each creature as it is before any of them leaves, for "the total power of creatures they controlled that were exiled this way".
@@ -1274,7 +1279,9 @@ function runEffect(
     case 'exileOnResolve': {
       // D-439 (CR 614.1a, 608.2n): the spell whose casting caused the trigger carries the replacement from now on (`rules/exile-on-resolve.ts`).
       const spells = resolveObjects(state, effect.spell, ctx, targets);
-      return done(markExileOnResolve(state, spells, res.controller, res.source));
+      return done(
+        markExileOnResolve(state, spells, res.controller, res.source, effect.linked === true),
+      );
     }
 
     case 'doubleSpellX': {

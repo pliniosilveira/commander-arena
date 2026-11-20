@@ -97,6 +97,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   ],
   examples: [
     'you may cast a spell from among them without paying its mana cost',
+    'you may cast any number of spells from among cards exiled with ~ without paying their mana costs',
     'you may cast instant and sorcery spells with mana value X or less from among them without paying their mana costs',
     'you may cast instant and sorcery spells from among them without paying their mana costs',
     'you may cast up to two spells from among the other cards exiled this way without paying their mana costs',
@@ -115,6 +116,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     'you may cast a spell from your graveyard without paying its mana cost',
     'you may cast a spell from among them by paying its mana cost',
     'you may cast a spell from among them without paying its mana cost and draw a card',
+    'you may cast a spell from among cards exiled with it without paying its mana cost',
     'you may cast one spell from among them without paying its mana cost',
     'you may cast instant and sorcery spells from among them without paying its mana cost',
     'you may cast creature spells with mana value X or less from among them without paying their mana costs',
@@ -123,7 +125,7 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
   parse: (ctx, pos) => {
     const id = 'effect.cast-from-among';
     const head = pattern(
-      /(you may )?cast (a spell|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
+      /(you may )?cast (a spell|up to two spells|any number of spells|instant and sorcery spells(?: with mana value X or less)?) from among (them|those cards|the other cards exiled this way|cards exiled with ~) without paying (its mana cost|their mana costs)(?![\p{L}\p{N}])/iu,
     )(ctx, pos);
     if (!head.ok) return head;
     const [, may = '', count = '', from = '', cost = ''] = head.value;
@@ -133,6 +135,8 @@ export const EFFECT_CAST_FROM_AMONG = defineRule<Clauses>({
     const span = { start: pos, end: head.pos };
     const args: Record<string, IrAmount | ReturnType<typeof flag>> = {
       other: flag(id, from.toLowerCase() === 'the other cards exiled this way', span),
+      // Forger's Foundry (issue 121): "from among cards exiled with ~": the cards the permanent exiled with its linked ability.
+      linked: flag(id, from.toLowerCase() === 'cards exiled with ~', span),
       // "you may" said inside the rule, or by the sentence before the rule (a trigger's "you may ..." is read as the sentence's own).
       may: flag(id, may !== '', span),
     };

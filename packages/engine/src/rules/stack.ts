@@ -511,6 +511,16 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
           ],
         };
       }
+      // Issue 121 (Forger's Foundry, CR 607.2a): "exiled with this artifact": the permanent that gave the replacement remembers the card.
+      const mark = obj.stack?.exileOnResolve;
+      if (exiled && moved.newObject !== null && mark?.linked === true) {
+        const owner = next.objects[mark.source];
+        if (owner?.zone === 'battlefield') {
+          next = patchObject(next, owner.id, {
+            linkedExile: [...(owner.linkedExile ?? []), moved.newObject],
+          });
+        }
+      }
       // CR 603.7, 603.7c (D-439): the card exiled as it resolved comes back to its owner's hand at the beginning of the next end step.
       if (exiled && moved.newObject !== null) {
         const back = returnExiledSpell(obj, moved.newObject);

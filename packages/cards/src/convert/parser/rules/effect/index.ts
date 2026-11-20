@@ -158,6 +158,7 @@ import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
+import { QUICK_DRAW_EFFECT_RULES } from './quick-draw';
 import { RAMP_LANDS_EFFECT_RULES } from './ramp-lands';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
@@ -1105,6 +1106,8 @@ export const EFFECT_RULES = [
   ...NEXT_SPELL_EFFECT_RULES,
   // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
   ...PUT_MILLED_EFFECT_RULES,
+  // Arcane Bombardment (issue 121): exile at random, copy what the permanent exiled.
+  ...QUICK_DRAW_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,

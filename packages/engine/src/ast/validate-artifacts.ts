@@ -115,7 +115,10 @@ function checkLinkedExile(face: CardFace, path: string, out: AstIssue[]): void {
           JSON.stringify(a.targets ?? null).includes('"exiledWithSource":true'))),
   );
   const exiles = face.abilities.some(
-    (a) => (a?.kind === 'triggered' || a?.kind === 'activated') && hasLinkedExile(a.effect),
+    (a) =>
+      ((a?.kind === 'triggered' || a?.kind === 'activated') && hasLinkedExile(a.effect)) ||
+      // Issue 121 (Forger's Foundry): the mana ability's rider exiles the spell it was spent on with the permanent.
+      (a?.kind === 'mana' && JSON.stringify(a.spentRider ?? null).includes('"exileLinked":true')),
   );
   // CR 702.75a (Hideaway): the keyword's own trigger exiles the card that "play the exiled card" reads (D-230).
   const hideaway = face.abilities.some(
