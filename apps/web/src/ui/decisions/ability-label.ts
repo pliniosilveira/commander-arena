@@ -354,6 +354,8 @@ function objectText(what: ObjectSelector, ability: WithTargets, self: string): s
       return `this ${self}`;
     case 'thisSpell':
       return 'this spell';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'target':
       return targetText(ability.targets?.find((t) => t.id === what.id));
     case 'chosen':
@@ -545,6 +547,7 @@ function recipientText(
     case 'chosen':
     case 'this':
     case 'thisSpell':
+    case 'convokers':
     case 'moved':
     case 'boundObjects':
     case 'thisCard':

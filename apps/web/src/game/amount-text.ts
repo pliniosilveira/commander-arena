@@ -50,6 +50,9 @@ function possessive(ref: ObjectRef, ctx: AmountContext): string {
       return `this ${ctx.self ?? 'permanent'}'s`;
     case 'thisSpell':
       return "this spell's";
+    case 'convokers':
+      // Issue 102: the creatures that convoked the spell.
+      return "that creature's";
     case 'target':
     case 'triggerSubject':
       return ctx.spell === true && ref.kind === 'triggerSubject'
@@ -89,6 +92,8 @@ function objectPronoun(ref: ObjectRef, ctx: AmountContext): string {
       return ctx.same === undefined ? `this ${ctx.self ?? 'permanent'}` : 'it';
     case 'thisSpell':
       return 'this spell';
+    case 'convokers':
+      return 'each creature that convoked this spell';
     case 'target':
     case 'triggerSubject':
       return 'that creature';
