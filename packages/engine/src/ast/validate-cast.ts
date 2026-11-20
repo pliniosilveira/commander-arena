@@ -43,6 +43,7 @@ export function checkFlashbackCost(cost: readonly Cost[], path: string, out: Ast
         c.countX === true ||
         c.anyNumber === true ||
         c.atLeastOne === true ||
+        c.alongside !== undefined ||
         (c.count !== undefined && (!Number.isSafeInteger(c.count) || c.count < 2))
       ) {
         issue(

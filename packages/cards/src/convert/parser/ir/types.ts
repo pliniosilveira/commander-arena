@@ -836,7 +836,13 @@ export type IrCost = IrNode &
     | { readonly kind: 'tap' }
     | { readonly kind: 'untap' }
     // `count` is "Sacrifice two artifacts" (stage P29, D-133): 2 or more, a plural noun
-    | { readonly kind: 'sacrifice'; readonly what: IrNoun; readonly count?: number }
+    // `also` is "Sacrifice a Swamp and a Forest" (CR 701.21a): the other parts, each a noun of "a ..."
+    | {
+        readonly kind: 'sacrifice';
+        readonly what: IrNoun;
+        readonly count?: number;
+        readonly also?: readonly IrNoun[];
+      }
     // "Tap three untapped Zombies you control" (stage P29, D-133, CR 118.3): `filter` of the permanents, `count` how many
     | {
         readonly kind: 'tapPermanents';

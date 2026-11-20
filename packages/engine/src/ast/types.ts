@@ -1264,6 +1264,13 @@ export type Cost =
       readonly anyNumber?: true;
       /** D-583: with `anyNumber`, at least one permanent: "Sacrifice one or more artifacts" as the cost of an activated ability. Not for an additional cost of a spell. */
       readonly atLeastOne?: true;
+      /**
+       * "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3, 602.2b): one more permanent for each filter, each a different permanent from the others and from the one `what` names,
+       * so `what` and `alongside` are the parts of one cost. A permanent that matches several parts pays only one of them (a land that is both a Swamp and a Forest is one land):
+       * the cost can be paid when each part can be given its own permanent, and the answer must be such an assignment. Only the cost of an activated ability, with a filter in `what`
+       * and no `count`, `countX` or `anyNumber`.
+       */
+      readonly alongside?: readonly ObjectFilter[];
     }
   /**
    * "Tap two untapped artifacts you control", "Tap three untapped Zombies you control" (D-133, CR 118.3): the player taps

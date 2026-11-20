@@ -192,7 +192,10 @@ export function createRandomHandlers(draw: (n: number) => number): DecisionHandl
     choosePermanent: (d) => {
       // A crew cost (CR 702.122a) is met only by creatures with enough total power: pick one of the
       // subsets the decision lists (`powers` and `minTotalPower` are in the decision).
-      if (d.minTotalPower !== undefined) return pick(preferredActions(d), draw);
+      // A sacrifice for each of several parts ("Sacrifice a Swamp and a Forest", CR 701.21a) takes one different permanent for each part: one of the listed assignments.
+      if (d.minTotalPower !== undefined || d.groups !== undefined) {
+        return pick(preferredActions(d), draw);
+      }
       const count = d.min + draw(d.max - d.min + 1);
       return { kind: 'choosePermanents', objects: pickCards(d.legal, count, draw) };
     },

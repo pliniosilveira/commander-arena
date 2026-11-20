@@ -518,6 +518,12 @@ export interface ChoosePermanentDecision extends DecisionBase {
    */
   readonly minTotalPower?: number;
   /**
+   * For a `forCost` sacrifice of several different permanents ("Sacrifice a Swamp and a Forest", CR 701.21a): one list for each part of the cost, the permanents that can pay it
+   * (`legal` is all of them, `min` and `max` the number of parts). The answer gives each part a different permanent of its own list, so a permanent in two lists pays one of them.
+   * Left out for every other choice.
+   */
+  readonly groups?: readonly (readonly ObjectId[])[];
+  /**
    * For `'crew'`: the power of each creature in `legal` as the engine derives it now (CR 613.4), so
    * a listing from the decision alone (`legalActionsForDecision`) can tell which subsets are enough.
    */

@@ -683,6 +683,10 @@ function prepare(
     ...(costs.value.some((c) => c.kind === 'sacrifice' && c.atLeastOne === true)
       ? (['ability:sacrificeOneOrMore'] as const)
       : []),
+    // CR 701.21a: "Sacrifice a Swamp and a Forest".
+    ...(costs.value.some((c) => c.kind === 'sacrifice' && c.alongside !== undefined)
+      ? (['ability:sacrificeEach'] as const)
+      : []),
   ]);
   if (blocked !== null) return blocked;
   // D-625: a cost that taps permanents may come with a mana cost and {T} (the permanents are chosen before the mana is paid); the engine still
@@ -754,6 +758,8 @@ function lowerOrdinary(ability: Activated, ctx: LowerContext): LowerResult<reado
         (c) =>
           c.kind === 'mana' ||
           c.kind === 'exileThis' ||
+          // CR 701.21a (Jarad, Golgari Lich Lord): permanents you control are sacrificed wherever the ability works ("Sacrifice a Swamp and a Forest: Return this card from your graveyard to your hand"); the card itself is not.
+          (c.kind === 'sacrifice' && !('kind' in c.what)) ||
           (c.kind === 'returnToHand' && typeof c.what === 'object' && !('kind' in c.what)),
       ))
   ) {
@@ -924,4 +930,5 @@ export const ACTIVATED_NEEDS: readonly FeatureRef[] = [
   'ability:xCost',
   'ability:sacrificeX',
   'ability:sacrificeOneOrMore',
+  'ability:sacrificeEach',
 ];

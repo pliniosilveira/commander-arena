@@ -2547,6 +2547,42 @@ export function checkCost(cost: Cost, path: string, out: Out): void {
           issue(out, `${path}.atLeastOne`, 'atLeastOne is true and goes with anyNumber');
         }
       }
+      if (cost.alongside !== undefined) {
+        // CR 701.21a, 118.3: "Sacrifice a Swamp and a Forest": one different permanent for `what` and for each filter of `alongside`; an ability's cost only (checked where it stands).
+        if (!Array.isArray(cost.alongside) || cost.alongside.length < 1) {
+          issue(out, `${path}.alongside`, 'alongside lists at least one more filter');
+        } else {
+          if (
+            kindOf(cost.what) === 'this' ||
+            cost.count !== undefined ||
+            cost.countX !== undefined ||
+            cost.anyNumber !== undefined
+          ) {
+            issue(
+              out,
+              `${path}.alongside`,
+              'a sacrifice of several different permanents names each by a filter: no this, count, X or any number',
+            );
+          }
+          cost.alongside.forEach((filter, j) => {
+            checkFilter(filter, `${path}.alongside[${j}]`, out);
+            if (filterSome(filter, (f) => f.controller === 'opponent')) {
+              issue(
+                out,
+                `${path}.alongside[${j}].controller`,
+                'a player can only sacrifice permanents they control',
+              );
+            }
+            if (filter.zone !== undefined && filter.zone !== 'battlefield') {
+              issue(
+                out,
+                `${path}.alongside[${j}].zone`,
+                'only permanents on the battlefield can be sacrificed',
+              );
+            }
+          });
+        }
+      }
       if (cost.count !== undefined) {
         // D-133: "Sacrifice two artifacts": 2 or more, of permanents chosen among those that match.
         if (!isCount(cost.count) || cost.count < 2) {

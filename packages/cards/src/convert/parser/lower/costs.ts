@@ -3,7 +3,7 @@
  * cost kind it becomes so the caller can check it against `costKinds` (an activated ability) or
  * `manaAbilityCostKinds` (a mana ability, CR 605.1a).
  */
-import type { Cost } from '@commander-arena/engine';
+import type { Cost, ObjectFilter } from '@commander-arena/engine';
 import type { IrCost } from '../ir/types';
 import { lowerAmount } from './amounts';
 import { type FeatureRef, missingFeatures } from './features';
@@ -100,7 +100,26 @@ export function lowerCost(cost: IrCost, options: CostOptions = {}): LowerResult<
         : failure(cost);
     case 'sacrifice': {
       const { what } = cost;
-      if (what.det === 'self') return ok({ kind: 'sacrifice', what: { kind: 'this' } });
+      if (what.det === 'self' && cost.also === undefined) {
+        return ok({ kind: 'sacrifice', what: { kind: 'this' } });
+      }
+      // "Sacrifice a Swamp and a Forest" (CR 701.21a, 118.3): a different permanent for each part, the cost of an ordinary activated ability.
+      if (cost.also !== undefined) {
+        if (options.ordinary !== true) return failure(cost);
+        const parts = [what, ...cost.also];
+        if (parts.some((part) => part.det !== 'a' || part.count !== undefined)) {
+          return failure(cost);
+        }
+        const filters = parts.map((part) => lowerFilter(part));
+        const [first, ...rest] = filters;
+        if (first === undefined || !first.ok) return first ?? failure(cost);
+        const others: ObjectFilter[] = [];
+        for (const filter of rest) {
+          if (!filter.ok) return filter;
+          others.push(filter.value);
+        }
+        return ok({ kind: 'sacrifice', what: first.value, alongside: others });
+      }
       // "Sacrifice X creatures" (D-488, CR 107.3a, 602.2b): the X announced as the ability is activated; the cost of an ordinary activated ability only.
       if (what.det === 'a' && what.count?.kind === 'x') {
         if ((options.ordinary !== true && options.discardX !== true) || what.other)

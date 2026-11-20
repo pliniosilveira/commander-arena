@@ -85,6 +85,7 @@ import { monarchAfterLoss } from './rules/monarch';
 import { answerResolutionPile } from './rules/pile-answer';
 import { grantPriority } from './rules/priority';
 import { fail, ok, type Result } from './rules/result';
+import { matchesGroups } from './rules/sacrifice-groups';
 import { evaluateGameEnd } from './rules/sba';
 import { setPending } from './rules/set-pending';
 import { bottomCards, keepHand, takeMulligan } from './rules/setup';
@@ -684,7 +685,9 @@ function validPermanentChoice(
     chosen.length >= d.min &&
     chosen.length <= d.max &&
     new Set(chosen).size === chosen.length &&
-    chosen.every((id) => d.legal.includes(id))
+    chosen.every((id) => d.legal.includes(id)) &&
+    // CR 701.21a: a cost that sacrifices a permanent for each of several parts takes one different permanent for each.
+    (d.groups === undefined || matchesGroups(chosen, d.groups))
   );
 }
 

@@ -492,6 +492,7 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     'equal to the greatest mana value among artifacts you control',
     "equal to that creature's toughness",
     'equal to its toughness',
+    "equal to the sacrificed creature's power",
     'equal to your devotion to black',
     'equal to your devotion to black and red',
     'equal to half the number of creatures you control, rounded down',
@@ -551,7 +552,9 @@ export const AMOUNT_EQUAL_TO = defineRule<IrAmount>({
     if (!head.ok) return head;
     const value = VALUE('amount.equal-to')(ctx, head.pos);
     if (!value.ok) return value;
-    if (OLDER_EQUAL_KINDS.has(value.value.kind)) return fail(ctx, pos);
+    // "equal to the sacrificed creature's power" (CR 602.2c, 113.7a): the older rules read only "its" and "that creature's", so this one reads the sacrificed object.
+    const sacrificedStat = value.value.kind === 'powerOf' && value.value.of.det === 'sacrificed';
+    if (OLDER_EQUAL_KINDS.has(value.value.kind) && !sacrificedStat) return fail(ctx, pos);
     return value;
   }),
 });
