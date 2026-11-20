@@ -188,3 +188,84 @@ describe('Command Beacon: sacrifice it to put your commander from the command zo
     g.expect.zone(CAPTAIN.name, 'battlefield', { seat: 0 });
   });
 });
+
+// ---- Nesting Grounds: "{1}, {T}: Move a counter from target permanent you control onto a second target permanent. Activate only as a sorcery." (CR 122.1, 122.6, 608.2d, 602.5d).
+
+const NESTING = parsed(
+  'SYNTHETIC Parsed Nesting Grounds',
+  'Land',
+  '{T}: Add {C}.\n{1}, {T}: Move a counter from target permanent you control onto a second target permanent. Activate only as a sorcery.',
+);
+const BEAR = parsed('SYNTHETIC Parsed Counter Bear', 'Creature — Bear', '', {
+  manaCost: '{1}{G}',
+  colors: ['G'],
+  power: '2',
+  toughness: '2',
+});
+const ELK = parsed('SYNTHETIC Parsed Counter Elk', 'Creature — Elk', '', {
+  manaCost: '{1}{G}',
+  colors: ['G'],
+  power: '2',
+  toughness: '2',
+});
+
+test('the real Nesting Grounds is supported', () => {
+  const imported = real('Nesting Grounds');
+  expect(imported.support.unparsed).toEqual([]);
+  expect(imported.support.status).toBe('supported');
+});
+
+describe('Nesting Grounds: move a counter from one permanent onto another', () => {
+  const start = (counters: Record<string, number>) =>
+    scenario()
+      .seat(0)
+      .life(20)
+      .define(NESTING)
+      .define(BEAR)
+      .define(ELK)
+      .battlefield(NESTING.name, { tapped: false })
+      .battlefield('Plains')
+      .battlefield(BEAR.name, { counters })
+      .battlefield(ELK.name)
+      .library('Plains', 'Plains')
+      .seat(1)
+      .life(20)
+      .library('Plains', 'Plains')
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+
+  test('with one kind of counter it moves that one', () => {
+    const g = start({ '+1/+1': 2 });
+    g.act(0).activate(NESTING.name, { targets: [BEAR.name, ELK.name], pay: true });
+    g.passAll();
+    g.expect.counters(BEAR.name, { '+1/+1': 1 });
+    g.expect.counters(ELK.name, { '+1/+1': 1 });
+    g.expect.invariants();
+  });
+
+  test('with two kinds the controller chooses which one moves (CR 608.2d)', () => {
+    const g = start({ '+1/+1': 1, charge: 1 });
+    g.act(0).activate(NESTING.name, { targets: [BEAR.name, ELK.name], pay: true });
+    g.passAll();
+    const d = g.state.pending;
+    expect(d?.kind).toBe('chooseOption');
+    if (d?.kind === 'chooseOption') expect(d.options).toEqual(['+1/+1', 'charge']);
+    g.act(0).chooseOption('charge');
+    g.passAll();
+    g.expect.counters(BEAR.name, { '+1/+1': 1 });
+    g.expect.counters(ELK.name, { charge: 1 });
+  });
+
+  test('with no counter on the first permanent nothing moves', () => {
+    const g = start({});
+    g.act(0).activate(NESTING.name, { targets: [BEAR.name, ELK.name], pay: true });
+    g.passAll();
+    g.expect.counters(ELK.name, {});
+  });
+
+  test('it can be activated only as a sorcery (CR 602.5d)', () => {
+    const g = start({ '+1/+1': 1 });
+    g.advanceTo('declareAttackers');
+    g.expect.illegal(0, { activate: NESTING.name, targets: [BEAR.name, ELK.name] });
+  });
+});
