@@ -1242,6 +1242,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   durationKinds: [
     'untilEndOfTurn',
     'untilYourNextTurn',
+    // CR 611.2b (Minas Morgul): `setTypes.whileHasCounter`, "for as long as that creature has a shadow counter on it".
+    'whileHasCounter',
     'forAsLongAsYouControlThis',
     'forAsLongAsThisRemains',
     'untilNextUntapStep',
@@ -2184,6 +2186,8 @@ export type ConditionKind = (typeof CONDITION_KINDS)[number];
 export const DURATION_KINDS = [
   'untilEndOfTurn',
   'untilYourNextTurn',
+  /** "For as long as that creature has a shadow counter on it" (CR 611.2b): `setTypes.whileHasCounter`. */
+  'whileHasCounter',
   'untilEndOfNextTurn',
   'asLongAs',
   'thisTurn',

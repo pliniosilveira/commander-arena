@@ -178,6 +178,26 @@ export function runContinuous(
     }
     return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
   }
+  // CR 611.2b, 122.1 (Minas Morgul): "for as long as that creature has a shadow counter on it": one effect for each object that has the counter now, each ending, for good,
+  // as that object stops having it (`endLostControlEffects`); an object with none has the duration over before the effect begins.
+  if (node.kind === 'setTypes' && node.whileHasCounter !== undefined) {
+    const counter = node.whileHasCounter;
+    let next = state;
+    const made: ContinuousEffect[] = [];
+    for (const id of affected) {
+      if ((state.objects[id]?.counters[counter] ?? 0) <= 0) continue;
+      const [timestamp, stamped] = allocateTimestamp(next);
+      next = stamped;
+      made.push({
+        id: `ce${timestamp}`,
+        timestamp,
+        objects: [id],
+        until: { kind: 'whileHasCounter', object: id, counter },
+        change: changeOf(state, node, ctx, targets),
+      });
+    }
+    return done({ ...next, continuousEffects: [...next.continuousEffects, ...made] });
+  }
   const [timestamp, stamped] = allocateTimestamp(state);
   const created: ContinuousEffect = {
     id: `ce${timestamp}`,

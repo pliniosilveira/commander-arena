@@ -3469,6 +3469,12 @@ export type Effect =
        * not stop matching once they are creatures). Applies in the same duration.
        */
       readonly basePt?: { readonly power: number; readonly toughness: number };
+      /**
+       * "For as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types" (Minas Morgul, CR 611.2b, 122.1): each object the selector
+       * names as the effect begins has the change only while it is on the battlefield with a counter of this kind, and for good no longer once it stops (a counter put
+       * on again later does not bring it back). An object with no such counter as the effect begins gets nothing. With `duration` `permanent`, and no `basePt`.
+       */
+      readonly whileHasCounter?: string;
       readonly duration: Duration;
     }
   /**

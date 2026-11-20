@@ -357,3 +357,29 @@ describe('Echoing Return', () => {
     g.expect.zone(ELVES, 'graveyard', { seat: 0 });
   });
 });
+
+describe('Minas Morgul, Dark Fortress', () => {
+  const morgul = real('Minas Morgul, Dark Fortress');
+
+  const activated = () => {
+    const g = scenario()
+      .define(morgul)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(morgul.name)
+      .battlefield(BEARS)
+      .pool('CCCB')
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.act(0).activate(morgul.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('puts a shadow counter on the creature, which has shadow and is a Wraith in addition to its other types (CR 122.1b, 205.1b)', () => {
+    const g = activated();
+    g.expect.counters(BEARS, { shadow: 1 });
+    g.expect.derived(BEARS, { subtypes: ['Bear', 'Wraith'], keywords: ['shadow'] });
+    g.expect.invariants();
+  });
+});

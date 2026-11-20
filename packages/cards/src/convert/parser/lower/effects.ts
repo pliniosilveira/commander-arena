@@ -84,6 +84,7 @@ import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
 import {
   BECOMES_FOR_GOOD,
   BECOMES_LOSES_ALL,
+  BECOMES_WHILE_COUNTER,
   GAIN_STATIC_ABILITY,
   GIVE_POISON,
 } from './granted-static';
@@ -2670,6 +2671,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   BECOMES_FOR_GOOD,
+  BECOMES_WHILE_COUNTER,
   BECOMES_LOSES_ALL,
   GIVE_POISON,
   GAIN_CONTROL,
