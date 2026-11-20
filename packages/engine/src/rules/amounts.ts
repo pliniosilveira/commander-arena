@@ -230,6 +230,11 @@ export function amountOf(
     const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
     return source?.castX ?? 0;
   }
+  if (amount.kind === 'lifePaidAsEntered') {
+    // CR 119.4, 614.12, 400.7: the life the permanent paid as it entered, which it remembers (`GameObject.chosen`), or last-known information when it has left.
+    const source = ctx.source === null ? null : objectOrLki(state, ctx.source);
+    return source?.chosen?.lifePaid ?? 0;
+  }
   // CR 706.2 (Galadriel group 3): "where X is the result": the natural result of the die rolled earlier in this resolution (0 when none was: `validateCard` forbids that).
   if (amount.kind === 'dieResult') return ctx.dieResult ?? 0;
   if (amount.kind === 'x') {

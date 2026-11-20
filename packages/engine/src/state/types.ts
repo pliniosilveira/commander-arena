@@ -310,6 +310,8 @@ export interface ChosenValues {
   readonly cardType?: CardType;
   /** A name chosen from a list the card gives (D-151: "choose Khans or Dragons"). */
   readonly option?: string;
+  /** The life paid as it entered (CR 119.4, 614.12: "pay any amount of life"), a whole number from 0 to the controller's life total then. */
+  readonly lifePaid?: number;
 }
 
 export interface TokenData {

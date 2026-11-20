@@ -184,6 +184,11 @@ export function lowerAmount(
       if (ctx.dieSides === null) return { ok: false, needs: [], at: amount.span, rule };
       return { ok: true, value: { kind: 'dieResult' }, rule };
     }
+    case 'lifePaidAsEntered': {
+      // "where X is the life paid as ~ entered" (Phyrexian Processor, CR 119.4, 614.12): the amount the permanent paid as it entered; `validateCard` checks the card pays life as it enters.
+      const blocked = needs('lifePaidAsEntered');
+      return blocked ?? { ok: true, value: { kind: 'lifePaidAsEntered' }, rule };
+    }
     case 'triggerDamage': {
       // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
       // how many were moved, not the damage of an event.
@@ -863,6 +868,7 @@ export const AMOUNT_NEEDS = [
   'amount:enteredX',
   'amount:aurasAttachedToTriggerSubject',
   'amount:dieResult',
+  'amount:lifePaidAsEntered',
   'amount:powerOf',
   'amount:manaValueOf',
   'amount:countOf',

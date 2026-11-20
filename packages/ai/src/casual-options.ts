@@ -11,6 +11,7 @@ import type { Action, ChooseOptionDecision, GameView, ObjectView } from '@comman
 import { chooseCardType } from './casual-card-type';
 import { chooseNamedOption } from './casual-dragons';
 import { chooseRiot } from './casual-keywords';
+import { chooseLifePaid } from './casual-life-paid';
 import { choosePile } from './casual-piles';
 import { chooseProtectionCardType, chooseProtectionColor } from './casual-protection';
 import { ownCommandZone, ownHand } from './casual-view';
@@ -132,6 +133,8 @@ export function chooseOptionAnswer(view: GameView, d: ChooseOptionDecision): Act
   if (d.purpose === 'riot') return chooseRiot(view, d);
   // D-151: a name from a list the card gives, the chapter of a Saga with read ahead (casual-dragons.ts).
   if (d.purpose === 'option') return chooseNamedOption(d);
+  // CR 119.4, 614.12: "As this artifact enters, pay any amount of life", a quarter of the life total while staying safe (casual-life-paid.ts).
+  if (d.purpose === 'lifePaid') return chooseLifePaid(view, d);
   // D-376 (CR 614.12a): "choose a card type", the type the opponents' permanents have most of (casual-card-type.ts).
   if (d.purpose === 'cardType') return chooseCardType(view, d);
   // D-451 (CR 702.16, 608.2d): "gains protection from the color of your choice", the color that threatens the protected permanents (casual-protection.ts).

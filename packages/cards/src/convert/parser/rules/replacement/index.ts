@@ -20,6 +20,7 @@ import { ENTERS_AS_COPY_COUNTERS_RULES } from './enters-as-copy-counters';
 import { GISA_G5_REPLACEMENT_RULES } from './gisa-g5';
 import { HASHATON_G3_REPLACEMENT_RULES } from './hashaton-group-3';
 import { KICKED_REPLACEMENT_RULES } from './kicked';
+import { PAY_LIFE_REPLACEMENT_RULES } from './pay-life';
 import { REVEAL_REPLACEMENT_RULES } from './reveal';
 import { countersTail, ENTERS, replacement } from './shared';
 import { SKIP_DRAW_REPLACEMENT_RULES } from './skip-draw';
@@ -343,4 +344,6 @@ export const REPLACEMENT_RULES = [
   ...DANITHA_G4_REPLACEMENT_RULES,
   // Gisa deck, group 5 (D-482): "~ escapes with two +1/+1 counters on it."
   ...GISA_G5_REPLACEMENT_RULES,
+  // Phyrexian Processor: "As ~ enters, pay any amount of life."
+  ...PAY_LIFE_REPLACEMENT_RULES,
 ];

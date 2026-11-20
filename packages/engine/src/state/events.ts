@@ -613,6 +613,7 @@ export type GameEvent =
         | 'creatureType'
         | 'color'
         | 'cardType'
+        | 'lifePaid'
         | 'option'
         | 'attackTarget'
         | 'assignOpponent'
