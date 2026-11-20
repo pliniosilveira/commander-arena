@@ -107,6 +107,8 @@ describe('the continuous-effect nodes that are valid and supported', () => {
       'forAsLongAsThisRemains',
       // D-517: "doesn't untap during its controller's next untap step", the duration of a `restrict` of `doesntUntap` only.
       'untilNextUntapStep',
+      // Issue 144: "attacks this combat if able", the duration of a `restrict` of `attacksEachCombat` only.
+      'thisCombat',
     ]);
     const forever: Effect = {
       kind: 'loseAllAbilities',
@@ -256,6 +258,33 @@ describe('the moved reference and the owner control option (CR 400.7j, 110.2)', 
       ],
     };
     expect(structure(on(nested))).toEqual([]);
+  });
+
+  test('moved works after a conditional whose branch moved cards (CR 608.2c, "If you do, exile the top card. You may play that card")', () => {
+    const afterConditional: Effect = {
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'conditional',
+          condition: { kind: 'opponentsAtLeast', count: 1 },
+          effect: { kind: 'exileTop', count: 1 },
+        },
+        { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+      ],
+    };
+    expect(structure(on(afterConditional))).toEqual([]);
+    const noMove: Effect = {
+      kind: 'sequence',
+      effects: [
+        {
+          kind: 'conditional',
+          condition: { kind: 'opponentsAtLeast', count: 1 },
+          effect: { kind: 'draw', player: { kind: 'you' }, count: 1 },
+        },
+        { kind: 'mayPlay', objects: { kind: 'moved' }, lasts: 'endOfTurn' },
+      ],
+    };
+    expectIssue(structure(on(noMove)), "'moved' needs an exile, destroy or moveToZone effect");
   });
 
   test("controller is only valid, as 'owner' or 'you', when moving to the battlefield", () => {

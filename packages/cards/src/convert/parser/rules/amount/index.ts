@@ -7,6 +7,7 @@ import { COUNT_AMOUNT_RULES } from './count';
 import { DISCARDED_TYPES_AMOUNT_RULES } from './discarded-types';
 import { AMOUNT_FOR_EACH_AURA_ATTACHED, AMOUNT_FOR_EACH_STILL_EXILED } from './dragons';
 import { EXPERIENCE_AMOUNT_RULES } from './experience';
+import { F144_AMOUNT_RULES } from './f144';
 import { FEATHER_G1_AMOUNT_RULES } from './feather-g1';
 import { GALADRIEL_G2_AMOUNT_RULES } from './galadriel-g2';
 import { HALF_X_AMOUNT_RULES } from './half-x';
@@ -451,7 +452,45 @@ export const AMOUNT_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
   },
 });
 
+/**
+ * `amount.excess-damage-dealt-this-way`: "equal to the amount of excess damage dealt to that creature this way" (CR 120.10 Excess Damage, 608.2c; Goblin Negotiation): what the
+ * `dealDamage` before it dealt to the creature beyond lethal damage. Only "that creature" or "that permanent", the object the damage was dealt to, and only after a damage
+ * instruction; "excess damage dealt this turn" and the other recipients are not read.
+ */
+export const AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY = defineRule<IrAmount>({
+  id: 'amount.excess-damage-dealt-this-way',
+  family: 'amount',
+  leading: ['equal'],
+  cites: ['CR 120.10 (Damage)', 'CR 120.6 (Damage)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'equal to the amount of excess damage dealt to that creature this way',
+    'equal to the amount of excess damage dealt to that permanent this way',
+  ],
+  rejects: [
+    'equal to the amount of excess damage dealt to that creature',
+    'equal to the amount of excess damage dealt to target creature this way',
+    'equal to the excess damage dealt to that creature this way',
+    'equal to the amount of excess damage dealt to that creature this turn',
+    'equal to the amount of excess damage dealt to that player this way',
+    'the amount of excess damage dealt to that creature this way',
+  ],
+  parse: (ctx, pos) => {
+    const r = spanned(
+      pattern(
+        /equal to the amount of excess damage dealt to that (?:creature|permanent) this way(?![\p{L}\p{N}])/iu,
+      ),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    return {
+      ok: true,
+      value: { kind: 'thisWay', what: 'excessDamageDealt', words: [], span: r.value.span },
+      pos: r.pos,
+    };
+  },
+});
+
 export const AMOUNT_RULES = [
+  AMOUNT_EXCESS_DAMAGE_DEALT_THIS_WAY,
   AMOUNT_FOR_EACH_DIED,
   // Stage P37 (D-180): "for each color among permanents you control", which `amount.for-each` does not read.
   ...KORVOLD_AMOUNT_RULES,
@@ -459,6 +498,8 @@ export const AMOUNT_RULES = [
   ...CARD_TYPES_AMOUNT_RULES,
   // Stage P68 (D-229): "for each time you've cast your commander from the command zone this game".
   ...HOFRI_AMOUNT_RULES,
+  // Issue 144 (Glimpse the Impossible): "for each card put into your graveyard this way".
+  ...F144_AMOUNT_RULES,
   ...DISCARDED_TYPES_AMOUNT_RULES,
   // Quandrix Unlimited deck, group G: "equal to the damage dealt" of a combat damage batch trigger.
   ...QUANDRIX_G_AMOUNT_RULES,

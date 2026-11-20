@@ -194,6 +194,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'damageDealt':
       // Issue 159: "equal to the damage dealt this way".
       return 'the damage dealt this way';
+    case 'excessDamageDealt':
+      // Issue 144 (CR 120.10): "the amount of excess damage dealt to that creature this way".
+      return 'the excess damage dealt this way';
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way".
       return 'the number of counters removed this way';

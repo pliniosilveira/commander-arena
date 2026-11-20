@@ -126,6 +126,7 @@ import {
   remainders,
   usePayOptions,
 } from './pay-options';
+import { playPermissionAnyColor } from './play-permission-color';
 import { becomeUnprepared } from './prepare';
 import { grantPriority } from './priority';
 import { fail, ok, type Result } from './result';
@@ -277,6 +278,10 @@ export function beginCast(
       ...(riders.exileInstead === true ||
       (zone === 'graveyard' && !resolving && castPermissionExiles(state, seat, obj))
         ? { exileInstead: true as const }
+        : {}),
+      // Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell" of the permission the card is cast with.
+      ...(zone === 'exile' && !resolving && playPermissionAnyColor(state, seat, obj.id)
+        ? { anyManaColor: true as const }
         : {}),
       // Lorehold group 2 (CR 614.1a): "If that spell would be put into a graveyard, put it on the bottom of its owner's library instead" of the permission the card is cast with.
       ...(zone === 'exile' &&
@@ -1384,7 +1389,12 @@ export function answerPayment(
   // An ability's cost is paid like a spell's, but restricted mana that may not pay for abilities
   // does not count (CR 106.6, 605.3a), and `finish` goes on to the rest of the cost.
   const spell = activation
-    ? abilitySpend(state, activation.source, hasX(abilityXCost(activation.ability.cost)))
+    ? abilitySpend(
+        state,
+        activation.source,
+        hasX(abilityXCost(activation.ability.cost)),
+        activation.ability.cost.some((c) => c.kind === 'mana' && c.onlyChosenColor === true),
+      )
     : // D-351 (CR 609.4b): "mana of any type can be spent to cast that spell".
       spellSpendTarget(state, spellObject, spellObject.stack?.anyManaType === true);
   const sacrifice = casting.extra?.sacrifice ?? null;
@@ -1455,12 +1465,24 @@ export function answerPayment(
  * What mana may be spent on when it pays for an ability of `source` (CR 106.6, 605.3a; D-151: "... or activate abilities of Dragons" reads the card types and
  * subtypes of the permanent the ability belongs to). The permanent may have left while the cost was paid: then it names none.
  */
-function abilitySpend(state: GameState, source: ObjectId, costHasX = false) {
+function abilitySpend(
+  state: GameState,
+  source: ObjectId,
+  costHasX = false,
+  onlyChosenColor = false,
+) {
   const obj = state.objects[source];
   const x = costHasX ? ({ hasX: true } as const) : {};
-  if (obj === undefined) return { ability: true, ...x } as const;
+  // Issue 144 (CR 602.2b): "Spend only mana of the chosen color to activate this ability".
+  const only = onlyChosenColor ? ({ onlyColor: obj?.chosen?.color ?? null } as const) : {};
+  if (obj === undefined) return { ability: true, ...x, ...only } as const;
   const d = derive(state, obj);
-  return { ability: true, ...x, source: { types: d.types, subtypes: d.subtypes } } as const;
+  return {
+    ability: true,
+    ...x,
+    ...only,
+    source: { types: d.types, subtypes: d.subtypes },
+  } as const;
 }
 
 /**

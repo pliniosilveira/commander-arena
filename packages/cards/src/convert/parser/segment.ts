@@ -38,6 +38,8 @@ export interface AbilitySkeleton {
   readonly chapter?: true;
   /** activated: each cost, split on commas outside quotes and braces. */
   readonly costs: readonly Span[];
+  /** activated, "Boast — {cost}: ..." (CR 702.142a): the keyword adds "Activate only if this creature attacked this turn and only once each turn". */
+  readonly boast?: true;
   /** activated: trailing "Activate only ..." sentences. */
   readonly restrictions: readonly Span[];
   /** triggered, activated, other: the sentences of the body, each with its period. */
@@ -71,7 +73,7 @@ const DELAYED_CAST_LEAD = /^when you next cast an? [^,.]+ spell this turn, /i;
 /** A line that starts a modal spell or ability: "Choose one —", "Choose one. If you control ...". */
 /** "Tiered" (D-433, CR 702.183a) is the lead line of a modal text whose modes have costs, as "Choose one —" is of the others. */
 const MODAL_HEADER =
-  /^(?:choose\b|tiered(?:\n|$)|you may choose two\. each mode must target a different player\.(?:\n|$))/i;
+  /^(?:choose\b|tiered(?:\n|$)|spree(?:\n|$)|you may choose two\. each mode must target a different player\.(?:\n|$))/i;
 const REPLACEMENT_ENTERS = /^(?:as )?~ enters\b/i;
 /** "You may have ~ enter as a copy of any creature on the battlefield, except ..." (issue 104, CR 614.12): the replacement effect of a permanent that enters as a copy, said without "As". */
 const REPLACEMENT_ENTER_AS_COPY = /^you may have ~ enter as a copy of\b/i;
@@ -248,6 +250,13 @@ const NOT_COPIED_SENTENCE = /^if you don['’]t copy a spell this way, draw a ca
 const COPY_IF_TARGETS =
   /(?:^|, )copy that spell if it targets a permanent or player(?:,? and you may choose new targets for the copy)?\.$/i;
 
+/**
+ * "..., create a 1/1 red Soldier creature token with haste, then copy that spell. The copy targets that token." (Frontline Heroism, issue 144, CR 707.10e): the second sentence only says what
+ * the copy of the first targets, so the two are read as one (`effect.copy-spell`). Joined only to a sentence that ends in the copy of the spell of the trigger.
+ */
+const COPY_TARGETS_TOKEN_SENTENCE = /^the copy targets that token\.$/i;
+const COPY_THAT_SPELL_END = /(?:^|, )(?:then )?copy (?:that spell|it)\.$/i;
+
 /** Whether `text` at `span` is a sentence about the new targets that goes with the sentence `before` it (stage P27, D-337). */
 function newTargetsOf(text: string, before: Span | undefined, span: Span): boolean {
   if (before === undefined) return false;
@@ -256,6 +265,7 @@ function newTargetsOf(text: string, before: Span | undefined, span: Span): boole
   if (COPY_EACH_SENTENCE.test(said)) return COPY_FOR_EACH_OTHER.test(beforeText);
   if (RETURN_EXILED_SENTENCE.test(said)) return EXILE_ON_RESOLVE.test(beforeText);
   if (NOT_COPIED_SENTENCE.test(said)) return COPY_IF_TARGETS.test(beforeText);
+  if (COPY_TARGETS_TOKEN_SENTENCE.test(said)) return COPY_THAT_SPELL_END.test(beforeText);
   if (NEW_TARGETS_SENTENCE.test(said)) return true;
   return (
     NEW_TARGETS_COPIES_SENTENCE.test(said) &&
@@ -569,6 +579,12 @@ const MAY_CAST_FROM_YOUR_GRAVEYARD =
   /(?:^|, )you may cast target [^.,]* cards? from your graveyard (?:this turn|until end of turn)\.$/i;
 const EXILE_THAT_SPELL_INSTEAD_YOUR =
   /^if that spell would be put into your graveyard, exile it instead\.$/i;
+/**
+ * "When this creature enters, you may cast target instant or sorcery card with mana value 3 or less from your graveyard without paying its mana cost. If that spell would be put into your
+ * graveyard, exile it instead." (issue 144, Goblin Dark-Dwellers, CR 118.9, 614.1a): the second sentence is a rider of the cast the first one allows (`effect.cast-own-graveyard-card-free`).
+ */
+const CAST_FROM_YOUR_GRAVEYARD_FREE =
+  /(?:^|, )you may cast target [^.,]* cards? [^.,]*from your graveyard without paying its mana cost\.$/i;
 
 /**
  * "You may cast target creature card in a graveyard this turn. When you cast it this turn, ~ gains all activated abilities of that card until end of turn." (issue 159, CR 603.7,
@@ -691,6 +707,14 @@ const COUNT_LIBRARY = /^count the number of cards in your library\.$/i;
 const LIFE_TOTAL_BECOMES_THAT_NUMBER = /^your life total becomes that number\.$/i;
 const CREATE_TOKENS = /^create [^.]* tokens(?: [^.]*)?\.$/i;
 const TOKENS_HAVE_QUOTED_ABILITY = /^they have ["“].*["”]\.?$/i;
+/**
+ * "At the beginning of the next end step, if any of those cards remain exiled, put them into your graveyard, then create a 0/1 colorless Eldrazi Spawn creature token for each card put
+ * into your graveyard this way. Those tokens have \"Sacrifice this token: Add {C}.\"" (issue 144, Glimpse the Impossible, CR 603.7, 111.4): the second sentence says what the tokens the
+ * delayed ability makes have, so the two are read as one (`effect.create-token`).
+ */
+const DELAYED_TOKENS_FOR_EACH_GRAVEYARD =
+  /^at the beginning of the next end step, [^.]*create [^.]* tokens? for each card put into your graveyard this way\.$/i;
+const THOSE_TOKENS_HAVE_QUOTED_ABILITY = /^those tokens have ["“].*["”]\.?$/i;
 /**
  * "Create a white Aura enchantment token named Contract attached to target creature an opponent controls. The token has enchant creature and \"...\"" (issue 89, CR 303.4f, 702.5a): an
  * Aura token is created attached to a target and the sentence after it says what it enchants and has, so the two are read as one (`effect.create-token`).
@@ -876,6 +900,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       b !== undefined &&
       ((said(a, SHUFFLE_THEN_REVEAL) && said(b, IF_ITS_CARD_PUT_ONTO)) ||
         (said(a, CREATE_TOKENS) && said(b, TOKENS_HAVE_QUOTED_ABILITY)) ||
+        (said(a, DELAYED_TOKENS_FOR_EACH_GRAVEYARD) && said(b, THOSE_TOKENS_HAVE_QUOTED_ABILITY)) ||
         (said(a, CREATE_AURA_TOKEN) && said(b, TOKEN_HAS_ENCHANT)) ||
         (said(a, LOOK_AT_TOP_CARD) && said(b, IF_ITS_CARD_MAY_TAKE)) ||
         (said(a, LOOK_AT_TOP_CARD_COST) && said(b, IF_ITS_LAND_OR_MAY_PUT)) ||
@@ -900,6 +925,7 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
         (said(a, CAST_TARGET_FROM_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD)) ||
         (said(a, CAST_PER_OPPONENT_FREE) && said(b, EXILE_A_SPELL_CAST_THIS_WAY_INSTEAD)) ||
         (said(a, MAY_CAST_FROM_YOUR_GRAVEYARD) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
+        (said(a, CAST_FROM_YOUR_GRAVEYARD_FREE) && said(b, EXILE_THAT_SPELL_INSTEAD_YOUR)) ||
         (said(a, ADD_MANA_SENTENCE) && said(b, MANA_STAYS_SENTENCE)) ||
         (said(a, CHOOSE_ODD_OR_EVEN) && said(b, RETURN_CHOSEN_PARITY)) ||
         (said(a, CHOOSE_ANY_OPPONENT_AT_RANDOM) && said(b, ATTACKS_THAT_PLAYER_THIS_COMBAT)) ||
@@ -1116,6 +1142,9 @@ function reflexiveModal(
   };
 }
 
+/** "Boast — " before the cost of an activated ability (CR 702.142a). */
+const BOAST_PREFIX = /^Boast — /u;
+
 const EMPTY = { costs: [], restrictions: [], sentences: [], modes: [] } as const;
 
 /** "• Khans — ": the bullet of a choice among named options and the name (stage P34, D-152). */
@@ -1193,6 +1222,13 @@ export function segment(text: string, face: FaceKind): AbilitySkeleton {
       ...shifted(segment(text.slice(by), face), text, by),
       option: bullet[1] ?? '',
     };
+  }
+  // "Boast — Sacrifice another creature or artifact: ..." (CR 702.142a): the keyword word and its dash, then an ordinary activated ability.
+  const boast = BOAST_PREFIX.exec(text);
+  if (boast !== null) {
+    const by = boast[0].length;
+    const inner = segment(text.slice(by), face);
+    if (inner.head === 'activated') return { ...shifted(inner, text, by), boast: true };
   }
   const whole = { start: 0, end: text.length };
   const base = { text, face, whole, ...EMPTY };

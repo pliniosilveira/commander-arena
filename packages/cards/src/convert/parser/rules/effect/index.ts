@@ -61,6 +61,7 @@ import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
 import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
+import { F144_EFFECT_RULES, F144_FIRST_EFFECT_RULES } from './f144';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -88,6 +89,7 @@ import { HASHATON_G7_EFFECT_RULES } from './hashaton-g7';
 import { HASHATON_G8_EFFECT_RULES } from './hashaton-g8';
 import { HASHATON_G9_EFFECT_RULES } from './hashaton-g9';
 import { HASHATON_GROUP_4_EFFECT_RULES } from './hashaton-group-4';
+import { HAVE_DAMAGE_EFFECT_RULES } from './have-damage';
 import { HEXPROOF_LOSS_EFFECT_RULES } from './hexproof-loss';
 import { HOFRI_EFFECT_RULES } from './hofri';
 import { HYLDA_G1_EFFECT_RULES } from './hylda-g1';
@@ -97,6 +99,7 @@ import { INCUBATE_EFFECT_RULES } from './incubate';
 import { JESKAI_CASTFREE_EFFECT_RULES } from './jeskai-castfree';
 import { JESKAI_FLASHBACK_EFFECT_RULES } from './jeskai-flashback';
 import { KORVOLD_EFFECT_RULES } from './korvold';
+import { LAND_CREATURE_ABILITY_EFFECT_RULES } from './land-creature-ability';
 import { LAND_CREATURE_KEYWORDS_EFFECT_RULES } from './land-creature-keywords';
 import { LIBRARY_RULES } from './library';
 import { LOOK_ELSE_EFFECT_RULES } from './look-else';
@@ -176,6 +179,7 @@ import { SEARCH_RULES } from './search';
 import { SEARCH_PAIR_RULES } from './search-pair';
 import { SONG_FREYALISE_EFFECT_RULES } from './song-freyalise';
 import { SPEND_QUALITIES_EFFECT_RULES } from './spend-qualities';
+import { THRONE_EFFECT_RULES } from './throne';
 import { TOKEN_EFFECT_RULES } from './token';
 import { TRANSFORM_RULES } from './transform';
 import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
@@ -1049,6 +1053,8 @@ export const EFFECT_UNTAP = tapRule('untap');
 export const EFFECT_RULES = [
   // Finale of Promise (issue 121): the four sentences of its one instruction start like a plain "you may cast", and are tried first.
   ...QUICK_DRAW_FIRST_EFFECT_RULES,
+  // Issue 144 (Grenzo): "until end of turn, you may cast that card and you may spend mana as though it were mana of any color ...", before the plain `effect.may-play`.
+  ...F144_FIRST_EFFECT_RULES,
   // Issue 89 (Animate Dead): the sentences of the Aura that returns the card it enchants start like a plain return, a plain "it ..." and "that creature ...", and are tried first.
   ...AURA_GRAVEYARD_EFFECT_RULES,
   ...PREPARE_EFFECT_RULES,
@@ -1122,6 +1128,7 @@ export const EFFECT_RULES = [
   ...PAY_OR_CANT_ATTACK_EFFECT_RULES,
   ...REVEAL_UNTIL_OTHER_EFFECT_RULES,
   ...LAND_CREATURE_KEYWORDS_EFFECT_RULES,
+  ...LAND_CREATURE_ABILITY_EFFECT_RULES,
   ...YOU_MAY_HAVE_EFFECT_RULES,
   ...SONG_FREYALISE_EFFECT_RULES,
   // Death Toll deck, group C: "reveal the top four cards ... put all land cards revealed this way into your hand", "look at the top three cards ... the rest into your graveyard".
@@ -1173,6 +1180,8 @@ export const EFFECT_RULES = [
   ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
+  // Issue 144 (Goblin Dark-Dwellers, Grenzo): "cast target ... card from your graveyard without paying its mana cost" and "exile the top card of that player's library".
+  ...F144_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
   // D-367: "amass Zombies 1".
   ...HASHATON_GROUP_4_EFFECT_RULES,
@@ -1215,6 +1224,8 @@ export const EFFECT_RULES = [
   ...QUANDRIX_D1_EFFECT_RULES,
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
+  // Issue 144 (Throne of Eldraine): the two sentences that restrict mana to the chosen color.
+  ...THRONE_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.
@@ -1251,6 +1262,8 @@ export const EFFECT_RULES = [
   ...FEATHER_G2_EFFECT_RULES,
   // Issue 41 (D-481): "you may have target player lose life equal to the number of Zombies on the battlefield".
   ...GISA_G5_EFFECT_RULES,
+  // Issue 144: "you may have ~ deal 1 damage to target player or planeswalker".
+  ...HAVE_DAMAGE_EFFECT_RULES,
   // Feather deck, group 1 (issue 27, D-451, D-457): protection for the turn (before `effect.gain-keyword`, which refuses it) and "Until end of turn, double target creature's power and it gains first strike.".
   ...FEATHER_G1_EFFECT_RULES,
   // D-303: "Reveal the top five cards of your library. An opponent separates those cards into two piles. ..." (three sentences kept together).

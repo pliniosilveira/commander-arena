@@ -145,6 +145,9 @@ export function activationCostPart(cost: Cost, self = 'permanent'): string {
       return '{T}';
     case 'untap':
       return '{Q}';
+    case 'exert':
+      // CR 701.43a (issue 144): the permanent with the ability is exerted as part of the cost.
+      return `Exert this ${self}`;
     case 'payLife':
       return `Pay ${costPart(cost)}`;
     case 'payXLife':

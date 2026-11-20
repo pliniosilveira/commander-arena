@@ -48,6 +48,8 @@ export interface ScenarioBuilder {
   ring(tempted: number): ScenarioBuilder;
   /** The seat has the city's blessing (CR 702.131c, D-264). */
   citysBlessing(): ScenarioBuilder;
+  /** The seat has this speed at the start (CR 702.179b): 1 to 4; without it the seat has no speed. */
+  speed(speed: number): ScenarioBuilder;
   hand(name: string, options?: PlaceOptions): ScenarioBuilder;
   hand(...names: string[]): ScenarioBuilder;
   /** Top of the library first. */
@@ -159,6 +161,10 @@ export function scenario(): ScenarioBuilder {
     },
     citysBlessing() {
       seatSpec('citysBlessing').citysBlessing = true;
+      return builder;
+    },
+    speed(speed) {
+      seatSpec('speed').speed = speed;
       return builder;
     },
     ring(tempted) {

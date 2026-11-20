@@ -115,6 +115,8 @@ const TURN_CONDITIONS = [
   'condition.cast-from-graveyard-this-turn',
   // Conduit of Worlds: "If you haven't cast a spell this turn, you may cast that card."
   'condition.no-spell-cast-this-turn',
+  // Issue 144 (Great Train Heist): "If it's your combat phase, there is an additional combat phase after this phase." (CR 506.1, 500.8).
+  'condition.your-combat-phase',
 ] as const;
 
 /**
@@ -350,6 +352,14 @@ const DELAYED_LEAD: Parser<NonNullable<IrSentence['delayed']>> = quiet(
       step: 'thatCombat' as const,
       whose: 'you' as const,
     })),
+    // Issue 144 (CR 603.7, 603.7c, 510.3a): "Whenever a creature you control deals combat damage to that player this turn, ": the player a target before it named.
+    map(
+      literal('whenever a creature you control deals combat damage to that player this turn, '),
+      () => ({
+        step: 'combatDamageToThatPlayer' as const,
+        whose: 'you' as const,
+      }),
+    ),
     // D-336 (CR 603.7, 603.7a): "When you next cast an instant or sorcery spell this turn, ": the next spell of that kind its controller casts.
     NEXT_CAST_LEAD,
   ),

@@ -1601,6 +1601,15 @@ export function describeEvent(
         [],
         'CR 702.131b',
       );
+    case 'speedChanged':
+      // CR 702.179a, 702.179c, 702.179d (issue 144): a player's speed became `to` (from none when `from` is 0).
+      return line(
+        'major',
+        `${who(event.seat)} ${event.from === 0 ? verb(event.seat, 'get', 'gets') : verb(event.seat, 'reach', 'reaches')} speed ${event.to}.`,
+        event.seat,
+        [],
+        'CR 702.179',
+      );
     case 'enteredAsCopy':
       // CR 707.9 (D-151): "As this enters, you may have it become a copy of ...".
       return line(

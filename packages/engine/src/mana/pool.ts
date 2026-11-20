@@ -14,16 +14,28 @@ export type SpendTarget =
        * of the mana itself and the snow of {S} are not about its type and still apply.
        */
       readonly anyType?: true;
+      /**
+       * Issue 144 (CR 609.4b): "you may spend mana as though it were mana of any color to cast that spell": a mana of a color pays any colored symbol of the spell's cost. Colorless mana
+       * is no color, so it still pays generic mana only.
+       */
+      readonly anyColor?: true;
       /** The mana value of the spell as it is cast (CR 202.3e: an {X} counts as the value announced on the stack, 0 elsewhere); read by a `qualities` restriction. */
       readonly manaValue?: number;
       /** Whether its mana cost has an {X} (CR 107.3); read by a `qualities` restriction. */
       readonly hasX?: boolean;
+      /** The colors of the spell as it is cast (`W`, `U`, `B`, `R`, `G`); read by a `monocolored` restriction (issue 144, CR 105.2a). */
+      readonly colors?: readonly string[];
     }
   /** An activated ability; with `source` (D-151) the card types and subtypes of the permanent it belongs to. */
   | {
       readonly ability: true;
       /** The activation cost has an {X} (CR 107.3, 602.2b). */
       readonly hasX?: true;
+      /**
+       * "Spend only mana of the chosen color to activate this ability" (issue 144, CR 602.2b): only mana of this color pays the cost; `null` when no color was chosen, so no mana can.
+       * Read by the payment planner (`mana/payment.ts`), which leaves out the pool mana and the source outcomes of any other color.
+       */
+      readonly onlyColor?: ManaColor | null;
       readonly source?: { readonly types: readonly string[]; readonly subtypes: readonly string[] };
     };
 
@@ -77,6 +89,14 @@ export function restrictionAllows(
       )
     ) {
       return false;
+    }
+    // CR 105.2a, 106.6: "monocolored spells of that color": exactly one color, and it is the one named.
+    if (restriction.monocolored !== undefined) {
+      const colors = 'colors' in target ? (target.colors ?? []) : [];
+      const [only, ...more] = colors;
+      if (only === undefined || more.length > 0 || !restriction.monocolored.includes(only)) {
+        return false;
+      }
     }
     return (
       (restriction.types === undefined ||

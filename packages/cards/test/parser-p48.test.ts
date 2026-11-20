@@ -60,6 +60,8 @@ describe('flavor words (CR 207.2d): taken off only when the line does not read a
     'Forecast — {1}{W}, Reveal this card from your hand: Draw a card.',
     'Companion — Each creature card in your starting deck has a different name.',
     'Solved — Draw a card.',
+    // Max speed (CR 702.179) restricts the ability to a player with max speed: dropping it would let the ability run at any time.
+    'Max speed — {T}: Add {R}.',
     'Level 2 — Draw a card.',
     // Not a label.
     'Draw a card — then discard a card.',

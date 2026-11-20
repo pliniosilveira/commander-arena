@@ -367,6 +367,14 @@ function lowerFilterAt(
   }
   // D-437 (CR 115.1, 115.9c): "that targets ~" and "that targets only ~": the source of the ability is the object the spell targets, the only one for "only".
   let targetsOnly: ObjectFilter | undefined;
+  // Issue 144 (CR 115.9c): "that targets only a single creature you control": the one object the spell's targets are is of this kind.
+  if (filter.targetsOnly !== undefined) {
+    if (!onStack || targetsObject !== undefined) return bad([]);
+    parts.push('selector:targetsOnly');
+    const aimed = lowerFilterAt(filter.targetsOnly, noun, true, false, true);
+    if (!aimed.ok) return aimed;
+    targetsOnly = aimed.value;
+  }
   if (filter.targetsSelf === true || filter.targetsOnlySelf === true) {
     if (!onStack || targetsObject !== undefined) return bad([]);
     parts.push('selector:isSource');

@@ -1217,6 +1217,17 @@ function lowerTriggeredAbility(
           needs: ['selector:triggerAttackedPlayer'],
         }
       : null;
+  // CR 508.4: "create a token that's tapped and attacking" after "whenever one or more Goblins you control attack": it attacks a player the declaration attacked (the first one).
+  ctx.attackBatchPlayer =
+    triggers.length === 1 &&
+    triggers[0]?.kind === 'attackBatch' &&
+    triggers[0].who === 'you' &&
+    triggers[0].attackedEnchantedPlayer !== true
+      ? {
+          selector: { kind: 'triggerAttackedPlayer' },
+          needs: ['selector:triggerAttackedPlayer'],
+        }
+      : null;
   ctx.enchantedPlayerTrigger =
     triggers.length > 0 &&
     triggers.every((t) => t.kind === 'attackBatch' && t.attackedEnchantedPlayer === true);
@@ -1388,6 +1399,9 @@ function lowerTriggeredAbility(
   );
   ctx.diesTrigger = triggers.every((t) => t.kind === 'dies');
   ctx.damageBatchTrigger = triggers.every((t) => t.kind === 'combatDamageBatch');
+  ctx.selfAttackTrigger =
+    triggers.length > 0 &&
+    triggers.every((t) => t.kind === 'attacks' && 'kind' in t.what && t.what.kind === 'this');
   const bodies = ability.modal === undefined ? [ability.body] : ability.modal.modes;
   const clauses = bodies.flatMap((b) => b.sentences.flatMap((s) => s.clauses));
   // "It" in the body of "becomes the target" is the spell or ability that targeted (the engine's

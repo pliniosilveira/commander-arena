@@ -37,6 +37,13 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
         'a mana ability sacrifices one permanent: no "any number" (D-491)',
       );
     }
+    if (c?.kind === 'mana' && c.onlyChosenColor !== undefined) {
+      issue(
+        out,
+        `${path}.cost[${i}].onlyChosenColor`,
+        'spending only mana of the chosen color is a restriction on the cost of an activated ability, not of a mana ability',
+      );
+    }
     if (c?.kind === 'tapPermanents' && c.count !== 1) {
       issue(
         out,
@@ -203,12 +210,32 @@ export function checkManaAbility(a: ManaAbility, path: string, out: Out): void {
           });
         }
       }
+      // Issue 144 (Throne of Eldraine): "monocolored spells of that color" stands alone.
+      if (only.monocoloredChosen !== undefined && only.monocoloredChosen !== true) {
+        issue(
+          out,
+          `${path}.spendOnly.monocoloredChosen`,
+          'monocoloredChosen must be true when present',
+        );
+      }
+      if (
+        only.monocoloredChosen === true &&
+        (only.types !== undefined ||
+          only.subtypes !== undefined ||
+          only.chosenType !== undefined ||
+          only.alsoAbilities !== undefined ||
+          only.qualities !== undefined ||
+          only.xCost !== undefined)
+      ) {
+        issue(out, `${path}.spendOnly`, 'spendOnly monocoloredChosen names nothing else');
+      }
       if (
         only.types === undefined &&
         only.subtypes === undefined &&
         only.chosenType !== true &&
         only.qualities === undefined &&
-        only.xCost !== true
+        only.xCost !== true &&
+        only.monocoloredChosen !== true
       ) {
         issue(out, `${path}.spendOnly`, 'spendOnly names at least one type or subtype');
       }

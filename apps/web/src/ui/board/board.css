@@ -915,6 +915,16 @@
   border-color: var(--accent);
 }
 
+.board-flag-speed {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.board-flag-speed.is-max {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+
 .board-flag-soulbond {
   color: var(--accent);
   border-color: var(--accent);

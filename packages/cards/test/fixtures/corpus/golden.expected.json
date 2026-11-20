@@ -1,5 +1,5 @@
 {
-  "parserVersion": 171,
+  "parserVersion": 172,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -24,6 +24,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7a487dbf"
+    },
+    "00807825-88e5-4b88-8527-a49f553a91be": {
+      "name": "Witch's Mark",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a73dc4d0"
     },
     "00c0543c-2a1f-4425-8283-4062d74a1637": {
       "name": "Solemn Simulacrum",
@@ -1178,6 +1186,14 @@
       "reasons": [],
       "ast": "9ec4ff4a"
     },
+    "1e080c7d-102c-4d28-bcb9-62b36d400d13": {
+      "name": "Rundvelt Hordemaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "84bbdf6c"
+    },
     "1e36a42f-58e2-49bc-8c14-7f75e1d8ef98": {
       "name": "Arcane Bombardment",
       "group": "acceptance",
@@ -1273,6 +1289,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "62480e03"
+    },
+    "213fbbdd-f1bc-4bba-9124-7b26e9a706c8": {
+      "name": "Goblin Lackey",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "a1580446"
     },
     "2143f413-7baa-4fd6-a7ca-32f52bfa553f": {
       "name": "Shadrix Silverquill",
@@ -1682,6 +1706,14 @@
       "reasons": [],
       "ast": "ff466820"
     },
+    "2e19baba-2d66-4e3a-b2bf-cb27dce89f44": {
+      "name": "Quest for the Goblin Lord",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c70649b5"
+    },
     "2e2ace5b-4018-43af-8e72-ebafec1a7739": {
       "name": "Harmonic Prodigy",
       "group": "acceptance",
@@ -1795,26 +1827,10 @@
         {
           "face": 0,
           "ability": 0,
-          "text": "Spree",
+          "text": "Spree\n• {1} — Copy target instant spell, sorcery spell, activated ability, or triggered ability. You may choose new targets for the copy.\n• {1} — Change the target of target spell or ability with a single target.",
           "reason": "unrecognised",
           "slot": "effect",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "+ {1} — Copy target instant spell, sorcery spell, activated ability, or triggered ability. You may choose new targets for the copy.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "+ {1} — Change the target of target spell or ability with a single target.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "none"
+          "closestRule": "effect.copy-spell"
         }
       ],
       "reasons": [],
@@ -2120,19 +2136,11 @@
     },
     "3640c29b-1534-4952-b297-619ade948431": {
       "name": "Roaming Throne",
-      "group": "training",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 3,
-          "text": "If a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time.",
-          "reason": "unrecognised",
-          "closestRule": "none"
-        }
-      ],
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "8c57b0f8"
+      "ast": "384989bd"
     },
     "365548fb-5acc-4a8a-b20b-26d28b7d029f": {
       "name": "Village Rites",
@@ -2197,6 +2205,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "80ba00b7"
+    },
+    "37a18736-5fe2-4897-809b-013497bdd890": {
+      "name": "Past in Flames",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "09871086"
     },
     "386a6fa7-db5b-4e82-bd25-fd86d910ed0c": {
       "name": "Baral and Kari Zev",
@@ -2648,6 +2664,14 @@
       "reasons": [],
       "ast": "181f9f5e"
     },
+    "467ea3e3-7767-405a-9d1a-8fa5de696376": {
+      "name": "Gempalm Incinerator",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b0d02ea1"
+    },
     "46c3a69a-4984-40b0-905f-4b0762c7ad72": {
       "name": "Titania, Nature's Force",
       "group": "acceptance",
@@ -2823,6 +2847,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4c0d0fa0"
+    },
+    "4c340b82-22e1-445a-b236-82471b442031": {
+      "name": "Frontline Heroism",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1e19b9a7"
     },
     "4c6a0c30-b547-4eff-8ff4-0ca25803c076": {
       "name": "Urza's Saga",
@@ -3004,7 +3036,7 @@
           "text": "If you would draw a card while your library has no cards in it, you win the game instead.",
           "reason": "unrecognised",
           "slot": "condition",
-          "closestRule": "replacement.enters-with-counters-kicked"
+          "closestRule": "replacement.enters-tapped-if"
         },
         {
           "face": 0,
@@ -3390,6 +3422,14 @@
       "reasons": [],
       "ast": "90a97946"
     },
+    "5b9a2b81-a645-43be-8001-03817ac210ca": {
+      "name": "Throne of Eldraine",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9dc3bfb9"
+    },
     "5bb4ee32-11c6-4ed4-a071-c3cf48070fff": {
       "name": "Embalmer's Tools",
       "group": "acceptance",
@@ -3607,6 +3647,14 @@
       "reasons": [],
       "ast": "f8cf15ac"
     },
+    "61978202-538b-4f92-acfc-e95f4a6ce466": {
+      "name": "Wild Ride",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "4a0a37db"
+    },
     "61cceb14-9568-4a5e-9b56-07afa6407df2": {
       "name": "Inspired Sphinx",
       "group": "acceptance",
@@ -3687,6 +3735,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4fb91c0b"
+    },
+    "63dfe794-5f56-41ec-9883-5523b41cc3e0": {
+      "name": "Arena of Glory",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "14fabd38"
     },
     "63e2cba7-ec1a-44bf-b915-d2ae75851430": {
       "name": "Hermes, Overseer of Elpis",
@@ -4513,6 +4569,14 @@
       "reasons": [],
       "ast": "e1a66262"
     },
+    "79824266-bffa-476c-bdd3-976e9d789a42": {
+      "name": "Goblin Negotiation",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7cc77327"
+    },
     "79ba18fd-f184-43c1-86df-56ee18ce806c": {
       "name": "Secluded Courtyard",
       "group": "acceptance",
@@ -4584,6 +4648,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "11943bc2"
+    },
+    "7b70696e-b09e-4bc9-8438-d31075d78c0c": {
+      "name": "Glimpse the Impossible",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5343cd35"
     },
     "7bc3f92f-68a2-4934-afc4-89f6d0e8cf98": {
       "name": "Dusk // Dawn",
@@ -4830,6 +4902,14 @@
       "reasons": [],
       "ast": "8752681e"
     },
+    "80788290-1569-4c7f-b263-b4da7b31a9d1": {
+      "name": "Grenzo, Havoc Raiser",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "123ec85a"
+    },
     "8134f3fd-197a-4b44-a370-311cc955dea3": {
       "name": "Ainok Wayfarer",
       "group": "acceptance",
@@ -5054,6 +5134,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "118702ae"
+    },
+    "86ec0b56-497f-481c-a03a-c4e64e8e7404": {
+      "name": "Searslicer Goblin",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "aefa5b8d"
     },
     "86fb3749-37d6-48a6-8524-71e996850307": {
       "name": "High Market",
@@ -5474,6 +5562,14 @@
       "reasons": [],
       "ast": "c9be3892"
     },
+    "94e8b0a9-44a1-4dce-8d44-78681ae638a1": {
+      "name": "Fountainport",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8dc5ed12"
+    },
     "95e1c368-b58a-4e69-9583-587560ad558d": {
       "name": "Eagle's Rescue",
       "group": "acceptance",
@@ -5593,6 +5689,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3d47f3bf"
+    },
+    "997d2f38-5a50-451e-bd48-e36dcb24d967": {
+      "name": "Boggart Shenanigans",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c682818f"
     },
     "99c2d3ef-e5b4-48cd-b3f5-de9b02c7c36a": {
       "name": "Ureni of the Unwritten",
@@ -5849,6 +5953,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7d6f9e36"
+    },
+    "9e9d538b-a9e5-4d59-b7c1-208fe18110e3": {
+      "name": "Siege-Gang Lieutenant",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7025fcf1"
     },
     "9ea14a03-c6a2-49ec-953d-4249a2c27e1d": {
       "name": "Mirrorwing Dragon",
@@ -6411,6 +6523,14 @@
       "reasons": [],
       "ast": "d9e15843"
     },
+    "ac7d1986-8388-4e4c-973e-d90382b12acf": {
+      "name": "Sazacap's Brew",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1298ec39"
+    },
     "ac8952c9-bd30-48cd-b964-7e6271f9cbc8": {
       "name": "Sephara, Sky's Blade",
       "group": "training",
@@ -6474,6 +6594,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "6d0876a5"
+    },
+    "ada48353-4c86-44d6-83a5-e7e3c703b948": {
+      "name": "Redcap Gutter-Dweller",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "df2abb2e"
     },
     "add60aad-2532-4f59-bfb9-f0168c2adda6": {
       "name": "Cosmic Rebirth",
@@ -6555,6 +6683,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c93b85e3"
+    },
+    "afe2f7a4-9440-4d93-801f-a18b627efb21": {
+      "name": "Great Train Heist",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "309efe8c"
     },
     "aff4e43d-cafa-47de-8e39-011f9254a26a": {
       "name": "Marwyn, the Clearcutter",
@@ -6862,6 +6998,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "0d33da74"
+    },
+    "bab0ab8d-74d2-49a3-b258-b93d19925d99": {
+      "name": "Goblin Dark-Dwellers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "7f58f534"
     },
     "bad6a5a9-7010-418d-b042-182926aa999d": {
       "name": "Norn's Choirmaster",
@@ -7546,6 +7690,14 @@
       "reasons": [],
       "ast": "67880500"
     },
+    "cd45a29f-73bc-435c-9d50-09a4ecaa77be": {
+      "name": "Howlsquad Heavy",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "39b4bf21"
+    },
     "cdfa9de4-7d7d-4638-8ac4-793ece6372dd": {
       "name": "Changing Loyalty",
       "group": "acceptance",
@@ -7962,6 +8114,14 @@
       "reasons": [],
       "ast": "c6d50f19"
     },
+    "da1c1c70-c2fa-4ba7-89fe-d9af3fb353b9": {
+      "name": "General Kreat, the Boltbringer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "9eba2a4b"
+    },
     "da46786e-28df-4638-ab3d-121011d2f150": {
       "name": "Master Transmuter",
       "group": "training",
@@ -8210,6 +8370,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7c48d8f0"
+    },
+    "e0c00a74-bdf8-4fee-8042-42c5878e9e3c": {
+      "name": "Broadside Bombardiers",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "2257864b"
     },
     "e110ee80-37af-4989-a5fb-95d51dc7f102": {
       "name": "Shimmer Myr",
@@ -8780,6 +8948,14 @@
       "reasons": [],
       "ast": "9de0530e"
     },
+    "f17d0fb8-c157-43b8-be26-f5ba4c6aed14": {
+      "name": "Haze of Rage",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "5614826c"
+    },
     "f18cce8c-8fb6-49a7-8f79-2529c0ee3ecc": {
       "name": "Mog, Moogle Warrior",
       "group": "acceptance",
@@ -8919,6 +9095,14 @@
       "reasons": [],
       "ast": "7915483f"
     },
+    "f451b8f0-1ff5-4e8d-9f30-9352d83ed687": {
+      "name": "Den of the Bugbear",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b6ec8430"
+    },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
       "group": "acceptance",
@@ -8950,6 +9134,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9bce244c"
+    },
+    "f5d1bd3c-0e65-4999-a810-881b2389b40e": {
+      "name": "Conspicuous Snoop",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1f5539be"
     },
     "f61680da-606e-4d16-b0a0-361aa5210901": {
       "name": "Chandra's Ignition",
@@ -9316,15 +9508,15 @@
   "summary": {
     "training": {
       "supported": 157,
-      "total": 176
+      "total": 175
     },
     "holdout": {
       "supported": 53,
       "total": 57
     },
     "acceptance": {
-      "supported": 846,
-      "total": 865
+      "supported": 874,
+      "total": 893
     }
   }
 }

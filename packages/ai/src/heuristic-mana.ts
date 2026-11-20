@@ -35,10 +35,19 @@ export type Unit = readonly Colour[];
 const ADD = /\{T\}(?:, [^:]*)?: Add ([^.]*)\./i;
 const SYMBOL = /\{([WUBRGC])\}/g;
 
-/** The units of mana an untapped permanent makes with a "{T}: Add" ability; none when it makes none. */
-export function unitsOf(o: ObjectView): Unit[] {
+/**
+ * The units of mana an untapped permanent makes with a "{T}: Add" ability; none when it makes none. A line "Max speed — {T}: Add ..." counts only with `maxSpeed`
+ * (the player's speed is 4, CR 702.178a), which the callers that know the viewer's speed pass.
+ */
+export function unitsOf(o: ObjectView, maxSpeed = false): Unit[] {
   if (o.tapped || (o.summoningSick && o.types.includes('creature'))) return [];
-  const match = ADD.exec(o.oracleText);
+  const text0 = maxSpeed
+    ? o.oracleText
+    : o.oracleText
+        .split('\n')
+        .filter((line) => !/^max speed — /i.test(line))
+        .join('\n');
+  const match = ADD.exec(text0);
   if (match !== null) {
     const text = match[1] ?? '';
     if (/any color|any type/i.test(text)) return [ALL];
@@ -55,7 +64,10 @@ export function unitsOf(o: ObjectView): Unit[] {
 
 /** The units the agent can make now, from its untapped permanents. */
 export function ownUnits(view: GameView): Unit[] {
-  return view.battlefield.filter((o) => o.controller === view.viewer).flatMap(unitsOf);
+  const maxSpeed = view.seats[view.viewer]?.speed === 4;
+  return view.battlefield
+    .filter((o) => o.controller === view.viewer)
+    .flatMap((o) => unitsOf(o, maxSpeed));
 }
 
 interface Need {

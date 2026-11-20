@@ -57,6 +57,7 @@ const EXECUTABLE_KEYWORDS = [
   'wither', // scenario-xx-infect-toxic
   'toxic', // scenario-xx-infect-toxic
   'splitSecond', // scenario-xx-split-second
+  'startYourEngines', // scenario-xx-speed-s144
   'typecycling', // scenario-xx-typecycling
   'multikicker', // scenario-xx-multikicker
   'buyback', // scenario-xx-galadriel-g3-spells
@@ -158,6 +159,7 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   wither: { kind: 'wither' },
   toxic: { kind: 'toxic', count: 1 },
   splitSecond: { kind: 'splitSecond' },
+  startYourEngines: { kind: 'startYourEngines' },
   typecycling: {
     kind: 'typecycling',
     filter: { subtypes: ['Island'] },
@@ -383,6 +385,7 @@ describe('supported feature gate', () => {
       'Gingerbrute',
       'Incubator',
       'Lander',
+      'Wicked Role',
       'Junk',
     ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
@@ -420,6 +423,8 @@ describe('supported feature gate', () => {
       'tapPermanents',
       // Issue 245 (PR #280): "{T}, Remove a charge counter from this land: Add one mana of any color" (Vivid Grove).
       'removeCounters',
+      // Issue 144: "{R}, {T}, Exert this land: Add {R}{R}" (Arena of Glory).
+      'exert',
     ]);
     expect([...SUPPORTED_FEATURES.keywordKinds].sort()).toEqual([...EXECUTABLE_KEYWORDS].sort());
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {

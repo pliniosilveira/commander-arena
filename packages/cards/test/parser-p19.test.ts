@@ -293,7 +293,7 @@ describe('a modal spell is the whole text of its spell', () => {
     expect(u).toMatchObject({ reason: 'unrecognised', closestRule: 'modal.choose' });
   });
 
-  test.each(['Entwine {2}', 'Spree'])(
+  test.each(['Entwine {2}'])(
     '%s, which puts a cost on a mode, has no rule: the line stays unread',
     (text) => {
       expect(dropped(text, 'instant')).toMatchObject({
@@ -303,13 +303,9 @@ describe('a modal spell is the whole text of its spell', () => {
     },
   );
 
-  test('Spree: mode costs are lines of their own, unread', () => {
+  test('Spree (CR 702.172a): the plus signs are bullets and the cost before each effect is the cost of the mode', () => {
     const parsed = read('Spree\n+ {1} — Draw a card.\n+ {2} — You gain 3 life.', 'instant');
-    expect(parsed.unparsed.map((u) => u.text)).toEqual([
-      'Spree',
-      '+ {1} — Draw a card.',
-      '+ {2} — You gain 3 life.',
-    ]);
+    expect(parsed.unparsed).toEqual([]);
   });
 });
 

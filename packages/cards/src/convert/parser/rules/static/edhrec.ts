@@ -7,7 +7,7 @@
 import { fail, literal, map, pattern, sequence } from '../../combinators';
 import type { IrNoun, IrStatic } from '../../ir/types';
 import { CREATURE_TYPES } from '../noun/creature-types';
-import { spellPhrase, withoutZone } from '../noun/phrases';
+import { permanentPhrase, spellPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, quietly, spanned } from '../registry';
 import { makeNoun } from '../trigger/subjects';
 import { staticOf } from './angels-words';
@@ -213,8 +213,62 @@ export const STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING = defineRule<IrStatic>({
   },
 });
 
+/**
+ * `static.triggers-additional-time-another`: "If a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time."
+ * (CR 603.2d, 607.2d: the same doubling as above for the creatures of the controller, other than the source, that have the creature type the source chose as
+ * it entered). Not read: no "another", a plural, "that ability" (the other wording is `static.triggers-additional-time`), another number of times.
+ */
+export const STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER = defineRule<IrStatic>({
+  id: 'static.triggers-additional-time-another',
+  family: 'static',
+  leading: ['if'],
+  cites: [
+    'CR 603.2d (Handling Triggered Abilities)',
+    'CR 607.2d (Linked Abilities)',
+    'CR 604.1 (Handling Static Abilities)',
+  ],
+  examples: [
+    'If a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time.',
+    'If a triggered ability of another creature you control triggers, it triggers an additional time.',
+  ],
+  rejects: [
+    'If a triggered ability of a creature you control of the chosen type triggers, it triggers an additional time.',
+    'If a triggered ability of another creature you control of the chosen type triggers, it triggers an additional time',
+    'If a triggered ability of another creature you control of the chosen type triggers, it triggers two additional times.',
+    'If a triggered ability of another creatures you control of the chosen type triggers, it triggers an additional time.',
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.triggers-additional-time-another';
+    const lead = literal('if a triggered ability of another ')(ctx, pos);
+    if (!lead.ok) return lead;
+    const phrase = permanentPhrase(false)(ctx, lead.pos);
+    if (!phrase.ok) return phrase;
+    const tail = sequence(literal(' triggers'), literal(', it triggers an additional time.'))(
+      ctx,
+      phrase.pos,
+    );
+    if (!tail.ok) return tail;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: phrase.value,
+      upTo: false,
+      plural: false,
+      other: true,
+      span: { start: lead.pos, end: phrase.pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: staticOf(id, subject, [{ kind: 'doubleTriggers' }], pos, tail.pos),
+      pos: tail.pos,
+    };
+  },
+});
+
 export const EDHREC_STATIC_RULES = [
   STATIC_TRIGGERS_ADDITIONAL_TIME_ATTACKING,
   STATIC_TRIGGERS_ADDITIONAL_TIME,
+  STATIC_TRIGGERS_ADDITIONAL_TIME_ANOTHER,
   STATIC_TRIGGERS_ADDITIONAL_TIME_CAUSE,
 ].map(quietly);

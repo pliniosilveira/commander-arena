@@ -18,7 +18,13 @@ import type { IrComparison, IrFilter, IrNoun } from '../../ir/types';
 import { quantity } from '../amount/index';
 import { defineRule, family, node, spanned } from '../registry';
 import { BRAIDS_NOUN_RULES } from './braids';
-import { graveyardPhrase, PLURAL_TYPE_UNION, permanentPhrase, withoutZone } from './phrases';
+import {
+  BOUNDARY,
+  graveyardPhrase,
+  PLURAL_TYPE_UNION,
+  permanentPhrase,
+  withoutZone,
+} from './phrases';
 
 type Bare = Omit<IrNoun, 'span' | 'rule'>;
 
@@ -495,12 +501,53 @@ export const NOUN_EACH_PERMANENT_THEY_CONTROL = defineRule<IrNoun>({
   },
 });
 
+/**
+ * `noun.a-token`: "a token", "another token", "two tokens": the acting player chooses among the tokens they control (CR 111.1, 701.21a), as in
+ * "Sacrifice a token". A token of any kind: no type word, so `noun.a-permanent` (which wants one) does not read it.
+ */
+export const NOUN_A_TOKEN = defineRule<IrNoun>({
+  id: 'noun.a-token',
+  family: 'noun',
+  leading: [],
+  cites: ['CR 111.1 (Tokens)', 'CR 701.21a (Sacrifice)'],
+  examples: ['a token', 'another token', 'two tokens'],
+  rejects: ['target token', 'a token an opponent controls', 'tokens', 'one token', 'a tokens'],
+  parse: node<Bare, IrNoun>(
+    'noun.a-token',
+    choice<Bare>(
+      map(
+        sequence(
+          spanned(satisfy(quantity, (n) => n >= 2)),
+          pattern(new RegExp(` tokens${BOUNDARY}`, 'iu')),
+        ),
+        ([count]) =>
+          bare(
+            'a',
+            { token: true, raw: 'tokens' },
+            {
+              count: { kind: 'number', value: count.value, span: count.span },
+              plural: true,
+            },
+          ),
+      ),
+      map(pattern(new RegExp(`another token${BOUNDARY}`, 'iu')), () =>
+        bare('a', { token: true, raw: 'token' }, { other: true }),
+      ),
+      map(pattern(new RegExp(`an? token${BOUNDARY}`, 'iu')), () =>
+        bare('a', { token: true, raw: 'token' }),
+      ),
+    ),
+    (b) => b,
+  ),
+});
+
 export const CHOOSE_NOUN_RULES = [
   NOUN_SELF,
   NOUN_A_GREATEST_PERMANENT,
   // Meren deck, Braids: "a permanent of their choice that shares a card type with it", before the plain "a permanent" that would read its first words.
   ...BRAIDS_NOUN_RULES,
   NOUN_A_PERMANENT,
+  NOUN_A_TOKEN,
   NOUN_ANY_NUMBER_PERMANENTS,
   NOUN_ONE_OR_MORE_PERMANENTS,
   NOUN_ALL_NONLAND_THEY_CONTROL,

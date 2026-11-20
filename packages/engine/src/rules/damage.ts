@@ -103,6 +103,31 @@ export function lethalDamageTo(
   return deathtouch && remaining > 0 ? 1 : remaining;
 }
 
+/**
+ * The excess damage (CR 120.10) of `dealt` damage a source dealt to `recipient` as it was before the damage: for a creature what is more than lethal damage (CR 120.6, 702.2c:
+ * any damage above 0 is lethal from a source with deathtouch), for a planeswalker what is more than its loyalty; for a permanent that is both, the greater of the two. 0 for any
+ * other permanent. `before` is the state before the damage was dealt.
+ */
+export function excessDamageTo(
+  before: GameState,
+  recipient: GameObject,
+  dealt: number,
+  deathtouch: boolean,
+): number {
+  if (dealt <= 0) return 0;
+  const types = derive(before, recipient).types;
+  const overCreature = types.includes('creature')
+    ? dealt - lethalDamageTo(before, recipient, deathtouch)
+    : 0;
+  const overWalker = types.includes('planeswalker') ? dealt - (recipient.counters.loyalty ?? 0) : 0;
+  return Math.max(0, overCreature, overWalker);
+}
+
+/** Whether the source of the damage has deathtouch as it is dealt (a source that left is read as it last was, CR 113.7a). */
+export function sourceHasDeathtouch(state: GameState, source: ObjectId): boolean {
+  return sourceInfo(state, source)?.deathtouch === true;
+}
+
 /** Damage that was dealt: the state after it and what happened. */
 export interface Dealt {
   readonly kind: 'dealt';

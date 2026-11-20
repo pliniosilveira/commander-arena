@@ -68,6 +68,7 @@ import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
 import { EXILED_WITH_LOWERINGS } from './exiled-with';
+import { F144_LOWERINGS } from './f144';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
@@ -957,6 +958,7 @@ export function lowerMana(spec: IrManaSpec): ManaProduction | null {
     case 'commanderIdentity':
       return { kind: 'commanderIdentity' };
     case 'chosenColor':
+      if (spec.what.count !== undefined) return { kind: 'chosenColor', count: spec.what.count };
       return spec.what.or === undefined
         ? { kind: 'chosenColor' }
         : { kind: 'chosenColor', or: spec.what.or };
@@ -1976,6 +1978,26 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       rule: clause.rule,
     };
   }
+  // Issue 144 (CR 508.4, 110.5b): "create a 1/1 red Goblin creature token that's tapped and attacking": the token enters tapped, then the engine's `enterAttacking` puts it in the combat
+  // against whom the source attacks, never declared as an attacker. Only where the source is the attacker ("Whenever this creature attacks"): anywhere else the controller chooses whom
+  // it attacks (CR 508.4), which the engine does not ask.
+  if (token.tappedAndAttacking === true && ctx.selfAttackTrigger) {
+    const blockedAttack = missingFeatures(['effect:enterAttacking', 'token:tapped']);
+    if (blockedAttack.length > 0) {
+      return { ok: false, needs: blockedAttack, at: token.span, rule: token.rule };
+    }
+    const { tappedAndAttacking: _flag, ...plain } = token;
+    const inner = lowerCreateToken(
+      { ...clause, args: { ...clause.args, token: { ...plain, tapped: true } } },
+      ctx,
+    );
+    if (!inner.ok) return inner;
+    return {
+      ok: true,
+      value: [...inner.value, { kind: 'enterAttacking', objects: { kind: 'moved' } }],
+      rule: clause.rule,
+    };
+  }
   const count = lowerAmount(token.count, ctx, clause.rule);
   if (!count.ok) return count;
   const at = { at: token.span, rule: token.rule };
@@ -1992,8 +2014,21 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (missing.length > 0) return { ok: false, needs: missing, ...at };
     entersAttacking = { attacking: { at: ctx.attackedPlayer.selector } };
   }
+  // CR 508.4, 110.5b: "that's tapped and attacking": only in the effect of an attack batch trigger of the controller, which names the players the declaration attacked.
+  if (token.tappedAndAttacking === true) {
+    if (ctx.attackBatchPlayer === null) return { ok: false, needs: [], ...at };
+    const missing = missingFeatures([
+      ...ctx.attackBatchPlayer.needs,
+      'token:attacking',
+      'token:tapped',
+    ]);
+    if (missing.length > 0) return { ok: false, needs: missing, ...at };
+    entersAttacking = { attacking: { at: ctx.attackBatchPlayer.selector } };
+  }
   const entersTapped = {
-    ...(token.tapped === true ? { tapped: true as const } : {}),
+    ...(token.tapped === true || token.tappedAndAttacking === true
+      ? { tapped: true as const }
+      : {}),
     ...entersAttacking,
   };
   // "Its controller creates ...": the token is created under that player's control (CR 111.2).
@@ -2012,6 +2047,20 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     const blocked = missingFeatures([`token:${name}`]);
     if (blocked.length > 0) return { ok: false, needs: blocked, ...at };
     if (name === 'Blood') return { ok: false, needs: [`token:${name}`], ...at };
+    // CR 111.10, 303.7: a Role token is an Aura token; the engine creates it only attached to the target the text names (`createToken.attachTo`).
+    let attachTo: { kind: 'target'; id: string } | undefined;
+    const host = arg(clause, 'attachTo');
+    if (name === 'Wicked Role') {
+      if (host?.kind !== 'noun' || host.det !== 'target' || count.value !== 1) {
+        return { ok: false, needs: [], ...at };
+      }
+      const ref = objectRefOf(host, ctx);
+      if (!ref.ok) return ref;
+      if (ref.value.kind !== 'target') return failure(clause);
+      attachTo = { kind: 'target', id: ref.value.id };
+    } else if (host !== undefined) {
+      return failure(clause);
+    }
     return {
       ok: true,
       value: [
@@ -2021,6 +2070,7 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
           count: count.value,
           ...entersTapped,
           ...by,
+          ...(attachTo === undefined ? {} : { attachTo }),
         },
       ],
       rule: clause.rule,
@@ -2348,6 +2398,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...NEXT_SPELL_LOWERINGS,
   ...PUT_MILLED_LOWERINGS,
   ...QUICK_DRAW_LOWERINGS,
+  ...F144_LOWERINGS,
   ...DACK_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".

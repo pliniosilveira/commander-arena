@@ -265,6 +265,11 @@ export function checkContinuousEffect(
         '"until the next untap step" is the duration of doesntUntap only',
       );
     }
+  } else if (e.kind === 'restrict' && e.duration === 'thisCombat') {
+    // CR 506.1, 508.1d, 611.2a: the one duration of "attacks this combat if able".
+    if (e.restriction !== 'attacksEachCombat') {
+      issue(out, `${path}.duration`, '"this combat" is the duration of attacksEachCombat only');
+    }
   } else if (e.kind === 'grantAbility' && e.duration === 'untilYourNextTurn') {
     // Issue 145 (Song of Freyalise, CR 611.2a, 500.1): the duration of a temporary grant of an activated, triggered or mana ability (`checkGrantAbility` checks the abilities).
   } else if (!isOneOf(e.duration, DURATIONS)) {

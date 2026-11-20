@@ -726,6 +726,13 @@ export type GameEvent =
     }
   /** `seat` got the city's blessing (CR 702.131b, D-264): they controlled ten or more permanents, one of them with Ascend. Once per player. */
   | { readonly kind: 'citysBlessingGained'; readonly seat: SeatId }
+  /** `seat` had speed `from` (0: none, CR 702.179b) and has `to` (CR 702.179a, 702.179c, 702.179d). */
+  | {
+      readonly kind: 'speedChanged';
+      readonly seat: SeatId;
+      readonly from: number;
+      readonly to: number;
+    }
   /**
    * The Ring tempted `seat` (CR 701.54a, 701.54d, D-196), once they had done what the rule says, even when some or all of it was impossible.
    * `times` is how often it has tempted them now (the emblem has abilities from 2, 3 and 4), `bearer` the creature they chose as their

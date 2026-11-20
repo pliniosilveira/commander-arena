@@ -13,7 +13,12 @@ import type { DamageRecipient } from '../state/combat-types';
 import type { GameEvent } from '../state/events';
 import type { ChosenTarget, GameObject, GameState, ResolutionContext } from '../state/types';
 import { controllerOf } from './control';
-import { dealDamageAsking, dealDamageWithExcess } from './damage';
+import {
+  dealDamageAsking,
+  dealDamageWithExcess,
+  excessDamageTo,
+  sourceHasDeathtouch,
+} from './damage';
 import type { Asked, OrderFlow } from './damage-order';
 import { attackedTarget } from './defending';
 import { derive } from './derive';
@@ -101,6 +106,7 @@ export function runDealDamage(
         : derive(state, state.objects[damageSource] as GameObject).abilities,
       'trample',
     );
+  let excess = 0;
   for (const id of objects) {
     const recipient = next.objects[id];
     const isCreature =
@@ -110,12 +116,26 @@ export function runDealDamage(
         ? dealDamageWithExcess(next, damageSource, recipient, amount, flow)
         : dealDamageAsking(next, damageSource, { kind: 'object', id }, amount, false, flow);
     if (r.kind === 'asked') return asking(state, r);
+    // CR 120.10 (issue 144): what was dealt to the permanent beyond lethal damage (beyond the loyalty of a planeswalker), as it stood before the damage.
+    if (recipient !== undefined) {
+      const dealtToIt = r.events.reduce(
+        (n, e) =>
+          e.kind === 'damageDealt' && e.to.kind === 'object' && e.to.id === id ? n + e.amount : n,
+        0,
+      );
+      excess += excessDamageTo(next, recipient, dealtToIt, sourceHasDeathtouch(next, damageSource));
+    }
     next = r.state;
     events.push(...r.events);
   }
   // Issue 159: "you gain life equal to the damage dealt this way" reads the damage that was dealt, after prevention (CR 615.6).
   const dealt = events.reduce((n, e) => (e.kind === 'damageDealt' ? n + e.amount : n), 0);
-  return { ...done(next, events), ...(dealt > 0 ? { thisWay: { damageDealt: dealt } } : {}) };
+  return {
+    ...done(next, events),
+    ...(dealt > 0
+      ? { thisWay: { damageDealt: dealt, ...(excess > 0 ? { excessDamageDealt: excess } : {}) } }
+      : {}),
+  };
 }
 
 /**

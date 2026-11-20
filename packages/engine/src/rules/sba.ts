@@ -26,7 +26,7 @@ import {
   removeFromZone,
 } from '../state/ops';
 import type { GameObject, GameState } from '../state/types';
-import { illegalAttachments, illegalAuras, unattach } from './attach';
+import { duplicateRoles, illegalAttachments, illegalAuras, unattach } from './attach';
 import { gainCitysBlessings } from './city-blessing';
 import { controllerOf } from './control';
 import { endLostControlEffects } from './control-effects';
@@ -41,6 +41,7 @@ import { cannotLoseGame } from './player-protection';
 import { endLostRingBearers } from './ring';
 import { sacrificePermanent } from './sacrifice';
 import { sagaIsDone } from './saga';
+import { gainStartingSpeeds } from './speed';
 import { moveObject, recordLastKnown } from './zones';
 
 export interface SbaResult {
@@ -131,13 +132,21 @@ export function checkStateBasedActions(input: GameState): SbaResult {
     return { state: blessed.state, events: blessed.events, performed: true, decision: null };
   }
 
+  // CR 704.5aa, 702.179a: a player with a permanent with start your engines! and no speed gets speed 1.
+  const started = gainStartingSpeeds(state);
+  if (started !== null) {
+    return { state: started.state, events: started.events, performed: true, decision: null };
+  }
+
   // 1. Find everything against the unchanged state (CR 704.3).
   const losses = lossReasons(state);
   const toGraveyard: GameObject[] = []; // CR 704.5f, not a destruction
   const destroyed: GameObject[] = []; // CR 704.5g, 704.5h
   const cease: GameObject[] = []; // CR 704.5d
   const annihilate: GameObject[] = []; // CR 704.5q
-  const fallenAuras = illegalAuras(state); // CR 704.5m
+  const illegal = illegalAuras(state); // CR 704.5m
+  // CR 303.7, 704.5y: a Role that is not the newest of its controller on a permanent goes to the graveyard like an Aura attached wrongly.
+  const fallenAuras = [...illegal, ...duplicateRoles(state).filter((o) => !illegal.includes(o))];
   const unattached = illegalAttachments(state); // CR 704.5n, 704.5p
   const legendary: LegendCandidate[] = []; // CR 704.5j
   const finishedSagas: GameObject[] = []; // CR 704.5s
