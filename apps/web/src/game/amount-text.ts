@@ -163,6 +163,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'destroyedValue':
       // Convert to Slime: "the total mana value of permanents destroyed this way".
       return 'the total mana value of the permanents destroyed this way';
+    case 'destroyedCreaturesOfAffected':
+      // Deadly Tempest (CR 608.2c): read for each player the instruction affects.
+      return 'the number of creatures that player controlled that were destroyed this way';
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
@@ -265,6 +268,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the life that player lost this turn';
     case 'lifeGainedThisTurn':
       return 'the amount of life you gained this turn';
+    case 'lifeGainedOrLostThisTurn':
+      // CR 119.3 (Willowdusk, Essence Seer).
+      return 'the amount of life you gained this turn or the amount of life you lost this turn, whichever is greater';
     case 'enteredThisTurn':
     case 'diedThisTurn': {
       const current = thingsPhrase(

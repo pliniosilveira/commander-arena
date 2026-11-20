@@ -1589,6 +1589,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   countersRemoved: 'a removeAllCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
+  destroyedCreaturesOfAffected: 'a destroy effect',
   exiledCreatures: 'an exile effect',
   discardedTypeCount: 'a discard effect',
 };
@@ -1601,7 +1602,8 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
   if (e?.kind === 'sequence')
     return Array.isArray(e.effects) ? e.effects.flatMap(thisWayProduced) : [];
   if (e?.kind === 'sacrifice') return ['sacrificed', 'sacrificedOwn'];
-  if (e?.kind === 'destroy') return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue'];
+  if (e?.kind === 'destroy')
+    return ['destroyed', 'destroyedOwnNontoken', 'destroyedValue', 'destroyedCreaturesOfAffected'];
   if (e?.kind === 'exileOwnGraveyardCard') return ['exiledNonland'];
   if (e?.kind === 'draw') return ['playersDrew'];
   if (e?.kind === 'tap') return ['tapped'];
@@ -1708,6 +1710,7 @@ export function checkStateAmount(a: Amount, path: string, out: Out, label: strin
     case 'opponentsWithMore':
     case 'opponentCount':
     case 'lifeGainedThisTurn':
+    case 'lifeGainedOrLostThisTurn':
     case 'enteredThisTurn':
     case 'diedThisTurn':
       checkAmount(a, path, NO_SCOPE, out);
@@ -1947,6 +1950,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
       }
       break;
     case 'lifeGainedThisTurn':
+    case 'lifeGainedOrLostThisTurn':
       if (Object.keys(a).some((key) => key !== 'kind')) {
         issue(out, path, 'life gained this turn reads only the controller; no extra fields');
       }
@@ -2094,6 +2098,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           out,
           path,
           `thisWay "${a.what}" needs ${THIS_WAY_SOURCES[a.what]} before it in the same sequence`,
+        );
+      } else if (a.what === 'destroyedCreaturesOfAffected') {
+        // Only as the whole amount of a `loseLife` (checked with the effect), where it is read for each player the effect affects.
+        issue(
+          out,
+          path,
+          'destroyedCreaturesOfAffected is the whole amount of a loseLife effect, not part of another amount',
         );
       }
       break;
@@ -5948,8 +5959,13 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     }
     case 'castCard':
       // CR 608.2g (D-350): "you may cast target [card] from a graveyard": the card is a target of the ability (a card in a graveyard when the ability resolves).
-      if (kindOf(e.object) !== 'target') {
-        issue(out, `${path}.object`, 'the card to cast is a target');
+      if (kindOf(e.object) === 'this') {
+        // CR 113.6b (Sproutback Trudge): the card itself, which only an ability that works from its graveyard can name there (`validateCard` checks `functionsIn`).
+        if (scope.owner !== 'ability') {
+          issue(out, `${path}.object`, 'casting this card is the effect of an ability');
+        }
+      } else if (kindOf(e.object) !== 'target') {
+        issue(out, `${path}.object`, 'the card to cast is a target or this card');
       } else {
         checkRef(e.object as ObjectRef, 'object', `${path}.object`, scope, out);
       }
@@ -6294,6 +6310,24 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (kindOf(e.amount) === 'lifeLostThisTurn') {
         if (e.kind !== 'loseLife') {
           issue(out, `${path}.amount`, 'lifeLostThisTurn is the amount of a loseLife effect');
+        }
+      } else if (
+        kindOf(e.amount) === 'thisWay' &&
+        (e.amount as { what?: unknown }).what === 'destroyedCreaturesOfAffected'
+      ) {
+        // CR 608.2c: "each player loses life equal to the number of creatures they controlled that were destroyed this way": each player's own number.
+        if (e.kind !== 'loseLife') {
+          issue(
+            out,
+            `${path}.amount`,
+            'destroyedCreaturesOfAffected is the amount of a loseLife effect',
+          );
+        } else if (!(scope.thisWay ?? []).includes('destroyedCreaturesOfAffected')) {
+          issue(
+            out,
+            `${path}.amount`,
+            'destroyedCreaturesOfAffected needs a destroy effect before it',
+          );
         }
       } else {
         checkAmount(e.amount, `${path}.amount`, scope, out);

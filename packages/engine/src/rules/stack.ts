@@ -295,6 +295,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 countersRemoved:
                   (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
                 ...mergePowerBy(res.thisWay?.exiledPowerBy, out.thisWay.exiledPowerBy),
+                ...mergeCreaturesBy(
+                  res.thisWay?.destroyedCreaturesBy,
+                  out.thisWay.destroyedCreaturesBy,
+                ),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),
@@ -383,6 +387,19 @@ function mergePowerBy(
     total[Number(seat)] = (total[Number(seat)] ?? 0) + power;
   }
   return { exiledPowerBy: total };
+}
+
+/** The creatures by seat of two `thisWay` tallies, added (Deadly Tempest); nothing when neither has any. */
+function mergeCreaturesBy(
+  a: Readonly<Record<number, number>> | undefined,
+  b: Readonly<Record<number, number>> | undefined,
+): { readonly destroyedCreaturesBy?: Readonly<Record<number, number>> } {
+  if (a === undefined && b === undefined) return {};
+  const total: Record<number, number> = { ...a };
+  for (const [seat, count] of Object.entries(b ?? {})) {
+    total[Number(seat)] = (total[Number(seat)] ?? 0) + count;
+  }
+  return { destroyedCreaturesBy: total };
 }
 
 function enchantedHost(

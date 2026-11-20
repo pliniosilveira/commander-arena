@@ -477,6 +477,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'leavesBattlefield',
     // D-333: "Whenever a source you control deals noncombat damage to an opponent".
     'noncombatDamageDealt',
+    // CR 120.2: "Whenever you're dealt damage" (Sun Droplet).
+    'dealtDamageToPlayer',
     // D-133: "whenever [a creature] is dealt damage".
     'dealtDamage',
     // D-120: "whenever this blocks / becomes blocked" (Bushido, CR 702.45a).
@@ -1257,6 +1259,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // CR 402.1: "the number of cards in that player's hand", read for each player a `dealDamage` hurts.
     'cardsInHandOfAffected',
     'lifeGainedThisTurn',
+    'lifeGainedOrLostThisTurn',
     'enteredThisTurn',
     'diedThisTurn',
     // D-131: counts, aggregates and arithmetic.
@@ -2120,6 +2123,8 @@ export const AMOUNT_KINDS = [
   /** "The number of cards in that player's hand" (CR 402.1): the engine's `cardsInHandOfAffected`, the whole amount of a `dealDamage` to players. */
   'cardsInHandOfAffected',
   'lifeGainedThisTurn',
+  /** "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3): the engine's `lifeGainedOrLostThisTurn`. */
+  'lifeGainedOrLostThisTurn',
   'lifeGainedAndLostThisTurn',
   'enteredThisTurn',
   'diedThisTurn',
@@ -2520,6 +2525,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   dealsCombatDamage: true,
   dealsDamage: true,
   noncombatDamageDealt: true,
+  dealtDamageToPlayer: true,
   dealtDamage: true,
   leavesBattlefield: true,
   blocks: true,

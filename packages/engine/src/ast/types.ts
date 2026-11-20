@@ -147,6 +147,11 @@ export type Amount =
   | { readonly kind: 'cardsInHandOfAffected' }
   /** Life actually gained by this instruction's controller this turn, before this instruction runs. */
   | { readonly kind: 'lifeGainedThisTurn' }
+  /**
+   * "The amount of life you gained this turn or the amount of life you lost this turn, whichever is greater" (CR 119.3, 608.2h): the larger of the life the controller has
+   * gained this turn (`TurnLog.lifeGainedTotal`) and the life the controller has lost this turn (`SeatState.lifeLostThisTurn`), read as the instruction runs.
+   */
+  | { readonly kind: 'lifeGainedOrLostThisTurn' }
   /** Entries or deaths recorded at the event, including objects that have since left their destination. */
   | {
       readonly kind: 'enteredThisTurn';
@@ -428,7 +433,10 @@ export type ThisWayKind =
   | 'damageDealt'
   // Oversimplify: "the total power of creatures they controlled that were exiled this way": read only by an `addCounters` with `perController`, as the total power of the creatures that
   // player controlled (as they were just before they left, CR 608.2h) that the `exile` effects of this resolution really exiled.
-  | 'exiledPowerOwn';
+  | 'exiledPowerOwn'
+  // Deadly Tempest (CR 608.2c, 608.2h): "each player loses life equal to the number of creatures they controlled that were destroyed this way": the whole amount of a `loseLife`, read for
+  // each player it affects as the number of creatures that player controlled (as they were just before they died) that the `destroy` effects of this resolution destroyed.
+  | 'destroyedCreaturesOfAffected';
 
 /**
  * A designation a player can have (CR 725.1, D-131): the monarch (one player at most, `GameState.monarch`) and the city's blessing (CR 702.131c, D-264:
@@ -3665,7 +3673,11 @@ export type Effect =
    */
   | {
       readonly kind: 'castCard';
-      readonly object: Extract<ObjectRef, { readonly kind: 'target' }>;
+      /**
+       * A target, or `this` (Sproutback Trudge: "At the beginning of your end step, if you gained life this turn, you may cast this creature from your graveyard", CR 113.6b,
+       * 608.2g): the card with the ability, in the graveyard it works from (only in a triggered ability with `functionsIn: 'graveyard'`).
+       */
+      readonly object: Extract<ObjectRef, { readonly kind: 'target' | 'this' }>;
       readonly anyManaType?: true;
       readonly exileInstead?: true;
       /**
@@ -4260,6 +4272,16 @@ export type Trigger =
       readonly kind: 'noncombatDamageDealt';
       readonly by: 'you' | 'any';
       readonly to: 'opponent' | 'player';
+    }
+  /**
+   * "Whenever you're dealt damage" (CR 120.2, 120.3, 603.2, 603.2c, 603.2g; Sun Droplet): damage of any kind, from any source, that a player `who` names is dealt (`you`: the controller of
+   * this ability; `opponent`: a player the controller does not control, CR 113.7a; `player`: any player), once for each source and each player it damages in one damage event.
+   * Damage that is prevented entirely, or is 0, is not dealt and triggers nothing (CR 120.8, 603.2g). `triggerDamage` is the amount that source dealt to that player ("that many")
+   * and `triggerPlayer` the player damaged.
+   */
+  | {
+      readonly kind: 'dealtDamageToPlayer';
+      readonly who: 'you' | 'opponent' | 'player';
     }
   /**
    * "Whenever [a creature | this] is dealt damage" (CR 120.3, 603.2, D-133): once for each source that deals damage to

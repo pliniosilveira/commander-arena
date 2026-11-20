@@ -308,6 +308,15 @@ function lowerTrigger(t: IrTrigger, ctx: LowerContext): LowerResult<Trigger> {
       if (missing.length > 0) return failure(t, missing);
       return ok({ kind: 'dealsDamage', what: what.value, to: t.damaged });
     }
+    case 'playerDealtDamage': {
+      // "Whenever you're dealt damage" (issue 190, Sun Droplet, CR 120.2, 603.2c): damage of any kind to a player, once for each source.
+      if (t.damaged !== 'you' && t.damaged !== 'opponent' && t.damaged !== 'player') {
+        return failure(t);
+      }
+      const missing = missingFeatures(['trigger:dealtDamageToPlayer']);
+      if (missing.length > 0) return failure(t, missing);
+      return ok({ kind: 'dealtDamageToPlayer', who: t.damaged });
+    }
     case 'noncombatDamageDealt': {
       // "Whenever a source you control deals noncombat damage to an opponent" (issue 25, D-333, CR 120.2b, 603.2c): whose source it is and which player it damaged.
       if (t.by === undefined || (t.damaged !== 'player' && t.damaged !== 'opponent')) {
@@ -782,7 +791,8 @@ function thatPlayerOf(events: readonly IrTrigger[]): LowerContext['thatPlayer'] 
     ((only.event === 'dealsCombatDamage' ||
       only.event === 'dealsDamage' ||
       only.event === 'combatDamageBatch' ||
-      only.event === 'noncombatDamageDealt') &&
+      only.event === 'noncombatDamageDealt' ||
+      only.event === 'playerDealtDamage') &&
       only.recipient !== undefined);
   // The beginning of a step of another player's turn (CR 102.1: the active player is the player whose turn it is; CR 603.2b): "that player" is the active player, the engine's occurrence player of
   // `step`, `upkeep` and `endStep` (the beginning of your own step was answered above: "you").
@@ -1013,7 +1023,10 @@ function eventAmountThatMany(ability: Triggered): Triggered {
   );
   const eventDamage = events.every(
     (e) =>
-      e.event === 'lifeGained' || e.event === 'noncombatDamageDealt' || e.event === 'dealsDamage',
+      e.event === 'lifeGained' ||
+      e.event === 'noncombatDamageDealt' ||
+      e.event === 'playerDealtDamage' ||
+      e.event === 'dealsDamage',
   );
   // Issue 81 (The Ur-Sphinx): "Whenever one or more Sphinxes you control attack, each player mills that many cards": the creatures of the declaration the trigger counted.
   const attackers = events.every((e) => e.event === 'attackBatch');
@@ -1470,6 +1483,7 @@ function lowerTriggeredAbility(
       // Lorehold group 1: "you may exile one of them from your graveyard": the engine's choice of none or one card is the question.
       c.verb === 'exileOneOfThem' ||
       c.verb === 'castCard' ||
+      c.verb === 'castThisFromGraveyard' ||
       c.verb === 'castMovedFree' ||
       // Prismari group 3 (D-660): "you may cast up to two spells from among ...": the engine's `castFree` asks which spells, and may stop.
       c.verb === 'castFromAmong' ||
@@ -1687,6 +1701,7 @@ export const TRIGGER_NEEDS: readonly FeatureRef[] = [
   'trigger:lifeGained',
   'trigger:lifeLost',
   'trigger:noncombatDamageDealt',
+  'trigger:dealtDamageToPlayer',
   'trigger:countersAdded',
   'trigger:attackBatch',
   'trigger:unblockedAttackBatch',

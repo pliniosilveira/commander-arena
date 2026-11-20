@@ -676,6 +676,21 @@ function graveyardSuccessors(state: GameState, id: ObjectId): readonly ObjectId[
 }
 
 /** The X a resolving spell or ability reads: its own, or, for a triggered ability with none, the X of the spell that is its source (`validateCard` allows that only for "When you cast this spell"). */
+/** CR 608.2h: the creatures each player controlled among `ids`, read before they moved: `{ destroyedCreaturesBy: { seat: count } }`, or nothing when there were none. */
+function destroyedCreaturesByPlayer(
+  state: GameState,
+  ids: readonly ObjectId[],
+): { readonly destroyedCreaturesBy?: Readonly<Record<number, number>> } {
+  const by: Record<number, number> = {};
+  for (const id of ids) {
+    const obj = state.objects[id];
+    if (obj === undefined || !derive(state, obj).types.includes('creature')) continue;
+    const seat = controllerOf(state, obj);
+    by[seat] = (by[seat] ?? 0) + 1;
+  }
+  return Object.keys(by).length === 0 ? {} : { destroyedCreaturesBy: by };
+}
+
 function abilityXOf(state: GameState, res: ResolutionContext): number {
   const own = state.objects[res.object]?.stack;
   if (own?.x !== undefined && own.x !== null) return own.x;
@@ -825,6 +840,8 @@ function runEffect(
               ? total
               : total + manaValueOfCost(derive(state, obj).manaCost, obj);
           }, 0),
+          // CR 701.8, 608.2h: the creatures each player controlled that were destroyed, by player, as they were just before they died.
+          ...destroyedCreaturesByPlayer(state, [...destroyed]),
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
           destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
@@ -1915,7 +1932,7 @@ function runEffect(
       let lost = 0;
       for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
         // D-365: "the life that player lost this turn" is each player's own number, read before they lose any more.
-        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone);
+        const amount = lifeAmountFor(next, effect.amount, seat, () => everyone, ctx.thisWay);
         const r =
           effect.kind === 'gainLife'
             ? gainLifeOf(next, seat, amount, flow, res.source)
