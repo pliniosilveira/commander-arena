@@ -176,6 +176,7 @@ import { TROYAN_G4_EFFECT_RULES } from './troyan-g4';
 import { UNBOUND_I_EFFECT_RULES } from './unbound-i';
 import { VOTE_EFFECT_RULES } from './vote';
 import { VRASKA_EFFECT_RULES } from './vraska';
+import { WITHERBLOOM_A_EFFECT_RULES } from './witherbloom-a';
 
 /** What "tap" and "untap" act on: a permanent, `~`, or "it" (stage P15). */
 const TAP_OPERANDS = [
@@ -778,6 +779,28 @@ const RETURN_FROM_GRAVEYARD: Parser<{
 };
 
 /**
+ * "return target creature or land card from a graveyard to its owner's hand" (Pulse of Murasa, CR 400.3, 404.1): one target card of any graveyard goes to its owner's
+ * hand, wherever it lies. One card only: the plural is "to their owners' hands", read by no rule.
+ */
+const RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND: Parser<{
+  objects: IrNoun | IrNounList;
+  to: IrZoneSpec;
+}> = map(
+  sequence(
+    literal('return '),
+    operands(['noun.target-graveyard-card'], 'effect.return', {
+      accept: (noun) => !noun.plural && noun.count === undefined && noun.upTo !== true,
+      locate: (noun) => noun.span.start,
+    }),
+    spanned(pattern(/ to its owner['’]s hand/i)),
+  ),
+  ([, objects, to]) => ({
+    objects,
+    to: zone('effect.return', to.span, 'hand', { whose: 'owner' }),
+  }),
+);
+
+/**
  * `effect.return`: "Return target creature to its owner's hand" and "Return target creature card
  * from a graveyard to the battlefield [tapped] [under your control | under its owner's control]".
  * A card put onto the battlefield enters under the control of the player performing the effect
@@ -801,6 +824,9 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return X target creature cards from your graveyard to your hand',
     'return all land cards from your graveyard to the battlefield tapped',
     'return target creature card from a graveyard to the battlefield',
+    // Pulse of Murasa (CR 400.3): one card of any graveyard, to its owner's hand.
+    "return target creature or land card from a graveyard to its owner's hand",
+    "return target creature card from an opponent's graveyard to its owner's hand",
     'return target creature card from a graveyard to the battlefield under your control',
     "return target creature card from a graveyard to the battlefield under its owner's control",
     'return target creature card from your graveyard to the battlefield tapped under your control',
@@ -847,6 +873,10 @@ export const EFFECT_RETURN = defineRule<Clauses>({
     'return target creature card from a graveyard to your hand',
     'return target creature card from your graveyard to your hand under your control',
     'return X target creature cards from a graveyard to your hand',
+    "return two target creature cards from a graveyard to its owner's hand",
+    "return up to one target creature card from a graveyard to its owner's hand",
+    "return all creature cards from a graveyard to its owner's hand",
+    "return target creature card from a graveyard to its owner's hand tapped",
     'return X target creature cards from your graveyard to your library',
     'return X target creature cards to your hand',
     'return target creature to the battlefield',
@@ -874,6 +904,7 @@ export const EFFECT_RETURN = defineRule<Clauses>({
       RETURN_IT_TO_BATTLEFIELD,
       RETURN_CHOSEN,
       RETURN_FROM_GRAVEYARD,
+      RETURN_FROM_ANY_GRAVEYARD_TO_OWNERS_HAND,
       RETURN_THAT_CARD,
       RETURN_THE_CHOSEN_CARDS,
       RETURN_THIS_CARD,
@@ -1190,6 +1221,7 @@ export const EFFECT_RULES = [
   ...QUANDRIX_D1_EFFECT_RULES,
   ...ANGEL_EFFECT_RULES,
   ...QUANDRIX_E_EFFECT_RULES,
+  ...WITHERBLOOM_A_EFFECT_RULES,
   // D-362 (Hashaton, group 8): "Choose target creature card in your graveyard.", before `effect.choose-target` of the Vraska rules, which reads "choose target creature".
   ...HASHATON_G8_EFFECT_RULES,
   // D-385 (Hashaton, group 5): "for each token you control of the chosen type that entered this turn, create a token that's a copy of it", before the "for each" rules of the Vraska rules.

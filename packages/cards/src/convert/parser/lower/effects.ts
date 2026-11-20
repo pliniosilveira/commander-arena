@@ -130,6 +130,7 @@ import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
+import { WITHERBLOOM_A_LOWERINGS } from './witherbloom-a';
 
 /**
  * "Untap ~", "exile ~", "return ~ to its owner's hand": the effect acts on the permanent the
@@ -2255,6 +2256,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
+  ...WITHERBLOOM_A_LOWERINGS,
   ...JESKAI_CASTFREE_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
