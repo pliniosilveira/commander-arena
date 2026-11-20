@@ -2555,6 +2555,12 @@ export type Effect =
       readonly grants?: 'storm' | 'cascade';
     }
   /**
+   * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, Marshland Bloodcaster, CR 118.9, 601.2b,
+   * 601.2f, 202.3e, 119.4, 611.2a): until end of turn, the controller may cast the next spell they cast by the alternative cost `lifeForMana`: no mana cost, and life equal to the spell's
+   * mana value (an {X} counts as the X announced). The effect is used up by the next spell the controller casts, used or not, and ends with the turn (`rules/next-spell-life.ts`).
+   */
+  | { readonly kind: 'nextSpellPayLife' }
+  /**
    * "Reveal the top card of your library. You may cast it without paying its mana cost if it's a spell with lesser mana value. If you don't cast it, put it into your hand"
    * (CR 701.20a Reveal, 608.2g, 118.9, 107.3b, 202.3e): the controller reveals the top card of their library (nothing happens with an empty library; the card stays on top
    * while the question is asked). When it is not a land card, its mana value (an {X} in a library counts as 0) is less than `manaValueBelow` and it could be cast now (a legal

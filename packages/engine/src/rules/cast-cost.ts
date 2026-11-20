@@ -27,7 +27,7 @@ import type { CastAlternativeKind } from '../ast/features';
 import type { Cost, NamedAlternativeKind, ObjectFilter } from '../ast/types';
 import type { CardFace } from '../cards/definition';
 import type { ObjectId, SeatId } from '../ids';
-import type { PaymentPlan, PaymentSource } from '../mana';
+import { manaValue, type PaymentPlan, type PaymentSource } from '../mana';
 import type { ManaColor } from '../mana/types';
 import { definitionOf, getSeat, patchSeat, printedCard } from '../state/ops';
 import type { GameObject, GameState, StackData } from '../state/types';
@@ -145,6 +145,7 @@ export function alternativeOfStack(
   if (stack?.retrace === true) return 'retrace';
   if (stack?.jumpStart === true) return 'jumpStart';
   if (stack?.free === true) return 'free';
+  if (stack?.lifeForMana === true) return 'lifeForMana';
   return stack?.alt;
 }
 
@@ -354,7 +355,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   const fromGraveyard =
     zone === 'graveyard' && alternative === undefined ? graveyardCostOf(face) : null;
   const symbols: string[] =
-    alternative === 'free'
+    alternative === 'free' || alternative === 'lifeForMana'
       ? []
       : flashback !== null
         ? // CR 107.3a: a cost equal to the mana cost has the X of it; a printed flashback cost is paid as it is.
@@ -450,6 +451,8 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
     lifeOf(additional) +
     (kicker === null ? 0 : lifeOf(kicker) * kicks) +
     (flashback === null ? 0 : lifeOf(flashback)) +
+    // CR 118.9, 202.3e: "pay life equal to that spell's mana value" rather than the mana cost: an {X} counts as the X announced.
+    (alternative === 'lifeForMana' ? manaValue(withX(face?.manaCost ?? [], x)) : 0) +
     perX.life * x;
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;

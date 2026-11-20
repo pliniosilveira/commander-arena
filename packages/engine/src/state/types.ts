@@ -408,6 +408,8 @@ export interface StackData {
    * difference to it: a copy is not a card and ceases to exist.
    */
   readonly boughtBack?: true;
+  /** True when the spell was cast by paying life equal to its mana value rather than its mana cost (`nextSpellPayLife`, CR 118.9, 202.3e). */
+  readonly lifeForMana?: true;
   /**
    * The opponent the caster promised a gift to as the spell was cast (CR 702.174a, 702.174k, D-135): "the chosen player". Absent
    * when the spell has no gift or the gift was not promised. A copy of the spell has it too (CR 707.10), which makes no
@@ -2140,6 +2142,11 @@ export type ContinuousChange =
       readonly lessGeneric: number;
       readonly grants?: 'storm' | 'cascade';
     }
+  /**
+   * "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (`nextSpellPayLife`, CR 118.9, 601.2b): `seat` may cast their next
+   * spell by the alternative cost `lifeForMana`. The next spell `seat` casts uses it up, whether or not they pay that way (`rules/next-spell-life.ts`). No layer: read where casting is decided.
+   */
+  | { readonly kind: 'nextSpellLife'; readonly seat: SeatId }
   | { readonly kind: 'modifyPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'setPt'; readonly power: number; readonly toughness: number }
   | { readonly kind: 'loseAllAbilities' }

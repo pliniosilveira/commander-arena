@@ -102,6 +102,9 @@ export function checkDragonsEffect(
         issue(out, `${path}.lasts`, `unknown end ${JSON.stringify(e.lasts)}`);
       }
       return true;
+    case 'nextSpellPayLife':
+      // CR 118.9, 601.2b: no fields: the controller's next spell this turn may be cast by paying life equal to its mana value.
+      return true;
     case 'nextSpellModifier': {
       // Issue 121 (CR 601.2f, 702.40a, 702.85a): the next spell the controller casts that the filter describes, in this turn: a spell being cast (no zone), a reduction of generic
       // mana read as the effect resolves, and/or Storm or Cascade, the keywords that work as the spell is cast.

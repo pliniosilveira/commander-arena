@@ -438,6 +438,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'mayCastEachType',
     // Issue 121: "the next instant or sorcery spell you cast this turn costs {X} less / has storm" (CR 601.2f, 702.40a).
     'nextSpellModifier',
+    // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value" (CR 118.9, 601.2b).
+    'nextSpellPayLife',
     // D-151: "reveals the top card of their library. If it's a permanent card, they put it onto the battlefield" (Chaos Warp).
     'revealTop',
     // CR 701.20a, 119.3: "you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player ...".
@@ -2302,6 +2304,8 @@ export const CAST_ALTERNATIVE_KINDS = [
   'jumpStart',
   'sacrificeFromGraveyard',
   'impending',
+  // "Rather than pay the mana cost of the next spell you cast this turn, you may pay life equal to that spell's mana value": granted by an effect, not listed on a face.
+  'lifeForMana',
 ] as const;
 export type CastAlternativeKind = (typeof CAST_ALTERNATIVE_KINDS)[number];
 
@@ -2554,6 +2558,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   revealTopCast: true,
   mayCastEachType: true,
   nextSpellModifier: true,
+  nextSpellPayLife: true,
   revealTop: true,
   revealTopDuel: true,
   revealTopBranches: true,

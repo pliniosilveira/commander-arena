@@ -113,6 +113,7 @@ import { applyPaymentPlan, payableSources } from './mana-engine';
 import { manaValueOfCost } from './mana-value';
 import { legalModeSets, modalOfSpellText, modesDecision, printedOrder, specModes } from './modes';
 import { applyNextSpellEffects } from './next-spell';
+import { useUpNextSpellLife } from './next-spell-life';
 import { payByTapping } from './pay-manual';
 import {
   colorsOfChoice,
@@ -259,6 +260,8 @@ export function beginCast(
       // CR 702.133a: cast from the graveyard by its jump-start ability.
       ...(alternative === 'jumpStart' ? { jumpStart: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
+      // CR 118.9: the life paid rather than the mana cost (`nextSpellPayLife`).
+      ...(alternative === 'lifeForMana' ? { lifeForMana: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||
       freeUse !== null ||
@@ -1694,6 +1697,8 @@ function finishCast(state: GameState, events: GameEvent[]): Result {
   }
   // Issue 121 (CR 601.2f, 702.40a, 702.85a): the effects that name this spell, "the next instant or sorcery spell you cast this turn", are used up and give it their keyword.
   next = applyNextSpellEffects(next, casting.seat, casting.object);
+  // CR 118.9, 601.2i: the next spell the caster casts uses up "you may pay life rather than pay its mana cost", whether or not they paid that way.
+  next = useUpNextSpellLife(next, casting.seat);
   // CR 601.2c: the spell's targets became targets as they were chosen; Ward and the like see it now.
   events.push(...becameTargetEvents(next, casting.object, casting.seat));
   // CR 700.13 (D-464): casting a spell that targets an opponent, what they control or a card in their graveyard is committing a crime.
