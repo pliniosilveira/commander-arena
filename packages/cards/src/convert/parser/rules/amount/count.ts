@@ -26,6 +26,7 @@ import {
   optional,
   type Parser,
   pattern,
+  quiet,
   satisfy,
   sequence,
 } from '../../combinators';
@@ -58,6 +59,11 @@ const TARGET_PLAYER_CONTROLS = pattern(
 
 /** " they control": the permanents of the player an earlier noun of the text names (see `battlefield`). */
 const THEY_CONTROL = pattern(new RegExp(` they control${BOUNDARY}`, 'iu'));
+
+/** " that shares a creature type with it" (Titan of Littjara, CR 205.3m): the creature types of the source of the ability, which the lowering of the ability checks. */
+const SHARES_CREATURE_TYPE_WITH_IT = pattern(
+  new RegExp(` that shares a creature type with it${BOUNDARY}`, 'iu'),
+);
 
 /** The words a list of kinds is joined with, in the shapes English has: "A or B", "A, B, or C". */
 const CONNECTORS = ['and/or', 'and', 'or'] as const;
@@ -197,6 +203,14 @@ function battlefield(plural: boolean): Parser<{ filter: IrFilter; other: boolean
         const suffix = ON_THE_BATTLEFIELD(ctx, end);
         if (!suffix.ok) return suffix;
         end = suffix.pos;
+      }
+    }
+    // Titan of Littjara (CR 205.3m): "each other creature you control that shares a creature type with it", counted for a creature phrase that names its controller.
+    if (!plural && filter.controller !== undefined) {
+      const shares = quiet(SHARES_CREATURE_TYPE_WITH_IT)(ctx, end);
+      if (shares.ok) {
+        filter = { ...filter, sharesCreatureTypeWithSource: true };
+        end = shares.pos;
       }
     }
     return {

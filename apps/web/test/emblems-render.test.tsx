@@ -69,6 +69,7 @@ function give(store: Store, extras: Extras): void {
   const view: GameView = {
     ...snap.view,
     monarch: extras.monarch ?? null,
+    dayNight: null,
     seats: snap.view.seats.map((s) => ({
       ...s,
       command: [

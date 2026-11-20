@@ -3,10 +3,10 @@
  * cast a spell this turn, you may cast that card. If you do, you can't cast additional spells this turn." The first sentence is `effect.choose-graveyard-cards`, the conditions
  * are `condition.no-spell-cast-this-turn` and `condition.if-you-do`; the lowerings are in `lower/graveyard-cast.ts` and `lower/sentences.ts`.
  */
-import { literal, pattern, satisfy, sequence } from '../../combinators';
+import { literal, optional, pattern, satisfy, sequence } from '../../combinators';
 import type { IrNoun } from '../../ir/types';
 import { BOUNDARY } from '../noun/phrases';
-import { defineRule, family, quietly } from '../registry';
+import { defineRule, family, quietly, spanned } from '../registry';
 import { flag } from './dragons';
 import { type Clauses, single } from './operands';
 
@@ -62,6 +62,52 @@ export const EFFECT_MAY_CAST_THAT_CARD = defineRule<Clauses>({
   ),
 });
 
+const CAST_THIS_FROM_GRAVEYARD = 'effect.may-cast-this-from-graveyard';
+
+/**
+ * `effect.may-cast-this-from-graveyard`: "you may cast ~ from your graveyard" (CR 113.6b: an ability that works from the graveyard; CR 608.2g: a spell cast as an effect resolves,
+ * with no timing restriction, paying its mana cost; CR 601.2: the steps of casting). The engine's `castCard` on the card with the ability, which asks the controller itself, so "you may"
+ * is that question. Not read: no "you may", another zone or owner, "this turn", "without paying its mana cost", another card, a second instruction joined to it.
+ */
+export const EFFECT_MAY_CAST_THIS_FROM_GRAVEYARD = defineRule<Clauses>({
+  id: CAST_THIS_FROM_GRAVEYARD,
+  family: 'effect',
+  leading: ['you', 'cast'],
+  cites: [
+    'CR 113.6b (Abilities)',
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 601.2 (Casting Spells)',
+  ],
+  examples: ['you may cast ~ from your graveyard', 'cast ~ from your graveyard'],
+  rejects: [
+    'cast ~',
+    'you may cast ~',
+    'you may cast ~ from a graveyard',
+    'you may cast ~ from your hand',
+    'you may cast ~ from an opponent’s graveyard',
+    'you may cast ~ from your graveyard this turn',
+    'you may cast ~ from your graveyard without paying its mana cost',
+    'you may cast ~ from your graveyard and draw a card',
+    'you may cast that card from your graveyard',
+    'you may cast another card from your graveyard',
+  ],
+  parse: single(
+    CAST_THIS_FROM_GRAVEYARD,
+    sequence(
+      optional(spanned(literal('you may ')), null),
+      literal('cast ~ from your graveyard'),
+      // Nothing joined to the clause: a join says a second instruction, which is not read.
+      pattern(/(?=\.|$)/u),
+    ),
+    ([may]) => ({
+      verb: 'castThisFromGraveyard',
+      args: {
+        may: flag(CAST_THIS_FROM_GRAVEYARD, may !== null, may?.span ?? { start: 0, end: 0 }),
+      },
+    }),
+  ),
+});
+
 const CANT_CAST_MORE = 'effect.cant-cast-additional-spells';
 
 /**
@@ -97,5 +143,6 @@ export const EFFECT_CANT_CAST_ADDITIONAL_SPELLS = defineRule<Clauses>({
 
 export const GRAVEYARD_CAST_EFFECT_RULES = [
   EFFECT_MAY_CAST_THAT_CARD,
+  EFFECT_MAY_CAST_THIS_FROM_GRAVEYARD,
   EFFECT_CANT_CAST_ADDITIONAL_SPELLS,
 ].map(quietly);

@@ -413,6 +413,14 @@ function wordsOf(condition: Condition, negate: boolean, ctx: AmountContext): str
     case 'controlsRingBearer':
       // D-196 (CR 701.54e): "if you control your Ring-bearer".
       return `you ${negate ? "don't control" : 'control'} your Ring-bearer`;
+    case 'thisIsRingBearer':
+      // CR 701.54e (Frodo, Adventurous Hobbit): "if this creature is your Ring-bearer".
+      return `this creature ${negate ? 'is not' : 'is'} your Ring-bearer`;
+    case 'ringTemptedAtLeast':
+      // CR 701.54c (Frodo, Adventurous Hobbit): "if the Ring has tempted you two or more times this game".
+      return negate
+        ? `the Ring has tempted you fewer than ${condition.times} times this game`
+        : `the Ring has tempted you ${condition.times} or more times this game`;
     case 'subjectControllerHasMore':
       // D-229 (CR 603.4): "if that player controls more lands than you".
       return `that player ${negate ? "doesn't control" : 'controls'} more ${condition.stat === 'lands' ? 'lands' : condition.stat === 'creatures' ? 'creatures' : 'cards'} than you`;

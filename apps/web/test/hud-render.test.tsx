@@ -37,6 +37,17 @@ test('the top bar names the monarch, for you and for the opponent, and says noth
   expect(render(them, <TurnTracker />)).toContain('Opponent is the monarch');
 });
 
+test('the top bar says day or night once the game has one, and nothing before', async () => {
+  const neither = await gameWith((v) => ({ ...v, dayNight: null }));
+  expect(render(neither, <TurnTracker />)).not.toContain('data-day-night');
+  const day = await gameWith((v) => ({ ...v, dayNight: 'day' }));
+  const byDay = render(day, <TurnTracker />);
+  expect(byDay).toContain('data-day-night="day"');
+  expect(byDay).toContain('Day');
+  const night = await gameWith((v) => ({ ...v, dayNight: 'night' }));
+  expect(render(night, <TurnTracker />)).toContain('data-day-night="night"');
+});
+
 test('commander damage taken shows beside the life total as damage out of 21, named when it is clear', async () => {
   const store = await gameWith((v) => {
     const commander = v.seats[1]?.command[0];

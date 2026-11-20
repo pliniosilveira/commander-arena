@@ -84,8 +84,22 @@ export function maxTargetCountX(
 ): number {
   let most = Number.MAX_SAFE_INTEGER;
   for (const spec of specs) {
-    if (spec.countX === true && spec.min !== 0)
-      most = Math.min(most, legalTargets(state, spec, ctx).length);
+    if (spec.countX === true && spec.min !== 0) {
+      const legal = legalTargets(state, spec, ctx);
+      // CR 601.2b-c, 115.1 (Suffer the Past: "X target cards from target player's graveyard"): all the cards come from the graveyard of the one player the spell
+      // targets, so the most X is the most cards one graveyard holds, not the cards of every graveyard together.
+      if (spec.ownedByTarget === undefined) {
+        most = Math.min(most, legal.length);
+      } else {
+        const perOwner = new Map<number, number>();
+        for (const t of legal) {
+          if (t.kind === 'object' && t.group !== undefined) {
+            perOwner.set(t.group, (perOwner.get(t.group) ?? 0) + 1);
+          }
+        }
+        most = Math.min(most, Math.max(0, ...perOwner.values()));
+      }
+    }
   }
   return most;
 }
@@ -149,6 +163,8 @@ export function targetChoiceSpecs(
         specId: spec.id,
         min: spec.min === 0 ? 0 : n,
         max: n,
+        // CR 115.1: "X target cards from target player's graveyard": the cards are checked against the player the other slot names.
+        ...(spec.ownedByTarget === undefined ? {} : { ownedBy: spec.ownedByTarget }),
         target: spec,
         legal,
         ...(slotMode === undefined ? {} : { mode: slotMode.mode }),

@@ -154,13 +154,13 @@ describe('keyword.equip: "Equip {M}" and "Equip—Pay N life" (CR 702.6a)', () =
   });
 
   test('restricted equip (CR 702.6c) stays unparsed, at the words that restrict it', () => {
-    expect(diagnosticOf('Equip legendary creature {3}', 'Equipment')).toMatchObject({
+    expect(diagnosticOf('Equip nonlegendary creature {3}', 'Equipment')).toMatchObject({
       reason: 'unrecognised',
-      stoppedAt: 'legendary creature {3}',
+      stoppedAt: 'nonlegendary creature {3}',
       closestRule: 'keyword.equip',
       slot: 'cost',
     });
-    // "Equip commander {3}" is read since stage P70 (D-259, `keyword.equip-commander`).
+    // "Equip commander {3}" and "Equip legendary creature {3}" are read (`keyword.equip-commander`, `keyword.equip-legendary`).
   });
 
   test('costs the engine does not pay for equip are not read', () => {

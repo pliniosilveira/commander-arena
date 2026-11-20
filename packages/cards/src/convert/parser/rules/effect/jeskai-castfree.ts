@@ -114,6 +114,73 @@ export const EFFECT_LOOK_CAST_FREE = defineRule<Clauses>({
 });
 
 /**
+ * `effect.look-cast-free-any`: "look at the top four cards of your library. You may cast a spell from among them without paying its mana cost. Put the rest on the bottom of your library
+ * in a random order." (issue 345, Svella, Ice Shaper; CR 608.2g, 118.9, 401.4): the same three sentences as `effect.look-cast-free` with any spell (a nonland card) and no limit on its
+ * mana value. The engine's `lookAtTop` whose card taken is cast (`take.to: 'castFree'`), none or one, the rest on the bottom in a random order. Not read: a kind of spell, a limit,
+ * another place for the rest, the top card alone, "any order".
+ */
+export const EFFECT_LOOK_CAST_FREE_ANY = defineRule<Clauses>({
+  id: 'effect.look-cast-free-any',
+  family: 'effect',
+  leading: ['look'],
+  cites: [
+    'CR 608.2g (Resolving Spells and Abilities)',
+    'CR 118.9 (Alternative Costs)',
+    'CR 401.4 (Library)',
+  ],
+  examples: [
+    'look at the top four cards of your library. You may cast a spell from among them without paying its mana cost. Put the rest on the bottom of your library in a random order',
+  ],
+  rejects: [
+    'look at the top four cards of your library. You may cast a spell from among them without paying its mana cost',
+    'look at the top four cards of your library. You may cast a spell from among them without paying its mana cost. Put the rest into your graveyard',
+    'look at the top four cards of your library. You may cast a spell from among them without paying its mana cost. Put the rest on the bottom of your library in any order',
+    'look at the top four cards of your library. You may cast a creature spell from among them without paying its mana cost. Put the rest on the bottom of your library in a random order',
+    'look at the top card of your library. You may cast a spell from among them without paying its mana cost. Put the rest on the bottom of your library in a random order',
+    'look at the top four cards of your library. You may cast a spell from among them. Put the rest on the bottom of your library in a random order',
+  ],
+  parse: single(
+    'effect.look-cast-free-any',
+    sequence(
+      literal('look at the top '),
+      AT_LEAST_TWO,
+      literal(
+        ' cards of your library. you may cast a spell from among them without paying its mana cost. put the rest on the bottom of your library in a random order',
+      ),
+    ),
+    ([, count]) => {
+      const id = 'effect.look-cast-free-any';
+      const take: IrNoun = {
+        kind: 'noun',
+        det: 'a',
+        filter: { notTypes: ['land'], card: true, raw: 'a spell' },
+        upTo: false,
+        plural: false,
+        other: false,
+        span: count.span,
+        rule: id,
+      };
+      const flag = (value: boolean) => ({
+        kind: 'flag' as const,
+        value,
+        span: take.span,
+        rule: id,
+      });
+      return {
+        verb: 'lookTake',
+        args: {
+          count,
+          take,
+          toGraveyard: flag(false),
+          ontoBattlefield: flag(false),
+          castFree: flag(true),
+        },
+      };
+    },
+  ),
+});
+
+/**
  * `effect.counter-exile-cast`: "counter target spell. If that spell is countered this way, exile it instead of putting it into its owner's graveyard, then you may cast it without
  * paying its mana cost." (CR 701.6a, 614.1a, 608.2g: Transcendent Dragon). Two sentences that `splitSentences` keeps together. The engine's `counter` with `exileInstead`, then a
  * `castFree` of the card exiled. Not read: a counter with a condition ("unless"), another place for the spell, a cast that costs mana, the second sentence alone.
@@ -211,6 +278,7 @@ export const EFFECT_DESTROYED_CONTROLLER_EXILE_CAST = defineRule<Clauses>({
 // Read quietly: these start like the plain look, counter and "if" rules, so they must not move the point where a line they do not read stops.
 export const JESKAI_CASTFREE_EFFECT_RULES = [
   EFFECT_LOOK_CAST_FREE,
+  EFFECT_LOOK_CAST_FREE_ANY,
   EFFECT_COUNTER_EXILE_CAST,
   EFFECT_DESTROYED_CONTROLLER_EXILE_CAST,
 ].map(quietly);

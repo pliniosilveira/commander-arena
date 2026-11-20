@@ -197,6 +197,12 @@ export function selfNames(options: NormalizeOptions): string[] {
       const short = SHORT_NAME_THE.exec(options.name);
       if (short?.[1] !== undefined) names.push(short[1]);
       else {
+        // "<Given name> <Family name> of <Title>": a legendary creature may also be called by the two words before "of" ("Rosie Cotton of South Lane" is "Rosie Cotton").
+        const personal =
+          options.creature === true
+            ? /^(\p{Lu}[\p{L}'’-]+(?: \p{Lu}[\p{L}'’-]+)+) of \p{Lu}/u.exec(options.name)?.[1]
+            : undefined;
+        if (personal !== undefined) names.push(personal);
         const given =
           givenName(options.name) ??
           (options.creature === true ? creatureOfName(options.name) : undefined);

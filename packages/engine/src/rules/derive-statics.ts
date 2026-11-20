@@ -150,6 +150,8 @@ export interface AbilityReductionSource {
   readonly targeting?: ObjectFilter;
   /** The objects whose activated abilities cost less, cards in a graveyard (D-461); absent for an Equip reduction. */
   readonly objects?: ObjectFilter;
+  /** `abilityCostReduction` `minTotal` (issue 345): the mana the cost keeps at least. */
+  readonly minTotal?: number;
   readonly amount: Amount;
 }
 
@@ -160,6 +162,8 @@ export interface AbilityReductionSource {
 export interface FlashPermissionSource {
   readonly object: GameObject;
   readonly spells: ObjectFilter;
+  /** "Any player may cast ..." (CR 601.3b): the permission is every player's, not the controller's alone. */
+  readonly anyPlayer: boolean;
 }
 
 /**
@@ -172,6 +176,12 @@ export interface LibraryCastSource {
   readonly gainsHaste: boolean;
   /** The permanent sacrificed as an additional cost of a spell cast this way ("by sacrificing a nonland permanent"); absent for none. */
   readonly sacrifice?: ObjectFilter;
+}
+
+/** A static ability of a permanent that lets its controller activate the abilities of some creatures as though they had haste (`activateAsThoughHaste`, issue 345). */
+export interface HasteActivationSource {
+  readonly object: GameObject;
+  readonly creatures: ObjectFilter;
 }
 
 /**
@@ -208,9 +218,23 @@ interface HandGrantSource {
 interface SpellGrantSource {
   readonly object: GameObject;
   readonly what: ObjectFilter;
-  readonly keyword: Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>;
+  readonly keyword:
+    | Extract<Keyword, { readonly kind: 'demonstrate' | 'convoke' }>
+    | { readonly kind: 'replicateAtManaCost' };
   readonly condition?: Condition;
   readonly conditionKey?: string;
+}
+
+/** A static ability of a permanent that gives Encore to the cards of its controller's graveyard (`grantEncoreToGraveyardCards`, CR 702.141a, 613.1f). */
+export interface EncoreGrantSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
+}
+
+/** A static ability of a permanent that stops the legend rule applying to the permanents `what` names (`legendRuleDoesntApply`, CR 704.5j). */
+export interface LegendExemptionSource {
+  readonly object: GameObject;
+  readonly what: ObjectFilter;
 }
 
 /** A static ability of a permanent that gives flashback to the cards of its controller's graveyard (`grantFlashbackToGraveyardCards`, CR 702.34a, 613.1f). */
@@ -240,12 +264,18 @@ interface BoardIndex {
   readonly flashes: readonly FlashPermissionSource[];
   /** Permanents with a `castFromTopOfLibrary` static ability, in battlefield order (D-151). */
   readonly libraryCasts: readonly LibraryCastSource[];
+  /** Permanents with an `activateAsThoughHaste` static ability, in battlefield order (issue 345). */
+  readonly hasteActivations: readonly HasteActivationSource[];
   /** Permanents with a `playFromGraveyardOnceEachTurn` static ability, in battlefield order (D-232). */
   readonly graveyardPlays: readonly GraveyardPlaySource[];
   /** Permanents with a `grantKeywordToHandCards` static ability, in battlefield order (issue 104). */
   readonly handGrants: readonly HandGrantSource[];
   /** Permanents with a `grantKeywordToSpells` static ability, in battlefield order (issue 145). */
   readonly spellGrants: readonly SpellGrantSource[];
+  /** Permanents with a `grantEncoreToGraveyardCards` static ability, in battlefield order. */
+  readonly encoreGrants: readonly EncoreGrantSource[];
+  /** Permanents with a `legendRuleDoesntApply` static ability, in battlefield order. */
+  readonly legendExemptions: readonly LegendExemptionSource[];
   /** Permanents with a `grantFlashbackToGraveyardCards` static ability, in battlefield order. */
   readonly flashbackGrants: readonly FlashbackGrantSource[];
   /** Permanents attached to each permanent, in battlefield order. */
@@ -330,7 +360,12 @@ function abilityReductionsOf(
     if (a.kind === 'static' && a.static.kind === 'abilityCostReduction') {
       out.push(
         a.static.abilities === 'ofObjects'
-          ? { object, objects: a.static.objects, amount: a.static.amount }
+          ? {
+              object,
+              objects: a.static.objects,
+              amount: a.static.amount,
+              ...(a.static.minTotal === undefined ? {} : { minTotal: a.static.minTotal }),
+            }
           : { object, targeting: a.static.targeting, amount: a.static.amount },
       );
     }
@@ -347,7 +382,7 @@ function flashesOf(object: GameObject, abilities: readonly Ability[]): FlashPerm
       a.static.kind === 'castAsThoughFlash' &&
       !('kind' in a.static.spells)
     ) {
-      out.push({ object, spells: a.static.spells });
+      out.push({ object, spells: a.static.spells, anyPlayer: a.static.anyPlayer === true });
     }
   }
   return out;
@@ -421,6 +456,29 @@ function handGrantsOf(object: GameObject, abilities: readonly Ability[]): HandGr
   return out;
 }
 
+function encoreGrantsOf(object: GameObject, abilities: readonly Ability[]): EncoreGrantSource[] {
+  const out: EncoreGrantSource[] = [];
+  for (const a of abilities) {
+    if (a.kind === 'static' && a.static.kind === 'grantEncoreToGraveyardCards') {
+      out.push({ object, what: a.static.what });
+    }
+  }
+  return out;
+}
+
+function legendExemptionsOf(
+  object: GameObject,
+  abilities: readonly Ability[],
+): LegendExemptionSource[] {
+  const out: LegendExemptionSource[] = [];
+  for (const a of abilities) {
+    if (a.kind === 'static' && a.static.kind === 'legendRuleDoesntApply') {
+      out.push({ object, what: a.static.what });
+    }
+  }
+  return out;
+}
+
 function spellGrantsOf(object: GameObject, abilities: readonly Ability[]): SpellGrantSource[] {
   const out: SpellGrantSource[] = [];
   for (const a of abilities) {
@@ -472,10 +530,13 @@ function buildIndex(state: GameState): BoardIndex {
   const abilityReductions: AbilityReductionSource[] = [];
   const flashes: FlashPermissionSource[] = [];
   const libraryCasts: LibraryCastSource[] = [];
+  const hasteActivations: HasteActivationSource[] = [];
   const graveyardPlays: GraveyardPlaySource[] = [];
   const handGrants: HandGrantSource[] = [];
   const spellGrants: SpellGrantSource[] = [];
   const flashbackGrants: FlashbackGrantSource[] = [];
+  const legendExemptions: LegendExemptionSource[] = [];
+  const encoreGrants: EncoreGrantSource[] = [];
   const attachments = new Map<ObjectId, ObjectId[]>();
   for (const id of state.battlefield) {
     const object = state.objects[id];
@@ -490,10 +551,17 @@ function buildIndex(state: GameState): BoardIndex {
     abilityReductions.push(...abilityReductionsOf(object, printed));
     flashes.push(...flashesOf(object, printed));
     libraryCasts.push(...libraryCastsOf(object, printed));
+    for (const a of printed) {
+      if (a.kind === 'static' && a.static.kind === 'activateAsThoughHaste') {
+        hasteActivations.push({ object, creatures: a.static.creatures });
+      }
+    }
     graveyardPlays.push(...graveyardPlaysOf(object, printed));
     handGrants.push(...handGrantsOf(object, printed));
     spellGrants.push(...spellGrantsOf(object, printed));
     flashbackGrants.push(...flashbackGrantsOf(object, printed));
+    legendExemptions.push(...legendExemptionsOf(object, printed));
+    encoreGrants.push(...encoreGrantsOf(object, printed));
     if (object.attachedTo !== null) {
       const list = attachments.get(object.attachedTo);
       if (list === undefined) attachments.set(object.attachedTo, [id]);
@@ -564,10 +632,13 @@ function buildIndex(state: GameState): BoardIndex {
     abilityReductions,
     flashes,
     libraryCasts,
+    hasteActivations,
     graveyardPlays,
     handGrants,
     spellGrants,
     flashbackGrants,
+    legendExemptions,
+    encoreGrants,
     attachments,
   };
 }
@@ -614,6 +685,11 @@ export function abilityReductionSources(state: GameState): readonly AbilityReduc
 }
 
 /** The permission "You may cast creature spells ... from the top of your library" of the permanents on the battlefield (D-151). */
+/** The permanents whose static ability lets their controller activate abilities of some creatures as though they had haste (issue 345). */
+export function hasteActivationSources(state: GameState): readonly HasteActivationSource[] {
+  return indexOf(state).hasteActivations;
+}
+
 export function libraryCastSources(state: GameState): readonly LibraryCastSource[] {
   return indexOf(state).libraryCasts;
 }
@@ -621,6 +697,16 @@ export function libraryCastSources(state: GameState): readonly LibraryCastSource
 /** The permission "Once during each of your turns, you may play a land or cast a spell from your graveyard" of the permanents on the battlefield (D-232). */
 export function graveyardPlaySources(state: GameState): readonly GraveyardPlaySource[] {
   return indexOf(state).graveyardPlays;
+}
+
+/** The permanents on the battlefield that give Encore to the cards of their controller's graveyard (CR 702.141a). */
+export function encoreGrantSources(state: GameState): readonly EncoreGrantSource[] {
+  return indexOf(state).encoreGrants;
+}
+
+/** The static abilities of the permanents on the battlefield that stop the legend rule applying to permanents (CR 704.5j). */
+export function legendExemptionSources(state: GameState): readonly LegendExemptionSource[] {
+  return indexOf(state).legendExemptions;
 }
 
 /** The static abilities of the permanents on the battlefield that give flashback to the cards of their controller's graveyard (CR 702.34a). */
@@ -798,6 +884,35 @@ function handGrantsOn(state: GameState, target: GameObject, base: StaticBase): S
 }
 
 /**
+ * The Encore the static abilities of the permanents on the battlefield give to `target`, a card in a graveyard (`grantEncoreToGraveyardCards`, CR 702.141a, 613.1f): "Each Sliver
+ * creature card in your graveyard has encore {X}, where X is its mana value." The graveyard is the one of the permanent's controller, `what` is read against the card as it is after
+ * layers 4 and 5 (`base`), and the cost is the generic mana of its mana value (CR 202.3: an {X} in its mana cost counts as 0 away from the stack, which `base.manaValue` is).
+ */
+function graveyardGrantsOn(state: GameState, target: GameObject, base: StaticBase): StaticGrant[] {
+  const sources = indexOf(state).encoreGrants;
+  if (sources.length === 0) return [];
+  const grants: StaticGrant[] = [];
+  for (const source of sources) {
+    if (target.owner !== controllerOf(state, source.object)) continue;
+    const filter: ObjectFilter = { ...source.what, zone: 'graveyard' };
+    if (
+      !matchesFilterWith(state, target, () => base, filter, subjectContextOf(state, source.object))
+    ) {
+      continue;
+    }
+    const value = base.manaValue ?? 0;
+    grants.push({
+      ability: {
+        kind: 'keyword',
+        keyword: { kind: 'encore', cost: [{ kind: 'mana', symbols: [String(value)] }] },
+      },
+      timestamp: source.object.timestamp,
+    });
+  }
+  return grants;
+}
+
+/**
  * The keywords the static abilities of the permanents on the battlefield give to `target`, a spell on the stack (issue 145, `grantKeywordToSpells`, CR 702.144a, 702.51a, 613.1f):
  * "Creature spells you cast have demonstrate." The spell is the one its controller cast, so `what` is read with the permanent's controller as "you" against the spell as it is after
  * layers 4 and 5 (`base`). A copy of a spell is not cast (CR 707.10) and an ability on the stack is no spell: neither gets a keyword. The object may be the card as it is cast
@@ -824,10 +939,18 @@ function spellGrantsOn(state: GameState, target: GameObject, base: StaticBase): 
     ) {
       continue;
     }
-    grants.push({
-      ability: { kind: 'keyword', keyword: source.keyword },
-      timestamp: source.object.timestamp,
-    });
+    let keyword: Keyword;
+    if (source.keyword.kind === 'replicateAtManaCost') {
+      // CR 702.56a, 118.9: a Replicate cost equal to the mana cost of the spell as it is on the stack. Nothing to pay for a spell with no mana cost; {X} is announced later than
+      // the replicate count is asked (CR 601.2b), so a cost with {X} is not given one.
+      const symbols = base.manaCost;
+      if (symbols === undefined || symbols === null || symbols.length === 0) continue;
+      if (symbols.includes('X')) continue;
+      keyword = { kind: 'replicate', cost: [{ kind: 'mana', symbols: [...symbols] }] };
+    } else {
+      keyword = source.keyword;
+    }
+    grants.push({ ability: { kind: 'keyword', keyword }, timestamp: source.object.timestamp });
   }
   return grants;
 }
@@ -845,6 +968,7 @@ export function staticEffectsOn(
 ): StaticEffects {
   if (target.zone === 'hand') return otherZoneEffects(handGrantsOn(state, target, base));
   if (target.zone === 'stack') return otherZoneEffects(spellGrantsOn(state, target, base));
+  if (target.zone === 'graveyard') return otherZoneEffects(graveyardGrantsOn(state, target, base));
   if (target.zone !== 'battlefield') return otherZoneEffects([]);
   const index = indexOf(state);
   const grants: StaticGrant[] = [];

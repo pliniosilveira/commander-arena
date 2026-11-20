@@ -4,12 +4,49 @@ import { defineRule } from '../registry';
 
 /** Counts use event-time characteristics, not objects currently on the battlefield or in a graveyard. */
 export const HISTORY_VALUE: Parser<IrAmount> = (ctx, pos) => {
+  // CR 119.3 (Willowdusk, Essence Seer): the larger of the two, tried before the plain gain it starts with.
+  const larger = pattern(
+    /the amount of life you gained this turn or the amount of life you lost this turn, whichever is greater(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (larger.ok) {
+    return {
+      ok: true,
+      value: { kind: 'lifeGainedOrLostThisTurn', span: { start: pos, end: larger.pos } },
+      pos: larger.pos,
+    };
+  }
+  // CR 608.2c, 701.8 (Deadly Tempest): "each player loses life equal to the number of creatures they controlled that were destroyed this way": each player's own count.
+  const destroyedOwn = pattern(
+    /the number of creatures they controlled that were destroyed this way(?![\p{L}\p{N}])/iu,
+  )(ctx, pos);
+  if (destroyedOwn.ok) {
+    return {
+      ok: true,
+      value: {
+        kind: 'thisWay',
+        what: 'destroyedCreaturesOfAffected',
+        words: ['creature'],
+        span: { start: pos, end: destroyedOwn.pos },
+      },
+      pos: destroyedOwn.pos,
+    };
+  }
   const gain = pattern(/the amount of life you gained this turn(?![\p{L}\p{N}])/iu)(ctx, pos);
   if (gain.ok) {
     return {
       ok: true,
       value: { kind: 'lifeGainedThisTurn', span: { start: pos, end: gain.pos } },
       pos: gain.pos,
+    };
+  }
+  // Field-Tested Frying Pan (CR 119.9, 603.2): "whenever you gain life, ... where X is the amount of life you gained": the life of the event that caused the trigger (`triggerDamage`,
+  // read only in the body of a life gain trigger, which the lowering checks), as opposed to the life gained over the whole turn above.
+  const event = pattern(/the amount of life you gained(?! this turn)(?![\p{L}\p{N}])/iu)(ctx, pos);
+  if (event.ok) {
+    return {
+      ok: true,
+      value: { kind: 'triggerDamage', life: true, span: { start: pos, end: event.pos } },
+      pos: event.pos,
     };
   }
   // D-638 (Prismari deck group 1, CR 601.2i): the spells the controller has cast this turn.

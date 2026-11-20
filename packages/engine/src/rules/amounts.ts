@@ -68,10 +68,13 @@ export function historyCount(
 ): number {
   // CR 700.9, 603.10a: "a modified creature died": the deaths record whether the permanent was modified as it left.
   const onlyModified = amount.kind === 'diedThisTurn' && amount.modified === true;
+  // CR 207.2c (Revolt): "a permanent left the battlefield under your control this turn" reads every permanent that left, to any zone.
   const entries =
     amount.kind === 'enteredThisTurn'
       ? state.turnLog.entered
-      : state.turnLog.died.filter((e) => !onlyModified || e.modified);
+      : amount.leftBattlefield === true
+        ? (state.turnLog.left ?? [])
+        : state.turnLog.died.filter((e) => !onlyModified || e.modified);
   return entries.filter(
     (e) =>
       (amount.controller === 'any' || e.controller === controller) &&
@@ -234,6 +237,12 @@ export function amountOf(
   if (typeof amount === 'number') return amount;
   if (amount.kind === 'lifeGainedThisTurn')
     return state.turnLog.lifeGainedTotal[ctx.controller] ?? 0;
+  if (amount.kind === 'lifeGainedOrLostThisTurn') {
+    return Math.max(
+      state.turnLog.lifeGainedTotal[ctx.controller] ?? 0,
+      getSeat(state, ctx.controller).lifeLostThisTurn,
+    );
+  }
   if (amount.kind === 'enteredThisTurn' || amount.kind === 'diedThisTurn') {
     return historyCount(state, amount, ctx.controller);
   }
@@ -457,6 +466,8 @@ export function stateAmountOf(
       return subject?.card == null ? 0 : (state.commanderCasts[subject.card] ?? 0);
     }
     case 'thisWay':
+      // Each player's own number, read by `lifeAmountFor`, never here (`validateCard` allows it only as the whole amount of a `loseLife`).
+      if (amount.what === 'destroyedCreaturesOfAffected') return 0;
       return ctx.thisWay?.[amount.what] ?? 0;
     case 'opponentsWithMore':
       return opponentsWithMore(state, ctx.controller, amount.stat, amount.fewer === true);

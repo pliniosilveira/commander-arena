@@ -304,4 +304,56 @@ export const EFFECT_INVESTIGATE = defineRule<Clauses>({
   },
 });
 
-export const TOKEN_EFFECT_RULES = [EFFECT_CREATE_TOKEN, EFFECT_INVESTIGATE];
+/**
+ * `effect.create-two-tokens`: "create X 1/1 white Halfling creature tokens and X Food tokens", "create a Treasure token and a Food token" (CR 111.2, 608.2c): one
+ * "create" for two groups of tokens, the second joined by "and" with no verb of its own. It is the two instructions "create A" and "create B", followed in the order written.
+ * Not read: a third group, a rider or a "for each" count on the first group (the other rule reads those), "or".
+ */
+export const EFFECT_CREATE_TWO_TOKENS = defineRule<Clauses>({
+  id: 'effect.create-two-tokens',
+  family: 'effect',
+  leading: ['create'],
+  cites: ['CR 111.2 (Tokens)', 'CR 608.2c (Resolving Spells and Abilities)'],
+  examples: [
+    'create a Treasure token and a Food token',
+    'create two Treasure tokens and two Food tokens',
+    'create X 1/1 white Halfling creature tokens and X Food tokens',
+    'create a 1/1 white Soldier creature token and a Food token',
+  ],
+  rejects: [
+    'create a Food token',
+    'create a Food token and',
+    'create a Treasure token and a Food token and a Clue token',
+    'create a Treasure token or a Food token',
+    'create a Treasure token and draw a card',
+    'create a Treasure token and a Food token or a Clue token',
+  ],
+  parse: (ctx, pos) => {
+    const first = sequence(literal('create '), family<IrToken>('token'))(ctx, pos);
+    if (!first.ok) return first;
+    const second = sequence(literal(' and '), family<IrToken>('token'))(ctx, first.pos);
+    if (!second.ok) return second;
+    // A third group is not read: the next word must not continue the list.
+    if (/^(?:,| and | or )/u.test(ctx.text.slice(second.pos))) return fail(ctx, second.pos);
+    const id = 'effect.create-two-tokens';
+    const a = first.value[1];
+    const b = second.value[1];
+    return {
+      ok: true,
+      value: [
+        {
+          ...makeClause(id, 'createToken', { token: a }, { start: pos, end: first.pos }),
+          connector: 'and',
+        },
+        makeClause(id, 'createToken', { token: b }, { start: first.pos, end: second.pos }),
+      ],
+      pos: second.pos,
+    };
+  },
+});
+
+export const TOKEN_EFFECT_RULES = [
+  EFFECT_CREATE_TWO_TOKENS,
+  EFFECT_CREATE_TOKEN,
+  EFFECT_INVESTIGATE,
+];

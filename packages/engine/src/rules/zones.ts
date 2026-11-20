@@ -54,6 +54,7 @@ import { optionsFor } from './chosen';
 import { controllerOf } from './control';
 import { copiableValues } from './copiable';
 import { entryCounters } from './counter-bonus';
+import { entersTransformed } from './day-night';
 import { derive, oracleTextOf } from './derive';
 import { permanentAlternative } from './derive-alt';
 import { dieReplacementFor } from './die-replacement';
@@ -81,6 +82,7 @@ import {
   devourCandidates,
   devourDecision,
   devourOf,
+  devourQualityOf,
   keywordEntryCounters,
   riotDecision,
   riotGivesHaste,
@@ -96,6 +98,7 @@ import { commanderCardOf, isCommanderCardId, meldPairIssue } from './melded';
 import { isModified } from './modified';
 import { lifeTotalIsLocked } from './player-lock';
 import { becomePrepared, dropPrepareCopy } from './prepare';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { countMatching } from './select';
 import { sourceInfo } from './source-info';
 import { createTokens } from './tokens';
@@ -301,11 +304,23 @@ function enteringFace(
 
 /**
  * The face the object has after the move: the one asked for; else a spell that becomes a permanent
- * keeps the face it had on the stack (CR 712.13); else the front face (CR 712.8a, 712.14, 715.4).
+ * keeps the face it had on the stack (CR 712.13); else the front face (CR 712.8a, 712.14, 715.4), but a daybound card enters with its back face up at night (CR 702.145b).
  */
-function faceAfter(old: GameObject, request: MoveRequest): number {
-  if (request.face !== undefined) return request.face;
-  return old.zone === 'stack' && request.to === 'battlefield' ? old.face : 0;
+function faceAfter(state: GameState, old: GameObject, request: MoveRequest): number {
+  const face =
+    request.face !== undefined
+      ? request.face
+      : old.zone === 'stack' && request.to === 'battlefield'
+        ? old.face
+        : 0;
+  // CR 702.145b, 712.14a: a daybound card enters transformed at night.
+  return face === 0 &&
+    request.to === 'battlefield' &&
+    request.entersFaceDown === undefined &&
+    old.card !== null &&
+    entersTransformed(state, definitionOf(state, old.card))
+    ? 1
+    : face;
 }
 
 /** CR 903.3, 903.3b: the object is a commander card, or a melded permanent one of whose two cards is a commander card. */
@@ -342,7 +357,11 @@ export function sacrificeForDevour(
   // D-283 (CR 603.10a): the creatures sacrificed together keep the last-known information recorded before the first leaves.
   const going = ids.filter((id) => {
     const obj = input.objects[id];
-    return obj?.zone === 'battlefield' && controllerOf(input, obj) === seat;
+    return (
+      obj?.zone === 'battlefield' &&
+      controllerOf(input, obj) === seat &&
+      !cantBeSacrificed(input, id)
+    );
   });
   if (going.length > 1) {
     for (const id of going) {
@@ -353,6 +372,8 @@ export function sacrificeForDevour(
   for (const id of ids) {
     const obj = state.objects[id];
     if (obj?.zone !== 'battlefield' || controllerOf(state, obj) !== seat) continue;
+    // CR 701.21a, 101.2: a permanent that can't be sacrificed stays.
+    if (cantBeSacrificed(state, id)) continue;
     const moved = moveOne(state, {
       object: id,
       to: 'graveyard',
@@ -476,7 +497,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   const enterController = request.toSeat ?? controllerOf(state, old);
   // CR 614.12, 614.12b (D-272): what the replacement effects of the entering card read is the battlefield without the cards that enter with it (`rules/enters-run.ts`).
   const before = withoutRun(state, request.alongside);
-  const faceIndex = faceAfter(old, request);
+  const faceIndex = faceAfter(state, old, request);
   // CR 708.3 (D-309): a permanent that enters face down is turned face down before it enters, so the face of the card is not looked at: no enters replacement effect, counter
   // or choice of the card applies. What it is as it enters is the face-down status (`downEntry`), which the readers below see on the object they ask about.
   const downEntry = to === 'battlefield' ? faceDownEntry(state, request.entersFaceDown) : {};
@@ -660,9 +681,13 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   // CR 702.82a (D-185): "As this object enters, you may sacrifice any number of creatures": the last question, asked only when there is a creature to
   // sacrifice (the permanent is not on the battlefield, so it is not one).
   if (devourOf(faceAbilities) > 0 && request.entersDevour === undefined) {
-    const legal = devourCandidates(before, enterController);
+    const quality = devourQualityOf(faceAbilities);
+    const legal = devourCandidates(before, enterController, quality);
     if (legal.length > 0) {
-      return { kind: 'needsDecision', decision: devourDecision(enterController, old.id, legal) };
+      return {
+        kind: 'needsDecision',
+        decision: devourDecision(enterController, old.id, legal, quality),
+      };
     }
   }
 
@@ -1046,6 +1071,7 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
   }
   // D-151: a permanent that entered this turn (Celebration), under whose control and as which types.
   if (to === 'battlefield') {
+    const entered = derive(next, getObject(next, newId));
     next = {
       ...next,
       turnLog: {
@@ -1055,8 +1081,26 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
           {
             object: newId,
             controller,
-            types: derive(next, getObject(next, newId)).types,
+            types: entered.types,
+            subtypes: entered.subtypes,
             token: created.token !== null,
+          },
+        ],
+      },
+    };
+  }
+  // CR 400.7, 207.2c (Revolt): a permanent that left the battlefield this turn for any zone, under the control it had as it left.
+  if (old.zone === 'battlefield') {
+    next = {
+      ...next,
+      turnLog: {
+        ...next.turnLog,
+        left: [
+          ...(next.turnLog.left ?? []),
+          {
+            controller: sourceInfo(next, old.id)?.controller ?? controllerOf(state, old),
+            types: next.lki[old.id]?.characteristics.types ?? derive(state, old).types,
+            token: old.token !== null,
           },
         ],
       },

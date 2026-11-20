@@ -121,6 +121,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'static.reveal-top': asIs,
   'static.play-lands-from-top': asIs,
   'static.play-lands-from-graveyard': asIs,
+  // Issue 345: the play-from-the-top lines are lines of their own.
+  'static.look-and-play-lands-from-top': asIs,
+  'static.activate-as-though-haste': asIs,
   'static.attack-tax': asIs,
   'static.attack-tax-counters': asIs,
   'static.optional-untap': asIs,
@@ -241,11 +244,16 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'restriction.sorcery': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Feather deck, group 2 (D-444): the two restrictions in the order of Hall of Oracles.
   'restriction.sorcery-and-if': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
+  // Issue 345: the sorcery timing and the count of one sentence.
+  'restriction.sorcery-once-each-turn': permanent((e) => `{1}: Draw a card. ${cap(e)}`),
   // Gisa deck, group 4 (D-459 to D-462): the restriction of the turn and the cost of the reveal of Tetzimoc, the reduction of Embalmer's Tools, and the sentences of Whip of
   // Erebos and Ghost Vacuum that need the instruction before them (a return from the graveyard, the exile that links).
   'restriction.during-your-turn': permanent((e) => `{1}: Draw a card. ${e}`),
   'cost.reveal-this': permanent((e) => `{B}, ${e}: Draw a card.`),
+  'static.creature-ability-cost-reduction-power': asIs,
   'static.graveyard-ability-cost-reduction': asIs,
+  // Food and Fellowship deck, group B: the reduction of the abilities of a group of permanents (Sam).
+  'static.permanent-ability-cost-reduction': asIs,
   // Prismari deck, group 1 (D-638, D-641, D-644): strive is the line of a sorcery, "X tokens that are copies of ..." follows "create", and the triggers are read after "Whenever".
   'static.cost-per-extra-target': spell((e) => e),
   'static.spells-cost-increase-targeting-self': asIs,
@@ -401,6 +409,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'noun.you-and-player': spell((e) => `${cap(e)} draw a card.`),
   'noun.each-other-player': spell((e) => `${cap(e)} draws a card.`),
   'noun.defending-player': spell((e) => `${cap(e)} draws a card.`),
+  'noun.player-to-your-right': spell((e) => `${cap(e)} draws a card.`),
   // Stage P21: the life lost by the instruction before it.
   'amount.life-lost-this-way': spell((e) => `Each opponent loses 1 life. You gain life ${e}.`),
   // Stage P19: the header line of a modal spell, followed by two bullets.
@@ -430,6 +439,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // CR 603.4: "Whenever you cast an instant or sorcery spell, if ~ has fewer than three charge counters on it, ..." is read after "if", like every condition.
   'condition.this-counter-count': permanent(
     (e) => `Whenever you cast a spell, if ${e}, draw a card.`,
+  ),
+  // Prize Pig: the counters of one kind on ~, in the "Then if" sentence after the counters an instruction put on.
+  'condition.there-are-counters-on-self': permanent(
+    (e) => `Whenever you gain life, put that many +1/+1 counters on ~. Then if ${e}, draw a card.`,
   ),
   'condition.this-is-token': permanent((e) => `When ~ enters, if ${e}, draw a card.`),
   'static.each': asIs,
@@ -757,6 +770,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'token.named-legendary': spell((e) => `Create ${e}.`),
   // Death Toll deck, group C: a token whose own characteristic-defining ability defines its power and toughness; the card whose own ability is a creature off the battlefield.
   'token.defined-pt': spell((e) => `Create ${e}.`),
+  'token.noncreature-named': spell((e) => `Create ${e}.`),
   'static.creature-off-battlefield': asIs,
   // Stage P48 (D-205): the Vraska deck's text and token slice. The trigger follows "When"; the noun follows a sentence about several targets.
   'trigger.enters-and-cast': permanent((e) => `When ${e}, you gain 1 life.`),
@@ -794,6 +808,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   'static.crew-saddle-bonus': asIs,
   'static.spells-you-cast-have-keyword': asIs,
+  'static.each-spell-you-cast-has-replicate': asIs,
+  'static.legend-rule-doesnt-apply': asIs,
+  'static.groups-are-the-chosen-type': asIs,
+  'static.graveyard-cards-have-encore': asIs,
   'static.every-creature-type': asIs,
   'static.hand-cards-have-cycling': asIs,
   'static.graveyard-cards-have-flashback': asIs,
@@ -801,6 +819,21 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever a creature you control enters, scry 1. If ${e}, you gain 1 life.`,
   ),
   'condition.chose-ring-bearer': permanent((e) => `Whenever the Ring tempts you, if ${e}, scry 3.`),
+  // Food and Fellowship deck, group C: Revolt, the Ring-bearer and the times the Ring has tempted, "two or more creatures you control attack a player", the counters on ~.
+  'condition.permanent-left-under-control': permanent(
+    (e) => `At the beginning of your end step, if ${e}, you gain 1 life.`,
+  ),
+  'condition.this-is-ring-bearer': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'condition.ring-tempted-times': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'condition.ring-bearer-and-tempted': permanent(
+    (e) => `Whenever ~ attacks, draw a card. Then if ${e}, scry 1.`,
+  ),
+  'trigger.n-or-more-attack-a-player': whenever,
+  'static.pt-counters-on-source': asIs,
   'condition.not-declared-attacker': permanent(
     (e) => `Whenever a creature becomes tapped, if ${e}, you gain 1 life.`,
   ),
@@ -809,6 +842,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `Whenever one or more creatures you control enter, if ${e}, you gain 1 life.`,
   ),
   'noun.subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
+  'noun.other-subtype-pair': permanent((e) => `${cap(e)} get +1/+1.`),
   'noun.creatures-subtype-and-or-tokens': permanent((e) => `${cap(e)} get +1/+1.`),
   // Hylda deck, group 3 (issue 42): "any number of target tapped creatures with different controllers".
   'noun.any-number-targets-controllers': spell((e) => `Destroy ${e}.`),
@@ -819,6 +853,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   ),
   // Issue 25 (the Niv-Mizzet deck): the condition leads the "instead" sentence of a trigger about a spell that was cast.
   'condition.spells-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
+  'condition.spells-cast-last-turn': permanent(
+    (e) => `At the beginning of each upkeep, if ${e}, you gain 1 life.`,
+  ),
   // Conduit of Worlds: the condition leads the sentence that offers to cast the card.
   'condition.no-spell-cast-this-turn': permanent((e) => `{T}: Add {G}. Activate only if ${e}.`),
   // Issue 279 (Windfall).
@@ -864,6 +901,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'keyword.equip-quality': asIs,
   // Stage P70 (D-259): the equip of a commander is a line of its own.
   'keyword.equip-commander': asIs,
+  // Issue 345: the equip of a legendary creature is a line of its own.
+  'keyword.equip-legendary': asIs,
   // Stage P66 (D-219): the replacement of the creation of tokens is a line of its own.
   'replacement.tokens-instead': asIs,
   // Issue 25 (D-332): the line of its own; the trigger follows "Whenever".
@@ -872,7 +911,9 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.draw-instead': asIs,
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
+  'static.cant-be-sacrificed': asIs,
   'trigger.noncombat-damage': whenever,
+  'trigger.player-dealt-damage': whenever,
   'trigger.enchanted-player-attacked': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,
@@ -988,6 +1029,10 @@ const EMBED: Readonly<Record<string, Embed>> = {
   // D-269: the players a permanent attacked this turn, as the subject of "loses the game".
   'noun.each-player-attacked': permanent(
     (e) => `At the beginning of your end step, ${e} loses the game.`,
+  ),
+  // CR 120.2a: the opponents a creature of the card's name has dealt combat damage to this game, as the subject of "loses life".
+  'noun.each-opponent-dealt-combat-damage-by-named': permanent(
+    (e) => `At the beginning of your end step, ${e} loses 1 life.`,
   ),
   'amount.milled-value-this-way': permanent(
     (e) => `When ~ enters, you mill three cards, then ~ deals damage to target opponent ${e}.`,
@@ -1179,6 +1224,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
     (e) => `At the beginning of your end step, if ${e}, draw a card.`,
   ),
   'noun.target-creature-token': spell((e) => `${cap(e)} can't be blocked this turn.`),
+  'noun.commander-creatures-you-own': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.commanders-you-control': permanent((e) => `${cap(e)} have hexproof.`),
   'noun.that-token': spell(
     (e) =>

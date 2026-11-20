@@ -31,6 +31,36 @@ export const CAST_THAT_CARD: Lowering<IrClause, Effects> = {
   },
 };
 
+/**
+ * "You may cast ~ from your graveyard" (CR 113.6b, 608.2g, 601.2; Sproutback Trudge): the engine's `castCard` on the card with the triggered ability, in the graveyard it works from, paying
+ * its mana cost. The effect asks the controller itself, so the "you may" is that question. Only in a trigger (`graveyardSource`), which then works from the graveyard.
+ */
+export const CAST_THIS_FROM_GRAVEYARD: Lowering<IrClause, Effects> = {
+  head: 'castThisFromGraveyard',
+  id: 'lower.cast-this-from-graveyard',
+  needs: ['effect:castCard', 'selector:this', 'ability:functionsInGraveyard'],
+  acceptsOptional: true,
+  lower(clause, ctx) {
+    const may = arg(clause, 'may');
+    // The offer is the "you may" of the words (the flag) or one the sentence read before the clause (`optional`); a cast that is not a choice is not run.
+    const offered = (may?.kind === 'flag' && may.value) || clause.optional;
+    if (!offered || !ctx.graveyardSource) return failure(clause);
+    const blocked = missingFeatures([
+      'effect:castCard',
+      'selector:this',
+      'ability:functionsInGraveyard',
+    ]);
+    if (blocked.length > 0)
+      return { ok: false, needs: blocked, at: clause.span, rule: clause.rule };
+    ctx.usedGraveyardSource = true;
+    return {
+      ok: true,
+      value: [{ kind: 'castCard', object: { kind: 'this' } }],
+      rule: clause.rule,
+    };
+  },
+};
+
 /** "You can't cast additional spells this turn" (CR 101.2, 611.2a): the engine's `playerCantCastSpells` for the controller until end of turn. */
 export const CANT_CAST_ADDITIONAL_SPELLS: Lowering<IrClause, Effects> = {
   head: 'cantCastAdditionalSpells',
@@ -52,5 +82,6 @@ export const CANT_CAST_ADDITIONAL_SPELLS: Lowering<IrClause, Effects> = {
 
 export const GRAVEYARD_CAST_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   CAST_THAT_CARD,
+  CAST_THIS_FROM_GRAVEYARD,
   CANT_CAST_ADDITIONAL_SPELLS,
 ];

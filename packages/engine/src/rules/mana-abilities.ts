@@ -14,6 +14,7 @@ import type { GameObject, GameState } from '../state/types';
 import { evaluateCondition } from './conditions';
 import { controlledSince, controllerOf } from './control';
 import { derive } from './derive';
+import { hasteActivationSources } from './derive-statics';
 import { exertPermanent } from './exert';
 import { hasKeyword } from './keywords';
 import { effectiveManaAbility, isCombinationProduction, productionOutcomes } from './mana-outcomes';
@@ -23,6 +24,8 @@ import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { hasRestriction } from './restrictions';
 import { sacrificeCandidates, sacrificePermanent, tapCandidates } from './sacrifice';
+import { cantBeSacrificed } from './sacrifice-prevention';
+import { matchesFilter } from './select';
 
 export function manaAbilitiesOf(
   state: GameState,
@@ -57,9 +60,24 @@ export function wouldBeSummoningSick(state: GameState, obj: GameObject): boolean
   return controlledSince(state, obj) > getSeat(state, controllerOf(state, obj)).turnStartTimestamp;
 }
 
+/**
+ * CR 302.6, 702.10b (issue 345): whether summoning sickness holds back the {T} or {Q} abilities of `obj`: it is summoning sick, and no permanent its controller has says they may
+ * activate its abilities as though it had haste ("You may activate abilities of creatures you control as though those creatures had haste"). Attacking is not an activation:
+ * `isSummoningSick` still decides it.
+ */
+export function isSummoningSickToActivate(state: GameState, obj: GameObject): boolean {
+  if (!isSummoningSick(state, obj)) return false;
+  const controller = controllerOf(state, obj);
+  return !hasteActivationSources(state).some(
+    (source) =>
+      controllerOf(state, source.object) === controller &&
+      matchesFilter(state, obj, source.creatures, { controller, source: source.object.id }),
+  );
+}
+
 export function canTapForMana(state: GameState, obj: GameObject, seat: SeatId): boolean {
   if (obj.zone !== 'battlefield' || controllerOf(state, obj) !== seat || obj.tapped) return false;
-  return !isSummoningSick(state, obj);
+  return !isSummoningSickToActivate(state, obj);
 }
 
 export const hasCost = (ability: ManaAbility, kind: 'tap' | 'sacrifice' | 'exert'): boolean =>
@@ -329,6 +347,10 @@ export function physicalRefusal(
   const kind = sacrificeFilterOf(ability);
   if (kind !== null && sacrificeCandidates(state, seat, obj.id, kind).length === 0) {
     return `you control nothing to sacrifice for ${name}`;
+  }
+  // CR 701.21a, 101.2: "Sacrifice this" can't be paid by a permanent that can't be sacrificed.
+  if (kind === null && hasCost(ability, 'sacrifice') && cantBeSacrificed(state, obj.id)) {
+    return `${name} can't be sacrificed`;
   }
   // CR 118.3 (D-625): "Tap an untapped creature you control" needs one besides the source.
   if (

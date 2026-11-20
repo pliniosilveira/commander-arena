@@ -157,12 +157,18 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'discardedTypeCount':
       // Issue 81 (Occult Epiphany): "for each card type among cards discarded this way".
       return 'the number of card types among cards discarded this way';
+    case 'returned':
+      // Revival Experiment (CR 608.2c): "for each card returned this way".
+      return 'the number of cards returned to the battlefield this way';
     case 'exiledNonland':
       // D-231: "put that many +1/+1 counters" after "each player exiles a card from their graveyard".
       return 'the number of nonland cards exiled this way';
     case 'destroyedValue':
       // Convert to Slime: "the total mana value of permanents destroyed this way".
       return 'the total mana value of the permanents destroyed this way';
+    case 'destroyedCreaturesOfAffected':
+      // Deadly Tempest (CR 608.2c): read for each player the instruction affects.
+      return 'the number of creatures that player controlled that were destroyed this way';
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
@@ -268,6 +274,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       return 'the life that player lost this turn';
     case 'lifeGainedThisTurn':
       return 'the amount of life you gained this turn';
+    case 'lifeGainedOrLostThisTurn':
+      // CR 119.3 (Willowdusk, Essence Seer).
+      return 'the amount of life you gained this turn or the amount of life you lost this turn, whichever is greater';
     case 'enteredThisTurn':
     case 'diedThisTurn': {
       const current = thingsPhrase(
@@ -280,6 +289,9 @@ export function amountPhrase(amount: Amount, ctx: AmountContext = {}): string {
       if (current === null) return UNKNOWN_AMOUNT;
       const things = current.replace(/ on the battlefield$/, '');
       const yours = amount.controller === 'you' ? ' under your control' : '';
+      if (amount.kind === 'diedThisTurn' && amount.leftBattlefield === true) {
+        return `the number of ${things} that left the battlefield${yours} this turn`;
+      }
       return amount.kind === 'enteredThisTurn'
         ? `the number of ${things} that entered${yours} this turn`
         : amount.types?.length === 1 && amount.types[0] === 'creature'

@@ -423,8 +423,12 @@ describe('what the validation refuses (D-460 to D-462)', () => {
     expect(
       validateCard(make({ types: ['creature'], controller: 'you' }) as never).length,
     ).toBeGreaterThan(0);
+    // Sam, Loyal Attendant: the abilities of permanents are named with zone 'battlefield'; any other zone is still refused.
     expect(
-      validateCard(make({ zone: 'battlefield', types: ['creature'] }) as never).length,
+      validateCard(make({ zone: 'battlefield', subtypes: ['Food'], controller: 'you' }) as never),
+    ).toEqual([]);
+    expect(
+      validateCard(make({ zone: 'hand', types: ['creature'] }) as never).length,
     ).toBeGreaterThan(0);
   });
 

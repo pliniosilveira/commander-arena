@@ -18,7 +18,7 @@ import {
   isIrAmount,
 } from '../ir/types';
 import { CREATURE_TYPES } from '../rules/noun/creature-types';
-import { isCostSacrificeCount, lowerAmount } from './amounts';
+import { isCostSacrificeCount, lowerAmount, lowerPtTerm } from './amounts';
 import { lowerChooseColorMana } from './chosen-color-mana';
 import { amountArg, arg, type Effects } from './clauses';
 import { lowerCondition } from './conditions';
@@ -773,24 +773,34 @@ const MAY_KINDS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * "Untap those creatures." (stage P64, D-217, CR 701.26a, 611.2c): the permanents the sentence before it gave +N/+N or a keyword, the group it named as it
- * resolved (`each`): untapped as that group stands right after it (nothing happens in between, and the group's filter does not read what the pump changed).
- * The sentence before it is one plain sentence of that group's pumps and grants; after anything else "those creatures" has no group and the sentence is refused.
+ * "Untap those creatures." (stage P64, D-217, CR 701.26a, 611.2c), "..., untap those creatures and they get an additional +2/+2 until end of turn." (Food and Fellowship deck, group B,
+ * CR 611.2c, 613.4c): the permanents the sentence before it gave +N/+N or a keyword, the group it named as it resolved (`each`): untapped, and given one more change, as that group
+ * stands right after it (nothing happens in between, and the group's filter does not read what the pump changed). The sentence before it is one plain sentence of that group's
+ * pumps and grants, or an untap of it; after anything else "those creatures" has no group and the sentence is refused. An "if" at the front of the sentence (CR 608.2c, 603.4: tested
+ * as the sentence is followed) wraps what it does in the engine's `conditional`.
  */
-function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerResult<Effects> {
-  const [only, ...more] = sentence.clauses;
+function lowerThoseGroup(
+  sentence: IrSentence,
+  before: Step | undefined,
+  ctx: LowerContext,
+): LowerResult<Effects> {
   if (
-    only === undefined ||
-    more.length > 0 ||
-    only.optional ||
-    sentence.condition !== undefined ||
+    sentence.clauses.length === 0 ||
+    sentence.clauses.length > 2 ||
+    sentence.clauses.some(
+      (c) => c.optional || (c.verb !== 'untapThose' && c.verb !== 'pumpThose'),
+    ) ||
     sentence.where !== undefined ||
-    sentence.instead === true
+    sentence.instead === true ||
+    sentence.reflexive === true ||
+    sentence.delayed !== undefined ||
+    sentence.mayBy !== undefined
   ) {
     return refuse(sentence);
   }
   const group = before?.effects.map((e) =>
-    (e.kind === 'modifyPt' || e.kind === 'grantKeyword') && e.objects.kind === 'each'
+    (e.kind === 'modifyPt' || e.kind === 'grantKeyword' || e.kind === 'untap') &&
+    e.objects.kind === 'each'
       ? e.objects
       : e.kind === 'gainControl' && e.objects.kind === 'target'
         ? e.objects
@@ -805,9 +815,45 @@ function lowerUntapThose(sentence: IrSentence, before: Step | undefined): LowerR
   ) {
     return refuse(sentence);
   }
-  const blocked = missingFeatures(['effect:untap']);
+  const effects: Effect[] = [];
+  for (const clause of sentence.clauses) {
+    if (clause.verb === 'untapThose') {
+      const blocked = missingFeatures(['effect:untap']);
+      if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+      effects.push({ kind: 'untap', objects: first });
+      continue;
+    }
+    const pt = arg(clause, 'pt');
+    if (pt?.kind !== 'ptChange' || clause.duration?.scope !== 'untilEndOfTurn') {
+      return refuse(sentence);
+    }
+    const blocked = missingFeatures(['effect:modifyPt', 'duration:untilEndOfTurn']);
+    if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
+    // A group that was gained from a target is a single slot of the ability, which a pump of the group does not name again.
+    if (first.kind !== 'each') return refuse(sentence);
+    const power = lowerPtTerm(pt.power, pt.span, ctx, pt.rule);
+    if (!power.ok) return power;
+    const toughness = lowerPtTerm(pt.toughness, pt.span, ctx, pt.rule);
+    if (!toughness.ok) return toughness;
+    effects.push({
+      kind: 'modifyPt',
+      objects: first,
+      power: power.value,
+      toughness: toughness.value,
+      duration: 'untilEndOfTurn',
+    });
+  }
+  const rule = sentence.clauses[0]?.rule ?? sentence.rule;
+  if (sentence.condition === undefined) return { ok: true, value: effects, rule };
+  const blocked = missingFeatures(SENTENCE_NEEDS);
   if (blocked.length > 0) return { ...refuse(sentence), needs: blocked };
-  return { ok: true, value: [{ kind: 'untap', objects: first }], rule: only.rule };
+  const condition = lowerCondition(sentence.condition, false, ctx);
+  if (!condition.ok) return condition;
+  return {
+    ok: true,
+    value: [{ kind: 'conditional', condition: condition.value, effect: oneEffect(effects) }],
+    rule,
+  };
 }
 
 /** The instructions a spell may offer with "you may" and nothing after it (stage P63, D-216). */
@@ -1687,6 +1733,11 @@ function countsWhatHappened(
     case 'destroyedValue':
       // Death Toll deck, group D (CR 202.3, 608.2h): "the total mana value of permanents destroyed this way": every permanent a `destroy` before it destroyed.
       return earlier.verb === 'destroy';
+    case 'destroyedCreaturesOfAffected':
+      // Deadly Tempest (CR 608.2c): "the number of creatures they controlled that were destroyed this way": a `destroy` of creatures before it.
+      return (
+        earlier.verb === 'destroy' && names(earlier.args.objects).every((n) => n === 'creature')
+      );
     case 'destroyedOwnNontoken':
       // Stage P68 (D-230): "for each nontoken creature you controlled that was destroyed this way": a `destroy` of creatures before it.
       return (
@@ -1710,6 +1761,9 @@ function countsWhatHappened(
     case 'discarded':
       // Issue 244 (Syphon Mind): "for each card discarded this way": the cards a `discard` before it made the players discard.
       return earlier.verb === 'discard';
+    case 'returned':
+      // Revival Experiment (CR 608.2c): "for each card returned this way": the cards the return of one card per permanent type before it put onto the battlefield.
+      return earlier.verb === 'returnOnePerPermanentType';
     case 'countersRemoved':
       // Nexus Mentality: "for each counter removed this way": a `remove all counters` before it.
       return earlier.verb === 'removeAllCounters';
@@ -2198,8 +2252,8 @@ function lowerStep(
     return { last: i + 1 };
   }
   // "creatures you control get +1/+1 until end of turn. Untap those creatures." (stage P64, D-217, CR 611.2c): the group the instruction before it named.
-  if (first.verb === 'untapThose') {
-    const untapped = lowerUntapThose(sentence, steps[steps.length - 1]);
+  if (first.verb === 'untapThose' || first.verb === 'pumpThose') {
+    const untapped = lowerThoseGroup(sentence, steps[steps.length - 1], ctx);
     if (!untapped.ok) return stop(untapped);
     steps.push({ effects: untapped.value, replaceable: false });
     return { last: i };

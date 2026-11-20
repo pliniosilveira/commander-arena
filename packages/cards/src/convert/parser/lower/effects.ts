@@ -73,12 +73,13 @@ import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
 import { FLASH_PERMISSION_LOWERINGS } from './flash-permission';
+import { FOOD_D_LOWERINGS } from './food-d';
 import { GALADRIEL_G1_LOWERINGS } from './galadriel-g1';
 import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
-import { GAIN_STATIC_ABILITY } from './granted-static';
+import { BECOMES_FOR_GOOD, GAIN_STATIC_ABILITY } from './granted-static';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
@@ -130,12 +131,15 @@ import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
 import { SEARCH_PAIR_LOWERINGS } from './search-pair';
+import { SLIVER_D_LOWERINGS } from './sliver-d';
 import { lowerTokenAbility, tokenRulesText } from './tokens';
 import { TROYAN_G4_LOWERINGS } from './troyan-g4';
 import type { LowerContext, LowerFailure, Lowering, LowerResult } from './types';
 import { UNBOUND_I_LOWERINGS } from './unbound-i';
 import { VRASKA_LOWERINGS } from './vraska';
 import { WIN_GAME_LOWERINGS } from './win-game';
+import { revealTopBranchesLowering, WITHERBLOOM_A_LOWERINGS } from './witherbloom-a';
+import { WITHERBLOOM_C_LOWERINGS } from './witherbloom-c';
 
 /**
  * "Untap ~", "exile ~", "return ~ to its owner's hand": the effect acts on the permanent the
@@ -294,9 +298,28 @@ const COUNTER_UNLESS: Lowering<IrClause, Effects> = {
     const objects = operand(clause, 'objects');
     const costs = arg(clause, 'cost');
     if (objects?.kind !== 'noun' || costs?.kind !== 'costList') return failure(clause);
-    const spell = objectRefOf(objects, ctx);
+    // Issue 133 (Diffusion Sliver, CR 702.21a): "counter that spell or ability unless its controller pays {2}" in a trigger about becoming a target: the spell or ability that
+    // targeted, as the engine's Ward counters it. "That spell" is only said of a trigger about spells.
+    let spell: ReturnType<typeof objectRefOf>;
+    if (objects.det === 'triggerSubject') {
+      const wanted = /^that spell or ability$/iu.test(objects.filter.raw.trim()) ? 'both' : 'spell';
+      if (
+        objects.rule !== 'effect.counter-that-unless' ||
+        ctx.becomesTargetOf === null ||
+        (wanted === 'spell' && ctx.becomesTargetOf !== 'spell')
+      ) {
+        return failure(clause);
+      }
+      const missing = missingFeatures(['selector:triggerSubject']);
+      if (missing.length > 0) return failure(clause, missing);
+      spell = { ok: true, value: { kind: 'triggerSubject' }, rule: clause.rule };
+    } else {
+      spell = objectRefOf(objects, ctx);
+    }
     if (!spell.ok) return spell;
-    if (spell.value.kind !== 'target') return failure(clause);
+    if (spell.value.kind !== 'target' && spell.value.kind !== 'triggerSubject') {
+      return failure(clause);
+    }
     const cost: Cost[] = [];
     for (const item of costs.costs) {
       const lowered = lowerCost(item);
@@ -1046,7 +1069,20 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
   head: 'addMana',
   id: 'lower.add-mana',
   needs: ['effect:addMana'],
+  // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...": the offer is the engine's `may` of the mana.
+  acceptsOptional: true,
   lower(clause, ctx) {
+    if (clause.optional) {
+      const blocked = missingFeatures(['effect:may']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const added = ADD_MANA.lower({ ...clause, optional: false }, ctx);
+      if (!added.ok) return added;
+      return {
+        ok: true,
+        value: added.value.map((effect) => ({ kind: 'may' as const, effect })),
+        rule: clause.rule,
+      };
+    }
     const spec = arg(clause, 'mana');
     if (spec?.kind !== 'manaSpec') return failure(clause);
     // "Until end of turn, you don't lose this mana as steps and phases end." (Prismari deck group 2, D-650, CR 500.5): the fixed mana the effect adds stays in the pool until the turn
@@ -1497,12 +1533,18 @@ const LOOK_TAKE: Lowering<IrClause, Effects> = {
       if (blocked.length > 0) return failure(clause, blocked);
       if (toBattlefield || toGraveyard.value || onTop) return failure(clause);
     }
+    // "You may reveal any number of cards of the chosen type from among them": every card looked at may be taken, so `max` is the number looked at (a number, not an amount read later).
+    const any = arg(clause, 'anyNumber');
+    const anyNumber = any?.kind === 'flag' && any.value;
+    if (anyNumber && (typeof count.value !== 'number' || toBattlefield || castFree)) {
+      return failure(clause);
+    }
     const look: Effect = {
       kind: 'lookAtTop',
       count: count.value,
       take: {
         filter: filter.value,
-        max: 1,
+        max: anyNumber && typeof count.value === 'number' ? count.value : 1,
         ...(toBattlefield ? { to: 'battlefield' as const } : {}),
         ...(castFree ? { to: 'castFree' as const } : {}),
         ...(atMost === undefined ? {} : { manaValueAtMost: atMost }),
@@ -2099,7 +2141,16 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
       : (token.power === undefined) !== (token.toughness === undefined)
         ? null
         : token.power === undefined;
-  if (!creature || definesPt === null) {
+  // Issue 345 (Svella, Ice Shaper, CR 111.4, 205.4): "a colorless snow artifact token named Icy Manalith with \"{T}: Add one mana of any color.\"": a token that is no creature, has no
+  // power or toughness and no keywords, only the abilities in its quotes.
+  const noncreature =
+    !creature &&
+    token.power === undefined &&
+    token.toughness === undefined &&
+    token.ptAmount !== true &&
+    (token.keywords ?? []).length === 0 &&
+    types.length > 0;
+  if (!noncreature && (!creature || definesPt === null)) {
     return { ok: false, needs: [], ...at };
   }
   const subtypes = [...(token.subtypes ?? [])];
@@ -2150,7 +2201,9 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
   const defines = abilities.filter(
     (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
   );
-  if (definesPt ? defines.length !== 1 : defines.length > 0) return { ok: false, needs: [], ...at };
+  if (noncreature ? defines.length > 0 : definesPt ? defines.length !== 1 : defines.length > 0) {
+    return { ok: false, needs: [], ...at };
+  }
   // CR 111.4: the name the effect gives the token. "named ~'s Pridemate" (D-266): the card's own short name, which normalization wrote as the tilde;
   // a context that does not know it (a quoted ability, where the tilde is the token) refuses the name instead of guessing.
   const named = token.named === undefined ? undefined : ownTokenName(token.named, ctx);
@@ -2159,12 +2212,15 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     // CR 111.4: the name the effect gives the token, or else its creature types.
     name: named ?? subtypes.join(' '),
     manaCost: null,
-    supertypes: token.legendary === true ? ['legendary'] : [],
+    supertypes: [
+      ...(token.legendary === true ? (['legendary'] as const) : []),
+      ...(token.snow === true ? (['snow'] as const) : []),
+    ],
     types,
     subtypes,
     colors,
-    power: token.power ?? (token.ptAmount === true ? 0 : '*'),
-    toughness: token.toughness ?? (token.ptAmount === true ? 0 : '*'),
+    power: noncreature ? null : (token.power ?? (token.ptAmount === true ? 0 : '*')),
+    toughness: noncreature ? null : (token.toughness ?? (token.ptAmount === true ? 0 : '*')),
     loyalty: null,
     defense: null,
     // The words of the token's abilities, which the card face prints (CR 111.4): its keywords on one line, then each ability in
@@ -2336,6 +2392,9 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DINOSAUR_LOWERINGS,
   // Quandrix Unlimited deck, group G: "Distribute X +1/+1 counters among any number of target creatures you control".
   ...QUANDRIX_G_LOWERINGS,
+  ...WITHERBLOOM_A_LOWERINGS,
+  // Witherbloom Witchcraft (issue 190): one reveal and a branch for each kind of card, a token among them.
+  revealTopBranchesLowering(lowerCreateToken),
   ...JESKAI_CASTFREE_LOWERINGS,
   ...ANGEL_LOWERINGS,
   ...QUANDRIX_D1_LOWERINGS,
@@ -2345,6 +2404,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...VRASKA_LOWERINGS,
   ...HASHATON_G5_LOWERINGS,
   ...HOFRI_LOWERINGS,
+  // Witherbloom Witchcraft, group C (issue 190): "for each permanent type, return up to one card of that type from your graveyard to the battlefield".
+  ...WITHERBLOOM_C_LOWERINGS,
   // Issue 258 (D-585): the sentence after "Choose a color.", reported alone (the pair is lowered by `lowerStep`).
   ...CHOSEN_COLOR_MANA_LOWERINGS,
   // D-393, D-394 (Hashaton, group 9): the exile of a random card from a hand, then "put it onto the battlefield" and "cast it without paying its mana cost".
@@ -2412,6 +2473,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...CONTROLLER_DAMAGE_LOWERINGS,
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
+  ...FOOD_D_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
   ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
@@ -2419,6 +2481,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
+  // Sliver Swarm deck, group D (issue 133): Harsh Mercy.
+  ...SLIVER_D_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
   ...RAMP_LANDS_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
@@ -2430,6 +2494,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...WIN_GAME_LOWERINGS,
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
+  BECOMES_FOR_GOOD,
   GAIN_CONTROL,
 ];
 

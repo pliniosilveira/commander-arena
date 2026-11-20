@@ -66,6 +66,8 @@ export interface CompileOptions {
   readonly namedInQuotes?: boolean;
   /** The shortest name the face's text calls itself by before normalization turned it into `~` (D-266): the name a token "named ~'s Pridemate" is given back. */
   readonly selfName?: string;
+  /** The text of the face says "named" and then the whole name of the card (Gollum, Obsessed Stalker: "a creature named Gollum, Obsessed Stalker"), which `~` stands for in the normalized text. */
+  readonly namedWholeName?: boolean;
 }
 
 function from(text: string, at: number): string {
@@ -120,6 +122,7 @@ export function compileLine(text: string, options: CompileOptions): LineResult {
     ctx.namedInQuotes = options.namedInQuotes === true;
     ctx.text = text;
     ctx.selfName = options.selfName ?? '';
+    ctx.namedWholeName = options.namedWholeName === true;
     const lowered = lower(bound.ability, ctx);
     if (!lowered.ok) {
       scope.targetCount = before;

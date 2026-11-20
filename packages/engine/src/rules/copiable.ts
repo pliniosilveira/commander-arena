@@ -17,7 +17,7 @@ import type { CardDefinition, CardFace } from '../cards/definition';
 import { definitionOf, printedCard } from '../state/ops';
 import type { CopiableValues, GameObject, GameState } from '../state/types';
 import { effectsOn } from './derive-layers';
-import { FACE_DOWN_VALUES, isFaceDown } from './face-down';
+import { faceDownValuesOf, isFaceDown } from './face-down';
 import {
   combinedValues,
   doorsOfDefinition,
@@ -127,7 +127,7 @@ export function copiableValues(state: GameState, obj: GameObject): CopiableValue
   }
   // Layer 1b (CR 613.2b, 708.2, 708.10): a face-down permanent has the characteristics of the rules for face-down permanents, applied after the copy effects, so one
   // that became a copy keeps them and one that is copied is copied as it is (CR 707.2).
-  if (isFaceDown(obj)) return FACE_DOWN_VALUES;
+  if (isFaceDown(obj)) return faceDownValuesOf(obj);
   // CR 709.5 (Room): on the battlefield a locked half gives the permanent no name, mana cost or rules text; the designations are the permanent's own, so a copy is locked or
   // unlocked by its own (they are not copiable values, CR 709.5c).
   const inPlay = obj.zone === 'battlefield' || obj.zone === 'phased';

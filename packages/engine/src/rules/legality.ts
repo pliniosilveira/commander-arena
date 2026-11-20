@@ -44,6 +44,7 @@ import { asFace, castableFaces, choosesFace } from './layouts';
 import { libraryLandPermission } from './library-play';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
+import { mayPayLifeForMana } from './next-spell-life';
 import { hasGrantedFlashCasting } from './player-flash';
 import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
@@ -135,12 +136,12 @@ function ownFlashPermission(
 /**
  * CR 601.3b, 702.8a (D-139): whether a static ability of a permanent `seat` controls lets them cast the spell `obj` at the timing of
  * an instant: the filter of a `castAsThoughFlash` ability describes the spell as it is cast (on the stack, CR 601.2a), whose controller
- * is the caster. The permission is the controller's alone; it does not give the spell the flash keyword.
+ * is the caster. The permission is the controller's alone (every player's with `anyPlayer`); it does not give the spell the flash keyword.
  */
 function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): boolean {
   return flashPermissionSources(state).some(
     (source) =>
-      controllerOf(state, source.object) === seat &&
+      (source.anyPlayer || controllerOf(state, source.object) === seat) &&
       matchesFilter(
         state,
         spell,
@@ -204,7 +205,8 @@ export function mayPlayFromExile(
         e.change.kind === 'playPermission' &&
         e.change.seat === seat &&
         e.objects.includes(obj.id) &&
-        (e.change.free === true) === free &&
+        // Lobelia (CR 118.9, 305.1): a land is played whatever the permission says about the mana cost of a spell: "without paying its mana cost" is no cost to a land.
+        (asLand || (e.change.free === true) === free) &&
         // "You may cast it this turn" (Lorehold group 1): a permission to cast is none to play a land.
         !(asLand && e.change.castOnly === true),
     )
@@ -736,6 +738,8 @@ export function canCast(
   ) {
     return false;
   }
+  // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
+  if (alternative === 'lifeForMana' && !mayPayLifeForMana(state, seat)) return false;
   const spell = castAs(obj, seat, face, alternative);
   const types = derive(state, spell).types;
   if (types.includes('land')) return false;
@@ -1059,7 +1063,10 @@ export function flashbackObjects(state: GameState, seat: SeatId): ObjectId[] {
 
 /** Every land the seat could play now, one entry per land face of a card with several (CR 712.12). */
 export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
-  const fromExile = state.exile.filter((id) => mayPlayFromExile(state, seat, getObject(state, id)));
+  // Lobelia, Defender of Bag End (CR 305.1): a land card an effect lets the seat play without paying its mana cost is a land to play (`asLand`, as `canPlayLand` asks).
+  const fromExile = state.exile.filter((id) =>
+    mayPlayFromExile(state, seat, getObject(state, id), true),
+  );
   const fromGraveyard = zoneList(state, 'graveyard', seat).filter(
     (id) =>
       mayPlayFromGraveyard(state, seat, getObject(state, id)) ||

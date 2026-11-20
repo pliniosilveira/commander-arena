@@ -13,6 +13,7 @@ import type {
   Keyword,
   ObjectFilter,
 } from '@commander-arena/engine';
+import { isNonCreatureSubtype } from '@commander-arena/engine';
 import type { IrAbility, IrCost, IrKeyword } from '../ir/types';
 import {
   isGrantable,
@@ -227,7 +228,12 @@ function lowerCostedKeyword(
   ]);
   if (blocked !== null) return blocked;
   // "Equip Wizard {1}" (stage P67, D-220, CR 702.6c): the creature type the equip ability attaches to.
-  if ((ability.quality !== undefined || ability.commanderOnly === true) && name !== 'equip') {
+  if (
+    (ability.quality !== undefined ||
+      ability.commanderOnly === true ||
+      ability.legendaryOnly === true) &&
+    name !== 'equip'
+  ) {
     return failure(ability);
   }
   return {
@@ -243,6 +249,10 @@ function lowerCostedKeyword(
             : { restriction: { subtypes: [ability.quality] } }),
           // "Equip commander {3}" (stage P70, D-259, CR 702.6c, 903.3): a creature that is a commander.
           ...(ability.commanderOnly === true ? { restriction: { commander: true } } : {}),
+          // "Equip legendary creature {3}" (issue 345, CR 702.6c, 205.4): a legendary creature.
+          ...(ability.legendaryOnly === true
+            ? { restriction: { types: ['creature'], supertypes: ['legendary'] } }
+            : {}),
         } as Keyword,
       },
     ],
@@ -417,6 +427,15 @@ function lowerNumbered(
   if (!Number.isSafeInteger(count.value) || count.value < 1) return failure(ability);
   const blocked = gate(ability, ['ability:keyword', `keyword:${kind}`]);
   if (blocked !== null) return blocked;
+  // CR 702.82c, "Devour Food 3": the quality is an artifact type the engine reads (a subtype that is no creature type); any other word is not read.
+  if (ability.quality !== undefined) {
+    if (kind !== 'devour' || !isNonCreatureSubtype(ability.quality)) return failure(ability);
+    return {
+      ok: true,
+      value: [{ kind: 'keyword', keyword: { kind, count: count.value, of: ability.quality } }],
+      rule: 'keyword.line',
+    };
+  }
   return {
     ok: true,
     value: [{ kind: 'keyword', keyword: { kind, count: count.value } }],

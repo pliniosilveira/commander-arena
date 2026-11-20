@@ -40,9 +40,16 @@ import { isGraveyardPlayStatic, lowerGraveyardPlayStatic } from './hofri';
 import { isGraveyardFlashbackStatic, lowerGraveyardFlashbackStatic } from './jeskai-flashback';
 import { isKorvoldStatic, lowerKorvoldStatic } from './korvold';
 import { colorLetter, lowerFilter } from './nouns';
+import { lowerPermanentAbilityCostReduction } from './permanent-ability-cost';
 import { isPlayRule, lowerPlayRule, PLAY_RULE_NEEDS, playRuleNeeds } from './play-rules';
 import { lowerQuotedGrantedAbility } from './quoted-ability';
 import { isCostIncrease, lowerCostIncrease, lowerGrantedCostIncrease } from './skybonder';
+import {
+  isSliverLordStatic,
+  lowerSliverLordStatic,
+  SLIVER_LORD_NEEDS,
+  sliverLordNeeds,
+} from './sliver-lords';
 import { isSpellKeywordStatic, lowerSpellKeywordStatic } from './spell-keyword-grant';
 import type { LowerContext, LowerFailure, LowerResult } from './types';
 
@@ -317,6 +324,9 @@ function effectOf(
       const granted = lowerGrantedAbility(quoted, subject, at, ctx);
       return granted.ok ? ok({ kind: 'grantAbility', subject, ability: granted.value }) : granted;
     }
+    case 'cantBeSacrificed':
+      // CR 701.21a, 101.2: said of the permanent itself.
+      return subject.kind === 'this' ? ok({ kind: 'cantBeSacrificed' }) : failure(at);
     case 'cantHaveCounters':
       // CR 122.6, 101.2 (Hashaton deck group 3, D-380): the permanents the subject names can't have counters of the kind put on them: a group, `~` or the attached permanent.
       return subject.kind === 'filter' || subject.kind === 'this' || subject.kind === 'attached'
@@ -395,6 +405,14 @@ function effectOf(
         subject,
         power: effect.power ? { kind: 'unspentMana' } : 0,
         toughness: effect.toughness ? { kind: 'unspentMana' } : 0,
+      });
+    case 'ptCountersOnSource':
+      // CR 122.1, 613.4c (Call for Unity): +1 for each counter of the kind on the permanent that has the ability, worked out as the characteristics are.
+      return ok({
+        kind: 'modifyPt',
+        subject,
+        power: effect.power ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+        toughness: effect.toughness ? { kind: 'countersOnSource', counter: effect.counter } : 0,
       });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.
@@ -560,6 +578,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:costIncrease'];
     case 'abilityCostReduction':
     case 'graveyardAbilityCostReduction':
+    case 'permanentAbilityCostReduction':
+    case 'creatureAbilityCostReductionByPower':
       return ['static:abilityCostReduction'];
     case 'costPerExtraTarget':
       return ['static:costPerExtraTarget'];
@@ -571,6 +591,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:modifyPt', 'amount:timesAttacked'];
     case 'ptUnspentMana':
       return ['static:modifyPt', 'amount:unspentMana'];
+    case 'ptCountersOnSource':
+      return ['static:modifyPt', 'amount:countersOnSource'];
     case 'loseAllAbilities':
       return ['static:loseAllAbilities'];
     case 'setColors':
@@ -587,11 +609,16 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:grantFlashbackToGraveyardCards'];
     case 'spellKeyword':
       return ['static:grantKeywordToSpells'];
+    case 'legendRuleDoesntApply':
+    case 'chosenTypeGroups':
+    case 'graveyardEncore':
+      return [...sliverLordNeeds(effect)];
     case 'additionalLandDrops':
     case 'lookAtTopOfLibrary':
     case 'revealTopOfLibrary':
     case 'playLandsFromTopOfLibrary':
     case 'playLandsFromGraveyard':
+    case 'activateAsThoughHaste':
     case 'attackTax':
     case 'optionalUntap':
     case 'crewSaddleBonus':
@@ -617,6 +644,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:cantGainLife'];
     case 'cantHaveCounters':
       return ['static:cantHaveCounters'];
+    case 'cantBeSacrificed':
+      return ['static:cantBeSacrificed'];
     case 'preventDamageToThis':
       return ['static:preventDamageToThis'];
     case 'cantCastThis':
@@ -661,8 +690,7 @@ function readsCombat(filter: ObjectFilter): boolean {
   return (
     filter.manaValueX === true ||
     filter.controllerDealtDamageBySource === true ||
-    // D-416 (CR 700.9): the attachments of a permanent are read from the game, which `derive` does not have while it matches a subject.
-    filter.modified === true ||
+    // D-416 (CR 700.9): "modified" is read from the counters and attachments (`subjectAffects`, issue 345), so a subject may name it.
     // CR 701.15b: the designation is read from the game, which `derive` does not have while it matches a subject.
     filter.goaded === true ||
     (filter.anyOf?.some(readsCombat) ?? false)
@@ -738,6 +766,7 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'pt':
     case 'ptCount':
     case 'ptTimesAttacked':
+    case 'ptCountersOnSource':
     case 'grantKeyword':
     case 'grantProtection':
     case 'grantAbility':
@@ -923,6 +952,8 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   if (isHandCyclingStatic(first)) return lowerHandCyclingStatic(ability);
   // Issue 145 (CR 702.144a, 702.51a, 613.1f): "Creature spells you cast have demonstrate."
   if (isSpellKeywordStatic(first)) return lowerSpellKeywordStatic(ability);
+  // Issue 133 (CR 704.5j, 613.1d, 702.141a): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
+  if (isSliverLordStatic(first)) return lowerSliverLordStatic(ability);
   // CR 702.34a, 118.9, 613.1f: "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that card's mana cost."
   if (isGraveyardFlashbackStatic(first)) return lowerGraveyardFlashbackStatic(ability);
   const parts: IrStaticPart[] = [
@@ -1090,6 +1121,34 @@ function lowerStaticStatement(ability: Static, ctx: LowerContext): LowerResult<r
   // "Activated abilities of creature cards in your graveyard cost {1} less to activate." (Gisa group 4, D-461, CR 601.2f, 118.7, 113.6b).
   if (first.kind === 'graveyardAbilityCostReduction')
     return lowerGraveyardAbilityCostReduction(ability, first, more.length);
+  // "Activated abilities of Foods you control cost {1} less to activate." (Food and Fellowship deck, group B, CR 601.2f, 602.2b, 118.7).
+  if (first.kind === 'permanentAbilityCostReduction')
+    return lowerPermanentAbilityCostReduction(ability, first, more.length);
+  // "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. ..." (issue 345, Agatha of the Vile Cauldron, CR 601.2f, 118.7).
+  if (first.kind === 'creatureAbilityCostReductionByPower') {
+    const { statement } = ability;
+    if (more.length > 0 || statement.condition !== undefined || statement.also !== undefined) {
+      return failure(ability);
+    }
+    const blocked = missingFeatures(['ability:static', 'static:abilityCostReduction']);
+    if (blocked.length > 0) return failure(ability, blocked);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'static',
+          static: {
+            kind: 'abilityCostReduction',
+            abilities: 'ofObjects',
+            objects: { zone: 'battlefield', types: ['creature'], controller: 'you' },
+            amount: { kind: 'powerOf', of: { kind: 'this' } },
+            minTotal: 1,
+          },
+        },
+      ],
+      rule: ability.rule,
+    };
+  }
   // "Strive — ~ costs {2}{R} more to cast for each target beyond the first." (Prismari group 1, D-641, CR 601.2f).
   if (first.kind === 'costPerExtraTarget') {
     if (
@@ -1218,12 +1277,16 @@ function lowerOwnStatic(
     void stackKind;
     const spells = lowerFilter(noun(described));
     if (!spells.ok) return spells;
+    // "Any player may cast ..." (CR 601.3b): every player may, so no controller is named; "You may cast ..." names the controller.
     return {
       ok: true,
       value: [
         {
           kind: 'static',
-          static: { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
+          static:
+            effect.anyPlayer === true
+              ? { kind: 'castAsThoughFlash', spells: spells.value, anyPlayer: true }
+              : { kind: 'castAsThoughFlash', spells: { ...spells.value, controller: 'you' } },
         },
       ],
       rule: ability.rule,
@@ -1289,6 +1352,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   'static:allCreatureTypes',
   'static:grantKeywordToHandCards',
   'static:grantFlashbackToGraveyardCards',
+  ...SLIVER_LORD_NEEDS,
   'static:castFromGraveyard',
   'static:cantBeBlockedBy',
   'static:setPt',
@@ -1305,6 +1369,7 @@ export const STATIC_NEEDS: readonly FeatureRef[] = [
   // Hashaton deck group 6 (D-377, CR 702.16): "You have protection from the chosen card type."
   'static:playerProtection',
   'static:cantHaveCounters',
+  'static:cantBeSacrificed',
   'ability:functionsInGraveyard',
   'ability:staticCondition',
   'staticSubject:this',

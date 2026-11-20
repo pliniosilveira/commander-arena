@@ -43,6 +43,9 @@ export function playerSubject(
     case 'defendingPlayer':
       // CR 508.5, 702.86a (Annihilator): "defending player sacrifices two permanents".
       return { text: 'the defending player', base: false };
+    case 'playerToYourRight':
+      // Hithlain Rope: the previous player in turn order.
+      return { text: 'the player to your right', base: false };
     case 'triggerPlayer':
       // D-133: the player the event that caused the trigger is about.
       return { text: 'that player', base: false };
@@ -67,6 +70,12 @@ export function playerSubject(
     case 'attackedPlayers':
       // D-269 (CR 508.6): "each player this creature attacked this turn loses the game".
       return { text: 'each player this creature attacked this turn', base: false };
+    case 'combatDamagedByNamed':
+      // CR 120.2a: "each opponent dealt combat damage this game by a creature named X loses life".
+      return {
+        text: `each opponent dealt combat damage this game by a creature named ${player.name}`,
+        base: false,
+      };
     case 'all':
       // "You and target opponent each draw": every member named once, then "each".
       return {

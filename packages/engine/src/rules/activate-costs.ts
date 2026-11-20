@@ -30,11 +30,12 @@ import { crewRefusal } from './crew';
 import { derive } from './derive';
 import { discardCandidates } from './discard-cost';
 import { discardOne } from './madness';
-import { isSummoningSick, planFor } from './mana-engine';
+import { isSummoningSickToActivate, planFor } from './mana-engine';
 import { millCards } from './mill';
 import { lifeTotalIsLocked } from './player-lock';
 import { controlledCandidates, sacrificeCandidates, tapCandidates } from './sacrifice';
 import { canAssignDistinct } from './sacrifice-groups';
+import { cantBeSacrificed } from './sacrifice-prevention';
 import { untapCandidates, untappableByMana } from './untap-cost-candidates';
 import { abilityXCost, hasX, withX } from './x-value';
 import { moveObject } from './zones';
@@ -303,7 +304,7 @@ function immediateRefusal(
   if (costs.tap) {
     if (source.zone !== 'battlefield' || source.tapped) return 'it is already tapped';
     // CR 602.5a, 302.6: a creature's {T} ability needs it to have been under control since the turn began.
-    if (isSummoningSick(state, source)) return 'it is summoning sick';
+    if (isSummoningSickToActivate(state, source)) return 'it is summoning sick';
   }
   // CR 119.4: life can be paid only if the life total is at least the amount.
   // A cost of no life is payable at any life total, a negative one included (the player cannot lose the game, CR 104.3b, issue 254).
@@ -509,6 +510,8 @@ export function costRefusal(
     if (source.zone !== 'battlefield' || controllerOf(state, source) !== seat) {
       return 'you do not control it, so you cannot sacrifice it';
     }
+    // CR 701.21a, 101.2: a permanent that can't be sacrificed can't pay "Sacrifice this".
+    if (cantBeSacrificed(state, source.id)) return "it can't be sacrificed";
   } else if (parts.sacrifice !== null && parts.sacrificeAlongside.length > 0) {
     // CR 701.21a, 118.3: each part of "Sacrifice a Swamp and a Forest" needs a permanent of its own.
     if (!canAssignDistinct(sacrificeGroups(paid, seat, source.id, parts))) {

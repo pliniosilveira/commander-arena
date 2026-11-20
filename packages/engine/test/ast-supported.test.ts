@@ -47,6 +47,8 @@ const EXECUTABLE_KEYWORDS = [
   'canBeCommander', // scenario-xx-planeswalker-commander
   'ascend', // scenario-xx-ascend
   'soulbond', // scenario-xx-soulbond (D-286)
+  'daybound', // scenario-xx-day-night
+  'nightbound', // scenario-xx-day-night
   'exalted', // scenario-xx-exalted-annihilator
   'annihilator', // scenario-xx-exalted-annihilator
   'afflict', // scenario-xx-gisa-g1-afflict (D-472)
@@ -149,6 +151,8 @@ const KEYWORD_SAMPLES: Record<string, Keyword> = {
   canBeCommander: { kind: 'canBeCommander' },
   ascend: { kind: 'ascend' },
   soulbond: { kind: 'soulbond' },
+  daybound: { kind: 'daybound' },
+  nightbound: { kind: 'nightbound' },
   exalted: { kind: 'exalted' },
   annihilator: { kind: 'annihilator', count: 2 },
   afflict: { kind: 'afflict', count: 3 },
@@ -267,12 +271,15 @@ describe('supported feature gate', () => {
                     ? syntheticCard('SYNTHETIC Escalating Charm')
                     : kind === 'hideaway'
                       ? syntheticCard('SYNTHETIC Hidden Cache')
-                      : // D-151: read ahead belongs to a Saga with chapter abilities (CR 702.155b).
-                        kind === 'aftermath'
-                        ? syntheticCard('SYNTHETIC Rite // Toll')
-                        : kind === 'readAhead'
-                          ? syntheticCard('SYNTHETIC Reading Rite')
-                          : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
+                      : // CR 702.145: daybound and nightbound belong to the faces of a transforming card.
+                        kind === 'daybound' || kind === 'nightbound'
+                        ? syntheticCard('SYNTHETIC Dayfang Cub // Nightfang Wolf')
+                        : // D-151: read ahead belongs to a Saga with chapter abilities (CR 702.155b).
+                          kind === 'aftermath'
+                          ? syntheticCard('SYNTHETIC Rite // Toll')
+                          : kind === 'readAhead'
+                            ? syntheticCard('SYNTHETIC Reading Rite')
+                            : cardWithKeyword(KEYWORD_SAMPLES[kind] as Keyword);
       expect(validateCard(card), kind).toEqual([]);
     }
     for (const kind of NOT_EXECUTABLE_KEYWORDS) {
@@ -345,6 +352,7 @@ describe('supported feature gate', () => {
         'lifeGained',
         'lifeLost',
         'noncombatDamageDealt',
+        'dealtDamageToPlayer',
         'permanentSacrificed',
         'putIntoGraveyard',
         // D-648: "Whenever a player attacks one of your opponents".

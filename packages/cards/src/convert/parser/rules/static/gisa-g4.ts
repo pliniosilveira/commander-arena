@@ -89,4 +89,66 @@ export const STATIC_GRAVEYARD_ABILITY_COST_REDUCTION = defineRule<IrStatic>({
   },
 });
 
-export const GISA_G4_STATIC_RULES = [STATIC_GRAVEYARD_ABILITY_COST_REDUCTION];
+/**
+ * `static.creature-ability-cost-reduction-power`: "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in
+ * that cost to less than one mana." (issue 345, Agatha of the Vile Cauldron; CR 601.2f, 118.7, 602.2b: the generic mana of the cost of an activated ability goes down by the power of
+ * the permanent, read as the ability is activated, and never below one mana). A static ability of a permanent: the engine's `abilityCostReduction` of the creatures its controller controls,
+ * with a floor. Only both sentences together, only "creatures you control", only "~'s power". Not read: another amount, another floor, the first sentence alone, "cards in your
+ * graveyard", "more".
+ */
+export const STATIC_CREATURE_ABILITY_COST_REDUCTION_POWER = defineRule<IrStatic>({
+  id: 'static.creature-ability-cost-reduction-power',
+  family: 'static',
+  leading: ['activated'],
+  cites: [
+    'CR 601.2f (Casting Spells)',
+    'CR 602.2b (Activating Activated Abilities)',
+    'CR 118.7 (Costs)',
+    'CR 107.3c (Mana Symbols)',
+  ],
+  examples: [
+    "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana.",
+  ],
+  rejects: [
+    "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power.",
+    "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than two mana.",
+    "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s toughness. This effect can't reduce the mana in that cost to less than one mana.",
+    "Activated abilities of creatures your opponents control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana.",
+    "Activated abilities of creatures you control cost {X} more to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana.",
+    "Activated abilities of creatures you control cost {1} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana.",
+    "Activated abilities of creatures you control cost {X} less to activate, where X is ~'s power. This effect can't reduce the mana in that cost to less than one mana",
+  ],
+  parse: (ctx, pos) => {
+    const id = 'static.creature-ability-cost-reduction-power';
+    const r = pattern(
+      /activated abilities of creatures you control cost \{X\} less to activate, where X is ~['’]s power\. This effect can['’]t reduce the mana in that cost to less than one mana\./iu,
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const subject: IrNoun = {
+      kind: 'noun',
+      det: 'self',
+      filter: { raw: '~' },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start: pos, end: pos },
+      rule: id,
+    };
+    return {
+      ok: true,
+      value: {
+        kind: 'static',
+        subject,
+        effects: [{ kind: 'creatureAbilityCostReductionByPower' }],
+        span: { start: pos, end: r.pos },
+        rule: id,
+      },
+      pos: r.pos,
+    };
+  },
+});
+
+export const GISA_G4_STATIC_RULES = [
+  STATIC_GRAVEYARD_ABILITY_COST_REDUCTION,
+  STATIC_CREATURE_ABILITY_COST_REDUCTION_POWER,
+];

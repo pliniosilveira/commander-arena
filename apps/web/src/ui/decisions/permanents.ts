@@ -117,10 +117,10 @@ export function isDevour(decision: Pick<ChoosePermanentDecision, 'purpose'>): bo
 /** The bar's second line: the running total for a crew, else what to click. */
 export function permanentsDetail(
   chosen: readonly ObjectId[],
-  decision: CrewFields & Partial<Pick<ChoosePermanentDecision, 'min'>>,
+  decision: CrewFields & Partial<Pick<ChoosePermanentDecision, 'min' | 'devourQuality'>>,
 ): string {
   if (isCrew(decision)) return crewTotalText(chosen, decision);
-  if (decision.purpose === 'devour') return devourDetail(chosen.length);
+  if (decision.purpose === 'devour') return devourDetail(chosen.length, decision.devourQuality);
   // D-139: "you may tap any number of untapped Myr you control".
   if (decision.purpose === 'effect' && decision.min === 0) {
     return chosen.length === 0
@@ -351,7 +351,7 @@ export function choosePermanentPrompt(
     ChoosePermanentDecision,
     'purpose' | 'min' | 'max' | 'source' | 'forCost' | 'legal' | 'minTotalPower' | 'subject'
   > &
-    Partial<Pick<ChoosePermanentDecision, 'seat' | 'spare'>>,
+    Partial<Pick<ChoosePermanentDecision, 'seat' | 'spare' | 'devourQuality'>>,
   index: Index,
 ): string {
   if (isFight(decision)) return fightPrompt(decision, index);
@@ -362,7 +362,7 @@ export function choosePermanentPrompt(
       source?.zone === 'stack' && source.ability !== undefined
         ? `the token ${source.name} creates`
         : nameOf(index, decision.source);
-    return devourPrompt(entering);
+    return devourPrompt(entering, decision.devourQuality);
   }
   if (isSpare(decision)) return sparePrompt(decision);
   if (isCrew(decision)) {

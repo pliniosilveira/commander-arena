@@ -56,6 +56,7 @@ import {
 export {
   canTapForMana,
   isSummoningSick,
+  isSummoningSickToActivate,
   manaAbilitiesOf,
   wouldBeSummoningSick,
 } from './mana-abilities';

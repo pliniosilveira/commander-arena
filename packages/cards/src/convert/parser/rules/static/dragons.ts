@@ -121,6 +121,8 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may cast spells from the top of your library.',
     // Issue 144 (Conspicuous Snoop): a creature type.
     'You may cast Goblin spells from the top of your library.',
+    // Sliver Swarm deck, group C (Realmwalker): the creature type the permanent chose as it entered.
+    'You may cast creature spells of the chosen type from the top of your library.',
     // Death Toll deck, group D (CR 601.2b, 118.8): an additional cost for each such spell.
     'You may cast spells from the top of your library by sacrificing a nonland permanent in addition to paying their other costs.',
   ],
@@ -146,6 +148,9 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
     'You may cast Goblins spells from the top of your library.',
     'You may cast Goblin from the top of your library.',
     'You may cast Goblin Warrior spells from the top of your library. If you cast a creature spell this way, it gains haste until end of turn.',
+    'You may cast creature spells of the chosen color from the top of your library.',
+    'You may cast creature spells of the chosen type from the top of your graveyard.',
+    'You may cast creature spells of the chosen type of the chosen type from the top of your library.',
   ],
   parse: (ctx, pos) => {
     const id = 'static.cast-from-top';
@@ -169,6 +174,11 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
         { types: [] as string[], subtypes: [] as string[] },
       ),
       literal('spells'),
+      // Sliver Swarm deck, group C (Realmwalker): "creature spells of the chosen type", the creature type the permanent chose as it entered (CR 607.2d).
+      optional(
+        map(pattern(/ of the chosen type(?![\p{L}\p{N}])/iu), () => true),
+        false,
+      ),
       optional(
         map(comparisonSuffix(['power', 'toughness', 'manaValue']), (c) => c),
         undefined,
@@ -178,11 +188,12 @@ export const STATIC_CAST_FROM_TOP = defineRule<IrStatic>({
       ),
     )(ctx, pos);
     if (!r.ok) return r;
-    const [, { types, subtypes }, , compared, ended] = r.value;
+    const [, { types, subtypes }, , chosenType, compared, ended] = r.value;
     const sacrifice = /by sacrificing/iu.test(ended[0] ?? '');
     const base: IrFilter = {
       ...(types.length > 0 ? { types } : {}),
       ...(subtypes.length > 0 ? { subtypes } : {}),
+      ...(chosenType ? { chosen: 'type' as const } : {}),
       raw: ctx.text.slice(pos, r.pos),
     };
     const spells = withComparison(base, compared);

@@ -55,6 +55,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   // Stage P28 (D-131): "you and target opponent each" (several players at once), "defending player" (CR 508.5).
   players: 'selector:all',
   defendingPlayer: 'selector:defendingPlayer',
+  // "the player to your right" (Hithlain Rope).
+  playerToRight: 'selector:playerToYourRight',
   // Stage P33 (D-150): "this card".
   thisCard: 'selector:thisCard',
   // Stage P52 (D-210): "each player who discarded a card this way".
@@ -63,6 +65,8 @@ export const SELECTOR_NEEDS: Readonly<Partial<Record<IrNoun['det'], FeatureRef>>
   couldntSacrificeThisWay: 'selector:couldntSacrificeThisWay',
   // D-269: "each player ~ attacked this turn" (CR 508.6).
   attackedPlayers: 'selector:attackedPlayers',
+  // CR 120.2a: "each opponent dealt combat damage this game by a creature named ~".
+  combatDamagedByNamed: 'selector:combatDamagedByNamed',
 };
 
 /** Features a noun can need beyond its selector kind. */
@@ -131,6 +135,9 @@ export const NOUN_EXTRA_NEEDS: readonly FeatureRef[] = [
   'selector:basePowerIs',
   'selector:named',
   'selector:sharesCreatureTypeWith',
+  'selector:sharesCreatureTypeWithSource',
+  'selector:sharesCreatureTypeWithSacrificed',
+  'selector:chooseFromTriggerSources',
   'selector:sharesCardTypeWith',
   'selector:eachOtherOpponent',
   'selector:discardedThisWay',
@@ -345,9 +352,20 @@ function lowerFilterAt(
   if (filter.sharedLandType === true) return bad([]);
   // CR 202.3: "any number of ... with total mana value 6 or less" is also about the cards found together (the search lowering takes it off first).
   if (filter.anyNumberTotalManaValue !== undefined) return bad([]);
+  // CR 701.23: "any number of creature cards" is about the cards found together as well.
+  if (filter.anyNumber === true) return bad([]);
   // D-261: "that shares a creature type with it" (CR 205.3m, 603.10a): the creature a "dies" trigger is about; the engine refuses it anywhere but the filter of a `revealUntil`
   // of such a trigger (`validateCard`).
   if (filter.sharesCreatureTypeWithIt === true) parts.push('selector:sharesCreatureTypeWith');
+  // CR 205.3m, 701.21a (Descendants' Fury): "shares a creature type with the sacrificed creature", read by the engine after a sacrifice of the same text.
+  if (filter.sharesCreatureTypeWithSacrificed === true) {
+    parts.push('selector:sharesCreatureTypeWithSacrificed');
+  }
+  // CR 205.3m (Titan of Littjara): "that shares a creature type with it" of a count, the creature types of the source of the ability.
+  if (filter.sharesCreatureTypeWithSource === true) {
+    if (inner) return bad([]);
+    parts.push('selector:sharesCreatureTypeWithSource');
+  }
   // CR 205.2a, 701.21a (Braids): "shares a card type with it", the permanent an earlier sacrifice sacrificed.
   if (filter.sharesCardTypeWithSacrificed === true) parts.push('selector:sharesCardTypeWith');
   // D-181 (stage P38): "with a single target" (CR 115.9a), a spell or ability on the stack (a target slot, never a member of a choice).
@@ -535,6 +553,12 @@ function lowerFilterAt(
     ...(filter.sharesCardTypeWithSacrificed === true
       ? { sharesCardTypeWith: 'sacrificed' as const }
       : {}),
+    ...(filter.sharesCreatureTypeWithSacrificed === true
+      ? { sharesCreatureTypeWith: 'sacrificed' as const }
+      : {}),
+    ...(filter.sharesCreatureTypeWithSource === true
+      ? { sharesCreatureTypeWith: 'source' as const }
+      : {}),
     ...(targetsObject === undefined ? {} : { targetsObject }),
     ...(targetsOnly === undefined ? {} : { targetsOnly }),
     ...(attachedTo === undefined ? {} : { attachedTo }),
@@ -652,7 +676,8 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
   }
   if (countX) {
     if (
-      ctx.owner !== 'spell' ||
+      // Issue 345 (Magus of the Candelabra, CR 602.2b): an activated ability announces its X before the targets too; a triggered ability has no X to announce.
+      (ctx.owner !== 'spell' && (ctx.owner !== 'ability' || ctx.triggeredBody)) ||
       noun.filter.player !== undefined ||
       noun.filter.anyTarget === true ||
       noun.orCard !== undefined ||
@@ -1198,8 +1223,33 @@ function selectorOf(
         rule: noun.rule,
       };
     }
-    const filter = lowerFilter(noun);
-    if (!filter.ok) return filter;
+    // "Destroy each nonland permanent with mana value X or less" (CR 107.3a, 202.3): the limit is the X announced for the spell (or the X the sentence defines), read as the
+    // effect resolves; the flag is replaced by the engine's `manaValueAtMost`.
+    let eachLimit: ObjectFilter['manaValueAtMost'];
+    let eachNoun = noun;
+    if (noun.filter.manaValueAtMostX === true) {
+      const refused = gate(noun, ['selector:manaValueAtMost']);
+      if (refused !== null) return refused;
+      const defined = ctx.xIs;
+      if (defined === null) {
+        ctx.usesX = true;
+        eachLimit = { kind: 'x' };
+      } else {
+        defined.used = true;
+        const amount = defined.lower === undefined ? failure(noun, []) : defined.lower();
+        if (!amount.ok) return amount;
+        eachLimit = amount.value;
+      }
+      const { manaValueAtMostX: _x, ...rest } = noun.filter;
+      void _x;
+      eachNoun = { ...noun, filter: rest };
+    }
+    const lowered = lowerFilter(eachNoun);
+    if (!lowered.ok) return lowered;
+    const filter =
+      eachLimit === undefined
+        ? lowered
+        : { ...lowered, value: { ...lowered.value, manaValueAtMost: eachLimit } };
     // "Target player's graveyard": the cards in it, selected by their owner (CR 108.3, 404.1).
     if (noun.of !== undefined) {
       const owned = gate(noun, ['selector:ownerRef']);
@@ -1258,6 +1308,10 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'defendingPlayer' });
     }
+    case 'playerToRight': {
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'playerToYourRight' });
+    }
     case 'discardedThisWay': {
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'discardedThisWay' });
@@ -1273,6 +1327,14 @@ export function playerSelectorOf(noun: IrNoun, ctx: LowerContext): LowerResult<P
       if (ctx.owner !== 'ability') return failure(noun, []);
       const blocked = gate(noun, need === undefined ? [] : [need]);
       return blocked ?? ok({ kind: 'attackedPlayers', of: { kind: 'this' } });
+    }
+    case 'combatDamagedByNamed': {
+      // CR 120.2a, 510.2: the creature is named like the card of the ability (`~`), so the name is the one the text is of.
+      // The tilde is the name the text wrote: the short name it used, or the whole name when it said "named" and then that (a card with a short name too, "Gollum, Obsessed Stalker").
+      const name = ctx.selfName !== '' ? ctx.selfName : ctx.namedWholeName ? ctx.cardName : '';
+      if (name === '') return failure(noun, []);
+      const blocked = gate(noun, need === undefined ? [] : [need]);
+      return blocked ?? ok({ kind: 'combatDamagedByNamed', name });
     }
     case 'players': {
       // D-131: "you and target opponent each draw two cards": several players at once, each acting once, in the

@@ -458,6 +458,7 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control have vigilance.',
     'Other creatures you control get +1/+1 and have flying.',
     'Other Elves you control get +1/+1.',
+    'Other Wolves and Werewolves you control have trample.',
     'Creatures your opponents control get -1/-1.',
     'Legendary creatures you control get +1/+1.',
     'Elves you control get +1/+1.',
@@ -467,6 +468,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Lands you control have "{T}: Add {G}."',
     'Other creatures you control have base power and toughness 5/3 and are Juggernauts in addition to their other creature types.',
     "Juggernauts you control can't be blocked by Walls.",
+    // Issue 133 (Shifting Sliver, CR 509.1b): the blockers are the creatures that are not of the type.
+    "Slivers can't be blocked except by Slivers.",
     'Creatures you control are Zombies in addition to their other creature types.',
     'Nontoken creatures you control are Forest lands in addition to their other types.',
     'Commanders you control have hexproof.',
@@ -476,6 +479,8 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'Creatures you control that are Zombies and/or tokens get +1/+1 and have flying.',
   ],
   rejects: [
+    "Slivers can't be blocked except by creatures with flying.",
+    "Slivers can't be blocked except by Slivers you control.",
     'Zombie tokens you control have flash.',
     'Zombie token you control has haste.',
     'Treasure tokens you control have haste.',
@@ -503,9 +508,13 @@ export const STATIC_PERMANENTS = defineRule<IrStatic>({
     'static.permanents',
     [
       'noun.plain-permanents',
+      // Issue 345 (Tavern Brawler): "Commander creatures you own have ...".
+      'noun.commander-creatures-you-own',
       'noun.other-permanents',
       'noun.other-subtype-permanents',
       'noun.subtype-union',
+      // Issue 345 (Hound Tamer // Untamed Pup): "Other Wolves and Werewolves you control have trample."
+      'noun.other-subtype-pair',
       // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control get +1/+1 and have menace."
       'noun.subtype-pair',
       // Issue 104 (Eternal Might deck): "Creatures you control that are Zombies and/or tokens get +1/+1 and have flying."
