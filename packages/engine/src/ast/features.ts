@@ -234,6 +234,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'removeAllCounters',
     // Nexus Mentality: "Move all counters from target nonland permanent you control onto another target nonland permanent you control" (CR 122.1, 122.6).
     'moveAllCounters',
+    // CR 122.5, 122.1 (Nesting Grounds, Eventide's Shadow, Glissa Sunslayer): the controller chooses which counters to move or remove.
+    'moveCounter',
+    'removeChosenCounters',
     'removeAllPlayerCounters',
     // Galadriel group 3: "Remove a number of loyalty counters equal to that card's mana value from ~" (CR 122.1).
     'removeCounters',
@@ -2561,6 +2564,8 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   untap: true,
   removeAllCounters: true,
   moveAllCounters: true,
+  moveCounter: true,
+  removeChosenCounters: true,
   removeCounters: true,
   removeAllPlayerCounters: true,
   gainEnergy: true,

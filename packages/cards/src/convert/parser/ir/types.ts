@@ -167,6 +167,11 @@ export interface IrNoun extends IrNode {
    */
   readonly otherTarget?: true;
   /**
+   * "a third target creature" after "target creature" and "another target creature" (Incremental Blight, CR 115.3): with `otherTarget`, none of the targets of any slot before
+   * this one, not only the slot just before it.
+   */
+  readonly otherTargetAll?: true;
+  /**
    * "attach ~ to it" (CR 701.3, 603.2): the word was "it", which names the token the sentence made and, where it made none, the object the trigger is about (Hero's
    * Blade: "Whenever a legendary creature you control enters, you may attach ~ to it").
    */
@@ -519,7 +524,7 @@ export type IrAmount =
   | {
       readonly kind: 'aggregate';
       readonly how: 'greatest' | 'total';
-      readonly stat: 'power' | 'toughness' | 'manaValue';
+      readonly stat: 'power' | 'toughness' | 'manaValue' | 'counters';
       readonly of: IrNoun;
       /** "... as you cast this spell" (stage P32, D-147, CR 601.2d): read once, as the spell is cast, not as it resolves. */
       readonly asCast?: true;

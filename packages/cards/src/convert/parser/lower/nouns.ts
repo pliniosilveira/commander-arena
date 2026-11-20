@@ -943,6 +943,12 @@ function declareTarget(noun: IrNoun, ctx: LowerContext): LowerResult<string> {
                       what: { kind: 'object', filter: filter.value },
                       ...boundsOf(noun),
                       ...(apart === undefined ? {} : { differentFrom: apart }),
+                      // "a third target creature" (CR 115.3): also none of the targets of the slots before the nearest one.
+                      ...(apart === undefined ||
+                      noun.otherTargetAll !== true ||
+                      ctx.targets.length < 2
+                        ? {}
+                        : { alsoDifferentFrom: ctx.targets.slice(0, -1).map((t) => t.id) }),
                     };
     }
     ctx.targets.push(spec);

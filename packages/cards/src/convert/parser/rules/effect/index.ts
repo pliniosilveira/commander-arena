@@ -42,6 +42,7 @@ import { COPY_ONE_OF_THEM_EFFECT_RULES } from './copy-one-of-them';
 import { EFFECT_COPY_SPELL } from './copy-spell';
 import { COPY_SPELL_TWICE_EFFECT_RULES } from './copy-spell-twice';
 import { COUNCIL_EFFECT_RULES } from './council';
+import { COUNTER_CHOICE_RULES } from './counter-choice';
 import { COUNTER_RULES } from './counters';
 import { CROSS_ZONE_EFFECT_RULES } from './cross-zone';
 import { DACK_EFFECT_RULES } from './dack';
@@ -1241,6 +1242,7 @@ export const EFFECT_RULES = [
   ...ADDITIONAL_LAND_EFFECT_RULES,
   ...RAMP_LANDS_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,
+  ...COUNTER_CHOICE_RULES,
   ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,
   // Issue 160 (D-628): "Each player gains control of all creatures they own."

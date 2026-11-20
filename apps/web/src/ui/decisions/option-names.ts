@@ -50,6 +50,14 @@ export function isVoteChoice(d: Asked): boolean {
   return d.purpose === 'vote';
 }
 
+/**
+ * True for "Remove any number of counters from among permanents" and "Move a counter from ... onto ..." (CR 122.1, 122.5, 608.2d): the controller takes one counter at a time. The options
+ * are the counters that may be taken ("+1/+1 counter on Grizzly Bears") and, when they may stop, "Done".
+ */
+export function isCounterPickChoice(d: Asked): boolean {
+  return d.purpose === 'counterPick';
+}
+
 /** True for the choice of a Saga with read ahead (CR 702.155b): every option is a chapter number. */
 export function isChapterChoice(d: Asked): boolean {
   return d.purpose === 'option' && d.options.length > 0 && d.options.every((o) => /^\d+$/.test(o));
@@ -110,6 +118,8 @@ export function namedOptionPrompt(
   if (isVoteChoice(d)) return votePrompt(d.options, d.vote, d.seat);
   if (isRiotChoice(d)) return riotPrompt(d.sourceName, d.riotSoFar ?? []);
   if (isReplacementChoice(d)) return replacementPrompt(d.replacement);
+  // CR 122.1, 122.5: the permanent and kind of counter taken, asked again while another may be.
+  if (isCounterPickChoice(d)) return `Choose a counter for ${d.sourceName}.`;
   if (isEffectChoice(d)) {
     // D-585 (CR 105.1, 608.2d): "Choose a color." offers the five colors of the game.
     return d.options.join(',') === 'white,blue,black,red,green'
@@ -281,6 +291,9 @@ export function namedOptionRows(
     isProtectionCardTypeChoice(d)
   ) {
     return d.options.map((option) => ({ option, label: capitalised(option), detail: null }));
+  }
+  if (isCounterPickChoice(d)) {
+    return d.options.map((option) => ({ option, label: option, detail: null }));
   }
   if (isProtectionColorChoice(d)) {
     return d.options.map((option) => ({ option, label: colorName(option), detail: null }));

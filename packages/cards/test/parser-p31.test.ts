@@ -870,7 +870,8 @@ describe('costs and restrictions (CR 118.3, 601.2f, 602.5b)', () => {
       '{T}: Add {G}. This ability costs {1} less to activate for each creature you control.',
       'land',
     ],
-    ['Put a page counter on ~: Draw a card.', 'artifact'],
+    // Devoted Druid (blight curse): "Put a -1/-1 counter on ~: Untap ~." is read now; counters on another object are not a cost the engine pays.
+    ['Put a page counter on target artifact: Draw a card.', 'artifact'],
     ["{1}, Return an artifact to its owner's hand: Draw a card.", 'artifact'],
     ["{1}, Return an artifact an opponent controls to its owner's hand: Draw a card.", 'artifact'],
     [

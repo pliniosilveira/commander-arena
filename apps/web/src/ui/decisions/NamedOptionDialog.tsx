@@ -4,6 +4,7 @@ import { Dialog } from './Dialog';
 import {
   CHAPTER_HINT,
   isChapterChoice,
+  isCounterPickChoice,
   isEffectChoice,
   isMeldOrderChoice,
   isProtectionCardTypeChoice,
@@ -54,7 +55,9 @@ export function NamedOptionDialog({
                     ? 'Choose a color'
                     : isProtectionCardTypeChoice(d)
                       ? 'Choose a card type'
-                      : 'Choose an option'
+                      : isCounterPickChoice(d)
+                        ? 'Choose a counter'
+                        : 'Choose an option'
       }
       className="dec-option dec-named"
     >

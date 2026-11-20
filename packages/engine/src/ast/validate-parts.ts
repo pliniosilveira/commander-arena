@@ -1195,6 +1195,21 @@ export function declareTargets(
         );
       }
     }
+    if (spec.alsoDifferentFrom !== undefined) {
+      // CR 115.3: more earlier slots of the same ability the targets of this one differ from; a nearest slot (`differentFrom`) goes with them.
+      if (
+        spec.differentFrom === undefined ||
+        !Array.isArray(spec.alsoDifferentFrom) ||
+        spec.alsoDifferentFrom.length === 0 ||
+        spec.alsoDifferentFrom.some((id) => typeof id !== 'string' || !declared.has(id))
+      ) {
+        issue(
+          out,
+          `${p}.alsoDifferentFrom`,
+          'alsoDifferentFrom names earlier target slots of the same ability, with differentFrom',
+        );
+      }
+    }
     if (spec.ownedByTarget !== undefined) {
       // CR 115.1, 608.2b: cards in the graveyard of the player an earlier slot of the ability targets.
       if (typeof spec.ownedByTarget !== 'string' || declared.get(spec.ownedByTarget) !== 'player') {
@@ -1624,7 +1639,7 @@ const THIS_WAY_SOURCES: Readonly<Record<ThisWayKind, string>> = {
   discardedMost: 'a discard effect',
   damageDealt: 'a dealDamage effect',
   excessDamageDealt: 'a dealDamage effect',
-  countersRemoved: 'a removeAllCounters effect',
+  countersRemoved: 'a removeAllCounters or removeChosenCounters effect',
   searched: 'a search effect',
   exiledPowerOwn: 'an exile effect',
   destroyedCreaturesOfAffected: 'a destroy effect',
@@ -1664,7 +1679,9 @@ function thisWayProduced(e: Effect): ThisWayKind[] {
     ];
   if (e?.kind === 'mill') return ['milledValue', 'milledCreature'];
   if (e?.kind === 'dealDamage') return ['damageDealt', 'excessDamageDealt'];
-  if (e?.kind === 'removeAllCounters') return ['countersRemoved'];
+  if (e?.kind === 'removeAllCounters' || e?.kind === 'removeChosenCounters') {
+    return ['countersRemoved'];
+  }
   // Oversimplify: the creatures an exile really exiled, by controller.
   if (e?.kind === 'exile') return ['exiledPowerOwn', 'exiledCreatures'];
   // Lorehold group 1: "If you search your library this way, shuffle."
@@ -1903,7 +1920,7 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
           `an aggregate is "greatest" or "total", not ${JSON.stringify(a.how)}`,
         );
       }
-      if (!isOneOf(a.stat, ['power', 'toughness', 'manaValue'])) {
+      if (!isOneOf(a.stat, ['power', 'toughness', 'manaValue', 'counters'])) {
         issue(out, `${path}.stat`, `unknown stat ${JSON.stringify(a.stat)}`);
       }
       if (a.filter === undefined || a.filter === null) {
@@ -5866,6 +5883,18 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'removeAllPlayerCounters':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       break;
+    case 'moveCounter':
+      // CR 122.5: both permanents are targets of the ability (or the permanent with it), as for `moveAllCounters`.
+      checkRef(e.from, 'object', `${path}.from`, scope, out);
+      checkRef(e.to, 'object', `${path}.to`, scope, out);
+      break;
+    case 'removeChosenCounters':
+      // CR 122.1, 608.2d: the permanents the counters may come off, and at most `upTo` of them.
+      checkObjectSelector(e.objects, `${path}.objects`, scope, out);
+      if (e.upTo !== undefined && (!isCount(e.upTo) || e.upTo < 1)) {
+        issue(out, `${path}.upTo`, 'upTo must be a positive integer');
+      }
+      break;
     case 'moveAllCounters':
       // CR 122.1: both permanents are targets of the ability (or the triggering permanent), as for a copy that names its original.
       checkRef(e.from, 'object', `${path}.from`, scope, out);
@@ -7194,7 +7223,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'doubleCounters':
       checkAffectedObjects(e.objects, `${path}.objects`, scope, out);
-      if (typeof e.counter !== 'string' || e.counter === '') {
+      if (e.counter !== undefined && (typeof e.counter !== 'string' || e.counter === '')) {
         issue(out, `${path}.counter`, 'counter name must be non-empty');
       }
       break;

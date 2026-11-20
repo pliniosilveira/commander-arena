@@ -177,7 +177,7 @@ export interface TargetChoiceSpec {
   readonly ownedBy?: string;
   /** "Each of up to two other targets" (`TargetSpec.differentFrom`, D-151): no target of this slot is a target chosen for the slot with this id. */
   readonly differentFrom?: string;
-  /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes). */
+  /** "Each mode must target a different player" (`ModeChoice.differentTargets`, CR 700.2d): no target of this slot is a target chosen for any slot with one of these ids (the slots of the other chosen modes, or, with `TargetSpec.alsoDifferentFrom`, more earlier slots of the ability: "a third target creature"). */
   readonly differentFromAll?: readonly string[];
   /**
    * The slot as the card words it (the `TargetSpec` it came from, public like the card's text): the interface reads "target creature you control" from it so a
@@ -860,8 +860,20 @@ export interface ChooseOptionDecision extends DecisionBase {
     | 'meldOrder'
     | 'pile'
     | 'protectionColor'
-    | 'protectionCardType';
+    | 'protectionCardType'
+    | 'counterPick';
   readonly options: readonly string[];
+  /**
+   * For purpose `'counterPick'` (CR 122.1, 122.5, 608.2d, "Remove any number of counters from among permanents on the battlefield", "Move a counter from target permanent onto a second
+   * target permanent"): the controller of the resolving spell or ability (`seat`) takes one counter. Each entry is the counter an option stands for, in the order of `options`: the permanent
+   * it is on, its kind and how many of the kind the permanent has. A last option with no entry (when the effect takes "any number" or "up to") stops taking counters. The answer is a
+   * `chooseOption` action and cannot be taken back. Absent for the other purposes.
+   */
+  readonly counterPicks?: readonly {
+    readonly object: ObjectId;
+    readonly counter: string;
+    readonly count: number;
+  }[];
   /**
    * For purpose `'protectionColor'` (D-451, CR 702.16, 608.2d, "gains protection from the color of your choice"): the controller of the resolving spell or
    * ability chooses one of the five colors (`options` are `W`, `U`, `B`, `R`, `G`, in that order) and the permanents in `protects` gain protection from it

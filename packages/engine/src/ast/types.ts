@@ -209,7 +209,11 @@ export type Amount =
   | {
       readonly kind: 'aggregate';
       readonly how: 'greatest' | 'total';
-      readonly stat: 'power' | 'toughness' | 'manaValue';
+      /**
+       * `counters` (CR 122.1, 608.2c; "the number of counters among creatures target player controls"): the counters of every kind on the object, added together; an
+       * object with none counts 0, so no object is left out.
+       */
+      readonly stat: 'power' | 'toughness' | 'manaValue' | 'counters';
       readonly filter: ObjectFilter;
     }
   /**
@@ -1261,6 +1265,11 @@ export interface TargetSpec {
    * otherwise share a target.
    */
   readonly differentFrom?: string;
+  /**
+   * "Put a -1/-1 counter on target creature, two -1/-1 counters on another target creature, and three -1/-1 counters on a third target creature" (CR 115.3): also none of the
+   * targets of these earlier slots of the same ability (`differentFrom` names the nearest one; a third target differs from both). Only with `differentFrom`.
+   */
+  readonly alsoDifferentFrom?: readonly string[];
   /**
    * "When you do, up to that many target creatures gain double strike" (CR 603.12, 601.2c, D-187): the slot takes up to as many targets as the
    * resolution that created this reflexive ability sacrificed permanents (none to that many); the number is fixed as the ability is created, and
@@ -3196,6 +3205,24 @@ export type Effect =
    */
   | { readonly kind: 'moveAllCounters'; readonly from: ObjectRef; readonly to: ObjectRef }
   /**
+   * "Move a counter from target permanent you control onto a second target permanent" (CR 122.5, 122.1, 608.2d; Nesting Grounds): exactly one counter comes off the permanent `from`
+   * names and is put on the one `to` names; the controller chooses its kind (a `chooseOption` decision of purpose `counterPick`, not asked when only one kind can go). A kind the second
+   * permanent can't have (CR 122.6) can't be chosen. Nothing is moved when the two are the same permanent, the first has no counter the second can have, or either is no longer on the
+   * battlefield as the effect runs (CR 122.5).
+   */
+  | { readonly kind: 'moveCounter'; readonly from: ObjectRef; readonly to: ObjectRef }
+  /**
+   * "Remove any number of counters from among permanents on the battlefield" and "Remove up to three counters from target permanent" (CR 122.1, 608.2d; Eventide's Shadow, Glissa
+   * Sunslayer): the controller takes counters of any kind off the permanents `objects` names, one at a time, choosing the permanent and the kind each time (a `chooseOption` decision of
+   * purpose `counterPick`), as many as they like up to `upTo` (any number when it is left out) and no more than the permanents have. The counters taken are counted for `thisWay`
+   * `countersRemoved` ("equal to the number of counters removed this way"), one `counterRemoved` event for each. A permanent that has left the battlefield by the time the effect runs is skipped.
+   */
+  | {
+      readonly kind: 'removeChosenCounters';
+      readonly objects: ObjectSelector;
+      readonly upTo?: number;
+    }
+  /**
    * "Each player may discard their hand and draw seven cards" and "target opponent may have you draw three cards. If the player doesn't, ..." (D-210, CR 608.2d,
    * 101.4): each player `players` names, in the order CR 101.4 gives, is asked whether to do `effect`; a player who accepts has it done, a player who declines
    * has `otherwise` done, if there is one. `effect` is done by the controller of the ability, or, with `runsAs: 'chooser'`, by the player asked (they are "you" in
@@ -3271,12 +3298,13 @@ export type Effect =
   /**
    * "Double the number of +1/+1 counters on target creature you control" (CR 701.10 Double, CR 122.6): each object `objects` names that has
    * `counter` counters, as the effect resolves, gets as many more of them as it has (each its own count). Counters it can't have (CR 122.6,
-   * 101.2) are not put; an object with none gets none.
+   * 101.2) are not put; an object with none gets none. With no `counter` ("Double the number of each kind of counter on target creature", Ferrafor): every kind of counter
+   * the object has as the effect resolves is doubled, each its own count.
    */
   | {
       readonly kind: 'doubleCounters';
       readonly objects: ObjectSelector;
-      readonly counter: string;
+      readonly counter?: string;
     }
   | {
       readonly kind: 'modifyPt';

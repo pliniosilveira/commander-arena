@@ -121,10 +121,12 @@ export function isStateAmount(amount: Exclude<Amount, number>): amount is StateA
 export function statOf(
   state: GameState,
   id: ObjectId,
-  stat: 'power' | 'toughness' | 'manaValue',
+  stat: 'power' | 'toughness' | 'manaValue' | 'counters',
 ): number | null {
   const obj = state.objects[id];
   if (obj === undefined) return null;
+  // CR 122.1: counters belong to no layer; every kind on the object counts.
+  if (stat === 'counters') return Object.values(obj.counters).reduce((n, c) => n + c, 0);
   const d = derive(state, obj);
   if (stat === 'power') return d.power;
   if (stat === 'toughness') return d.toughness;
