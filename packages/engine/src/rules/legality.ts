@@ -41,6 +41,7 @@ import { graveyardPlayPermission } from './graveyard-play';
 import { harmonizeWays } from './harmonize';
 import { hasKeyword } from './keywords';
 import { asFace, castableFaces, choosesFace } from './layouts';
+import { libraryLandPermission } from './library-play';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
 import { hasGrantedFlashCasting } from './player-flash';
@@ -255,7 +256,11 @@ export function canPlayLand(state: GameState, seat: SeatId, obj: GameObject, fac
     obj.zone === 'graveyard' &&
     (mayPlayFromGraveyard(state, seat, obj, true) ||
       graveyardPlayPermission(state, seat, obj, true) !== null);
-  if (!fromExile && !fromGraveyard && (obj.zone !== 'hand' || obj.owner !== seat)) return false;
+  // CR 305.1, 401.5: the top card of the library, when a permanent lets its controller play lands from there ("You may play lands from the top of your library").
+  const fromLibrary = libraryLandPermission(state, seat, obj);
+  if (!fromExile && !fromGraveyard && !fromLibrary && (obj.zone !== 'hand' || obj.owner !== seat)) {
+    return false;
+  }
   if (!castableFaces(definitionOf(state, obj.card)).includes(face)) return false;
   if (!derive(state, asFace(obj, face)).types.includes('land')) return false;
   if (!hasSorceryTiming(state, seat)) return false; // CR 305.1, 305.3
@@ -1008,9 +1013,13 @@ export function playableLands(state: GameState, seat: SeatId): FaceOption[] {
       mayPlayFromGraveyard(state, seat, getObject(state, id)) ||
       graveyardPlayPermission(state, seat, getObject(state, id), true) !== null,
   );
+  // CR 305.1, 401.5: the top card of the library (`playLandsFromTopOfLibrary`).
+  const top = getSeat(state, seat).library[0];
+  const fromLibrary =
+    top !== undefined && libraryLandPermission(state, seat, getObject(state, top)) ? [top] : [];
   return faceOptions(
     state,
-    [...zoneList(state, 'hand', seat), ...fromExile, ...fromGraveyard],
+    [...zoneList(state, 'hand', seat), ...fromExile, ...fromGraveyard, ...fromLibrary],
     (obj, face) => canPlayLand(state, seat, obj, face),
   );
 }

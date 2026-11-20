@@ -190,6 +190,23 @@ export function lowerCondition(
       ctx.meldPartner = test.name;
       return ok({ kind: 'ownsAndControlsNamed', name: test.name, type: test.type as CardType });
     }
+    case 'cardsExiledWithSelf': {
+      // CR 603.4, 607.2a (Valakut Exploration): "if there are cards exiled with ~" is the intervening "if" of a triggered ability: at least one card the permanent exiled with its
+      // linked ability is still in exile, read as the ability triggers and again as it resolves. The cards it leaves for "put them into their owner's graveyard" to name.
+      const blocked = missingFeatures([
+        'condition:amountIs',
+        'amount:countOf',
+        'selector:exiledWithSource',
+      ]);
+      if (blocked.length > 0) return failure(c, blocked);
+      if (ctx?.interveningCondition !== true) return failure(c, []);
+      ctx.exiledWithCondition = true;
+      return ok({
+        kind: 'amountIs',
+        amount: { kind: 'countOf', filter: { zone: 'exile', exiledWithSource: true } },
+        compare: { cmp: 'atLeast', value: 1 },
+      });
+    }
     case 'thisInYourGraveyard': {
       // CR 113.6b, 603.4 (D-271): "if ~ is in your graveyard" is read only as the intervening "if" of a triggered ability (the lowering of the trigger then
       // requires that the ability works from the graveyard); anywhere else it is a test the engine does not run for that shape.

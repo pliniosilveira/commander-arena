@@ -265,10 +265,85 @@ export const NOUN_THOSE_CREATURES = defineRule<IrNoun>({
   ),
 });
 
+/**
+ * `noun.each-permanent-of-target-player`: "each creature target player controls", "each nonland permanent target opponent controls" (Geode Rager, CR 109.4, 110.1, 115.1, 608.2c): the
+ * singular "each" form of `noun.all-permanents-of-target-player`, the same group: every permanent of the kind that the player chosen as a target controls, fixed as the effect
+ * resolves. The player is a target noun of its own, numbered with the other targets of the text (the engine's `controlledBy` of that target). Not read: "all", a plural after
+ * "each", "other", no controller words, "you control" or "your opponents control" (the plain `noun.each-permanent`), "target players", "that player controls" (the plain
+ * `noun.each-permanent-of-player`), a controller said twice.
+ */
+export const NOUN_EACH_PERMANENT_OF_TARGET_PLAYER = defineRule<IrNoun>({
+  id: 'noun.each-permanent-of-target-player',
+  family: 'noun',
+  leading: ['each'],
+  cites: [
+    'CR 109.4 (Objects)',
+    'CR 110.1 (Permanents)',
+    'CR 115.1 (Targets)',
+    'CR 608.2c (Resolving Spells and Abilities)',
+  ],
+  examples: [
+    'each creature target player controls',
+    'each creature target opponent controls',
+    'each nonland permanent target player controls',
+  ],
+  rejects: [
+    'each creature',
+    'each creature you control',
+    'each creature your opponents control',
+    'all creatures target player controls',
+    'each creatures target player controls',
+    'each other creature target player controls',
+    'each creature target players control',
+    'each creature that player controls',
+    'each creature target player',
+    'each creature you control target player controls',
+    'each creature target creature controls',
+  ],
+  parse: (ctx, pos) => {
+    // Looked at first, so that a plain "each creature" stops where it always did (the words of the other `each` nouns).
+    const ahead = pattern(/(?=each [^.,;:]*? target (?:player|opponent) controls)/iu)(ctx, pos);
+    if (!ahead.ok) return ahead;
+    const r = sequence(
+      literal('each '),
+      permanentPhrase(false, 'all'),
+      spanned(pattern(new RegExp(` target (player|opponent) controls${BOUNDARY}`, 'iu'))),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const [, filter, suffix] = r.value;
+    if (filter.controller !== undefined) return fail(ctx, pos);
+    const start = suffix.span.start + 1;
+    const wanted = (suffix.value[1] ?? '').toLowerCase();
+    const word = `target ${wanted}`;
+    const player: IrNoun = {
+      kind: 'noun',
+      det: 'target',
+      filter: { player: wanted === 'opponent' ? 'opponent' : 'any', raw: word },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: { start, end: start + word.length },
+      rule: 'noun.each-permanent-of-target-player',
+    };
+    const noun: IrNoun = {
+      kind: 'noun',
+      det: 'each',
+      filter: { ...filter, controller: { noun: player }, raw: ctx.text.slice(pos, r.pos) },
+      upTo: false,
+      plural: true,
+      other: false,
+      span: { start: pos, end: r.pos },
+      rule: 'noun.each-permanent-of-target-player',
+    };
+    return { ok: true, value: noun, pos: r.pos };
+  },
+});
+
 /** Before `noun.all-permanents`, whose phrase ("all creatures") is the first words of the first. */
 export const HYLDA_G2_EARLY_NOUN_RULES = [
   NOUN_ALL_PERMANENTS_OF_TARGET_PLAYER,
   NOUN_GROUP_OF_TARGET_PLAYER,
+  NOUN_EACH_PERMANENT_OF_TARGET_PLAYER,
 ];
 /** Before `noun.target-permanent`, whose phrase ("target creature") is the first words of the first. */
 export const HYLDA_G2_TARGET_NOUN_RULES = [NOUN_TARGET_PERMANENT_OF_THAT_PLAYER];

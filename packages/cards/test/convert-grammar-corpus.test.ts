@@ -212,11 +212,17 @@ const SPELLS: readonly Line[] = [
   {
     kind: 'instant',
     text: 'Add one mana of any color.',
-    expect: no('one mana of any color.', 'effect.add-mana', {
+    expect: OK,
+    note: 'a spell or a stack ability chooses the color as it resolves (a `chooseOne` of the five colors, Lotus Cobra); a mana ability chooses while paying',
+  },
+  {
+    kind: 'instant',
+    text: 'Choose a color.',
+    expect: no('Choose a color.', 'effect.choose-color', {
       reason: 'notRunnable',
       needs: ['selector:colorChoice'],
     }),
-    note: 'read, but the interpreter has no color choice while a spell resolves (a mana ability chooses while paying)',
+    note: 'read, but the interpreter has no color choice that a later instruction reads (a mana ability chooses while paying)',
   },
 
   // Structure and everything the engine has no node for

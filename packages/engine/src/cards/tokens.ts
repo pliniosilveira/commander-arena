@@ -95,11 +95,41 @@ export const INCUBATOR_TOKEN: TokenDefinition = {
   },
 };
 
+/**
+ * CR 111.10u (Lander token): "A Lander token is a colorless Lander artifact token with '{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the
+ * battlefield tapped, then shuffle.'"
+ */
+const LANDER_TOKEN: TokenDefinition = artifactToken(
+  'Lander',
+  '{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
+  [
+    {
+      kind: 'activated',
+      cost: [
+        { kind: 'mana', symbols: ['2'] },
+        { kind: 'tap' },
+        { kind: 'sacrifice', what: { kind: 'this' } },
+      ],
+      effect: {
+        kind: 'search',
+        player: { kind: 'you' },
+        filter: { types: ['land'], supertypes: ['basic'] },
+        max: 1,
+        destinations: [{ zone: 'battlefield', tapped: true, count: 1 }],
+        reveal: false,
+        shuffle: true,
+      },
+    },
+  ],
+);
+
 export const TOKEN_PRESETS: Readonly<Record<TokenPreset, TokenDefinition>> = {
   // Issue 81: the token of Ginger, Queen of Sweets and the cards like it.
   Gingerbrute: GINGERBRUTE_TOKEN,
   // CR 111.10i, 701.53b (issue 81): the token of Incubate.
   Incubator: INCUBATOR_TOKEN,
+  // CR 111.10u (Edge of Eternities: Horizon Explorer, Seedship Impact, Larval Scoutlander).
+  Lander: LANDER_TOKEN,
   // CR 111.10a: "{T}, Sacrifice this token: Add one mana of any color."
   Treasure: artifactToken('Treasure', '{T}, Sacrifice this token: Add one mana of any color.', [
     {

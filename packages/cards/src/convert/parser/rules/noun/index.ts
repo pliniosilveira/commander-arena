@@ -24,6 +24,7 @@ import { ATTACKING_YOU_NOUN_RULES } from './attacking-you';
 import { AURA_GRAVEYARD_NOUN_RULES } from './aura-graveyard';
 import { CHOOSE_NOUN_RULES, NOUN_UP_TO_GRAVEYARD_CARDS, NOUN_UP_TO_ONE_PERMANENT } from './choose';
 import { NOUN_EACH_EXILED_CONTROLLER, NOUN_ITS_CONTROLLER } from './controller';
+import { CREATURE_LAND_PAIR_NOUN_RULES } from './creature-land-pair';
 import { CROSS_ZONE_NOUN_RULES } from './cross-zone';
 import { DANITHA_G3_NOUN_RULES } from './danitha-g3';
 import { DESTINY_EARLY_NOUN_RULES } from './destiny';
@@ -857,6 +858,8 @@ export const NOUN_RULES = [
   NOUN_SUBTYPE_UNION,
   // D-468 (Gisa deck, group 2): "Skeletons and Zombies you control", which `noun.plain-permanents` would stop in the middle of.
   ...GISA_G2_NOUN_RULES,
+  // Issue 347: "Treefolk and Forests you control".
+  ...CREATURE_LAND_PAIR_NOUN_RULES,
   // Issue 104 (Eternal Might deck): "creatures you control that are Zombies and/or tokens", which `noun.plain-permanents` would stop in the middle of.
   ...ETERNAL_MIGHT_NOUN_RULES,
   NOUN_PLAIN_PERMANENTS,

@@ -109,6 +109,7 @@ describe('amounts that read an object', () => {
       'sum',
       'extreme',
       'opponentCount',
+      'movedCount',
       'opponentsWithMore',
       'thisWay',
       // D-133.

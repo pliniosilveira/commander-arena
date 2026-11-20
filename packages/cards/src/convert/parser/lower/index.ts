@@ -25,6 +25,7 @@ import { DESTINY_NEEDS } from './destiny';
 import { DRAGON_NEEDS } from './dragons';
 import { EFFECT_LOWERINGS } from './effects';
 import { SEARCH_NEEDS } from './effects-more';
+import { EXILED_WITH_NEEDS } from './exiled-with';
 import type { FeatureRef } from './features';
 import { FINALE_NEEDS } from './finale';
 import { GIDEON_NEEDS } from './gideon';
@@ -162,6 +163,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     ...PLANESWALKER_NEEDS,
     ...DESTINY_NEEDS,
     ...MELD_NEEDS,
+    ...EXILED_WITH_NEEDS,
     ...ADAMANTOISE_NEEDS,
     ...CONDITION_NEEDS,
     ...SENTENCE_NEEDS,
@@ -174,6 +176,7 @@ export const DECLARED_NEEDS: readonly FeatureRef[] = [
     'token:Map',
     'token:Gingerbrute',
     'token:Incubator',
+    'token:Lander',
     'token:Blood',
     'token:custom',
     'token:copyOf',

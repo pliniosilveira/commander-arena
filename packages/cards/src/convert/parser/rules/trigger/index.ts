@@ -31,6 +31,7 @@ import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
+import { DEALS_DAMAGE_TRIGGER_RULES } from './deals-damage';
 import { DEATH_TOLL_B_TRIGGER_RULES } from './death-toll-b';
 import { DEATH_TOLL_D_TRIGGER_RULES } from './death-toll-d';
 import { DINOSAUR_TRIGGER_RULES } from './dinosaurs';
@@ -1234,6 +1235,8 @@ export const TRIGGER_RULES = [
   TRIGGER_UPKEEP,
   TRIGGER_END_STEP,
   ...EVENT_TRIGGER_RULES,
+  // Issue 347: "enchanted creature deals damage to an opponent".
+  ...DEALS_DAMAGE_TRIGGER_RULES,
   // Issue 25 (D-333): "a source you control deals noncombat damage to an opponent".
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".

@@ -10,6 +10,7 @@ import { ADAMANTOISE_REPLACEMENT_RULES } from './adamantoise';
 import { ANGEL_REPLACEMENT_RULES } from './angels';
 import { COPY_EXCEPT_REPLACEMENT_RULES } from './copy-except';
 import { COUNTERS_PLUS_REPLACEMENT_RULES } from './counters-plus';
+import { DAMAGE_BONUS_REPLACEMENT_RULES } from './damage-bonus';
 import { DANITHA_G4_REPLACEMENT_RULES } from './danitha-g4';
 import { DIE_REPLACEMENT_RULES } from './die';
 import { DRAGON_REPLACEMENT_RULES } from './dragons';
@@ -330,6 +331,8 @@ export const REPLACEMENT_RULES = [
   ...COPY_EXCEPT_REPLACEMENT_RULES,
   // Stage P43 (D-193): "All damage that would be dealt to you and other permanents you control is dealt to ~ instead."
   ...ADAMANTOISE_REPLACEMENT_RULES,
+  // Tannuk deck (issue 347): "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+  ...DAMAGE_BONUS_REPLACEMENT_RULES,
   // Stage P66 (D-219): "If one or more artifact tokens would be created under your control, ... are created instead."
   ...EDHREC_REPLACEMENT_RULES,
   // Issue 25 (D-332): "If you would draw a card while your library has no cards in it, skip that draw instead."

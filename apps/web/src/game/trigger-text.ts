@@ -594,6 +594,12 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
         trigger.filter === undefined ? 'a creature' : filterPhrase(trigger.filter, 'creature');
       return victim === null ? null : `${head} to ${victim}`;
     }
+    case 'dealsDamage': {
+      // CR 120.2: damage of any kind, to an opponent or a player.
+      const what = subjectPhrase(trigger.what, ctx);
+      if (what === null) return null;
+      return `Whenever ${what} deals damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
+    }
     case 'noncombatDamageDealt': {
       // D-333 (CR 120.2b, 603.2c): "Whenever a source you control deals noncombat damage to an opponent".
       const source = trigger.by === 'you' ? 'a source you control' : 'a source';

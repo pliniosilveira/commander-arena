@@ -4,6 +4,7 @@
  */
 import type { ObjectId } from '../ids';
 import type { DamageRecipient } from '../state/combat-types';
+import type { DamageBonus } from './damage-bonus';
 import type { Redirect } from './damage-redirect';
 import type { Shield, StaticPrevention } from './prevention';
 
@@ -34,4 +35,10 @@ export type DamageModifier =
       readonly key: string;
       /** A redirection effect of a creature (CR 614.9, D-192): the damage is dealt to that creature instead. Used once for an event (CR 614.5). */
       readonly origin: { readonly kind: 'redirect'; readonly redirect: Redirect };
+    }
+  | {
+      readonly kind: 'increase';
+      readonly key: string;
+      /** "...it deals that much damage plus 2 instead" (CR 614.1a, `damage-bonus.ts`): the damage is more. Used once for an event (CR 614.5). */
+      readonly origin: { readonly kind: 'increase'; readonly bonus: DamageBonus };
     };

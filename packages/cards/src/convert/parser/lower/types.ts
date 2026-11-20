@@ -169,6 +169,11 @@ export interface LowerContext {
    */
   meldPartner: string | null;
   /**
+   * True once the intervening "if" of the ability said "there are cards exiled with ~" (Valakut Exploration, CR 607.2a): "put them into their owner's graveyard" then names those
+   * cards (the engine's `linkedExile`). False where no such condition came before.
+   */
+  exiledWithCondition: boolean;
+  /**
    * True when "it" in the body of a triggered ability is the card the permanent became (stage P30, D-135): every event of the
    * trigger is `~` dying or leaving the battlefield, so "exile it" and "put it into its owner's library" name `thisCard`.
    */
@@ -382,6 +387,7 @@ export function newContext(
     text: '',
     interveningCondition: false,
     meldPartner: null,
+    exiledWithCondition: false,
     itIsCard: false,
     auraDies: false,
     returnedDyingCard: false,

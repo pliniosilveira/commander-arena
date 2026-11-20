@@ -316,6 +316,7 @@ describe('supported feature gate', () => {
         // D-596: "When this Class becomes level N".
         'classLevel',
         'dealsCombatDamage',
+        'dealsDamage',
         'dealtDamage',
         'combatDamageBatch',
         'countersAdded',
@@ -377,6 +378,7 @@ describe('supported feature gate', () => {
       'Map',
       'Gingerbrute',
       'Incubator',
+      'Lander',
     ]);
     expect(SUPPORTED_FEATURES.triggerFeatures).toEqual([
       'interveningIf',

@@ -5,11 +5,57 @@
  */
 import type { CardFace } from '../cards/definition';
 import type { Replacement, StaticEffect } from './types';
-import { kindOf } from './validate-base';
+import { isCount, kindOf } from './validate-base';
 import { type AstIssue, checkFilter, filterSome, issue } from './validate-parts';
 
-/** The replacement kind D-192 adds. True when `r` is it (it was checked here). */
+/** "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead" (CR 614.1a). */
+function checkDamageBonus(
+  r: Extract<Replacement, { kind: 'damageBonus' }>,
+  path: string,
+  out: AstIssue[],
+): void {
+  if (!isCount(r.amount) || r.amount < 1) {
+    issue(out, `${path}.amount`, 'the extra damage is a positive whole number');
+  }
+  if (r.sources === null || typeof r.sources !== 'object') {
+    issue(out, `${path}.sources`, 'sources is a filter of the sources of the damage');
+    return;
+  }
+  checkFilter(r.sources, `${path}.sources`, out);
+  if (r.sources.controller !== 'you') {
+    issue(
+      out,
+      `${path}.sources.controller`,
+      'the sources are the controller\'s own: controller must be "you"',
+    );
+  }
+  if (
+    filterSome(
+      r.sources,
+      (f) =>
+        f.zone !== undefined ||
+        f.owner !== undefined ||
+        f.stackKind !== undefined ||
+        f.manaValueX !== undefined ||
+        f.controllerDealtDamageBySource !== undefined ||
+        f.putFromBattlefieldThisTurn !== undefined ||
+        f.enteredThisTurn !== undefined,
+    )
+  ) {
+    issue(
+      out,
+      `${path}.sources`,
+      'the sources are read as the damage would be dealt: no zone, owner, stackKind, X or "this turn" reading',
+    );
+  }
+}
+
+/** The replacement kinds D-192 and `damageBonus` add. True when `r` is one of them (it was checked here). */
 export function checkRedirectReplacement(r: Replacement, path: string, out: AstIssue[]): boolean {
+  if (r?.kind === 'damageBonus') {
+    checkDamageBonus(r, path, out);
+    return true;
+  }
   if (r?.kind !== 'redirectDamage') return false;
   if (typeof r.you !== 'boolean') issue(out, `${path}.you`, 'you is true or false');
   if (r.permanents === undefined) {

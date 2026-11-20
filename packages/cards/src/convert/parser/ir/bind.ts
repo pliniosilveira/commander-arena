@@ -731,6 +731,7 @@ const SELF_EVENTS: ReadonlySet<string> = new Set([
   'becomesBlocked',
   // The source deals the damage on the battlefield (stage P18, D-111).
   'dealsCombatDamage',
+  'dealsDamage',
   // A state of the permanent itself, which is on the battlefield while the state holds (stage P31, CR 603.8).
   'state',
   // D-448 (CR 603.2): the permanent that became the target of a spell is still on the battlefield, and "it" of "Whenever ~ attacks, blocks, or becomes the target of a spell, it deals

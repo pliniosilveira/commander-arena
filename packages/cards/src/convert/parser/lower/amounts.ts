@@ -185,6 +185,13 @@ export function lowerAmount(
       return { ok: true, value: { kind: 'dieResult' }, rule };
     }
     case 'triggerDamage': {
+      // "Put them into their owner's graveyard, then ~ deals that much damage to each opponent" (Valakut Exploration, CR 608.2c): after the cards "exiled with ~" were moved, "that much" is
+      // how many were moved, not the damage of an event.
+      if (ctx.exiledWithCondition && ctx.lastEffectKind === 'moveToZone') {
+        const moved = needs('movedCount');
+        if (moved !== null) return moved;
+        return { ok: true, value: { kind: 'movedCount' }, rule };
+      }
       // "You gain that much life" (stage P29, D-133): the damage of the event that caused the trigger; `validateCard`
       // checks the trigger is one that has it.
       const blocked = needs('triggerDamage');
@@ -898,4 +905,5 @@ export const AMOUNT_NEEDS = [
   'amount:cardTypesAmongTriggerCards',
   'amount:triggerSpellX',
   'amount:votesFor',
+  'amount:movedCount',
 ] as const;

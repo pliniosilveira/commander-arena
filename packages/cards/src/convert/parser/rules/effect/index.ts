@@ -59,6 +59,7 @@ import { DRAGON_LIBRARY_EFFECT_RULES } from './dragons-more';
 import { DRAW_COMMANDER_CASTS_EFFECT_RULES } from './draw-commander-casts';
 import { EACH_LIBRARY_EFFECT_RULES } from './each-library';
 import { ENCHANTED_PLAYER_EFFECT_RULES } from './enchanted-player';
+import { EXILED_WITH_EFFECT_RULES } from './exiled-with';
 import { FEATHER_G1_EFFECT_RULES } from './feather-g1';
 import { FEATHER_G2_EFFECT_RULES } from './feather-g2';
 import { FEATHER_G3_EFFECT_RULES } from './feather-g3';
@@ -76,6 +77,7 @@ import { GISA_G4_EFFECT_RULES } from './gisa-g4';
 import { GISA_G5_EFFECT_RULES } from './gisa-g5';
 import { GOAD_EFFECT_RULES } from './goad';
 import { GRANTED_STATIC_EFFECT_RULES } from './granted-static';
+import { GRAVEYARD_CAST_EFFECT_RULES } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_RULES } from './graveyard-choice';
 import { GRAVEYARD_COPY_EFFECT_RULES } from './graveyard-copy';
 import { GROUP_BASE_PT_RULES } from './group-base-pt';
@@ -153,6 +155,7 @@ import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
 import { QUANDRIX_G_EFFECT_RULES } from './quandrix-g';
+import { RAMP_LANDS_EFFECT_RULES } from './ramp-lands';
 import { RECURSION_EFFECT_RULES } from './recursion';
 import { REGENERATE_RULES } from './regenerate';
 import { RESTRICT_RULES } from './restrict';
@@ -1119,6 +1122,8 @@ export const EFFECT_RULES = [
   ...DRAGON_EFFECT_RULES,
   ...DRAGON_LIBRARY_EFFECT_RULES,
   ...KORVOLD_EFFECT_RULES,
+  // Valakut Exploration: "you may play that card for as long as it remains exiled", "put them into their owner's graveyard", "~ deals that much damage to each opponent".
+  ...EXILED_WITH_EFFECT_RULES,
   // Issue 337 (Finale of Revelation): "you have no maximum hand size for the rest of the game".
   ...FINALE_EFFECT_RULES,
   ...GIDEON_EFFECT_RULES,
@@ -1140,6 +1145,7 @@ export const EFFECT_RULES = [
   // D-337: "copy it for each time you've cast your commander from the command zone this game".
   ...NIV_GROUP_3_A_EFFECT_RULES,
   ...NIV_GROUP_3_C_EFFECT_RULES,
+  ...GRAVEYARD_CAST_EFFECT_RULES,
   // First Flight deck: "for each opponent, you may cast up to one target instant or sorcery card from that player's graveyard without paying its mana cost".
   ...PRIMORDIAL_EFFECT_RULES,
   ...HASHATON_G7_EFFECT_RULES,
@@ -1150,6 +1156,7 @@ export const EFFECT_RULES = [
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".
   ...COPY_ONE_OF_THEM_EFFECT_RULES,
   ...ADDITIONAL_LAND_EFFECT_RULES,
+  ...RAMP_LANDS_EFFECT_RULES,
   ...MOVE_COUNTERS_EFFECT_RULES,
   ...SEARCH_PAIR_RULES,
   ...ENCHANTED_PLAYER_EFFECT_RULES,

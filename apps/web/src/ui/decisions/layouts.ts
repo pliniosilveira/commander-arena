@@ -125,6 +125,9 @@ export function exileBadge(
 /** What the top card of the library says when it may be cast from there (D-151, CR 601.3). */
 export const CAST_FROM_LIBRARY = 'Cast from the top of your library';
 
+/** What the top card of the library says when it may be played as a land from there (CR 305.1, 401.5: "You may play lands from the top of your library"). */
+export const PLAY_FROM_LIBRARY = 'Play from the top of your library';
+
 /** The badge of the top card of the library when the decision offers to cast it; null for anything else. */
 export function libraryBadge(
   playable: ReadonlySet<ObjectId>,
@@ -132,7 +135,8 @@ export function libraryBadge(
   id: ObjectId,
 ): string | null {
   const card = index.get(id);
-  return card?.zone === 'library' && playable.has(id) ? CAST_FROM_LIBRARY : null;
+  if (card?.zone !== 'library' || !playable.has(id)) return null;
+  return card.types.includes('land') ? PLAY_FROM_LIBRARY : CAST_FROM_LIBRARY;
 }
 
 /** True for a transformed (or back-face-up) double-faced permanent or spell. */

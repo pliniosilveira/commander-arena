@@ -260,6 +260,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'goad',
     'grantPlayerProtectionEverything',
     'preventPlayerLifeTotalChange',
+    // CR 101.2: "You can't cast additional spells this turn."
+    'playerCantCastSpells',
     // D-179: "Until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able".
     'requireAttack',
     // CR 508.1d, 701.26a: "choose an opponent at random that this creature didn't attack during your last combat ... attacks that player this combat if able".
@@ -470,6 +472,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'step',
     'drawn',
     'dealsCombatDamage',
+    // CR 120.2: "Whenever enchanted creature deals damage to an opponent" (combat or not).
+    'dealsDamage',
     'leavesBattlefield',
     // D-333: "Whenever a source you control deals noncombat damage to an opponent".
     'noncombatDamageDealt',
@@ -685,6 +689,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersAsCopy',
     // D-192: "All damage that would be dealt to you and other permanents you control is dealt to this creature instead."
     'redirectDamage',
+    // CR 614.1a: "If a red source you control would deal damage to an opponent or a permanent an opponent controls, it deals that much damage plus 2 instead."
+    'damageBonus',
     // D-332: "If you would draw a card while your library has no cards in it, skip that draw instead."
     'skipDraw',
     // D-379 (CR 614.11): "If you would draw a card except the first one you draw in each of your draw steps, draw two cards instead."
@@ -729,7 +735,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
   // D-639: `moved` for "Sacrifice those tokens" (the tokens an effect before it made, CR 603.7c) in a delayed ability and after the effect that made them.
   sacrificeSelectors: ['this', 'choose', 'each', 'moved', 'putWithThis'],
   // Treasure's mana ability, and the activated abilities of Food and Clue (CR 111.10a, b, f).
-  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute', 'Incubator'],
+  tokenPresets: ['Treasure', 'Food', 'Clue', 'Gold', 'Map', 'Gingerbrute', 'Incubator', 'Lander'],
   // D-200: a planeswalker token enters with loyalty counters (CR 306.5b).
   tokenTypes: ['artifact', 'creature', 'enchantment', 'land', 'planeswalker'],
   // CR 709 split (either half is cast), CR 715 Adventure, CR 712 modal and nonmodal double-faced, CR
@@ -1131,6 +1137,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'additionalLandDrops',
     // D-125: "You may look at the top card of your library any time."
     'lookAtTopOfLibrary',
+    // CR 401.5: "Play with the top card of your library revealed." and "You may play lands from the top of your library."
+    'revealTopOfLibrary',
+    'playLandsFromTopOfLibrary',
     // D-125: "Creatures can't attack you unless their controller pays {M} for each creature ..."
     'attackTax',
     // D-647: "Inklings can't attack you or planeswalkers you control."
@@ -1220,6 +1229,7 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'Map',
     'Gingerbrute',
     'Incubator',
+    'Lander',
     'custom',
     'copyOf',
     'tapped',
@@ -1280,6 +1290,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'sum',
     'extreme',
     'opponentCount',
+    // CR 608.2c (Valakut Exploration): "that much" after cards were put somewhere.
+    'movedCount',
     'opponentsWithMore',
     'thisWay',
     // D-133: "that much" for the damage that caused a trigger.
@@ -1968,6 +1980,10 @@ export const STATIC_KINDS = [
   'additionalLandDrops',
   /** "You may look at the top card of your library any time." (CR 401.5, D-125). */
   'lookAtTopOfLibrary',
+  /** "Play with the top card of your library revealed." (CR 401.5): the engine's `revealTopOfLibrary`. */
+  'revealTopOfLibrary',
+  /** "You may play lands from the top of your library." (CR 305.1, 401.5): the engine's `playLandsFromTopOfLibrary`. */
+  'playLandsFromTopOfLibrary',
   /** "Creatures can't attack you unless their controller pays {M} for each creature they control that's attacking you." (CR 508.1h, D-125). */
   'attackTax',
   /** "Inklings can't attack you or planeswalkers you control." (CR 508.1a, 506.3, D-647): the engine's `cantAttackYou`. */
@@ -2069,6 +2085,7 @@ export const TOKEN_KINDS = [
   'Map',
   'Gingerbrute',
   'Incubator',
+  'Lander',
   'Blood',
   'custom',
   /** "A token that's a copy of target creature" (CR 707.2): the engine's `copyOf`. */
@@ -2150,6 +2167,8 @@ export const AMOUNT_KINDS = [
   'extreme',
   /** "The number of opponents you have" (CR 102.2): the engine's `opponentCount`. */
   'opponentCount',
+  /** "That much" after cards were put somewhere (CR 608.2c, Valakut Exploration): the engine's `movedCount`. */
+  'movedCount',
   /** "For each creature sacrificed / destroyed this way", "for each opponent who drew a card this way" (D-131): the engine's `thisWay`. */
   'thisWay',
   /** "For each opponent who has more life / cards in hand / creatures than you" (D-131): the engine's `opponentsWithMore`. */
@@ -2320,6 +2339,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   grantPlayerManaAbility: true,
   grantPlayerProtectionEverything: true,
   preventPlayerLifeTotalChange: true,
+  playerCantCastSpells: true,
   mill: true,
   manifest: true,
   dealDamage: true,
@@ -2498,6 +2518,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   step: true,
   drawn: true,
   dealsCombatDamage: true,
+  dealsDamage: true,
   noncombatDamageDealt: true,
   dealtDamage: true,
   leavesBattlefield: true,
@@ -2644,6 +2665,7 @@ const REPLACEMENT_TABLE: KindTable<Replacement['kind']> = {
   groupEntersTapped: true,
   entersAsCopy: true,
   redirectDamage: true,
+  damageBonus: true,
   skipDraw: true,
   drawInstead: true,
   umbraArmor: true,

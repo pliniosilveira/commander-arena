@@ -33,6 +33,7 @@ import type { ChooseOptionDecision, DamageReplacementChoice } from '../state/dec
 import type { GameEvent } from '../state/events';
 import { patchObject } from '../state/ops';
 import type { GameState } from '../state/types';
+import { bonusAmount, bonusesFor, bonusKey } from './damage-bonus';
 import type { DamageEvent, DamageModifier } from './damage-modifier';
 import { modifierText, nameOf } from './damage-order-text';
 import { redirectKey, redirectsFor } from './damage-redirect';
@@ -78,7 +79,14 @@ export function damageModifiers(
       key: redirectKey(redirect),
       origin: { kind: 'redirect', redirect },
     }));
-  if (!state.continuousEffects.some(isShield)) return [...statics, ...redirects()];
+  // CR 614.1a: the increases of the damage, applied after the prevention that the player would always choose first (the file comment).
+  const increases = (): DamageModifier[] =>
+    bonusesFor(state, event, used).map((bonus) => ({
+      kind: 'increase',
+      key: bonusKey(bonus),
+      origin: { kind: 'increase', bonus },
+    }));
+  if (!state.continuousEffects.some(isShield)) return [...statics, ...increases(), ...redirects()];
   if (to.kind === 'object' && state.objects[to.id]?.zone !== 'battlefield') return statics;
   const fits = state.continuousEffects
     .filter(isShield)
@@ -92,6 +100,7 @@ export function damageModifiers(
     ...statics,
     ...fits.filter((s) => s.change.amount === 'all').map(toModifier),
     ...fits.filter((s) => s.change.amount !== 'all').map(toModifier),
+    ...increases(),
     ...redirects(),
   ];
 }
@@ -184,6 +193,15 @@ function counterRemoval(
 /** Applies one modifier (the file comment): the result is what is left of the event and the shields after it. */
 export function applyModifier(current: Settling, modifier: DamageModifier): Settling {
   const { origin } = modifier;
+  if (origin.kind === 'increase') {
+    // CR 614.1a, 614.5: the same source deals more damage; this effect is used for the event, and no prevention is reported for it.
+    return {
+      ...current,
+      amount: current.amount + bonusAmount(current.state, origin.bonus),
+      applied: current.applied + 1,
+      used: [...current.used, modifier.key],
+    };
+  }
   if (origin.kind === 'redirect') {
     // CR 614.9: the same damage is dealt to the creature instead, by the same source; CR 614.5: this redirection is used for the event.
     const to: DamageRecipient = { kind: 'object', id: origin.redirect.object };
@@ -459,7 +477,9 @@ function question(current: Settling, options: readonly DamageModifier[]): Replac
         ? m.origin.prevention.object
         : m.origin.kind === 'redirect'
           ? m.origin.redirect.object
-          : undefined;
+          : m.origin.kind === 'increase'
+            ? m.origin.bonus.object
+            : undefined;
     return {
       option: m.key,
       kind: m.kind,

@@ -22,6 +22,8 @@ export type PlayRuleEffect = Extract<
     kind:
       | 'additionalLandDrops'
       | 'lookAtTopOfLibrary'
+      | 'revealTopOfLibrary'
+      | 'playLandsFromTopOfLibrary'
       | 'playLandsFromGraveyard'
       | 'attackTax'
       | 'optionalUntap'
@@ -35,6 +37,8 @@ export function isPlayRule(effect: IrStaticEffect): effect is PlayRuleEffect {
   return (
     effect.kind === 'additionalLandDrops' ||
     effect.kind === 'lookAtTopOfLibrary' ||
+    effect.kind === 'revealTopOfLibrary' ||
+    effect.kind === 'playLandsFromTopOfLibrary' ||
     effect.kind === 'playLandsFromGraveyard' ||
     effect.kind === 'attackTax' ||
     effect.kind === 'blockTax' ||
@@ -51,6 +55,10 @@ export function playRuleNeeds(effect: PlayRuleEffect): FeatureRef[] {
       return ['static:additionalLandDrops'];
     case 'lookAtTopOfLibrary':
       return ['static:lookAtTopOfLibrary'];
+    case 'revealTopOfLibrary':
+      return ['static:revealTopOfLibrary'];
+    case 'playLandsFromTopOfLibrary':
+      return ['static:playLandsFromTopOfLibrary'];
     case 'playLandsFromGraveyard':
       return ['static:playLandsFromGraveyard'];
     case 'attackTax':
@@ -89,6 +97,12 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
       });
     case 'lookAtTopOfLibrary':
       return ok({ kind: 'static', static: { kind: 'lookAtTopOfLibrary' } });
+    // "Play with the top card of your library revealed." (Oracle of Mul Daya, CR 401.5).
+    case 'revealTopOfLibrary':
+      return ok({ kind: 'static', static: { kind: 'revealTopOfLibrary' } });
+    // "You may play lands from the top of your library." (Oracle of Mul Daya, CR 305.1, 401.5): any land card on top.
+    case 'playLandsFromTopOfLibrary':
+      return ok({ kind: 'static', static: { kind: 'playLandsFromTopOfLibrary' } });
     // "You may play Forests from your graveyard." (Death Toll deck, group D, CR 305.1): the land cards of the named basic land type, or any land.
     case 'playLandsFromGraveyard':
       return ok({
@@ -151,6 +165,8 @@ export function lowerPlayRule(at: At, effect: PlayRuleEffect): LowerResult<reado
 export const PLAY_RULE_NEEDS: readonly FeatureRef[] = [
   'static:additionalLandDrops',
   'static:lookAtTopOfLibrary',
+  'static:revealTopOfLibrary',
+  'static:playLandsFromTopOfLibrary',
   'static:playLandsFromGraveyard',
   'static:attackTax',
   'static:blockTax',

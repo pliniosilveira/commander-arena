@@ -66,6 +66,7 @@ import { EDHREC_LOWERINGS } from './edhrec';
 import { PUMP, SEARCH } from './effects-more';
 import { ENCHANTED_PLAYER_LOWERINGS } from './enchanted-player';
 import { EXILE_OWN_GRAVEYARD_LOWERINGS } from './exile-own-graveyards';
+import { EXILED_WITH_LOWERINGS } from './exiled-with';
 import { FEATHER_G2_LOWERINGS } from './feather-g2';
 import { missingFeatures } from './features';
 import { FINALE_LOWERINGS } from './finale';
@@ -76,6 +77,7 @@ import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY } from './granted-ability';
 import { GAIN_STATIC_ABILITY } from './granted-static';
+import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
 import { HASHATON_G5_LOWERINGS } from './hashaton-g5';
@@ -118,6 +120,7 @@ import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
 import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
 import { QUANDRIX_G_LOWERINGS } from './quandrix-g';
+import { RAMP_LANDS_LOWERINGS } from './ramp-lands';
 import { RETURN_CONTROL_LOWERINGS } from './return-control';
 import { REVEAL_TAKE_LOWERINGS } from './reveal-take';
 import { REVEAL_TOP_DUEL_LOWERINGS } from './reveal-top-duel';
@@ -187,7 +190,7 @@ const ATTACK_RANDOM_OPPONENT_ANY: Lowering<IrClause, Effects> = {
   }),
 };
 
-/** "Goad target creature", "goad it" (CR 701.15a, D-639, D-651): the engine's `goad` on the one creature the operand names. */
+/** "Goad target creature", "goad it", "goad each creature target player controls" (CR 701.15a, D-639, D-651): the engine's `goad` on what the operand names. */
 const GOAD: Lowering<IrClause, Effects> = {
   head: 'goad',
   id: 'lower.goad',
@@ -195,7 +198,7 @@ const GOAD: Lowering<IrClause, Effects> = {
   lower(clause, ctx) {
     const operandNoun = operand(clause, 'objects');
     if (operandNoun?.kind !== 'noun') return failure(clause);
-    const object = objectRefOf(operandNoun, ctx, { moved: true, token: true });
+    const object = objectSelectorOf(operandNoun, ctx, { moved: true, token: true });
     if (!object.ok) return object;
     // "The tokens are goaded for the rest of the game" (CR 701.15a, 611.2b): no end.
     const forever = arg(clause, 'forever');
@@ -807,7 +810,20 @@ const PUT_FROM_ZONE: Lowering<IrClause, Effects> = {
     // Issue 103 (CR 701.38b, 608.2c): "You may put a permanent card from your hand onto the battlefield for each free vote": up to that many cards, chosen as it resolves.
     const votes = arg(clause, 'count');
     let count: Amount | undefined;
-    if (votes !== undefined) {
+    // CR 107.3a, 608.2d (Worldsoul's Rage): "Put up to X land cards from your hand and/or graveyard onto the battlefield tapped": up to the X of the spell, from the cards of both places.
+    if (votes !== undefined && votes.kind === 'x') {
+      if (
+        !optional ||
+        to.attacking === true ||
+        filter.value.zone !== 'hand' ||
+        both?.kind !== 'flag'
+      ) {
+        return failure(clause);
+      }
+      const lowered = lowerAmount(votes, ctx, clause.rule);
+      if (!lowered.ok) return lowered;
+      count = lowered.value;
+    } else if (votes !== undefined) {
       if (
         votes.kind !== 'votesFor' ||
         !optional ||
@@ -1091,6 +1107,30 @@ const ADD_MANA: Lowering<IrClause, Effects> = {
             options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
               label: `{${color}}`,
               effect: { kind: 'addMana', mana: { kind: 'fixed', mana: [color] } } as Effect,
+            })),
+          },
+        ],
+        rule: clause.rule,
+      };
+    }
+    // "Whenever a land you control enters, add one mana of any color." (Lotus Cobra, CR 106.1b, 608.2d, 605.1b): an instruction of a spell or of an ability that is not a mana ability
+    // (a triggered ability whose event is not a mana ability uses the stack, CR 605.1b), so the color is chosen as it resolves: the engine's `chooseOne` of the five colors, each
+    // option adding the mana of that one color ("two mana of any one color" adds both of the same color).
+    if (spec.what.kind === 'anyColor' && !stays) {
+      const blocked = missingFeatures(['effect:chooseOne']);
+      if (blocked.length > 0) return failure(clause, blocked);
+      const count = spec.what.count ?? 1;
+      return {
+        ok: true,
+        value: [
+          {
+            kind: 'chooseOne',
+            options: (['W', 'U', 'B', 'R', 'G'] as const).map((color) => ({
+              label: `{${color}}`,
+              effect: {
+                kind: 'addMana',
+                mana: { kind: 'fixed', mana: Array.from({ length: count }, () => color) },
+              } as Effect,
             })),
           },
         ],
@@ -1622,17 +1662,28 @@ const SACRIFICE: Lowering<IrClause, Effects> = {
     if (blocked.length > 0) return failure(clause, blocked);
     const filter = lowerFilter(what);
     if (!filter.ok) return filter;
+    // CR 107.3a, 701.21a (Nahiri's Lithoforming): "Sacrifice X lands": the number of permanents is the X of the spell, read as the effect runs (D-131); with fewer than X to
+    // sacrifice, all of them are (the engine's choice takes what there is).
+    let xCount: Amount | undefined;
+    if (what.count?.kind === 'x') {
+      const x = lowerAmount(what.count, ctx, clause.rule);
+      if (!x.ok) return x;
+      xCount = x.value;
+    }
     const count = what.count?.kind === 'number' ? what.count.value : 1;
     // "... When you do, ~ deals damage equal to that creature's power" (stage P36, D-178, CR 603.12, 608.2h): the one permanent chosen is what
     // "that creature" means in an amount that follows, the engine's `sacrificed`.
     ctx.sacrificedRef =
-      count === 1 && what.anyNumber !== true && !what.plural ? (what.ref ?? null) : null;
+      count === 1 && xCount === undefined && what.anyNumber !== true && !what.plural
+        ? (what.ref ?? null)
+        : null;
     const chosen: ChooseSelector = {
       kind: 'choose',
       filter: filter.value,
       ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
       ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
       ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
+      ...(xCount !== undefined ? { count: xCount } : {}),
       ...(count > 1 && what.anyNumber !== true ? { count } : {}),
     };
     // "Each player sacrifices a creature of their choice." (stage P28, CR 701.21a, 101.4): each player the noun names
@@ -2002,6 +2053,20 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     if (!own.ok) return own;
     abilities.push(own.value);
   }
+  // CR 305.6 (Verdant Kraken): a land token that has a basic land type has its intrinsic "{T}: Add [mana symbol]", as a land card that prints the type has it as an ability of its
+  // definition (the engine adds the ability only for a type a land gains, `landTypeAbilities`). Listed after the abilities of the token's own text, in the order of the subtypes.
+  if (types.includes('land')) {
+    for (const subtype of subtypes) {
+      const mana = Object.hasOwn(BASIC_LAND_MANA, subtype) ? BASIC_LAND_MANA[subtype] : undefined;
+      if (mana !== undefined) {
+        abilities.push({
+          kind: 'mana',
+          cost: [{ kind: 'tap' }],
+          production: { kind: 'fixed', mana: [mana] },
+        });
+      }
+    }
+  }
   const defines = abilities.filter(
     (a) => a.kind === 'static' && a.static.kind === 'characteristicPt',
   );
@@ -2047,6 +2112,15 @@ function lowerCreateToken(clause: IrClause, ctx: LowerContext): LowerResult<Effe
     rule: clause.rule,
   };
 }
+
+/** The mana of the intrinsic ability of each basic land type (CR 305.6). */
+const BASIC_LAND_MANA: Readonly<Record<string, ManaColor | undefined>> = {
+  Plains: 'W',
+  Island: 'U',
+  Swamp: 'B',
+  Mountain: 'R',
+  Forest: 'G',
+};
 
 const PLAYER_LOCK: Lowering<IrClause, Effects> = {
   head: 'playerLock',
@@ -2229,6 +2303,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DRAGON_LOWERINGS,
   ...EXILE_OWN_GRAVEYARD_LOWERINGS,
   ...KORVOLD_LOWERINGS,
+  // Valakut Exploration: "put them into their owner's graveyard, then ~ deals that much damage to each opponent" after "if there are cards exiled with ~".
+  ...EXILED_WITH_LOWERINGS,
   ...FINALE_LOWERINGS,
   ...GIDEON_LOWERINGS,
   ...REVEAL_TOP_DUEL_LOWERINGS,
@@ -2251,12 +2327,14 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   // Lorehold Spirit deck, group 2 (issue 86): "Choose target card exiled with ~. You may cast that card this turn without paying its mana cost. ..."
   ...LOREHOLD_G2_LOWERINGS,
   ...NIV_GROUP_3_C_LOWERINGS,
+  ...GRAVEYARD_CAST_LOWERINGS,
   ...HASHATON_G7_LOWERINGS,
   ...HASHATON_GROUP_4_LOWERINGS,
   ...TROYAN_G4_LOWERINGS,
   ...POPULATE_LOWERINGS,
   ...COPY_ONE_OF_THEM_LOWERINGS,
   ...ADDITIONAL_LAND_LOWERINGS,
+  ...RAMP_LANDS_LOWERINGS,
   ...MOVE_COUNTERS_LOWERINGS,
   ...SEARCH_PAIR_LOWERINGS,
   ...ENCHANTED_PLAYER_LOWERINGS,
@@ -2335,7 +2413,8 @@ export function lowerClause(clause: IrClause, ctx: LowerContext): LowerResult<Ef
         kind === 'notDeclaredAttacker' ||
         kind === 'enteredFromGraveyard' ||
         kind === 'costContainsX' ||
-        kind === 'unlessReturn'
+        kind === 'unlessReturn' ||
+        kind === 'cardsExiledWithSelf'
         ? []
         : missingFeatures([`condition:${kind}`]),
     );
