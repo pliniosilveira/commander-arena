@@ -922,6 +922,15 @@ function runEffect(
           // CR 701.8, 608.2h: the creatures each player controlled that were destroyed, by player, as they were just before they died.
           ...destroyedCreaturesByPlayer(state, [...destroyed]),
           // CR 701.8, 608.2h (D-230): the nontoken creatures of the controller of the effect, as they were as they were destroyed (before they moved).
+          // CR 701.8, 608.2h: the nontoken creatures destroyed, whoever controlled them, as they were as they were destroyed.
+          destroyedNontokenCreatures: [...destroyed].filter((id) => {
+            const obj = state.objects[id];
+            return (
+              obj !== undefined &&
+              obj.token === null &&
+              derive(state, obj).types.includes('creature')
+            );
+          }).length,
           destroyedOwnNontoken: [...destroyed].filter((id) => {
             const obj = state.objects[id];
             return (

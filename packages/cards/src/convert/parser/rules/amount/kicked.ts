@@ -70,6 +70,8 @@ export const FOR_EACH_AMOUNTS = [
   'amount.for-each-mana-spent',
   // Stage P68 (D-230): the nontoken creatures of the controller that an earlier destroy destroyed.
   'amount.for-each-own-nontoken-destroyed',
+  // Ahoy Mateys deck, group 5 (Blood Money): the nontoken creatures of any player that an earlier destroy destroyed.
+  'amount.for-each-nontoken-destroyed',
   // Feather deck group 1 (D-450): the cards the controller has drawn this turn.
   'amount.for-each-card-drawn',
   // Issue 145 (Aetherflux Reservoir): the spells the controller has cast this turn.

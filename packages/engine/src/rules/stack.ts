@@ -270,6 +270,9 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 destroyedOwnNontoken:
                   (res.thisWay?.destroyedOwnNontoken ?? 0) +
                   (out.thisWay.destroyedOwnNontoken ?? 0),
+                destroyedNontokenCreatures:
+                  (res.thisWay?.destroyedNontokenCreatures ?? 0) +
+                  (out.thisWay.destroyedNontokenCreatures ?? 0),
                 destroyedValue:
                   (res.thisWay?.destroyedValue ?? 0) + (out.thisWay.destroyedValue ?? 0),
                 playersDrew: (res.thisWay?.playersDrew ?? 0) + (out.thisWay.playersDrew ?? 0),

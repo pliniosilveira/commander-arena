@@ -172,6 +172,9 @@ function thisWayPhrase(what: ThisWayKind): string {
     case 'destroyedOwnNontoken':
       // D-230: "for each nontoken creature you controlled that was destroyed this way".
       return 'the number of nontoken creatures you controlled that were destroyed this way';
+    case 'destroyedNontokenCreatures':
+      // Blood Money: "for each nontoken creature destroyed this way".
+      return 'the number of nontoken creatures destroyed this way';
     case 'playersDrew':
       return 'the number of players who drew a card this way';
     case 'tapped':

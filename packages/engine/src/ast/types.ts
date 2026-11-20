@@ -462,6 +462,8 @@ export type ThisWayKind =
   | 'destroyed'
   // D-230: "for each nontoken creature you controlled that was destroyed this way" (Ceaseless Conflict): the creatures the controller of the effect controlled as they were destroyed.
   | 'destroyedOwnNontoken'
+  // CR 701.8, 608.2h (Blood Money): "for each nontoken creature destroyed this way": the nontoken creatures a `destroy` destroyed, whoever controlled them.
+  | 'destroyedNontokenCreatures'
   // CR 202.3, 608.2h: "the total mana value of permanents destroyed this way" (Convert to Slime): the mana values the permanents a `destroy` destroyed had on the battlefield, added.
   | 'destroyedValue'
   // D-231: "When one or more nonland cards are exiled this way, put that many +1/+1 counters" (Augusta): the nonland cards `exileOwnGraveyardCard` exiled (CR 603.12).
@@ -6013,6 +6015,11 @@ export type Condition =
    * Read from the turn log, so it is read as the event happens and again as the ability resolves.
    */
   | { readonly kind: 'cardLeftYourGraveyard' }
+  /**
+   * "If you descended this turn" (Enterprising Scallywag; the Descend rule is not verified against the CR text here, CR 603.4, 404.1, 400.7): a permanent card owned by the controller
+   * was put into their graveyard from anywhere since the turn began (a token is not a card). Read from the turn log, as the event happens and again as the ability resolves.
+   */
+  | { readonly kind: 'descendedThisTurn' }
   /**
    * "If at least four mana was spent to cast it" (CR 601.2h, 603.4, D-206): the spell that caused a cast trigger (its `triggerSubject`) was cast with at
    * least `count` mana spent on its cost in all (the mana of Convoke, Improvise and Delve and life paid for Phyrexian mana are not counted, as
