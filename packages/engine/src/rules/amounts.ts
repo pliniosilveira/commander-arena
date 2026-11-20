@@ -68,10 +68,13 @@ export function historyCount(
 ): number {
   // CR 700.9, 603.10a: "a modified creature died": the deaths record whether the permanent was modified as it left.
   const onlyModified = amount.kind === 'diedThisTurn' && amount.modified === true;
+  // CR 207.2c (Revolt): "a permanent left the battlefield under your control this turn" reads every permanent that left, to any zone.
   const entries =
     amount.kind === 'enteredThisTurn'
       ? state.turnLog.entered
-      : state.turnLog.died.filter((e) => !onlyModified || e.modified);
+      : amount.leftBattlefield === true
+        ? (state.turnLog.left ?? [])
+        : state.turnLog.died.filter((e) => !onlyModified || e.modified);
   return entries.filter(
     (e) =>
       (amount.controller === 'any' || e.controller === controller) &&

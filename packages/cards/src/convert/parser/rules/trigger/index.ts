@@ -29,6 +29,7 @@ import { defineRule, family, quietly, spanned } from '../registry';
 import { ACTIVATES_ABILITY_TRIGGER_RULES } from './activates-ability';
 import { ANGEL_TRIGGER_RULES } from './angels';
 import { ARTIFACT_TRIGGER_RULES } from './artifacts';
+import { ATTACK_A_PLAYER_TRIGGER_RULES } from './attack-a-player';
 import { CAST_DURING_TURN_TRIGGER_RULES } from './cast-during-turn';
 import { CLASS_TRIGGER_RULES } from './class';
 import { CONTROL_TRIGGER_RULES } from './control';
@@ -1221,6 +1222,8 @@ export const TRIGGER_RULES = [
   ...OPPONENT_ATTACKS_TRIGGER_RULES,
   // Stage P65 (D-218): "one or more creatures attack", "one or more tokens you control enter", "you cast or copy an instant or sorcery spell".
   ...EDHREC_TRIGGER_RULES,
+  // Landroval: "two or more creatures you control attack a player".
+  ...ATTACK_A_PLAYER_TRIGGER_RULES,
   // Issue 160 (D-629): "Whenever enchanted player is attacked".
   ...ENCHANTED_PLAYER_TRIGGER_RULES,
   // Stage P68 (D-229): cards leaving a graveyard, exiled from a library or graveyard, "casts their second spell each turn", creatures with a mana value

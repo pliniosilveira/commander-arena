@@ -397,6 +397,14 @@ function effectOf(
         power: effect.power ? { kind: 'unspentMana' } : 0,
         toughness: effect.toughness ? { kind: 'unspentMana' } : 0,
       });
+    case 'ptCountersOnSource':
+      // CR 122.1, 613.4c (Call for Unity): +1 for each counter of the kind on the permanent that has the ability, worked out as the characteristics are.
+      return ok({
+        kind: 'modifyPt',
+        subject,
+        power: effect.power ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+        toughness: effect.toughness ? { kind: 'countersOnSource', counter: effect.counter } : 0,
+      });
     case 'ptTimesAttacked':
       // CR 508.1, 613.4c (stage P41, D-188): +1 for each time the creature affected has attacked this turn, read from the turn log as it is looked at.
       return ok({
@@ -573,6 +581,8 @@ function needsOf(effect: IrStaticEffect): FeatureRef[] {
       return ['static:modifyPt', 'amount:timesAttacked'];
     case 'ptUnspentMana':
       return ['static:modifyPt', 'amount:unspentMana'];
+    case 'ptCountersOnSource':
+      return ['static:modifyPt', 'amount:countersOnSource'];
     case 'loseAllAbilities':
       return ['static:loseAllAbilities'];
     case 'setColors':
@@ -740,6 +750,7 @@ function takesCondition(effect: IrStaticEffect): boolean {
     case 'pt':
     case 'ptCount':
     case 'ptTimesAttacked':
+    case 'ptCountersOnSource':
     case 'grantKeyword':
     case 'grantProtection':
     case 'grantAbility':

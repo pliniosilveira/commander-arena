@@ -152,8 +152,16 @@ const MANA_SPENT_CONDITIONS = [
  */
 const TRIGGER_SPELL_CONDITIONS = ['condition.that-spells-stat'] as const;
 
-/** Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). */
-const RESOLUTION_CONDITIONS = ['condition.resolved-times'] as const;
+/**
+ * Galadriel deck, group 1 (issue 43): "If this is the second time this ability has resolved this turn, the Ring tempts you." (CR 608.2c). Food and Fellowship deck (Frodo,
+ * Adventurous Hobbit): "Then if ~ is your Ring-bearer and the Ring has tempted you two or more times this game, draw a card." (CR 701.54).
+ */
+const RESOLUTION_CONDITIONS = [
+  'condition.resolved-times',
+  'condition.ring-bearer-and-tempted',
+  'condition.this-is-ring-bearer',
+  'condition.ring-tempted-times',
+] as const;
 
 const LEAD_CONDITIONS = [
   ...MANA_SPENT_CONDITIONS,

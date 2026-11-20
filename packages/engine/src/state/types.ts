@@ -2483,6 +2483,15 @@ export interface TurnLog {
    * in the graveyard: a card that moved on from there is a new object (CR 400.7) and is not in it. A token is not (it is not a card).
    */
   readonly graveyarded: readonly ObjectId[];
+  /**
+   * Each permanent that left the battlefield this turn for any zone, a token included (CR 400.7; Revolt, CR 207.2c): who controlled it as it left, its card types as it left and
+   * whether it is a token. Absent until one left, so the state of a game where none did is as it was.
+   */
+  readonly left?: readonly {
+    readonly controller: SeatId;
+    readonly types: readonly CardType[];
+    readonly token: boolean;
+  }[];
   /** Permanent-to-graveyard events, including tokens, with their characteristics immediately before leaving. */
   readonly died: readonly {
     readonly controller: SeatId;

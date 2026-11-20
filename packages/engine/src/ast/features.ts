@@ -1150,6 +1150,9 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackersTotalPower',
     // D-196: "if you control your Ring-bearer" (CR 701.54e).
     'controlsRingBearer',
+    // CR 701.54: "if this creature is your Ring-bearer", "if the Ring has tempted you two or more times this game".
+    'thisIsRingBearer',
+    'ringTemptedAtLeast',
     // D-278: "if you both own and control this creature and a creature named X" (CR 701.42a).
     'ownsAndControlsNamed',
     // D-286: "as long as this creature is paired with another creature" (CR 702.95b), and the engine's own intervening "if" of soulbond.
@@ -1343,6 +1346,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'timesAttacked',
     // Issue 81 (Omnath): "for each unspent mana you have" (a static ability's +N/+N).
     'unspentMana',
+    // CR 122.1: "for each unity counter on this enchantment" (a static ability's +N/+N).
+    'countersOnSource',
     'affected',
     'half',
     'multiple',
@@ -2008,6 +2013,10 @@ export const CONDITION_KINDS = [
   'attackersTotalPower',
   /** "If you control your Ring-bearer" (CR 701.54e, D-196): the engine's `controlsRingBearer`. */
   'controlsRingBearer',
+  /** "If this creature is your Ring-bearer" (CR 701.54e): the engine's `thisIsRingBearer`. */
+  'thisIsRingBearer',
+  /** "If the Ring has tempted you two or more times this game" (CR 701.54c): the engine's `ringTemptedAtLeast`. */
+  'ringTemptedAtLeast',
   /** "If you both own and control this creature and a creature named X" (CR 701.42a, D-278): the engine's `ownsAndControlsNamed`. */
   'ownsAndControlsNamed',
   /** "As long as this creature is paired with another creature" (CR 702.95b, D-286): the engine's `paired`. */
@@ -2250,6 +2259,8 @@ export const AMOUNT_KINDS = [
   'timesAttacked',
   /** "For each unspent mana you have" (CR 106.4, issue 81): the engine's `unspentMana`, a static ability's +N/+N. */
   'unspentMana',
+  /** "For each unity counter on this enchantment" (CR 122.1, 613.4c): the engine's `countersOnSource`, a static ability's +N/+N. */
+  'countersOnSource',
   /** "Double the power and toughness of each creature you control" (CR 701.10, D-145): the engine's `affected` power or toughness amount. */
   'affected',
   /** "Half the number of ..., rounded down" (D-131): the engine's `half`. */

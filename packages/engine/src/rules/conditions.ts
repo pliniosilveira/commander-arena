@@ -27,7 +27,7 @@ import { designationHolders, hasMaxSpeed } from './designations';
 import { manaSpentOf } from './mana-spent';
 import { ownsAndControlsNamedHolds } from './meld-condition';
 import { partnerOf } from './pairing';
-import { ringBearerOf } from './ring-bearer';
+import { isRingBearerOf, ringBearerOf, ringLevel } from './ring-bearer';
 import { matchesFilter, resolveObjects, resolvePlayers } from './select';
 import { soulbondReadyHolds } from './soulbond';
 import { objectOrLki } from './source-info';
@@ -603,6 +603,14 @@ export function evaluateCondition(
     case 'controlsRingBearer':
       // CR 701.54e (D-196): a creature on the battlefield under the controller's control with their Ring-bearer designation.
       return ringBearerOf(state, ctx.controller) !== null;
+    case 'thisIsRingBearer': {
+      // CR 701.54e: the permanent the ability belongs to is the Ring-bearer of the controller, on the battlefield under their control.
+      const self = ctx.source === null ? undefined : state.objects[ctx.source];
+      return self !== undefined && isRingBearerOf(state, self, ctx.controller);
+    }
+    case 'ringTemptedAtLeast':
+      // CR 701.54c: how many times the Ring has tempted the controller.
+      return ringLevel(state, ctx.controller) >= condition.times;
     case 'subjectControllerHasMore': {
       // CR 603.4, 109.4 (D-229): "that player", the controller of the land that entered, has more of the stat than the controller of the ability.
       if (ctx.triggerSubject === undefined) return false;

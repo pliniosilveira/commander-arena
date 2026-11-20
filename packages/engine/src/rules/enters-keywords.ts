@@ -34,6 +34,13 @@ export function devourOf(abilities: readonly Ability[]): number {
   return 0;
 }
 
+/** The quality of the devour ability these abilities have (CR 702.82c, "Devour Food 3": "Food"), or undefined for creatures. */
+export function devourQualityOf(abilities: readonly Ability[]): string | undefined {
+  for (const a of abilities)
+    if (a.kind === 'keyword' && a.keyword.kind === 'devour') return a.keyword.of;
+  return undefined;
+}
+
 /**
  * How many instances of riot `entering` has as it enters (CR 702.136b): the printed ones in `abilities` and the ones the static abilities of the
  * permanents on the battlefield give it. `entering` is the permanent as it would be on the battlefield (`zone: 'battlefield'`, its controller).
@@ -79,15 +86,18 @@ export function riotInstances(
   return count;
 }
 
-/** The creatures `seat` controls, which devour may sacrifice (CR 702.82a), in battlefield order. */
-export function devourCandidates(state: GameState, seat: SeatId): ObjectId[] {
+/**
+ * The permanents `seat` controls, which devour may sacrifice (CR 702.82a), in battlefield order: creatures, or with `quality` ("Devour Food 3", CR 702.82c) the
+ * permanents of that subtype, whatever else they are.
+ */
+export function devourCandidates(state: GameState, seat: SeatId, quality?: string): ObjectId[] {
   return state.battlefield.filter((id) => {
     const obj = state.objects[id];
-    return (
-      obj !== undefined &&
-      controllerOf(state, obj) === seat &&
-      derive(state, obj).types.includes('creature')
-    );
+    if (obj === undefined || controllerOf(state, obj) !== seat) return false;
+    const derived = derive(state, obj);
+    return quality === undefined
+      ? derived.types.includes('creature')
+      : derived.subtypes.includes(quality);
   });
 }
 
@@ -116,6 +126,7 @@ export function devourDecision(
   seat: SeatId,
   source: ObjectId,
   legal: readonly ObjectId[],
+  quality?: string,
 ): Omit<ChoosePermanentDecision, 'id'> {
   return {
     kind: 'choosePermanent',
@@ -126,6 +137,7 @@ export function devourDecision(
     min: 0,
     max: legal.length,
     legal,
+    ...(quality === undefined ? {} : { devourQuality: quality }),
   };
 }
 
