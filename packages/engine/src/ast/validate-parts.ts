@@ -4563,6 +4563,8 @@ export const MAY_EFFECT_KINDS = [
   'destroy',
   // Issue 345 (Soulbright Flamekin, CR 608.2c): "If this is the third time this ability has resolved this turn, you may add {R}{R}...".
   'addMana',
+  // Issue 102 (Ob Nixilis, the Fallen, CR 119.3, 608.2c): "you may have target player lose 3 life. If you do, put three +1/+1 counters on ~": life was lost when the amount was above 0.
+  'loseLife',
 ];
 
 /**

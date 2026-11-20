@@ -121,3 +121,34 @@ describe('"{T}, Sacrifice ~: Put your commander into your hand from the command 
     g.expect.zone(beacon.name, 'graveyard');
   });
 });
+
+describe('"Whenever a land you control enters, you may have target player lose 3 life. If you do, put three +1/+1 counters on ~." (CR 119.3, 608.2c, 122.1)', () => {
+  const fiend = parsed(
+    'SYNTHETIC Parsed Fallen',
+    'Creature — Demon',
+    'Landfall — Whenever a land you control enters, you may have target player lose 3 life. If you do, put three +1/+1 counters on ~.',
+    { manaCost: '{3}{B}{B}', power: '5', toughness: '5', colors: ['B'] },
+  );
+  const build = () =>
+    base().define(fiend).battlefield(fiend.name).hand('Forest').at('precombatMain').build();
+
+  test('accepting: the player loses 3 life and the creature gets three counters', () => {
+    const g = build();
+    g.act(0).playLand('Forest[0]');
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.act(0).accept();
+    g.expect.life(1, 37);
+    g.expect.counters(fiend.name, { '+1/+1': 3 });
+  });
+
+  test('declining: nothing is lost and no counters are put', () => {
+    const g = build();
+    g.act(0).playLand('Forest[0]');
+    g.act(0).chooseTargets({ player: 1 });
+    g.passAll();
+    g.act(0).decline();
+    g.expect.life(1, 40);
+    g.expect.counters(fiend.name, {});
+  });
+});

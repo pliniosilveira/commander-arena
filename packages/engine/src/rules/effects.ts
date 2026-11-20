@@ -2144,7 +2144,12 @@ function runEffect(
         // CR 702.101a (D-120): the life lost is remembered for "the total life lost this way".
         if (effect.kind === 'loseLife') lost += Math.max(0, amount);
       }
-      return { ...done(next, events), ...(lost > 0 ? { lifeLost: lost } : {}) };
+      // CR 608.2c: a "you may have target player lose 3 life. If you do, ..." counts as done when some life was lost (`may`, issue 102).
+      return {
+        ...done(next, events),
+        ...(lost > 0 ? { lifeLost: lost } : {}),
+        ...(effect.kind === 'loseLife' && lost > 0 ? { performed: 1 } : {}),
+      };
     }
 
     case 'meld':
