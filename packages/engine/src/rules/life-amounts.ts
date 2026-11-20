@@ -8,7 +8,7 @@
 import type { Amount, Cost } from '../ast/types';
 import type { SeatId } from '../ids';
 import { getSeat } from '../state/ops';
-import type { GameState } from '../state/types';
+import type { GameState, ThisWayCounts } from '../state/types';
 import { amountOf } from './amounts';
 import type { SelectContext } from './select';
 
@@ -18,7 +18,14 @@ export function lifeAmountFor(
   amount: Amount,
   seat: SeatId,
   read: () => number,
+  thisWay?: ThisWayCounts,
 ): number {
+  // CR 608.2c (Deadly Tempest): "the number of creatures they controlled that were destroyed this way" is each player's own number.
+  if (typeof amount === 'object' && amount.kind === 'thisWay') {
+    if (amount.what === 'destroyedCreaturesOfAffected') {
+      return thisWay?.destroyedCreaturesBy?.[seat] ?? 0;
+    }
+  }
   if (typeof amount === 'object' && amount.kind === 'lifeLostThisTurn') {
     return getSeat(state, seat).lifeLostThisTurn;
   }

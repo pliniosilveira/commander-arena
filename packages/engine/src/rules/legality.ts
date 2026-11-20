@@ -44,6 +44,7 @@ import { asFace, castableFaces, choosesFace } from './layouts';
 import { libraryLandPermission } from './library-play';
 import { isCommanderCardId } from './melded';
 import { chosenModeSpecs, legalModeSets, modalOfAbility, modalOfSpellText } from './modes';
+import { mayPayLifeForMana } from './next-spell-life';
 import { hasGrantedFlashCasting } from './player-flash';
 import { preparedPermanentOf } from './prepare';
 import { matchesFilter } from './select';
@@ -736,6 +737,8 @@ export function canCast(
   ) {
     return false;
   }
+  // CR 118.9: "Rather than pay the mana cost of the next spell you cast this turn, you may pay life": only while an effect grants it.
+  if (alternative === 'lifeForMana' && !mayPayLifeForMana(state, seat)) return false;
   const spell = castAs(obj, seat, face, alternative);
   const types = derive(state, spell).types;
   if (types.includes('land')) return false;

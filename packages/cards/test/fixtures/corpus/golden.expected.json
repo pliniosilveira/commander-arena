@@ -1,5 +1,5 @@
 {
-  "parserVersion": 172,
+  "parserVersion": 173,
   "cards": {
     "00187de2-bc48-4137-97d8-a9a0fafc76c1": {
       "name": "Pteramander",
@@ -575,6 +575,14 @@
       "reasons": [],
       "ast": "681059ce"
     },
+    "0c1e2bb8-0629-466c-b435-c4c71cdc755d": {
+      "name": "Sapling of Colfenor",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b6bb3c3e"
+    },
     "0c2841bb-038c-4fbf-8360-bc0a1522b58d": {
       "name": "Exploration",
       "group": "holdout",
@@ -727,6 +735,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "239d9e83"
+    },
+    "103d9ad0-d655-4bd5-a899-e9f8869e333d": {
+      "name": "Gaze of Granite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "46f4cc3b"
     },
     "1063822f-47d3-42e9-8a21-f62b12609fe1": {
       "name": "Fatehold Chronologist // Peer Review",
@@ -986,6 +1002,14 @@
       "reasons": [],
       "ast": "13a8a530"
     },
+    "1820af5c-9cc2-4b77-b4ca-86084442f087": {
+      "name": "Sun Droplet",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "e6657315"
+    },
     "183891b0-b5ec-47f4-8d09-b9d3cfc4e7f1": {
       "name": "God-Eternal Bontu",
       "group": "training",
@@ -1217,6 +1241,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "2d4f4daf"
+    },
+    "1fa20b05-cc06-4fb7-ae76-677a29e2185a": {
+      "name": "Yedora, Grave Gardener",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "8f37996f"
     },
     "1fb02bad-0d1f-437f-a269-f51cc19b280f": {
       "name": "Havengul Lich",
@@ -1577,6 +1609,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "9564f29c"
+    },
+    "2a3712f9-6bed-4068-9064-2b5240fc7b28": {
+      "name": "Gluttonous Troll",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "734f822c"
     },
     "2abe9303-d498-4aad-b6b2-8b5064bd2ffd": {
       "name": "Rhox Faithmender",
@@ -3551,6 +3591,14 @@
       "reasons": [],
       "ast": "940a518a"
     },
+    "5ecf35b1-0bfd-4c60-a791-5a3b918dd630": {
+      "name": "Marshland Bloodcaster",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "80572aec"
+    },
     "5f15125e-ae89-471e-b055-226a783bc7c1": {
       "name": "Aetherflux Reservoir",
       "group": "acceptance",
@@ -4456,6 +4504,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "3ecc6edf"
+    },
+    "75a4ddf5-1b3c-4dde-a6e4-4346e46cebf1": {
+      "name": "Druidic Satchel",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "ea3c947c"
     },
     "75e4448b-5bd7-4ed4-8db8-820cd6d04c12": {
       "name": "Boar Umbra",
@@ -5458,6 +5514,14 @@
       "reasons": [],
       "ast": "568550ce"
     },
+    "913ec957-5f4e-46b4-a819-9448837f72a3": {
+      "name": "Revival Experiment",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "18de27a4"
+    },
     "918991a6-7321-419d-8f3d-150fe32d02d2": {
       "name": "Eris, Roar of the Storm",
       "group": "acceptance",
@@ -5561,6 +5625,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "c9be3892"
+    },
+    "94723d61-3e29-4180-91bc-df37c4086a66": {
+      "name": "Willowdusk, Essence Seer",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "03fb6d2d"
     },
     "94e8b0a9-44a1-4dce-8d44-78681ae638a1": {
       "name": "Fountainport",
@@ -6259,6 +6331,14 @@
       "reasons": [],
       "ast": "a92e282b"
     },
+    "a684df3a-5441-4daa-86d1-c47a91b35e6a": {
+      "name": "Reckless Spite",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fc94a5f0"
+    },
     "a6fd90dc-0ec3-4dce-a77a-4d04f5e254bf": {
       "name": "Winds of Rath",
       "group": "acceptance",
@@ -6838,6 +6918,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "7037decd"
+    },
+    "b5516bc9-ec8d-4323-8748-96c49d7d0622": {
+      "name": "Deadly Tempest",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "69941b55"
     },
     "b5641fcf-135e-43e7-a547-344fac61e279": {
       "name": "Tivash, Gloom Summoner",
@@ -7930,6 +8018,22 @@
       "reasons": [],
       "ast": "82ebee59"
     },
+    "d5b446a4-a761-42f0-acf0-ea0a1a9538d6": {
+      "name": "Pulse of Murasa",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "b4ea72b8"
+    },
+    "d5c4d36c-54b3-4149-906b-a57a670260fc": {
+      "name": "Alhammarret's Archive",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "fff007f3"
+    },
     "d683d985-9888-4d21-8b5f-69e69ce4a03b": {
       "name": "Path to Exile",
       "group": "training",
@@ -8081,6 +8185,14 @@
       "unparsed": [],
       "reasons": [],
       "ast": "4e7b1cbf"
+    },
+    "d9826660-0f34-4d82-8915-cf2796ab8d9a": {
+      "name": "Sproutback Trudge",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "1118ed8a"
     },
     "d9a10971-f32b-4978-952d-fed0a5bc9e36": {
       "name": "Krosan Verge",
@@ -8811,6 +8923,14 @@
       "reasons": [],
       "ast": "db3fc478"
     },
+    "edf46ef0-159d-4f0b-ae14-14e0c8446382": {
+      "name": "Suffer the Past",
+      "group": "acceptance",
+      "status": "supported",
+      "unparsed": [],
+      "reasons": [],
+      "ast": "c6be13d1"
+    },
     "ee1db746-f5c1-4dce-82eb-24b273cc9507": {
       "name": "Witherbloom Charm",
       "group": "acceptance",
@@ -9515,8 +9635,8 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 874,
-      "total": 893
+      "supported": 889,
+      "total": 908
     }
   }
 }

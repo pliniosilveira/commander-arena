@@ -263,6 +263,7 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 sacrificedOwn: (res.thisWay?.sacrificedOwn ?? 0) + (out.thisWay.sacrificedOwn ?? 0),
                 destroyed: (res.thisWay?.destroyed ?? 0) + (out.thisWay.destroyed ?? 0),
                 exiledNonland: (res.thisWay?.exiledNonland ?? 0) + (out.thisWay.exiledNonland ?? 0),
+                returned: (res.thisWay?.returned ?? 0) + (out.thisWay.returned ?? 0),
                 exiledCreatures:
                   (res.thisWay?.exiledCreatures ?? 0) + (out.thisWay.exiledCreatures ?? 0),
                 destroyedOwnNontoken:
@@ -304,6 +305,10 @@ export function continueResolution(input: GameState, events: GameEvent[] = []): 
                 countersRemoved:
                   (res.thisWay?.countersRemoved ?? 0) + (out.thisWay.countersRemoved ?? 0),
                 ...mergePowerBy(res.thisWay?.exiledPowerBy, out.thisWay.exiledPowerBy),
+                ...mergeCreaturesBy(
+                  res.thisWay?.destroyedCreaturesBy,
+                  out.thisWay.destroyedCreaturesBy,
+                ),
                 discardedBy: [
                   ...new Set([
                     ...(res.thisWay?.discardedBy ?? []),
@@ -392,6 +397,19 @@ function mergePowerBy(
     total[Number(seat)] = (total[Number(seat)] ?? 0) + power;
   }
   return { exiledPowerBy: total };
+}
+
+/** The creatures by seat of two `thisWay` tallies, added (Deadly Tempest); nothing when neither has any. */
+function mergeCreaturesBy(
+  a: Readonly<Record<number, number>> | undefined,
+  b: Readonly<Record<number, number>> | undefined,
+): { readonly destroyedCreaturesBy?: Readonly<Record<number, number>> } {
+  if (a === undefined && b === undefined) return {};
+  const total: Record<number, number> = { ...a };
+  for (const [seat, count] of Object.entries(b ?? {})) {
+    total[Number(seat)] = (total[Number(seat)] ?? 0) + count;
+  }
+  return { destroyedCreaturesBy: total };
 }
 
 function enchantedHost(

@@ -873,6 +873,7 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'replacement.tokens-double': asIs,
   'static.cant-have-counters': asIs,
   'trigger.noncombat-damage': whenever,
+  'trigger.player-dealt-damage': whenever,
   'trigger.enchanted-player-attacked': whenever,
   'effect.opponents-attacking-do-same': spell(
     (e) => `Create a 2/2 black Zombie creature token. ${cap(e)}.`,

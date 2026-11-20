@@ -54,6 +54,7 @@ import { JESKAI_CASTFREE_TRIGGER_RULES } from './jeskai-castfree';
 import { KORVOLD_TRIGGER_RULES } from './korvold';
 import { NONCOMBAT_DAMAGE_TRIGGER_RULES } from './noncombat-damage';
 import { OPPONENT_ATTACKS_TRIGGER_RULES } from './opponent-attacks';
+import { PLAYER_DEALT_DAMAGE_TRIGGER_RULES } from './player-dealt-damage';
 import { PRISMARI_G1_TRIGGER_RULES } from './prismari-g1';
 import { QUANDRIX_E_TRIGGER_RULES } from './quandrix-e';
 import { RECURSION_TRIGGER_RULES } from './recursion';
@@ -1263,6 +1264,8 @@ export const TRIGGER_RULES = [
   ...DEALS_DAMAGE_TRIGGER_RULES,
   // Issue 25 (D-333): "a source you control deals noncombat damage to an opponent".
   ...NONCOMBAT_DAMAGE_TRIGGER_RULES,
+  // Issue 190 (Sun Droplet): "you're dealt damage".
+  ...PLAYER_DEALT_DAMAGE_TRIGGER_RULES,
   // D-391 (Hashaton, group 9): "a source deals damage to ~".
   ...HASHATON_G9_TRIGGER_RULES,
   // Stage P49 (D-206): "one or more other creatures and/or artifacts you control die", "you discard a card".

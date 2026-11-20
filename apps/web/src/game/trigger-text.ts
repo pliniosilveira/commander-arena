@@ -600,6 +600,11 @@ export function triggerWording(trigger: Trigger, ctx: TriggerContext): string | 
       if (what === null) return null;
       return `Whenever ${what} deals damage to ${trigger.to === 'opponent' ? 'an opponent' : 'a player'}`;
     }
+    case 'dealtDamageToPlayer':
+      // CR 120.2 (Sun Droplet): "Whenever you're dealt damage".
+      return trigger.who === 'you'
+        ? "Whenever you're dealt damage"
+        : `Whenever ${trigger.who === 'opponent' ? 'an opponent' : 'a player'} is dealt damage`;
     case 'noncombatDamageDealt': {
       // D-333 (CR 120.2b, 603.2c): "Whenever a source you control deals noncombat damage to an opponent".
       const source = trigger.by === 'you' ? 'a source you control' : 'a source';

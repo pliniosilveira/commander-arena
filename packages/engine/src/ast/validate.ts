@@ -1228,6 +1228,11 @@ function checkTrigger(t: Trigger, path: string, out: AstIssue[]): void {
         issue(out, `${path}.to`, `unknown recipient ${String(t.to)}`);
       }
       break;
+    case 'dealtDamageToPlayer':
+      if (!isOneOf(t.who, ['you', 'opponent', 'player'])) {
+        issue(out, `${path}.who`, `unknown player ${String(t.who)}`);
+      }
+      break;
     case 'noncombatDamageDealt':
       // D-333: whose source it is and which player it damaged; any object can be the source, so there is no subject to check.
       if (!isOneOf(t.by, ['you', 'any'])) {
@@ -1298,6 +1303,7 @@ function hasDamage(t: Trigger): boolean {
     t?.kind === 'dealsCombatDamage' ||
     t?.kind === 'dealsDamage' ||
     t?.kind === 'noncombatDamageDealt' ||
+    t?.kind === 'dealtDamageToPlayer' ||
     // Issue 103: all the combat damage the sources dealt to the player, "that damage".
     t?.kind === 'combatDamageBatch' ||
     t?.kind === 'lifeGained' ||
@@ -1663,6 +1669,17 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
     case 'triggered': {
       checkTrigger(a.trigger, `${path}.trigger`, out);
       checkGraveyardAbility(a, path, out);
+      // CR 113.6b (Sproutback Trudge): "cast this card from your graveyard" names the card in the graveyard its ability works from.
+      if (
+        a.functionsIn !== 'graveyard' &&
+        JSON.stringify(a.effect ?? null).includes('"kind":"castCard","object":{"kind":"this"}')
+      ) {
+        issue(
+          out,
+          `${path}.functionsIn`,
+          "casting this card needs a triggered ability with functionsIn: 'graveyard'",
+        );
+      }
       const targets = declareTargets(
         a.targets,
         `${path}.targets`,
