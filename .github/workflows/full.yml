@@ -108,7 +108,9 @@ jobs:
     needs: gate
     if: ${{ needs.gate.outputs.run == 'true' }}
     name: browser tests
-    runs-on: ubuntu-latest
+    # Pinned: `ubuntu-latest` became Ubuntu 26.04 on 17 November, and `playwright install --with-deps chromium` stops there ("Playwright does not support chromium on
+    # ubuntu26.04-x64"), so the browser tests did not run for three nights. Move it back to `ubuntu-latest` when the pinned Playwright supports the newer release.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
