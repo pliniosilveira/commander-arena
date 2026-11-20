@@ -153,6 +153,7 @@ import { PRISMARI_G2_EFFECT_RULES } from './prismari-g2';
 import { PRISMARI_G3_EFFECT_RULES } from './prismari-g3';
 import { PUMP_RULES } from './pump';
 import { PUT_RULES } from './put';
+import { PUT_MILLED_EFFECT_RULES } from './put-milled';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
@@ -1102,6 +1103,8 @@ export const EFFECT_RULES = [
   ...ADAPT_EFFECT_RULES,
   // Issue 121 (CR 601.2f, 702.40a, 702.85a): "the next instant or sorcery spell you cast this turn costs {X} less / has storm".
   ...NEXT_SPELL_EFFECT_RULES,
+  // Leyline Dowser (issue 121): "You may put an instant or sorcery card milled this way into your hand."
+  ...PUT_MILLED_EFFECT_RULES,
   ...OWNER_LIBRARY_EFFECT_RULES,
   ...INCUBATE_EFFECT_RULES,
   ...CAST_MILLED_EFFECT_RULES,

@@ -4545,6 +4545,11 @@ export type Trigger =
       readonly what: TriggerSubject;
       readonly counter?: string;
       readonly by: 'you' | 'any';
+      /**
+       * "When the twelfth hour counter is put on this artifact" (Midnight Clock, issue 121, CR 122.6, 603.2): only the instance of putting that makes the number of `counter` counters on
+       * the permanent reach this number or go past it (from fewer than `reaches` to `reaches` or more). Needs `counter`; a whole number of 2 or more.
+       */
+      readonly reaches?: number;
     }
   /**
    * "Whenever you attack" (`atLeast` 1, D-187), "Whenever you attack with two or more creatures", "whenever another player attacks with two or more creatures" (CR 508.1, 603.2, D-149):

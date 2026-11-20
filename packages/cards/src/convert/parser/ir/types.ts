@@ -1367,6 +1367,8 @@ export interface IrTrigger extends IrNode {
    */
   readonly counter?: string;
   readonly by?: 'you' | 'any';
+  /** 'countersAdded' "the twelfth hour counter is put on ~" (Midnight Clock, issue 121): the number of counters of the kind the putting reaches. */
+  readonly reaches?: number;
   /**
    * 'attacks' "while you don't control another Dinosaur" (stage P32, D-147, CR 603.2): a condition that is part of the event itself,
    * read once as it happens (not an intervening "if", CR 603.4, which is read again as the ability resolves).

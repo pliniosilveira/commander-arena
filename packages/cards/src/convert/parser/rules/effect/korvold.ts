@@ -148,6 +148,31 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
 });
 
 /**
+ * `effect.shuffle-hand-and-graveyard`: "shuffle your hand and graveyard into your library" (Midnight Clock, CR 701.24, 400.3): every card of the player's hand and of their graveyard goes
+ * into their library and the library is shuffled. The engine's `moveToZone` of each card of the hand and of the graveyard, then `shuffle`.
+ */
+export const EFFECT_SHUFFLE_HAND_AND_GRAVEYARD = defineRule<Clauses>({
+  id: 'effect.shuffle-hand-and-graveyard',
+  family: 'effect',
+  leading: ['shuffle'],
+  cites: ['CR 701.24 (Shuffle)', 'CR 402.1 (Hand)', 'CR 404.1 (Graveyard)'],
+  examples: ['shuffle your hand and graveyard into your library'],
+  rejects: [
+    'shuffle your hand into your library',
+    'shuffle your graveyard and hand into your library',
+    'shuffle your hand and graveyard into their library',
+    'shuffle your hand and graveyard',
+    'shuffle your hand and graveyard into your library and draw a card',
+    'shuffle all hands and graveyards into your library',
+  ],
+  parse: single(
+    'effect.shuffle-hand-and-graveyard',
+    spanned(literal('shuffle your hand and graveyard into your library')),
+    () => ({ verb: 'shuffleHandAndGraveyardIn', args: {} }),
+  ),
+});
+
+/**
  * `effect.shuffle-graveyard`: "shuffle your graveyard into your library" (stage P35, D-176, CR 701.24, 400.3): every card of the player's
  * graveyard goes into their library and the library is shuffled. A commander in it may go to the command zone instead (CR 903.9a), which
  * the engine asks as it moves the cards.
@@ -495,5 +520,6 @@ export const KORVOLD_EFFECT_RULES = [
   EFFECT_GAIN_KEYWORD_TARGETS,
   EFFECT_RETURN_CHOSEN_CARD,
   EFFECT_SHUFFLE_GRAVEYARD,
+  EFFECT_SHUFFLE_HAND_AND_GRAVEYARD,
   EFFECT_REQUIRE_ATTACK,
 ];

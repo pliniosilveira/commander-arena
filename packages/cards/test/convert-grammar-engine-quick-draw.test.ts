@@ -260,3 +260,61 @@ test('Smoldering Stagecoach: when it attacks, the next instant and the next sorc
   g.passAll();
   expect(g.state.continuousEffects.filter((e) => e.change.kind === 'nextSpell')).toHaveLength(2);
 });
+
+// ---- Singles
+
+test('Leyline Dowser: mill a card, and put it into your hand only when it is an instant or a sorcery', () => {
+  const dowser = load('Leyline Dowser');
+  const build = (top: string) =>
+    scenario()
+      .define(dowser)
+      .seat(0)
+      .library(top, 'Island', 'Island')
+      .battlefield(dowser.name)
+      .pool('U')
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  const spell = build('Lightning Bolt');
+  spell.act(0).activate(dowser.name, { ability: 0, pay: true });
+  spell.passAll();
+  spell.act(0).accept();
+  spell.expect.zone('Lightning Bolt', 'hand', { seat: 0 });
+  const land = build('Plains');
+  land.act(0).activate(dowser.name, { ability: 0, pay: true });
+  land.passAll();
+  land.expect.zone('Plains', 'graveyard', { seat: 0 });
+  expect(land.state.seats[0]?.hand).toHaveLength(0);
+});
+
+test('Midnight Clock: the twelfth hour counter shuffles the hand and graveyard into the library, draws seven and exiles it', () => {
+  const clock = load('Midnight Clock');
+  const build = (hours: number) =>
+    scenario()
+      .define(clock)
+      .seat(0)
+      .library(...FILLER, ...FILLER, ...FILLER)
+      .hand('Plains', 'Plains')
+      .graveyard('Lightning Bolt')
+      .battlefield(clock.name, { counters: { hour: hours } })
+      .battlefield('Island', { count: 3 })
+      .seat(1)
+      .library(...FILLER)
+      .at('precombatMain', { active: 0, turn: 3 })
+      .build();
+  // The eleventh counter is not enough: {2}{U}: put an hour counter on it makes twelve.
+  const g = build(11);
+  g.act(0).activate(clock.name, { ability: 1, pay: true });
+  g.passAll();
+  expect(g.state.seats[0]?.hand).toHaveLength(7);
+  expect(g.state.seats[0]?.graveyard).toHaveLength(0);
+  g.expect.zone(clock.name, 'exile');
+  g.expect.invariants();
+  // The tenth counter and the eleventh trigger nothing.
+  const quiet = build(9);
+  quiet.act(0).activate(clock.name, { ability: 1, pay: true });
+  quiet.passAll();
+  expect(quiet.state.seats[0]?.hand).toHaveLength(2);
+  quiet.expect.zone(clock.name, 'battlefield');
+});

@@ -514,6 +514,8 @@ const EMBED: Readonly<Record<string, Embed>> = {
   'trigger.life-gained': whenever,
   'trigger.life-lost': whenever,
   'trigger.counters-added': whenever,
+  // Midnight Clock (issue 121): the Nth counter of a kind put on the permanent.
+  'trigger.nth-counter-put': whenever,
   'trigger.attack-batch': whenever,
   'trigger.opponent-attacks': whenever,
   'trigger.player-attacks-opponent': whenever,

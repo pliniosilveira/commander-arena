@@ -118,6 +118,7 @@ import { PREVENT_DAMAGE } from './prevent';
 import { PRISMARI_G1_LOWERINGS } from './prismari-g1';
 import { PRISMARI_G2_LOWERINGS } from './prismari-g2';
 import { PRISMARI_G3_LOWERINGS } from './prismari-g3';
+import { PUT_MILLED_LOWERINGS } from './put-milled';
 import { QUANDRIX_LOWERINGS } from './quandrix';
 import { QUANDRIX_D1_LOWERINGS } from './quandrix-d1';
 import { QUANDRIX_D2_LOWERINGS } from './quandrix-d2';
@@ -2317,6 +2318,7 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...DAMAGE_BATCH_LOWERINGS,
   ...ADAPT_LOWERINGS,
   ...NEXT_SPELL_LOWERINGS,
+  ...PUT_MILLED_LOWERINGS,
   ...DACK_LOWERINGS,
   ...DEATH_TOLL_C_LOWERINGS,
   // Hylda deck, group 3 (issue 42): "shuffle ~ and target creature ... into their owners' libraries".
