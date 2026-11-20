@@ -66,20 +66,20 @@ const UNREAD: readonly Line[] = [
   {
     kind: 'creature',
     text: 'Start your engines!',
-    expect: no('Start your engines!', NONE),
-    note: 'speed (CR 702.179) is not built: a proposal waits for approval',
+    expect: OK,
+    note: 'speed (CR 702.179) is built: the keyword sets speed 1 as a state-based action',
   },
   {
     kind: 'creature',
     text: 'Max speed — {T}: Add {R}.',
-    expect: no('Max speed — {T}: Add {R}.', NONE),
+    expect: OK,
     note: 'the label limits the ability to max speed, so it is not dropped as a flavor word',
   },
   {
     kind: 'creature',
     text: 'At the beginning of combat on your turn, create a 1/1 red Goblin creature token. That token attacks this combat if able.',
-    expect: no('attacks this combat if able.', 'effect.pump'),
-    note: '"this combat" is not "this turn": the engine has no duration of one combat for a requirement',
+    expect: OK,
+    note: '"this combat" has its own duration (CR 508.1d): it ends with the combat, not the turn',
   },
 ];
 
