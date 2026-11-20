@@ -10,7 +10,7 @@ import { describe, expect, test } from 'vitest';
 import { GameHost } from '../src/game/host';
 import { createAppStore } from '../src/store';
 import { CardFace } from '../src/ui/board/CardFace';
-import { groupTokens } from '../src/ui/board/group';
+import { groupEqual } from '../src/ui/board/group';
 import { layoutRow } from '../src/ui/board/layout';
 import { rowSpec } from '../src/ui/board/Row';
 import { Tile, tokenLine } from '../src/ui/board/Tile';
@@ -78,7 +78,7 @@ describe('the generic token frame', () => {
 
 describe('a stack of tokens is tapped or untapped as a whole', () => {
   test('tapped and untapped tokens never share a group', () => {
-    const entries = groupTokens([
+    const entries = groupEqual([
       zombie('a', { tapped: true }),
       zombie('b'),
       zombie('c', { tapped: true }),
@@ -128,12 +128,15 @@ describe('issue 36 again: 13 tapped tokens beside untapped ones in a row that is
     }
   });
 
-  test('the card behind a tapped stack is turned as the front card is, in the stylesheet too', () => {
+  test('the card behind a tapped stack is tilted as the front card is, in the stylesheet too', () => {
     // The decorative card behind a stack sits outside the front card's own box, so it has to be
-    // turned by a rule of its own: without it a tapped stack drew an upright card behind a tapped
+    // tilted by a rule of its own: without it a tapped stack drew an upright card behind a tapped
     // one, which looked like untapped and tapped cards in one stack.
     const css = readFileSync(new URL('../src/ui/board/board.css', import.meta.url), 'utf8');
     const rule = css.match(/\.board-tile\.is-tapped \.board-tile-stack \{([^}]*)\}/);
-    expect(rule?.[1]).toMatch(/rotate\(90deg\)/);
+    const front = css.match(/\.board-tile\.is-tapped \.board-tile-inner \{([^}]*)\}/);
+    const tilt = front?.[1]?.match(/rotate\([^)]*\)/)?.[0];
+    expect(tilt).toBeDefined();
+    expect(rule?.[1]).toContain(tilt);
   });
 });

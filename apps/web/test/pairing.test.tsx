@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, test } from 'vitest';
 import { GameHost } from '../src/game/host';
 import { createAppStore } from '../src/store';
-import { groupTokens } from '../src/ui/board/group';
+import { groupEqual } from '../src/ui/board/group';
 import { layoutRow } from '../src/ui/board/layout';
 import { PAIR_COLORS, pairClass, pairNumbers } from '../src/ui/board/pairing';
 import { combatRoles, roleKey, roleText } from '../src/ui/board/resolve';
@@ -191,16 +191,16 @@ describe('grouping never hides a pairing', () => {
     const roles = combatRoles(view);
     const key = (o: ObjectView) => roleKey(roles.get(o.id));
     // The attackers: blocked 1, blocked 2, open 3, blocked 4: four different states.
-    expect(groupTokens(attackers, key).map((e) => e.kind)).toEqual([
+    expect(groupEqual(attackers, key).map((e) => e.kind)).toEqual([
       'single',
       'single',
       'single',
       'single',
     ]);
     // Three identical blockers, each on a different attacker.
-    expect(groupTokens(blockers, key).map((e) => e.kind)).toEqual(['single', 'single', 'single']);
+    expect(groupEqual(blockers, key).map((e) => e.kind)).toEqual(['single', 'single', 'single']);
     // Without the combat state in the key they would collapse: this is the confusion that was fixed.
-    expect(groupTokens(blockers)).toHaveLength(1);
+    expect(groupEqual(blockers)).toHaveLength(1);
   });
 
   test('blockers of the same attacker may share a tile; a blocker of another may not', () => {
@@ -209,8 +209,8 @@ describe('grouping never hides a pairing', () => {
     const other = creature({ controller: 1 });
     const roles = combatRoles(viewOf([a, ...bs, other], [attack(a, bs)]));
     const key = (o: ObjectView) => roleKey(roles.get(o.id));
-    expect(groupTokens(bs, key)).toHaveLength(1);
-    const [spare] = groupTokens([...bs, other], key).filter((e) => e.kind === 'single');
+    expect(groupEqual(bs, key)).toHaveLength(1);
+    const [spare] = groupEqual([...bs, other], key).filter((e) => e.kind === 'single');
     expect(spare).toBeDefined();
   });
 

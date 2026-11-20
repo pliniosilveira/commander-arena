@@ -669,8 +669,11 @@
     opacity 0.15s ease;
 }
 
+/* A tapped permanent is tilted and dimmed, not turned 90 degrees: a tile is wider than tall, and
+   turned it would need a row as tall as the tile is wide. */
 .board-tile.is-tapped .board-tile-inner {
-  transform: rotate(90deg);
+  transform: rotate(7deg);
+  filter: brightness(0.6);
 }
 
 /* Issue 22: a card is framed in its colours (a land in the colours of its mana). The colours are an
@@ -1196,10 +1199,11 @@
   border-radius: 6px;
 }
 
-/* A stack of identical tokens is tapped or untapped as a whole (grouping never mixes the two), so
-   the card behind the front one turns with it. The offset is the upright one in the rotated frame. */
+/* A stack of equal permanents is tapped or untapped as a whole (grouping never mixes the two), so
+   the card behind the front one tilts with it. */
 .board-tile.is-tapped .board-tile-stack {
-  transform: rotate(90deg) translate(-3px, -4px);
+  transform: rotate(7deg) translate(4px, -3px);
+  filter: brightness(0.6);
 }
 
 .board-count {
@@ -1807,6 +1811,39 @@
   z-index: 1;
 }
 
+/* The top of the printed card (card-top.ts): the image is as wide as the tile and the tile cuts it
+   under the type line. Once it has loaded, the printed title and type line replace the drawn band,
+   name and token line, and the marks keep clear of the title bar and the type line. */
+.board-tile-top {
+  object-position: top;
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded)
+  > :is(.board-tile-band, .board-tile-name, .board-tile-token) {
+  display: none;
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-kw {
+  margin-top: calc(var(--h) * 0.18);
+}
+
+.board-tile:not(.is-compact) .board-tile-inner:has(> .board-tile-top.is-loaded) .board-tile-chips {
+  margin-bottom: calc(var(--h) * 0.13);
+}
+
+.board-tile-inner > .board-tile-under {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
+  background: var(--bg-raised);
+}
+
+.board-tile-inner:has(> .board-tile-top.is-loaded) > .board-tile-under {
+  display: block;
+}
+
 .board-tile-name,
 .board-tile-foot {
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.85);
@@ -1889,8 +1926,8 @@
   display: block;
 }
 
-/* A tapped land is turned 90 degrees in its square, so the part of it that shows in a stack is its
-   side: a mark on the strip says which cards are tapped. */
+/* Little of the tilt of a tapped land shows on the strip a stack leaves of it: a mark on the strip
+   says which cards are tapped. */
 .board-land-slot:not([data-front]) .board-tile.is-tapped::after {
   content: "⟳";
   position: absolute;

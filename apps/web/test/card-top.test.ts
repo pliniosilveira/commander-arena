@@ -1,0 +1,77 @@
+import type { ObjectView } from '@commander-arena/engine';
+import { describe, expect, test } from 'vitest';
+import { CARD_TOP_ASPECT, cardTopHeight, cardTopOf } from '../src/ui/board/card-top';
+
+function obj(over: Partial<ObjectView> = {}): ObjectView {
+  return {
+    id: 'o1',
+    owner: 0,
+    controller: 0,
+    zone: 'battlefield',
+    name: 'Bears',
+    manaCost: ['1', 'G'],
+    supertypes: [],
+    types: ['creature'],
+    subtypes: ['Bear'],
+    colors: ['G'],
+    power: 2,
+    toughness: 2,
+    oracleText: '',
+    tapped: false,
+    damage: 0,
+    counters: {},
+    isCommander: false,
+    summoningSick: false,
+    isToken: false,
+    keywords: [],
+    protector: null,
+    support: 'supported',
+    targets: [],
+    ...over,
+  };
+}
+
+describe('the top of the printed card on a tile', () => {
+  test('a tile is wider than tall, and keeps that shape at any width', () => {
+    expect(CARD_TOP_ASPECT).toBeGreaterThan(1.1);
+    expect(CARD_TOP_ASPECT).toBeLessThan(1.2);
+    expect(cardTopHeight(154)).toBe(136);
+    expect(cardTopHeight(100)).toBe(88);
+  });
+
+  test('a regular card shows its whole top; a planeswalker is covered under its higher type line', () => {
+    expect(cardTopOf(obj())).toEqual({ cover: 1 });
+    expect(cardTopOf(obj({ types: ['land'], subtypes: [] }))).toEqual({ cover: 1 });
+    expect(cardTopOf(obj({ layout: 'transform', face: 1 }))).toEqual({ cover: 1 });
+    const walker = cardTopOf(obj({ types: ['planeswalker'], subtypes: ['Ral'] }));
+    expect(walker?.cover).toBeGreaterThan(0.8);
+    expect(walker?.cover).toBeLessThan(1);
+  });
+
+  test.each([
+    ['a face-down permanent', { faceDown: true, faceDownBy: 'manifest' }],
+    ['a token with a frame of its own', { isToken: true }],
+    ['a split card', { layout: 'split' }],
+    ['a Saga', { layout: 'saga', types: ['enchantment'], subtypes: ['Saga'] }],
+    ['a Class', { layout: 'class', types: ['enchantment'], subtypes: ['Class'] }],
+    ['a Case', { types: ['enchantment'], subtypes: ['Case'] }],
+    ['a battle', { types: ['battle'], subtypes: ['Siege'] }],
+  ] as [string, Partial<ObjectView>][])('%s keeps the drawn frame', (_, over) => {
+    expect(cardTopOf(obj(over))).toBeNull();
+  });
+
+  test('a token that is a copy of a card is drawn as that card', () => {
+    const copy = obj({
+      isToken: true,
+      tokenDefinition: { manaCost: ['1', 'G'] } as unknown as NonNullable<
+        ObjectView['tokenDefinition']
+      >,
+    });
+    expect(cardTopOf(copy)).toEqual({ cover: 1 });
+    const token = obj({
+      isToken: true,
+      tokenDefinition: { manaCost: null } as unknown as NonNullable<ObjectView['tokenDefinition']>,
+    });
+    expect(cardTopOf(token)).toBeNull();
+  });
+});
