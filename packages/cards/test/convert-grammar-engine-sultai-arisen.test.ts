@@ -378,3 +378,36 @@ describe('"Draw two cards, then discard a card and you lose 2 life. Create X tap
     expect(onBattlefield(g.state)).toBe(5 + 3);
   });
 });
+
+describe('"{1}{G}, {T}, Return ~ to its owner’s hand: Reveal the top four cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest into your graveyard." (CR 701.20a, 110.2a)', () => {
+  const snake = parsed(
+    'SYNTHETIC Parsed Snake',
+    'Legendary Enchantment Creature — Snake Druid',
+    "{1}{G}, {T}, Return ~ to its owner's hand: Reveal the top four cards of your library. You may put a land card from among them onto the battlefield tapped. Put the rest into your graveyard.",
+    { manaCost: '{1}{G}', power: '1', toughness: '1', colors: ['G'] },
+  );
+  const build = () =>
+    scenario()
+      .seat(0)
+      .define(snake)
+      .battlefield(snake.name, 'Forest', 'Forest')
+      .library('Forest', 'Lightning Bolt', 'Serra Angel', 'Grizzly Bears', 'Plains', 'Plains')
+      .seat(1)
+      .library('Plains', 'Plains')
+      .seat(0)
+      .at('precombatMain')
+      .build();
+
+  test('one land is put onto the battlefield tapped, the rest go to the graveyard', () => {
+    const g = build();
+    g.act(0).activate(snake.name).pay();
+    g.passAll();
+    g.act(0).chooseCards({ name: 'Forest', zone: 'library' });
+    g.expect.zone(snake.name, 'hand', { seat: 0 });
+    expect(onBattlefield(g.state)).toBe(3);
+    g.expect.tapped({ name: 'Forest', zone: 'battlefield', nth: 2 });
+    g.expect.zone('Lightning Bolt', 'graveyard', { seat: 0 });
+    g.expect.zone('Serra Angel', 'graveyard', { seat: 0 });
+    g.expect.zone('Grizzly Bears', 'graveyard', { seat: 0 });
+  });
+});

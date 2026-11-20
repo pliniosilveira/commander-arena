@@ -665,7 +665,8 @@ const PUT_ONE_PILE = /^put one pile into your hand and the other into your grave
  * "Reveal the top five cards of your library. You may put a creature or enchantment card from among them into your hand. Put the rest into your graveyard." (D-396, CR 701.20a):
  * the second sentence of the same instruction after `REVEAL_THE_TOP` (the cards are revealed, so "reveal" is not said again), kept together with the rest for `effect.reveal-take`.
  */
-const PUT_FROM_AMONG_REVEALED = /^you may put [^.]* from among them into your hand\.$/i;
+const PUT_FROM_AMONG_REVEALED =
+  /^you may put [^.]* from among them (?:into your hand|onto the battlefield tapped)\.$/i;
 /**
  * "You and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card revealed by the other player. You each put the card you
  * revealed into your hand." (CR 701.20a, 119.3): three sentences that are one instruction, kept together for `effect.reveal-top-duel`.
