@@ -622,6 +622,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     // D-665: Demonstrate (CR 702.144a); D-667: Retrace (CR 702.81a).
     'demonstrate',
     'retrace',
+    // CR 702.133a: Jump-start, cast from the graveyard by discarding a card, then exiled.
+    'jumpStart',
     // CR 702.127a: Aftermath, one half of a split card cast from the graveyard.
     'aftermath',
     // D-124: Unearth (CR 702.84a).
@@ -1354,6 +1356,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'tapPermanents',
     // D-667: Retrace (CR 702.81a), cast from the graveyard by discarding a land card as an additional cost.
     'retrace',
+    // CR 702.133a: Jump-start (cast from the graveyard by discarding a card as an additional cost).
+    'jumpStart',
     // Issue 159: "cast this creature from your graveyard by paying {B}{B} and sacrificing two creatures rather than paying its mana cost".
     'sacrificeFromGraveyard',
   ],
@@ -2238,6 +2242,7 @@ export const CAST_ALTERNATIVE_KINDS = [
   'morph',
   'tapPermanents',
   'retrace',
+  'jumpStart',
   'sacrificeFromGraveyard',
   'impending',
 ] as const;
@@ -2625,6 +2630,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   cascade: true,
   demonstrate: true,
   retrace: true,
+  jumpStart: true,
   aftermath: true,
   unearth: true,
   encore: true,

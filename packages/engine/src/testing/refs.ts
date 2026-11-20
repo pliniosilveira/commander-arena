@@ -323,6 +323,7 @@ export function castAction(
     alternative === 'escape' ||
     alternative === 'harmonize' ||
     alternative === 'retrace' ||
+    alternative === 'jumpStart' ||
     alternative === 'sacrificeFromGraveyard'
       ? ['graveyard']
       : ['hand', 'command', 'exile'];

@@ -431,6 +431,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !exiled &&
       timeCounters === null &&
       obj.stack.flashback !== true &&
+      obj.stack.jumpStart !== true &&
       obj.stack.aftermath !== true &&
       obj.stack.alt !== 'harmonize' &&
       obj.stack.exileInstead !== true;
@@ -441,6 +442,7 @@ function finish(state: GameState, events: GameEvent[]): ResolveOutcome {
       !exiled &&
       !boughtBack &&
       obj.stack?.flashback !== true &&
+      obj.stack?.jumpStart !== true &&
       obj.stack?.exileInstead !== true;
     const downBy = faceDownBy(obj);
     const moved = moveObject(next, {

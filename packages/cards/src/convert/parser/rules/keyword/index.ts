@@ -140,6 +140,8 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     'Retrace',
     'Cascade, retrace',
     'Retrace, flying',
+    // CR 702.133a: Jump-start (the reminder text is stripped before the line is read).
+    'Jump-start',
     // CR 702.127a: Aftermath on the second half of a split card (the reminder text is stripped before the line is read).
     'Aftermath',
     'aftermath',

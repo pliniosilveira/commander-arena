@@ -4986,6 +4986,13 @@ export type Keyword =
    */
   | { readonly kind: 'retrace' }
   /**
+   * CR 702.133a (Jump-start): "You may cast this card from your graveyard by discarding a card in addition to paying its other costs. If you do, exile this card instead of putting it
+   * anywhere else any time it would leave the stack." A static ability that functions while the card is in its owner's graveyard: the card is cast from there, at the timing of its
+   * type, paying its mana cost and discarding a card from the hand as an additional cost (CR 601.2b, 601.2f-h). The engine offers it as its own way of casting (`castSpell` with
+   * `alternative` `jumpStart`: it is not an alternative cost, CR 118.9, but a permission used by naming it, like Retrace). An instant or a sorcery.
+   */
+  | { readonly kind: 'jumpStart' }
+  /**
    * CR 702.127a (Aftermath): "You may cast this half of this split card from your graveyard", "This half of this split card can't be cast from any zone other than a graveyard" and "If this
    * spell was cast from a graveyard, exile it instead of putting it anywhere else any time it would leave the stack." Three static abilities of one half of a split card (CR 709). It is not an
    * alternative cost: the half is cast paying its own mana cost, at the timing of its type, so the engine offers it as an ordinary `castSpell` with that `face` for a card in a graveyard

@@ -16,6 +16,7 @@ import {
   flashbackObjects,
   foretellCastObjects,
   harmonizeObjects,
+  jumpStartObjects,
   playableLands,
   retraceObjects,
   sacrificeFromGraveyardObjects,
@@ -56,6 +57,10 @@ export function priorityOptions(state: GameState, seat: SeatId): PriorityOption[
   // CR 702.34a (Flashback): a card in the graveyard is cast by its alternative cost.
   for (const object of flashbackObjects(state, seat)) {
     options.push({ kind: 'castSpell', object, alternative: 'flashback' });
+  }
+  // CR 702.133a (Jump-start): a card with jump-start in the graveyard is cast by discarding a card, one option for each.
+  for (const object of jumpStartObjects(state, seat)) {
+    options.push({ kind: 'castSpell', object, alternative: 'jumpStart' });
   }
   // CR 702.81a (Retrace, D-667): a card with retrace in the graveyard is cast by discarding a land card, one option for each.
   for (const object of retraceObjects(state, seat)) {

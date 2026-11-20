@@ -451,6 +451,14 @@ export function castZone(
     );
     return retrace === true ? 'graveyard' : null;
   }
+  // CR 702.133a (Jump-start): a card with jump-start in its owner's graveyard is cast from there, paying its mana cost and discarding a card.
+  if (alternative === 'jumpStart') {
+    if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
+    const jumpStart = faceOf(state, obj)?.abilities.some(
+      (a) => a.kind === 'keyword' && a.keyword.kind === 'jumpStart',
+    );
+    return jumpStart === true ? 'graveyard' : null;
+  }
   if (alternative === 'flashback') {
     if (obj.zone !== 'graveyard' || obj.card === null || faceIndex !== 0) return null;
     const face = faceOf(state, obj);
@@ -981,6 +989,13 @@ export function escapeObjects(state: GameState, seat: SeatId): ObjectId[] {
 export function retraceObjects(state: GameState, seat: SeatId): ObjectId[] {
   return zoneList(state, 'graveyard', seat).filter((id) =>
     canCast(state, seat, getObject(state, id), 'retrace'),
+  );
+}
+
+/** The cards in the seat's graveyard it could cast now with jump-start (CR 702.133a): the card is castable and a card can be discarded for it. */
+export function jumpStartObjects(state: GameState, seat: SeatId): ObjectId[] {
+  return zoneList(state, 'graveyard', seat).filter((id) =>
+    canCast(state, seat, getObject(state, id), 'jumpStart'),
   );
 }
 

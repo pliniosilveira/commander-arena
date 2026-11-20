@@ -69,6 +69,7 @@ const LABELS: Readonly<Record<string, readonly [short: string, full: string]>> =
   // Prismari group 3 (D-666, D-667): Demonstrate and Retrace.
   demonstrate: ['Dem', 'Demonstrate'],
   retrace: ['Rtr', 'Retrace'],
+  jumpStart: ['JmS', 'Jump-start'],
   aftermath: ['Aft', 'Aftermath'],
   // Ascend on a permanent (D-264, CR 702.131b).
   ascend: ['Asc', 'Ascend'],

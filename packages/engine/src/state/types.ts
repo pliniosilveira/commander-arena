@@ -432,6 +432,11 @@ export interface StackData {
    */
   readonly retrace?: true;
   /**
+   * True when cast from the graveyard by its jump-start ability (CR 702.133a): the mana cost was paid and a card was discarded as an additional cost. The spell is exiled instead of going
+   * anywhere else when it leaves the stack (`rules/zones.ts`). Absent otherwise, and for an ability.
+   */
+  readonly jumpStart?: true;
+  /**
    * True when cast without paying its mana cost (CR 118.9, D-095): the `free` alternative cost.
    * Absent otherwise, and for an ability.
    */

@@ -142,6 +142,7 @@ export function alternativeOfStack(
 ): CastAlternative | undefined {
   if (stack?.flashback === true) return 'flashback';
   if (stack?.retrace === true) return 'retrace';
+  if (stack?.jumpStart === true) return 'jumpStart';
   if (stack?.free === true) return 'free';
   return stack?.alt;
 }
@@ -450,7 +451,7 @@ export function spellCost(state: GameState, request: CostRequest): SpellCost {
   // D-386 (CR 107.3a, 601.2f): "discard X cards" is X cards of the hand in the total cost.
   discard += (perX.discard ?? 0) * x;
   // CR 702.81a, 601.2b, 601.2f-h (D-666): "You may cast this card from your graveyard by discarding a land card as an additional cost to cast it": one land card of the hand.
-  if (alternative === 'retrace') discard += 1;
+  if (alternative === 'retrace' || alternative === 'jumpStart') discard += 1;
   const reduced = reduceGeneric(
     symbols,
     reductionFor(

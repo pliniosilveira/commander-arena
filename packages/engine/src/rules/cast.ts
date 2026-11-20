@@ -212,6 +212,7 @@ export function beginCast(
     zone === 'graveyard' &&
     !resolving &&
     alternative !== 'retrace' &&
+    alternative !== 'jumpStart' &&
     !mayCastFromGraveyard(state, seat, obj)
       ? graveyardPlayPermission(state, seat, obj, false)
       : null;
@@ -253,6 +254,8 @@ export function beginCast(
         : {}),
       // D-667 (CR 702.81a): cast from the graveyard by its retrace ability.
       ...(alternative === 'retrace' ? { retrace: true as const } : {}),
+      // CR 702.133a: cast from the graveyard by its jump-start ability.
+      ...(alternative === 'jumpStart' ? { jumpStart: true as const } : {}),
       ...(alternative === 'free' ? { free: true as const } : {}),
       ...(isNamedAlternative(alternative) ? { alt: alternative } : {}),
       ...((resolving && alternative !== 'madness' && alternative !== 'miracle') ||

@@ -128,6 +128,8 @@ export function graveyardLabels(
         labels.push(alternativeLabel(o.alternative, card));
       // D-667 (CR 702.81a): the cost is the mana cost and a land card of the hand.
       else if (o.alternative === 'retrace') labels.push('Retrace: discard a land card');
+      // CR 702.133a: the cost is the mana cost and a card of the hand; the card is exiled afterwards.
+      else if (o.alternative === 'jumpStart') labels.push('Jump-start: discard a card');
       else if (isGraveyardPermission(o, card)) labels.push(GRAVEYARD_CAST);
     } else if (o.kind === 'activate' && o.object === card.id) {
       const entry = card.activated?.find((a) => a.abilityIndex === o.abilityIndex);
