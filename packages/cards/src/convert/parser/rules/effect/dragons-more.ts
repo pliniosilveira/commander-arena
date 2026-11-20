@@ -146,12 +146,16 @@ export const EFFECT_LOOK_TOP_TAKE = defineRule<Clauses>({
     "look at the top card of your library. if it's a creature card of the chosen type, you may reveal it and put it into your hand",
     'look at the top card of your library. if it’s a land card, you may reveal it and put it into your hand',
     "look at the top card of your library. if it's a Dragon card, you may reveal it and put it into your hand",
+    // Issue 345 (Vivien's Grizzly): the card that is not taken goes to the bottom of the library.
+    "look at the top card of your library. if it's a creature or planeswalker card, you may reveal it and put it into your hand. if you don't put the card into your hand, put it on the bottom of your library",
   ],
   rejects: [
     'look at the top card of your library',
     "look at the top card of your library. if it's a creature card, you may reveal it and put it onto the battlefield",
     "look at the top two cards of your library. if it's a creature card, you may reveal it and put it into your hand",
     "look at the top card of your library. if it's a creature card, you may put it into your hand",
+    "look at the top card of your library. if it's a creature card, you may reveal it and put it into your hand. if you don't put the card into your hand, put it on top of your library",
+    "look at the top card of your library. if it's a creature card, you may reveal it and put it into your hand. if you don't put the card into your hand, put it on the bottom of your library and draw a card",
     "look at the top card of your library. if it's a creature card of the chosen type, you may reveal it and put it into your hand and draw a card",
     "look at the top card of target player's library. if it's a creature card, you may reveal it and put it into your hand",
   ],
@@ -170,7 +174,15 @@ export const EFFECT_LOOK_TOP_TAKE = defineRule<Clauses>({
       new RegExp(`, you may reveal it and put it into your hand${BOUNDARY}`, 'iu'),
     )(ctx, chosen.pos);
     if (!tail.ok) return tail;
-    const span = { start: pos, end: tail.pos };
+    // Issue 345 (Vivien's Grizzly, CR 401.2): "If you don't put the card into your hand, put it on the bottom of your library." The card looked at goes to the bottom rather than staying on top.
+    const bottom = pattern(
+      new RegExp(
+        `\\. if you don['’]t put the card into your hand, put it on the bottom of your library${BOUNDARY}`,
+        'iu',
+      ),
+    )(ctx, tail.pos);
+    const end = bottom.ok ? bottom.pos : tail.pos;
+    const span = { start: pos, end };
     const take: IrNoun = {
       ...card.value,
       filter: chosen.value === null ? card.value.filter : { ...card.value.filter, chosen: 'type' },
@@ -190,12 +202,12 @@ export const EFFECT_LOOK_TOP_TAKE = defineRule<Clauses>({
             take,
             toGraveyard: flag(id, false, span),
             ontoBattlefield: flag(id, false, span),
-            onTop: flag(id, true, span),
+            onTop: flag(id, !bottom.ok, span),
           },
           span,
         ),
       ],
-      pos: tail.pos,
+      pos: end,
     };
   },
 });

@@ -395,6 +395,9 @@ const IF_ITS_CARD_PUT_ONTO = /^if it['’]s an? [^.,]* card, they put it onto th
 const LOOK_AT_TOP_CARD = /^look at the top card of your library\.$/i;
 const IF_ITS_CARD_MAY_TAKE =
   /^if it['’]s an? [^.,]* card(?: of the chosen type)?, you may reveal it and put it into your hand\.$/i;
+/** "If you don't put the card into your hand, put it on the bottom of your library." (Vivien's Grizzly, issue 345): the third sentence of the instruction of `LOOK_AT_TOP_CARD`. */
+const ELSE_BOTTOM_OF_LIBRARY =
+  /^if you don['’]t put the card into your hand, put it on the bottom of your library\.$/i;
 
 /**
  * "Each player exiles a card from their graveyard. When one or more nonland cards are exiled this way, put that many +1/+1 counters on target attacking creature."
@@ -775,6 +778,15 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
       said(a, EXILE_UNTIL_NONLAND) &&
       said(b, MAY_CAST_FREE_IF) &&
       said(c, ELSE_INTO_HAND)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, LOOK_AT_TOP_CARD) &&
+      said(b, IF_ITS_CARD_MAY_TAKE) &&
+      said(c, ELSE_BOTTOM_OF_LIBRARY)
     ) {
       out.push({ start: a.start, end: c.end });
       i += 2;
