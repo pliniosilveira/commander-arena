@@ -984,6 +984,7 @@ describe('unmatched abilities', () => {
       'effect.lead-granted-ability',
       'effect.lead-gain',
       'effect.lead-gain-all',
+      'effect.restrict-except',
       'effect.restrict',
       'effect.restrict-all',
       'effect.restrict-self',
