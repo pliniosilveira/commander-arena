@@ -45,6 +45,7 @@ export type SimpleKeyword = Extract<
   | 'improvise'
   | 'delve'
   | 'cascade'
+  | 'compleated'
   | 'demonstrate'
   | 'retrace'
   | 'jumpStart'
@@ -122,6 +123,8 @@ export const SIMPLE_KEYWORDS: readonly (readonly [string, SimpleKeyword])[] = [
   ['improvise', 'improvise'],
   ['delve', 'delve'],
   ['cascade', 'cascade'],
+  // CR 702.150a (Compleated): a printed ability on a planeswalker, never granted; the engine reads the life paid for its Phyrexian mana as it enters.
+  ['compleated', 'compleated'],
   // Prismari deck, group 3 (issue 87, D-665, D-666; CR 702.144a, 702.81a): printed abilities with no parameter, never granted (the engine's GRANTABLE_KEYWORDS has neither).
   ['demonstrate', 'demonstrate'],
   ['retrace', 'retrace'],

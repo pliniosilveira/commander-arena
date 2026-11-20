@@ -1492,6 +1492,8 @@ export interface IrRestriction extends IrNode {
   readonly timing?: 'sorcery';
   /** Activate only once each turn. */
   readonly perTurn?: number;
+  /** "Only your opponents may activate this ability." (CR 602.2): who may activate it. */
+  readonly activator?: 'opponents';
   /** "Activate only if you control a Swamp." (stage P14, CR 602.5b): the test, read like any other. */
   readonly condition?: IrCondition;
   /**

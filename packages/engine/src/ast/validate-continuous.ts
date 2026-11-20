@@ -5,7 +5,13 @@
  * [color]" and "gains [keyword]". `validate.ts` hands them to `checkEffect` (validate-parts.ts)
  * through `Scope.checkContinuous`, because this file needs that one's building blocks.
  */
-import { BASIC_LAND_TYPES, CARD_TYPES, COLORS, isNonCreatureSubtype } from '../characteristics';
+import {
+  ARTIFACT_TYPES,
+  BASIC_LAND_TYPES,
+  CARD_TYPES,
+  COLORS,
+  isNonCreatureSubtype,
+} from '../characteristics';
 
 /** D-474 (CR 305.6): the basic land types, the one kind of land subtype an effect can set. */
 const BASIC_LAND_TYPE_NAMES: readonly string[] = Object.keys(BASIC_LAND_TYPES);
@@ -97,11 +103,16 @@ function checkGrantAbility(
     return;
   }
   e.abilities.forEach((a, i) => {
+    // CR 613.1f, 605.1a, 611.2a: "becomes a Treasure artifact with \"{T}, Sacrifice this artifact: Add one mana of any color\"": a mana ability given for good.
+    if (a?.kind === 'mana') {
+      scope.checkAbility(a, `${path}.abilities[${i}]`, out);
+      return;
+    }
     if (a?.kind !== 'static' || !isOneOf(a.static?.kind, GRANTABLE_STATICS)) {
       issue(
         out,
         `${path}.abilities[${i}]`,
-        `an effect gives only the static abilities ${GRANTABLE_STATICS.join(' and ')}`,
+        `an effect gives only a mana ability or the static abilities ${GRANTABLE_STATICS.join(' and ')}`,
       );
       return;
     }
@@ -122,6 +133,16 @@ function checkGrantAbility(
  * (CR 205.1b) they are added to what the object has, so a subtype need not be checked against the
  * types in the same node: the object may already be a creature.
  */
+/** CR 205.3g, 205.1a: "becomes a Treasure artifact": the card type artifact alone, with artifact types for subtypes. */
+function isArtifactBecoming(e: Extract<ContinuousNode, { kind: 'setTypes' }>): boolean {
+  return (
+    e.additive !== true &&
+    Array.isArray(e.types) &&
+    e.types.length === 1 &&
+    e.types[0] === 'artifact'
+  );
+}
+
 function checkSetTypes(
   e: Extract<ContinuousNode, { kind: 'setTypes' }>,
   path: string,
@@ -169,8 +190,13 @@ function checkSetTypes(
     e.subtypes.forEach((s, i) => {
       if (typeof s !== 'string' || s === '') {
         issue(out, `${path}.subtypes[${i}]`, 'empty subtype');
-      } else if (isNonCreatureSubtype(s) && !BASIC_LAND_TYPE_NAMES.includes(s)) {
-        // The effect replaces creature types, or (D-474, CR 305.7) a land's basic land types; replacing another card type's subtypes is not run.
+      } else if (
+        isNonCreatureSubtype(s) &&
+        !BASIC_LAND_TYPE_NAMES.includes(s) &&
+        !(isArtifactBecoming(e) && ARTIFACT_TYPES.includes(s))
+      ) {
+        // The effect replaces creature types, or (D-474, CR 305.7) a land's basic land types, or (CR 205.3g) is an artifact of an artifact type ("becomes a Treasure artifact");
+        // replacing another card type's subtypes is not run.
         issue(
           out,
           `${path}.subtypes[${i}]`,
@@ -193,7 +219,8 @@ function checkSetTypes(
       e.additive !== true &&
       Array.isArray(e.types) &&
       !e.types.includes('creature') &&
-      !e.types.includes('kindred')
+      !e.types.includes('kindred') &&
+      !(isArtifactBecoming(e) && e.subtypes.every((s) => ARTIFACT_TYPES.includes(s)))
     ) {
       issue(out, `${path}.subtypes`, 'creature subtypes need the creature or kindred card type');
     }

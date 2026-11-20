@@ -89,6 +89,11 @@ export type Amount =
    */
   | { readonly kind: 'shortfall'; readonly limit: number; readonly of: ObjectRef }
   /**
+   * "A number of poison counters equal to the difference" between nine and the poison counters a player has (CR 122.1, 107.1b; Vraska, Betrayal's Sting): `limit` less the poison
+   * counters the first player `player` names has as the instruction runs, and 0 when that is not more than 0 or when no player is named.
+   */
+  | { readonly kind: 'poisonShortfall'; readonly limit: number; readonly player: PlayerSelector }
+  /**
    * "For each creature on the battlefield", "equal to the number of lands you control", "for each
    * card in your hand" (D-095): the number of objects in the filter's zone (the battlefield unless
    * `filter.zone` says otherwise) that match it, counted when the effect or the cost is determined:
@@ -3259,6 +3264,12 @@ export type Effect =
    */
   | { readonly kind: 'gainExperience'; readonly player: PlayerSelector; readonly amount: Amount }
   /**
+   * "They get a number of poison counters equal to the difference" (CR 122.1, 704.5c; Vraska, Betrayal's Sting): each player the selector names gets `amount` poison counters
+   * (a player's own counters, kept for the rest of the game), one `poisonChanged` event each. Nothing for an amount of 0 or less. A player with ten or more is out of the game
+   * as a state-based action (CR 704.5c).
+   */
+  | { readonly kind: 'givePoison'; readonly player: PlayerSelector; readonly amount: Amount }
+  /**
    * "Increase your speed by 1" (CR 702.179c, 702.179d): each player the selector names has `amount` more speed; a player with no speed gets that value (CR 702.179c). Speed does not
    * go past 4, the speed of max speed (CR 702.179e; the repository's CR text does not state a cap: unverified). One `speedChanged` event for each. Nothing for an amount of 0 or less.
    */
@@ -5151,6 +5162,12 @@ export type Keyword =
    * `packages/cards` reads the line when it checks a commander (D-053). It cannot be granted.
    */
   | { readonly kind: 'canBeCommander' }
+  /**
+   * CR 702.150a (Compleated): a static ability found on some planeswalker cards: "If this permanent would enter with one or more loyalty counters on it and the player who cast it chose
+   * to pay life for any part of its cost represented by Phyrexian mana symbols, it instead enters the battlefield with that many loyalty counters minus two for each of those mana
+   * symbols." Read as the planeswalker enters from its spell (`rules/zones.ts`, `StackData.phyrexianLifePaid`). It cannot be granted.
+   */
+  | { readonly kind: 'compleated' }
   /**
    * CR 702.131b (Ascend on a permanent, D-264): a static ability, "Any time you control ten or more permanents and you don't have the city's blessing, you get
    * the city's blessing for the rest of the game." The engine checks it with the state-based actions (`rules/city-blessing.ts`) for the controller of
@@ -7204,6 +7221,12 @@ export type Ability =
        * activation is complete. Only an ordinary activated ability, never a mana ability or a loyalty ability.
        */
       readonly exhaust?: true;
+      /**
+       * "Only your opponents may activate this ability" (CR 602.2, 602.1; Oft-Nabbed Goat): the ability of a permanent is activated by a player who does not control the
+       * permanent (an opponent of its controller), never by its controller; the ability is then controlled by the player who activated it (CR 602.2a), so "you" in its
+       * effect is that player. Only an ability of the battlefield, never a loyalty ability or a mana ability.
+       */
+      readonly activator?: 'opponents';
       /**
        * "Activate only if you control five or more lands." (CR 602.5b, D-099): a restriction on
        * activating the ability, read for its controller with the permanent as the source, when it is

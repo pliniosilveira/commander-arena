@@ -108,6 +108,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'oncePerTurn',
     // Issue 345 (CR 702.177a): "Exhaust — {cost}: ..." (`ActivatedAbility.exhaust`).
     'exhaust',
+    // CR 602.2: "Only your opponents may activate this ability" (`ActivatedAbility.activator`).
+    'activatorOpponents',
     // D-145: "If you control a creature with power 4 or greater, add two mana of any one color instead" (`ManaAbility.instead`).
     'manaInstead',
     // D-149: "Spend this mana only to cast an Angel spell." (`ManaAbility.spendOnly`)
@@ -244,6 +246,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'gainEnergy',
     // CR 122.1: "You get an experience counter" (`gainExperience`).
     'gainExperience',
+    // CR 122.1: "They get a number of poison counters equal to the difference" (`givePoison`).
+    'givePoison',
     // CR 702.179c: "Increase your speed by 1" (`increaseSpeed`).
     'increaseSpeed',
     // "You have no maximum hand size for the rest of the game" (CR 402.2).
@@ -625,6 +629,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chooseBackground',
     // D-200: "~ can be your commander".
     'canBeCommander',
+    // CR 702.150a: Compleated.
+    'compleated',
     // D-264: Ascend on a permanent (CR 702.131b).
     'ascend',
     // CR 702.179a: Start your engines!, the speed of a player (`rules/speed.ts`).
@@ -1348,6 +1354,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'colorsOf',
     // D-151: "create a number of tapped Treasure tokens equal to the difference" (Discover).
     'shortfall',
+    // CR 122.1, 107.1b: "equal to the difference" between nine and a player's poison counters.
+    'poisonShortfall',
     'countOf',
     'timesKicked',
     // D-183: "the amount of mana spent to cast it".
@@ -1595,6 +1603,8 @@ export const ABILITY_FEATURES = [
   'oncePerTurn',
   /** "Exhaust — {cost}: ..." (CR 702.177a, issue 345): `ActivatedAbility.exhaust`, activated only once. */
   'exhaust',
+  /** "Only your opponents may activate this ability" (CR 602.2): `ActivatedAbility.activator`. */
+  'activatorOpponents',
   'manaInstead',
   'manaSpendOnly',
   /** "Spend this mana only to cast a creature spell of the chosen type" (issue 199): `ManaAbility.spendOnly.chosenType`. */
@@ -2283,6 +2293,8 @@ export const AMOUNT_KINDS = [
   'colorsOf',
   /** "The difference" between a number and a mana value (D-151): the engine's `shortfall`. */
   'shortfall',
+  /** "The difference" between a number and a player's poison counters (CR 122.1, 107.1b): the engine's `poisonShortfall`. */
+  'poisonShortfall',
   'countOf',
   /** "For each time it was kicked" (CR 702.33c): the engine's `timesKicked`. */
   'timesKicked',
@@ -2473,6 +2485,7 @@ const ABILITY_TABLE: KindTable<Ability['kind'] | AbilityFeatureKind> = {
   costReducedBy: true,
   oncePerTurn: true,
   exhaust: true,
+  activatorOpponents: true,
   manaInstead: true,
   manaSpendOnly: true,
   manaSpendOnlyChosenType: true,
@@ -2570,6 +2583,7 @@ const EFFECT_TABLE: KindTable<Effect['kind']> = {
   removeAllPlayerCounters: true,
   gainEnergy: true,
   gainExperience: true,
+  givePoison: true,
   increaseSpeed: true,
   noMaxHandSizeForGame: true,
   connive: true,
@@ -2803,6 +2817,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   partnerWith: true,
   chooseBackground: true,
   canBeCommander: true,
+  compleated: true,
   ascend: true,
   startYourEngines: true,
   soulbond: true,

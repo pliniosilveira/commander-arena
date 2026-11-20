@@ -37,6 +37,11 @@ export interface QuotedOptions {
    * and a token's are activated or triggered.
    */
   readonly statics?: boolean;
+  /**
+   * The ability's text in the quotes carries no period ("with \"{T}, Sacrifice this artifact: Add one mana of any color\" and loses ..."): the period is added before the
+   * text is read as an ability of its own.
+   */
+  readonly unpunctuated?: boolean;
 }
 
 /**
@@ -60,7 +65,9 @@ export function readQuotedAbility(
   );
   // American punctuation (stage P49, D-206): a quoted ability that is not the end of the sentence ends with the comma that follows it, inside the
   // quotes: `has "Whenever ~ attacks, you gain 1 life," and is a Cleric` (White Mage's Staff). The ability is the text with its period.
-  const inner = /[^,],$/u.test(written) ? `${written.slice(0, -1)}.` : written;
+  const punctuated = /[^,],$/u.test(written) ? `${written.slice(0, -1)}.` : written;
+  const inner =
+    options.unpunctuated === true && !/\.["”]?$/u.test(punctuated) ? `${punctuated}.` : punctuated;
   // An ability ends with its period, inside the quotes (or inside the quote of the ability it ends with).
   if (!/\.["”]?$/u.test(inner) || inner.includes('\n')) return fail(ctx, pos);
   const outcome = parseAbility(segment(inner, 'permanent'), ctx.rules);

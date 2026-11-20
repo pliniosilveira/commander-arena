@@ -2071,6 +2071,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
           issue(out, `${path}.exhaust`, 'a loyalty ability is limited by CR 606.3: no exhaust');
         }
       }
+      // CR 602.2: "Only your opponents may activate this ability": an ability of a permanent, not a loyalty ability.
+      if (a.activator !== undefined) {
+        if (a.activator !== 'opponents') issue(out, `${path}.activator`, 'activator is opponents');
+        if (a.cost?.some((c) => c?.kind === 'loyalty') === true) {
+          issue(out, `${path}.activator`, 'a loyalty ability is activated by its controller only');
+        }
+        if (a.functionsIn !== undefined && a.functionsIn !== 'battlefield') {
+          issue(out, `${path}.activator`, 'only an ability of the battlefield has an activator');
+        }
+      }
       // D-425: the engine writes it as it expands an Equip keyword; card data says "equip {N}" with the keyword.
       if (a.equip !== undefined) {
         issue(
