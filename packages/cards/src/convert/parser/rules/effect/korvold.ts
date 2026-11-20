@@ -81,6 +81,8 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
     // Death Toll deck, Dim Oubliette (CR 400.7, 608.2d, 110.2a): the same choice, put onto the battlefield under your control.
     'return a creature card from your graveyard to the battlefield',
     'you may return a creature card from your graveyard to the battlefield',
+    // Issue 102 (Tasigur, the Golden Fang): a card that is not a land card.
+    'return a nonland card from your graveyard to your hand',
     // Issue 102 (Teval, the Balanced Scale): the same choice, entering tapped.
     'you may return a land card from your graveyard to the battlefield tapped',
   ],
@@ -109,7 +111,10 @@ export const EFFECT_RETURN_CHOSEN_CARD = defineRule<Clauses>({
           spanned(
             sequence(
               pattern(/an? /iu),
-              satisfy(graveyardPhrase(false), (filter) => filter.controller === 'you'),
+              satisfy(
+                graveyardPhrase(false, 'from', undefined, true),
+                (filter) => filter.controller === 'you',
+              ),
             ),
           ),
           spanned(

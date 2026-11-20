@@ -1055,6 +1055,8 @@ export function graveyardPhrase(
   // Puca's Covenant: "target permanent card with mana value less than or equal to the number of counters on that creature from your graveyard": the amount a caller reads after the
   // " with mana value less than or equal to " words, which the filter keeps as `manaValueAtMostAmount` for the lowering.
   amountLimit?: Parser<IrAmount>,
+  // Issue 102 (Tasigur): "a nonland card from your graveyard", read only by a caller that asks for it (a target's "nonland card" is another rule's reading).
+  allowNonland = false,
 ): Parser<IrFilter> {
   const owner: Parser<'you' | 'opponent' | undefined> =
     preposition === 'fromTheirs'
@@ -1107,10 +1109,7 @@ export function graveyardPhrase(
         [] as string[],
       ),
       // "a nonland card from your graveyard" (Tasigur, issue 102): the card is no land card.
-      optional(
-        map(literal('nonland '), () => ['land']),
-        [] as string[],
-      ),
+      optional(allowNonland ? map(literal('nonland '), () => ['land']) : fail, [] as string[]),
       nonSubtypes,
       many(
         map(

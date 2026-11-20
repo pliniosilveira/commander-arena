@@ -229,3 +229,25 @@ describe('"Whenever a card leaves your graveyard during your turn, draw a card. 
     g.expect.handSize(0, 2);
   });
 });
+
+describe('"Return a nonland card from your graveyard to your hand." (CR 205.2a, 608.2d)', () => {
+  const regrowth = parsed(
+    'SYNTHETIC Parsed Nonland Return',
+    'Sorcery',
+    'Return a nonland card from your graveyard to your hand.',
+    { manaCost: '{G}', colors: ['G'] },
+  );
+  test('a land card of the graveyard is never a candidate', () => {
+    const g = base()
+      .define(regrowth)
+      .hand(regrowth.name)
+      .battlefield('Forest')
+      .graveyard('Swamp', 'Lightning Bolt')
+      .at('precombatMain')
+      .build();
+    g.act(0).cast(regrowth.name, { pay: true });
+    g.passAll();
+    g.expect.zone('Lightning Bolt', 'hand', { seat: 0 });
+    g.expect.zone('Swamp', 'graveyard', { seat: 0 });
+  });
+});
