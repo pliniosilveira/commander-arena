@@ -429,3 +429,44 @@ describe('Nazgûl Battle-Mace', () => {
     g.expect.invariants();
   });
 });
+
+describe('The Darkness Crystal', () => {
+  const crystal = real('The Darkness Crystal');
+  const BOLT = 'Lightning Bolt';
+
+  const exiledBears = () => {
+    const g = scenario()
+      .define(crystal)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(crystal.name, 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp', 'Swamp')
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield(BEARS, 'Mountain')
+      .hand(BOLT)
+      .at('precombatMain', { active: 1 })
+      .build();
+    g.act(1).cast(BOLT, { targets: [BEARS], pay: true });
+    g.passAll();
+    return g;
+  };
+
+  test('a nontoken creature an opponent controls that would die is exiled instead and you gain 2 life (CR 614.1a)', () => {
+    const g = exiledBears();
+    g.expect.zone(BEARS, 'exile', { seat: 1 });
+    g.expect.life(0, 42);
+    g.expect.noEvent({ kind: 'died' });
+    g.expect.invariants();
+  });
+
+  test('{4}{B}{B}, {T}: the card it exiled enters tapped under your control with two additional +1/+1 counters (CR 607.2a, 122.6)', () => {
+    const g = exiledBears();
+    g.act(1).pass();
+    g.act(0).activate(crystal.name, { targets: [BEARS], pay: true });
+    g.passAll();
+    g.expect.zone(BEARS, 'battlefield', { seat: 0 });
+    g.expect.counters(BEARS, { '+1/+1': 2 });
+    g.expect.pt(BEARS, 4, 4);
+    g.expect.invariants();
+  });
+});

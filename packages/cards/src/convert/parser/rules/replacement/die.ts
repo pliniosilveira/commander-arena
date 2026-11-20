@@ -4,8 +4,17 @@
  * tokens its controller creates in its place. The kind of creature is any permanent phrase of the noun family ("a nontoken
  * creature an opponent controls", "a Zombie you control", "a creature"), so the rule names no type.
  */
-import { choice, fail, literal, map, optional, pattern, sequence } from '../../combinators';
-import type { IrAbility, IrClause, IrNoun, IrToken } from '../../ir/types';
+import {
+  choice,
+  fail,
+  literal,
+  map,
+  optional,
+  pattern,
+  satisfy,
+  sequence,
+} from '../../combinators';
+import type { IrAbility, IrAmount, IrClause, IrNoun, IrToken } from '../../ir/types';
 import { CREATURE_TYPES } from '../noun/creature-types';
 import { permanentPhrase, withoutZone } from '../noun/phrases';
 import { defineRule, family, spanned } from '../registry';
@@ -36,6 +45,8 @@ export const REPLACEMENT_WOULD_DIE = defineRule<IrAbility>({
     'If a creature would die, exile it instead.',
     'If a nontoken Time Lord would die, instead exile that card.',
     'If a nontoken creature an opponent controls would die, instead exile that card and create two 2/2 black Zombie creature tokens.',
+    // The Darkness Crystal (CR 614.1a, 119.1): the controller of the permanent gains life as the creature is exiled.
+    'If a nontoken creature an opponent controls would die, instead exile it and you gain 2 life.',
   ],
   rejects: [
     'If a nontoken creature an opponent controls would die, instead exile that card and create a 2/2 black Zombie creature token',
@@ -49,6 +60,10 @@ export const REPLACEMENT_WOULD_DIE = defineRule<IrAbility>({
     'If ~ would die, instead exile that card.',
     'If a creature would die, exile that card instead and create a 2/2 black Zombie creature token.',
     'If you would die, instead exile that card.',
+    'If a nontoken creature an opponent controls would die, instead exile it and you gain 0 life.',
+    'If a nontoken creature an opponent controls would die, instead exile it and you gain life.',
+    'If a nontoken creature an opponent controls would die, instead exile it and target player gains 2 life.',
+    'If a nontoken creature an opponent controls would die, instead exile it and you gain 2 life',
   ],
   parse: (ctx, pos) => {
     const id = 'replacement.would-die';
@@ -69,7 +84,7 @@ export const REPLACEMENT_WOULD_DIE = defineRule<IrAbility>({
           (filter.subtypes ?? []).every((t) => CREATURE_TYPES.has(t))));
     if (!creature) return fail(ctx, pos);
     const tail = sequence(
-      choice(
+      choice<IrToken | IrAmount | null>(
         map(
           sequence(
             literal('instead exile that card'),
@@ -87,11 +102,25 @@ export const REPLACEMENT_WOULD_DIE = defineRule<IrAbility>({
           ([, token]) => token,
         ),
         map(literal('exile it instead'), () => null),
+        // The Darkness Crystal: "instead exile it and you gain 2 life".
+        map(
+          sequence(
+            literal('instead exile it and you gain '),
+            satisfy(
+              family<IrAmount>('amount', { only: ['amount.number'] }),
+              (amount) => amount.kind === 'number' && amount.value >= 1,
+            ),
+            literal(' life'),
+          ),
+          ([, life]) => life,
+        ),
       ),
       literal('.'),
     )(ctx, head.pos);
     if (!tail.ok) return tail;
-    const [token] = tail.value;
+    const [said] = tail.value;
+    const token = said === null || said.kind !== 'token' ? null : said;
+    const life = said === null || said.kind !== 'number' ? null : said;
     const span = { start: pos, end: tail.pos };
     const objects: IrNoun = {
       kind: 'noun',
@@ -106,7 +135,7 @@ export const REPLACEMENT_WOULD_DIE = defineRule<IrAbility>({
     const event: IrClause = {
       kind: 'clause',
       verb: 'wouldDie',
-      args: token === null ? { objects } : { objects, token },
+      args: token !== null ? { objects, token } : life !== null ? { objects, life } : { objects },
       optional: false,
       span,
       rule: id,

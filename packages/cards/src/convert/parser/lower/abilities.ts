@@ -956,6 +956,12 @@ export function lowerReplacement(ability: Replacement): LowerResult<readonly Abi
     // The permanent's own zone ("on the battlefield") is the engine's business, not the filter's.
     const { zone, ...filter } = what.value;
     void zone;
+    // The Darkness Crystal (CR 614.1a, 119.1): "instead exile it and you gain 2 life".
+    const life = event.args.life;
+    if (life !== undefined) {
+      if (life.kind !== 'number' || life.value < 1 || token !== undefined) return failure(ability);
+      return built({ kind: 'wouldDie', what: filter, instead: 'exile', alsoGainLife: life.value });
+    }
     if (token === undefined) {
       return built({ kind: 'wouldDie', what: filter, instead: 'exile' });
     }

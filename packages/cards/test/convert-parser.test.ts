@@ -621,6 +621,7 @@ describe('unmatched abilities', () => {
       'effect.exile-at-end-step',
       'effect.exile-instead-when-leaving',
       'effect.put-exiled-with-battlefield',
+      'effect.put-target-exiled-with-battlefield',
       'effect.made-tokens-gain-keywords',
       'effect.end-step-made-tokens',
       'effect.leave-made-tokens',

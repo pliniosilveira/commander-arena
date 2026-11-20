@@ -575,10 +575,26 @@ function linkExile(abilities: readonly Ability[]): {
   const exilers = abilities.flatMap((a, i) =>
     (a.kind === 'triggered' || a.kind === 'activated') && exilesIn(a.effect) > 0 ? [i] : [],
   );
+  // The Darkness Crystal (CR 607.2a): "If a nontoken creature an opponent controls would die, instead exile it ...": the replacement is what exiles, and the card it exiled is
+  // what "exiled with ~" names. It is the one exiler of the face when no triggered or activated ability exiles.
+  const replacers = abilities.flatMap((a, i) =>
+    a.kind === 'replacement' && a.replacement.kind === 'wouldDie' ? [i] : [],
+  );
+  if (exilers.length === 0 && replacers.length === 1 && readers.length === 1) {
+    return {
+      abilities: abilities.map((a, i) =>
+        i === replacers[0] && a.kind === 'replacement' && a.replacement.kind === 'wouldDie'
+          ? { ...a, replacement: { ...a.replacement, linkExiled: true as const } }
+          : a,
+      ),
+      refused: [],
+    };
+  }
   const [only] = exilers;
   const one = only !== undefined ? abilities[only] : undefined;
   const linkable =
     readers.length === 1 &&
+    replacers.length === 0 &&
     exilers.length === 1 &&
     one !== undefined &&
     (one.kind === 'triggered' || one.kind === 'activated') &&

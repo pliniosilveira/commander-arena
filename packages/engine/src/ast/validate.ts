@@ -413,6 +413,13 @@ function checkReplacement(r: Replacement, path: string, out: AstIssue[]): void {
         }
         checkReplacementToken(r.alsoCreate.token, `${path}.alsoCreate.token`, out);
       }
+      // The Darkness Crystal (CR 614.1a): the life the controller gains as the creature is exiled, and the link to the card an ability reads as "exiled with ~".
+      if (r.alsoGainLife !== undefined && (!isCount(r.alsoGainLife) || r.alsoGainLife < 1)) {
+        issue(out, `${path}.alsoGainLife`, 'the life gained must be a positive integer');
+      }
+      if (r.linkExiled !== undefined && r.linkExiled !== true) {
+        issue(out, `${path}.linkExiled`, 'linkExiled must be true when present');
+      }
       break;
     default:
       // D-149: "If you would gain life, you gain that much life plus 1 instead."

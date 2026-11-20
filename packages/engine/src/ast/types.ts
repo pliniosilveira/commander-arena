@@ -6323,6 +6323,16 @@ export type Replacement =
         readonly token: Extract<TokenSpec, { readonly kind: 'preset' | 'custom' }>;
         readonly count: number;
       };
+      /**
+       * "..., instead exile it and you gain 2 life" (The Darkness Crystal, CR 614.1a, 119.1): the controller of the permanent with the ability also gains this much life (a positive
+       * whole number) as the creature is exiled.
+       */
+      readonly alsoGainLife?: number;
+      /**
+       * "... exile it instead" with another ability of the permanent that reads "exiled with ~" (CR 607.2a, linked abilities): the exiled card is remembered by the permanent with the
+       * replacement as one it exiled (`GameObject.linkedExile`), as `exile.linked` does. Set by the card's lowering when exactly one other ability reads the link.
+       */
+      readonly linkExiled?: true;
     }
   /**
    * "If one or more artifact tokens would be created under your control, that many 5/5 red Dragon creature tokens with flying are created instead" (`thatMany`)
