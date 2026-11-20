@@ -1847,6 +1847,22 @@ export type IrStaticEffect =
    * subject is `~`.
    */
   | { readonly kind: 'keepsDamage' }
+  /**
+   * "The "legend rule" doesn't apply to Slivers you control." (issue 133, CR 704.5j, 604.1): the permanents of the controller the subject names (a noun with `det: 'each'` and the
+   * controller `you`) are not subject to the legend rule while the permanent has the ability.
+   */
+  | { readonly kind: 'legendRuleDoesntApply' }
+  /**
+   * "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types. The same is true for creature spells you control and creature
+   * cards you own that aren't on the battlefield." (issue 133, CR 613.1d, 607.2d): the subject is the group of permanents (a noun whose filter is the choice of the two groups); the
+   * creature spells and cards outside the battlefield are named by the second sentence.
+   */
+  | { readonly kind: 'chosenTypeGroups' }
+  /**
+   * "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value." (issue 133, CR 702.141a, 613.1f): the creature cards of `cards` in the graveyard of the controller
+   * (the statement's subject, `you`) have Encore with the cost the mana value of the card.
+   */
+  | { readonly kind: 'graveyardEncore'; readonly cards: IrNoun }
   | { readonly kind: 'raw'; readonly text: string };
 
 /** One more subject of a statement and what it gets or has: "~ gets +2/+2 and creatures you control have vigilance". */
