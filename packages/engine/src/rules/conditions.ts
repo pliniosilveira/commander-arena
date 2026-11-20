@@ -634,6 +634,30 @@ export function evaluateCondition(
         playerStatOf(state, ctx.controller, condition.stat)
       );
     }
+    case 'subjectControlledByYou': {
+      // CR 603.10a, 608.2h, 109.4: "if you control that creature": the permanent the event is about, under the control it has now or had as it left.
+      if (ctx.triggerSubject === undefined) return false;
+      const subject = objectOrLki(state, ctx.triggerSubject);
+      return subject !== null && controllerOf(state, subject) === ctx.controller;
+    }
+    case 'subjectStat': {
+      // CR 603.10a, 113.7a, 208.1: "if its toughness was less than 1": the power or toughness the permanent has now, or had as it left the battlefield.
+      if (ctx.triggerSubject === undefined) return false;
+      const pt = ptNow(state, ctx.triggerSubject);
+      if (pt === null) return false;
+      const value = condition.stat === 'power' ? pt.power : pt.toughness;
+      if (condition.compare.cmp === 'atLeast') return value >= condition.compare.value;
+      if (condition.compare.cmp === 'atMost') return value <= condition.compare.value;
+      return value === condition.compare.value;
+    }
+    case 'putCountersThisTurn':
+      // CR 122.6, 603.4: the counters this player put this turn, from the turn log.
+      return (state.turnLog.countersPut ?? []).some(
+        (e) =>
+          e.seat === ctx.controller &&
+          (condition.counter === undefined || e.counter === condition.counter) &&
+          (condition.onType === undefined || e.types.includes(condition.onType)),
+      );
     case 'triggerPlayerHasMore':
       // CR 603.4, 110.2: "that player", the player the event is about, has more of the stat than the controller of the ability.
       return (

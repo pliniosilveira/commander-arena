@@ -47,6 +47,11 @@ export function checkAngelsTrigger(t: Trigger, path: string, out: AstIssue[]): b
           issue(out, `${path}.counter`, 'reaches needs the kind of counter');
         }
       }
+      // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" triggers once for each counter.
+      if (t.each !== undefined) {
+        if (t.each !== true) issue(out, `${path}.each`, 'each must be true when present');
+        if (t.reaches !== undefined) issue(out, `${path}.each`, 'each does not go with reaches');
+      }
       return true;
     case 'playerAttacksOpponent':
       // D-648: no parameters.

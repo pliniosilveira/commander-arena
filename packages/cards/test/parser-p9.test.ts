@@ -135,7 +135,7 @@ describe('"its controller" and "equal to its power" (CR 109.4, 208.1, 608.2h)', 
       'You gain life equal to the power of target creature.',
       'equal to the power of target creature.',
     ],
-    ['Its owner gains 4 life.', 'Its owner gains 4 life.'],
+    ['Its owners gain 4 life.', 'Its owners gain 4 life.'],
   ])('%s stops at "%s"', (text, stoppedAt) => {
     expect(dropped(text)).toMatchObject({ reason: 'unrecognised', stoppedAt });
   });

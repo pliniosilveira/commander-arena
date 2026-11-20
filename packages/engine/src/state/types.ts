@@ -2452,6 +2452,16 @@ export interface TurnLog {
     readonly subtypes: readonly Subtype[];
     readonly controller: SeatId | null;
   }[];
+  /**
+   * Each time a player put counters on a permanent this turn (CR 122.6, Lasting Tarfire: "if you put a counter on a creature this turn"), in order: the player, the kind of counter and
+   * the card types the permanent had as it got them. Counters no player put (`counterAdded` with no `by`) are not here. Absent until one was put, so the state of a game where none
+   * was is as it was.
+   */
+  readonly countersPut?: readonly {
+    readonly seat: SeatId;
+    readonly counter: string;
+    readonly types: readonly CardType[];
+  }[];
   /** Each time a player gained life this turn (D-149), in order, one entry for each life gain event: "for the first time each turn". */
   readonly lifeGained: readonly SeatId[];
   /** The life each player has gained this turn, by seat (D-252, CR 119.3): the sum of every life gain after replacement, for "if you gained 3 or more life this turn". */

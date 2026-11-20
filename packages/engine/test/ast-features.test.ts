@@ -110,6 +110,10 @@ describe('the dimensions', () => {
       'sourceHasCounter',
       'subjectGreaterPt',
       'subjectControllerHasMore',
+      // Auntie Ool, Massacre Girl, Lasting Tarfire.
+      'subjectControlledByYou',
+      'subjectStat',
+      'putCountersThisTurn',
       'triggerPlayerHasMore',
       'cardsInGraveyard',
       // D-331: "as long as there are no cards in your library".

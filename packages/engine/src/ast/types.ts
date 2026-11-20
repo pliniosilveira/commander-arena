@@ -195,9 +195,10 @@ export type Amount =
   /**
    * "For each +1/+1 counter on it" (D-131): how many counters of the kind the object a reference names has, as it is
    * now or from last-known information if it left (CR 113.7a). `counter` is the counter's name as the engine writes
-   * it ("+1/+1", "-1/-1", "stun", "page", ...).
+   * it ("+1/+1", "-1/-1", "stun", "page", ...). Left out (Puca's Covenant, "the number of counters on that creature"): the counters of every kind added together (not in a static ability's
+   * condition, which names the kind: `validateCard`).
    */
-  | { readonly kind: 'countersOn'; readonly of: ObjectRef; readonly counter: string }
+  | { readonly kind: 'countersOn'; readonly of: ObjectRef; readonly counter?: string }
   /**
    * "The greatest power among creatures you control", "the total power of creatures you control", "the greatest
    * mana value among artifacts you control" (D-131): over the objects `filter` matches (in its zone, the battlefield
@@ -727,6 +728,12 @@ export interface ObjectFilter {
   /** Only objects that are not this ability's source ("another creature"). */
   readonly other?: boolean;
   /**
+   * "Whenever a creature you control with a counter on it dies, you may return another target permanent card ... from your graveyard to your hand" (Puca's Covenant, CR 400.7, 603.10a,
+   * 109.1): the card the permanent the trigger is about became in the graveyard (`triggerCard`) is not matched: "another" is besides the creature that died, not besides the permanent with
+   * the ability (which is no card in a graveyard). Only in the target filter or the `choose` filter of a trigger about a permanent (`validateCard`); where there is no such card nothing is left out.
+   */
+  readonly notTriggerCard?: true;
+  /**
    * "With a counter on it", "with a +1/+1 counter on it" (D-145, CR 122.1): the object has at least one counter of any kind (`true`) or of
    * the named kind (a counter named as the engine writes it: "+1/+1", "stun", "page"). Read from the object as it is, or as it last was
    * when it has left (CR 113.7a). Counters belong to no layer, so a static ability may name them in its subject.
@@ -1060,6 +1067,11 @@ export type PlayerSelector =
    * about a player, as `triggerPlayer` is. With two players there is no other opponent, and nobody is named.
    */
   | { readonly kind: 'eachOtherOpponent' }
+  /**
+   * "Each other player" in "its owner draws that many cards and each other player loses that much life" (Oft-Nabbed Goat; CR 102.1, 101.4): the players still in the game besides the
+   * ones `except` names, in the order of CR 101.4. `except` names its players as the effect resolves (`ownerOf` the source, `you`, ...).
+   */
+  | { readonly kind: 'eachPlayerExcept'; readonly except: PlayerSelector }
   /**
    * Several selectors at once (D-131): "you and target opponent" is `all` of `you` and a `target` player. The players
    * they name together, each once (a player named twice acts once), in the order CR 101.4 gives (the active player
@@ -4795,6 +4807,11 @@ export type Trigger =
        * the permanent reach this number or go past it (from fewer than `reaches` to `reaches` or more). Needs `counter`; a whole number of 2 or more.
        */
       readonly reaches?: number;
+      /**
+       * "Whenever a -1/-1 counter is put on a creature" (Flourishing Defenses, CR 122.6, 603.2): the singular wording triggers once for each counter, not once for the instance of putting, so
+       * an instance that puts three counters triggers it three times. Not with `reaches`.
+       */
+      readonly each?: true;
     }
   /**
    * "Whenever you attack" (`atLeast` 1, D-187), "Whenever you attack with two or more creatures", "whenever another player attacks with two or more creatures" (CR 508.1, 603.2, D-149):
@@ -5559,6 +5576,34 @@ export type Condition =
    * (`entersBattlefield`, `landfall`, `dies` and the like); fails when there is none.
    */
   | { readonly kind: 'subjectControllerHasMore'; readonly stat: PlayerStat }
+  /**
+   * "Draw a card if you control that creature. If you don't control it, its controller loses 1 life." (Auntie Ool, Cursewretch; CR 603.10a, 608.2h, 109.4): the controller of this
+   * ability controls the permanent whose event caused the trigger, read as it is or as it last was once it has left (the controller it had then). `not` of it is "if you don't
+   * control it". Read in a conditional effect, or as the intervening "if", of a trigger about a permanent (`entersBattlefield`, `dies`, `countersAdded` and the like); false where
+   * there is none.
+   */
+  | { readonly kind: 'subjectControlledByYou' }
+  /**
+   * "If its toughness was less than 1" (Massacre Girl, Known Killer; CR 603.10a, 113.7a, 208.1): the power or toughness of the permanent whose event caused the trigger against a
+   * whole number, as it is or as it last was once it has left (a creature put into a graveyard by state-based actions for a toughness of 0 or less is read with that toughness, which
+   * may be negative: `atMost` 0 is "less than 1"). Where it may stand is as for `subjectControlledByYou`; false where there is no such permanent.
+   */
+  | {
+      readonly kind: 'subjectStat';
+      readonly stat: 'power' | 'toughness';
+      readonly compare: NumberComparison;
+    }
+  /**
+   * "If you put a counter on a creature this turn" (Lasting Tarfire; CR 122.6, 603.4): the controller of this ability has put at least one counter, of the kind `counter` names (any
+   * kind when left out), on a permanent of the card type `onType` (any when left out) this turn, as the turn log recorded it (`TurnLog.countersPut`: the counters a player is
+   * recorded as putting, `counterAdded` events with a `by`, on a permanent with that card type as it got them). Counters put by the controller's opponents, counters that came with
+   * no player putting them (a creature's wither damage) and counters put in an earlier turn do not count.
+   */
+  | {
+      readonly kind: 'putCountersThisTurn';
+      readonly counter?: string;
+      readonly onType?: CardType;
+    }
   /**
    * "If that player controls more creatures than you" (CR 603.4, 110.2; the Bruna deck, Keeper of the Accord): the player the event of the trigger is
    * about (`triggerPlayer`: the active player of a `step`, `upkeep` or `endStep` trigger, the player who drew, who cast, ...) has a greater `stat` than

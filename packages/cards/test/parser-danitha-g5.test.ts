@@ -266,7 +266,7 @@ describe('Spiral into Solitude: "can’t attack or block" and "Blight 1" (CR 508
 
   test.each([
     // the restriction is said of the enchanted permanent only
-    "Creatures you control can't attack.",
+    "Creatures you control can't attack or block alone.",
     "~ can't attack or block.",
     "Enchanted creature can't attack or block alone.",
     "Enchanted creature can't attack or",

@@ -171,6 +171,16 @@ export interface LowerContext {
   /** True only while the intervening "if" of a triggered ability is lowered (D-271): the one place "~ is in your graveyard" is read. */
   interveningCondition: boolean;
   /**
+   * True while the body of a trigger about other permanents dying is lowered ("Whenever a creature you control with a counter on it dies", Puca's Covenant, CR 603.10a): "another target
+   * ... card from your graveyard" is then besides the card the creature that died became (`ObjectFilter.notTriggerCard`).
+   */
+  deathOfOther: boolean;
+  /**
+   * The player the last instruction lowered was said of (a `player` of the effect): "each other player" is every player but that one ("its owner draws that many cards and each
+   * other player loses that much life"). Null before the first instruction and after one that names no player.
+   */
+  lastPlayer: PlayerSelector | null;
+  /**
    * The name of the creature the intervening "if" of the ability named ("if you both own and control ~ and a creature named X", D-278, CR 701.42a): "exile them,
    * then meld them into Y" reads it. Null where no such condition came before.
    */
@@ -402,6 +412,8 @@ export function newContext(
     staticCondition: false,
     text: '',
     interveningCondition: false,
+    deathOfOther: false,
+    lastPlayer: null,
     meldPartner: null,
     exiledWithCondition: false,
     itIsCard: false,

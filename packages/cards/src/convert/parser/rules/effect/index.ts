@@ -163,6 +163,7 @@ import { PUMP_RULES } from './pump';
 import { PUMP_THOSE_EFFECT_RULES } from './pump-those';
 import { PUT_RULES } from './put';
 import { PUT_MILLED_EFFECT_RULES } from './put-milled';
+import { PUT_THAT_CARD_EFFECT_RULES } from './put-that-card';
 import { QUANDRIX_EFFECT_RULES } from './quandrix';
 import { QUANDRIX_D1_EFFECT_RULES } from './quandrix-d1';
 import { QUANDRIX_E_EFFECT_RULES } from './quandrix-e';
@@ -1231,6 +1232,8 @@ export const EFFECT_RULES = [
   ...BLIGHT_EFFECT_RULES,
   // Aberrant Return: "Each of them enters with an additional -1/-1 counter on it." after a put onto the battlefield.
   ...ENTERS_WITH_ADDITIONAL_EFFECT_RULES,
+  // The Reaper, King No More: "put that card onto the battlefield under your control", before the plain put of counters.
+  ...PUT_THAT_CARD_EFFECT_RULES,
   // Burning Curiosity: "exile the top three cards instead".
   ...EXILE_TOP_INSTEAD_EFFECT_RULES,
   // Twilight Diviner (Meren deck): "create a token that's a copy of one of them".

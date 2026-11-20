@@ -89,6 +89,35 @@ function countersOn(rule: string, head: Parser<unknown>, plural: boolean): Parse
   };
 }
 
+/**
+ * "the number of counters on that creature", "the number of counters on it" (Puca's Covenant, CR 122.1, 603.10a): the counters of every kind an object has, as it is or as it last
+ * was. The object is a pronoun for the binding pass ("that creature", "that permanent", "it") or `~`; the counter has no kind (`IrAmount` `countersOn` with none).
+ */
+export const NUMBER_OF_ANY_COUNTERS = (rule: string): Parser<IrAmount> => {
+  return (ctx, pos) => {
+    const r = spanned(
+      pattern(/the number of counters on (that creature|that permanent|it|~)(?![\p{L}\p{N}'’])/iu),
+    )(ctx, pos);
+    if (!r.ok) return r;
+    const word = (r.value.value[1] ?? '').toLowerCase();
+    const of: IrNoun = {
+      kind: 'noun',
+      det: word === '~' ? 'self' : 'anaphor',
+      filter: { raw: word },
+      upTo: false,
+      plural: false,
+      other: false,
+      span: r.value.span,
+      rule,
+    };
+    return {
+      ok: true,
+      value: { kind: 'countersOn', of, span: r.value.span },
+      pos: r.pos,
+    };
+  };
+};
+
 /** "the number of Zombies you control": a count of the objects a filter matches (CR 608.2c). */
 const NUMBER_OF = (rule: string): Parser<IrAmount> =>
   countAmount(rule, literal('the number of '), true);
@@ -330,6 +359,7 @@ const ATOM = (rule: string): Parser<IrAmount> =>
     // CR 205.2a: "the number of card types among cards in your graveyard" (before the count of objects, which reads no "card types").
     CARD_TYPES_AMONG_VALUE,
     CARD_TYPES_AMONG_THOSE_VALUE,
+    NUMBER_OF_ANY_COUNTERS(rule),
     NUMBER_OF_COUNTERS(rule),
     NUMBER_OF(rule),
     AGGREGATE(rule),

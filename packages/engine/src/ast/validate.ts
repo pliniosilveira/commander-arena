@@ -1726,12 +1726,31 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
       );
       const subject = subjectOf(a.trigger);
       // CR 603.3d: a target filter reads the triggering object only where it is a spell (`manaValueAtMost` of its mana value).
-      if (JSON.stringify(a.targets ?? []).includes('"triggerSubject"') && subject !== 'stack') {
+      const targetsText = JSON.stringify(a.targets ?? []);
+      // CR 400.7, 603.10a: "another target ... card" besides the card the permanent the trigger is about became.
+      if (targetsText.includes('"notTriggerCard"') && subject !== 'permanent') {
         issue(
           out,
           `${path}.targets`,
-          'a target filter that reads the triggering spell needs a cast trigger',
+          'notTriggerCard leaves out the card of the permanent the trigger is about: it needs a trigger about a permanent',
         );
+      }
+      if (targetsText.includes('"triggerSubject"')) {
+        // CR 122.1, 603.10a (Puca's Covenant): "mana value less than or equal to the number of counters on that creature" reads the counters of the permanent the trigger is about.
+        const readsSpell = targetsText.includes('"manaValueOf"');
+        if (readsSpell && subject !== 'stack') {
+          issue(
+            out,
+            `${path}.targets`,
+            'a target filter that reads the triggering spell needs a cast trigger',
+          );
+        } else if (!readsSpell && subject !== 'permanent') {
+          issue(
+            out,
+            `${path}.targets`,
+            'a target filter that reads the counters of the triggering permanent needs a trigger about a permanent',
+          );
+        }
       }
       const selfCast = a.trigger?.kind === 'castSpell' && a.trigger.self === true;
       const scopeOf = (declared: Scope['targets']): Scope => ({
@@ -1876,6 +1895,16 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             'subjectControllerHasMore reads the controller of a permanent the event is about',
           );
         }
+        // CR 603.10a: "if you control that creature", "if its toughness was less than 1" read the permanent the event is about.
+        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+          if (conditionHas(a.interveningIf, kind) && subjectOf(a.trigger) !== 'permanent') {
+            issue(
+              out,
+              `${path}.interveningIf`,
+              `${kind} reads the permanent the event is about: it needs a trigger about a permanent`,
+            );
+          }
+        }
         // D-648: "that opponent" is the player a `playerAttacksOpponent` trigger is about.
         if (
           conditionHas(a.interveningIf, 'attackedHasMoreLifeThanOtherOpponent') &&
@@ -1965,6 +1994,11 @@ function checkAbility(a: Ability, path: string, out: AstIssue[]): void {
             `${path}.triggerCondition`,
             'triggerPlayerHasMore reads the player the event is about: it needs a trigger whose event is about a player',
           );
+        }
+        for (const kind of ['subjectControlledByYou', 'subjectStat']) {
+          if (conditionHas(a.triggerCondition, kind)) {
+            issue(out, `${path}.triggerCondition`, `${kind} is read as an intervening "if"`);
+          }
         }
         if (conditionHas(a.triggerCondition, 'subjectGreaterPt')) {
           issue(out, `${path}.triggerCondition`, 'subjectGreaterPt is read as an intervening "if"');

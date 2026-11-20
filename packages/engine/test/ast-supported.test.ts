@@ -419,6 +419,8 @@ describe('supported feature gate', () => {
       'entersFromGraveyard',
       // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}".
       'activatesAbilityX',
+      // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature".
+      'countersAddedEach',
     ]);
     expect(SUPPORTED_FEATURES.manaAbilityCostKinds).toEqual([
       'tap',

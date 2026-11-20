@@ -579,6 +579,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'entersFromGraveyard',
     // Unbound Flourishing: "activate an ability, if that ability's activation cost contains {X}" (`activatesAbility` with `xCost`, `anySource`).
     'activatesAbilityX',
+    // Flourishing Defenses: "Whenever a -1/-1 counter is put on a creature" (`countersAdded` with `each`).
+    'countersAddedEach',
   ],
   keywordKinds: [
     'flying',
@@ -881,6 +883,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'eachPlayer',
     'eachOpponent',
     'eachOtherOpponent',
+    // Oft-Nabbed Goat: "each other player" besides its owner (`eachPlayerExcept`, CR 102.1).
+    'eachPlayerExcept',
     // D-269: "each player this creature attacked this turn" (`attackedPlayers`, CR 508.6).
     'attackedPlayers',
     // "Each opponent dealt combat damage this game by a creature named X" (`combatDamagedByNamed`, CR 120.2a).
@@ -1041,6 +1045,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'attackedBy',
     // D-145: "with a counter on it" (`ObjectFilter.hasCounter`), "target commander" (`ObjectFilter.commander`).
     'hasCounter',
+    // Puca's Covenant: "another target permanent card ... from your graveyard" of a trigger about a creature that died (`ObjectFilter.notTriggerCard`).
+    'notTriggerCard',
     'commander',
     // D-416 (CR 700.9): "modified creature" (`ObjectFilter.modified`).
     'modified',
@@ -1072,6 +1078,10 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'subjectGreaterPt',
     // D-229: "if that player controls more lands than you".
     'subjectControllerHasMore',
+    // Auntie Ool, Massacre Girl, Lasting Tarfire: "if you control that creature", "if its toughness was less than 1", "if you put a counter on a creature this turn".
+    'subjectControlledByYou',
+    'subjectStat',
+    'putCountersThisTurn',
     // Bruna deck: "if that player controls more creatures than you" in a trigger about a player.
     'triggerPlayerHasMore',
     // D-229: "as long as there are fewer than eight cards in your graveyard".
@@ -1694,6 +1704,8 @@ export const TRIGGER_FEATURES = [
   'entersFromGraveyard',
   /** "Whenever you activate an ability, if its activation cost contains {X}" (CR 602.2b, 603.4): the engine's `activatesAbility` with `xCost` or `anySource`. */
   'activatesAbilityX',
+  /** "Whenever a -1/-1 counter is put on a creature" (CR 122.6, 603.2): the engine's `countersAdded` with `each`, once for each counter. */
+  'countersAddedEach',
 ] as const;
 export type TriggerFeatureKind = (typeof TRIGGER_FEATURES)[number];
 
@@ -1719,6 +1731,8 @@ export const SELECTOR_KINDS = [
   'eachOpponent',
   /** "Each other opponent" (D-151): the opponents besides the player of the trigger's event. */
   'eachOtherOpponent',
+  /** "Each other player" besides the one a selector names (CR 102.1, Oft-Nabbed Goat): the engine's `PlayerSelector` `eachPlayerExcept`. */
+  'eachPlayerExcept',
   /** "Each player this creature attacked this turn" (D-269, CR 508.6): the players the permanent of the ability was declared attacking this turn. */
   'attackedPlayers',
   /** "Each opponent dealt combat damage this game by a creature named X" (CR 120.2a, 510.2): the opponents the game history says a creature with the name dealt combat damage to. */
@@ -1912,6 +1926,8 @@ export const SELECTOR_KINDS = [
   'attackedBy',
   /** "A creature with a counter on it" (CR 122.1, D-145): the engine's `ObjectFilter.hasCounter`. */
   'hasCounter',
+  /** "Another target permanent card" besides the card the creature that died became (CR 400.7, 603.10a, 109.1): the engine's `ObjectFilter.notTriggerCard`. */
+  'notTriggerCard',
   /** "Target commander" (CR 903.3, D-145): the engine's `ObjectFilter.commander`. */
   'commander',
   /** "Modified creature" (CR 700.9, D-416): the engine's `ObjectFilter.modified`. */
@@ -1948,6 +1964,12 @@ export const CONDITION_KINDS = [
   'subjectGreaterPt',
   /** "If that player controls more lands than you" (CR 603.4, D-229): the engine's `subjectControllerHasMore`. */
   'subjectControllerHasMore',
+  /** "Draw a card if you control that creature" (CR 603.10a, 608.2h): the engine's `subjectControlledByYou`. */
+  'subjectControlledByYou',
+  /** "If its toughness was less than 1" (CR 603.10a, 113.7a): the engine's `subjectStat`. */
+  'subjectStat',
+  /** "If you put a counter on a creature this turn" (CR 122.6, 603.4): the engine's `putCountersThisTurn`. */
+  'putCountersThisTurn',
   /** "If that player controls more creatures than you", the player being the one of the event (CR 603.4): the engine's `triggerPlayerHasMore`. */
   'triggerPlayerHasMore',
   /** "If it escaped", "unless it escaped" (CR 702.138b, D-124): the engine's `escaped`. */
@@ -2737,6 +2759,7 @@ const TRIGGER_TABLE: KindTable<Trigger['kind'] | TriggerFeatureKind> = {
   tapBatch: true,
   entersFromGraveyard: true,
   activatesAbilityX: true,
+  countersAddedEach: true,
 };
 const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   flying: true,

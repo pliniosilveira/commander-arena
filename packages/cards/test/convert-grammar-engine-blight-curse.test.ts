@@ -1,7 +1,7 @@
 // The Blight Curse deck, group "blight" (Lorwyn Eclipsed): the REAL Oracle text of Burning Curiosity ("As an additional cost to cast this spell, you may blight 1." and "If this
 // spell's additional cost was paid, exile the top three cards instead."), Sinister Gnarlbark ("draw a card and blight 1") and Auntie Ool, Cursewretch ("Ward—Blight 2.") from the
 // golden corpus goes through the grammar as a card with no override, is defined in an engine scenario and is played through applyAction, so the nodes the parser writes for the real
-// text are what the engine runs. Auntie Ool's other ability ("Whenever one or more -1/-1 counters are put on a creature, ...") belongs to another group: she stays unsupported, and only
+// text are what the engine runs. Auntie Ool's other ability ("Whenever one or more -1/-1 counters are put on a creature, ...") belongs to another group (convert-grammar-engine-blight-curse-counters.test.ts), and only
 // her ward line is checked here. Pins: CR 701.68a and 701.68b (Blight), CR 118.8 and 601.2b (an additional cost, the optional one may be declined), CR 608.2c and 614.1a ("exile the top
 // three cards instead"), CR 702.21a and 118.12a (Ward), CR 611.2a and 514.2 (until the end of your next turn).
 import { readFileSync } from 'node:fs';
@@ -184,13 +184,13 @@ describe('Sinister Gnarlbark', () => {
 describe('Auntie Ool, Cursewretch: "Ward—Blight 2."', () => {
   const ool = imported('Auntie Ool, Cursewretch');
 
-  test('the ward line is read into the engine ward keyword with a blight cost; the card stays unsupported until her other ability is', () => {
+  test('the ward line is read into the engine ward keyword with a blight cost, and her counter trigger (the counter triggers group) makes the card supported', () => {
     expect(ool.definition.faces[0]?.abilities).toContainEqual({
       kind: 'keyword',
       keyword: { kind: 'ward', cost: [{ kind: 'blight', count: 2 }] },
     });
-    expect(ool.support.status).not.toBe('supported');
-    expect(ool.support.unparsed.map((u) => u.ability)).toEqual([1]);
+    expect(ool.support.unparsed).toEqual([]);
+    expect(ool.support.status).toBe('supported');
   });
 
   test('the ward line alone, as a card, makes the opponent put two counters on a creature of theirs to keep a spell', () => {

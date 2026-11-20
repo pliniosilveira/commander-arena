@@ -30,6 +30,7 @@ export const PLAYER_ONLY_KINDS: readonly string[] = [
   'eachPlayer',
   'eachOpponent',
   'eachOtherOpponent',
+  'eachPlayerExcept',
   'all',
   'controllerOf',
   'ownerOf',
