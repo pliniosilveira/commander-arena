@@ -147,7 +147,7 @@ const SPELLS: readonly Line[] = [
   {
     kind: 'sorcery',
     text: 'Return target creature card from an opponent’s graveyard to your hand.',
-    expect: no('from an opponent’s graveyard to your hand.', 'effect.return'),
+    expect: no('to your hand.', 'effect.return'),
     note: 'it would go to the owner’s hand, not yours',
   },
   {

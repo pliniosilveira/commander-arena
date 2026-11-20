@@ -614,6 +614,12 @@ const EACH_PUT_REVEALED_INTO_HAND = /^you each put the card you revealed into yo
 const REVEAL_TOP_CARD = /(?:^|, )(?:then )?(?:you may )?reveal the top card of your library\.$/i;
 const IF_REVEALED_CARD =
   /^if (?:it['’]s an? [^.,]* card|an? [^.,]* card is revealed this way), [^.]*\.$/i;
+/**
+ * "Reveal the top card of your library. If it's a creature card, create a 1/1 green Saproling creature token. If it's a land card, put that card onto the battlefield under your control.
+ * If it's a noncreature, nonland card, you gain 2 life." (Witherbloom Witchcraft, issue 190, CR 701.20a, 608.2c): one reveal and several "if" sentences about the card it shows, kept
+ * together for `effect.reveal-top-branches`. A list of types may hold a comma, which `IF_REVEALED_CARD` does not allow.
+ */
+const IF_REVEALED_BRANCH = /^if it['’]s an? [^.]*? card, [^.]*\.$/i;
 /** "Otherwise, put that card into your hand." (Coiling Oracle, issue 310, CR 608.2c): the third sentence of the instruction of `REVEAL_TOP_CARD`, the card that is not of the kind goes into the hand. */
 const OTHERWISE_PUT_INTO_HAND = /^otherwise, put that card into your hand\.$/i;
 /**
@@ -759,6 +765,34 @@ function joinLookAtTop(text: string, spans: Span[]): Span[] {
     ) {
       out.push({ start: a.start, end: d.end });
       i += 3;
+    } else if (
+      a !== undefined &&
+      d !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_BRANCH) &&
+      said(c, IF_REVEALED_BRANCH) &&
+      said(d, IF_REVEALED_BRANCH)
+    ) {
+      out.push({ start: a.start, end: d.end });
+      i += 3;
+    } else if (
+      a !== undefined &&
+      c !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_BRANCH) &&
+      said(c, IF_REVEALED_BRANCH)
+    ) {
+      out.push({ start: a.start, end: c.end });
+      i += 2;
+    } else if (
+      a !== undefined &&
+      b !== undefined &&
+      said(a, REVEAL_TOP_CARD) &&
+      said(b, IF_REVEALED_BRANCH) &&
+      !said(b, IF_REVEALED_CARD)
+    ) {
+      out.push({ start: a.start, end: b.end });
+      i += 1;
     } else if (
       a !== undefined &&
       c !== undefined &&

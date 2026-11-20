@@ -2369,6 +2369,26 @@ export type Effect =
       readonly otherwiseTo?: 'hand';
     }
   /**
+   * "Reveal the top card of your library. If it's a creature card, create a 1/1 green Saproling creature token. If it's a land card, put that card onto the battlefield under
+   * your control. If it's a noncreature, nonland card, you gain 2 life." and "Whenever ~ attacks, reveal the top card of your library. If it's a creature card, you gain life
+   * equal to that card's toughness, lose life equal to its power, then put it into your hand." (CR 701.20a Reveal, 608.2c, 608.2h): each player `player` names reveals the top
+   * card of their own library once (a `cardsRevealed` event; nothing for an empty library), and then each branch of `branches` whose `ifMatches` describes the card as it was
+   * revealed is done, in the order written (a card both a creature and a land is a match of both). A branch first runs its `onMatch` effect as that player ("you" is the player
+   * who revealed; `moved` names the card revealed, still in the library, so "that card's toughness" is `toughnessOf` `moved`), then puts the card into the place `to` names. A
+   * branch that moves the card away leaves a later branch that moves it nothing to move (a card that is no longer on top of the library stays where it went). The card stays on top
+   * when no branch moves it.
+   */
+  | {
+      readonly kind: 'revealTopBranches';
+      readonly player: PlayerSelector;
+      readonly branches: readonly {
+        readonly ifMatches: ObjectFilter;
+        readonly onMatch?: Effect;
+        readonly to?: 'battlefield' | 'hand';
+        readonly tapped?: true;
+      }[];
+    }
+  /**
    * "At the beginning of your upkeep, you and target opponent each reveal the top card of your library. You each lose life equal to the mana value of the card
    * revealed by the other player. You each put the card you revealed into your hand." (CR 701.20a Reveal, 119.3, 202.3): each of the two players `players` names reveals the top
    * card of their own library (nothing for an empty library: the other player then loses no life), each loses life equal to the mana value of the card the OTHER player revealed,
