@@ -1445,12 +1445,16 @@ export function answerPayment(
     if (plan === null) return fail('You cannot pay that cost');
     const applied = applyPaymentPlan(cleared, seat, plan, plan.lifePaid);
     return finish(
-      withManaSpent(
-        withSpentRiders(applied.state, casting, derivedSpell, applied.riders),
+      withPhyrexianLife(
+        withManaSpent(
+          withSpentRiders(applied.state, casting, derivedSpell, applied.riders),
+          casting,
+          applied.spent,
+          applied.spentSnow,
+          applied.spentColors,
+        ),
         casting,
-        applied.spent,
-        applied.spentSnow,
-        applied.spentColors,
+        plan.lifePaid,
       ),
       applied.events,
     );
@@ -1460,12 +1464,16 @@ export function answerPayment(
   const paid = payByTapping(cleared, seat, casting.totalCost, spell, action.taps);
   if ('error' in paid) return fail(paid.error);
   return finish(
-    withManaSpent(
-      withSpentRiders(paid.state, casting, derivedSpell, paid.riders),
+    withPhyrexianLife(
+      withManaSpent(
+        withSpentRiders(paid.state, casting, derivedSpell, paid.riders),
+        casting,
+        paid.spent,
+        paid.spentSnow,
+        paid.spentColors,
+      ),
       casting,
-      paid.spent,
-      paid.spentSnow,
-      paid.spentColors,
+      paid.phyrexianLifePaid,
     ),
     paid.events,
   );
@@ -1638,6 +1646,22 @@ function withSpentRiders(
   return triggers.length === 0
     ? next
     : { ...next, pendingTriggers: [...next.pendingTriggers, ...triggers] };
+}
+
+/**
+ * CR 107.4f, 601.2h, 702.150a: the spell remembers the life paid for the Phyrexian mana symbols of its cost (2 life for each symbol paid that way), which Compleated reads as the
+ * permanent enters. Nothing for an ability, and nothing when no Phyrexian symbol was paid with life.
+ */
+function withPhyrexianLife(
+  state: GameState,
+  casting: NonNullable<GameState['casting']>,
+  life: number,
+): GameState {
+  const stack = state.objects[casting.object]?.stack;
+  if (casting.activation !== null || life <= 0 || stack === null || stack === undefined) {
+    return state;
+  }
+  return patchObject(state, casting.object, { stack: { ...stack, phyrexianLifePaid: life } });
 }
 
 /**

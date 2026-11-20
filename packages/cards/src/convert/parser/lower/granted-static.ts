@@ -14,7 +14,7 @@ import { CREATURE_TYPES } from '../rules/noun/creature-types';
 import { lowerAngelStatic } from './angels';
 import { arg, type Effects, failure, operand } from './clauses';
 import { lateLowerers } from './late';
-import { objectSelectorOf } from './nouns';
+import { objectSelectorOf, playerSelectorOf } from './nouns';
 import { type Lowering, newContext } from './types';
 
 /** The static abilities an effect may give for good: the ones the engine reads from an object's abilities after the layers. */
@@ -105,6 +105,96 @@ export const BECOMES_FOR_GOOD: Lowering<IrClause, Effects> = {
           subtypes: [...types.subtypes],
           additive: true,
           duration: 'permanent',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "Target creature becomes a Treasure artifact with \"{T}, Sacrifice ~: Add one mana of any color\" and loses all other card types and abilities." (CR 205.1a, 205.3d, 613.1d,
+ * 613.1f, 611.2a; Vraska, Betrayal's Sting): three effects of one target, all for good, in the order of the layers and of the timestamps: the types are replaced (layer 4: the
+ * object is only an artifact, its creature types go with the creature type, the new subtype is added), it loses all abilities (layer 6), and then it is given the quoted mana
+ * ability (layer 6, a later timestamp, so the loss does not take it away, CR 613.7).
+ */
+export const BECOMES_LOSES_ALL: Lowering<IrClause, Effects> = {
+  head: 'becomesLosesAll',
+  id: 'lower.becomes-loses-all',
+  needs: ['effect:setTypes', 'effect:loseAllAbilities', 'effect:grantAbility'],
+  lower(clause, ctx) {
+    const subject = operand(clause, 'objects');
+    const types = arg(clause, 'types');
+    const quoted = arg(clause, 'ability');
+    if (
+      subject?.kind !== 'noun' ||
+      subject.det !== 'target' ||
+      types?.kind !== 'typeList' ||
+      quoted?.kind !== 'quoted'
+    ) {
+      return failure(clause);
+    }
+    const objects = objectSelectorOf(subject, ctx);
+    if (!objects.ok) return objects;
+    if (objects.value.kind !== 'target') return failure(clause);
+    // The permanent the ability names as `~` is the artifact itself: not a group, not a card named inside the quotes.
+    if (ctx.namedInQuotes) return failure(clause);
+    const bound = bind(quoted.ability, {});
+    if (!bound.ok || bound.ability.kind !== 'activated') return failure(clause);
+    // The ability of the artifact is lowered like any activated ability (a mana ability, CR 605.1a), for an object that is only an artifact.
+    const general = lateLowerers();
+    if (general === null) return failure(clause);
+    const lowered = general.activated(
+      bound.ability,
+      newContext('ability', ['artifact'], [], ctx.cardName),
+    );
+    if (!lowered.ok) return failure(clause, lowered.needs);
+    const [mana, ...more] = lowered.value;
+    if (mana?.kind !== 'mana' || more.length > 0) return failure(clause);
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'setTypes',
+          objects: objects.value,
+          types: ['artifact'],
+          subtypes: [...types.subtypes],
+          duration: 'permanent',
+        },
+        { kind: 'loseAllAbilities', objects: objects.value, duration: 'permanent' },
+        {
+          kind: 'grantAbility',
+          objects: objects.value,
+          abilities: [mana],
+          duration: 'permanent',
+        },
+      ],
+      rule: clause.rule,
+    };
+  },
+};
+
+/**
+ * "If target player has fewer than nine poison counters, they get a number of poison counters equal to the difference." (CR 122.1, 107.1b; Vraska, Betrayal's Sting): the engine's
+ * `givePoison` of the player the text names, the amount the number less the poison counters the player has as the instruction runs (nothing when they have that many or more).
+ */
+export const GIVE_POISON: Lowering<IrClause, Effects> = {
+  head: 'givePoison',
+  id: 'lower.give-poison',
+  needs: ['effect:givePoison', 'amount:poisonShortfall'],
+  lower(clause, ctx) {
+    const who = arg(clause, 'player');
+    const limit = arg(clause, 'limit');
+    if (who?.kind !== 'noun' || limit?.kind !== 'number') return failure(clause);
+    const player = playerSelectorOf(who, ctx);
+    if (!player.ok) return player;
+    return {
+      ok: true,
+      value: [
+        {
+          kind: 'givePoison',
+          player: player.value,
+          amount: { kind: 'poisonShortfall', limit: limit.value, player: player.value },
         },
       ],
       rule: clause.rule,

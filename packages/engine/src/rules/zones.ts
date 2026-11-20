@@ -731,6 +731,14 @@ function moveOne(state: GameState, request: MoveRequest): MoveResult {
     // CR 306.5b: a planeswalker enters with loyalty counters equal to its printed loyalty.
     if (face?.types.includes('planeswalker') && face.loyalty !== null) {
       counters = { ...counters, loyalty: face.loyalty };
+      // CR 702.150a (Compleated), 107.4f: if life was paid for Phyrexian mana symbols of its cost, it enters with two fewer loyalty counters for each of them (2 life each).
+      const phyrexianLife = old.zone === 'stack' ? (old.stack?.phyrexianLifePaid ?? 0) : 0;
+      if (
+        phyrexianLife > 0 &&
+        face.abilities.some((a) => a.kind === 'keyword' && a.keyword.kind === 'compleated')
+      ) {
+        counters = { ...counters, loyalty: Math.max(0, face.loyalty - phyrexianLife) };
+      }
     }
     // CR 310.4b: a battle enters with defense counters equal to its printed defense.
     if (face?.types.includes('battle') && face.defense !== null) {

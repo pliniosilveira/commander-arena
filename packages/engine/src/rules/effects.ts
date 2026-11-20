@@ -2553,6 +2553,18 @@ function runEffect(
       return done(next, events);
     }
 
+    case 'givePoison': {
+      // CR 122.1, 704.5c (Vraska, Betrayal's Sting): each player named puts that many poison counters on themselves.
+      const amount = amountOf(state, effect.amount, ctx, targets);
+      if (amount <= 0) return done(state);
+      for (const seat of resolvePlayers(state, effect.player, ctx, targets)) {
+        const had = getSeat(next, seat).poison;
+        next = patchSeat(next, seat, { poison: had + amount });
+        events.push({ kind: 'poisonChanged', seat, from: had, to: had + amount });
+      }
+      return done(next, events);
+    }
+
     case 'gainExperience': {
       // CR 122.1 (Meren of Clan Nel Toth): "You get an experience counter": the player puts that many experience counters on themselves.
       const amount = amountOf(state, effect.amount, ctx, targets);

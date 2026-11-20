@@ -341,6 +341,8 @@ function walkEffect(
         (effect.kind === 'setPt' ||
           effect.kind === 'setTypes' ||
           effect.kind === 'grantKeyword' ||
+          // CR 613.1f, 611.2a: "Target creature becomes a Treasure artifact ... and loses all other card types and abilities" (Vraska, Betrayal's Sting): no end, a layer 6 loss.
+          effect.kind === 'loseAllAbilities' ||
           // Issue 159: "It's a black Zombie in addition to its other colors and types" (a Zombie from a graveyard keeps being one).
           (effect.kind === 'setColors' && effect.additive === true))
       ) {

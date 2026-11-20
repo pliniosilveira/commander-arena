@@ -81,7 +81,12 @@ import { GALADRIEL_G3_LOWERINGS } from './galadriel-g3';
 import { GIDEON_LOWERINGS } from './gideon';
 import { GISA_G4_LOWERINGS } from './gisa-g4';
 import { GRANT_ABILITY, GRANT_MANA_ABILITY } from './granted-ability';
-import { BECOMES_FOR_GOOD, GAIN_STATIC_ABILITY } from './granted-static';
+import {
+  BECOMES_FOR_GOOD,
+  BECOMES_LOSES_ALL,
+  GAIN_STATIC_ABILITY,
+  GIVE_POISON,
+} from './granted-static';
 import { GRAVEYARD_CAST_LOWERINGS } from './graveyard-cast';
 import { GRAVEYARD_CHOICE_LOWERINGS } from './graveyard-choice';
 import { GRAVEYARD_COPY_LOWERINGS } from './graveyard-copy';
@@ -2482,6 +2487,8 @@ export const EFFECT_LOWERINGS: readonly Lowering<IrClause, Effects>[] = [
   ...MELD_LOWERINGS,
   GAIN_STATIC_ABILITY,
   BECOMES_FOR_GOOD,
+  BECOMES_LOSES_ALL,
+  GIVE_POISON,
   GAIN_CONTROL,
 ];
 

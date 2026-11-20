@@ -467,6 +467,11 @@ export interface StackData {
    */
   readonly manaSpent?: ManaSpent;
   /**
+   * The life paid for the Phyrexian mana symbols of the spell's mana cost (CR 107.4f, 601.2h; 2 life for each symbol), written as the cost is paid: Compleated (CR 702.150a) reads it
+   * as the permanent enters. Absent when no Phyrexian symbol was paid with life, and for an ability.
+   */
+  readonly phyrexianLifePaid?: number;
+  /**
    * True when mana that carries a haste rider was spent on the spell (D-151: "If that mana is spent on a Dragon creature spell, it gains haste until
    * end of turn"), or when an effect that let the spell be cast says it gains haste until end of turn (Thundermane Dragon): the permanent the spell
    * becomes has haste until the end of that turn. Absent otherwise, and for an ability.

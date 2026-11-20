@@ -1259,7 +1259,9 @@ function activatedSkeleton(
   const all = splitSentences(text, colon + 1, text.length);
   // "Activate only ..." (CR 602.5) and "This ability costs {4} less to activate if ..." (stage P30, CR 601.2f) follow the effect.
   const firstRestriction = all.findIndex((s) =>
-    /^(?:activate\b|this ability costs\b)/i.test(text.slice(s.start)),
+    /^(?:activate\b|this ability costs\b|only your opponents may activate\b)/i.test(
+      text.slice(s.start),
+    ),
   );
   const body = firstRestriction === -1 ? all : all.slice(0, firstRestriction);
   const restrictions = firstRestriction === -1 ? [] : all.slice(firstRestriction);

@@ -258,6 +258,11 @@ export function amountOf(
     const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
     return seat === undefined ? 0 : getSeat(state, seat).life;
   }
+  // CR 122.1, 107.1b: the limit less the player's poison counters now; a negative result is 0.
+  if (amount.kind === 'poisonShortfall') {
+    const seat = resolvePlayers(state, amount.player, ctx, targets)[0];
+    return seat === undefined ? 0 : Math.max(0, amount.limit - getSeat(state, seat).poison);
+  }
   if (amount.kind === 'enteredX') {
     // CR 107.3m, 107.3g (Hylda group 3): the X of the spell the permanent resolved from, which the permanent remembers (`GameObject.castX`), or last-known information
     // when it has left; a permanent that was not cast has none.

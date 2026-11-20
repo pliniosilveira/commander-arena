@@ -592,11 +592,9 @@ describe('The Reaper, King No More: "Whenever a creature an opponent controls wi
 describe('Oft-Nabbed Goat: "When this creature dies, if it had one or more -1/-1 counters on it, its owner draws that many cards and each other player loses that much life."', () => {
   const goat = imported('Oft-Nabbed Goat');
 
-  test('the death trigger is read and has the engine shape; the activated ability keeps the card unsupported', () => {
-    expect(goat.support.status).not.toBe('supported');
-    expect(goat.support.unparsed.map((u) => u.text)).toEqual([
-      expect.stringContaining('Gain control of'),
-    ]);
+  test('the death trigger is read and has the engine shape; the whole card is supported', () => {
+    expect(goat.support.unparsed).toEqual([]);
+    expect(goat.support.status).toBe('supported');
     const dies = goat.definition.faces[0]?.abilities.find((a) => a.kind === 'triggered');
     expect(dies).toEqual({
       kind: 'triggered',
@@ -683,6 +681,72 @@ describe('Oft-Nabbed Goat: "When this creature dies, if it had one or more -1/-1
     g.expect.zone(trigger.name, 'graveyard', { seat: 0 });
     g.expect.life(1, 40);
     g.expect.pending('priority', 0);
+  });
+});
+
+describe('Oft-Nabbed Goat: "{1}: Draw a card. Gain control of this creature and put a -1/-1 counter on it. Only your opponents may activate this ability and only as a sorcery."', () => {
+  const goat = real('Oft-Nabbed Goat');
+  const GOAT = goat.name;
+
+  const start = (active: 0 | 1, controller: 0 | 1 = 0) =>
+    scenario()
+      .define(goat)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield('Mountain', { count: 2 })
+      .battlefield(GOAT, { label: 'goat', controller })
+      .seat(1)
+      .library(...LIBRARY)
+      .battlefield('Plains', { count: 3 })
+      .at('precombatMain', { active, turn: 3 })
+      .build();
+
+  test('the ability has the engine shape: opponents only, sorcery timing, three effects in order', () => {
+    expect(validateCard(goat)).toEqual([]);
+    expect(goat.faces[0]?.abilities[0]).toEqual({
+      kind: 'activated',
+      cost: [{ kind: 'mana', symbols: ['1'] }],
+      effect: {
+        kind: 'sequence',
+        effects: [
+          { kind: 'draw', player: { kind: 'you' }, count: 1 },
+          { kind: 'gainControl', objects: { kind: 'this' }, duration: 'permanent' },
+          { kind: 'addCounters', objects: { kind: 'this' }, counter: '-1/-1', count: 1 },
+        ],
+      },
+      timing: 'sorcery',
+      activator: 'opponents',
+    });
+  });
+
+  test('an opponent activates it in their main phase: they draw and the goat gets a -1/-1 counter (CR 602.2)', () => {
+    const g = start(1);
+    const hand = g.state.seats[1]?.hand.length ?? 0;
+    g.act(1).activate('goat', { pay: true });
+    g.passAll();
+    expect(g.state.seats[1]?.hand.length).toBe(hand + 1);
+    g.expect.counters('goat', { '-1/-1': 1 });
+    // CR 613.1b: control changed (a layer 2 effect with no duration); the owner is still seat 0 (CR 108.3)
+    expect(g.view(1).battlefield.find((o) => o.name === GOAT)?.controller).toBe(1);
+    expect(g.view(1).battlefield.find((o) => o.name === GOAT)?.owner).toBe(0);
+  });
+
+  test("it is taken over for good: the new controller cannot activate it, nor the old one in the new controller's turn", () => {
+    const g = start(1);
+    g.act(1).activate('goat', { pay: true });
+    g.passAll();
+    g.expect.illegal(1, { activate: 'goat' });
+    g.expect.illegal(0, { activate: 'goat' });
+  });
+
+  test('its controller cannot activate it', () => {
+    const g = start(0);
+    g.expect.illegal(0, { activate: 'goat' });
+  });
+
+  test("only as a sorcery (CR 602.5d): an opponent cannot activate it in the controller's turn", () => {
+    const g = start(0);
+    g.expect.illegal(1, { activate: 'goat' });
   });
 });
 

@@ -2030,6 +2030,13 @@ export function checkAmount(a: Amount, path: string, scope: Scope, out: Out): vo
     case 'lifeTotalOf':
       checkPlayerSelector(a.player, `${path}.player`, scope, out);
       break;
+    case 'poisonShortfall':
+      // CR 122.1, 107.1b: a positive whole number less a player's poison counters, read as the instruction runs.
+      if (!isCount(a.limit) || a.limit < 1) {
+        issue(out, `${path}.limit`, 'limit must be a positive integer');
+      }
+      checkPlayerSelector(a.player, `${path}.player`, scope, out);
+      break;
     case 'experienceCounters':
       // CR 122.1 (Meren of Clan Nel Toth): the controller's own experience counters now; valid wherever an amount of an effect is (statics refuse it in `checkStateAmount`).
       break;
@@ -5207,14 +5214,14 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       if (named === 'triggerSubject')
         checkSubjectRef(e.objects as ObjectRef, 'permanent', `${path}.objects`, scope, out);
       else if (named === 'target') checkObjectSelector(e.objects, `${path}.objects`, scope, out);
-      else if (named === 'this' && scope.owner === 'ability' && e.player !== undefined) {
-        // CR 613.1b: "that player gains control of this artifact": the permanent with the ability, for the one player `player` names.
+      else if (named === 'this' && scope.owner === 'ability') {
+        // CR 613.1b: "that player gains control of this artifact" (the one player `player` names) or "gain control of ~" (the controller of the ability): the permanent with the ability.
         checkObjectSelector(e.objects, `${path}.objects`, scope, out);
       } else
         issue(
           out,
           `${path}.objects`,
-          'gainControl names a target, the permanent that caused the trigger, or (with a player who gains control) the permanent with the ability',
+          'gainControl names a target, the permanent that caused the trigger, or the permanent with the ability',
         );
       if (e.player !== undefined) {
         checkPlayerSelector(e.player, `${path}.player`, scope, out);
@@ -6714,6 +6721,7 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
     case 'loseLife':
     case 'gainEnergy':
     case 'gainExperience':
+    case 'givePoison':
     case 'increaseSpeed':
       checkPlayerSelector(e.player, `${path}.player`, scope, out);
       // D-365: "the life that player lost this turn" is the whole amount of a `loseLife`, read for each player it affects (`rules/life-amounts.ts`).
