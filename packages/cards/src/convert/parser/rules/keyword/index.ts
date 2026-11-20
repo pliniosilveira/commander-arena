@@ -118,6 +118,7 @@ export const KEYWORD_LINE = defineRule<readonly IrKeyword[]>({
     // D-472 (CR 702.130a): Afflict N.
     'Afflict 3',
     'Flying, afflict 2',
+    'Mobilize 1',
     'Flying, infect',
     'Infect, wither',
     'Trample, toxic 1',

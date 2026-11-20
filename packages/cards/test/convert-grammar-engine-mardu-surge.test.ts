@@ -23,6 +23,13 @@ function real(name: string): CardDefinition {
   return imported.definition;
 }
 
+/** The definition the grammar reads, without the check that every ability of the card was read (for a test of the abilities that were). */
+function readAbilities(name: string): CardDefinition {
+  const card = GOLDEN.find((c) => c.name === name);
+  if (card === undefined) throw new Error(`${name} is not in the golden corpus`);
+  return importCard(fromGoldenCard(card), undefined, NO_OVERRIDES).definition;
+}
+
 const BEARS = 'Grizzly Bears';
 const LIBRARY = Array.from({ length: 8 }, () => 'Island');
 
@@ -99,5 +106,60 @@ describe('Hero of Bladehold: two tokens tapped and attacking (CR 508.4)', () => 
       unblocked: [hero.name, 'Soldier[0]', 'Soldier[1]'],
     });
     g.expect.invariants();
+  });
+});
+
+describe('Mobilize (CR 702.181a)', () => {
+  const zurgo = readAbilities('Zurgo Stormrender');
+  const shield = real('Infantry Shield');
+
+  test('Zurgo has the keyword with its number, and the engine expands it into one attack trigger', () => {
+    expect(
+      zurgo.faces[0]?.abilities.some(
+        (a) => a.kind === 'keyword' && a.keyword.kind === 'mobilize' && a.keyword.count === 1,
+      ),
+    ).toBe(true);
+  });
+
+  test('an attack makes a 1/1 red Warrior tapped and attacking, sacrificed at the next end step', () => {
+    const g = scenario()
+      .define(zurgo)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(zurgo.name)
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: zurgo.name }]);
+    g.passAll();
+    g.expect.zone('Warrior', 'battlefield', { seat: 0, count: 1 });
+    g.expect.tapped('Warrior');
+    g.expect.derived('Warrior', { subtypes: ['Warrior'], colors: ['R'] });
+    g.expect.combat({ attackers: [zurgo.name, 'Warrior'], unblocked: [zurgo.name, 'Warrior'] });
+    g.advanceTo('end');
+    g.passAll();
+    g.expect.zone('Warrior', 'battlefield', { count: 0 });
+    g.expect.invariants();
+  });
+
+  test('Infantry Shield: the equipped creature has menace and mobilize X, X being its power', () => {
+    expect(validateCard(shield)).toEqual([]);
+    const g = scenario()
+      .define(shield)
+      .seat(0)
+      .library(...LIBRARY)
+      .battlefield(BEARS, { label: 'bears' })
+      .battlefield(shield.name, { attachedTo: 'bears' })
+      .seat(1)
+      .library(...LIBRARY)
+      .at('precombatMain', { active: 0 })
+      .build();
+    g.expect.derived('bears', { keywords: ['menace', 'mobilize'] });
+    g.advanceTo('declareAttackers', { attack: false });
+    g.act(0).declareAttackers([{ attacker: 'bears' }]);
+    g.passAll();
+    g.expect.zone('Warrior', 'battlefield', { seat: 0, count: 2 });
   });
 });

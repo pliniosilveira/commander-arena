@@ -408,7 +408,15 @@ function lowerStation(ability: IrKeyword, ctx: LowerContext): LowerResult<readon
  */
 function lowerNumbered(
   ability: IrKeyword,
-  kind: 'toxic' | 'annihilator' | 'afflict' | 'bushido' | 'hideaway' | 'devour' | 'backup',
+  kind:
+    | 'toxic'
+    | 'annihilator'
+    | 'afflict'
+    | 'mobilize'
+    | 'bushido'
+    | 'hideaway'
+    | 'devour'
+    | 'backup',
 ): LowerResult<readonly Ability[]> {
   const [count, ...more] = ability.params;
   if (count?.kind !== 'number' || more.length > 0 || ability.cost !== undefined) {
@@ -550,6 +558,7 @@ export function lowerKeyword(
     ability.name === 'toxic' ||
     ability.name === 'annihilator' ||
     ability.name === 'afflict' ||
+    ability.name === 'mobilize' ||
     ability.name === 'bushido' ||
     ability.name === 'hideaway' ||
     ability.name === 'devour' ||
@@ -1099,6 +1108,7 @@ export const ABILITY_NEEDS: readonly FeatureRef[] = [
   'keyword:toxic',
   'keyword:annihilator',
   'keyword:afflict',
+  'keyword:mobilize',
   'keyword:partnerWith',
   'keyword:bushido',
   'keyword:affinity',

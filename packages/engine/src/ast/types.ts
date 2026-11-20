@@ -5039,6 +5039,13 @@ export type Keyword =
    */
   | { readonly kind: 'afflict'; readonly count: number }
   /**
+   * CR 702.181a (Mobilize, issue 101): "Mobilize N" means "Whenever this creature attacks, create N 1/1 red Warrior creature tokens. Those tokens enter tapped and attacking.
+   * Sacrifice them at the beginning of the next end step." A triggered ability the engine writes when it derives the object's abilities (`rules/derive-keywords.ts`); each instance
+   * triggers separately. `count` is N, a positive integer, or 'power' ("mobilize X, where X is its power": the power of the creature as the ability resolves). The sacrifice is a
+   * triggered ability of each token (it is created in combat, so the next end step is this turn's). Grantable.
+   */
+  | { readonly kind: 'mobilize'; readonly count: number | 'power' }
+  /**
    * CR 702.165a (Backup, D-230): "Backup N" means "When this creature enters, put N +1/+1 counters on target creature. If that's another creature, it also gains the
    * non-backup abilities of this creature printed below this one until end of turn." A triggered ability the engine writes when it derives the object's abilities
    * (`rules/derive-keywords.ts`), from the abilities printed after the keyword; they are fixed as the ability goes on the stack (CR 702.165d).

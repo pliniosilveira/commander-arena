@@ -614,6 +614,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'annihilator',
     // D-472: Afflict N (CR 702.130).
     'afflict',
+    // Issue 101: Mobilize N (CR 702.181).
+    'mobilize',
     // D-230: Backup N (CR 702.165).
     'backup',
     'persist',
@@ -1458,6 +1460,8 @@ export const GRANTABLE_KEYWORDS: readonly Keyword['kind'][] = [
   'riot',
   // D-472: Afflict N (CR 702.130): each instance granted is a triggered ability of its own (CR 702.130b), like exalted's.
   'afflict',
+  // Issue 101: Mobilize N (CR 702.181a): each instance granted is a triggered ability of its own, like afflict's.
+  'mobilize',
   // D-638: ward (CR 702.21): "Enchanted creature has ward {2}"; each instance granted is a triggered ability of its own, like afflict's.
   'ward',
   // D-640: annihilator (CR 702.86): "Enchanted creature has annihilator 2"; each instance granted triggers separately (CR 702.86b), like afflict's.
@@ -2707,6 +2711,7 @@ const KEYWORD_TABLE: KindTable<Keyword['kind']> = {
   exalted: true,
   annihilator: true,
   afflict: true,
+  mobilize: true,
   backup: true,
   persist: true,
   undying: true,

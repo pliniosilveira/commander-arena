@@ -190,6 +190,7 @@ const INSTANCE_KEYWORDS: readonly (string | null)[] = [
   'exalted',
   'prowess',
   'afflict',
+  'mobilize',
   'ward',
   'annihilator',
   'demonstrate',
