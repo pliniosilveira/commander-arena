@@ -1366,19 +1366,10 @@
     "1ea3ba2d-e88f-4879-92f2-681637094b45": {
       "name": "Nazgûl Battle-Mace",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Equipped creature has menace, deathtouch, annihilator 1, and \"Whenever an opponent sacrifices a nontoken permanent, put that card onto the battlefield under your control unless that player pays 3 life.\"",
-          "reason": "unrecognised",
-          "slot": "static",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "d7faf818"
+      "ast": "297ef1fc"
     },
     "1f1ad44c-1811-40e3-976b-03f19866abd5": {
       "name": "Assemble the Entmoot",
@@ -2796,19 +2787,10 @@
     "40eb9904-dea3-47cf-963a-04821f98ba64": {
       "name": "The Black Gate",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{1}{B}, {T}: Choose a player with the most life or tied for most life. Target creature can't be blocked by creatures that player controls this turn.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "effect.choose-graveyard-cards"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "3bf57cda"
+      "ast": "5ef703f2"
     },
     "40ed32a6-ad56-48c7-aecf-b4238c34c212": {
       "name": "Shiko and Narset, Unified",
@@ -3262,19 +3244,10 @@
     "4ce156f8-6b0b-41ce-9e8f-b2735c757406": {
       "name": "Flare of Malice",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "You may sacrifice a nontoken black creature rather than pay ~'s mana cost.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.a-permanent"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "47ca086a"
+      "ast": "7e953716"
     },
     "4cfaa5cf-cc3d-49a7-9544-38a8bb7e9ec1": {
       "name": "Frontier Siege",
@@ -4382,27 +4355,10 @@
     "660f370a-b25b-4ea5-b765-7abf96899c1c": {
       "name": "The Darkness Crystal",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "If a nontoken creature an opponent controls would die, instead exile it and you gain 2 life.",
-          "reason": "unrecognised",
-          "slot": "replacement",
-          "closestRule": "replacement.would-die"
-        },
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{4}{B}{B}, {T}: Put target creature card exiled with ~ onto the battlefield tapped under your control with two additional +1/+1 counters on it.",
-          "reason": "unrecognised",
-          "slot": "noun",
-          "closestRule": "noun.target-graveyard-card"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "1f4db4fd"
+      "ast": "e4ac4c07"
     },
     "663d451b-f848-41cc-b541-0c6fe37d3d54": {
       "name": "Hofri Ghostforge",
@@ -5702,19 +5658,10 @@
     "867dbd5a-c3cf-41ce-980b-c9babc6f30f2": {
       "name": "Minas Morgul, Dark Fortress",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 2,
-          "text": "{3}{B}, {T}: Put a shadow counter on target creature. For as long as that creature has a shadow counter on it, it's a Wraith in addition to its other types.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "ability.activated"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "b11922bb"
+      "ast": "164dc96e"
     },
     "8682266c-2b0f-496e-b1c6-1fb338feac24": {
       "name": "Perplexing Test",
@@ -6001,19 +5948,10 @@
     "8dcd7e2b-75a9-476a-a0a0-798613e8dad6": {
       "name": "Sauron, the Necromancer",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Whenever ~ attacks, exile target creature card from your graveyard. Create a tapped and attacking token that's a copy of that card, except it's a 3/3 black Wraith with menace. At the beginning of the next end step, exile that token unless ~ is your Ring-bearer.",
-          "reason": "unrecognised",
-          "slot": "token",
-          "closestRule": "token.custom"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "ff8fb4a9"
+      "ast": "611d07ba"
     },
     "8dd5f5af-d2d8-4356-8617-8381081b930c": {
       "name": "Yavimaya, Cradle of Growth",
@@ -9812,19 +9750,10 @@
     "eea18c55-8695-4ba1-9b38-3e7638692f5f": {
       "name": "Saw in Half",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 0,
-          "text": "Destroy target creature. If that creature dies this way, its controller creates two tokens that are copies of that creature, except their power is half that creature's power and their toughness is half that creature's toughness. Round up each time.",
-          "reason": "unrecognised",
-          "slot": "effect",
-          "closestRule": "spell.effect"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "e0a06a7f"
+      "ast": "aca48af8"
     },
     "eecb3047-a563-441a-9175-200421981ac3": {
       "name": "Ugin, the Spirit Dragon",
@@ -10137,18 +10066,10 @@
     "f48b2349-797e-4e79-aea7-2413e78129e1": {
       "name": "Morgul-Knife Wound",
       "group": "acceptance",
-      "status": "unsupported",
-      "unparsed": [
-        {
-          "face": 0,
-          "ability": 1,
-          "text": "Enchanted creature gets -3/-0 and has \"At the beginning of your upkeep, exile ~ unless you pay 2 life.\"",
-          "reason": "notRunnable",
-          "closestRule": "static.attached"
-        }
-      ],
+      "status": "supported",
+      "unparsed": [],
       "reasons": [],
-      "ast": "c98de4c3"
+      "ast": "926f436d"
     },
     "f49302c5-8510-4360-841c-a59f53f87e0b": {
       "name": "Icy Blast",
@@ -10602,7 +10523,7 @@
       "total": 57
     },
     "acceptance": {
-      "supported": 995,
+      "supported": 1003,
       "total": 1022
     }
   }
