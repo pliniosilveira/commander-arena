@@ -136,12 +136,12 @@ function ownFlashPermission(
 /**
  * CR 601.3b, 702.8a (D-139): whether a static ability of a permanent `seat` controls lets them cast the spell `obj` at the timing of
  * an instant: the filter of a `castAsThoughFlash` ability describes the spell as it is cast (on the stack, CR 601.2a), whose controller
- * is the caster. The permission is the controller's alone; it does not give the spell the flash keyword.
+ * is the caster. The permission is the controller's alone (every player's with `anyPlayer`); it does not give the spell the flash keyword.
  */
 function flashPermitted(state: GameState, seat: SeatId, spell: GameObject): boolean {
   return flashPermissionSources(state).some(
     (source) =>
-      controllerOf(state, source.object) === seat &&
+      (source.anyPlayer || controllerOf(state, source.object) === seat) &&
       matchesFilter(
         state,
         spell,

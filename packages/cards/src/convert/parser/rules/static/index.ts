@@ -45,6 +45,7 @@ import { PT_COUNTERS_ON_SOURCE_STATIC_RULES } from './pt-counters-on-source';
 import { RESTRICTION_STATIC_RULES } from './restrictions';
 import { SHALAI_STATIC_RULES } from './shalai';
 import { SKYBONDER_STATIC_RULES } from './skybonder';
+import { SLIVER_LORDS_STATIC_RULES } from './sliver-lords';
 import { SPELL_KEYWORD_GRANT_STATIC_RULES } from './spell-keyword-grant';
 import { VRASKA_STATIC_RULES } from './vraska';
 
@@ -161,4 +162,6 @@ export const STATIC_RULES = [
   ...GALADRIEL_G3_STATIC_RULES,
   // Issue 145 (Hatsune Miku deck): "Creature spells you cast have demonstrate."
   ...SPELL_KEYWORD_GRANT_STATIC_RULES,
+  // Issue 133 (the Sliver Swarm deck, group B): the legend rule that does not apply, a chosen type for groups, Encore for the cards of a graveyard.
+  ...SLIVER_LORDS_STATIC_RULES,
 ];

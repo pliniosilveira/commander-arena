@@ -207,7 +207,7 @@ export function runInstruction(
       front: [],
       needs: {
         kind: 'chooseOption',
-        seat: res.controller,
+        seat: instruction.seat ?? res.controller,
         purpose: 'creatureType',
         options: CREATURE_TYPES,
         source: res.object,
@@ -723,7 +723,14 @@ function contextOf(state: GameState, res: ResolutionContext): SelectContext {
     source: res.source,
     ...(res.chosenCreatureType === undefined
       ? {}
-      : { sourceChosen: { creatureType: res.chosenCreatureType } }),
+      : {
+          sourceChosen: {
+            creatureType: res.chosenCreatureType,
+            ...(res.chosenCreatureTypes === undefined
+              ? {}
+              : { creatureTypes: res.chosenCreatureTypes }),
+          },
+        }),
     ...(res.chosenObjects === undefined ? {} : { chosenObjects: res.chosenObjects }),
     // CR 107.3a: the X announced for the spell or ability that is resolving.
     // CR 107.3a, 601.2b: an ability that has no X of its own ("When you cast this spell, you gain half X life") reads the X of the spell it belongs to, as it is on the stack or as it last was.
@@ -777,7 +784,18 @@ function runEffect(
         ],
       );
     case 'chooseCreatureType':
-      return done(state, [], [{ kind: 'chooseCreatureType', chosen: null }]);
+      // CR 101.4 (Harsh Mercy): each player the selector names chooses in turn, the active player first; one question each.
+      return done(
+        state,
+        [],
+        effect.players === undefined
+          ? [{ kind: 'chooseCreatureType', chosen: null }]
+          : resolvePlayers(state, effect.players, ctx, targets).map((seat) => ({
+              kind: 'chooseCreatureType' as const,
+              chosen: null,
+              seat,
+            })),
+      );
     case 'sequence':
       return done(
         state,
@@ -906,6 +924,7 @@ function runEffect(
               ...(what.anyNumber === true ? { anyNumber: true as const } : {}),
               ...(what.atLeastOne === true ? { atLeastOne: true as const } : {}),
               ...(what.greatest === undefined ? {} : { greatest: what.greatest }),
+              ...(what.fromTriggerSources === true ? { fromTriggerSources: true as const } : {}),
               ...(first === undefined ? {} : { seat: first }),
               // CR 101.4: with several players, they all choose (active player first) before any sacrifice happens.
               ...(later.length === 0 ? {} : { together: { later, held: [] } }),

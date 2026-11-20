@@ -593,9 +593,21 @@ export function checkFilter(
   }
   // D-261: "that shares a creature type with it" names the creature a "dies" trigger is about, which only the filter of a `revealUntil` in its effect reads.
   if (f.sharesCreatureTypeWith !== undefined) {
-    if (f.sharesCreatureTypeWith !== 'triggerSubject') {
-      issue(out, `${path}.sharesCreatureTypeWith`, "sharesCreatureTypeWith is 'triggerSubject'");
-    } else if (sharesWith !== true) {
+    if (!isOneOf(f.sharesCreatureTypeWith, ['triggerSubject', 'source', 'sacrificed'])) {
+      issue(
+        out,
+        `${path}.sharesCreatureTypeWith`,
+        "sharesCreatureTypeWith is 'triggerSubject', 'source' or 'sacrificed'",
+      );
+    } else if (f.sharesCreatureTypeWith === 'sacrificed') {
+      if (where.afterSacrifice !== true) {
+        issue(
+          out,
+          `${path}.sharesCreatureTypeWith`,
+          "sharesCreatureTypeWith 'sacrificed' is read in the filter of a revealUntil that follows a sacrifice (or the offer of one) in the same sequence",
+        );
+      }
+    } else if (f.sharesCreatureTypeWith === 'triggerSubject' && sharesWith !== true) {
       issue(
         out,
         `${path}.sharesCreatureTypeWith`,
@@ -3541,6 +3553,18 @@ function checkSacrificeSelector(
     return;
   }
   const choose = sel as ChooseSelector;
+  // CR 603.2c (Descendants' Fury): "sacrifice one of them" names the creatures that dealt the combat damage of the batch trigger.
+  if (choose.fromTriggerSources !== undefined) {
+    if (choose.fromTriggerSources !== true) {
+      issue(out, `${path}.fromTriggerSources`, 'fromTriggerSources must be true when present');
+    } else if (scope.triggerSources !== true) {
+      issue(
+        out,
+        `${path}.fromTriggerSources`,
+        "fromTriggerSources needs a triggered ability of a combatDamageBatch trigger: 'them' are the creatures that dealt the damage",
+      );
+    }
+  }
   checkFilter(choose.filter, `${path}.filter`, out, undefined, undefined, {
     ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
   });
@@ -4716,6 +4740,8 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       checkFilter(e.filter, `${path}.filter`, out, scope);
       break;
     case 'chooseCreatureType':
+      // CR 101.4 (Harsh Mercy): "each player chooses a creature type" names the players who choose.
+      if (e.players !== undefined) checkPlayerSelector(e.players, `${path}.players`, scope, out);
       break;
     case 'sequence':
       if (!Array.isArray(e.effects) || e.effects.length === 0) {
@@ -6334,7 +6360,10 @@ export function checkEffect(e: Effect, path: string, scope: Scope, out: Out): vo
       break;
     case 'revealUntil':
       // D-145: "reveal cards until you reveal a land card": a filter of cards in the library, and where the card found goes.
-      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true);
+      // CR 701.21a (Descendants' Fury): after a sacrifice (or the offer of one) in the same sequence the cards may share a creature type with what was sacrificed.
+      checkFilter(e.filter, `${path}.filter`, out, undefined, scope.diesTrigger === true, {
+        ...(scope.sacrificedEarlier === true ? { afterSacrifice: true } : {}),
+      });
       if (
         filterSome(
           e.filter,

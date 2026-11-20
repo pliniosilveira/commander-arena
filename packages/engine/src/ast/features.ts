@@ -913,6 +913,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'hostOfSource',
     // D-261: "a creature card that shares a creature type with it" (`ObjectFilter.sharesCreatureTypeWith`).
     'sharesCreatureTypeWith',
+    // CR 205.3m (Titan of Littjara, Descendants' Fury): `sharesCreatureTypeWith` of the source of the ability, or of the creature an earlier sacrifice sacrificed.
+    'sharesCreatureTypeWithSource',
+    'sharesCreatureTypeWithSacrificed',
+    // CR 603.2c (Descendants' Fury): `ChooseSelector.fromTriggerSources`, "sacrifice one of them".
+    'chooseFromTriggerSources',
     // D-262: "up to two basic land cards that share a land type" (`search.sharedLandType`).
     'sharedLandType',
     // "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b; `search.zones`).
@@ -949,6 +954,8 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'chosenType',
     'notChosenType',
     'chosenColor',
+    // CR 101.4 (Harsh Mercy): `chooseCreatureType.players`, "each player chooses a creature type".
+    'chooseCreatureTypePlayers',
     // D-110: "defending player" (CR 508.5) and "it" for the card the source became (CR 400.7, Persist).
     'defendingPlayer',
     'thisCard',
@@ -1294,6 +1301,11 @@ export const SUPPORTED_FEATURES: SupportedFeatures = {
     'spellsCantBeCountered',
     // D-192: "Damage isn't removed from this creature during cleanup steps."
     'keepsDamage',
+    // "The \"legend rule\" doesn't apply to Slivers you control." (CR 704.5j).
+    'legendRuleDoesntApply',
+    // "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types." (CR 613.1d), "Each Sliver creature card in your graveyard has encore {X}" (CR 702.141a).
+    'giveChosenCreatureType',
+    'grantEncoreToGraveyardCards',
   ],
   // D-286: `pair`, "each of those creatures" of a soulbond card, for a modification of power and toughness, a granted keyword or a granted ability only.
   staticSubjectKinds: ['this', 'attached', 'filter', 'pair'],
@@ -1751,6 +1763,12 @@ export const SELECTOR_KINDS = [
   'hostOfSource',
   /** "That shares a creature type with it" (CR 205.3m, 603.10a, D-261): the engine's `ObjectFilter.sharesCreatureTypeWith`. */
   'sharesCreatureTypeWith',
+  /** "Each other creature you control that shares a creature type with it" of an ability about its own source (CR 205.3m, Titan of Littjara): `ObjectFilter.sharesCreatureTypeWith: 'source'`. */
+  'sharesCreatureTypeWithSource',
+  /** "A creature card that shares a creature type with the sacrificed creature" (CR 205.3m, 701.21a, Descendants' Fury): `ObjectFilter.sharesCreatureTypeWith: 'sacrificed'`. */
+  'sharesCreatureTypeWithSacrificed',
+  /** "You may sacrifice one of them" after a batch of combat damage (CR 603.2c, 701.21a, Descendants' Fury): the engine's `ChooseSelector.fromTriggerSources`. */
+  'chooseFromTriggerSources',
   /** "Up to two basic land cards that share a land type" (CR 205.3i, 701.23, D-262): the engine's `search.sharedLandType`. */
   'sharedLandType',
   /** "Search your graveyard, hand, and/or library for a card named X" (CR 701.23a, 701.23b): the engine's `search.zones`. */
@@ -1798,6 +1816,8 @@ export const SELECTOR_KINDS = [
   'chosenType',
   'notChosenType',
   'chosenColor',
+  /** "Each player chooses a creature type" (CR 101.4, Harsh Mercy): the engine's `chooseCreatureType.players`. */
+  'chooseCreatureTypePlayers',
   /** "Defending player" (CR 508.5, Annihilator): the engine's `PlayerSelector` `defendingPlayer`. */
   'defendingPlayer',
   /** "Return it" for the card the source became in another zone (CR 400.7, Persist): the engine's `thisCard`. */
@@ -2195,6 +2215,12 @@ export const STATIC_KINDS = [
   'activateAsThoughHaste',
   /** "Damage isn't removed from this creature during cleanup steps" (CR 514.2, D-192): the engine's `keepsDamage`. */
   'keepsDamage',
+  /** "The \"legend rule\" doesn't apply to Slivers you control" (CR 704.5j): the engine's `legendRuleDoesntApply`. */
+  'legendRuleDoesntApply',
+  /** "Slivers you control and nontoken creatures you control are the chosen type in addition to their other creature types" (CR 613.1d): the engine's `giveChosenCreatureType`. */
+  'giveChosenCreatureType',
+  /** "Each Sliver creature card in your graveyard has encore {X}, where X is its mana value" (CR 702.141a): the engine's `grantEncoreToGraveyardCards`. */
+  'grantEncoreToGraveyardCards',
 ] as const;
 export type StaticKind = (typeof STATIC_KINDS)[number];
 
